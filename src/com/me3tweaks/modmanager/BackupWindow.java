@@ -71,7 +71,7 @@ public class BackupWindow extends JDialog {
 		//Set the backup flag to true
 		Wini ini;
 		try {
-			File settings = new File("me3mcc.ini");
+			File settings = new File(ModManager.settingsFilename);
 			if (!settings.exists())
 				settings.createNewFile();
 			ini = new Wini(settings);

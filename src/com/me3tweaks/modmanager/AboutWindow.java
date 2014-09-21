@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 
+import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -27,7 +28,7 @@ public class AboutWindow extends JDialog {
 	public AboutWindow(JFrame callingWindow) {
 		this.setTitle("About Coalesced Mod Manager");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(320, 228));
+		this.setPreferredSize(new Dimension(330, 248));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
@@ -51,7 +52,7 @@ public class AboutWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini;
 				try {
-					File settings = new File("me3mcc.ini");
+					File settings = new File(ModManager.settingsFilename);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
@@ -74,6 +75,7 @@ public class AboutWindow extends JDialog {
 			}
 		});
 		aboutPanel.add(loggingMode, BorderLayout.SOUTH);
+		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 		this.getContentPane().add(aboutPanel);
 	}
 }

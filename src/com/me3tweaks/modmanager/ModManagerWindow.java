@@ -75,7 +75,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		setupWindow(this);
 
-		Dimension minSize = new Dimension(540, 500);
+		Dimension minSize = new Dimension(560, 520);
 		this.setPreferredSize(minSize);
 		this.setMinimumSize(minSize);
 		this.pack();
@@ -94,7 +94,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// Title Panel
 		JPanel titlePanel = new JPanel(new BorderLayout());
-		titlePanel.add(new JLabel("  Mass Effect 3 - Coalesced Mod Manager " + ModManager.VERSION, SwingConstants.LEFT), BorderLayout.WEST);
+		titlePanel.add(new JLabel("Mass Effect 3 - Coalesced Mod Manager " + ModManager.VERSION, SwingConstants.LEFT), BorderLayout.WEST);
 
 		// BioGameDir Panel
 		JPanel cookedDirPanel = new JPanel(new BorderLayout());
@@ -183,6 +183,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		contentPanel.add(splitPane, BorderLayout.CENTER);
 		contentPanel.add(southPanel, BorderLayout.SOUTH);
 		this.setJMenuBar(menuBar);
+		contentPanel.setBorder(BorderFactory.createEmptyBorder(5,5,0,5));
 		this.add(contentPanel);
 		return this;
 	}
@@ -291,7 +292,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else
 		if (e.getSource() == toolsModMaker) {
-			new ModMakerWindow(this);
+			new ModMakerWindow(this, fieldBiogameDir.getText());
 		} else 
 
 		if (e.getSource() == toolsBackupDLC) {
@@ -418,7 +419,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (saveDir == 0) {
 				Wini ini;
 				try {
-					File settings = new File("me3mcc.ini");
+					File settings = new File(ModManager.settingsFilename);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
@@ -460,7 +461,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		Wini settingsini;
 		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BioGame\\";
 		try {
-			settingsini = new Wini(new File("me3mcc.ini"));
+			settingsini = new Wini(new File(ModManager.settingsFilename));
 			setDir = settingsini.get("Settings", "biogame_dir");
 			if (setDir == null || setDir.equals("")) {
 				setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BioGame\\";
@@ -553,7 +554,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		Wini ini;
 		boolean answer = true;
 		try {
-			File settings = new File("me3mcc.ini");
+			File settings = new File(ModManager.settingsFilename);
 			if (!settings.exists())
 				settings.createNewFile();
 			ini = new Wini(settings);
@@ -777,7 +778,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		// Executable exists.
 		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", executable.getAbsolutePath() };
 		try {
-			labelStatus.setText(" Starting game...");
+			labelStatus.setText("Launched Mass Effect 3");
 			this.setExtendedState(JFrame.ICONIFIED);
 			Runtime.getRuntime().exec(command);
 		} catch (IOException e) {

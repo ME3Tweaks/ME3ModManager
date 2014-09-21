@@ -17,13 +17,14 @@ public class ModManager {
 	public static final String VERSION = "3.0";
 	public static final String BUILD_DATE = "9/18/2014";
 	public static DebugLogger debugLogger;
+	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	
 	public static void main(String[] args) {
 		//Set and get debugging mode from wini
 		Wini settingsini;
 		try {
-			settingsini = new Wini(new File("me3mcc.ini"));
+			settingsini = new Wini(new File(ModManager.settingsFilename));
 			String logStr  = settingsini.get("Settings", "logging_mode");
 			int logInt = 0;
 			if (logStr!= null && !logStr.equals("")) {
