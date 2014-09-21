@@ -33,7 +33,8 @@ public class ModMakerCompilerWindow extends JDialog {
 	private static int TOTAL_STEPS = 10;
 	private int stepsCompleted = 1;
 	ArrayList<String> requiredCoals = new ArrayList<String>();
-	JSONObject modInfo;
+	JSONObject mod_object, mod_info;
+	JSONArray mod_data;
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;
 
@@ -91,7 +92,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		try {
 			FileUtils.copyURLToFile(new URL(link), new File("mod_info"));
 			JSONParser parser = new JSONParser();
-			modInfo = (JSONObject) parser.parse(new FileReader("mod_info"));
+			mod_object = (JSONObject) parser.parse(new FileReader("mod_info"));
 			parseModInfo();
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
@@ -135,11 +136,11 @@ public class ModMakerCompilerWindow extends JDialog {
 
 	protected void parseModInfo() {
 		// modinfo should be defined already.
-		JSONObject mod_meta = (JSONObject) modInfo.get("mod_info");
-		modName = (String) mod_meta.get("name");
+		mod_info = (JSONObject) mod_object.get("mod_info");
+		modName = (String) mod_info.get("name");
 		infoLabel.setText("Compiling " + modName + "...");
 		// Find the coals it needs
-		JSONArray mod_data = (JSONArray) modInfo.get("mod_data");
+		mod_data = (JSONArray) mod_info.get("mod_data");
 		for (Object coal_obj : mod_data) {
 			JSONObject coal_data = (JSONObject) coal_obj;
 			String coal_name = (String) coal_data.get("coal_name");
@@ -230,7 +231,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	    	stepsCompleted++;
 	    	overallProgress.setValue(100/(TOTAL_STEPS/stepsCompleted));
 	    	System.out.println("Coals decompiled");
-	    	//decompileMods();
+	    	mergeJsonFiles();
 	    }
 	}
 
@@ -285,5 +286,19 @@ public class ModMakerCompilerWindow extends JDialog {
 	    	overallProgress.setValue(100/(TOTAL_STEPS/stepsCompleted));
 	    	decompileMods();
 	    }
+	}
+
+	/**
+	 * After coals are downloaded and decompiled, this method is called and merges the contents of the downloaded mod into the files. 
+	 */
+	public void mergeJsonFiles() {
+		//we are going to parse the mod_data array and then look at all the files in the array.
+		//Haha wow this is going to be ugly.
+		for (Object coal_obj : mod_data) {
+			JSONObject coal_data = (JSONObject) coal_obj;
+			String coal_name = (String) coal_data.get("coal_name");
+			System.out.println("Mod requires "+coal_name);
+			requiredCoals.add(shortNameToCoalFilename(coal_name));
+		}
 	}
 }
