@@ -6,10 +6,8 @@ import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -43,6 +41,9 @@ import javax.swing.event.ListSelectionListener;
 
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
 
 @SuppressWarnings("serial")
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
@@ -460,16 +461,56 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private String getLocationText(JTextField locationSet) {
 		Wini settingsini;
 		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BioGame\\";
+		String os = System.getProperty("os.name");
 		try {
 			settingsini = new Wini(new File(ModManager.settingsFilename));
 			setDir = settingsini.get("Settings", "biogame_dir");
 			if (setDir == null || setDir.equals("")) {
+				//Try to detect it via the registry
+				if (os.contains("Windows")){
+			        String installDir = Advapi32Util.registryGetStringValue(
+				            WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{534A31BD-20F4-46b0-85CE-09778379663C}", "InstallLocation");	
+			        System.out.println(installDir);
+				}
+
+		 
+				
+				
 				setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BioGame\\";
 			}
 		} catch (InvalidFileFormatException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			System.err.println("I/O Error reading settings file. It may not exist yet.");
+			//Try to make one
+			if (os.contains("Windows")){
+		        String installDir = Advapi32Util.registryGetStringValue(
+			            WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{534A31BD-20F4-46b0-85CE-09778379663C}", "InstallLocation");
+		        File bgdir = new File(installDir+"\\BIOGame");
+		        if (bgdir.exists()) {
+		        	//its correct
+		        	Wini ini;
+					try {
+						File settings = new File(ModManager.settingsFilename);
+						if (!settings.exists())
+							settings.createNewFile();
+						ini = new Wini(settings);
+						ini.put("Settings", "biogame_dir", bgdir.toString());
+						if (ModManager.logging) {
+							ModManager.debugLogger.writeMessage(bgdir.toString()+" was detected via the registry to be the biogame dir.");
+						}
+						ini.store();
+						fieldBiogameDir.setText(bgdir.toString());
+					} catch (InvalidFileFormatException ex) {
+						e.printStackTrace();
+					} catch (IOException ex) {
+						System.err.println("Could not save automatically detected biogame dir.");
+					}
+		        }
+		        System.out.println(installDir);
+			}
+			
+			
 		}
 
 		return setDir;

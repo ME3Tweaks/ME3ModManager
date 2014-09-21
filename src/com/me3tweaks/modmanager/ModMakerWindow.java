@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -19,7 +18,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
 
 @SuppressWarnings("serial")
 public class ModMakerWindow extends JDialog implements ActionListener{
@@ -115,6 +113,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 				    JOptionPane.ERROR_MESSAGE);
 			return;
 		}
+		System.out.println("Detected Gibbed's original coalesced compiler");
 		
 		if (!gibbedDLC.exists()){
 			dispose();
@@ -124,7 +123,8 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 				    JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		
+		System.out.println("Detected Gibbed's DLC coalesced compiler");
+
 		//All prereqs met.
 	}
 

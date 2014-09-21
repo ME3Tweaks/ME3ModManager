@@ -1,0 +1,9 @@
+Changelog from 2.0.2 to 3.0
+
+Added automatic detection of Biogame Directory via registry (might only work with english install)
+Added ModMaker
+Small UI tweaks
+Updated links
+
+--TODO--
+Added ability to have mods that modified original game content beyond Coalesced.bin

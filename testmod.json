@@ -1,0 +1,71 @@
+{
+	"mod_info": {
+		"name": "Testing mod",
+		"creator": "Mgamerz",
+		"date": "1411169185"
+	},
+	"mod_data": [
+		{
+			"coal_name": "MP4",
+			"biogame": {
+				"sfxwave_horde_cerberus1 sfxwave_horde_cerberus2": {
+				  "enemies": [
+					{
+					  "Type": 2,
+					  "Value": "(Difficulty=DO_Level1,Enemies=((EnemyType=\"WAVE_CER_AssaultTrooper\")))"
+					},
+					{
+					  "Type": 2,
+					  "Value": "(Difficulty=DO_Level2,Enemies=((EnemyType=\"WAVE_CER_AssaultTrooper\"),(EnemyType=\"WAVE_CER_Centurion\", MinCount=2, MaxCount=2)))"
+					},
+					{
+					  "Type": 2,
+					  "Value": "(Difficulty=DO_Level3,Enemies=((EnemyType=\"WAVE_CER_AssaultTrooper\"),(EnemyType=\"WAVE_CER_Centurion\", MinCount=2, MaxCount=2),(EnemyType=\"WAVE_CER_Nemesis\", MinCount=2, MaxCount=2)))"
+					},
+					{
+					  "Type": 2,
+					  "Value": "(Difficulty=DO_Level4,Enemies=((EnemyType=\"WAVE_CER_AssaultTrooper\"),(EnemyType=\"WAVE_CER_Engineer\", MinCount=2, MaxCount=2),(EnemyType=\"WAVE_CER_Phantom\", MinCount=2, MaxCount=2),(EnemyType=\"WAVE_CER_Atlas\", MinCount=2, MaxCount=2))))"
+					}
+				  ],
+				  "waveindex": [
+					{
+					  "Type": 2,
+					  "Value": "1"
+					}
+				  ]
+				}
+			}
+		}, 
+		{
+			"coal_name": "MP5",
+			"biogame": {
+				"sfxwave_horde_cerberus1 sfxwave_horde_cerberus2": {
+				  "enemies": [
+					{
+					  "Type": 2,
+					  "Value": "(Difficulty=DO_Level1,Enemies=((EnemyType=\"WAVE_CER_AssaultTrooper\")))"
+					},
+					{
+					  "Type": 2,
+					  "Value": "(Difficulty=DO_Level2,Enemies=((EnemyType=\"WAVE_CER_AssaultTrooper\"),(EnemyType=\"WAVE_CER_Centurion\", MinCount=2, MaxCount=2)))"
+					},
+					{
+					  "Type": 2,
+					  "Value": "(Difficulty=DO_Level3,Enemies=((EnemyType=\"WAVE_CER_AssaultTrooper\"),(EnemyType=\"WAVE_CER_Centurion\", MinCount=2, MaxCount=2),(EnemyType=\"WAVE_CER_Nemesis\", MinCount=2, MaxCount=2)))"
+					},
+					{
+					  "Type": 2,
+					  "Value": "(Difficulty=DO_Level4,Enemies=((EnemyType=\"WAVE_CER_AssaultTrooper\"),(EnemyType=\"WAVE_CER_Engineer\", MinCount=2, MaxCount=2),(EnemyType=\"WAVE_CER_Phantom\", MinCount=2, MaxCount=2),(EnemyType=\"WAVE_CER_Atlas\", MinCount=2, MaxCount=2))))"
+					}
+				  ],
+				  "waveindex": [
+					{
+					  "Type": 2,
+					  "Value": "1"
+					}
+				  ]
+				}
+			}
+		}
+	]
+}
