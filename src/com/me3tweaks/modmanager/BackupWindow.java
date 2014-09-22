@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
@@ -183,7 +184,7 @@ public class BackupWindow extends JDialog {
 		backupPanel.add(backupButton, BorderLayout.CENTER);
 
 		rootPanel.add(backupPanel, BorderLayout.SOUTH);
-
+		rootPanel.setBorder(new EmptyBorder(5,5,5,5));
 		getContentPane().add(rootPanel);
 
 		addWindowListener(new WindowAdapter() {

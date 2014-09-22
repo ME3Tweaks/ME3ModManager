@@ -24,7 +24,7 @@ public class ModType {
 	protected static final String GUN02 = "GROUNDSIDE";
 	
 	
-	/*
+	/* DONT DELETE
 	protected static final String COAL = "COALESCED";
 	protected static final String MP1 = "RESURGENCE";
 	protected static final String MP2 = "REBELLION";
@@ -45,7 +45,7 @@ public class ModType {
 	protected static final String GUN02 = "FIREFIGHT";*/
 
 	protected static String[] getHeaderNameArray(){
-		return new String[]{MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,TESTPATCH,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
+		return new String[]{MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
 	}
 	
 	/** Returns the subdirectory from biogame (no leading or trailing slashes) that corresponds to a DLC folder where the .sfar file should exist.
@@ -57,35 +57,35 @@ public class ModType {
 		//System.out.println("Getting DLC path for: "+modType);
 		switch(modType){
 		case MP1:
-			return "DLC\\DLC_CON_MP1\\CookedPCConsole";
+			return "DLC\\DLC_CON_MP1\\CookedPCConsole"; //Resurgence
 		case MP2:
-			return "DLC\\DLC_CON_MP2\\CookedPCConsole";
+			return "DLC\\DLC_CON_MP2\\CookedPCConsole"; //Rebellion
 		case MP3:
-			return "DLC\\DLC_CON_MP3\\CookedPCConsole";
+			return "DLC\\DLC_CON_MP3\\CookedPCConsole"; //Earth
 		case MP4:
-			return "DLC\\DLC_CON_MP4\\CookedPCConsole";
+			return "DLC\\DLC_CON_MP4\\CookedPCConsole"; //Retaliation
 		case MP5:
-			return "DLC\\DLC_CON_MP5\\CookedPCConsole";
+			return "DLC\\DLC_CON_MP5\\CookedPCConsole"; //Reckoning
 		case PATCH1:
 			return "DLC\\DLC_UPD_Patch01\\CookedPCConsole";
 		case PATCH2:
 			return "DLC\\DLC_UPD_Patch02\\CookedPCConsole";
-		case TESTPATCH: //This is a special case
-			return "Patches\\PCConsole";
+		//case TESTPATCH: //This is a special case
+		//	return "Patches\\PCConsole";
 		case HEN_PR:
-			return "DLC\\DLC_HEN_PR\\CookedPCConsole";
+			return "DLC\\DLC_HEN_PR\\CookedPCConsole"; //From Ashes
 		case END:
-			return "DLC\\DLC_CON_END\\CookedPCConsole";
+			return "DLC\\DLC_CON_END\\CookedPCConsole"; //Extended Cut
 		case EXP1:
-			return "DLC\\DLC_EXP_Pack001\\CookedPCConsole";
+			return "DLC\\DLC_EXP_Pack001\\CookedPCConsole"; //Leviathan
 		case EXP2:
-			return "DLC\\DLC_EXP_Pack002\\CookedPCConsole";
+			return "DLC\\DLC_EXP_Pack002\\CookedPCConsole"; //Omega
 		case EXP3:
-			return "DLC\\DLC_EXP_Pack003\\CookedPCConsole";
+			return "DLC\\DLC_EXP_Pack003\\CookedPCConsole"; //Citadel
 		case EXP3B:
-			return "DLC\\DLC_EXP_Pack003_Base\\CookedPCConsole";
+			return "DLC\\DLC_EXP_Pack003_Base\\CookedPCConsole"; //Citadel 2
 		case APP01:
-			return "DLC\\DLC_CON_APP01\\CookedPCConsole";
+			return "DLC\\DLC_CON_APP01\\CookedPCConsole"; //Appearance Pack
 		case GUN01:
 			return "DLC\\DLC_CON_GUN01\\CookedPCConsole";
 		case GUN02:
@@ -118,6 +118,31 @@ public class ModType {
 		dlcMap.put(APP01,"d27098a14da986f4562bda557ed778cc");
 		dlcMap.put(GUN01,"d05977324e5ef172e8d0f10ec664ab9f");
 		dlcMap.put(GUN02,"6d7fa053fac1696c6b64ea20669db5c0");
+		return dlcMap;
+	}
+	
+	/** Returns a hashmap of names -> filesizes of a DLC.
+	 * @return HashMap with ModType.NAME mapped to that DLCs respective original hash value.
+	 */
+	public static HashMap<String, Integer> getSizesMap() {
+		HashMap<String, Integer> dlcMap = new HashMap<String, Integer>();
+		dlcMap.put(MP1,0);
+		dlcMap.put(MP2,0);
+		dlcMap.put(MP3,0);
+		dlcMap.put(MP4,0);
+		dlcMap.put(MP5,0);
+		dlcMap.put(PATCH1,0);
+		dlcMap.put(PATCH2,0);
+		//dlcMap.put(TESTPATCH,"1");
+		dlcMap.put(HEN_PR,0);
+		dlcMap.put(END,0);
+		dlcMap.put(EXP1,0);
+		dlcMap.put(EXP2,0);
+		dlcMap.put(EXP3,0);
+		dlcMap.put(EXP3B,0);
+		dlcMap.put(APP01,0);
+		dlcMap.put(GUN01,0);
+		dlcMap.put(GUN02,0);
 		return dlcMap;
 	}
 

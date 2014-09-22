@@ -657,10 +657,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	/**
-	 * Handles looking up the name of a mod to the mod that it comes from. Uses a hash map.
+	 * Handles looking up the name of a mod from the mod object that it comes from. Uses a hash map.
 	 * 
 	 * @param modName
-	 *            Name of the mod from the list
+	 *            Name of the mod from the list (display name)
 	 * @return File that describes the selected mod
 	 */
 	private Mod lookupModByFileName(String modName) {

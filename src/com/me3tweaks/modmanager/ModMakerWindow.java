@@ -59,6 +59,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		codeDownloadPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		modMakerPanel.add(codeDownloadPanel);
 		
+		codeField.addActionListener(this);
 		downloadButton.addActionListener(this);
 		
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
@@ -133,7 +134,11 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		if (e.getSource() == downloadButton) {
 			dispose();
 			callingWindow.startModMaker(codeField.getText().toString());
+		} else
+		if (e.getSource() == codeField) {
+			//enter was pressed
+			dispose();
+			callingWindow.startModMaker(codeField.getText().toString());
 		}
-		
 	}
 }

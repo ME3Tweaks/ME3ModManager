@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 /** Contains data that the DLC Injector can understand.
- * It is typically passed as a property container object.
+ * It is typically passed as a property container object. (object that contains properties)
  * @author FemShep
  *
  */

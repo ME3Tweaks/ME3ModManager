@@ -63,7 +63,7 @@ public class Mod {
 		// Backwards compatibility for mods that are built to target older versions of mod manager (NO DLC)
 		if (modcmmver < 2.0f) {
 			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Modcmmver is less than 2, checking for coalesced.bin (legacy)");
+				ModManager.debugLogger.writeMessage("Modcmmver is less than 2, checking for coalesced.bin in folder (legacy)");
 			}
 			File file = new File(ModManagerWindow.appendSlash(modPath) + "Coalesced.bin");
 			if (!file.exists()) {
@@ -151,35 +151,41 @@ public class Mod {
 			}
 		}
 
-		// Check for coalesced in the new mod manager version (modcoal)
-		if (ModManager.logging){
-			ModManager.debugLogger.writeMessage(modName + ": Checking for coalesced flag in moddesc.ini");
-		}
-		int modCoalFlag = 0;
-		try {
-			modCoalFlag = Integer.parseInt(wini.get("ModInfo", "modcoal"));
+		// Backwards compatibility for Mod Manager 2's modcoal flag (has now moved to [BASEGAME] as of 3.0)
+		if (modcmmver < 3.0f && modcmmver>=2.0f) {
 			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Coalesced flag: "+modCoalFlag);
+				ModManager.debugLogger.writeMessage(modName + ": Checking for modcoal in moddesc.ini because moddesc targets cmm2.0");
 			}
-
-			if (modCoalFlag != 0) {
-				File file = new File(ModManagerWindow.appendSlash(modPath) + "Coalesced.bin");
+			int modCoalFlag = 0;
+			try {
+				modCoalFlag = Integer.parseInt(wini.get("ModInfo", "modcoal"));
 				if (ModManager.logging){
-					ModManager.debugLogger.writeMessage("Coalesced flag was set, verifying its location");
+					ModManager.debugLogger.writeMessage("Coalesced flag: "+modCoalFlag);
 				}
-				if (!file.exists()) {
+
+				if (modCoalFlag != 0) {
+					File file = new File(ModManagerWindow.appendSlash(modPath) + "Coalesced.bin");
 					if (ModManager.logging){
-						ModManager.debugLogger.writeMessage(modName + " doesn't have Coalesced.bin even though flag was set. Marking as invalid.");
+						ModManager.debugLogger.writeMessage("Coalesced flag was set, verifying its location");
 					}
-					return;
+					if (!file.exists()) {
+						if (ModManager.logging){
+							ModManager.debugLogger.writeMessage(modName + " doesn't have Coalesced.bin even though flag was set. Marking as invalid.");
+						}
+						return;
+					}
+					addTask(ModType.COAL, null);
 				}
-				addTask(ModType.COAL, null);
-			}
-		} catch (NumberFormatException e) {
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal");
+			} catch (NumberFormatException e) {
+				if (ModManager.logging){
+					ModManager.debugLogger.writeMessage("Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal");
+				}
 			}
 		}
+		// Check for coalesced in the new mod manager version [2.0 only] (modcoal)
+
+		
+		
 		
 		if (ModManager.logging){
 			ModManager.debugLogger.writeMessage("Finished reading mod.");
@@ -209,6 +215,11 @@ public class Mod {
 		return str;
 	}
 
+	/**
+	 * Adds a task to this mod for when the mod is deployed.
+	 * @param name
+	 * @param newJob
+	 */
 	protected void addTask(String name, DLCInjectJob newJob) {
 		if (name.equals(ModType.COAL)) {
 			modCoal = true;
@@ -220,9 +231,11 @@ public class Mod {
 
 	}
 
+	/**
+	 * Updates the string showing what this mod edits in terms of files
+	 * @param taskName name of task to modify (EARTH, Coalesced, etc)
+	 */
 	private void updateModifyString(String taskName) {
-		// TODO Auto-generated method stub
-		// System.out.println("Updating modifystring: " + taskName);
 		if (modifyString.equals("")) {
 			modifyString = "\nModifies: " + taskName;
 		} else {
