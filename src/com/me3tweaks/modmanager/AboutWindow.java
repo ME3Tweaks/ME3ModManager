@@ -68,9 +68,7 @@ public class AboutWindow extends JDialog {
 				} catch (InvalidFileFormatException error) {
 					error.printStackTrace();
 				} catch (IOException error) {
-					if (ModManager.logging){
-						ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
-					}
+					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");	
 				}
 			}
 		});

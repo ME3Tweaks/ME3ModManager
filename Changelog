@@ -5,6 +5,7 @@ Added ModMaker
 Small UI tweaks
 Updated links
 Removed TestPatch references (we can't edit it so no point)
+Automatic Update detection and installation
 
 --TODO--
 Added ability to have mods that modified original game content beyond Coalesced.bin

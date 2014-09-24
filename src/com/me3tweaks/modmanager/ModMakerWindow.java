@@ -79,14 +79,14 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		try {
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (binkhash.equals(wvdlcBink32MD5)){
-				System.out.println("Bink32 DLC bypass installed");
+				ModManager.debugLogger.writeMessage("Bink32 DLC bypass installed");
 			} else {
 				// Check for LauncherWV.
 				File Launcher_WV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
 				File LauncherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\LauncherWV.exe");
 				if (Launcher_WV.exists() || LauncherWV.exists()) {
 					//does exist
-					System.out.println("Launcher WV DLC bypass installed");
+					ModManager.debugLogger.writeMessage("Launcher WV DLC bypass installed");
 				} else {
 					// it doesn't exist
 					//Failure
@@ -114,7 +114,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 				    JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		System.out.println("Detected Gibbed's original coalesced compiler");
+		ModManager.debugLogger.writeMessage("Detected Gibbed's original coalesced compiler");
 		
 		if (!gibbedDLC.exists()){
 			dispose();
@@ -124,8 +124,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 				    JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		System.out.println("Detected Gibbed's DLC coalesced compiler");
-
+		ModManager.debugLogger.writeMessage("Detected Gibbed's DLC coalesced compiler");
 		//All prereqs met.
 	}
 

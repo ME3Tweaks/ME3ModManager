@@ -44,14 +44,16 @@ public class DebugLogger {
 	}
 	
 	protected void writeMessage(String message){
-		try {
-			System.out.println("[L]: "+message);
-			fw.write(message);
-			fw.write(System.getProperty("line.separator"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			System.out.println("cannot write to log file! IOException");
-			e.printStackTrace();
+		if (ModManager.logging){
+			try {
+				System.out.println("[L]: "+message);
+				fw.write(message);
+				fw.write(System.getProperty("line.separator"));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.out.println("cannot write to log file! IOException");
+				e.printStackTrace();
+			}
 		}
 	}
 }

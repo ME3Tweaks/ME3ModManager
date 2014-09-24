@@ -6,6 +6,9 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,8 +19,14 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
 
 @SuppressWarnings("serial")
+/**
+ * Window that injects the files into the game/dlc.
+ * @author Mgamerz
+ *
+ */
 public class PatchWindow extends JDialog {
 	JLabel infoLabel;
 	String BioGameDir;
@@ -29,12 +38,12 @@ public class PatchWindow extends JDialog {
 	
 	ModManagerWindow callingWindow;
 
-	public PatchWindow(ModManagerWindow callingWindow, DLCInjectJob[] jobs, String BioGameDir, Mod mod) {
+	public PatchWindow(ModManagerWindow callingWindow, ModJob[] jobs, String BioGameDir, Mod mod) {
 		// callingWindow.setEnabled(false);
 		this.callingWindow = callingWindow;
 		this.BioGameDir = BioGameDir;
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Injecting mods into DLC");
+		this.setTitle("Applying Mod");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(320, 220));
 		consoleQueue = new String[levelCount];
@@ -52,13 +61,14 @@ public class PatchWindow extends JDialog {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		// TODO Auto-generated method stub
-		infoLabel = new JLabel("<html>Injecting files into DLC...<br>This may take a few minutes.</html>");
+		infoLabel = new JLabel("<html>Applying mod to game...<br>This may take a few minutes.</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
 		progressBar.setIndeterminate(false);
 		
 		northPanel.add(progressBar, BorderLayout.SOUTH);
+		northPanel.setBorder(new EmptyBorder(5,5,5,5));
 		rootPanel.add(northPanel, BorderLayout.NORTH);
 
 		consoleArea = new JTextArea();
@@ -75,50 +85,84 @@ public class PatchWindow extends JDialog {
 		int completed = 0;
 		int numjobs = 0;
 		Mod mod;
-		DLCInjectJob[] jobs;
+		ModJob[] jobs;
 		ArrayList<String> failedJobs;
 
-		protected InjectionCommander(DLCInjectJob[] jobs, Mod mod) {
+		protected InjectionCommander(ModJob[] jobs, Mod mod) {
 			this.mod = mod;
 			numjobs = jobs.length;
 			failedJobs = new ArrayList<String>();
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Starting the InjectionCommander utility. Number of jobs to do: "+numjobs);
-			}
+			ModManager.debugLogger.writeMessage("Starting the InjectionCommander utility. Number of jobs to do: "+numjobs);
 			this.jobs = jobs;
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage(getBetaDirectory());
-			}
+			ModManager.debugLogger.writeMessage(getBetaDirectory());
 		}
 
 		@Override
 		public Boolean doInBackground() {
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Starting the background thread");
-			}
-			for (DLCInjectJob job : jobs) {
-				if (ModManager.logging){
-					ModManager.debugLogger.writeMessage("Starting new injection job");
-				}
-				if (processDLCJob(job)){
+			ModManager.debugLogger.writeMessage("Starting the background thread");
+			
+			for (ModJob job : jobs) {
+				ModManager.debugLogger.writeMessage("Starting mod job");
+				
+				if ((job.modType == ModJob.DLC)? processDLCJob(job) : processBasegameJob(job)){ //pick the right method to execute. Return values are the same.
 					completed++;
-					if (ModManager.logging){
-						ModManager.debugLogger.writeMessage("Successfully finished injection job");
-					}
+					ModManager.debugLogger.writeMessage("Successfully finished mod job");
+					
 				} else {
-					if (ModManager.logging){
-						ModManager.debugLogger.writeMessage("Injection job failed, marking as failure");
-					}
+					ModManager.debugLogger.writeMessage("Mod job failed, marking as failure");
 					failedJobs.add(job.getDLCFilePath());
 				}
 				publish(Integer.toString(completed));
 			}
+			return true;
+		}
+		
+		private boolean processBasegameJob(ModJob job) {
+			File bgdir = new File(ModManagerWindow.appendSlash(BioGameDir));
+			String me3dir = ModManagerWindow.appendSlash(bgdir.getParent());
+			//Make backup folder if it doesn't exist
+			String backupfolderpath = me3dir.toString()+"cmmbackup\\";
+			File cmmbackupfolder = new File(backupfolderpath);
+			cmmbackupfolder.mkdirs();
+			ModManager.debugLogger.writeMessage("Basegame backup directory should have been created.");
+			
+			
+			//Prep replacement job
+			String[] filesToReplace = job.getFilesToReplace();
+			String[] newFiles = job.getNewFiles(); 
+			int numFilesToReplace = filesToReplace.length;
+			for (int i = 0; i<numFilesToReplace; i++){
+				String fileToReplace = filesToReplace[i];
+				String newFile = newFiles[i];
+				
+				//Check for backup
+				File basegamefile = new File(me3dir+fileToReplace);
+				File backupfile = new File(backupfolderpath+fileToReplace);
+				System.out.println("Checking for backup file at "+backupfile);
+				if (!backupfile.exists()) {
+					//backup the file
+					Path originalpath = Paths.get(basegamefile.toString());
+					Path backuppath = Paths.get(backupfile.toString());
+					Path newfilepath = Paths.get(newFile);
+
+					backupfile.getParentFile().mkdirs();
+					try {
+						//backup and then copy file
+						Files.copy(originalpath, backuppath);
+						ModManager.debugLogger.writeMessage("Backed up "+fileToReplace);
+						Files.copy(newfilepath, originalpath);
+						ModManager.debugLogger.writeMessage("Installed mod file: "+newFile);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			
 			
 			return true;
-
 		}
 
-		private boolean processDLCJob(DLCInjectJob job) {
+		private boolean processDLCJob(ModJob job) {
 			// TODO Auto-generated method stub
 			//System.out.println("Processing DLCJOB");
 			ArrayList<String> commandBuilder = new ArrayList<String>();
@@ -130,9 +174,8 @@ public class PatchWindow extends JDialog {
 			commandBuilder.add(ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+"Default.sfar");
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles();
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Number of files to replace: "+filesToReplace.length);
-			}
+			ModManager.debugLogger.writeMessage("Number of files to replace: "+filesToReplace.length);
+			
 			publish("Injecting "+filesToReplace.length+" files into "+job.DLCFilePath+"\\Default.sfar");
 
 			for (int i = 0; i<filesToReplace.length;i++){
@@ -148,15 +191,11 @@ public class PatchWindow extends JDialog {
 			for (String arg : command){
 				sb.append(arg+" ");
 			}
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage(sb.toString());
-			}
+			ModManager.debugLogger.writeMessage(sb.toString());
 			Process p = null;
 				int returncode = 1;
 				try {
-					if (ModManager.logging){
-						ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
-					}
+					ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
 					p = Runtime.getRuntime().exec(command);
 					returncode = p.waitFor();
 				} catch (IOException | InterruptedException e) {
@@ -174,9 +213,7 @@ public class PatchWindow extends JDialog {
 			//System.out.println("Restoring next DLC");
 			for (String update : updates) {
 				try {
-					if (ModManager.logging){
-						ModManager.debugLogger.writeMessage(update);
-					}
+					ModManager.debugLogger.writeMessage(update);
 					Integer.parseInt(update); // see if we got a number. if we did that means we should update the bar
 					if (numjobs != 0) {
 						progressBar.setValue((int) (((float) completed / numjobs) * 100));
@@ -194,11 +231,11 @@ public class PatchWindow extends JDialog {
 			if (numjobs != completed){
 				//failed something
 				StringBuilder sb = new StringBuilder();
-				sb.append("Failed to inject DLC into the following folders:\n");
+				sb.append("Failed to process mod job in the following folders:\n");
 				for (String jobName : failedJobs){
 					sb.append(" - "+jobName+"\n");
 				}
-				callingWindow.labelStatus.setText(" Failed to inject files into at least 1 DLC");
+				callingWindow.labelStatus.setText(" Failed to install at least 1 part of mod");
 				JOptionPane.showMessageDialog(null, sb.toString(), "Error",
 						JOptionPane.ERROR_MESSAGE);
 			} else {
@@ -211,28 +248,23 @@ public class PatchWindow extends JDialog {
 	}
 	
 	protected void finishPatch(){
-		if (ModManager.logging){
-			ModManager.debugLogger.writeMessage("Finished injecting DLCs.");
-		}
+		ModManager.debugLogger.writeMessage("Finished installing mod.");
 		dispose();
 	}
 
 	public String getBetaDirectory() {
 		File executable = new File(ModManagerWindow.appendSlash(System.getProperty("user.dir"))+"ME3Explorer.exe");
-		if (ModManager.logging){
-			ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
-		}
+		ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
+		
 		if (!executable.exists()){
 			//try another file
 			executable = new File("ME3Explorer\\ME3Explorer.exe");
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
-			}
+			ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
+			
 			if (!executable.exists()){
 				executable = new File("ME3Explorer_0102w_beta\\ME3Explorer.exe");
-				if (ModManager.logging){
-					ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
-				}
+				ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
+				
 				if (!executable.exists()){
 					StringBuilder sb = new StringBuilder();
 					sb.append("Failed to find ME3Explorer.exe in the following directories:\n");
@@ -245,9 +277,7 @@ public class PatchWindow extends JDialog {
 				
 			}
 		}
-		if (ModManager.logging){
-			ModManager.debugLogger.writeMessage("Founed exe in folder: "+ModManagerWindow.appendSlash(executable.getAbsolutePath()));
-		}
+		ModManager.debugLogger.writeMessage("Founed exe in folder: "+ModManagerWindow.appendSlash(executable.getAbsolutePath()));
 		return ModManagerWindow.appendSlash(executable.getParent());//ModManagerWindow.appendSlash("ME3Explorer_0102w_beta");
 	}
 
@@ -272,7 +302,6 @@ public class PatchWindow extends JDialog {
 	}
 
 	private void updateInfo() {
-		// Log.i(Launch.APPTAG, "DebugView\n"+this.toString());
 		consoleArea.setText(getConsoleString());
 	}
 }

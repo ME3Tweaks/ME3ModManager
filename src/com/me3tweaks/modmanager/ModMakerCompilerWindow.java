@@ -37,6 +37,7 @@ import org.json.simple.parser.ParseException;
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
 	String code, modName;
+	ModManagerWindow callingWindow;
 	private static int TOTAL_STEPS = 10;
 	private static String DOWNLOADED_JSON_FILENAME = "mod_info";
 	private int stepsCompleted = 1;
@@ -49,8 +50,9 @@ public class ModMakerCompilerWindow extends JDialog {
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;
 
-	public ModMakerCompilerWindow(JFrame callingWindow, String code) {
+	public ModMakerCompilerWindow(ModManagerWindow callingWindow, String code) {
 		this.code = code;
+		this.callingWindow = callingWindow;
 		this.setTitle("Mod Maker Compiler");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(420, 228));
@@ -242,7 +244,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		File moddir = new File(modName);
 		if (moddir.isDirectory()) {
 			try {
-				System.out.println("DEBUGGING: Remove existing mod directory");
+				ModManager.debugLogger.writeMessage("DEBUGGING: Remove existing mod directory");
 				FileUtils.deleteDirectory(moddir);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -267,7 +269,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		for (Object coal_obj : mod_data) {
 			JSONObject coal_data = (JSONObject) coal_obj;
 			String coal_name = (String) coal_data.get("coal_name");
-			System.out.println("Mod requires " + coal_name);
+			ModManager.debugLogger.writeMessage("Mod requires " + coal_name);
 			requiredCoals.add(shortNameToCoalFilename(coal_name));
 		}
 
@@ -363,7 +365,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			// Coals downloaded
 			stepsCompleted++;
 			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
-			System.out.println("Coals decompiled");
+			ModManager.debugLogger.writeMessage("Coals decompiled");
 			new JsonMergeWorker(progress).execute();
 		}
 	}
@@ -421,7 +423,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			// Coals downloaded
 			stepsCompleted++;
 			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
-			System.out.println("Coals recompiled");
+			ModManager.debugLogger.writeMessage("Coals recompiled");
 			createCMMMod();
 		}
 	}
@@ -473,7 +475,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected void done() {
 			// Coals downloaded
-			System.out.println("Coals downloaded");
+			ModManager.debugLogger.writeMessage("Coals downloaded");
 			stepsCompleted++;
 			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
 			decompileMods();
@@ -528,7 +530,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					try {
 						JSONParser parser = new JSONParser();
 						String shortNameDir = "coalesceds\\"+FilenameUtils.removeExtension(shortNameToCoalFilename(coal_name));
-						System.out.println("Merging file "+coal_name);
+						ModManager.debugLogger.writeMessage("Merging file "+coal_name);
 						FileReader jsonReader = new FileReader(shortNameDir+"\\"+filename+".json");
 						
 						/**
@@ -538,7 +540,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						jsonReader.close();
 						//recursively drill into the json...
 						bioMergeTarget = drillObject(bioMergeTarget, merge_data);
-						System.out.println(bioMergeTarget.toJSONString());
+						ModManager.debugLogger.writeMessage(bioMergeTarget.toJSONString());
 						
 						//write to file
 						FileWriter file = new FileWriter(shortNameDir+"\\"+filename+".json");
@@ -575,7 +577,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				} else {
 					//check what data type we have
 					filesystem.put(keyname, drilledToMerge);
-					//System.out.println("bottom level object: "+keyname+" -> "+drilledToMerge.get(keyname));
+					//ModManager.debugLogger.writeMessage("bottom level object: "+keyname+" -> "+drilledToMerge.get(keyname));
 				}
 			}
 			return filesystem;
@@ -596,10 +598,10 @@ public class ModMakerCompilerWindow extends JDialog {
 					//return 
 				}/* else {
 					filesystem.put(keyname, drilledToMerge);
-					System.out.println("Bottom level of array: "+obj);
+					ModManager.debugLogger.writeMessage("Bottom level of array: "+obj);
 				} */
 				else {
-					System.out.println("Not an array or object in an array.");
+					ModManager.debugLogger.writeMessage("Not an array or object in an array.");
 				}
 			}
 			return filesystem;
@@ -616,7 +618,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected void done() {
 			// Coals downloaded
-			System.out.println("Coals downloaded");
+			ModManager.debugLogger.writeMessage("Coals downloaded");
 			stepsCompleted++;
 			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
 			new CompilerWorker(requiredCoals, progress).execute();
@@ -650,7 +652,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				compCoalDir.mkdirs();
 				File coalFile = new File("coalesceds\\"+reqcoal);
 				if (coalFile.renameTo(new File(compCoalDir+"\\"+reqcoal))){
-					System.out.println("Moved "+reqcoal+" to proper mod element directory");
+					ModManager.debugLogger.writeMessage("Moved "+reqcoal+" to proper mod element directory");
 				} else {
 					System.err.println("ERROR! Didn't move "+reqcoal+" to the proper mod element directory. Could already exist.");
 				}
@@ -664,12 +666,12 @@ public class ModMakerCompilerWindow extends JDialog {
 				ini.put(coalNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal));
 
 				
-				/*			try {
+				try {
 					FileUtils.deleteDirectory(compCoalSourceDir);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}*/
+				}
 				
 				
 				
@@ -685,5 +687,9 @@ public class ModMakerCompilerWindow extends JDialog {
 		
 		
 		//Mod Created!
+		dispose();
+		JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
+		callingWindow.dispose();
+		new ModManagerWindow(false);
 	}
 }

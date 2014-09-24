@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+
 import javax.swing.JOptionPane;
 
 import org.ini4j.InvalidFileFormatException;
@@ -14,13 +15,15 @@ import org.ini4j.Wini;
 
 public class ModManager {
 	
-	public static final String VERSION = "3.0";
+	public static final String VERSION = "3.0i";
+	public static long BUILD_NUMBER = 17L;
 	public static final String BUILD_DATE = "9/18/2014";
 	public static DebugLogger debugLogger;
+
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) {		
 		//Set and get debugging mode from wini
 		Wini settingsini;
 		try {
@@ -49,7 +52,14 @@ public class ModManager {
 		} catch (IOException e) {
 			System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 		}
-		new ModManagerWindow();
+		boolean isUpdate = false;
+		if (args.length == 1 && args[0].equals("--update-complete")){
+			//This is being run as an update
+			File file = new File("update"); //Delete the update directory
+			file.delete();
+			isUpdate = true;
+		}
+		new ModManagerWindow(isUpdate);
 	}
 	
 	public static String[] getModsFromDirectory(){
@@ -82,9 +92,7 @@ public class ModManager {
 		}
 		String[] returnMods = new String[availableMod.size()];
 		for(int i = 0; i<availableMod.size();i++){
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Adding mod "+availableMod.get(i).getModName());
-			}
+			ModManager.debugLogger.writeMessage("Adding mod "+availableMod.get(i).getModName());
 			returnMods[i]=availableMod.get(i).getModName();
 		}
 		Arrays.sort(returnMods,java.text.Collator.getInstance());
@@ -102,10 +110,9 @@ public class ModManager {
 			//Attempt to copy an original
 			try {
 				String coalDirHash = MD5Checksum.getMD5Checksum(ModManagerWindow.appendSlash(origDir)+"CookedPCConsole\\Coalesced.bin");
-				if (ModManager.logging){
-					ModManager.debugLogger.writeMessage("Patch 3 Coalesced Original Hash: "+coalDirHash);
-					ModManager.debugLogger.writeMessage("Current Patch 3 Coalesced Hash: "+patch3CoalescedHash);
-				}
+				ModManager.debugLogger.writeMessage("Patch 3 Coalesced Original Hash: "+coalDirHash);
+				ModManager.debugLogger.writeMessage("Current Patch 3 Coalesced Hash: "+patch3CoalescedHash);
+				
 				if (!coalDirHash.equals(patch3CoalescedHash)){
 					String[] YesNo = {"Yes", "No"};
 					int keepInstalling = JOptionPane.showOptionDialog(null,"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "+coalDirHash+"\nPatch 3 Coalesced.bin's hash: "+patch3CoalescedHash+"\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.blogspot.com if you need to restore your original.\nContinue installing this mod? ", "Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
@@ -127,34 +134,26 @@ public class ModManager {
 								do {
 								    line = reader.readLine();
 								    if (line != null) { 
-										if (ModManager.logging){
-											ModManager.debugLogger.writeMessage(line); 
-											}
-										}
+										ModManager.debugLogger.writeMessage(line); 
+									}
 								} while (line != null);
 								reader.close();
 								
 								p.waitFor();
 							} catch (IOException e) {
-								if (ModManager.logging){
-									ModManager.debugLogger.writeMessage("Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install.");
-									ModManager.debugLogger.writeMessage(e.getMessage());
-								}
+								ModManager.debugLogger.writeMessage("Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install.");
+								ModManager.debugLogger.writeMessage(e.getMessage());
 								return false;
 							} catch (InterruptedException e) {
-								if (ModManager.logging){
-									ModManager.debugLogger.writeMessage("Backup of the original Coalesced was interupted. Aborting install.");
-									ModManager.debugLogger.writeMessage(e.getMessage());
-								}
+								ModManager.debugLogger.writeMessage("Backup of the original Coalesced was interupted. Aborting install.");
+								ModManager.debugLogger.writeMessage(e.getMessage());
 								return false;
 							}
 							return true;
 					}
 			} catch (Exception e) {
-				if (ModManager.logging){
-					ModManager.debugLogger.writeMessage("Error occured while attempting to backup or hash the original Coalesced.");
-					ModManager.debugLogger.writeMessage(e.getMessage());
-				}
+				ModManager.debugLogger.writeMessage("Error occured while attempting to backup or hash the original Coalesced.");
+				ModManager.debugLogger.writeMessage(e.getMessage());
 				return false;
 			}
 		}

@@ -7,9 +7,12 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -39,14 +42,19 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.apache.commons.io.FileUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
 @SuppressWarnings("serial")
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
+	boolean isUpdate;
 	JTextField fieldBiogameDir;
 	JTextArea fieldDescription;
 	JScrollPane scrollDescription;
@@ -56,7 +64,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenu actionMenu, toolsMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionGetME3Exp, actionReload, actionExit;
 	JMenuItem toolsBackupDLC;
-	JMenuItem toolsModMaker, toolsRevertAll, toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC, toolsRevertCoal;
+	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame, toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC, toolsRevertCoal;
 	JMenuItem helpPost, helpAbout;
 	JList listMods;
 	JProgressBar progressBar;
@@ -66,7 +74,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	String selectMod = "Select a mod on the left to view its description or to apply it.";
 	static HashMap<String, Mod> listDescriptors;
 
-	public ModManagerWindow() {
+	public ModManagerWindow(boolean isUpdate) {
+		this.isUpdate = isUpdate;
 		initializeWindow();
 	}
 
@@ -82,6 +91,43 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.pack();
 		setLocationRelativeTo(null);
 		this.setVisible(true);
+		if (isUpdate) {
+			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager "+ModManager.VERSION+" (Build "+ModManager.BUILD_NUMBER+").", "Update Complete", JOptionPane.INFORMATION_MESSAGE);
+		}
+		checkForUpdates();
+	}
+
+	private void checkForUpdates() {
+		labelStatus.setText("Checking for update...");
+		//Check for update
+		try {
+			String update_check_link = "http://me3tweaks.com/modmanager/latest_version.json";
+			String latest_version = "latest_version";
+			File local_json = new File(latest_version);
+			FileUtils.copyURLToFile(new URL(update_check_link), local_json);
+			JSONParser parser = new JSONParser();
+			JSONObject latest_object = (JSONObject) parser.parse(new FileReader(latest_version));
+			local_json.delete();
+			long latest_build = (long) latest_object.get("latest_build_number");
+			if (latest_build > ModManager.BUILD_NUMBER) {
+				//An update is available!
+				labelStatus.setVisible(true);
+				labelStatus.setText("Update available");
+				new UpdateAvailableWindow(latest_object, this);
+			} else {
+				labelStatus.setVisible(true);
+				labelStatus.setText("No updates available");
+			}
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private JFrame setupWindow(JFrame frame) {
@@ -218,7 +264,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsModMaker = new JMenuItem("Enter modmaker code");
 		toolsBackupDLC = new JMenuItem("Backup DLCs");
-		toolsRevertAll = new JMenuItem("Revert all to vanilla");
+		toolsRevertDLCCoalesced = new JMenuItem("Revert DLC & Coalesced");
+		toolsRevertBasegame = new JMenuItem("Restore basegame files");
 		toolsRevertAllDLC = new JMenuItem("Restore all DLCs");
 		toolsRevertSPDLC = new JMenuItem("Restore SP DLCs");
 		toolsRevertMPDLC = new JMenuItem("Restore MP DLCs");
@@ -230,7 +277,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsModMaker.addActionListener(this);
 		toolsBackupDLC.addActionListener(this);
-		toolsRevertAll.addActionListener(this);
+		toolsRevertDLCCoalesced.addActionListener(this);
+		toolsRevertBasegame.addActionListener(this);
 		toolsRevertAllDLC.addActionListener(this);
 		toolsRevertSPDLC.addActionListener(this);
 		toolsRevertMPDLC.addActionListener(this);
@@ -240,7 +288,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsBackupDLC);
 		toolsMenu.addSeparator();
-		toolsMenu.add(toolsRevertAll);
+		toolsMenu.add(toolsRevertDLCCoalesced);
+		toolsMenu.add(toolsRevertBasegame);
 		toolsMenu.add(toolsRevertAllDLC);
 		toolsMenu.add(toolsRevertSPDLC);
 		toolsMenu.add(toolsRevertMPDLC);
@@ -305,16 +354,20 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else
 
 		if (e.getSource() == toolsRevertAllDLC) {
-			restoreDLCs(fieldBiogameDir.getText(), RestoreMode.ALL);
+			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.ALL);
 		} else
-
+		
+		if (e.getSource() == toolsRevertBasegame) {
+			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.BASEGAME);
+		} else
+		
 		if (e.getSource() == toolsRevertSPDLC) {
-			restoreDLCs(fieldBiogameDir.getText(), RestoreMode.SP);
+			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.SP);
 		} else if (e.getSource() == toolsRevertMPDLC) {
-			restoreDLCs(fieldBiogameDir.getText(), RestoreMode.MP);
+			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.MP);
 		} else
 
-		if (e.getSource() == toolsRevertAll) {
+		if (e.getSource() == toolsRevertDLCCoalesced) {
 			restoreEverything(fieldBiogameDir.getText());
 		} else
 
@@ -347,7 +400,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else
 		if (e.getSource() == actionReload) {
 			// Reload this jframe
-			new ModManagerWindow();
+			new ModManagerWindow(false);
 			dispose();
 		} else
 
@@ -710,7 +763,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	private boolean restoreEverything(String bioGameDir) {
 		if (restoreCoalesced(bioGameDir)) { // attempt to restore coalesced. if it fails, don't bother with the rest.
-			return restoreDLCs(bioGameDir, RestoreMode.ALL);
+			return restoreDataFiles(bioGameDir, RestoreMode.ALL);
 		} else {
 			// something failed
 			JOptionPane
@@ -774,10 +827,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 *            Directory to biogame folder
 	 * @return True if all were restored, false otherwise
 	 */
-	private boolean restoreDLCs(String bioGameDir, int restoreMode) {
+	private boolean restoreDataFiles(String bioGameDir, int restoreMode) {
 		// Check to make sure biogame is correct
 		if (validateBIOGameDir()) {
-			new RestoreDLCWindow(this, bioGameDir, restoreMode);
+			new RestoreFilesWindow(this, bioGameDir, restoreMode);
 			return true;
 		} else {
 			labelStatus.setText(" DLC Restoration Failed");
@@ -838,7 +891,5 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	public void startModMaker(String code) {
 		new ModMakerCompilerWindow(this, code);
-		
 	}
-
 }

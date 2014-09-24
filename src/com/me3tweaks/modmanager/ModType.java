@@ -4,7 +4,8 @@ import java.util.HashMap;
 
 public class ModType {
 	//DLC Header names
-	protected static final String COAL = "COALESCED"; //Not an actual header, just used for marking
+	protected static final String COAL = "COALESCED"; //Used with Legacy and 2.0
+	protected static final String BASEGAME = "BASEGAME"; //Used in 3.0
 	protected static final String MP1 = "RESURGENCE";
 	protected static final String MP2 = "REBELLION";
 	protected static final String MP3 = "EARTH";
@@ -45,7 +46,7 @@ public class ModType {
 	protected static final String GUN02 = "FIREFIGHT";*/
 
 	protected static String[] getHeaderNameArray(){
-		return new String[]{MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
+		return new String[]{BASEGAME,MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
 	}
 	
 	/** Returns the subdirectory from biogame (no leading or trailing slashes) that corresponds to a DLC folder where the .sfar file should exist.
@@ -124,25 +125,25 @@ public class ModType {
 	/** Returns a hashmap of names -> filesizes of a DLC.
 	 * @return HashMap with ModType.NAME mapped to that DLCs respective original hash value.
 	 */
-	public static HashMap<String, Integer> getSizesMap() {
-		HashMap<String, Integer> dlcMap = new HashMap<String, Integer>();
-		dlcMap.put(MP1,0);
-		dlcMap.put(MP2,0);
-		dlcMap.put(MP3,0);
-		dlcMap.put(MP4,0);
-		dlcMap.put(MP5,0);
-		dlcMap.put(PATCH1,0);
-		dlcMap.put(PATCH2,0);
+	public static HashMap<String, Long> getSizesMap() {
+		HashMap<String, Long> dlcMap = new HashMap<String, Long>();
+		dlcMap.put(MP1,220174473L);
+		dlcMap.put(MP2,139851674L);
+		dlcMap.put(MP3,198668075L);
+		dlcMap.put(MP4,441856666L);
+		dlcMap.put(MP5,208777784L);
+		dlcMap.put(PATCH1,208998L);
+		dlcMap.put(PATCH2,302772L);
 		//dlcMap.put(TESTPATCH,"1");
-		dlcMap.put(HEN_PR,0);
-		dlcMap.put(END,0);
-		dlcMap.put(EXP1,0);
-		dlcMap.put(EXP2,0);
-		dlcMap.put(EXP3,0);
-		dlcMap.put(EXP3B,0);
-		dlcMap.put(APP01,0);
-		dlcMap.put(GUN01,0);
-		dlcMap.put(GUN02,0);
+		dlcMap.put(HEN_PR,594778936L);
+		dlcMap.put(END,1919137514L);
+		dlcMap.put(EXP1,1561239503L);
+		dlcMap.put(EXP2,1849136836L);
+		dlcMap.put(EXP3,1886013531L);
+		dlcMap.put(EXP3B,1896814656L);
+		dlcMap.put(APP01,53878606L);
+		dlcMap.put(GUN01,18708500L);
+		dlcMap.put(GUN02,17134896L);
 		return dlcMap;
 	}
 
