@@ -28,7 +28,7 @@ public class AboutWindow extends JDialog {
 	public AboutWindow(JFrame callingWindow) {
 		this.setTitle("About Coalesced Mod Manager");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(330, 248));
+		this.setPreferredSize(new Dimension(380, 338));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
@@ -43,7 +43,19 @@ public class AboutWindow extends JDialog {
 		infoLabel = new JLabel(
 				"<html>Mass Effect 3 - Coalesced Mod Manager<br> Version "
 						+ ModManager.VERSION
-						+ "- "+ModManager.BUILD_DATE+"<br>Developed by \"FemShep\"<br><br>Uses ini4j: http://ini4j.sourceforge.net<br><br>Mass Effect 3 is a registered trademark of Electronic Arts.<br><br>Fem Shep is not liable for any end-user actions done with this software.</html>");
+						+ "- "+ModManager.BUILD_DATE+"<br>Developed by \"FemShep\""
+								+ "<br>"
+								+ "Source code available at http://sourceforge.net/projects/me3cmm/"
+								+ "<br>"
+								+ "<br>Uses ini4j: http://ini4j.sourceforge.net"
+								+ "<br>Uses json-simple: https://code.google.com/p/json-simple/"
+								+ "<br>Uses Apache Commons-io: http://commons.apache.org/proper/commons-io/"
+								+ "<br>Uses JNA: https://github.com/twall/jnaJNA"
+								+ "<br>Packaged with Launch4j: http://launch4j.sourceforge.net/"
+								+ "<br>"
+								+ "<br>Mass Effect 3 is a registered trademark of Electronic Arts."
+								+ "<br>"
+								+ "<br>Fem Shep is not liable for any end-user actions done with this software.</html>");
 		aboutPanel.add(infoLabel, BorderLayout.NORTH);
 
 		loggingMode = new JCheckBox("Mod debugging mode");

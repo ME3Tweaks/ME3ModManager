@@ -55,6 +55,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		codeField = new JTextField(6);
 		codeDownloadPanel.add(codeField);
 		downloadButton = new JButton("Download & Compile");
+		downloadButton.setPreferredSize(new Dimension(185, 19));
 		codeDownloadPanel.add(downloadButton);
 		codeDownloadPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		modMakerPanel.add(codeDownloadPanel);

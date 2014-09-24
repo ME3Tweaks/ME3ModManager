@@ -36,6 +36,7 @@ import org.json.simple.parser.ParseException;
 
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
+	boolean modExists = false;
 	String code, modName;
 	ModManagerWindow callingWindow;
 	private static int TOTAL_STEPS = 10;
@@ -63,7 +64,12 @@ public class ModMakerCompilerWindow extends JDialog {
 				getClass().getResource("/resource/icon32.png")));
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
-		this.setVisible(true);
+		getModInfo();
+		if (modExists){
+			this.setVisible(true);
+		} else {
+			dispose();
+		}
 	}
 
 	private void setupWindow() {
@@ -96,8 +102,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		this.getContentPane().add(modMakerPanel);
-		getModInfo();
-	}
+		}
 
 	private void getModInfo() {
 		String link = "http://www.me3tweaks.com/modmaker/download.php?id="
@@ -106,15 +111,22 @@ public class ModMakerCompilerWindow extends JDialog {
 			FileUtils.copyURLToFile(new URL(link), new File(DOWNLOADED_JSON_FILENAME));
 			JSONParser parser = new JSONParser();
 			mod_object = (JSONObject) parser.parse(new FileReader(DOWNLOADED_JSON_FILENAME));
+			if (mod_object.get("error") != null){
+				dispose();
+				//error occurred
+				JOptionPane.showMessageDialog(null,
+					    "<html>No mod with id "+code+" was found on ME3Tweaks.</html>",
+					    "Compiling Error",
+					    JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			modExists = true;
 			parseModInfo();
 		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ParseException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -492,6 +504,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		public JsonMergeWorker(JProgressBar progress) {
 			this.progress = progress;
+			currentOperationLabel.setText("Merging Coalesced files...");
 		}
 
 		protected Void doInBackground() throws Exception {
@@ -631,6 +644,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * Creates a CMM Mod package from the completed previous steps.
 	 */
 	private void createCMMMod() {
+		currentOperationLabel.setText("Creating mod directory and descriptor...");
 		File moddir = new File(modName);
 		moddir.mkdirs(); // created mod directory
 
