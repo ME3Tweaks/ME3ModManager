@@ -6,9 +6,11 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -131,6 +133,7 @@ public class PatchWindow extends JDialog {
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles(); 
 			int numFilesToReplace = filesToReplace.length;
+			ModManager.debugLogger.writeMessage("Number of files to replace in the basegame: "+numFilesToReplace);
 			for (int i = 0; i<numFilesToReplace; i++){
 				String fileToReplace = filesToReplace[i];
 				String newFile = newFiles[i];
@@ -138,23 +141,28 @@ public class PatchWindow extends JDialog {
 				//Check for backup
 				File basegamefile = new File(me3dir+fileToReplace);
 				File backupfile = new File(backupfolderpath+fileToReplace);
-				System.out.println("Checking for backup file at "+backupfile);
+				Path originalpath = Paths.get(basegamefile.toString());
+				
+				ModManager.debugLogger.writeMessage("Checking for backup file at "+backupfile);
 				if (!backupfile.exists()) {
 					//backup the file
-					Path originalpath = Paths.get(basegamefile.toString());
+					
 					Path backuppath = Paths.get(backupfile.toString());
-					Path newfilepath = Paths.get(newFile);
-
 					backupfile.getParentFile().mkdirs();
 					try {
 						//backup and then copy file
 						Files.copy(originalpath, backuppath);
 						ModManager.debugLogger.writeMessage("Backed up "+fileToReplace);
-						Files.copy(newfilepath, originalpath);
-						ModManager.debugLogger.writeMessage("Installed mod file: "+newFile);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
+				}
+				try {
+					Path newfilepath = Paths.get(newFile);
+					Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
+					ModManager.debugLogger.writeMessage("Installed mod file: "+newFile);
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 			
@@ -171,13 +179,12 @@ public class PatchWindow extends JDialog {
 			}
 			commandBuilder.add(ModManagerWindow.appendSlash(getBetaDirectory())+"ME3Explorer.exe");
 			commandBuilder.add("-dlcinject");
-			commandBuilder.add(ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+"Default.sfar");
+			commandBuilder.add("\""+ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+"Default.sfar\""); //TODO this needs to change for Patch001 to work.
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles();
 			ModManager.debugLogger.writeMessage("Number of files to replace: "+filesToReplace.length);
 			
 			publish("Injecting "+filesToReplace.length+" files into "+job.DLCFilePath+"\\Default.sfar");
-
 			for (int i = 0; i<filesToReplace.length;i++){
 				commandBuilder.add(filesToReplace[i]);
 				commandBuilder.add(newFiles[i]);

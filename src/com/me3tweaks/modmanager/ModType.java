@@ -57,6 +57,8 @@ public class ModType {
 		String subPath = null;
 		//System.out.println("Getting DLC path for: "+modType);
 		switch(modType){
+		case BASEGAME:
+			return "CookedPCConsole";
 		case MP1:
 			return "DLC\\DLC_CON_MP1\\CookedPCConsole"; //Resurgence
 		case MP2:
@@ -71,8 +73,8 @@ public class ModType {
 			return "DLC\\DLC_UPD_Patch01\\CookedPCConsole";
 		case PATCH2:
 			return "DLC\\DLC_UPD_Patch02\\CookedPCConsole";
-		//case TESTPATCH: //This is a special case
-		//	return "Patches\\PCConsole";
+		case TESTPATCH: //This is a special case
+			return "Patches\\PCConsole";
 		case HEN_PR:
 			return "DLC\\DLC_HEN_PR\\CookedPCConsole"; //From Ashes
 		case END:

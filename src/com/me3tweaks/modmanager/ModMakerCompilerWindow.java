@@ -3,51 +3,60 @@ package com.me3tweaks.modmanager;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false;
-	String code, modName;
+	String code, modName, modDescription;
 	ModManagerWindow callingWindow;
 	private static int TOTAL_STEPS = 10;
-	private static String DOWNLOADED_JSON_FILENAME = "mod_info";
+	private static String DOWNLOADED_XML_FILENAME = "mod_info";
 	private int stepsCompleted = 1;
 	ArrayList<String> requiredCoals = new ArrayList<String>();
+	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+	Document doc;
 	JSONObject mod_object, mod_info;
-	/**
-	 * Mod Data is the mod_data element. It contains an array of coal_name (MP4) and files arrays as objects.
-	 */
-	JSONArray mod_data;
+	Element infoElement, dataElement;
+
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;
 
@@ -65,11 +74,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 		getModInfo();
-		if (modExists){
-			this.setVisible(true);
-		} else {
-			dispose();
-		}
+		this.setVisible(true);
 	}
 
 	private void setupWindow() {
@@ -105,33 +110,45 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 	private void getModInfo() {
-		String link = "http://www.me3tweaks.com/modmaker/download.php?id="
+		//String link = "http://www.me3tweaks.com/modmaker/download.php?id="
+		//		+ code;
+		String link = "http://webdev-c9-mgamerz.c9.io/modmaker/download.php?id="
 				+ code;
+		System.out.println("Fetching mod from "+link);
 		try {
-			FileUtils.copyURLToFile(new URL(link), new File(DOWNLOADED_JSON_FILENAME));
-			JSONParser parser = new JSONParser();
-			mod_object = (JSONObject) parser.parse(new FileReader(DOWNLOADED_JSON_FILENAME));
-			if (mod_object.get("error") != null){
+			File downloaded = new File(DOWNLOADED_XML_FILENAME);
+			FileUtils.copyURLToFile(new URL(link), downloaded);
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			doc = dBuilder.parse(downloaded);
+			doc.getDocumentElement().normalize();
+			NodeList errors = doc.getElementsByTagName("error");
+			if (errors.getLength() > 0) {
+				//error occured.
 				dispose();
-				//error occurred
 				JOptionPane.showMessageDialog(null,
 					    "<html>No mod with id "+code+" was found on ME3Tweaks.</html>",
 					    "Compiling Error",
 					    JOptionPane.ERROR_MESSAGE);
 				return;
 			}
-			modExists = true;
 			parseModInfo();
 		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ParseException e) {
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
 	/**
+	 * 
 	 * Converts a short name (e.g. MP3, MP4) into the DLC or original coalesced
 	 * name (Default_DLC_CON_MP3.bin).
 	 * 
@@ -155,7 +172,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "Default_DLC_UPD_Patch01.bin";
 		case "PATCH2":
 			return "Default_DLC_UPD_Patch02.bin";
-		case "ORIGINAL":
+		case "BASEGAME":
 			return "Coalesced.bin";
 		default:
 			return null;
@@ -217,6 +234,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		case "Coalesced.bin":
 			return "BASEGAME";
 		default:
+			System.out.println("UNRECOGNIZED COAL FILE: "+coalName);
 			return null;
 		}
 	}
@@ -242,15 +260,22 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "/BIOGame/DLC/DLC_UPD_Patch01/CookedPCConsole/Default_DLC_UPD_Patch01.bin";
 		case "Default_DLC_UPD_Patch02.bin":
 			return "/BIOGame/DLC/DLC_UPD_Patch02/CookedPCConsole/Default_DLC_UPD_Patch02.bin";
+		case "Coalesced.bin":
+			return "\\BIOGame\\CookedPCConsole\\Coalesced.bin";
 		default:
+			System.out.println("UNRECOGNIZED COAL FILE: "+coalName);
 			return null;
 		}
 	}
 
 	protected void parseModInfo() {
-		// modinfo should be defined already.
-		mod_info = (JSONObject) mod_object.get("mod_info");
-		modName = (String) mod_info.get("name");
+		NodeList infoNodeList = doc.getElementsByTagName("ModInfo");
+		infoElement = (Element) infoNodeList.item(0); //it'll be the only element. Hopefully!
+		NodeList nameElement = infoElement.getElementsByTagName("Name");
+		modName = nameElement.item(0).getTextContent();
+		
+		NodeList descElement = infoElement.getElementsByTagName("Description");
+		modDescription = descElement.item(0).getTextContent();
 		
 		//Check the name
 		File moddir = new File(modName);
@@ -268,23 +293,24 @@ public class ModMakerCompilerWindow extends JDialog {
 				    "<html>A mod with this name already exists.</html>",
 				    "Compiling Error",
 				    JOptionPane.ERROR_MESSAGE);*/
-		
-		
 		}
 		
 		//Debug remove
-		
-		
 		infoLabel.setText("Compiling " + modName + "...");
-		// Find the coals it needs
-		mod_data = (JSONArray) mod_object.get("mod_data");
-		for (Object coal_obj : mod_data) {
-			JSONObject coal_data = (JSONObject) coal_obj;
-			String coal_name = (String) coal_data.get("coal_name");
-			ModManager.debugLogger.writeMessage("Mod requires " + coal_name);
-			requiredCoals.add(shortNameToCoalFilename(coal_name));
+		NodeList dataNodeList = doc.getElementsByTagName("ModData");
+		dataElement = (Element) dataNodeList.item(0);
+		NodeList fileNodeList = dataElement.getChildNodes();
+		//Find the coals it needs, iterate over the files list.
+		for (int i = 0; i < fileNodeList.getLength(); i++) {
+			Node fileNode = fileNodeList.item(i);
+			if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
+				//filters out the #text nodes. Don't know what those really are.
+				String intCoalName = fileNode.getNodeName();
+				System.out.println("File descriptor found in mod: "+intCoalName);	
+				requiredCoals.add(shortNameToCoalFilename(intCoalName));
+			}
 		}
-
+		
 		// Check Coalesceds
 		File coalDir = new File("coalesceds");
 		coalDir.mkdirs(); // creates if it doens't exist. otherwise nothing.
@@ -315,15 +341,19 @@ public class ModMakerCompilerWindow extends JDialog {
 	}
 
 	/**
-	 * Runs the Coalesced files through Gibbed's decompiler
+	 * Runs the Coalesced files through Tankmasters decompiler
 	 */
 	public void decompileMods() {
 		// TODO Auto-generated method stub
 
 		new DecompilerWorker(requiredCoals, currentStepProgress).execute();
+	} /*
 
-	}
-
+	/**
+	 * Decompiles a coalesced into .xml files using tankmaster's tools.
+	 * @author Michael
+	 *
+	 */
 	class DecompilerWorker extends SwingWorker<Void, Integer> {
 		private ArrayList<String> coalsToDecompile;
 		private JProgressBar progress;
@@ -344,14 +374,9 @@ public class ModMakerCompilerWindow extends JDialog {
 					.toString();
 			for (String coal : coalsToDecompile) {
 				String compilerPath = path
-						+ "\\DLC Compiler\\Gibbed.MassEffect3.Coalesce.exe";
-				if (coal.equals("Coalesced.bin")) {
-					// its the default
-					compilerPath = path
-							+ "\\Original Compiler\\Gibbed.MassEffect3.Coalesce.exe";
-				}
+						+ "\\Tankmaster Compiler\\MassEffect3.Coalesce.exe";
 				ProcessBuilder decompileProcessBuilder = new ProcessBuilder(
-						compilerPath, "--bin2json", path + "\\coalesceds\\"
+						compilerPath, path + "\\coalesceds\\"
 								+ coal);
 				decompileProcessBuilder.redirectErrorStream(true);
 				decompileProcessBuilder
@@ -378,7 +403,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			stepsCompleted++;
 			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
 			ModManager.debugLogger.writeMessage("Coals decompiled");
-			new JsonMergeWorker(progress).execute();
+			new MergeWorker(progress).execute();
 		}
 	}
 
@@ -402,20 +427,15 @@ public class ModMakerCompilerWindow extends JDialog {
 					.toString();
 			for (String coal : coalsToCompile) {
 				String compilerPath = path
-						+ "\\DLC Compiler\\Gibbed.MassEffect3.Coalesce.exe";
-				if (coal.equals("Coalesced.bin")) {
-					// its the default
-					compilerPath = path
-							+ "\\Original Compiler\\Gibbed.MassEffect3.Coalesce.exe";
-				}
-				ProcessBuilder decompileProcessBuilder = new ProcessBuilder(
-						compilerPath, "--json2bin", path + "\\coalesceds\\"
-								+ FilenameUtils.removeExtension(coal) + "\\");
-				decompileProcessBuilder.redirectErrorStream(true);
-				decompileProcessBuilder
+						+ "\\Tankmaster Compiler\\MassEffect3.Coalesce.exe";
+				ProcessBuilder compileProcessBuilder = new ProcessBuilder(
+						compilerPath, path + "\\coalesceds\\"
+								+ FilenameUtils.removeExtension(coal) + "\\Coalesced.xml");
+				compileProcessBuilder.redirectErrorStream(true);
+				compileProcessBuilder
 						.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-				Process decompileProcess = decompileProcessBuilder.start();
-				decompileProcess.waitFor();
+				Process compileProcess = compileProcessBuilder.start();
+				compileProcess.waitFor();
 				coalsCompiled++;
 				this.publish(coalsCompiled);
 			}
@@ -498,11 +518,13 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * After coals are downloaded and decompiled, this worker is created and
 	 * merges the contents of the downloaded mod into all of the decompiled json files.
 	 */
-	class JsonMergeWorker extends SwingWorker<Void, Integer> {
+	class MergeWorker extends SwingWorker<Void, Integer> {
 		private int numFilesToMerge;
 		private JProgressBar progress;
+		boolean error = false;
 
-		public JsonMergeWorker(JProgressBar progress) {
+		public MergeWorker(JProgressBar progress) {
+			System.out.println("Beginning MERGE operation.");
 			this.progress = progress;
 			currentOperationLabel.setText("Merging Coalesced files...");
 		}
@@ -516,108 +538,125 @@ public class ModMakerCompilerWindow extends JDialog {
 			
 			/*
 			 * Structure of mod_data array and elements
-			 * mod_data [ARRAY]
-			 *    |-coal_name (What Coalesced file, MP1, Original, PATCH1...)
-			 *    |-files [ARRAY] (what .json files to merge)
-			 *      |- filename (what .json file we are going to merge)
-			 *      |- merge_data (data to actually merge - this object will match the structure of the filename item when read into memory.)
-			 *        |- elements... etc
+			 * <ModInfo>
+			 * 	<Coalesced ID>
+			 *   <Filename>
+			 *    <Properties (with path attribute)>
 			 */
 
-			for (Object coal_obj : mod_data) {
-				JSONObject coal_data = (JSONObject) coal_obj; //an object in the array
-				String coal_name = (String) coal_data.get("coal_name"); //Coalesced file we are going to modify. NOT the json.
-				
-				JSONArray files = (JSONArray) coal_data.get("files"); //an object in the array
-				int localNumberToMerge = files.size();
-				for (Object json_file : files){
-					//Objects in the files array contain filename and merge data
-					JSONObject json_fileobj = (JSONObject) json_file;
-					String filename = (String) json_fileobj.get("filename");
-					/**
-					 * Data we want to merge into the file, downloaded from me3tweaks
-					 */
-					JSONObject merge_data = (JSONObject) json_fileobj.get("merge_data");
-					
-					//From here we must algorithmically drill down as far as we can into the json and add only the end nodes.
-					try {
-						JSONParser parser = new JSONParser();
-						String shortNameDir = "coalesceds\\"+FilenameUtils.removeExtension(shortNameToCoalFilename(coal_name));
-						ModManager.debugLogger.writeMessage("Merging file "+coal_name);
-						FileReader jsonReader = new FileReader(shortNameDir+"\\"+filename+".json");
-						
-						/**
-						 * The actual file on the filesystem we are merging into. This is the .json that will go into the Coalesced file.
-						 */
-						JSONObject bioMergeTarget = (JSONObject) parser.parse(jsonReader); //load original into memory.
-						jsonReader.close();
-						//recursively drill into the json...
-						bioMergeTarget = drillObject(bioMergeTarget, merge_data);
-						ModManager.debugLogger.writeMessage(bioMergeTarget.toJSONString());
-						
-						//write to file
-						FileWriter file = new FileWriter(shortNameDir+"\\"+filename+".json");
-						file.write(bioMergeTarget.toJSONString());
-						file.flush();
-						file.close();
-					} catch (FileNotFoundException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+			NodeList coalNodeList = dataElement.getChildNodes();
+			//Iterate over the coalesceds.
+			for (int i = 0; i < coalNodeList.getLength(); i++) {
+				//coalNode is a node containing the coalesced module, such as <MP1> or <BASEGAME>
+				Node coalNode = coalNodeList.item(i);
+				if (coalNode.getNodeType() == Node.ELEMENT_NODE) {
+					String intCoalName = coalNode.getNodeName(); //get the coal name so we can figure out what folder to look in.
+					ModManager.debugLogger.writeMessage("Read coalecesed ID: "+intCoalName);
+					String foldername = FilenameUtils.removeExtension(shortNameToCoalFilename(intCoalName));
+					NodeList filesNodeList = coalNode.getChildNodes();
+					for (int j = 0; j < filesNodeList.getLength(); j++) {
+						Node fileNode = filesNodeList.item(j);
+						if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
+							//we now have a file ID such as biogame.
+							//We need to load that XML file now.
+							String iniFileName = fileNode.getNodeName()+".xml";
+							Document iniFile = dbFactory.newDocumentBuilder().parse("coalesceds\\"+foldername+"\\"+iniFileName);
+							iniFile.getDocumentElement().normalize();
+							ModManager.debugLogger.writeMessage("Loaded "+iniFile.getDocumentURI()+" into memory.");
+							NodeList assetList = iniFile.getElementsByTagName("CoalesceAsset");
+							Element coalesceAsset = (Element) assetList.item(0);
+							NodeList sectionsTagList = coalesceAsset.getElementsByTagName("Sections");
+							Element sections = (Element) sectionsTagList.item(0);
+							NodeList SectionList = sections.getElementsByTagName("Section");
+							
+							//We are now at at the "sections" array.
+							//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+							NodeList mergeList = fileNode.getChildNodes();
+							for (int k = 0; k < mergeList.getLength(); k++){
+								//for every property in this filenode (of the data to merge)...
+								Node newproperty = mergeList.item(k);
+								if (newproperty.getNodeType() == Node.ELEMENT_NODE) {
+									//<Property type="2" name="defaultgravityz" path="engine.worldinfo">-50</Property>
+									Element property = (Element) newproperty;
+									String newPropName = property.getAttribute("name");
+									String newValue = newproperty.getTextContent();
+									
+									//first tokenize the path...
+									String path = property.getAttribute("path");
+									StringTokenizer drillTokenizer = new StringTokenizer(path,"-"); // - splits this in the event we need to drill down. Spaces are valid it seems in the path.
+									
+									Element drilled = null;
+									while (drillTokenizer.hasMoreTokens()){
+										//drill
+										String drillTo = drillTokenizer.nextToken();
+										boolean pathfound = false;
+										for (int l = 0; l < SectionList.getLength(); l++) {
+											//iterate over all sections...
+											Node sectionNode = SectionList.item(l);
+											if (sectionNode.getNodeType() == Node.ELEMENT_NODE) {
+												drilled = (Element) sectionNode;
+												System.out.println("Checking attribute: "+drilled.getAttribute("name"));
+												if (!drilled.getAttribute("name").equals(drillTo)) {
+													continue;
+												} else {
+													//this is the section we want.
+													System.out.println("Found what I wanted");
+													pathfound = true;
+													break;
+												}
+											}
+										}
+										if (!pathfound) {
+											dispose();
+											JOptionPane.showMessageDialog(null,
+												    "<html>Could not find the path "+path+" to property.</html>",
+												    "Compiling Error",
+												    JOptionPane.ERROR_MESSAGE);
+											error = true;
+											return null;
+										}
+									}
+									if (drilled == null) {
+										//we didn't find what we wanted...
+										dispose();
+										error = true;
+										JOptionPane.showMessageDialog(null,
+											    "<html>Could not find the path "+path+" to property.</html>",
+											    "Compiling Error",
+											    JOptionPane.ERROR_MESSAGE);
+										return null;
+									}
+									//we are where we want to be. Now we can set the property.
+									//drilled is the element (parent of our property) that we want.
+									NodeList props = drilled.getChildNodes(); //get children of the path (<property> list)
+									for (int m = 0; m < props.getLength(); m++){
+										Node propertyNode = props.item(m);
+										if (propertyNode.getNodeType() == Node.ELEMENT_NODE) {
+											Element itemToModify = (Element) propertyNode;
+											if (itemToModify.getAttribute("name").equals(newPropName)) {
+												itemToModify.setTextContent(newValue);
+												System.out.println("Set "+newPropName+" to "+newValue);
+												break;
+											}
+										}
+									}
+								}
+							}
+							//end of the file node.
+							//Time to save the file...
+							Transformer transformer = TransformerFactory.newInstance().newTransformer();
+							File outputFile = new File("coalesceds\\"+foldername+"\\"+iniFileName);
+							Result output = new StreamResult(outputFile);
+							Source input = new DOMSource(iniFile);
+							System.out.println("break");
+							ModManager.debugLogger.writeMessage("Saving file: "+outputFile.toString());
+							transformer.transform(input, output);
+						}
 					}
 				}
 			}
-		return null;
-		}
-		
-		private JSONObject drillObject(JSONObject filesystem, JSONObject toMerge){
-			Iterator<String> itr = toMerge.keySet().iterator();
-			while (itr.hasNext()){
-				String keyname = itr.next();
-				Object drilledToMerge = toMerge.get(keyname);
-				Object drilledFilesystem = filesystem.get(keyname);
-				
-				if (drilledToMerge instanceof JSONObject) {
-					filesystem.put(keyname, drillObject((JSONObject)drilledFilesystem, (JSONObject)drilledToMerge));
-				} else
-				if (drilledToMerge instanceof JSONArray) {
-					filesystem.put(keyname, drillArray((JSONArray)drilledFilesystem, (JSONArray)drilledToMerge));
-				} else {
-					//check what data type we have
-					filesystem.put(keyname, drilledToMerge);
-					//ModManager.debugLogger.writeMessage("bottom level object: "+keyname+" -> "+drilledToMerge.get(keyname));
-				}
-			}
-			return filesystem;
-		}
-		
-		private JSONArray drillArray(JSONArray filesystem, JSONArray toMerge){
-			for (int i = 0; i < toMerge.size(); i++) {
-				Object obj = toMerge.get(i);
-				if (obj instanceof JSONArray) {
-					filesystem.set(i, drillArray((JSONArray)obj, (JSONArray)obj));
-					//return drillArray((JSONArray)obj, (JSONArray)obj);
-				} else 
-				if (obj instanceof JSONObject) {
-					//JSONObject arrayObj = (JSONObject) obj;
-					filesystem.set(i, drillObject((JSONObject)obj, (JSONObject)obj));
-					
-					//arrayObjarrayObj.put(toMerge., );
-					//return 
-				}/* else {
-					filesystem.put(keyname, drilledToMerge);
-					ModManager.debugLogger.writeMessage("Bottom level of array: "+obj);
-				} */
-				else {
-					ModManager.debugLogger.writeMessage("Not an array or object in an array.");
-				}
-			}
-			return filesystem;
+			
+			return null;
 		}
 
 		@Override
@@ -631,7 +670,11 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected void done() {
 			// Coals downloaded
-			ModManager.debugLogger.writeMessage("Coals downloaded");
+			if (error) {
+				return;
+			}
+			ModManager.debugLogger.writeMessage("Finished merging coals.");
+
 			stepsCompleted++;
 			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
 			new CompilerWorker(requiredCoals, progress).execute();
@@ -657,20 +700,22 @@ public class ModMakerCompilerWindow extends JDialog {
 			ini = new Wini(moddesc);
 			ini.put("ModManager", "cmmver", 3.0);
 			ini.put("ModInfo", "modname", modName);
-			ini.put("ModInfo", "moddesc", "Created with Mod Maker");
+			ini.put("ModInfo", "moddesc", modDescription+"<br><br>Created with Mod Maker");
 			ini.put("ModInfo", "modsite", "http://me3tweaks.com");
+			ini.put("ModInfo", "modid", "8");
 			
 			// Create directories, move files to them
 			for (String reqcoal : requiredCoals) {
 				File compCoalDir = new File(moddir.toString() + "\\"+coalFilenameToShortName(reqcoal));
 				compCoalDir.mkdirs();
-				File coalFile = new File("coalesceds\\"+reqcoal);
+				String fileNameWithOutExt = FilenameUtils.removeExtension(reqcoal);
+				File coalFile = new File("coalesceds\\"+fileNameWithOutExt+"\\"+reqcoal);
 				if (coalFile.renameTo(new File(compCoalDir+"\\"+reqcoal))){
 					ModManager.debugLogger.writeMessage("Moved "+reqcoal+" to proper mod element directory");
 				} else {
 					System.err.println("ERROR! Didn't move "+reqcoal+" to the proper mod element directory. Could already exist.");
 				}
-				String fileNameWithOutExt = FilenameUtils.removeExtension(reqcoal);
+
 				File compCoalSourceDir = new File("coalesceds\\"+fileNameWithOutExt);
 				
 				//TODO: Add PCConsoleTOC.bin to the desc file.
@@ -686,9 +731,6 @@ public class ModMakerCompilerWindow extends JDialog {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
-				
-				
 				ini.store();
 			}
 			
@@ -705,5 +747,22 @@ public class ModMakerCompilerWindow extends JDialog {
 		JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
 		callingWindow.dispose();
 		new ModManagerWindow(false);
+	}
+	
+	public static String toString(Document doc) {
+	    try {
+	        StringWriter sw = new StringWriter();
+	        TransformerFactory tf = TransformerFactory.newInstance();
+	        Transformer transformer = tf.newTransformer();
+	        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+	        transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+	        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+	        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+
+	        transformer.transform(new DOMSource(doc), new StreamResult(sw));
+	        return sw.toString();
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Error converting to String", ex);
+	    }
 	}
 }

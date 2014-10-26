@@ -785,19 +785,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					String destFile = appendSlash(bioGameDir) + "CookedPCConsole\\Coalesced.bin";
 					if (new File(destFile).exists() == false) {
 						JOptionPane
-								.showMessageDialog(null, "The Coalesced.bin to be restored was not found in the specified BIOGame\\CookedPCConsole directory.\nYou must fix the directory before you can restore Coalesced.", "Coalesced not found", JOptionPane.ERROR_MESSAGE);
-						labelStatus.setText(" Coalesced.bin not restored");
+								.showMessageDialog(null, "Coalesced.bin to be restored was not found in the specified BIOGame\\CookedPCConsole directory.\nYou must fix the directory before you can restore Coalesced.", "Coalesced not found", JOptionPane.ERROR_MESSAGE);
+						labelStatus.setText("Coalesced.bin not restored");
 						labelStatus.setVisible(true);
 						return false;
 					}
 					String sourceFile = "Coalesced.original";
 
 					Files.copy(new File(appendSlash(System.getProperty("user.dir")) + sourceFile).toPath(), new File(destFile).toPath(), StandardCopyOption.REPLACE_EXISTING);
-					labelStatus.setText(" Coalesced.bin restored");
+					labelStatus.setText("Coalesced.bin restored");
 					labelStatus.setVisible(true);
 					return true;
 				} else {
-					labelStatus.setText(" Coalesced.bin not restored.");
+					labelStatus.setText("Coalesced.bin not restored.");
 					labelStatus.setVisible(true);
 					JOptionPane
 							.showMessageDialog(null, "Your backed up original Coalesced.bin file does not match the known original from Mass Effect 3.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com.\nYour current Coalesced has not been changed.", "Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
