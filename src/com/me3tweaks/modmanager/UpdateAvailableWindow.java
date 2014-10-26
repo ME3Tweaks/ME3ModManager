@@ -11,8 +11,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -31,6 +35,9 @@ import org.json.simple.JSONObject;
 @SuppressWarnings("serial")
 public class UpdateAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
 	String downloadLink, updateScriptLink;
+	boolean error = false;
+	String version;
+	long build;
 	JLabel introLabel, versionsLabel, changelogLabel, sizeLabel;
 	JButton updateButton;
 	JSONObject updateInfo;
@@ -38,8 +45,9 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 
 	public UpdateAvailableWindow(JSONObject updateInfo, JFrame callingWindow) {
 		this.updateInfo = updateInfo;
+		build = (long) updateInfo.get("latest_build_number");
+		version = (String) updateInfo.get("latest_version_hr");
 		downloadLink = (String) updateInfo.get("download_link");
-		updateScriptLink = (String) updateInfo.get("update_script_link");
 		this.setTitle("Update Available");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		long width = (long) updateInfo.get("dialog_width"); //dialog size is determined by the latest build information. This is because it might have a long changelog.
@@ -127,85 +135,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	     */
 	    @Override
 	    protected Void doInBackground() throws Exception {
-	    	//Download 7za.exe so we can decompress the update as a single file
-	    	try {
-	            HTTPDownloadUtil util = new HTTPDownloadUtil();
-	            util.downloadFile("http://me3tweaks.com/download/7za.exe");
-	             
-	            // set file information on the GUI
-	            setStatusText("Downloading 7zip decompressor...");
-	             
-	            String saveFilePath = saveDirectory + File.separator + util.getFileName();
-	 
-	            InputStream inputStream = util.getInputStream();
-	            // opens an output stream to save into file
-	            FileOutputStream outputStream = new FileOutputStream(saveFilePath);
-	 
-	            byte[] buffer = new byte[BUFFER_SIZE];
-	            int bytesRead = -1;
-	            long totalBytesRead = 0;
-	            int percentCompleted = 0;
-	            long fileSize = util.getContentLength();
-	 
-	            while ((bytesRead = inputStream.read(buffer)) != -1) {
-	                outputStream.write(buffer, 0, bytesRead);
-	                totalBytesRead += bytesRead;
-	                percentCompleted = (int) (totalBytesRead * 100 / fileSize);
-	 
-	                setProgress(percentCompleted);         
-	            }
-	            outputStream.close();
-	 
-	            util.disconnect();
-	        } catch (IOException ex) {
-	            JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error downloading file: " + ex.getMessage(),
-	                    "Error", JOptionPane.ERROR_MESSAGE);           
-	            ex.printStackTrace();
-	            setProgress(0);
-	            cancel(true);          
-	        }
-	    	
-	    	//Download the update
-	    	try {
-
-	        	//Download update
-	            HTTPDownloadUtil util = new HTTPDownloadUtil();
-	            util.downloadFile(updateScriptLink);
-	             
-	            // set file information on the GUI
-	            setStatusText("Downloading update script...");
-	             
-	            String saveFilePath = saveDirectory + File.separator + util.getFileName();
-	 
-	            InputStream inputStream = util.getInputStream();
-	            // opens an output stream to save into file
-	            FileOutputStream outputStream = new FileOutputStream(saveFilePath);
-	 
-	            byte[] buffer = new byte[BUFFER_SIZE];
-	            int bytesRead = -1;
-	            long totalBytesRead = 0;
-	            int percentCompleted = 0;
-	            long fileSize = util.getContentLength();
-	 
-	            while ((bytesRead = inputStream.read(buffer)) != -1) {
-	                outputStream.write(buffer, 0, bytesRead);
-	                totalBytesRead += bytesRead;
-	                percentCompleted = (int) (totalBytesRead * 100 / fileSize);
-	 
-	                setProgress(percentCompleted);         
-	            }
-	 
-	            outputStream.close();
-	 
-	            util.disconnect();
-	        } catch (IOException ex) {
-	            JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error downloading file: " + ex.getMessage(),
-	                    "Error", JOptionPane.ERROR_MESSAGE);           
-	            ex.printStackTrace();
-	            setProgress(0);
-	            cancel(true);          
-	        }
-	    	
 	    	//Download the update
 	    	try {
 
@@ -239,11 +168,16 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	            outputStream.close();
 	 
 	            util.disconnect();
+	            
+	            if (!buildUpdateScript()){
+	            	cancel(true);
+	            }
 	        } catch (IOException ex) {
 	            JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error downloading file: " + ex.getMessage(),
 	                    "Error", JOptionPane.ERROR_MESSAGE);           
 	            ex.printStackTrace();
 	            setProgress(0);
+	            error = true;
 	            cancel(true);          
 	        }
 	        return null;
@@ -255,7 +189,9 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	    @Override
 	    protected void done() {
 	    	//TODO: Install update through the update script
-	    	
+	    	if (!error) {
+	    		runUpdateScript();
+	    	}
 	    }  
 	}
 	 
@@ -321,6 +257,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	            throw new IOException(
 	                    "No file to download. Server replied HTTP code: "
 	                            + responseCode);
+	            
 	        }
 	    }
 	 
@@ -353,5 +290,76 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			task.execute();
 		}
 		
+	}
+	
+	public void runUpdateScript() {
+		// TODO Auto-generated method stub
+		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", System.getProperty("user.dir")+"\\update\\updater.cmd" };
+		try {
+			Runtime.getRuntime().exec(command);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		ModManager.debugLogger.writeMessage("Upgrading to build "+build+", shutting down.");
+		System.exit(0);
+	}
+
+	/**
+	 * Builds the update script (.cmd) to run when swapping files.
+	 * @return True if created, false otherwise.
+	 */
+	private boolean buildUpdateScript(){
+		String updateFolder = System.getProperty("user.dir")+"\\update\\";
+		StringBuilder sb = new StringBuilder();
+		sb.append("::Update script for Mod Manager 3.0 (Build "+build+")");
+		sb.append("\r\n");
+		sb.append("\r\n");
+		sb.append("@echo off");
+		sb.append("\r\n");
+		sb.append("echo Current directory: %CD%");
+		sb.append("\r\n");
+		sb.append("pushd update");
+		sb.append("\r\n");
+		sb.append("::Wait for 2 seconds so the JVM fully exits.");
+		sb.append("\r\n");
+		sb.append("PING 1.1.1.1 -n 1 -w 2000 >NUL");
+		sb.append("\r\n");
+		sb.append("mkdir NewVersion");
+		sb.append("\r\n");
+		sb.append("\r\n");
+		sb.append("::Extract update");
+		sb.append("\r\n");
+		sb.append("7za.exe -y e ME3CMM.7z -o"+updateFolder+"NewVersion");
+		sb.append("\r\n");
+		sb.append("\r\n");
+		sb.append("::Update the files");
+		sb.append("\r\n");
+		sb.append("xcopy /Y NewVersion "+System.getProperty("user.dir"));
+		sb.append("\r\n");
+		sb.append("::Run Mod Manager");
+		sb.append("\r\n");
+		sb.append("popd");
+		sb.append("\r\n");
+		sb.append("echo Current directory: %CD%");
+		sb.append("\r\n");
+		sb.append("ME3CMM.exe --update-complete");
+		sb.append("\r\n");
+		sb.append("pause");
+		//sb.append("exit");
+		try {
+			String updatePath = new File(".\\update\\updater.cmd").getAbsolutePath();
+			Files.write( Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeMessage("Couldn't generate the update script. Must abort.");
+            JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error building update script: " + e.getClass()+"\nCannot continue.",
+                    "Updater Error", JOptionPane.ERROR_MESSAGE);           
+			error = true;
+			e.printStackTrace();
+			dispose();
+			return false;
+		}
+		return true;
 	}
 }

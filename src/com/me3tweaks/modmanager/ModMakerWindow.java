@@ -8,6 +8,8 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -18,6 +20,10 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 @SuppressWarnings("serial")
 public class ModMakerWindow extends JDialog implements ActionListener{
@@ -53,10 +59,32 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		
 		
 		codeField = new JTextField(6);
+		JLabel validationLabel = new JLabel("");
+		DecimalValidator validator = new DecimalValidator();
+		validator.setValidationLabel(validationLabel);
+		//codeField.setInputVerifier(validator);
+		//validation
+		((AbstractDocument)codeField.getDocument()).setDocumentFilter(new DocumentFilter(){
+		    Pattern pattern = Pattern.compile("-{0,1}\\d+");
+
+		    @Override
+		    public void replace(FilterBypass arg0, int arg1, int arg2, String arg3, AttributeSet arg4) throws BadLocationException {
+		        String text = arg0.getDocument().getText(0, arg0.getDocument().getLength())+arg3;
+		        Matcher matcher = pattern.matcher(text);
+		        if(!matcher.matches()){
+		            return;
+		        }
+		        if(text.length()>7){
+		            return;
+		        }
+		        super.replace(arg0, arg1, arg2, arg3, arg4);
+		    }
+		});
 		codeDownloadPanel.add(codeField);
 		downloadButton = new JButton("Download & Compile");
 		downloadButton.setPreferredSize(new Dimension(185, 19));
 		codeDownloadPanel.add(downloadButton);
+		modMakerPanel.add(validationLabel);
 		codeDownloadPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		modMakerPanel.add(codeDownloadPanel);
 		

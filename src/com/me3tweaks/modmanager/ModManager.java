@@ -115,7 +115,7 @@ public class ModManager {
 				
 				if (!coalDirHash.equals(patch3CoalescedHash)){
 					String[] YesNo = {"Yes", "No"};
-					int keepInstalling = JOptionPane.showOptionDialog(null,"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "+coalDirHash+"\nPatch 3 Coalesced.bin's hash: "+patch3CoalescedHash+"\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.blogspot.com if you need to restore your original.\nContinue installing this mod? ", "Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
+					int keepInstalling = JOptionPane.showOptionDialog(null,"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "+coalDirHash+"\nPatch 3 Coalesced.bin's hash: "+patch3CoalescedHash+"\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? ", "Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
 					if (keepInstalling == 0) return true;
 					return false;
 				} else {

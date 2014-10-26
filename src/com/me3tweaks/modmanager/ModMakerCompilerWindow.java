@@ -45,7 +45,7 @@ import org.xml.sax.SAXException;
 
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
-	boolean modExists = false;
+	boolean modExists = false, error = false;
 	String code, modName, modDescription;
 	ModManagerWindow callingWindow;
 	private static int TOTAL_STEPS = 10;
@@ -56,7 +56,6 @@ public class ModMakerCompilerWindow extends JDialog {
 	Document doc;
 	JSONObject mod_object, mod_info;
 	Element infoElement, dataElement;
-
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;
 
@@ -74,7 +73,9 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 		getModInfo();
-		this.setVisible(true);
+		if (!error) {
+			this.setVisible(true);
+		}
 	}
 
 	private void setupWindow() {
@@ -125,6 +126,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (errors.getLength() > 0) {
 				//error occured.
 				dispose();
+				error = true;
 				JOptionPane.showMessageDialog(null,
 					    "<html>No mod with id "+code+" was found on ME3Tweaks.</html>",
 					    "Compiling Error",

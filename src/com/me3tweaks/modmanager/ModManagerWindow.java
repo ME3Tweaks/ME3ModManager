@@ -101,7 +101,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		labelStatus.setText("Checking for update...");
 		//Check for update
 		try {
-			String update_check_link = "http://me3tweaks.com/modmanager/latest_version.json";
+			//String update_check_link = "http://me3tweaks.com/modmanager/latest_version.json";
+			String update_check_link = "https://webdev-c9-mgamerz.c9.io/modmanager/latest_version.json";
 			String latest_version = "latest_version";
 			File local_json = new File(latest_version);
 			FileUtils.copyURLToFile(new URL(update_check_link), local_json);
