@@ -46,7 +46,7 @@ public class ModType {
 	protected static final String GUN02 = "FIREFIGHT";*/
 
 	protected static String[] getHeaderNameArray(){
-		return new String[]{BASEGAME,MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
+		return new String[]{BASEGAME,MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,TESTPATCH,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
 	}
 	
 	/** Returns the subdirectory from biogame (no leading or trailing slashes) that corresponds to a DLC folder where the .sfar file should exist.
@@ -111,7 +111,7 @@ public class ModType {
 		dlcMap.put(MP5,"4645cc530f4f309dc7be4eb1dffccab6");
 		dlcMap.put(PATCH1,"f025e9b197bfa9e0ce24ca7aefc7b00f");
 		dlcMap.put(PATCH2,"77c5584cff4726ad754cbecefa38adad");
-		dlcMap.put(TESTPATCH,"1");
+		dlcMap.put(TESTPATCH,"c53a2ac7c3b6f62e76b3e529b7cc61e5");
 		dlcMap.put(HEN_PR,"64ab5bae7ae4ad75108009d76c73389b");
 		dlcMap.put(END,"a0f9f2acdba80acba100218f205e385e");
 		dlcMap.put(EXP1,"3b9b37d842378e96038c17389dd63032");
@@ -136,7 +136,7 @@ public class ModType {
 		dlcMap.put(MP5,208777784L);
 		dlcMap.put(PATCH1,208998L);
 		dlcMap.put(PATCH2,302772L);
-		//dlcMap.put(TESTPATCH,"1");
+		dlcMap.put(TESTPATCH,2455154L);
 		dlcMap.put(HEN_PR,594778936L);
 		dlcMap.put(END,1919137514L);
 		dlcMap.put(EXP1,1561239503L);
@@ -154,7 +154,7 @@ public class ModType {
 	}
 	
 	public static String[] getMPHeaderNameArray(){
-		return new String[]{MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2};
+		return new String[]{MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,TESTPATCH};
 
 	}
 }

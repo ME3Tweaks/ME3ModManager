@@ -30,6 +30,8 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
+import org.ini4j.InvalidFileFormatException;
+import org.ini4j.Wini;
 import org.json.simple.JSONObject;
 
 @SuppressWarnings("serial")
@@ -39,7 +41,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	String version;
 	long build;
 	JLabel introLabel, versionsLabel, changelogLabel, sizeLabel;
-	JButton updateButton;
+	JButton updateButton, notNowButton, nextUpdateButton;
 	JSONObject updateInfo;
 	JProgressBar downloadProgress;
 
@@ -75,6 +77,10 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		changelogLabel = new JLabel(release_notes);
 		updateButton = new JButton("Download Update");
 		updateButton.addActionListener(this);
+		notNowButton = new JButton("Not now");
+		notNowButton.addActionListener(this);
+		nextUpdateButton = new JButton("Remind me on the next update");
+		nextUpdateButton.addActionListener(this);
 		
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
@@ -90,6 +96,8 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 
 		updatePanel.add(changelogLabel);
 		updatePanel.add(updateButton);
+		updatePanel.add(notNowButton);
+		updatePanel.add(nextUpdateButton);
 		updatePanel.add(downloadProgress);
 		updatePanel.add(sizeLabel);
 
@@ -121,12 +129,10 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	 */
 	class DownloadTask extends SwingWorker<Void, Void> {
 	    private static final int BUFFER_SIZE = 4096;   
-	    private String downloadURL;
 	    private String saveDirectory;
 	    //private SwingFileDownloadHTTP gui;
 	     
-	    public DownloadTask(String downloadURL, String saveDirectory) {
-	        this.downloadURL = downloadURL;
+	    public DownloadTask(String saveDirectory) {
 	        this.saveDirectory = saveDirectory;
 	    }
 	     
@@ -285,9 +291,31 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			updateButton.setEnabled(false);
 			File updateDir = new File("update");
 			updateDir.mkdirs();
-			DownloadTask task = new DownloadTask(downloadLink, "update");
+			DownloadTask task = new DownloadTask("update");
 			task.addPropertyChangeListener(this);
 			task.execute();
+		} else 
+		if (e.getSource() == notNowButton) {
+			dispose();
+			return;
+		} else 
+		if (e.getSource() == nextUpdateButton) {
+			//write to ini that we don't want update
+			Wini ini;
+			try {
+				File settings = new File(ModManager.settingsFilename);
+				if (!settings.exists())
+					settings.createNewFile();
+				ini = new Wini(settings);
+				ini.put("Settings", "nextupdatedialogbuild", build+1);
+				ModManager.debugLogger.writeMessage("Ignoring current update, will show again when "+(build+1)+ " is released.");
+				ini.store();
+			} catch (InvalidFileFormatException ex) {
+				ex.printStackTrace();
+			} catch (IOException ex) {
+				System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+			}
+			dispose();
 		}
 		
 	}

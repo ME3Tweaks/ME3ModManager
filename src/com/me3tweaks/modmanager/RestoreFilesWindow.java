@@ -40,7 +40,6 @@ public class RestoreFilesWindow extends JDialog {
 	ModManagerWindow callingWindow;
 
 	public RestoreFilesWindow(ModManagerWindow callingWindow, String BioGameDir, int backupMode) {
-		// callingWindow.setEnabled(false);
 		this.callingWindow = callingWindow;
 		this.BioGameDir = BioGameDir;
 		this.backupMode = backupMode;
@@ -188,7 +187,22 @@ public class RestoreFilesWindow extends JDialog {
 			}
 
 			// The folder exists.
-			File mainSfar = new File(fullDLCDirectory + "Default.sfar");
+			File defaultSfar = new File(fullDLCDirectory + "Default.sfar");
+			File testpatchSfar = new File(fullDLCDirectory + "Patch_001.sfar");
+			File mainSfar = null;
+			if (defaultSfar.exists()) {
+				mainSfar = new File(fullDLCDirectory + "Default.sfar");
+			} else {
+				if (testpatchSfar.exists()){
+					mainSfar = new File(fullDLCDirectory + "Patch_001.sfar");
+				}
+			}
+			
+			if (mainSfar == null) {
+				//The original DLC element is missing.
+				mainSfar = new File("DLC SFAR MISSING");
+			}
+			
 			String mainSfarHash = "Error: Unable to hash";
 			if (mainSfar.exists()) {
 				// the sfar exists. 
@@ -227,11 +241,20 @@ public class RestoreFilesWindow extends JDialog {
 			} else {
 				ModManager.debugLogger.writeMessage(jobName + ": DLC file does not exist: " + mainSfar.toString());
 				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping.");
-				ModManager.debugLogger.writeMessage("Note: TESTPATCH is not implemented in this build. It will always fail.");
 			}
 
 			// Check for backup
-			File backupSfar = new File(fullDLCDirectory + "Default.sfar.bak");
+			File backupSfar = null;
+			File defaultSfarBackup = new File(fullDLCDirectory + "Default.sfar.bak");
+			File testpatchSfarBackup = new File(fullDLCDirectory + "Patch_001.sfar.bak");
+
+			if (defaultSfarBackup.exists()) {
+				backupSfar = defaultSfarBackup;
+			}
+			if (testpatchSfar.exists()) {
+				backupSfar = testpatchSfarBackup;
+			}
+			
 			String backupSfarHash = "Error";
 			if (backupSfar.exists()) {
 				// the sfar exists. We should hash it to check if it's original

@@ -61,7 +61,7 @@ public class BackupWindow extends JDialog {
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("Backup DLCs");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(260, 353));
+		this.setPreferredSize(new Dimension(260, 363));
 		this.setResizable(false);
 
 		setupWindow();
@@ -91,7 +91,6 @@ public class BackupWindow extends JDialog {
 
 	private void setupWindow() {
 		JPanel rootPanel = new JPanel(new BorderLayout());
-		// TODO Auto-generated method stub
 		JPanel northPanel = new JPanel(new BorderLayout());
 		infoLabel = new JLabel("Select DLCs to backup.");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
@@ -121,7 +120,8 @@ public class BackupWindow extends JDialog {
 		for (String dlcName : headerArray) {
 			JCheckBox checkbox = new JCheckBox(dlcName);
 			// checkBoxPanel.add(checkbox);
-			File dlcPath = new File(ModManagerWindow.appendSlash(BioGameDir) + ModManagerWindow.appendSlash(ModType.getDLCPath(dlcName)));
+			String filepath = ModManagerWindow.appendSlash(BioGameDir) + ModManagerWindow.appendSlash(ModType.getDLCPath(dlcName));
+			File dlcPath = new File(filepath);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
 				// Maybe DLC is not installed?
@@ -138,10 +138,9 @@ public class BackupWindow extends JDialog {
 
 			// The folder exists.
 			File mainSfar = new File(dlcPath + "\\Default.sfar");
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Looking for DLC at: " + mainSfar);
-			}
-			if (mainSfar.exists()) {
+			File testpathSfar = new File(dlcPath + "\\Patch_001.sfar");
+			ModManager.debugLogger.writeMessage("Looking for Default.sfar, Patch_001.sfar in " + filepath);
+			if (mainSfar.exists() || testpathSfar.exists()) {
 				// File exists.
 
 				checkbox.setEnabled(true);
@@ -154,6 +153,7 @@ public class BackupWindow extends JDialog {
 				checkboxMap.put(dlcName, checkbox);
 				continue;
 			} else {
+				ModManager.debugLogger.writeMessage(dlcName+" was not found.");
 				checkbox.setEnabled(false);
 				if (i < 8) {
 					checkBoxPanelLeft.add(checkbox);
@@ -229,22 +229,16 @@ public class BackupWindow extends JDialog {
 			this.bioGameDir = bioGameDir;
 			numjobs = jobs.length;
 			infoLabel.setText("Backing up DLC...");
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Starting the backupDLCJob utility. Number of jobs to do: " + numjobs);
-			}
+			ModManager.debugLogger.writeMessage("Starting the backupDLCJob utility. Number of jobs to do: " + numjobs);
 		}
 
 		@Override
 		public Boolean doInBackground() {
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage("Starting the restore thread");
-			}
+			ModManager.debugLogger.writeMessage("Starting the restore thread");
 			HashMap<String,String> sfarHashes = ModType.getHashesMap();
 			for (String dlcName : jobs) {
 				if (windowOpen == true) {// if the window is closed this will quickly finish this thread after the current job finishes
-					if (ModManager.logging){
-						ModManager.debugLogger.writeMessage("Processing backup job");
-					}
+					ModManager.debugLogger.writeMessage("Processing backup job");
 					if (processBackupJob(ModManagerWindow.appendSlash(bioGameDir) + ModManagerWindow.appendSlash(ModType.getDLCPath(dlcName)),dlcName,sfarHashes)){
 						completed++;
 					}
@@ -271,6 +265,9 @@ public class BackupWindow extends JDialog {
 			// The folder exists.
 			File mainSfar = new File(fullDLCDirectory + "Default.sfar");
 			File backupSfar = new File(fullDLCDirectory + "Default.sfar.bak");
+			
+			File testpatchSfar = new File(fullDLCDirectory + "Patch_001.sfar");
+			File backupTestpatchSfar = new File(fullDLCDirectory + "Patch_001.sfar.bak");
 
 			if (mainSfar.exists()) {
 				try {
@@ -292,14 +289,31 @@ public class BackupWindow extends JDialog {
 					e.printStackTrace();
 					return false;
 				}
-			} else {
-				addFailure(dlcName, "Default.sfar does not exist");
-				if (ModManager.logging){
-					ModManager.debugLogger.writeMessage("Main SFAR does not exist, skipping");
+				return true;
+			}
+			if (testpatchSfar.exists()){
+				try {
+					if (forceAuthentic){
+						//We should hash it and compare it against the known original
+						if (!(MD5Checksum.getMD5Checksum(testpatchSfar.toString()).equals(sfarHashes.get(dlcName)))){
+							//It's not the original
+							addFailure(dlcName, "DLC hash does not match known original");
+							return false;
+						}
+					}
+					Files.copy(testpatchSfar.toPath(), backupTestpatchSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				} catch (IOException e) {
+					addFailure(dlcName, "I/O Exception occured");
+					e.printStackTrace();
+					return false;
+				} catch (Exception e) {
+					e.printStackTrace();
+					return false;
 				}
-			}	 
+				return true;
+			}
 
-			return true;
+			return false; //neither sfar could be found.
 		}
 
 		@Override

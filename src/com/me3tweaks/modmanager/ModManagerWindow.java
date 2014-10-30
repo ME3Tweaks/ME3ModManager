@@ -64,9 +64,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenu actionMenu, toolsMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionGetME3Exp, actionReload, actionExit;
 	JMenuItem toolsBackupDLC;
-	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame, toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC, toolsRevertCoal;
+	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame, toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC, toolsRevertCoal, toolsAutoTOC;
 	JMenuItem helpPost, helpAbout;
-	JList listMods;
+	JList<String> listMods;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
 	JSplitPane splitPane;
@@ -110,7 +110,36 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			JSONObject latest_object = (JSONObject) parser.parse(new FileReader(latest_version));
 			local_json.delete();
 			long latest_build = (long) latest_object.get("latest_build_number");
-			if (latest_build > ModManager.BUILD_NUMBER) {
+			boolean showUpdate = true;
+			//make sure the user hasn't declined this one.
+			Wini settingsini;
+			try {
+				settingsini = new Wini(new File(ModManager.settingsFilename));
+				String showIfHigherThan  = settingsini.get("Settings", "nextupdatedialogbuild");
+				long build_check = ModManager.BUILD_NUMBER;
+				if (showIfHigherThan!= null && !showIfHigherThan.equals("")) {
+					try {
+						build_check = Integer.parseInt(showIfHigherThan);
+						if (latest_build>build_check){
+							//update is newer than one stored in ini, show the dialog.
+							showUpdate = true;
+						} else {
+							//don't show it.
+							showUpdate = false;
+						}
+					} catch (NumberFormatException e){
+						ModManager.debugLogger.writeMessage("Number format exception reading the build number updateon in the ini. Showing the dialog.");
+					}
+				}
+			} catch (InvalidFileFormatException e) {
+				ModManager.debugLogger.writeMessage("Invalid INI! Did the user modify it by hand?");
+				e.printStackTrace();
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
+			}
+			
+			
+			if (showUpdate) {
 				//An update is available!
 				labelStatus.setVisible(true);
 				labelStatus.setText("Update available");
@@ -271,11 +300,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsRevertSPDLC = new JMenuItem("Restore SP DLCs");
 		toolsRevertMPDLC = new JMenuItem("Restore MP DLCs");
 		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
-		File restoreTest = new File("Coalesced.original");
-		if (!restoreTest.exists()) {
-			toolsRevertCoal.setEnabled(false);
-		}
+		verifyBackupCoalesced();
+		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
+		toolsAutoTOC = new JMenuItem("Update TOC of current selected");
 
+		
 		toolsModMaker.addActionListener(this);
 		toolsBackupDLC.addActionListener(this);
 		toolsRevertDLCCoalesced.addActionListener(this);
@@ -284,6 +313,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsRevertSPDLC.addActionListener(this);
 		toolsRevertMPDLC.addActionListener(this);
 		toolsRevertCoal.addActionListener(this);
+		toolsAutoTOC.addActionListener(this);
+
 
 		toolsMenu.add(toolsModMaker);
 		toolsMenu.addSeparator();
@@ -295,6 +326,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.add(toolsRevertSPDLC);
 		toolsMenu.add(toolsRevertMPDLC);
 		toolsMenu.add(toolsRevertCoal);
+		toolsMenu.addSeparator();
+		toolsMenu.add(toolsAutoTOC);
 
 		menuBar.add(toolsMenu);
 
@@ -311,6 +344,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		menuBar.add(helpMenu);
 
 		return menuBar;
+	}
+
+	private void verifyBackupCoalesced() {
+		File restoreTest = new File("Coalesced.original");
+		if (!restoreTest.exists()) {
+			toolsRevertCoal.setEnabled(false);
+		}
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -444,6 +484,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// TODO Auto-generated catch block
 				ex.printStackTrace();
 			}
+		} else 
+			
+		if (e.getSource() == toolsAutoTOC) {
+			autoTOC();
 		}
 	}
 
@@ -479,9 +523,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						settings.createNewFile();
 					ini = new Wini(settings);
 					ini.put("Settings", "biogame_dir", appendSlash(dirChooser.getSelectedFile().toString()));
-					if (ModManager.logging) {
-						ModManager.debugLogger.writeMessage(appendSlash(dirChooser.getSelectedFile().toString()));
-					}
+					ModManager.debugLogger.writeMessage(appendSlash(dirChooser.getSelectedFile().toString()));
 					ini.store();
 				} catch (InvalidFileFormatException e) {
 					e.printStackTrace();
@@ -719,14 +761,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	private Mod lookupModByFileName(String modName) {
 		if (listDescriptors.containsKey(modName) == false) {
-			if (ModManager.logging) {
-				ModManager.debugLogger.writeMessage(modName + " doesn't exist in the mod hashmap.");
-			}
+			ModManager.debugLogger.writeMessage(modName + " doesn't exist in the mod hashmap.");
 			return null;
 		}
-		if (ModManager.logging) {
-			ModManager.debugLogger.writeMessage("Hashmap contains location of mod " + modName + ": " + listDescriptors.containsKey(modName));
-		}
+		ModManager.debugLogger.writeMessage("Hashmap contains location of mod " + modName + ": " + listDescriptors.containsKey(modName));
+		
 		return listDescriptors.get(modName);
 	}
 
@@ -892,5 +931,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	public void startModMaker(String code) {
 		new ModMakerCompilerWindow(this, code);
+	}
+	
+	private void autoTOC(){
+		//update the PCConsoleTOC's of a specific mod.
+		String selectedValue = listMods.getSelectedValue();
+		if (selectedValue == null) {
+			return; //shouldn't be able to toc an unselected mod eh?
+		}
+		System.out.println("SELECTED VALUE: "+selectedValue);
+		Mod mod = listDescriptors.get(selectedValue);
+		new AutoTocWindow(this, mod);
+		
 	}
 }

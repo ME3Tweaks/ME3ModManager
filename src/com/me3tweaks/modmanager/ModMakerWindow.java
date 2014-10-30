@@ -60,8 +60,6 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		
 		codeField = new JTextField(6);
 		JLabel validationLabel = new JLabel("");
-		DecimalValidator validator = new DecimalValidator();
-		validator.setValidationLabel(validationLabel);
 		//codeField.setInputVerifier(validator);
 		//validation
 		((AbstractDocument)codeField.getDocument()).setDocumentFilter(new DocumentFilter(){

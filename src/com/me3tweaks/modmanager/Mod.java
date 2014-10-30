@@ -22,6 +22,10 @@ public class Mod {
 		this.validMod = validMod;
 	}
 
+	/**
+	 * Creates a new mod object.
+	 * @param filepath Path to the moddesc.ini file.
+	 */
 	public Mod(String filepath) {
 		modifyString = "";
 		modDescFile = new File(filepath);
@@ -50,8 +54,7 @@ public class Mod {
 
 		modDesc = wini.get("ModInfo", "moddesc");
 		modName = wini.get("ModInfo", "modname");
-		ModManager.debugLogger.writeMessage("------------------------"+modName+"------------------------");
-		ModManager.debugLogger.writeMessage("Validating...");
+		ModManager.debugLogger.writeMessage("------------------Reading "+modName+"------------------");
 		// Check if this mod has been made for Mod Manager 2.0 or legacy mode
 		float modcmmver = 1.0f;
 		try {
@@ -85,13 +88,13 @@ public class Mod {
 		// It's a 2.0 or above mod. Check for mod tags in the desc file
 		String[] modIniHeaders = ModType.getHeaderNameArray();
 		for (String modHeader : modIniHeaders) {
-			ModManager.debugLogger.writeMessage("Reading header: " + modHeader + " in ini of " + modName);
+			ModManager.debugLogger.writeMessage("Scanning for header: " + modHeader + " in ini of " + modName);
 			
 			// Check for each mod. If it exists, add the task
 			String iniModDir = wini.get(modHeader, "moddir");
 			if (iniModDir != null && !iniModDir.equals("")) {
 				// It's a DLC header, we should check for the files to mod, and make sure they all match properly
-				ModManager.debugLogger.writeMessage(modName + ": Found INI header " + modHeader);
+				ModManager.debugLogger.writeMessage("Found INI header " + modHeader);
 				
 				String newFileIni = wini.get(modHeader, "newfiles");
 				String oldFileIni = wini.get(modHeader, "replacefiles");

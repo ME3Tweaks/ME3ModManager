@@ -96,7 +96,7 @@ public class PatchWindow extends JDialog {
 			failedJobs = new ArrayList<String>();
 			ModManager.debugLogger.writeMessage("Starting the InjectionCommander utility. Number of jobs to do: "+numjobs);
 			this.jobs = jobs;
-			ModManager.debugLogger.writeMessage(getBetaDirectory());
+			ModManager.debugLogger.writeMessage("Using ME3Explorer from: "+ModManager.getME3ExplorerEXEDirectory());
 		}
 
 		@Override
@@ -174,10 +174,7 @@ public class PatchWindow extends JDialog {
 			// TODO Auto-generated method stub
 			//System.out.println("Processing DLCJOB");
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			if (ModManager.logging){
-				ModManager.debugLogger.writeMessage(getBetaDirectory());
-			}
-			commandBuilder.add(ModManagerWindow.appendSlash(getBetaDirectory())+"ME3Explorer.exe");
+			commandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory())+"ME3Explorer.exe");
 			commandBuilder.add("-dlcinject");
 			commandBuilder.add("\""+ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+"Default.sfar\""); //TODO this needs to change for Patch001 to work.
 			String[] filesToReplace = job.getFilesToReplace();
@@ -259,34 +256,7 @@ public class PatchWindow extends JDialog {
 		dispose();
 	}
 
-	public String getBetaDirectory() {
-		File executable = new File(ModManagerWindow.appendSlash(System.getProperty("user.dir"))+"ME3Explorer.exe");
-		ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
-		
-		if (!executable.exists()){
-			//try another file
-			executable = new File("ME3Explorer\\ME3Explorer.exe");
-			ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
-			
-			if (!executable.exists()){
-				executable = new File("ME3Explorer_0102w_beta\\ME3Explorer.exe");
-				ModManager.debugLogger.writeMessage("Searching for ME3Explorer in "+executable.getAbsolutePath());
-				
-				if (!executable.exists()){
-					StringBuilder sb = new StringBuilder();
-					sb.append("Failed to find ME3Explorer.exe in the following directories:\n");
-					sb.append(" - "+System.getProperty("user.dir")+"\n");
-					sb.append(" - "+System.getProperty("user.dir")+"\\ME3Explorer\\"+"\n");
-					sb.append(" - "+System.getProperty("user.dir")+"\\ME3Explorer_0102w_beta\\");
-					JOptionPane.showMessageDialog(null, sb.toString(), "Error",
-							JOptionPane.ERROR_MESSAGE);
-				}
-				
-			}
-		}
-		ModManager.debugLogger.writeMessage("Founed exe in folder: "+ModManagerWindow.appendSlash(executable.getAbsolutePath()));
-		return ModManagerWindow.appendSlash(executable.getParent());//ModManagerWindow.appendSlash("ME3Explorer_0102w_beta");
-	}
+
 
 	public void addToQueue(String newLine) {
 		for (int i = consoleQueue.length - 1; i >= 1; i--) {

@@ -43,6 +43,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
+
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
@@ -269,6 +271,36 @@ public class ModMakerCompilerWindow extends JDialog {
 			return null;
 		}
 	}
+	
+	/**
+	 * Converts the Coalesced.bin filenames to their respective PCConsoleTOC directory in the .sfar files.
+	 * @param coalName name of coal being packed into the mod
+	 * @return path to the file to repalce
+	 */
+	protected String coalFileNameToDLCTOCDir(String coalName) {
+		switch (coalName) {
+		case "Default_DLC_CON_MP1.bin":
+			return "/BIOGame/DLC/DLC_CON_MP1/PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP2.bin":
+			return "/BIOGame/DLC/DLC_CON_MP2/PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP3.bin":
+			return "/BIOGame/DLC/DLC_CON_MP3/PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP4.bin":
+			return "/BIOGame/DLC/DLC_CON_MP4/PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP5.bin":
+			return "/BIOGame/DLC/DLC_CON_MP5/PCConsoleTOC.bin";
+		case "Default_DLC_UPD_Patch01.bin":
+			return "/BIOGame/DLC/DLC_UPD_Patch01/PCConsoleTOC.bin";
+		case "Default_DLC_UPD_Patch02.bin":
+			return "/BIOGame/DLC/DLC_UPD_Patch02/PCConsoleTOC.bin";
+		case "Coalesced.bin":
+			//not used
+			return "\\BIOGame\\PCConsoleTOC.bin";
+		default:
+			System.out.println("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: "+coalName);
+			return null;
+		}
+	}
 
 	protected void parseModInfo() {
 		NodeList infoNodeList = doc.getElementsByTagName("ModInfo");
@@ -431,8 +463,12 @@ public class ModMakerCompilerWindow extends JDialog {
 				String compilerPath = path
 						+ "\\Tankmaster Compiler\\MassEffect3.Coalesce.exe";
 				ProcessBuilder compileProcessBuilder = new ProcessBuilder(
-						compilerPath, path + "\\coalesceds\\"
-								+ FilenameUtils.removeExtension(coal) + "\\Coalesced.xml");
+						compilerPath, "--xml2bin", path + "\\coalesceds\\"
+								+ FilenameUtils.removeExtension(coal)+".xml");
+				//log it
+				ModManager.debugLogger.writeMessage("Executing compile command: "+
+						compilerPath+" --xml2bin "+ path + "\\coalesceds\\"
+								+ FilenameUtils.removeExtension(coal)+".xml");
 				compileProcessBuilder.redirectErrorStream(true);
 				compileProcessBuilder
 						.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -458,7 +494,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			stepsCompleted++;
 			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
 			ModManager.debugLogger.writeMessage("Coals recompiled");
-			createCMMMod();
+			new TOCDownloadWorker(coalsToCompile, progress).execute();
 		}
 	}
 
@@ -579,30 +615,50 @@ public class ModMakerCompilerWindow extends JDialog {
 								Node newproperty = mergeList.item(k);
 								if (newproperty.getNodeType() == Node.ELEMENT_NODE) {
 									//<Property type="2" name="defaultgravityz" path="engine.worldinfo">-50</Property>
+									boolean isArrayProperty = false;
 									Element property = (Element) newproperty;
-									String newPropName = property.getAttribute("name");
+									String newPropName = null;
+									String arrayType = null;
+									String operation = null;
+									String matchontype = null;
+									if (property.getNodeName().equals("Property")) {
+										//Property
+										newPropName = property.getAttribute("name");
+										isArrayProperty = false;
+									} else {
+										//ArrayProperty
+										//<ArrayProperty path="sfxgamempcontent.sfxdifficultyhandlermp&amp;level2difficultydata" type="3" arraytype="biodifficulty" matchontype="3" operation="modify">(Cate...</ArrayProperty>
+										arrayType = property.getAttribute("arraytype");
+										matchontype = property.getAttribute("matchontype");
+										operation = property.getAttribute("operation");
+										isArrayProperty = true;
+
+									}
+									
 									String newValue = newproperty.getTextContent();
 									
 									//first tokenize the path...
 									String path = property.getAttribute("path");
-									StringTokenizer drillTokenizer = new StringTokenizer(path,"-"); // - splits this in the event we need to drill down. Spaces are valid it seems in the path.
-									
+									StringTokenizer drillTokenizer = new StringTokenizer(path,"&"); // - splits this in the event we need to drill down. Spaces are valid it seems in the path.
 									Element drilled = null;
+									NodeList drilledList = SectionList;
 									while (drillTokenizer.hasMoreTokens()){
 										//drill
 										String drillTo = drillTokenizer.nextToken();
+										ModManager.debugLogger.writeMessage("Drilling to find: "+drillTo);
 										boolean pathfound = false;
-										for (int l = 0; l < SectionList.getLength(); l++) {
+										for (int l = 0; l < drilledList.getLength(); l++) {
 											//iterate over all sections...
-											Node sectionNode = SectionList.item(l);
-											if (sectionNode.getNodeType() == Node.ELEMENT_NODE) {
-												drilled = (Element) sectionNode;
-												System.out.println("Checking attribute: "+drilled.getAttribute("name"));
+											Node drilledNode = drilledList.item(l); //L, not a 1.
+											if (drilledNode.getNodeType() == Node.ELEMENT_NODE) {
+												drilled = (Element) drilledNode;
+												//System.out.println("Checking attribute: "+drilled.getAttribute("name"));
 												if (!drilled.getAttribute("name").equals(drillTo)) {
 													continue;
 												} else {
 													//this is the section we want.
-													System.out.println("Found what I wanted");
+													ModManager.debugLogger.writeMessage("Found "+drillTo);
+													drilledList = drilled.getChildNodes();
 													pathfound = true;
 													break;
 												}
@@ -628,17 +684,44 @@ public class ModMakerCompilerWindow extends JDialog {
 											    JOptionPane.ERROR_MESSAGE);
 										return null;
 									}
-									//we are where we want to be. Now we can set the property.
+									//we are where we want to be. Now we can set the property or array value.
 									//drilled is the element (parent of our property) that we want.
 									NodeList props = drilled.getChildNodes(); //get children of the path (<property> list)
 									for (int m = 0; m < props.getLength(); m++){
 										Node propertyNode = props.item(m);
 										if (propertyNode.getNodeType() == Node.ELEMENT_NODE) {
 											Element itemToModify = (Element) propertyNode;
-											if (itemToModify.getAttribute("name").equals(newPropName)) {
-												itemToModify.setTextContent(newValue);
-												System.out.println("Set "+newPropName+" to "+newValue);
-												break;
+											//Check on property
+											if (!isArrayProperty) {
+												if (itemToModify.getAttribute("name").equals(newPropName)) {
+													itemToModify.setTextContent(newValue);
+													System.out.println("Set "+newPropName+" to "+newValue);
+													break;
+												}
+											} else {
+												//Check on ArrayProperty
+												if (itemToModify.getAttribute("type").equals(matchontype)) {
+													//potential array value candidate...
+													boolean match = false;
+													switch (arrayType) {
+													//Must use individual matching algorithms so we can figure out if something matches.
+														case "biodifficulty":
+															//Match on Category (name)
+															Category existing = new Category(itemToModify.getTextContent());
+															Category importing = new Category(newValue);
+															if (existing.matchIdentifiers(importing)) {
+																existing.merge(importing);
+																newValue = existing.createCategoryString();
+																match = true;
+															}
+															break;
+													}
+													if (match) {
+														itemToModify.setTextContent(newValue);
+														ModManager.debugLogger.writeMessage("Set array property to "+newValue);
+														break;
+													}
+												}
 											}
 										}
 									}
@@ -650,7 +733,6 @@ public class ModMakerCompilerWindow extends JDialog {
 							File outputFile = new File("coalesceds\\"+foldername+"\\"+iniFileName);
 							Result output = new StreamResult(outputFile);
 							Source input = new DOMSource(iniFile);
-							System.out.println("break");
 							ModManager.debugLogger.writeMessage("Saving file: "+outputFile.toString());
 							transformer.transform(input, output);
 						}
@@ -695,40 +777,64 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		// Write mod descriptor file
 		Wini ini;
+		File moddesc = new File(moddir + "\\moddesc.ini");
 		try {
-			File moddesc = new File(moddir + "\\moddesc.ini");
 			if (!moddesc.exists())
 				moddesc.createNewFile();
 			ini = new Wini(moddesc);
 			ini.put("ModManager", "cmmver", 3.0);
 			ini.put("ModInfo", "modname", modName);
-			ini.put("ModInfo", "moddesc", modDescription+"<br><br>Created with Mod Maker");
+			ini.put("ModInfo", "moddesc", modDescription+"<br>Created with Mod Maker.");
 			ini.put("ModInfo", "modsite", "http://me3tweaks.com");
 			ini.put("ModInfo", "modid", "8");
 			
 			// Create directories, move files to them
 			for (String reqcoal : requiredCoals) {
-				File compCoalDir = new File(moddir.toString() + "\\"+coalFilenameToShortName(reqcoal));
+				File compCoalDir = new File(moddir.toString() + "\\"+coalFilenameToShortName(reqcoal)); //MP4, PATCH2 folders in mod package
 				compCoalDir.mkdirs();
 				String fileNameWithOutExt = FilenameUtils.removeExtension(reqcoal);
-				File coalFile = new File("coalesceds\\"+fileNameWithOutExt+"\\"+reqcoal);
-				if (coalFile.renameTo(new File(compCoalDir+"\\"+reqcoal))){
+				//copy coal
+				File coalFile = new File("coalesceds\\"+reqcoal);
+				File destCoal = new File(compCoalDir+"\\"+reqcoal);
+				destCoal.delete();
+				if (coalFile.renameTo(destCoal)){
 					ModManager.debugLogger.writeMessage("Moved "+reqcoal+" to proper mod element directory");
 				} else {
-					System.err.println("ERROR! Didn't move "+reqcoal+" to the proper mod element directory. Could already exist.");
+					ModManager.debugLogger.writeMessage("ERROR! Didn't move "+reqcoal+" to the proper mod element directory. Could already exist.");
+				}
+				//copy pcconsoletoc
+				if (!reqcoal.equals("Coalesced.bin")) {
+					File tocFile = new File("toc\\"+coalFilenameToShortName(reqcoal)+"\\PCConsoleTOC.bin");
+					File destToc = new File(compCoalDir+"\\PCConsoleTOC.bin");
+					destToc.delete();
+					if (tocFile.renameTo(destToc)){
+						ModManager.debugLogger.writeMessage("Moved "+reqcoal+" TOC to proper mod element directory");
+					} else {
+						ModManager.debugLogger.writeMessage("ERROR! Didn't move "+reqcoal+" TOC to the proper mod element directory. Could already exist.");
+					}
 				}
 
 				File compCoalSourceDir = new File("coalesceds\\"+fileNameWithOutExt);
 				
 				//TODO: Add PCConsoleTOC.bin to the desc file.
+				boolean basegame = 	reqcoal.equals("Coalesced.bin");
 				
 				ini.put(coalNameToModDescName(reqcoal), "moddir", coalFilenameToShortName(reqcoal));
-				ini.put(coalNameToModDescName(reqcoal), "newfiles", reqcoal);
-				ini.put(coalNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal));
+				
+				if (basegame) {
+					ini.put(coalNameToModDescName(reqcoal), "newfiles", reqcoal);
+					ini.put(coalNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal));					
+				} else {
+					ini.put(coalNameToModDescName(reqcoal), "newfiles", reqcoal+";PCConsoleTOC.bin");
+					ini.put(coalNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal)+";"+coalFileNameToDLCTOCDir(reqcoal));					
+				}
+
 
 				
 				try {
 					FileUtils.deleteDirectory(compCoalSourceDir);
+					FileUtils.deleteDirectory(compCoalSourceDir);
+
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -742,13 +848,79 @@ public class ModMakerCompilerWindow extends JDialog {
 			System.err.println("Mod file encountered an I/O error while attempting to write it. Mod Descriptor not saved.");
 		}
 
-		
+		//TOC the mod
+		ModManager.debugLogger.writeMessage("Running autotoc on mod.");
+		Mod newMod = new Mod(moddesc.toString());
+		new AutoTocWindow(callingWindow, newMod);
 		
 		//Mod Created!
 		dispose();
 		JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
 		callingWindow.dispose();
 		new ModManagerWindow(false);
+	}
+	
+	class TOCDownloadWorker extends SwingWorker<Void, Integer> {
+		private ArrayList<String> tocsToDownload;
+		private JProgressBar progress;
+		private int numtoc;
+
+		public TOCDownloadWorker(ArrayList<String> tocsToDownload,
+				JProgressBar progress) {
+			this.tocsToDownload = tocsToDownload;
+			if (this.tocsToDownload.contains("Coalesced.bin")) {
+				this.numtoc = tocsToDownload.size() - 1;
+			} else {
+				this.numtoc = tocsToDownload.size();
+
+			}
+			this.progress = progress;
+			if (numtoc > 0) {
+				currentOperationLabel.setText("Downloading "
+						+ tocsToDownload.get(0));
+			}
+		}
+
+		protected Void doInBackground() throws Exception {
+			int tocsCompleted = 0;
+			for (String toc : tocsToDownload) {
+				if (toc.equals("Coalesced.bin")) {
+					continue; //ignore basegame
+				}
+				try {
+					String link = "http://www.me3tweaks.com/toc/" + coalFilenameToShortName(toc) + "/PCConsoleTOC.bin";
+					ModManager.debugLogger.writeMessage("Downloading TOC file: "+link);
+					FileUtils.copyURLToFile(new URL(link), new File(
+							"toc/" + coalFilenameToShortName(toc) +"/PCConsoleTOC.bin"));
+					tocsCompleted++;
+					this.publish(tocsCompleted);
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			return null;
+		}
+
+		@Override
+		protected void process(List<Integer> numCompleted) {
+			if (numtoc > numCompleted.get(0)) {
+				currentOperationLabel.setText("Downloading "
+						+ tocsToDownload.get(numCompleted.get(0)));
+			}
+			progress.setValue(100 / (numtoc / numCompleted.get(0)));
+		}
+
+		protected void done() {
+			// Coals downloaded
+			ModManager.debugLogger.writeMessage("TOCs downloaded");
+			stepsCompleted++;
+			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
+			createCMMMod();
+		}
 	}
 	
 	public static String toString(Document doc) {

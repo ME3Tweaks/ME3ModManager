@@ -13,8 +13,14 @@ public class DebugLogger {
 	FileWriter fw;
 	
 	public DebugLogger(){
-		logFile = new File("me3cmm_last_run_log.txt");
 
+	}
+	
+	/**
+	 * Called if you want to use the debug logger.
+	 */
+	protected void initialize(){
+		logFile = new File("me3cmm_last_run_log.txt");
 		try {
 			if (logFile.exists()){
 				logFile.delete();

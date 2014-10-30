@@ -15,9 +15,9 @@ import org.ini4j.Wini;
 
 public class ModManager {
 	
-	public static final String VERSION = "3.0i";
-	public static long BUILD_NUMBER = 17L;
-	public static final String BUILD_DATE = "9/18/2014";
+	public static final String VERSION = "3.0a";
+	public static long BUILD_NUMBER = 19L;
+	public static final String BUILD_DATE = "10/27/2014";
 	public static DebugLogger debugLogger;
 
 	public static String settingsFilename = "me3cmm.ini";
@@ -25,6 +25,7 @@ public class ModManager {
 	
 	public static void main(String[] args) {		
 		//Set and get debugging mode from wini
+		debugLogger = new DebugLogger();
 		Wini settingsini;
 		try {
 			settingsini = new Wini(new File(ModManager.settingsFilename));
@@ -36,8 +37,8 @@ public class ModManager {
 					if (logInt>0){
 						//logging is on
 						System.out.println("Logging mode is enabled");
+						debugLogger.initialize();
 						logging = true;
-						debugLogger = new DebugLogger();
 						debugLogger.writeMessage("Starting logger");
 					} else {
 						System.out.println("Logging mode disabled");
@@ -159,5 +160,34 @@ public class ModManager {
 		}
 		//Backup exists
 		return true;
+	}
+	
+	public static String getME3ExplorerEXEDirectory() {
+		File executable = new File(ModManagerWindow.appendSlash(System.getProperty("user.dir"))+"ME3Explorer.exe");
+		ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: "+executable.getAbsolutePath());
+		
+		if (!executable.exists()){
+			//try another file
+			executable = new File("ME3Explorer\\ME3Explorer.exe");
+			ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: "+executable.getAbsolutePath());
+			
+			if (!executable.exists()){
+				executable = new File("ME3Explorer_0102w_beta\\ME3Explorer.exe");
+				ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: "+executable.getAbsolutePath());
+				
+				if (!executable.exists()){
+					StringBuilder sb = new StringBuilder();
+					sb.append("Failed to find ME3Explorer.exe in the following directories:\n");
+					sb.append(" - "+System.getProperty("user.dir")+"\n");
+					sb.append(" - "+System.getProperty("user.dir")+"\\ME3Explorer\\"+"\n");
+					sb.append(" - "+System.getProperty("user.dir")+"\\ME3Explorer_0102w_beta\\");
+					JOptionPane.showMessageDialog(null, sb.toString(), "Error",
+							JOptionPane.ERROR_MESSAGE);
+				}
+				
+			}
+		}
+		ModManager.debugLogger.writeMessage("Found ME3Explorer: "+executable.getAbsolutePath());
+		return ModManagerWindow.appendSlash(executable.getParent());//ModManagerWindow.appendSlash("ME3Explorer_0102w_beta");
 	}
 }
