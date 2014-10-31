@@ -49,6 +49,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
+import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
@@ -64,7 +66,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenu actionMenu, toolsMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionGetME3Exp, actionReload, actionExit;
 	JMenuItem toolsBackupDLC;
-	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame, toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC, toolsRevertCoal, toolsAutoTOC;
+	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame, toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC, toolsRevertCoal, toolsAutoTOC, toolsWavelistParser, toolsDifficultyParser;
 	JMenuItem helpPost, helpAbout;
 	JList<String> listMods;
 	JProgressBar progressBar;
@@ -303,6 +305,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		verifyBackupCoalesced();
 		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
 		toolsAutoTOC = new JMenuItem("Update TOC of current selected");
+		toolsWavelistParser = new JMenuItem("Wavelist Parser");
+		toolsDifficultyParser = new JMenuItem("Biodifficulty Parser");
+
 
 		
 		toolsModMaker.addActionListener(this);
@@ -314,8 +319,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsRevertMPDLC.addActionListener(this);
 		toolsRevertCoal.addActionListener(this);
 		toolsAutoTOC.addActionListener(this);
-
-
+		toolsWavelistParser.addActionListener(this);
+		toolsDifficultyParser.addActionListener(this);
+		
 		toolsMenu.add(toolsModMaker);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsBackupDLC);
@@ -328,6 +334,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.add(toolsRevertCoal);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsAutoTOC);
+		toolsMenu.add(toolsWavelistParser);
+		toolsMenu.add(toolsDifficultyParser);
 
 		menuBar.add(toolsMenu);
 
@@ -488,6 +496,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			
 		if (e.getSource() == toolsAutoTOC) {
 			autoTOC();
+		} else 
+			
+		if (e.getSource() == toolsWavelistParser) {
+			new WavelistGUI();
+		} else
+		
+		if (e.getSource() == toolsDifficultyParser) {
+			new DifficultyGUI();
 		}
 	}
 

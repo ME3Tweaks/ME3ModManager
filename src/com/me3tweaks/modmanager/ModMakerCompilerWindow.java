@@ -44,6 +44,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
+import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
@@ -687,6 +688,7 @@ public class ModMakerCompilerWindow extends JDialog {
 									//we are where we want to be. Now we can set the property or array value.
 									//drilled is the element (parent of our property) that we want.
 									NodeList props = drilled.getChildNodes(); //get children of the path (<property> list)
+									ModManager.debugLogger.writeMessage("Number of child property/elements to search: "+props.getLength());
 									for (int m = 0; m < props.getLength(); m++){
 										Node propertyNode = props.item(m);
 										if (propertyNode.getNodeType() == Node.ELEMENT_NODE) {
@@ -695,27 +697,47 @@ public class ModMakerCompilerWindow extends JDialog {
 											if (!isArrayProperty) {
 												if (itemToModify.getAttribute("name").equals(newPropName)) {
 													itemToModify.setTextContent(newValue);
-													System.out.println("Set "+newPropName+" to "+newValue);
+													ModManager.debugLogger.writeMessage("Set "+newPropName+" to "+newValue);
 													break;
 												}
 											} else {
 												//Check on ArrayProperty
+												ModManager.debugLogger.writeMessage("Candidates only will be returned if they are of type: "+matchontype);
+												ModManager.debugLogger.writeMessage("Scanning property type: "+itemToModify.getAttribute("type"));
 												if (itemToModify.getAttribute("type").equals(matchontype)) {
 													//potential array value candidate...
 													boolean match = false;
+													ModManager.debugLogger.writeMessage("Found candidate for arrayreplace: "+itemToModify.getTextContent());
 													switch (arrayType) {
 													//Must use individual matching algorithms so we can figure out if something matches.
-														case "biodifficulty":
+														case "biodifficulty": {
 															//Match on Category (name)
 															Category existing = new Category(itemToModify.getTextContent());
 															Category importing = new Category(newValue);
 															if (existing.matchIdentifiers(importing)) {
+																ModManager.debugLogger.writeMessage("Match found: "+existing.categoryname);
 																existing.merge(importing);
 																newValue = existing.createCategoryString();
 																match = true;
+															} else {
+																ModManager.debugLogger.writeMessage("Match failed: "+existing.categoryname);
 															}
+														}
+														break;
+														case "wave": {
+															//Match on Difficulty
+															Wave existing = new Wave(itemToModify.getTextContent());
+															Wave importing = new Wave(newValue);
+															if (existing.matchIdentifiers(importing)) {
+																match = true;
+																newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
+															}
+														}
+														break;
+														default:
+															ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm - does this client need updated?");
 															break;
-													}
+													} //end switch
 													if (match) {
 														itemToModify.setTextContent(newValue);
 														ModManager.debugLogger.writeMessage("Set array property to "+newValue);

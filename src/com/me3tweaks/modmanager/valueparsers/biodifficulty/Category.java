@@ -3,9 +3,11 @@ package com.me3tweaks.modmanager.valueparsers.biodifficulty;
 import java.util.ArrayList;
 import java.util.Stack;
 
+import com.me3tweaks.modmanager.ModManager;
+
 
 public class Category {
-	String categoryname;
+	public String categoryname;
 	ArrayList<Stat> stats;
 	public Category(String value) {
 		//get name
@@ -103,6 +105,7 @@ public class Category {
 	}
 
 	public boolean matchIdentifiers(Category importing) {
+		ModManager.debugLogger.writeMessage("Matching "+categoryname+" against "+importing.categoryname);
 		return categoryname.equals(importing.categoryname);
 	}
 }

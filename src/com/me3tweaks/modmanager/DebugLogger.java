@@ -49,7 +49,7 @@ public class DebugLogger {
 		}
 	}
 	
-	protected void writeMessage(String message){
+	public void writeMessage(String message){
 		if (ModManager.logging){
 			try {
 				System.out.println("[L]: "+message);
