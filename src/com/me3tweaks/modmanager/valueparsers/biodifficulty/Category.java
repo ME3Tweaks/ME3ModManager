@@ -1,7 +1,6 @@
 package com.me3tweaks.modmanager.valueparsers.biodifficulty;
 
 import java.util.ArrayList;
-import java.util.Stack;
 
 import com.me3tweaks.modmanager.ModManager;
 
