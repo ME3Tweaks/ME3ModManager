@@ -719,14 +719,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 				String YesNo[] = { "Yes", "No" }; // Yes/no buttons
 				int showDLCBackup = JOptionPane
-						.showOptionDialog(null, "This instance of Mod Manager hasn't backed up your DLC's yet;\nIf you have previously backed up using Mod Manager, you can ignore this message.\n\nBefore you install mods you should back them up in the event that you lose them.\n\nNote: This dialog will only be displayed once.\n\nOpen the backup manager window?", "Backup DLC before mod installation?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
+						.showOptionDialog(null, "This instance of Mod Manager hasn't backed up your DLC's yet.\nIf you have previously backed up using Mod Manager, you can ignore this message.\nYou really should back up your DLC so restoring them is faster than using Origin's repair game service.\n\nNote: This dialog will only be displayed once.\n\nOpen the backup manager window?", "Backup DLC before mod installation?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
 				// System.out.println("User chose: "+showDLCBackup);
 				if (showDLCBackup == 0) {
 					backupDLC(fieldBiogameDir.getText());
 				}
 			}
 			// shown only once. Backup complete, set to settings file
-			ini.put("Settings", "dlc_backup_flag", "1");
+			//ini.put("Settings", "dlc_backup_flag", "1");
 			ini.store();
 		} catch (InvalidFileFormatException e) {
 			e.printStackTrace();

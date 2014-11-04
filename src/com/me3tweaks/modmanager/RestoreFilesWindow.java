@@ -17,6 +17,7 @@ import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
@@ -255,6 +256,13 @@ public class RestoreFilesWindow extends JDialog {
 				backupSfar = testpatchSfarBackup;
 			}
 			
+			if (backupSfar == null){
+				//no backup!
+				publish(jobName + ": No backup exists, cannot restore.");
+				JOptionPane.showMessageDialog(null, "<html>No backup for "+jobName+" exists, you'll have to restore through Origin's Repair Game.<br>Select Tools>Backup DLC to avoid this issue after the game is restored.</html>","Error", JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+			
 			String backupSfarHash = "Error";
 			if (backupSfar.exists()) {
 				// the sfar exists. We should hash it to check if it's original
@@ -279,9 +287,11 @@ public class RestoreFilesWindow extends JDialog {
 					e.printStackTrace();
 					return false;
 				}
+			} else {
+				System.out.println("BACKUP DOES NOT EXIST.");
 			}
 
-			return true;
+			return false;
 		}
 
 		@Override
