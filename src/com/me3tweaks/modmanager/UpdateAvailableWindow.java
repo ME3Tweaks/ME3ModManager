@@ -1,5 +1,6 @@
 package com.me3tweaks.modmanager;
 
+import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -11,7 +12,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
@@ -65,6 +65,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	}
 
 	private void setupWindow() {
+		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
 		introLabel = new JLabel("An update to Mod Manager is available from ME3Tweaks.");
@@ -87,7 +88,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		downloadProgress.setIndeterminate(false);
 		downloadProgress.setEnabled(false);
 		
-		sizeLabel = new JLabel();
+		sizeLabel = new JLabel(" ");
 		
 		updatePanel.add(introLabel);
 		updatePanel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -95,16 +96,21 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		updatePanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
 		updatePanel.add(changelogLabel);
-		updatePanel.add(updateButton);
-		updatePanel.add(notNowButton);
-		updatePanel.add(nextUpdateButton);
-		updatePanel.add(downloadProgress);
-		updatePanel.add(sizeLabel);
+		
+		JPanel actionPanel = new JPanel(new BorderLayout());
+		actionPanel.add(updateButton, BorderLayout.WEST);
+		actionPanel.add(nextUpdateButton, BorderLayout.EAST);
+		actionPanel.add(downloadProgress, BorderLayout.SOUTH);
+		//updatePanel.add(actionPanel);
+		//updatePanel.add(sizeLabel);
 
 		
 		//aboutPanel.add(loggingMode, BorderLayout.SOUTH);
 		updatePanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-		this.getContentPane().add(updatePanel);
+		panel.add(updatePanel, BorderLayout.NORTH);
+		panel.add(actionPanel, BorderLayout.CENTER);
+		panel.add(sizeLabel,BorderLayout.SOUTH);
+		this.getContentPane().add(panel);
 	}
 	
     void setStatusText(String text) {

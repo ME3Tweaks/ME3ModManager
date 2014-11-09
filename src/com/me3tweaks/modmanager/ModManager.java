@@ -3,8 +3,11 @@ package com.me3tweaks.modmanager;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -15,13 +18,14 @@ import org.ini4j.Wini;
 
 public class ModManager {
 	
-	public static final String VERSION = "3.0a";
-	public static long BUILD_NUMBER = 19L;
-	public static final String BUILD_DATE = "10/27/2014";
+	public static final String VERSION = "3.0b";
+	public static long BUILD_NUMBER = 20L;
+	public static final String BUILD_DATE = "11/8/2014";
 	public static DebugLogger debugLogger;
-
+	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
+	public static double MODMAKER_VERSION_SUPPORT = 1.0; //max modmaker version
 	
 	public static void main(String[] args) {		
 		//Set and get debugging mode from wini
@@ -190,4 +194,40 @@ public class ModManager {
 		ModManager.debugLogger.writeMessage("Found ME3Explorer: "+executable.getAbsolutePath());
 		return ModManagerWindow.appendSlash(executable.getParent());//ModManagerWindow.appendSlash("ME3Explorer_0102w_beta");
 	}
+	
+	  /**
+     * Export a resource embedded into a Jar file to the local file path.
+     *
+     * @param resourceName ie.: "/SmartLibrary.dll"
+	 * @param exportPath 
+     * @return The path to the exported resource
+     * @throws Exception
+     */
+    public static String ExportResource(String resourceName, String exportPath) throws Exception {
+        InputStream stream = null;
+        OutputStream resStreamOut = null;
+        String jarFolder;
+        try {
+            stream = ModManager.class.getResourceAsStream(resourceName);//note that each / is a directory down in the "jar tree" been the jar the root of the tree
+            if(stream == null) {
+                throw new Exception("Cannot get resource \"" + resourceName + "\" from Jar file.");
+            }
+
+            int readBytes;
+            byte[] buffer = new byte[4096];
+            jarFolder = new File(ModManager.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath().replace('\\', '/');
+            //resStreamOut = new FileOutputStream(jarFolder + resourceName);
+            resStreamOut = new FileOutputStream(exportPath);
+            while ((readBytes = stream.read(buffer)) > 0) {
+                resStreamOut.write(buffer, 0, readBytes);
+            }
+        } catch (Exception ex) {
+            throw ex;
+        } finally {
+            stream.close();
+            resStreamOut.close();
+        }
+
+        return jarFolder + resourceName;
+    }
 }

@@ -37,6 +37,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -92,14 +93,34 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.setMinimumSize(minSize);
 		this.pack();
 		setLocationRelativeTo(null);
-		this.setVisible(true);
 		if (isUpdate) {
 			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager "+ModManager.VERSION+" (Build "+ModManager.BUILD_NUMBER+").", "Update Complete", JOptionPane.INFORMATION_MESSAGE);
 		}
-		checkForUpdates();
-	}
+		new UpdateCheckThread().execute();
+		this.setVisible(true);
 
-	private void checkForUpdates() {
+		
+	}
+	
+	   class UpdateCheckThread extends SwingWorker<Void, Object> {
+		   
+		   
+	       @Override
+	       public Void doInBackground() {
+	           return checkForUpdates();
+	       }
+
+	       @Override
+	       protected void done() {
+	           try {
+	               //label.setText(get());
+	           } catch (Exception ignore) {
+	           }
+	       }
+	   }
+
+
+	private Void checkForUpdates() {
 		labelStatus.setText("Checking for update...");
 		//Check for update
 		try {
@@ -160,6 +181,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return null;
 	}
 
 	private JFrame setupWindow(JFrame frame) {
@@ -179,7 +201,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JPanel cookedDirPanel = new JPanel(new BorderLayout());
 		TitledBorder cookedDirTitle = BorderFactory
 				.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory");
-		fieldBiogameDir = new JTextField(getLocationText(fieldBiogameDir));
+		fieldBiogameDir = new JTextField();
+		fieldBiogameDir.setText(getLocationText(fieldBiogameDir));
 		buttonBioGameDir = new JButton("Browse...");
 
 		fieldBiogameDir.setColumns(37);
@@ -334,9 +357,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.add(toolsRevertCoal);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsAutoTOC);
-		toolsMenu.add(toolsWavelistParser);
-		toolsMenu.add(toolsDifficultyParser);
-
+		if (ModManager.IS_DEBUG) {
+			toolsMenu.add(toolsWavelistParser);
+			toolsMenu.add(toolsDifficultyParser);
+		}
 		menuBar.add(toolsMenu);
 
 		// Help
@@ -423,7 +447,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (e.getSource() == actionModMaker) {
 				URI theURI;
 				try {
-					theURI = new URI("http://me3tweaks.com/tools/mod_maker.php");
+					theURI = new URI("http://me3tweaks.com/modmaker");
 					java.awt.Desktop.getDesktop().browse(theURI);
 				} catch (URISyntaxException ex) {
 					// TODO Auto-generated catch block
@@ -460,7 +484,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (e.getSource() == helpPost) {
 			URI theURI;
 			try {
-				theURI = new URI("http://goo.gl/aIjOS");
+				theURI = new URI("http://me3tweaks.com/tools/modmanager/faq");
 				java.awt.Desktop.getDesktop().browse(theURI);
 			} catch (URISyntaxException ex) {
 				// TODO Auto-generated catch block
@@ -856,7 +880,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					labelStatus.setText("Coalesced.bin not restored.");
 					labelStatus.setVisible(true);
 					JOptionPane
-							.showMessageDialog(null, "Your backed up original Coalesced.bin file does not match the known original from Mass Effect 3.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com.\nYour current Coalesced has not been changed.", "Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
+							.showMessageDialog(null, "Your backed up original Coalesced.bin file does not match the known original from Mass Effect 3.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.", "Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
 					return false;
 				}
 			} catch (Exception e) {
@@ -870,7 +894,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			labelStatus.setText(" Coalesced.bin not restored");
 			labelStatus.setVisible(true);
 			JOptionPane
-					.showMessageDialog(null, "The backed up Coalesced.bin file (Coalesced.original) does not exist.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.blogspot.com.\nYour current Coalesced has not been changed.\n\nThis error should have been caught but can be thrown due to file system changes \nwhile the program is open.", "Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
+					.showMessageDialog(null, "The backed up Coalesced.bin file (Coalesced.original) does not exist.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.\n\nThis error should have been caught but can be thrown due to file system changes \nwhile the program is open.", "Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
 
 		}
 		return false;

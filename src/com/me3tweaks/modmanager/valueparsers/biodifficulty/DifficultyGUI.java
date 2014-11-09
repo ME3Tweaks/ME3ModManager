@@ -64,6 +64,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		submit = new JButton("Parse");
 		submit.addActionListener(this);
 
+		
 		// sql stuff
 		JPanel SQLPanel = new JPanel(new BorderLayout());
 		difficultylist = new JComboBox<String>(difficulties);

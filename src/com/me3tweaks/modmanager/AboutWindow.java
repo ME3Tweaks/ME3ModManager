@@ -55,7 +55,7 @@ public class AboutWindow extends JDialog {
 								+ "<br>"
 								+ "<br>Mass Effect 3 is a registered trademark of Electronic Arts."
 								+ "<br>"
-								+ "<br>Fem Shep is not liable for any end-user actions done with this software.</html>");
+								+ "<br>FemShep is not liable for any end-user actions done with this software.</html>");
 		aboutPanel.add(infoLabel, BorderLayout.NORTH);
 
 		loggingMode = new JCheckBox("Mod debugging mode");

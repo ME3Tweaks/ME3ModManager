@@ -44,6 +44,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
+import com.me3tweaks.modmanager.valueparsers.possessionwaves.Difficulty;
 import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 
 @SuppressWarnings("serial")
@@ -463,13 +464,16 @@ public class ModMakerCompilerWindow extends JDialog {
 			for (String coal : coalsToCompile) {
 				String compilerPath = path
 						+ "\\Tankmaster Compiler\\MassEffect3.Coalesce.exe";
+				//ProcessBuilder compileProcessBuilder = new ProcessBuilder(
+				//		compilerPath, "--xml2bin", path + "\\coalesceds\\"
+				//				+ FilenameUtils.removeExtension(coal)+".xml");
 				ProcessBuilder compileProcessBuilder = new ProcessBuilder(
-						compilerPath, "--xml2bin", path + "\\coalesceds\\"
-								+ FilenameUtils.removeExtension(coal)+".xml");
+						compilerPath, path + "\\coalesceds\\"
+								+ FilenameUtils.removeExtension(coal)+".xml", "--mode=ToBin", "--keep-whitespace");
 				//log it
 				ModManager.debugLogger.writeMessage("Executing compile command: "+
-						compilerPath+" --xml2bin "+ path + "\\coalesceds\\"
-								+ FilenameUtils.removeExtension(coal)+".xml");
+						compilerPath+" "+ path + "\\coalesceds\\"
+								+ FilenameUtils.removeExtension(coal)+".xml --mode=ToBin --keep-whitespace");
 				compileProcessBuilder.redirectErrorStream(true);
 				compileProcessBuilder
 						.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -492,7 +496,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected void done() {
 			// Coals downloaded
-			stepsCompleted++;
+			stepsCompleted+=2;
 			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
 			ModManager.debugLogger.writeMessage("Coals recompiled");
 			new TOCDownloadWorker(coalsToCompile, progress).execute();
@@ -591,6 +595,8 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (coalNode.getNodeType() == Node.ELEMENT_NODE) {
 					String intCoalName = coalNode.getNodeName(); //get the coal name so we can figure out what folder to look in.
 					ModManager.debugLogger.writeMessage("Read coalecesed ID: "+intCoalName);
+					ModManager.debugLogger.writeMessage("---------------------START OF "+intCoalName+"-------------------------");
+
 					String foldername = FilenameUtils.removeExtension(shortNameToCoalFilename(intCoalName));
 					NodeList filesNodeList = coalNode.getChildNodes();
 					for (int j = 0; j < filesNodeList.getLength(); j++) {
@@ -713,6 +719,9 @@ public class ModMakerCompilerWindow extends JDialog {
 														case "biodifficulty": {
 															//Match on Category (name)
 															Category existing = new Category(itemToModify.getTextContent());
+															if (existing.categoryname.equals("Global")){
+																System.out.println("breakpoint");
+															}
 															Category importing = new Category(newValue);
 															if (existing.matchIdentifiers(importing)) {
 																ModManager.debugLogger.writeMessage("Match found: "+existing.categoryname);
@@ -731,6 +740,16 @@ public class ModMakerCompilerWindow extends JDialog {
 															if (existing.matchIdentifiers(importing)) {
 																match = true;
 																newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
+															}
+														}
+														case "possessionwaves": {
+															//Match on Difficulty/DoLevel
+															//Match on Difficulty
+															Difficulty existing = new Difficulty(itemToModify.getTextContent());
+															Difficulty importing = new Difficulty(newValue);
+															if (existing.matchIdentifiers(importing)) {
+																match = true;
+																newValue = importing.createDifficultyString(); //doens't really matter, but makes me feel good my code works
 															}
 														}
 														break;
@@ -874,7 +893,8 @@ public class ModMakerCompilerWindow extends JDialog {
 		ModManager.debugLogger.writeMessage("Running autotoc on mod.");
 		Mod newMod = new Mod(moddesc.toString());
 		new AutoTocWindow(callingWindow, newMod);
-		
+		stepsCompleted++;
+
 		//Mod Created!
 		dispose();
 		JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);

@@ -59,16 +59,30 @@ public class Category {
 			//merge that one into this one
 			for (Stat localstat : stats) {
 				//find our local stat that matches that one.
+				System.out.println("Comparing stat names: "+localstat.statname+" vs "+stat.statname);
 				if (localstat.statname.equals(stat.statname)) {
+					
 					statToUpdate = localstat;
 					break;
 				}
 				//keep looping.
 			}
 			if (statToUpdate == null) {
-				//error
-				System.out.println("DIDN'T FIND STAT TO MERGE.");
-				return;
+				//Check to make sure it isn't MPGlobal, as we have to add a stat to it.
+				if (stat.statname.equals("ExtractionCredits")) {
+					System.out.println("EXTRACTION CREDITS FOUND.");
+					Stat createdStat = new Stat(stat.createStatString()); //clone
+					stats.add(createdStat);
+					statToUpdate = createdStat;
+				} else {
+					//error
+					ModManager.debugLogger.writeMessage("DIDN'T FIND STAT TO MERGE: "+stat.statname+", listing stats:");
+					ModManager.debugLogger.writeMessage("NEWDATA:");
+					ModManager.debugLogger.writeMessage(mergeFrom.toString());
+					ModManager.debugLogger.writeMessage("EXISTINGDATA:");
+					ModManager.debugLogger.writeMessage(this.toString());
+					return;
+				}
 			}
 			System.out.println("Merging: "+stat.statname);
 			statToUpdate.statrange = stat.statrange;
