@@ -130,7 +130,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 				File LauncherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\LauncherWV.exe");
 				if (Launcher_WV.exists() || LauncherWV.exists()) {
 					//does exist
-					//hasDLCBypass = true;
+					hasDLCBypass = true;
 					ModManager.debugLogger.writeMessage("Launcher WV DLC bypass installed");
 				} else {
 					// it doesn't exist... extract our copy of binkw32.dll
