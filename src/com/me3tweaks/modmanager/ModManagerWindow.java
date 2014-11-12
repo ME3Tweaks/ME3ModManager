@@ -155,6 +155,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 					try {
 						build_check = Integer.parseInt(showIfHigherThan);
 						if (latest_build > build_check) {
+							System.out.println("Update params: "+latest_build+" > "+build_check);
 							// update is newer than one stored in ini, show the
 							// dialog.
 							showUpdate = true;

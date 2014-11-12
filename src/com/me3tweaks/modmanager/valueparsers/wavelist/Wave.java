@@ -84,4 +84,13 @@ public class Wave {
 	public boolean matchIdentifiers(Wave importing) {
 		return difficulty.equals(importing.difficulty);
 	}
+
+	public String getBaseEnemy() {
+		for (Enemy enemy : enemies) {
+			if (enemy.min == 0 && enemy.max == 0 && enemy.maxperwave == 0){
+				return enemy.enemyname;
+			}
+		}
+		return null;
+	}
 }
