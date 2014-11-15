@@ -45,6 +45,7 @@ import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
 import com.me3tweaks.modmanager.valueparsers.possessionwaves.Difficulty;
+import com.me3tweaks.modmanager.valueparsers.sharedassignment.SharedDifficulty;
 import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 
 @SuppressWarnings("serial")
@@ -733,15 +734,23 @@ public class ModMakerCompilerWindow extends JDialog {
 															}
 														}
 														break;
-														case "wave": {
+														case "wavelist": {
 															//Match on Difficulty
 															Wave existing = new Wave(itemToModify.getTextContent());
 															Wave importing = new Wave(newValue);
 															if (existing.matchIdentifiers(importing)) {
 																match = true;
 																newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
+															} else {
+																//CHECK FOR COLLECTOR PLAT WAVE 5.
+																String cplatwave5 = "(Difficulty=DO_Level3,Enemies=( (EnemyType=\"WAVE_COL_Scion\"), (EnemyType=\"WAVE_COL_Praetorian\", MinCount=1, MaxCount=1), (EnemyType=\"WAVE_CER_Phoenix\", MinCount=2, MaxCount=2), (EnemyType=\"WAVE_CER_Phantom\", MinCount=3, MaxCount=3) ))";
+																if (itemToModify.getTextContent().equals(cplatwave5) && path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies") && importing.difficulty.equals("DO_Level4")) {
+																	match = true;
+																	newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
+																}
 															}
 														}
+														break;
 														case "possessionwaves": {
 															//Match on Difficulty/DoLevel
 															//Match on Difficulty
@@ -753,8 +762,27 @@ public class ModMakerCompilerWindow extends JDialog {
 															}
 														}
 														break;
+														case "wavecost": {
+															//Match on SharedDifficulty (DO_Level)
+															SharedDifficulty existing = new SharedDifficulty(itemToModify.getTextContent());
+															SharedDifficulty importing = new SharedDifficulty(newValue);
+															if (existing.matchIdentifiers(importing)) {
+																match = true;
+															}
+														}
+														break;
+														case "wavebudget": {
+															//Match on SharedDifficulty (DO_Level)
+															SharedDifficulty existing = new SharedDifficulty(itemToModify.getTextContent());
+															SharedDifficulty importing = new SharedDifficulty(newValue);
+															if (existing.matchIdentifiers(importing)) {
+																match = true;
+															}
+														}
+														break;
 														default:
-															ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm - does this client need updated?");
+															ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm: "+arrayType+" does this client need updated? Aborting this stat update.");
+															System.err.println("ERROR: Unknown matching algorithm: "+arrayType+" does this client need updated? Aborting this stat update.");
 															break;
 													} //end switch
 													if (match) {
@@ -896,6 +924,8 @@ public class ModMakerCompilerWindow extends JDialog {
 		stepsCompleted++;
 
 		//Mod Created!
+		File file = new File(DOWNLOADED_XML_FILENAME);
+		file.delete();
 		dispose();
 		JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
 		callingWindow.dispose();

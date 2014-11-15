@@ -45,7 +45,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 
 	public ModMakerWindow(JFrame callingWindow, String biogameDir) {
 		this.biogameDir = biogameDir;
-		this.setTitle("ME3Tweaks Mod Maker");
+		this.setTitle("ME3Tweaks ModMaker");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(420, 228));
 		this.setResizable(false);
@@ -53,10 +53,15 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 		this.callingWindow = (ModManagerWindow) callingWindow;
-		validateModMakerPrereqs();
-		setupWindow();
-		this.setVisible(true);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		boolean shouldshow = validateModMakerPrereqs();
+		if (shouldshow) {
+			setupWindow();
+			this.setVisible(true);
+			this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		} else {
+			dispose();
+		}
+
 	}
 
 	private void setupWindow() {
@@ -107,9 +112,10 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 	}
 	
 	/**
-	 * Validates that all required components are available before starting a Mod Maker session.
+	 * Validates that all required components are available before starting a ModMaker session.
+	 * @return 
 	 */
-	private void validateModMakerPrereqs(){
+	private boolean validateModMakerPrereqs(){
 		String wvdlcBink32MD5 = "5a826dd66ad28f0099909d84b3b51ea4"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
 		String wvdlcBink32MD5_2 = "05540bee10d5e3985608c81e8b6c481a"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
 
@@ -144,7 +150,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 					ModManager.debugLogger.writeMessage("Binkw32.dll bypass hash failed, hash is: "+binkhash);
 					ModManager.debugLogger.writeMessage("LauncherWV was not found in Win32 as Launcher_WV or LauncherWV.");
 					ModManager.debugLogger.writeMessage("Advertising the DLC bypass install.");
-					return;
+					return true; //we will install binkw32.
 				}
 			}
 		} catch (Exception e) {
@@ -157,14 +163,28 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		if (!tankMasterCompiler.exists()){
 			dispose();
 			JOptionPane.showMessageDialog(null,
-				    "<html>You need TankMaster's Coalesced Compiler in order to use Mod Maker.<br><br>It should have been bundled with Mod Manager 3 in the TankMaster Compiler folder.</html>",
+				    "<html>You need TankMaster's Coalesced Compiler in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 3 in the TankMaster Compiler folder.</html>",
 				    "Prerequesites Error",
 				    JOptionPane.ERROR_MESSAGE);
+			
 			ModManager.debugLogger.writeMessage("Tankmaster's compiler not detected. Abort. Searched at: "+tankMasterCompiler.toString());
-			return;
+			return false;
 		}
 		ModManager.debugLogger.writeMessage("Detected TankMaster coalesced compiler");
+	
+		String me3explorerdir = ModManager.getME3ExplorerEXEDirectory(false);
+		if (me3explorerdir == null ) {
+			dispose();
+			JOptionPane.showMessageDialog(null,
+				    "<html>You need ME3Explorer in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 3 in the ME3Explorer folder.</html>",
+				    "Prerequesites Error",
+				    JOptionPane.ERROR_MESSAGE);
+			
+			ModManager.debugLogger.writeMessage("ME3Explorer not detected. Abort.");
+			return false;
+		}
 		//All prereqs met.
+		return true;
 	}
 
 	@Override

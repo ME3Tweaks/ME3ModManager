@@ -18,9 +18,9 @@ import org.ini4j.Wini;
 
 public class ModManager {
 	
-	public static final String VERSION = "3.0 Beta 1";
+	public static final String VERSION = "3.0 Beta 2";
 	public static long BUILD_NUMBER = 20L;
-	public static final String BUILD_DATE = "11/9/2014";
+	public static final String BUILD_DATE = "11/14/2014";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
@@ -166,7 +166,7 @@ public class ModManager {
 		return true;
 	}
 	
-	public static String getME3ExplorerEXEDirectory() {
+	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
 		File executable = new File(ModManagerWindow.appendSlash(System.getProperty("user.dir"))+"ME3Explorer.exe");
 		ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: "+executable.getAbsolutePath());
 		
@@ -174,22 +174,19 @@ public class ModManager {
 			//try another file
 			executable = new File("ME3Explorer\\ME3Explorer.exe");
 			ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: "+executable.getAbsolutePath());
-			
 			if (!executable.exists()){
-				executable = new File("ME3Explorer_0102w_beta\\ME3Explorer.exe");
-				ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: "+executable.getAbsolutePath());
-				
-				if (!executable.exists()){
+				ModManager.debugLogger.writeMessage("Could not find ME3Explorer.");
+				if (showDialog) {
 					StringBuilder sb = new StringBuilder();
 					sb.append("Failed to find ME3Explorer.exe in the following directories:\n");
 					sb.append(" - "+System.getProperty("user.dir")+"\n");
 					sb.append(" - "+System.getProperty("user.dir")+"\\ME3Explorer\\"+"\n");
-					sb.append(" - "+System.getProperty("user.dir")+"\\ME3Explorer_0102w_beta\\");
 					JOptionPane.showMessageDialog(null, sb.toString(), "Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
-				
+				return null;
 			}
+			
 		}
 		ModManager.debugLogger.writeMessage("Found ME3Explorer: "+executable.getAbsolutePath());
 		return ModManagerWindow.appendSlash(executable.getParent());//ModManagerWindow.appendSlash("ME3Explorer_0102w_beta");

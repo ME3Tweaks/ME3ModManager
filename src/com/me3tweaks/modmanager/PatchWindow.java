@@ -96,7 +96,7 @@ public class PatchWindow extends JDialog {
 			failedJobs = new ArrayList<String>();
 			ModManager.debugLogger.writeMessage("Starting the InjectionCommander utility. Number of jobs to do: "+numjobs);
 			this.jobs = jobs;
-			ModManager.debugLogger.writeMessage("Using ME3Explorer from: "+ModManager.getME3ExplorerEXEDirectory());
+			ModManager.debugLogger.writeMessage("Using ME3Explorer from: "+ModManager.getME3ExplorerEXEDirectory(false));
 		}
 
 		@Override
@@ -174,7 +174,7 @@ public class PatchWindow extends JDialog {
 			// TODO Auto-generated method stub
 			//System.out.println("Processing DLCJOB");
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory())+"ME3Explorer.exe");
+			commandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
 			commandBuilder.add("-dlcinject");
 			commandBuilder.add("\""+ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+"Default.sfar\""); //TODO this needs to change for Patch001 to work.
 			String[] filesToReplace = job.getFilesToReplace();
@@ -235,10 +235,7 @@ public class PatchWindow extends JDialog {
 			if (numjobs != completed){
 				//failed something
 				StringBuilder sb = new StringBuilder();
-				sb.append("Failed to process mod job in the following folders:\n");
-				for (String jobName : failedJobs){
-					sb.append(" - "+jobName+"\n");
-				}
+				sb.append("Failed to process mod installation.\nSome parts of the install may have succeeded.\nTurn on debugging via Help>About and check the log file.");
 				callingWindow.labelStatus.setText(" Failed to install at least 1 part of mod");
 				JOptionPane.showMessageDialog(null, sb.toString(), "Error",
 						JOptionPane.ERROR_MESSAGE);

@@ -139,10 +139,18 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			File local_json = new File(latest_version);
 			FileUtils.copyURLToFile(new URL(update_check_link), local_json);
 			JSONParser parser = new JSONParser();
+			FileReader fr = new FileReader(latest_version);
 			JSONObject latest_object = (JSONObject) parser
-					.parse(new FileReader(latest_version));
-			local_json.delete();
+					.parse(fr);
+			System.out.println(local_json.exists());
 			long latest_build = (long) latest_object.get("latest_build_number");
+			if (latest_build < ModManager.BUILD_NUMBER) {
+				labelStatus.setVisible(true);
+				labelStatus.setText("No updates available");
+				fr.close();
+				local_json.delete();
+				return null;
+			}
 			boolean showUpdate = true;
 			// make sure the user hasn't declined this one.
 			Wini settingsini;
@@ -182,9 +190,13 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 				labelStatus.setVisible(true);
 				labelStatus.setText("Update available");
 				new UpdateAvailableWindow(latest_object, this);
+				fr.close();
+				local_json.delete();
 			} else {
 				labelStatus.setVisible(true);
 				labelStatus.setText("No updates available");
+				fr.close();
+				local_json.delete();
 			}
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block

@@ -1,13 +1,10 @@
 package com.me3tweaks.modmanager.valueparsers.wavelist;
 
 import java.util.ArrayList;
-import java.util.Stack;
-
-import com.me3tweaks.modmanager.valueparsers.biodifficulty.Stat;
 
 
 public class Wave {
-	String difficulty;
+	public String difficulty;
 	ArrayList<Enemy> enemies;
 	public Wave(String value) {
 		//get name

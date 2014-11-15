@@ -16,12 +16,10 @@ public class Enemy {
 		//check for , to see if there is more.
 		if (workingStr.indexOf(',') != -1) {
 			workingStr = workingStr.substring(charIndex+3);//bypass " , and <space>
-			System.out.println("Searching for qualifiers: "+workingStr);
 			charIndex = workingStr.indexOf('=');
 			while (charIndex != -1){
 				//more , means more values.
 				String wavestat = workingStr.substring(0,charIndex);
-				System.out.println("Wavestatname: "+wavestat);
 				//System.out.println("Before update "+workingStr);
 				workingStr = workingStr.substring(charIndex+1); //got wavestat name
 				//System.out.println("After update "+workingStr);
