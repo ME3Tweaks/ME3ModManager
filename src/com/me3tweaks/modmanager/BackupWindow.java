@@ -172,9 +172,9 @@ public class BackupWindow extends JDialog {
 		backupButton = new JButton("Backup selected DLCs");
 		backupButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				//write to settings
 				new backupDLCJob(BioGameDir, getJobs()).execute();
 			}
-
 		});
 
 		JPanel backupPanel = new JPanel(new BorderLayout());

@@ -42,8 +42,8 @@ public class AboutWindow extends JDialog {
 		JPanel aboutPanel = new JPanel(new BorderLayout());
 		infoLabel = new JLabel(
 				"<html>Mass Effect 3 - Coalesced Mod Manager<br> Version "
-						+ ModManager.VERSION
-						+ "- "+ModManager.BUILD_DATE+"<br>Developed by \"FemShep\""
+						+ ModManager.VERSION + " Build "+ModManager.BUILD_NUMBER
+						+ "- "+ModManager.BUILD_DATE+"<br>Developed by FemShep"
 								+ "<br>"
 								+ "Source code available at http://sourceforge.net/projects/me3cmm/"
 								+ "<br>"

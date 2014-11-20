@@ -364,7 +364,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("::Extract update");
 		sb.append("\r\n");
-		sb.append("7za.exe -y e ME3CMM.7z -o"+updateFolder+"NewVersion");
+		sb.append("7za.exe -y x ME3CMM.7z -o"+updateFolder+"NewVersion");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Update the files");
@@ -383,7 +383,8 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		//sb.append("\r\n");
 		//sb.append("echo Current directory: %CD%");
 		sb.append("\r\n");
-		sb.append("ME3CMM.exe --update-complete");
+		sb.append("ME3CMM.exe --update-from ");
+		sb.append(ModManager.BUILD_NUMBER);
 		sb.append("\r\n");
 		sb.append("rmdir /S /Q NewVersion");
 		sb.append("\r\n");

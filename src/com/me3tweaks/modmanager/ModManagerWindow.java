@@ -135,10 +135,10 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		try {
 			String update_check_link;
 			if (ModManager.IS_DEBUG) { 
-				update_check_link = "https://webdev-c9-mgamerz.c9.io/modmanager/latest_version.json";
+				update_check_link = "https://webdev-c9-mgamerz.c9.io/modmanager/updatecheck?currentversion="+ModManager.BUILD_NUMBER;
 
 			} else {
-				update_check_link = "http://me3tweaks.com/modmanager/latest_version.json";
+				update_check_link = "http://me3tweaks.com/modmanager/updatecheck?currentversion="+ModManager.BUILD_NUMBER;
 			}
 			String latest_version = "latest_version";
 			File local_json = new File(latest_version);

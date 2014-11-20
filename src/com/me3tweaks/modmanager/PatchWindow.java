@@ -180,7 +180,7 @@ public class PatchWindow extends JDialog {
 			if (job.TESTPATCH) {
 				sfarName = "Patch_001.sfar";
 			}
-			commandBuilder.add("\""+ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+sfarName+"\"");
+			commandBuilder.add(ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+sfarName);
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles();
 			ModManager.debugLogger.writeMessage("Number of files to replace: "+filesToReplace.length);

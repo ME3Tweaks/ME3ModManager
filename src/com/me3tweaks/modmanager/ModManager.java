@@ -19,10 +19,10 @@ import org.ini4j.Wini;
 public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
-	public static long BUILD_NUMBER = 22L;
+	public static long BUILD_NUMBER = 21L;
 	public static final String BUILD_DATE = "11/19/2014";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.0; //max modmaker version
@@ -48,7 +48,7 @@ public class ModManager {
 							System.out.println("Logging mode is enabled");
 							debugLogger.initialize();
 							logging = true;
-							debugLogger.writeMessage("Starting logger");
+							debugLogger.writeMessage("Starting logger. Mod Manager version"+ModManager.VERSION+" Build "+ModManager.BUILD_NUMBER);
 						} else {
 							System.out.println("Logging mode disabled");
 						}
@@ -64,11 +64,28 @@ public class ModManager {
 			}
 		}
 		boolean isUpdate = false;
-		if (args.length == 1 && args[0].equals("--update-complete")){
+		if (args.length > 1 && args[0].equals("--update-from")){
 			//This is being run as an update
-			File file = new File("update"); //Delete the update directory
-			file.delete();
-			isUpdate = true;
+			try {
+				long oldbuild = Long.parseLong(args[1]); 
+				if (oldbuild >= ModManager.BUILD_NUMBER) {
+					//SOMETHING WAS WRONG!
+					JOptionPane.showMessageDialog(null,
+							"Update failed! Still using Build "+ModManager.BUILD_NUMBER+".",
+							"Update Failed", JOptionPane.ERROR_MESSAGE);
+					ModManager.debugLogger.writeMessage("UPDATE FAILED!");
+				} else {
+					//update ok
+					ModManager.debugLogger.writeMessage("UPDATE SUCCEEDED!");
+					File file = new File("update"); //Delete the update directory
+					file.delete();
+					isUpdate = true;
+				}
+			
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeMessage("--update-from number format exception.");
+			}
+
 		}
 		new ModManagerWindow(isUpdate);
 	}
