@@ -6,7 +6,6 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,6 +21,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @SuppressWarnings("serial")
 /**
@@ -101,7 +101,7 @@ public class PatchWindow extends JDialog {
 
 		@Override
 		public Boolean doInBackground() {
-			ModManager.debugLogger.writeMessage("Starting the background thread");
+			ModManager.debugLogger.writeMessage("Starting the background thread for PatchWindow");
 			
 			for (ModJob job : jobs) {
 				ModManager.debugLogger.writeMessage("Starting mod job");
@@ -111,7 +111,7 @@ public class PatchWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("Successfully finished mod job");
 					
 				} else {
-					ModManager.debugLogger.writeMessage("Mod job failed, marking as failure");
+					ModManager.debugLogger.writeMessage("Mod job failed: "+job.getDLCFilePath());
 					failedJobs.add(job.getDLCFilePath());
 				}
 				publish(Integer.toString(completed));
@@ -126,7 +126,7 @@ public class PatchWindow extends JDialog {
 			String backupfolderpath = me3dir.toString()+"cmmbackup\\";
 			File cmmbackupfolder = new File(backupfolderpath);
 			cmmbackupfolder.mkdirs();
-			ModManager.debugLogger.writeMessage("Basegame backup directory should have been created.");
+			ModManager.debugLogger.writeMessage("Basegame backup directory should have been created if it does not exist already.");
 			
 			
 			//Prep replacement job
@@ -176,12 +176,16 @@ public class PatchWindow extends JDialog {
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
 			commandBuilder.add("-dlcinject");
-			commandBuilder.add("\""+ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+"Default.sfar\""); //TODO this needs to change for Patch001 to work.
+			String sfarName = "Default.sfar";
+			if (job.TESTPATCH) {
+				sfarName = "Patch_001.sfar";
+			}
+			commandBuilder.add("\""+ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+sfarName+"\"");
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles();
 			ModManager.debugLogger.writeMessage("Number of files to replace: "+filesToReplace.length);
 			
-			publish("Injecting "+filesToReplace.length+" files into "+job.DLCFilePath+"\\Default.sfar");
+			publish("Injecting "+filesToReplace.length+" files into "+job.DLCFilePath+"\\"+sfarName);
 			for (int i = 0; i<filesToReplace.length;i++){
 				commandBuilder.add(filesToReplace[i]);
 				commandBuilder.add(newFiles[i]);
@@ -199,16 +203,19 @@ public class PatchWindow extends JDialog {
 			Process p = null;
 				int returncode = 1;
 				try {
+					ProcessBuilder pb = new ProcessBuilder(command);
 					ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
-					p = Runtime.getRuntime().exec(command);
+					//p = Runtime.getRuntime().exec(command);
+					p = pb.start();
+					ModManager.debugLogger.writeMessage("Executed command, waiting...");
 					returncode = p.waitFor();
 				} catch (IOException | InterruptedException e) {
-					// TODO Auto-generated catch block
+					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 					e.printStackTrace();
 					return false;
 				}
 						
-						
+			ModManager.debugLogger.writeMessage("processDLCJob RETURN VAL: "+(p!=null && returncode == 0));
 			return (p!=null && returncode == 0);
 		}
 
@@ -239,6 +246,7 @@ public class PatchWindow extends JDialog {
 				callingWindow.labelStatus.setText(" Failed to install at least 1 part of mod");
 				JOptionPane.showMessageDialog(null, sb.toString(), "Error",
 						JOptionPane.ERROR_MESSAGE);
+				ModManager.debugLogger.writeMessage(mod.getModName()+" failed to fully install.");
 			} else {
 				//we're good
 				callingWindow.labelStatus.setText(" "+mod.getModName()+" installed");

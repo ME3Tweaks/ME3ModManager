@@ -371,15 +371,31 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("xcopy /Y NewVersion "+System.getProperty("user.dir"));
 		sb.append("\r\n");
+		
+		sb.append("::Delete compressed update");
+		sb.append("\r\n");
+		sb.append("del /Q ME3CMM.7z");
+		sb.append("\r\n");
+		
 		sb.append("::Run Mod Manager");
 		sb.append("\r\n");
 		sb.append("popd");
-		sb.append("\r\n");
-		sb.append("echo Current directory: %CD%");
+		//sb.append("\r\n");
+		//sb.append("echo Current directory: %CD%");
 		sb.append("\r\n");
 		sb.append("ME3CMM.exe --update-complete");
 		sb.append("\r\n");
-		sb.append("pause");
+		sb.append("rmdir /S /Q NewVersion");
+		sb.append("\r\n");
+		sb.append("call :deleteSelf&exit /b");
+		sb.append("\r\n");
+		sb.append(":deleteSelf");
+		sb.append("\r\n");
+		sb.append("start /b \"\" cmd /c del \"%~f0\"&exit /b");
+		
+		
+		
+		//sb.append("pause");
 		//sb.append("exit");
 		try {
 			String updatePath = new File(".\\update\\updater.cmd").getAbsolutePath();

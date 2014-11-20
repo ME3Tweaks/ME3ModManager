@@ -121,6 +121,9 @@ public class Mod {
 				} else {
 					//DLC Job
 					newJob = new ModJob(ModType.getDLCPath(modHeader));
+					if (modHeader.equals(ModType.TESTPATCH)) {
+						newJob.TESTPATCH = true;
+					}
 				}
 				while (newStrok.hasMoreTokens()) {
 					String newFile = newStrok.nextToken();

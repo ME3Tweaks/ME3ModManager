@@ -130,11 +130,16 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 	private Void checkForUpdates() {
 		labelStatus.setText("Checking for update...");
+		ModManager.debugLogger.writeMessage("Checking for update...");
 		// Check for update
 		try {
-			// String update_check_link =
-			// "http://me3tweaks.com/modmanager/latest_version.json";
-			String update_check_link = "https://webdev-c9-mgamerz.c9.io/modmanager/latest_version.json";
+			String update_check_link;
+			if (ModManager.IS_DEBUG) { 
+				update_check_link = "https://webdev-c9-mgamerz.c9.io/modmanager/latest_version.json";
+
+			} else {
+				update_check_link = "http://me3tweaks.com/modmanager/latest_version.json";
+			}
 			String latest_version = "latest_version";
 			File local_json = new File(latest_version);
 			FileUtils.copyURLToFile(new URL(update_check_link), local_json);
@@ -142,15 +147,17 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			FileReader fr = new FileReader(latest_version);
 			JSONObject latest_object = (JSONObject) parser
 					.parse(fr);
-			System.out.println(local_json.exists());
 			long latest_build = (long) latest_object.get("latest_build_number");
-			if (latest_build < ModManager.BUILD_NUMBER) {
+			if (latest_build <= ModManager.BUILD_NUMBER) {
 				labelStatus.setVisible(true);
+				ModManager.debugLogger.writeMessage("No updates, at latest version (or could not contact server.)");
 				labelStatus.setText("No updates available");
 				fr.close();
 				local_json.delete();
 				return null;
 			}
+			ModManager.debugLogger.writeMessage("Update check: Local:"+ModManager.BUILD_NUMBER+" Latest: "+latest_build+", is less? "+ (ModManager.BUILD_NUMBER < latest_build));
+
 			boolean showUpdate = true;
 			// make sure the user hasn't declined this one.
 			Wini settingsini;
@@ -321,6 +328,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		this.setJMenuBar(menuBar);
 		contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
 		this.add(contentPanel);
+		verifyBackupCoalesced();
 		return this;
 	}
 
@@ -359,7 +367,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsRevertSPDLC = new JMenuItem("Restore SP DLCs");
 		toolsRevertMPDLC = new JMenuItem("Restore MP DLCs");
 		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
-		verifyBackupCoalesced();
+		
 		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
 		toolsAutoTOC = new JMenuItem("Update TOC of current selected");
 		toolsWavelistParser = new JMenuItem("Wavelist Parser");
@@ -413,7 +421,29 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	private void verifyBackupCoalesced() {
 		File restoreTest = new File("Coalesced.original");
 		if (!restoreTest.exists()) {
-			toolsRevertCoal.setEnabled(false);
+			ModManager.debugLogger.writeMessage("Didn't find Coalesced.original - checking existing installed one, will copy if verified.");
+			//try to copy the current one
+			String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e";
+			File coalesced = new File(appendSlash(fieldBiogameDir.getText()
+					.toString()) + "CookedPCConsole\\Coalesced.bin");
+			// Take the MD5 first to verify it.
+			try {
+				if (patch3CoalescedHash.equals(MD5Checksum.getMD5Checksum(coalesced.toString()))) {
+					//back it up
+					Files.copy(coalesced.toPath(), restoreTest.toPath());
+					toolsRevertCoal.setEnabled(true);
+					ModManager.debugLogger.writeMessage("Backed up Coalesced.");
+				} else {
+					ModManager.debugLogger.writeMessage("Didn't back up coalecsed, hash mismatch.");
+					toolsRevertCoal.setEnabled(false);
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -643,7 +673,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 	private String getLocationText(JTextField locationSet) {
 		Wini settingsini;
-		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BioGame\\";
+		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
 		String os = System.getProperty("os.name");
 		try {
 			settingsini = new Wini(new File(ModManager.settingsFilename));
@@ -656,10 +686,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 									WinReg.HKEY_LOCAL_MACHINE,
 									"SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{534A31BD-20F4-46b0-85CE-09778379663C}",
 									"InstallLocation");
-					System.out.println(installDir);
+					ModManager.debugLogger.writeMessage("Found mass effect 3 in registry: "+installDir);
+					setDir = installDir+"\\BIOGame";
 				}
-
-				setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BioGame\\";
 			}
 		} catch (InvalidFileFormatException e) {
 			e.printStackTrace();
@@ -689,13 +718,16 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 											+ " was detected via the registry to be the biogame dir.");
 						}
 						ini.store();
-						fieldBiogameDir.setText(bgdir.toString());
+						setDir = bgdir.toString();
+						//fieldBiogameDir.setText(bgdir.toString());
 					} catch (InvalidFileFormatException ex) {
 						e.printStackTrace();
 					} catch (IOException ex) {
 						System.err
-								.println("Could not save automatically detected biogame dir.");
+								.println("Could not automatically save detected biogame dir.");
 					}
+				} else {
+					System.out.println("BGDIR DOESNT EXIST!");
 				}
 				System.out.println(installDir);
 			}
@@ -819,7 +851,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 				int showDLCBackup = JOptionPane
 						.showOptionDialog(
 								null,
-								"This instance of Mod Manager hasn't backed up your DLC's yet.\nIf you have previously backed up using Mod Manager, you can ignore this message.\nYou really should back up your DLC so restoring them is faster than using Origin's repair game service.\n\nNote: This dialog will only be displayed once.\n\nOpen the backup manager window?",
+								"This instance of Mod Manager hasn't backed up your DLC's yet [this dialog is bugged].\nIf you have previously backed up using Mod Manager, you can ignore this message.\nYou really should back up your DLC so restoring them is faster than using Origin's repair game service.\n\n\nOpen the backup manager window?",
 								"Backup DLC before mod installation?",
 								JOptionPane.YES_NO_OPTION,
 								JOptionPane.QUESTION_MESSAGE, null, YesNo,

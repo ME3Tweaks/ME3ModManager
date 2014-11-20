@@ -118,9 +118,13 @@ public class ModMakerCompilerWindow extends JDialog {
 	private void getModInfo() {
 		//String link = "http://www.me3tweaks.com/modmaker/download.php?id="
 		//		+ code;
-		String link = "http://webdev-c9-mgamerz.c9.io/modmaker/download.php?id="
-				+ code;
-		System.out.println("Fetching mod from "+link);
+		String link;
+		if (ModManager.IS_DEBUG) {
+			link = "http://webdev-c9-mgamerz.c9.io/modmaker/download.php?id="+ code;
+		} else {
+			link = "http://me3tweaks.com/modmaker/download.php?id="+ code;
+		}
+		ModManager.debugLogger.writeMessage("Fetching mod from "+link);
 		try {
 			File downloaded = new File(DOWNLOADED_XML_FILENAME);
 			FileUtils.copyURLToFile(new URL(link), downloaded);
@@ -709,18 +713,18 @@ public class ModMakerCompilerWindow extends JDialog {
 												}
 											} else {
 												//Check on ArrayProperty
-												ModManager.debugLogger.writeMessage("Candidates only will be returned if they are of type: "+matchontype);
-												ModManager.debugLogger.writeMessage("Scanning property type: "+itemToModify.getAttribute("type"));
+												//ModManager.debugLogger.writeMessage("Candidates only will be returned if they are of type: "+matchontype);
+												//ModManager.debugLogger.writeMessage("Scanning property type: "+itemToModify.getAttribute("type"));
 												if (itemToModify.getAttribute("type").equals(matchontype)) {
 													//potential array value candidate...
 													boolean match = false;
-													ModManager.debugLogger.writeMessage("Found candidate for arrayreplace: "+itemToModify.getTextContent());
+													ModManager.debugLogger.writeMessage("Found type candidate ("+matchontype+") for arrayreplace: "+itemToModify.getTextContent());
 													switch (arrayType) {
 													//Must use individual matching algorithms so we can figure out if something matches.
 														case "biodifficulty": {
 															//Match on Category (name)
 															Category existing = new Category(itemToModify.getTextContent());
-															if (existing.categoryname.equals("Global")){
+															if (existing.categoryname.equals("Praetorian")){
 																System.out.println("breakpoint");
 															}
 															Category importing = new Category(newValue);
@@ -902,8 +906,6 @@ public class ModMakerCompilerWindow extends JDialog {
 				
 				try {
 					FileUtils.deleteDirectory(compCoalSourceDir);
-					FileUtils.deleteDirectory(compCoalSourceDir);
-
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -995,7 +997,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 	}
 	
-	public static String toString(Document doc) {
+	public static String docToString(Document doc) {
 	    try {
 	        StringWriter sw = new StringWriter();
 	        TransformerFactory tf = TransformerFactory.newInstance();

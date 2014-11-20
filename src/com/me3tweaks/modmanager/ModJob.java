@@ -12,6 +12,7 @@ public class ModJob {
 	//job types
 	protected static final int BASEGAME = 1;
 	protected static final int DLC = 0;
+	protected boolean TESTPATCH = false; //testpatch flag for patch window
 	
 	
 	int modType;

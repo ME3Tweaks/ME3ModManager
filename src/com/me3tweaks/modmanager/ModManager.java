@@ -18,11 +18,11 @@ import org.ini4j.Wini;
 
 public class ModManager {
 	
-	public static final String VERSION = "3.0 Beta 2";
-	public static long BUILD_NUMBER = 20L;
-	public static final String BUILD_DATE = "11/14/2014";
+	public static final String VERSION = "3.0 Public Beta";
+	public static long BUILD_NUMBER = 22L;
+	public static final String BUILD_DATE = "11/19/2014";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.0; //max modmaker version
@@ -30,32 +30,38 @@ public class ModManager {
 	public static void main(String[] args) {		
 		//Set and get debugging mode from wini
 		debugLogger = new DebugLogger();
-		Wini settingsini;
-		try {
-			settingsini = new Wini(new File(ModManager.settingsFilename));
-			String logStr  = settingsini.get("Settings", "logging_mode");
-			int logInt = 0;
-			if (logStr!= null && !logStr.equals("")) {
-				try {
-					logInt = Integer.parseInt(logStr);
-					if (logInt>0){
-						//logging is on
-						System.out.println("Logging mode is enabled");
-						debugLogger.initialize();
-						logging = true;
-						debugLogger.writeMessage("Starting logger");
-					} else {
-						System.out.println("Logging mode disabled");
+		if (ModManager.IS_DEBUG) {
+			debugLogger.initialize();
+			logging = true;
+			debugLogger.writeMessage("Starting logger due to Debug flag");
+		} else {
+			Wini settingsini;
+			try {
+				settingsini = new Wini(new File(ModManager.settingsFilename));
+				String logStr  = settingsini.get("Settings", "logging_mode");
+				int logInt = 0;
+				if (logStr!= null && !logStr.equals("")) {
+					try {
+						logInt = Integer.parseInt(logStr);
+						if (logInt>0){
+							//logging is on
+							System.out.println("Logging mode is enabled");
+							debugLogger.initialize();
+							logging = true;
+							debugLogger.writeMessage("Starting logger");
+						} else {
+							System.out.println("Logging mode disabled");
+						}
+					} catch (NumberFormatException e){
+						System.out.println("Number format exception reading the log mode - log mod disabled");
 					}
-				} catch (NumberFormatException e){
-					System.out.println("Number format exception reading the log mode - log mod disabled");
 				}
+			} catch (InvalidFileFormatException e) {
+				System.out.println("Invalid file format exception. Logging mode disabled");
+				e.printStackTrace();
+			} catch (IOException e) {
+				System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 			}
-		} catch (InvalidFileFormatException e) {
-			System.out.println("Invalid file format exception. Logging mode disabled");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 		}
 		boolean isUpdate = false;
 		if (args.length == 1 && args[0].equals("--update-complete")){
