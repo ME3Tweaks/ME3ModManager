@@ -165,8 +165,6 @@ public class PatchWindow extends JDialog {
 					e.printStackTrace();
 				}
 			}
-			
-			
 			return true;
 		}
 

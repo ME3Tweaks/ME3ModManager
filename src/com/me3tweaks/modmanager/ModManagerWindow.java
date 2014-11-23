@@ -44,6 +44,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
@@ -837,10 +838,12 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		boolean answer = true;
 		try {
 			File settings = new File(ModManager.settingsFilename);
-			if (!settings.exists())
+			if (!settings.exists()) {
+				ModManager.debugLogger.writeMessage("Creating settings file, it did not previously exist.");
 				settings.createNewFile();
+			}
 			ini = new Wini(settings);
-			String backupFlag = ini.get("Settings", "dlc_backup_flag");
+			String backupFlag = ini.get("Settings", "dlc_backed_up");
 			if (backupFlag == null || !backupFlag.equals("1")) {
 				// backup flag not set, lets ask user
 				if (ModManager.logging) {
@@ -863,9 +866,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			}
 			// shown only once. Backup complete, set to settings file
 			// ini.put("Settings", "dlc_backup_flag", "1");
-			ini.store();
+			//ini.store();
 		} catch (InvalidFileFormatException e) {
-			e.printStackTrace();
+			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 		} catch (IOException e) {
 			System.err
 					.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");

@@ -31,6 +31,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -73,12 +74,16 @@ public class BackupWindow extends JDialog {
 		Wini ini;
 		try {
 			File settings = new File(ModManager.settingsFilename);
-			if (!settings.exists())
+			if (!settings.exists()) {
+				ModManager.debugLogger.writeMessage("Created new settings file, didn't previously exist.");
 				settings.createNewFile();
+			}
 			ini = new Wini(settings);
-			ini.put("Settings", "dlc_backup_flag", "1");
+			ini.put("Settings", "dlc_backed_up", "1");
 			ini.store();
+			ModManager.debugLogger.writeMessage("Set the DLC backed up flag to 1.");
 		} catch (InvalidFileFormatException e) {
+			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 			e.printStackTrace();
 		} catch (IOException e) {
 			System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");

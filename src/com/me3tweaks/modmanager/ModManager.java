@@ -19,8 +19,8 @@ import org.ini4j.Wini;
 public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
-	public static long BUILD_NUMBER = 21L;
-	public static final String BUILD_DATE = "11/19/2014";
+	public static long BUILD_NUMBER = 24L;
+	public static final String BUILD_DATE = "11/23/2014";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";

@@ -721,78 +721,103 @@ public class ModMakerCompilerWindow extends JDialog {
 													ModManager.debugLogger.writeMessage("Found type candidate ("+matchontype+") for arrayreplace: "+itemToModify.getTextContent());
 													switch (arrayType) {
 													//Must use individual matching algorithms so we can figure out if something matches.
-														case "biodifficulty": {
-															//Match on Category (name)
-															Category existing = new Category(itemToModify.getTextContent());
-															if (existing.categoryname.equals("Praetorian")){
-																System.out.println("breakpoint");
-															}
-															Category importing = new Category(newValue);
-															if (existing.matchIdentifiers(importing)) {
-																ModManager.debugLogger.writeMessage("Match found: "+existing.categoryname);
-																existing.merge(importing);
-																newValue = existing.createCategoryString();
-																match = true;
-															} else {
-																ModManager.debugLogger.writeMessage("Match failed: "+existing.categoryname);
-															}
+													case "exactvalue": {
+														if (itemToModify.getTextContent().equals(newValue)) {
+															match = true;
 														}
-														break;
-														case "wavelist": {
-															//Match on Difficulty
-															Wave existing = new Wave(itemToModify.getTextContent());
-															Wave importing = new Wave(newValue);
-															if (existing.matchIdentifiers(importing)) {
+													}
+													break;
+													case "biodifficulty": {
+														//Match on Category (name)
+														Category existing = new Category(itemToModify.getTextContent());
+														if (existing.categoryname.equals("Praetorian")){
+															System.out.println("breakpoint");
+														}
+														Category importing = new Category(newValue);
+														if (existing.matchIdentifiers(importing)) {
+															ModManager.debugLogger.writeMessage("Match found: "+existing.categoryname);
+															existing.merge(importing);
+															newValue = existing.createCategoryString();
+															match = true;
+														} else {
+															ModManager.debugLogger.writeMessage("Match failed: "+existing.categoryname);
+														}
+													}
+													break;
+													case "wavelist": {
+														//Match on Difficulty
+														Wave existing = new Wave(itemToModify.getTextContent());
+														Wave importing = new Wave(newValue);
+														if (existing.matchIdentifiers(importing)) {
+															match = true;
+															newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
+														} else {
+															//CHECK FOR COLLECTOR PLAT WAVE 5.
+															String cplatwave5 = "(Difficulty=DO_Level3,Enemies=( (EnemyType=\"WAVE_COL_Scion\"), (EnemyType=\"WAVE_COL_Praetorian\", MinCount=1, MaxCount=1), (EnemyType=\"WAVE_CER_Phoenix\", MinCount=2, MaxCount=2), (EnemyType=\"WAVE_CER_Phantom\", MinCount=3, MaxCount=3) ))";
+															if (itemToModify.getTextContent().equals(cplatwave5) && path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies") && importing.difficulty.equals("DO_Level4")) {
 																match = true;
 																newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
-															} else {
-																//CHECK FOR COLLECTOR PLAT WAVE 5.
-																String cplatwave5 = "(Difficulty=DO_Level3,Enemies=( (EnemyType=\"WAVE_COL_Scion\"), (EnemyType=\"WAVE_COL_Praetorian\", MinCount=1, MaxCount=1), (EnemyType=\"WAVE_CER_Phoenix\", MinCount=2, MaxCount=2), (EnemyType=\"WAVE_CER_Phantom\", MinCount=3, MaxCount=3) ))";
-																if (itemToModify.getTextContent().equals(cplatwave5) && path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies") && importing.difficulty.equals("DO_Level4")) {
-																	match = true;
-																	newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
-																}
 															}
 														}
-														break;
-														case "possessionwaves": {
-															//Match on Difficulty/DoLevel
-															//Match on Difficulty
-															Difficulty existing = new Difficulty(itemToModify.getTextContent());
-															Difficulty importing = new Difficulty(newValue);
-															if (existing.matchIdentifiers(importing)) {
-																match = true;
-																newValue = importing.createDifficultyString(); //doens't really matter, but makes me feel good my code works
-															}
+													}
+													break;
+													case "possessionwaves": {
+														//Match on Difficulty/DoLevel
+														//Match on Difficulty
+														Difficulty existing = new Difficulty(itemToModify.getTextContent());
+														Difficulty importing = new Difficulty(newValue);
+														if (existing.matchIdentifiers(importing)) {
+															match = true;
+															newValue = importing.createDifficultyString(); //doens't really matter, but makes me feel good my code works
 														}
-														break;
-														case "wavecost": {
-															//Match on SharedDifficulty (DO_Level)
-															SharedDifficulty existing = new SharedDifficulty(itemToModify.getTextContent());
-															SharedDifficulty importing = new SharedDifficulty(newValue);
-															if (existing.matchIdentifiers(importing)) {
-																match = true;
-															}
+													}
+													break;
+													case "wavecost": {
+														//Match on SharedDifficulty (DO_Level)
+														SharedDifficulty existing = new SharedDifficulty(itemToModify.getTextContent());
+														SharedDifficulty importing = new SharedDifficulty(newValue);
+														if (existing.matchIdentifiers(importing)) {
+															match = true;
 														}
-														break;
-														case "wavebudget": {
-															//Match on SharedDifficulty (DO_Level)
-															SharedDifficulty existing = new SharedDifficulty(itemToModify.getTextContent());
-															SharedDifficulty importing = new SharedDifficulty(newValue);
-															if (existing.matchIdentifiers(importing)) {
-																match = true;
-															}
+													}
+													break;
+													case "wavebudget": {
+														//Match on SharedDifficulty (DO_Level)
+														SharedDifficulty existing = new SharedDifficulty(itemToModify.getTextContent());
+														SharedDifficulty importing = new SharedDifficulty(newValue);
+														if (existing.matchIdentifiers(importing)) {
+															match = true;
 														}
+													}
+													break;
+													default:
+														ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm: "+arrayType+" does this client need updated? Aborting this stat update.");
+														JOptionPane.showMessageDialog(null,
+															    "<html>Unknown matching algorithm from ME3Tweaks: "+arrayType+".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
+															    "Compiling Error",
+															    JOptionPane.ERROR_MESSAGE);
 														break;
+													} //end matching algorithm switch
+													if (match) {
+														switch (operation) {
+														case "subtraction":
+															Node itemParent = itemToModify.getParentNode();
+															itemParent.removeChild(itemToModify);
+															ModManager.debugLogger.writeMessage("Removed array value: "+newValue);
+															break;
+														case "modify": //same as assignment right now
+														case "assignment":
+															itemToModify.setTextContent(newValue);
+															ModManager.debugLogger.writeMessage("Assigned array value: "+newValue);
+															break;
 														default:
 															ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm: "+arrayType+" does this client need updated? Aborting this stat update.");
-															System.err.println("ERROR: Unknown matching algorithm: "+arrayType+" does this client need updated? Aborting this stat update.");
+															JOptionPane.showMessageDialog(null,
+																    "<html>Unknown operation from ME3Tweaks: "+operation+".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
+																    "Compiling Error",
+																    JOptionPane.ERROR_MESSAGE);
 															break;
-													} //end switch
-													if (match) {
-														itemToModify.setTextContent(newValue);
-														ModManager.debugLogger.writeMessage("Set array property to "+newValue);
-														break;
+														} //end operation switch
 													}
 												}
 											}
