@@ -120,9 +120,9 @@ public class ModMakerCompilerWindow extends JDialog {
 		//		+ code;
 		String link;
 		if (ModManager.IS_DEBUG) {
-			link = "http://webdev-c9-mgamerz.c9.io/modmaker/download.php?id="+ code;
+			link = "https://webdev-c9-mgamerz.c9.io/modmaker/download.php?id="+ code;
 		} else {
-			link = "http://me3tweaks.com/modmaker/download.php?id="+ code;
+			link = "https://me3tweaks.com/modmaker/download.php?id="+ code;
 		}
 		ModManager.debugLogger.writeMessage("Fetching mod from "+link);
 		try {

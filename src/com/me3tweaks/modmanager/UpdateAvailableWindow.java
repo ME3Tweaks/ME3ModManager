@@ -390,7 +390,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("popd");
 		sb.append("\r\n");
-		sb.append("pause");
+		//sb.append("pause");
 		sb.append("\r\n");
 		sb.append("ME3CMM.exe --update-from ");
 		sb.append(ModManager.BUILD_NUMBER);

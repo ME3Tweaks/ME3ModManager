@@ -20,7 +20,7 @@ public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
 	public static long BUILD_NUMBER = 24L;
-	public static final String BUILD_DATE = "11/23/2014";
+	public static final String BUILD_DATE = "11/24/2014";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
