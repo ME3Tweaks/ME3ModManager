@@ -75,7 +75,7 @@ public class BioAIGUI extends JFrame implements ActionListener {
 		
 		// sql stuff
 		JPanel SQLPanel = new JPanel(new BorderLayout());
-		tableNameField = new JTextField("tablesuffix");
+		tableNameField = new JTextField("TABLENAME");
 		generateTable = new JButton("Generate TBL");
 		generateTable.addActionListener(this);
 		generateInsert = new JButton("Generate SQL");
@@ -208,8 +208,12 @@ public class BioAIGUI extends JFrame implements ActionListener {
 			}
 		} else if (e.getSource() == generateInsert) {
 			generateSQL();
-		 }else if (e.getSource() == generateTable) {
+		} else if (e.getSource() == generateTable) {
 			generateTable();
+		} else if (e.getSource() == generateFork){
+			generateForkPHP();
+		} else if (e.getSource() == generateLoad){
+			generateLoad();
 		} else if (e.getSource() == copy) {
 			String myString = output.getText();
 			StringSelection stringSelection = new StringSelection (myString);
@@ -219,39 +223,62 @@ public class BioAIGUI extends JFrame implements ActionListener {
 	}
 	
 	private void generateSQL(){
-		String[] tables = new String[] {
-				"powers_aihacking",
-				"powers_supplyturret",
-				"startupmovies",
-	            "wavebudgets",
-	            "wavelists",
-	            "wavecosts",
-	            "possessionwaves"
-	           };
+		// g
+		String input_text = input.getText();
 		StringBuilder sb = new StringBuilder();
-		String stockstr = "DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'3\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'4\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'5\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'6\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'7\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'10\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'11\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'12\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'13\';\n"+
-				"DELETE FROM `me3tweaks`.`modmaker_PLACEHOLDER` WHERE `mod_id`=\'19\';\n"+
-
-				"ALTER TABLE `me3tweaks`.`modmaker_PLACEHOLDER` \n"+
-				"ADD FOREIGN KEY (`mod_id`)\n"+
-				"  REFERENCES `me3tweaks`.`modmaker_mods` (`mod_id`)\n"+
-				"  ON DELETE CASCADE\n"+
-				"  ON UPDATE NO ACTION;";
-		for (String table : tables) {
-			String appendStr = stockstr.replaceAll("PLACEHOLDER", table);
-			sb.append(appendStr);
-			sb.append("\n\n");
-		}
-		output.setText(sb.toString());
-		
+		sb.append("/*");
+		sb.append(tableNameField.getText());
+		sb.append(" data*/\n");
+		sb.append("INSERT INTO modmaker_aiweapon_");
+		sb.append(tableNameField.getText());
+		sb.append(" VALUES(\n");
+		sb.append("\t1, /*GENESIS MOD ID*/\n");
+		try {
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			
+			NodeList section = doc.getElementsByTagName("Section");
+			Element sectionElement = (Element) section.item(0);
+			NodeList propertyList = sectionElement.getChildNodes();
+			//We are now at at the "sections" array.
+			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+			for (int k = 0; k < propertyList.getLength(); k++){
+				//for every property in this filenode (of the data to merge)...
+				Node scannednode = propertyList.item(k);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element prop = (Element) scannednode;
+					sb.append("\t");
+					try {
+						Range test = new Range(prop.getTextContent());
+						sb.append(test.X);
+						sb.append(", /*");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min - X VAL*/\n");
+						
+						sb.append("\t");
+						sb.append(test.Y);
+						sb.append(", /*");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max - Y VAL*/\n");
+					} catch (StringIndexOutOfBoundsException strException){
+						//its a direct str
+						sb.append(Double.parseDouble(prop.getTextContent()));
+						sb.append(", /*");
+						sb.append(prop.getAttribute("name"));
+						sb.append("*/\n");
+					}
+				}
+			}
+			sb.append("\tfalse, /*modified*/\n");
+			sb.append("\tfalse /*genesis modified*/\n");
+			sb.append(");"); //end of SQL statement
+			output.setText(sb.toString());
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}		
 	}
 
 	private void generateTable() {
@@ -264,7 +291,7 @@ public class BioAIGUI extends JFrame implements ActionListener {
 		sb.append("CREATE TABLE modmaker_aiweapon_");
 		sb.append(tableNameField.getText());
 		sb.append(" (\n");
-		sb.append("\t mod_id INT NOT NULL\n");
+		sb.append("\t mod_id INT NOT NULL,\n");
 		try {
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(input_text));
@@ -307,11 +334,304 @@ public class BioAIGUI extends JFrame implements ActionListener {
 			sb.append("\tmodified_genesis boolean NOT NULL,\n");
 			sb.append("\tFOREIGN KEY (mod_id) REFERENCES modmaker_mods(mod_id) ON DELETE CASCADE,\n"); //end of SQL statement
 			sb.append("\tPRIMARY KEY(mod_id)\n");
-			sb.append(");");
+			sb.append(") ENGINE=INNODB;");
 			output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();
 			output.setText(e.getMessage());
 		}
+	}
+	
+	private void generateLoad(){
+		// get name of enemy
+		// Parse the enemy
+		String input_text = input.getText();
+		String weaponName = tableNameField.getText().toLowerCase();
+		String tableName = "modmaker_aiweapon_"+tableNameField.getText().toLowerCase();
+		
+		StringBuilder sb = new StringBuilder();
+		
+		//public function loadNAME(){
+		sb.append("\tpublic function loadAIWeapon");
+		sb.append(Character.toUpperCase(weaponName.charAt(0)) + weaponName.toLowerCase().substring(1)); //have only first letter capitalized.
+		sb.append("(){\n");
+		//doubletab from here on
+		try {
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			
+			NodeList section = doc.getElementsByTagName("Section");
+			Element sectionElement = (Element) section.item(0);
+			NodeList propertyList = sectionElement.getChildNodes();
+			//We are now at at the "sections" array.
+			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+			for (int k = 0; k < propertyList.getLength(); k++){
+				//for every property in this filenode (of the data to merge)...
+				Node scannednode = propertyList.item(k);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element prop = (Element) scannednode;
+					try {
+						new Range(prop.getTextContent());
+						sb.append("\t\t$this->mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min = null;\n");
+						
+						sb.append("\t\t$this->mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max = null;\n");
+					} catch (StringIndexOutOfBoundsException strException){
+						//its a direct str
+						sb.append("\t\t$this->mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append(" = null;\n");
+					}
+				}
+			}
+			//modified, genesis
+			sb.append("\t\t$this->mod_aiweapon_");
+			sb.append(weaponName);
+			sb.append("_modified = null;\n");
+			sb.append("\t\t$this->mod_aiweapon_");
+			sb.append(weaponName);
+			sb.append("_modified_genesis = null;\n");
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
+		
+		sb.append("\t\trequire($_SERVER['DOCUMENT_ROOT'].\"/db-middleman.php\");\n");
+		
+		//load values from DB
+		sb.append("\t\t//Load values from DB\n");
+		
+		//select * from modmaker_enemies_NAME where mod_id=:mod
+		sb.append("\t\t$sql = \"SELECT * FROM ");
+		sb.append(tableName);
+		sb.append(" WHERE mod_id=:mod_id\";\n");
+		
+		sb.append("\t\t$stmt = $dbh->prepare($sql);\n");
+		sb.append("\t\t$stmt->bindValue(\":mod_id\", $this->mod_id);\n");
+		sb.append("\t\t$stmt->execute();\n");
+		sb.append("\t\t$row = $stmt->fetch();\n");
+		//generate variables, load from row
+		try {
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			
+			NodeList section = doc.getElementsByTagName("Section");
+			Element sectionElement = (Element) section.item(0);
+			NodeList propertyList = sectionElement.getChildNodes();
+			//We are now at at the "sections" array.
+			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+			for (int k = 0; k < propertyList.getLength(); k++){
+				//for every property in this filenode (of the data to merge)...
+				Node scannednode = propertyList.item(k);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element prop = (Element) scannednode;
+					try {
+						new Range(prop.getTextContent());
+						sb.append("\t\t$this->mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min = $row['");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min'];\n");
+						
+						sb.append("\t\t$this->mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max = $row['");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max'];\n");
+					} catch (StringIndexOutOfBoundsException strException){
+						//its a direct str
+						sb.append("\t\t$this->mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append(" = $row['");
+						sb.append(prop.getAttribute("name"));
+						sb.append("'];\n");
+					}
+				}
+			}
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
+		//modified, genesis
+		sb.append("\t\t$this->mod_aiweapon_");
+		sb.append(weaponName);
+		sb.append("_modified = $row['modified'];\n");
+		sb.append("\t\t$this->mod_aiweapon_");
+		sb.append(weaponName);
+		sb.append("_modified_genesis = $row['modified_genesis'];\n");
+        sb.append("\t}\n");
+		
+		output.setText(sb.toString());
+	}
+	
+	/**
+	 * Generates fork code for ModMaker's fork handler
+	 */
+	public void generateForkPHP(){
+		String input_text = input.getText();
+		String weaponName = tableNameField.getText().toLowerCase();
+		String tableName = "modmaker_aiweapon_"+tableNameField.getText().toLowerCase();
+		StringBuilder sb = new StringBuilder();
+		sb.append("//");
+		sb.append(weaponName.toUpperCase());
+		sb.append("\n"); 
+		//echo "<br>Beginning TABLENAME fork.";
+		sb.append("//echo \"<br>Beginning ");
+		sb.append(weaponName);
+		sb.append(" fork.\";\n");
+		
+		//$stmt = $dbh->prepare("SELECT * FROM modmaker_enemies_centurion WHERE mod_id=:fork_parent");
+		sb.append("$stmt = $dbh->prepare(\"SELECT * FROM ");
+		sb.append(tableName);
+		sb.append(" WHERE mod_id=:fork_parent\");\n");
+		//$stmt->bindValue(":fork_parent", $original_id);
+		sb.append("$stmt->bindValue(\":fork_parent\", $original_id);\n");
+		//$stmt->execute();
+		sb.append("$stmt->execute();\n");
+		//$NAMEs = $stmt->fetchAll();
+		sb.append("$");
+		sb.append(weaponName);
+		sb.append("s = $stmt->fetchAll();\n");
+		//foreach ($NAMEs as $NAMErow) {
+		sb.append("foreach($");
+		sb.append(weaponName);
+		sb.append("s as $");
+		sb.append(weaponName);
+		sb.append("row) {\n");
+		sb.append("\t$stmt = $dbh->prepare(\"INSERT INTO ");
+		sb.append(tableName);
+		sb.append(" VALUES(:mod_id, ");
+		try {
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			
+			NodeList section = doc.getElementsByTagName("Section");
+			Element sectionElement = (Element) section.item(0);
+			NodeList propertyList = sectionElement.getChildNodes();
+			//We are now at at the "sections" array.
+			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+			for (int k = 0; k < propertyList.getLength(); k++){
+				//for every property in this filenode (of the data to merge)...
+				Node scannednode = propertyList.item(k);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element prop = (Element) scannednode;
+					try {
+						//sb.append("\t$");
+						new Range(prop.getTextContent());
+						sb.append(":");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min, :");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max");
+					} catch (StringIndexOutOfBoundsException strException){
+						sb.append(":");
+						sb.append(prop.getAttribute("name"));
+					}
+					sb.append(", ");
+				}
+			}
+			//output.setText(sb.toString());
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
+		sb.append("false, :modified_genesis)\");\n");
+		sb.append("\t$stmt->bindValue(\":mod_id\", $mod_id);\n");
+		
+		try {
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			
+			NodeList section = doc.getElementsByTagName("Section");
+			Element sectionElement = (Element) section.item(0);
+			NodeList propertyList = sectionElement.getChildNodes();
+			//We are now at at the "sections" array.
+			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+			for (int k = 0; k < propertyList.getLength(); k++){
+				//for every property in this filenode (of the data to merge)...
+				Node scannednode = propertyList.item(k);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element prop = (Element) scannednode;
+					try {
+						//min
+						new Range(prop.getTextContent());
+						sb.append("\t$stmt->bindValue(\":");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min\", $");
+						sb.append(weaponName);
+						sb.append("row['");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min']);\n");
+						//max
+						sb.append("\t$stmt->bindValue(\":");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max\", $");
+						sb.append(weaponName);
+						sb.append("row['");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max']);\n");
+					} catch (StringIndexOutOfBoundsException strException){
+						sb.append("\t$stmt->bindValue(\":");
+						sb.append(prop.getAttribute("name"));
+						sb.append("\", $");
+						sb.append(weaponName);
+						sb.append("row['");
+						sb.append(prop.getAttribute("name"));
+						sb.append("']);\n");
+					}
+				}
+			}
+			//output.setText(sb.toString());
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
+		//bind modified_genesis
+		sb.append("\t$stmt->bindValue(\":modified_genesis\", $");
+		sb.append(weaponName);
+		sb.append("row['");
+		sb.append("modified_genesis");
+		sb.append("']);\n");
+		
+		//if (!$stmt->execute()) {
+		sb.append("\tif (!$stmt->execute()) {\n");
+		//echo "NAME FORK FAIL."
+		sb.append("\t\t//echo \"");
+		sb.append(weaponName);
+		sb.append(" FORK FAIL: \".print_r($stmt->errorInfo());\n");
+		sb.append("\t\treturn ERROR_SQL_GENERIC;\n");
+		// } else {
+		sb.append("\t} else {\n");
+		//echo "<br>Finished NAME fork
+		sb.append("\t\t//echo \"<br>Finished ");
+		sb.append(weaponName);
+		sb.append(" fork.\";\n");
+		//closing brackets
+		sb.append("\t}\n");
+		sb.append("}");
+		output.setText(sb.toString());
 	}
 }
