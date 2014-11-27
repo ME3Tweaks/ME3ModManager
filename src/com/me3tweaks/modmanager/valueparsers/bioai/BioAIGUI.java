@@ -688,12 +688,12 @@ public class BioAIGUI extends JFrame implements ActionListener {
 			output.setText(e.getMessage());
 		}
 		// modified
-		sb.append("\tpublic $mod_aiweapons");
+		sb.append("\tpublic $mod_aiweapons_");
 		sb.append(weaponName);
 		sb.append("_");
 		sb.append("modified = null;\n");
 		//modified_genesis
-		sb.append("\tpublic $mod_aiweapons");
+		sb.append("\tpublic $mod_aiweapons_");
 		sb.append(weaponName);
 		sb.append("_");
 		sb.append("modified_genesis = null;\n");
