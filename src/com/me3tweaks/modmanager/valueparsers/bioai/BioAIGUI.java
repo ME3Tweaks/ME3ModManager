@@ -214,6 +214,8 @@ public class BioAIGUI extends JFrame implements ActionListener {
 			generateForkPHP();
 		} else if (e.getSource() == generateLoad){
 			generateLoad();
+		} else if (e.getSource() == generateVariables) {
+			generateVariables();
 		} else if (e.getSource() == copy) {
 			String myString = output.getText();
 			StringSelection stringSelection = new StringSelection (myString);
@@ -632,6 +634,70 @@ public class BioAIGUI extends JFrame implements ActionListener {
 		//closing brackets
 		sb.append("\t}\n");
 		sb.append("}");
+		output.setText(sb.toString());
+	}
+	
+	private void generateVariables() {		
+		String input_text = input.getText();
+		String weaponName = tableNameField.getText().toLowerCase();
+		StringBuilder sb = new StringBuilder();
+		sb.append("\t//");
+		sb.append(weaponName);
+		sb.append("\n");
+		try {
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			
+			NodeList section = doc.getElementsByTagName("Section");
+			Element sectionElement = (Element) section.item(0);
+			NodeList propertyList = sectionElement.getChildNodes();
+			//We are now at at the "sections" array.
+			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+			for (int k = 0; k < propertyList.getLength(); k++){
+				//for every property in this filenode (of the data to merge)...
+				Node scannednode = propertyList.item(k);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element prop = (Element) scannednode;
+					try {
+						new Range(prop.getTextContent());
+						sb.append("\tpublic $mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min = null;\n");
+
+						sb.append("\tpublic $mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max = null;\n");
+					} catch (StringIndexOutOfBoundsException strException){
+						//its a direct str
+						sb.append("\tpublic $mod_aiweapon_");
+						sb.append(weaponName);
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append(" = null;\n");
+					}
+				}
+			}
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
+		// modified
+		sb.append("\tpublic $mod_aiweapons");
+		sb.append(weaponName);
+		sb.append("_");
+		sb.append("modified = null;\n");
+		//modified_genesis
+		sb.append("\tpublic $mod_aiweapons");
+		sb.append(weaponName);
+		sb.append("_");
+		sb.append("modified_genesis = null;\n");
+		
 		output.setText(sb.toString());
 	}
 }
