@@ -13,6 +13,7 @@ import java.util.Arrays;
 
 import javax.swing.JOptionPane;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -20,7 +21,7 @@ public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
 	public static long BUILD_NUMBER = 24L;
-	public static final String BUILD_DATE = "11/24/2014";
+	public static final String BUILD_DATE = "12/1/2014";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
@@ -250,4 +251,37 @@ public class ModManager {
 
         return jarFolder + resourceName;
     }
+
+	public static boolean installBypass(String biogamedir) {
+		ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
+		File bgdir = new File(biogamedir);
+		if (!bgdir.exists()) {
+			JOptionPane
+			.showMessageDialog(
+					null,
+					"The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.",
+					"Invalid BioGame Directory",
+					JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+		
+		File gamedir = bgdir.getParentFile();
+		
+		
+		ModManager.debugLogger.writeMessage("Set binary win32 folder to game folder to: "+gamedir.toString());
+		File launcherWV = new File(gamedir.toString()+"\\Binaries\\Win32\\Launcher_WV.exe");
+		//File bink32_orig = new File(gamedir.toString()+"\\Binaries\\Win32\\binkw32_orig.dll");
+
+        //File bink32 = new File("dlcpatcher/binkw32.dll");
+        
+        try {
+			ModManager.ExportResource("/Launcher_WV.exe", launcherWV.toString());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
+			return false;
+		}
+	
+	return true;
+	}
 }

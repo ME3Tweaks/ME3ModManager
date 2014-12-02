@@ -245,7 +245,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		case "Coalesced.bin":
 			return "BASEGAME";
 		default:
-			System.out.println("UNRECOGNIZED COAL FILE: "+coalName);
+			ModManager.debugLogger.writeMessage("UNRECOGNIZED COAL FILE: "+coalName);
 			return null;
 		}
 	}
@@ -460,6 +460,8 @@ public class ModMakerCompilerWindow extends JDialog {
 			this.progress = progress;
 			currentOperationLabel.setText("Recompiling "
 					+ this.coalsToCompile.get(0));
+			progress.setIndeterminate(false);
+			progress.setValue(0);
 		}
 
 		protected Void doInBackground() throws Exception {
@@ -575,6 +577,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			System.out.println("Beginning MERGE operation.");
 			this.progress = progress;
 			currentOperationLabel.setText("Merging Coalesced files...");
+			progress.setIndeterminate(true);
 		}
 
 		protected Void doInBackground() throws Exception {
@@ -839,15 +842,6 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 			
 			return null;
-		}
-
-		@Override
-		protected void process(List<Integer> numCompleted) {
-			/*if (numCoals > numCompleted.get(0)) {
-				currentOperationLabel.setText("Downloading "
-						+ coalsToDownload.get(numCompleted.get(0)));
-			}
-			progress.setValue(100 / (numCoals / numCompleted.get(0)));*/
 		}
 
 		protected void done() {

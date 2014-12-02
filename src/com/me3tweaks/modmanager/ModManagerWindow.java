@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import org.json.simple.parser.ParseException;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.Win32Exception;
 import com.sun.jna.platform.win32.WinReg;
 
 @SuppressWarnings("serial")
@@ -74,7 +76,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame,
 			toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC,
 			toolsRevertCoal, toolsAutoTOC, toolsWavelistParser,
-			toolsDifficultyParser;
+			toolsDifficultyParser, toolsInstallDLCBypass, toolsUninstallDLCBypass;
 	JMenuItem helpPost, helpAbout;
 	JList<String> listMods;
 	JProgressBar progressBar;
@@ -374,6 +376,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsWavelistParser = new JMenuItem("Wavelist Parser");
 		toolsDifficultyParser = new JMenuItem("Biodifficulty Parser");
 
+		toolsInstallDLCBypass = new JMenuItem("Install Binkw32 DLC Bypass");
+		toolsUninstallDLCBypass = new JMenuItem("Uninstall Binkw32 DLC Bypass");
+		
 		toolsModMaker.addActionListener(this);
 		toolsBackupDLC.addActionListener(this);
 		toolsRevertDLCCoalesced.addActionListener(this);
@@ -385,7 +390,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsAutoTOC.addActionListener(this);
 		toolsWavelistParser.addActionListener(this);
 		toolsDifficultyParser.addActionListener(this);
-
+		toolsInstallDLCBypass.addActionListener(this);
+		toolsUninstallDLCBypass.addActionListener(this);
+		
 		toolsMenu.add(toolsModMaker);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsBackupDLC);
@@ -402,6 +409,8 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			toolsMenu.add(toolsWavelistParser);
 			toolsMenu.add(toolsDifficultyParser);
 		}
+		toolsMenu.add(toolsInstallDLCBypass);
+		toolsMenu.add(toolsUninstallDLCBypass);
 		menuBar.add(toolsMenu);
 
 		// Help
@@ -593,6 +602,10 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 		if (e.getSource() == toolsDifficultyParser) {
 			new DifficultyGUI();
+		} else 
+			
+		if (e.getSource() == toolsInstallDLCBypass) {
+			installBypass();
 		}
 	}
 
@@ -694,45 +707,51 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		} catch (InvalidFileFormatException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			System.err
-					.println("I/O Error reading settings file. It may not exist yet.");
-			// Try to make one
-			if (os.contains("Windows")) {
-				String installDir = Advapi32Util
-						.registryGetStringValue(
-								WinReg.HKEY_LOCAL_MACHINE,
-								"SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{534A31BD-20F4-46b0-85CE-09778379663C}",
-								"InstallLocation");
-				File bgdir = new File(installDir + "\\BIOGame");
-				if (bgdir.exists()) {
-					// its correct
-					Wini ini;
-					try {
-						File settings = new File(ModManager.settingsFilename);
-						if (!settings.exists())
-							settings.createNewFile();
-						ini = new Wini(settings);
-						ini.put("Settings", "biogame_dir", bgdir.toString());
-						if (ModManager.logging) {
-							ModManager.debugLogger
-									.writeMessage(bgdir.toString()
-											+ " was detected via the registry to be the biogame dir.");
+			try {
+				System.err
+						.println("I/O Error reading settings file. It may not exist yet.");
+				// Try to make one
+				if (os.contains("Windows")) {
+					String installDir = Advapi32Util
+							.registryGetStringValue(
+									WinReg.HKEY_LOCAL_MACHINE,
+									"SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{534A31BD-20F4-46b0-85CE-09778379663C}",
+									"InstallLocation");
+					File bgdir = new File(installDir + "\\BIOGame");
+					if (bgdir.exists()) {
+						// its correct
+						Wini ini;
+						try {
+							File settings = new File(ModManager.settingsFilename);
+							if (!settings.exists())
+								settings.createNewFile();
+							ini = new Wini(settings);
+							ini.put("Settings", "biogame_dir", bgdir.toString());
+							if (ModManager.logging) {
+								ModManager.debugLogger
+										.writeMessage(bgdir.toString()
+												+ " was detected via the registry to be the biogame dir.");
+							}
+							ini.store();
+							setDir = bgdir.toString();
+							//fieldBiogameDir.setText(bgdir.toString());
+						} catch (InvalidFileFormatException ex) {
+							e.printStackTrace();
+						} catch (IOException ex) {
+							System.err
+									.println("Could not automatically save detected biogame dir.");
 						}
-						ini.store();
-						setDir = bgdir.toString();
-						//fieldBiogameDir.setText(bgdir.toString());
-					} catch (InvalidFileFormatException ex) {
-						e.printStackTrace();
-					} catch (IOException ex) {
-						System.err
-								.println("Could not automatically save detected biogame dir.");
+					} else {
+						System.out.println("BGDIR DOESNT EXIST!");
 					}
-				} else {
-					System.out.println("BGDIR DOESNT EXIST!");
+					System.out.println(installDir);
 				}
-				System.out.println(installDir);
+			} catch (Exception ex) {
+				ModManager.debugLogger.writeMessage("Exception occured!");
 			}
-
+		} catch (Exception e) {
+			ModManager.debugLogger.writeMessage("Exception occured!");
+			return "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame";
 		}
 
 		return setDir;
@@ -776,7 +795,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 						+ "Coalesced.bin");
 
 				if (!source.exists()) {
-					labelStatus.setText(" Mod not installed");
+					labelStatus.setText("Mod not installed");
 					labelStatus.setVisible(true);
 					JOptionPane
 							.showMessageDialog(
@@ -1159,6 +1178,8 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			ModManager.debugLogger.writeMessage("Bink bypass was not found.");
+			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 		}
 		return false;
 	}
@@ -1183,6 +1204,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		System.out.println("SELECTED VALUE: " + selectedValue);
 		Mod mod = listDescriptors.get(selectedValue);
 		new AutoTocWindow(this, mod);
-
+	}
+	
+	private boolean installBypass(){
+		return ModManager.installBypass(fieldBiogameDir.getText());
 	}
 }

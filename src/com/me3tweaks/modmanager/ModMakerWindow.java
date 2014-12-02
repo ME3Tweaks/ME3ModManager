@@ -47,7 +47,7 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		this.biogameDir = biogameDir;
 		this.setTitle("ME3Tweaks ModMaker");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(420, 228));
+		this.setPreferredSize(new Dimension(420, 248));
 		this.setResizable(false);
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.pack();
@@ -102,7 +102,8 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 		modMakerPanel.add(new JLabel("<html>Don't have a code? Create a mod at http://me3tweaks.com/modmaker or pick a mod others have made.</html>"));
 		
 		if (!hasDLCBypass) {
-			modMakerPanel.add(new JLabel("<html>The binkw32.dll DLC bypass will be installed so your mod will work. Tab and ` will open the console in game.</html>"));
+			modMakerPanel.add(new JLabel(" "));
+			modMakerPanel.add(new JLabel("<html>The Launcher_WV.exe DLC bypass will be installed so your mod will work. To use mods you will need to use Start Game from Mod Manager. Tab and ` will open the console in game. Your game will not be modified by this file.</html>"));
 		}
 		codeField.addActionListener(this);
 		downloadButton.addActionListener(this);
@@ -210,37 +211,6 @@ public class ModMakerWindow extends JDialog implements ActionListener{
 	}
 	
 	private boolean installBypass(){
-		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer. Will backup original to binkw32_orig.dll");
-		//extract and install binkw32.dll
-		//from http://stackoverflow.com/questions/7168747/java-creating-self-extracting-jar-that-can-extract-parts-of-itself-out-of-the-a
-        //ClassLoader cl = ModManager.class.getClassLoader();
-        
-		File bgdir = new File(biogameDir);
-		File gamedir = bgdir.getParentFile();
-		ModManager.debugLogger.writeMessage("Set binkw32.dll game folder to: "+gamedir.toString());
-		File bink32 = new File(gamedir.toString()+"\\Binaries\\Win32\\binkw32.dll");
-		File bink32_orig = new File(gamedir.toString()+"\\Binaries\\Win32\\binkw32_orig.dll");
-
-        //File bink32 = new File("dlcpatcher/binkw32.dll");
-        if (bink32.exists()) {
-        	//if we got here binkw32.dll should have failed the hash check
-        	Path source = Paths.get(bink32.toString());
-    		Path destination = Paths.get(bink32_orig.toString());
-    		//create backup of original
-    		try {
-    			Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
-    		} catch (IOException ex) {
-    			ex.printStackTrace();
-    			return false;
-    		}
-        }
-        try {
-			ModManager.ExportResource("/binkw32.dll", bink32.toString());
-		} catch (Exception e1) {
-			e1.printStackTrace();
-			return false;
-		}
-	
-	return true;
+		return ModManager.installBypass(biogameDir);
 	}
 }
