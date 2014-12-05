@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,9 +35,9 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
-import org.json.simple.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -51,7 +52,7 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
-	String code, modName, modDescription;
+	String code, modName, modDescription, modId;
 	ModManagerWindow callingWindow;
 	private static int TOTAL_STEPS = 10;
 	private static String DOWNLOADED_XML_FILENAME = "mod_info";
@@ -59,15 +60,15 @@ public class ModMakerCompilerWindow extends JDialog {
 	ArrayList<String> requiredCoals = new ArrayList<String>();
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
-	JSONObject mod_object, mod_info;
-	Element infoElement, dataElement;
+	//JSONObject mod_object, mod_info;
+	Element infoElement, dataElement, tlkElement;
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;
 
 	public ModMakerCompilerWindow(ModManagerWindow callingWindow, String code) {
 		this.code = code;
 		this.callingWindow = callingWindow;
-		this.setTitle("Mod Maker Compiler");
+		this.setTitle("ModMaker Compiler");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(420, 228));
 		// this.setResizable(false);
@@ -274,7 +275,34 @@ public class ModMakerCompilerWindow extends JDialog {
 		case "Coalesced.bin":
 			return "\\BIOGame\\CookedPCConsole\\Coalesced.bin";
 		default:
-			System.out.println("UNRECOGNIZED COAL FILE: "+coalName);
+			ModManager.debugLogger.writeMessage("UNRECOGNIZED COAL FILE: "+coalName);
+			return null;
+		}
+	}
+	
+	/**
+	 * Converts the server TLKData tag name directory in the cookedpcconsole directory.
+	 * @param coalName name of coal being packed into the mod
+	 * @return path to the file to repalce
+	 */
+	protected String tlkShortNameToFileName(String shortTLK) {
+		switch (shortTLK) {
+		case "INT":
+			return "BIOGame_INT.tlk";
+		case "ESN":
+			return "BIOGame_ESN.tlk";
+		case "DEU":
+			return "BIOGame_DEU.tlk";
+		case "ITA":
+			return "BIOGame_ITA.tlk";
+		case "FRA":
+			return "BIOGame_FRA.tlk";
+		case "RUS":
+			return "BIOGame_RUS.tlk";
+		case "POL":
+			return "BIOGame_POL.tlk";
+		default:
+			ModManager.debugLogger.writeMessage("UNRECOGNIZED TLK FILE: "+shortTLK);
 			return null;
 		}
 	}
@@ -304,7 +332,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			//not used
 			return "\\BIOGame\\PCConsoleTOC.bin";
 		default:
-			System.out.println("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: "+coalName);
+			ModManager.debugLogger.writeMessage("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: "+coalName);
 			return null;
 		}
 	}
@@ -317,6 +345,9 @@ public class ModMakerCompilerWindow extends JDialog {
 		
 		NodeList descElement = infoElement.getElementsByTagName("Description");
 		modDescription = descElement.item(0).getTextContent();
+		
+		NodeList idElement = infoElement.getElementsByTagName("id");
+		modId = idElement.item(0).getTextContent();
 		
 		//Check the name
 		File moddir = new File(modName);
@@ -347,7 +378,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
 				//filters out the #text nodes. Don't know what those really are.
 				String intCoalName = fileNode.getNodeName();
-				System.out.println("File descriptor found in mod: "+intCoalName);	
+				ModManager.debugLogger.writeMessage("File descriptor found in mod: "+intCoalName);	
 				requiredCoals.add(shortNameToCoalFilename(intCoalName));
 			}
 		}
@@ -436,13 +467,14 @@ public class ModMakerCompilerWindow extends JDialog {
 				currentOperationLabel.setText("Decompiling "
 						+ coalsToDecompile.get(numCompleted.get(0)));
 			}
+			System.out.println("100 / ("+numCoals+" / "+numCompleted.get(0)+" = "+(100 / (numCoals / numCompleted.get(0))));
 			progress.setValue(100 / (numCoals / numCompleted.get(0)));
 		}
 
 		protected void done() {
 			// Coals downloaded
 			stepsCompleted++;
-			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
+			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
 			ModManager.debugLogger.writeMessage("Coals decompiled");
 			new MergeWorker(progress).execute();
 		}
@@ -498,15 +530,17 @@ public class ModMakerCompilerWindow extends JDialog {
 				currentOperationLabel.setText("Recompiling "
 						+ coalsToCompile.get(numCompleted.get(0)));
 			}
-			progress.setValue(100 / (numCoals / numCompleted.get(0)));
+			progress.setValue((int) (100 / ((double)numCoals / numCompleted.get(0)) + 0.5)); //crazy rounding trick for integer.
 		}
 
 		protected void done() {
 			// Coals downloaded
 			stepsCompleted+=2;
-			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
+			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
 			ModManager.debugLogger.writeMessage("Coals recompiled");
-			new TOCDownloadWorker(coalsToCompile, progress).execute();
+			new TLKWorker(progress).execute();
+			//new TOCDownloadWorker(coalsToCompile, progress).execute();
+			//new TOCDownloadWorker(coalsToCompile, progress).execute();
 		}
 	}
 
@@ -559,7 +593,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			// Coals downloaded
 			ModManager.debugLogger.writeMessage("Coals downloaded");
 			stepsCompleted++;
-			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
+			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
 			decompileMods();
 		}
 	}
@@ -574,7 +608,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		boolean error = false;
 
 		public MergeWorker(JProgressBar progress) {
-			System.out.println("Beginning MERGE operation.");
+			ModManager.debugLogger.writeMessage("Beginning MERGE operation.");
 			this.progress = progress;
 			currentOperationLabel.setText("Merging Coalesced files...");
 			progress.setIndeterminate(true);
@@ -636,9 +670,11 @@ public class ModMakerCompilerWindow extends JDialog {
 									String arrayType = null;
 									String operation = null;
 									String matchontype = null;
+									String UE3type = null;
 									if (property.getNodeName().equals("Property")) {
 										//Property
 										newPropName = property.getAttribute("name");
+										operation = property.getAttribute("none");
 										isArrayProperty = false;
 									} else {
 										//ArrayProperty
@@ -646,8 +682,8 @@ public class ModMakerCompilerWindow extends JDialog {
 										arrayType = property.getAttribute("arraytype");
 										matchontype = property.getAttribute("matchontype");
 										operation = property.getAttribute("operation");
+										UE3type = property.getAttribute("type");
 										isArrayProperty = true;
-
 									}
 									
 									String newValue = newproperty.getTextContent();
@@ -667,7 +703,7 @@ public class ModMakerCompilerWindow extends JDialog {
 											Node drilledNode = drilledList.item(l); //L, not a 1.
 											if (drilledNode.getNodeType() == Node.ELEMENT_NODE) {
 												drilled = (Element) drilledNode;
-												//System.out.println("Checking attribute: "+drilled.getAttribute("name"));
+												//ModManager.debugLogger.writeMessage("Checking attribute: "+drilled.getAttribute("name"));
 												if (!drilled.getAttribute("name").equals(drillTo)) {
 													continue;
 												} else {
@@ -699,6 +735,18 @@ public class ModMakerCompilerWindow extends JDialog {
 											    JOptionPane.ERROR_MESSAGE);
 										return null;
 									}
+									if (operation.equals("addition")) {
+										//we won't find anything to match, since it obviously can't exist. Add it from here.
+										ModManager.debugLogger.writeMessage("Creating new property with operation ADDITION");
+										Element newElement = drilled.getOwnerDocument().createElement("Value");
+										newElement.setAttribute("type", UE3type);
+										newElement.setTextContent(newValue);
+										drilled.appendChild(newElement);
+										continue; //continue property loop
+									}
+									
+									//we've drilled down as far as we can.
+									
 									//we are where we want to be. Now we can set the property or array value.
 									//drilled is the element (parent of our property) that we want.
 									NodeList props = drilled.getChildNodes(); //get children of the path (<property> list)
@@ -734,7 +782,7 @@ public class ModMakerCompilerWindow extends JDialog {
 														//Match on Category (name)
 														Category existing = new Category(itemToModify.getTextContent());
 														if (existing.categoryname.equals("Praetorian")){
-															System.out.println("breakpoint");
+															ModManager.debugLogger.writeMessage("breakpoint");
 														}
 														Category importing = new Category(newValue);
 														if (existing.matchIdentifiers(importing)) {
@@ -852,11 +900,190 @@ public class ModMakerCompilerWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Finished merging coals.");
 
 			stepsCompleted++;
-			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
+			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
 			new CompilerWorker(requiredCoals, progress).execute();
 		}
 	}
 
+	class TLKWorker extends SwingWorker<Void, Integer> {
+		private JProgressBar progress;
+		boolean error = false;
+
+		public TLKWorker(JProgressBar progress) {
+			ModManager.debugLogger.writeMessage("Beginning TLK Decompile operation.");
+			this.progress = progress;
+			currentOperationLabel.setText("Localizing Mod...");
+			progress.setIndeterminate(true);
+		}
+
+		protected Void doInBackground() throws Exception {
+			NodeList tlkElementNodeList = doc.getElementsByTagName("TLKData");
+			if (tlkElementNodeList.getLength() < 1) {
+				ModManager.debugLogger.writeMessage("No TLK in mod file, or length is 0.");
+				return null; //skip tlk, mod doesn't have it
+			}
+			tlkElement = (Element) tlkElementNodeList.item(0);
+			
+				
+			NodeList tlkNodeList = tlkElement.getChildNodes();
+			//Iterate over the coalesceds.
+			for (int i = 0; i < tlkNodeList.getLength(); i++) {
+				//coalNode is a node containing the coalesced module, such as <MP1> or <BASEGAME>
+				Node tlkNode = tlkNodeList.item(i);
+				if (tlkNode.getNodeType() == Node.ELEMENT_NODE) {
+					String tlkType = tlkNode.getNodeName(); //get the tlk name so we can figure out what tlk to modify
+					ModManager.debugLogger.writeMessage("Read TLK ID: "+tlkType);
+					ModManager.debugLogger.writeMessage("---------------------START OF "+tlkType+"-------------------------");
+					//decompile TLK to tlk folder
+					File tlkdir = new File("tlk");
+					tlkdir.mkdirs(); // created tlk directory
+					
+					//START OF TLK DECOMPILE=========================================================
+					ArrayList<String> commandBuilder = new ArrayList<String>();
+					commandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
+					commandBuilder.add("-tlkeditor");
+					commandBuilder.add("decompile");
+					commandBuilder.add(ModManagerWindow.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
+					commandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
+					
+					//System.out.println("Building command");
+					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+					//Debug stuff
+					StringBuilder sb = new StringBuilder();
+					for (String arg : command){
+						sb.append(arg+" ");
+					}
+					ModManager.debugLogger.writeMessage("Executing TLK Decompile command: "+sb.toString());
+					Process p = null;
+						int returncode = 1;
+						try {
+							ProcessBuilder pb = new ProcessBuilder(command);
+							ModManager.debugLogger.writeMessage("Executing process for TLK Decompile Job.");
+							//p = Runtime.getRuntime().exec(command);
+							p = pb.start();
+							returncode = p.waitFor();
+						} catch (IOException | InterruptedException e) {
+							ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
+							e.printStackTrace();
+						}
+					//END OF DECOMPILE==================================================
+					//load the decompiled XML file into memory
+					ModManager.debugLogger.writeMessage("Loading TLK XML "+tlkType+" into memory.");
+					
+					{ //scope variables.
+					RandomAccessFile raInputFile = new RandomAccessFile("tlk\\BIOGame_"+tlkType+".xml", "rw");
+					raInputFile.seek(20);
+					raInputFile.writeByte(49);
+					String origHeaderRow = raInputFile.readLine();
+					System.out.println("Rest of line: "+origHeaderRow);
+					//System.out.println(origHeaderRow.replace("1.0", "1.1"));
+					//raInputFile.writeUTF(origHeaderRow.replace("1.0", "1.1"));
+					raInputFile.close();
+					}
+					Document tlkXMLFile = dbFactory.newDocumentBuilder().parse("tlk\\BIOGame_"+tlkType+".xml");
+					tlkXMLFile.getDocumentElement().normalize();
+					ModManager.debugLogger.writeMessage("Loaded TLK "+tlkXMLFile.getDocumentURI()+" into memory.");
+					
+					//id only test
+					NodeList stringsInTLK = tlkXMLFile.getElementsByTagName("id");
+					
+					NodeList localizedNodeList = tlkNode.getChildNodes();
+					//Iterate over the tlk entries.
+					for (int j = 0; j < localizedNodeList.getLength(); j++) {
+						//coalNode is a node containing the coalesced module, such as <MP1> or <BASEGAME>
+						Node stringNode = localizedNodeList.item(j);
+						if (stringNode.getNodeType() == Node.ELEMENT_NODE) {
+							Element stringElement = (Element) stringNode;
+							
+							String id = stringElement.getAttribute("id");
+							String content = stringElement.getTextContent();
+							ModManager.debugLogger.writeMessage("Found string "+id+": "+content);
+							
+							//scan XML for it...
+							for (int s = 0; s < stringsInTLK.getLength(); s++){
+								//get node
+								Node tlkStringNode = stringsInTLK.item(s);
+								if (tlkStringNode.getNodeType() == Node.ELEMENT_NODE) {
+									Element idNode = (Element) tlkStringNode;
+									if (idNode.getTextContent().equals(id)) {
+										System.err.println("MATCH. Setting string content to "+content);
+										Element parentElement = (Element) idNode.getParentNode();
+										NodeList dataNodes = parentElement.getElementsByTagName("data");
+										System.out.println("Number of data nodes: "+dataNodes.getLength());
+										Element dataElement = (Element) dataNodes.item(0);
+										dataElement.setTextContent(content);
+									}
+								}
+							}
+						}
+					}
+					//end of the file node.
+					//Time to save the file...
+					Transformer transformer = TransformerFactory.newInstance().newTransformer();
+					File outputFile = new File("tlk\\BIOGame_"+tlkType+".xml");
+					Result output = new StreamResult(outputFile);
+					Source input = new DOMSource(tlkXMLFile);
+					ModManager.debugLogger.writeMessage("Saving file: "+outputFile.toString());
+					transformer.transform(input, output);
+					
+					{ //scope variables.
+					RandomAccessFile raInputFile = new RandomAccessFile("tlk\\BIOGame_"+tlkType+".xml", "rw");
+					raInputFile.seek(17);
+					raInputFile.writeByte(48); //0
+					String origHeaderRow = raInputFile.readLine();
+					System.out.println("Rest of line: "+origHeaderRow);
+					//System.out.println(origHeaderRow.replace("1.0", "1.1"));
+					//raInputFile.writeUTF(origHeaderRow.replace("1.0", "1.1"));
+					raInputFile.close();
+					}
+					
+					//create new TLK file from this.
+					//START OF TLK COMPILE=========================================================
+					ArrayList<String> tlkCompileCommandBuilder = new ArrayList<String>();
+					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
+					tlkCompileCommandBuilder.add("-tlkeditor");
+					tlkCompileCommandBuilder.add("compile");
+					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
+					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
+					
+					//System.out.println("Building command");
+					String[] tlkCompilecommand = tlkCompileCommandBuilder.toArray(new String[commandBuilder.size()]);
+					//Debug stuff
+					StringBuilder tlkCompileCommandsb = new StringBuilder();
+					for (String arg : tlkCompilecommand){
+						tlkCompileCommandsb.append(arg+" ");
+					}
+					ModManager.debugLogger.writeMessage("Executing TLK Compile command: "+tlkCompileCommandsb.toString());
+					p = null;
+						try {
+							ProcessBuilder pb = new ProcessBuilder(tlkCompilecommand);
+							ModManager.debugLogger.writeMessage("Executing process for TLK Compile Job.");
+							//p = Runtime.getRuntime().exec(command);
+							p = pb.start();
+							returncode = p.waitFor();
+						} catch (IOException | InterruptedException e) {
+							ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
+							e.printStackTrace();
+						}
+					//END OF COMPILE==================================================
+				}
+			}
+			return null;
+		}
+
+		protected void done() {
+			// Coals downloaded
+			if (error) {
+				return;
+			}
+			ModManager.debugLogger.writeMessage("Finished decompiling TLK files.");
+
+			stepsCompleted++;
+			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
+			new TOCDownloadWorker(requiredCoals, progress).execute();
+
+		}
+	}
 
 
 	/**
@@ -878,7 +1105,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			ini.put("ModInfo", "modname", modName);
 			ini.put("ModInfo", "moddesc", modDescription+"<br>Created with Mod Maker.");
 			ini.put("ModInfo", "modsite", "http://me3tweaks.com");
-			ini.put("ModInfo", "modid", "8");
+			ini.put("ModInfo", "modid", modId);
 			
 			// Create directories, move files to them
 			for (String reqcoal : requiredCoals) {
@@ -904,6 +1131,22 @@ public class ModMakerCompilerWindow extends JDialog {
 					} else {
 						ModManager.debugLogger.writeMessage("ERROR! Didn't move "+reqcoal+" TOC to the proper mod element directory. Could already exist.");
 					}
+				} else {
+					//it is basegame. copy the tlk files!
+					String[] tlkFiles = {"INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL"};
+					for (String tlkFilename : tlkFiles) {
+						File compiledTLKFile = new File("tlk\\"+"BIOGame_"+tlkFilename+".tlk");
+						if (compiledTLKFile.exists()) {
+							ModManager.debugLogger.writeMessage("TLK file "+compiledTLKFile+" is missing, might not have been compiled by this modmaker version. skipping.");
+							continue;
+						}
+						File destTLKFile= new File(compCoalDir+"\\BIOGame_"+tlkFilename+".tlk");
+						if (compiledTLKFile.renameTo(destTLKFile)){
+							ModManager.debugLogger.writeMessage("Moved "+compiledTLKFile+" TLK to BASEGAME directory");
+						} else {
+							ModManager.debugLogger.writeMessage("ERROR! Didn't move "+compiledTLKFile+" TLK to the BASEGAME directory. Could already exist.");
+						}
+					}
 				}
 
 				File compCoalSourceDir = new File("coalesceds\\"+fileNameWithOutExt);
@@ -914,8 +1157,24 @@ public class ModMakerCompilerWindow extends JDialog {
 				ini.put(coalNameToModDescName(reqcoal), "moddir", coalFilenameToShortName(reqcoal));
 				
 				if (basegame) {
-					ini.put(coalNameToModDescName(reqcoal), "newfiles", reqcoal);
-					ini.put(coalNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal));					
+					StringBuilder newsb = new StringBuilder();
+					StringBuilder replacesb = new StringBuilder();
+					//coalesced
+					newsb.append(reqcoal);
+					replacesb.append(coalFileNameToDLCDir(reqcoal));
+					
+					//tlk, if they exist.
+					String[] tlkFiles = {"INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL"};
+					for (String tlkFilename : tlkFiles) {
+						File basegameTLKFile = new File(compCoalDir+"\\BIOGame_"+tlkFilename+".tlk");
+						if (basegameTLKFile.exists()) {
+							newsb.append(";BIOGame_"+tlkFilename+".tlk");
+							replacesb.append(";\\BIOGame\\CookedPCConsole\\BIOGame_"+tlkFilename+".tlk");
+							continue;
+						}
+					}
+					ini.put(coalNameToModDescName(reqcoal), "newfiles", newsb.toString());
+					ini.put(coalNameToModDescName(reqcoal), "replacefiles", replacesb.toString());					
 				} else {
 					ini.put(coalNameToModDescName(reqcoal), "newfiles", reqcoal+";PCConsoleTOC.bin");
 					ini.put(coalNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal)+";"+coalFileNameToDLCTOCDir(reqcoal));					
@@ -929,9 +1188,14 @@ public class ModMakerCompilerWindow extends JDialog {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				ini.store();
 			}
-			
+			ini.store();
+			try {
+				FileUtils.deleteDirectory(new File("tlk"));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} catch (InvalidFileFormatException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -939,7 +1203,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		//TOC the mod
-		ModManager.debugLogger.writeMessage("Running autotoc on mod.");
+		ModManager.debugLogger.writeMessage("Running autotoc on compiled mod.");
 		Mod newMod = new Mod(moddesc.toString());
 		new AutoTocWindow(callingWindow, newMod);
 		stepsCompleted++;
@@ -1011,7 +1275,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			// Coals downloaded
 			ModManager.debugLogger.writeMessage("TOCs downloaded");
 			stepsCompleted++;
-			overallProgress.setValue(100 / (TOTAL_STEPS / stepsCompleted));
+			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
 			createCMMMod();
 		}
 	}
