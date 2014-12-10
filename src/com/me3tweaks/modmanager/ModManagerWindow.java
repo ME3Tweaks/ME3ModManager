@@ -76,7 +76,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame,
 			toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC,
 			toolsRevertCoal, toolsAutoTOC, toolsWavelistParser,
-			toolsDifficultyParser, toolsInstallDLCBypass, toolsUninstallDLCBypass;
+			toolsDifficultyParser, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem helpPost, helpAbout;
 	JList<String> listMods;
 	JProgressBar progressBar;
@@ -376,8 +376,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsWavelistParser = new JMenuItem("Wavelist Parser");
 		toolsDifficultyParser = new JMenuItem("Biodifficulty Parser");
 
-		toolsInstallDLCBypass = new JMenuItem("Install Binkw32 DLC Bypass");
-		toolsUninstallDLCBypass = new JMenuItem("Uninstall Binkw32 DLC Bypass");
+		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
+		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
+		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		
 		toolsModMaker.addActionListener(this);
 		toolsBackupDLC.addActionListener(this);
@@ -390,8 +391,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsAutoTOC.addActionListener(this);
 		toolsWavelistParser.addActionListener(this);
 		toolsDifficultyParser.addActionListener(this);
-		toolsInstallDLCBypass.addActionListener(this);
-		toolsUninstallDLCBypass.addActionListener(this);
+		toolsInstallLauncherWV.addActionListener(this);
+		toolsInstallBinkw32.addActionListener(this);
+		toolsUninstallBinkw32.addActionListener(this);
 		
 		toolsMenu.add(toolsModMaker);
 		toolsMenu.addSeparator();
@@ -409,8 +411,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			toolsMenu.add(toolsWavelistParser);
 			toolsMenu.add(toolsDifficultyParser);
 		}
-		toolsMenu.add(toolsInstallDLCBypass);
-		toolsMenu.add(toolsUninstallDLCBypass);
+		toolsMenu.add(toolsInstallLauncherWV);
+		toolsMenu.add(toolsInstallBinkw32);
+		toolsMenu.add(toolsUninstallBinkw32);
 		menuBar.add(toolsMenu);
 
 		// Help
@@ -604,8 +607,14 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			new DifficultyGUI();
 		} else 
 			
-		if (e.getSource() == toolsInstallDLCBypass) {
+		if (e.getSource() == toolsInstallLauncherWV) {
 			installBypass();
+		} else 
+		if (e.getSource() == toolsInstallBinkw32) {
+			installBinkw32Bypass();
+		} else
+		if (e.getSource() == toolsUninstallBinkw32) {
+			uninstallBinkw32Bypass();
 		}
 	}
 
@@ -1207,6 +1216,38 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	}
 	
 	private boolean installBypass(){
-		return ModManager.installBypass(fieldBiogameDir.getText());
+		boolean result = ModManager.installLauncherWV(fieldBiogameDir.getText());
+		if (result) {
+			//ok
+			labelStatus.setText("Launcher WV installed. Start Game will now use it.");
+		}else {
+			labelStatus.setText("FAILURE: Launcher WV bypass not installed!");
+		}
+		
+		return result;
+	}
+	
+	private boolean installBinkw32Bypass(){
+		boolean result = ModManager.installBinkw32Bypass(fieldBiogameDir.getText());
+		if (result) {
+			//ok
+			labelStatus.setText("Binkw32 installed. DLC will always authorize.");
+		} else {
+			labelStatus.setText("FAILURE: Binkw32 bypass not installed!");
+		}
+		
+		return result;
+	}
+	
+	private boolean uninstallBinkw32Bypass(){
+		boolean result = ModManager.uninstallBinkw32Bypass(fieldBiogameDir.getText());
+		if (result) {
+			//ok
+			labelStatus.setText("Binkw32 bypass uninstalled.");
+		} else {
+			labelStatus.setText("FAILURE: Binkw32 bypass not uninstalled!");
+		}
+		
+		return result;
 	}
 }

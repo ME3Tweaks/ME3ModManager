@@ -8,6 +8,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -21,12 +25,12 @@ public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
 	public static long BUILD_NUMBER = 24L;
-	public static final String BUILD_DATE = "12/1/2014";
+	public static final String BUILD_DATE = "12/9/2014";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
-	public static double MODMAKER_VERSION_SUPPORT = 1.0; //max modmaker version
+	public static double MODMAKER_VERSION_SUPPORT = 1.1; //max modmaker version
 	
 	public static void main(String[] args) {		
 		//Set and get debugging mode from wini
@@ -252,7 +256,7 @@ public class ModManager {
         return jarFolder + resourceName;
     }
 
-	public static boolean installBypass(String biogamedir) {
+	public static boolean installLauncherWV(String biogamedir) {
 		ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
 		File bgdir = new File(biogamedir);
 		if (!bgdir.exists()) {
@@ -282,6 +286,72 @@ public class ModManager {
 			return false;
 		}
 	
+	return true;
+	}
+	
+	public static boolean installBinkw32Bypass(String biogamedir){
+		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer. Will backup original to binkw32_orig.dll");
+		//extract and install binkw32.dll
+		//from http://stackoverflow.com/questions/7168747/java-creating-self-extracting-jar-that-can-extract-parts-of-itself-out-of-the-a
+        //ClassLoader cl = ModManager.class.getClassLoader();
+        
+		File bgdir = new File(biogamedir);
+		File gamedir = bgdir.getParentFile();
+		ModManager.debugLogger.writeMessage("Set binkw32.dll game folder to: "+gamedir.toString());
+		File bink32 = new File(gamedir.toString()+"\\Binaries\\Win32\\binkw32.dll");
+		File bink32_orig = new File(gamedir.toString()+"\\Binaries\\Win32\\binkw23.dll");
+
+        //File bink32 = new File("dlcpatcher/binkw32.dll");
+        if (bink32.exists()) {
+        	//if we got here binkw32.dll should have failed the hash check
+        	Path source = Paths.get(bink32.toString());
+    		Path destination = Paths.get(bink32_orig.toString());
+    		//create backup of original
+    		try {
+    			Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+    		} catch (IOException ex) {
+    			ex.printStackTrace();
+    			return false;
+    		}
+        }
+        try {
+			ModManager.ExportResource("/binkw32.dll", bink32.toString());
+		} catch (Exception e1) {
+			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
+			e1.printStackTrace();
+			return false;
+		}
+	
+	return true;
+	}
+	
+	public static boolean uninstallBinkw32Bypass(String biogamedir){
+		ModManager.debugLogger.writeMessage("Uninstalling binkw32.dll DLC authorizer. Will restore original from binkw23.dll.");
+		//extract and install binkw32.dll
+		//from http://stackoverflow.com/questions/7168747/java-creating-self-extracting-jar-that-can-extract-parts-of-itself-out-of-the-a
+        //ClassLoader cl = ModManager.class.getClassLoader();
+        
+		File bgdir = new File(biogamedir);
+		File gamedir = bgdir.getParentFile();
+		ModManager.debugLogger.writeMessage("Set binkw32.dll game folder to: "+gamedir.toString());
+		File bink32 = new File(gamedir.toString()+"\\Binaries\\Win32\\binkw32.dll");
+		File bink32_orig = new File(gamedir.toString()+"\\Binaries\\Win32\\binkw23.dll");
+
+        //File bink32 = new File("dlcpatcher/binkw32.dll");
+        if (bink32_orig.exists()) {
+        	//safe binkw32 exists. copy it over the roiginal.
+        	Path source = Paths.get(bink32_orig.toString());
+    		Path destination = Paths.get(bink32.toString());
+    		//create backup of original
+    		try {
+    			Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+    			bink32_orig.delete();
+    		} catch (IOException ex) {
+    			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+    			ex.printStackTrace();
+    			return false;
+    		}
+        }
 	return true;
 	}
 }

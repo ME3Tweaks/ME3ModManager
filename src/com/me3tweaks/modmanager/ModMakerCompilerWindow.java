@@ -4,10 +4,10 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
-	String code, modName, modDescription, modId;
+	String code, modName, modDescription, modId, modDev;
 	ModManagerWindow callingWindow;
 	private static int TOTAL_STEPS = 10;
 	private static String DOWNLOADED_XML_FILENAME = "mod_info";
@@ -349,6 +349,21 @@ public class ModMakerCompilerWindow extends JDialog {
 		NodeList idElement = infoElement.getElementsByTagName("id");
 		modId = idElement.item(0).getTextContent();
 		
+		NodeList modmakerVersionElement = infoElement.getElementsByTagName("ModMakerVersion");
+		String modModMakerVersion = modmakerVersionElement.item(0).getTextContent();
+		if (Double.parseDouble(modModMakerVersion) > ModManager.MODMAKER_VERSION_SUPPORT) {
+			//ERROR! We can't compile this version.
+			ModManager.debugLogger.writeMessage("FATAL ERROR: This version of mod manager does not support this version of modmaker.");
+			ModManager.debugLogger.writeMessage("FATAL ERROR: This version supports up to ModMaker version: "+ModManager.MODMAKER_VERSION_SUPPORT);
+			ModManager.debugLogger.writeMessage("FATAL ERROR: This version was built with ModMaker version: "+modModMakerVersion);
+			JOptionPane.showMessageDialog(null,
+				    "<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>",
+				    "Compiling Error",
+				    JOptionPane.ERROR_MESSAGE);
+			dispose();
+			return;
+		}
+		
 		//Check the name
 		File moddir = new File(modName);
 		if (moddir.isDirectory()) {
@@ -468,11 +483,11 @@ public class ModMakerCompilerWindow extends JDialog {
 						+ coalsToDecompile.get(numCompleted.get(0)));
 			}
 			System.out.println("100 / ("+numCoals+" / "+numCompleted.get(0)+" = "+(100 / (numCoals / numCompleted.get(0))));
-			progress.setValue(100 / (numCoals / numCompleted.get(0)));
+			progress.setValue((int) (100 / (numCoals / (float)numCompleted.get(0))));
 		}
 
 		protected void done() {
-			// Coals downloaded
+			// Coals decompiled
 			stepsCompleted++;
 			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
 			ModManager.debugLogger.writeMessage("Coals decompiled");
@@ -565,6 +580,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			for (String coal : coalsToDownload) {
 				try {
 					String link = "http://www.me3tweaks.com/coal/" + coal;
+					ModManager.debugLogger.writeMessage("Downloading Coalesced: "+link);
 					FileUtils.copyURLToFile(new URL(link), new File(
 							"coalesceds/" + coal));
 					coalsCompeted++;
@@ -586,14 +602,14 @@ public class ModMakerCompilerWindow extends JDialog {
 				currentOperationLabel.setText("Downloading "
 						+ coalsToDownload.get(numCompleted.get(0)));
 			}
-			progress.setValue(100 / (numCoals / numCompleted.get(0)));
+			progress.setValue((int) (100 / (numCoals / (float)numCompleted.get(0))));
 		}
 
 		protected void done() {
 			// Coals downloaded
-			ModManager.debugLogger.writeMessage("Coals downloaded");
+			ModManager.debugLogger.writeMessage("Required coalesceds downloaded");
 			stepsCompleted++;
-			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
+			overallProgress.setValue((int) (100 / (TOTAL_STEPS / (float)stepsCompleted)));
 			decompileMods();
 		}
 	}
@@ -879,6 +895,8 @@ public class ModMakerCompilerWindow extends JDialog {
 							//end of the file node.
 							//Time to save the file...
 							Transformer transformer = TransformerFactory.newInstance().newTransformer();
+							transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+						    transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 							File outputFile = new File("coalesceds\\"+foldername+"\\"+iniFileName);
 							Result output = new StreamResult(outputFile);
 							Source input = new DOMSource(iniFile);
@@ -917,6 +935,10 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		protected Void doInBackground() throws Exception {
+			if (true) {
+				ModManager.debugLogger.writeMessage("Debug skipping TLK");
+				return null; //skip tlk, mod doesn't have it
+			}
 			NodeList tlkElementNodeList = doc.getElementsByTagName("TLKData");
 			if (tlkElementNodeList.getLength() < 1) {
 				ModManager.debugLogger.writeMessage("No TLK in mod file, or length is 0.");
@@ -970,7 +992,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					//load the decompiled XML file into memory
 					ModManager.debugLogger.writeMessage("Loading TLK XML "+tlkType+" into memory.");
 					
-					{ //scope variables.
+					/*{ //scope variables.
 					RandomAccessFile raInputFile = new RandomAccessFile("tlk\\BIOGame_"+tlkType+".xml", "rw");
 					raInputFile.seek(20);
 					raInputFile.writeByte(49);
@@ -979,8 +1001,12 @@ public class ModMakerCompilerWindow extends JDialog {
 					//System.out.println(origHeaderRow.replace("1.0", "1.1"));
 					//raInputFile.writeUTF(origHeaderRow.replace("1.0", "1.1"));
 					raInputFile.close();
-					}
-					Document tlkXMLFile = dbFactory.newDocumentBuilder().parse("tlk\\BIOGame_"+tlkType+".xml");
+					}*/
+					//String xml = ModManager.readFile("tlk\\BIOGame_"+tlkType+".xml", StandardCharsets.UTF_8);
+					//xml = ModManager.stripInvalidXmlCharacters(xml); //get rid of the shit it makes
+					//Document tlkXMLFile = ModManager.loadXMLFromString(xml);
+					//Document tlkXMLFile = dbFactory.newDocumentBuilder().parse("tlk\\BIOGame_"+tlkType+".xml");
+					Document tlkXMLFile = null;
 					tlkXMLFile.getDocumentElement().normalize();
 					ModManager.debugLogger.writeMessage("Loaded TLK "+tlkXMLFile.getDocumentURI()+" into memory.");
 					
@@ -1026,7 +1052,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("Saving file: "+outputFile.toString());
 					transformer.transform(input, output);
 					
-					{ //scope variables.
+					/*{ //scope variables.
 					RandomAccessFile raInputFile = new RandomAccessFile("tlk\\BIOGame_"+tlkType+".xml", "rw");
 					raInputFile.seek(17);
 					raInputFile.writeByte(48); //0
@@ -1035,7 +1061,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					//System.out.println(origHeaderRow.replace("1.0", "1.1"));
 					//raInputFile.writeUTF(origHeaderRow.replace("1.0", "1.1"));
 					raInputFile.close();
-					}
+					} */
 					
 					//create new TLK file from this.
 					//START OF TLK COMPILE=========================================================
@@ -1072,7 +1098,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		protected void done() {
-			// Coals downloaded
+			// tlks decompiled.
 			if (error) {
 				return;
 			}
@@ -1103,8 +1129,9 @@ public class ModMakerCompilerWindow extends JDialog {
 			ini = new Wini(moddesc);
 			ini.put("ModManager", "cmmver", 3.0);
 			ini.put("ModInfo", "modname", modName);
-			ini.put("ModInfo", "moddesc", modDescription+"<br>Created with Mod Maker.");
-			ini.put("ModInfo", "modsite", "http://me3tweaks.com");
+			ini.put("ModInfo", "moddev", modDev);
+			ini.put("ModInfo", "moddesc", modDescription+"<br>Created with ME3Tweaks ModMaker.");
+			ini.put("ModInfo", "modsite", "https://me3tweaks.com/modmaker");
 			ini.put("ModInfo", "modid", modId);
 			
 			// Create directories, move files to them
@@ -1183,7 +1210,9 @@ public class ModMakerCompilerWindow extends JDialog {
 
 				
 				try {
-					FileUtils.deleteDirectory(compCoalSourceDir);
+					if (!ModManager.IS_DEBUG) {
+						FileUtils.deleteDirectory(compCoalSourceDir);
+					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -1268,7 +1297,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				currentOperationLabel.setText("Downloading "
 						+ tocsToDownload.get(numCompleted.get(0)));
 			}
-			progress.setValue(100 / (numtoc / numCompleted.get(0)));
+			progress.setValue((int)(100 / (numtoc / (float)numCompleted.get(0))));
 		}
 
 		protected void done() {

@@ -287,6 +287,11 @@ public class Mod {
 		if (modini.get("ModInfo", "modsite") != null) {
 			modDesc += "\nMod Site: " + modini.get("ModInfo", "modsite");
 		}
+		
+		// Add Modmaker
+		if (modini.get("ModInfo", "modid") != null) {
+			modDesc += "\nModMaker code: " + modini.get("ModInfo", "modid");
+		}
 	}
 
 	public String getModDescription() {
