@@ -3,6 +3,7 @@ package com.me3tweaks.modmanager;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -27,6 +28,9 @@ import javax.swing.border.EmptyBorder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
+import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
+import com.me3tweaks.modmanager.basegamedb.RepairFileInfo;
+
 @SuppressWarnings("serial")
 public class RestoreFilesWindow extends JDialog {
 	JLabel infoLabel;
@@ -45,7 +49,7 @@ public class RestoreFilesWindow extends JDialog {
 		this.BioGameDir = BioGameDir;
 		this.backupMode = backupMode;
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Restoring original DLCs");
+		this.setTitle("Restoring game files");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(330, 240));
 		this.setResizable(false);
@@ -54,7 +58,7 @@ public class RestoreFilesWindow extends JDialog {
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
-		addToQueue("Restoring original DLC files if necessary.");
+		addToQueue("Restoring original game files if necessary.");
 		new RestoreDataJob(backupMode).execute();
 		this.setVisible(true);
 	}
@@ -131,6 +135,7 @@ public class RestoreFilesWindow extends JDialog {
 				if (windowOpen == true) {// if the window is closed this will quickly finish this thread after the current job finishes
 					//publish("------------Now Processing: " + dlcName + "-----------");
 					if (restoreType.equals(ModType.BASEGAME)) {
+						publish(ModType.BASEGAME + ": Loading repair database");
 						processRestoreBasegame();
 					} else {
 						processRestoreJob(ModManagerWindow.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManagerWindow.appendSlash(ModType.getDLCPath(restoreType)), restoreType);
@@ -149,16 +154,84 @@ public class RestoreFilesWindow extends JDialog {
 		 * @return
 		 */
 		private boolean processRestoreBasegame() {
+			//load Basegame DB
+			BasegameHashDB bghDB = new BasegameHashDB(new File(BioGameDir).getParent(), false);
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
 			String backupfolder = ModManagerWindow.appendSlash(me3dir)+"cmmbackup\\";
 			File backupdir = new File(backupfolder);
 			if (backupdir.exists()){
 				Collection<File> backupfiles = FileUtils.listFiles(new File(backupfolder), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 				for (File backup : backupfiles) {
+					//verify it.
+					String relative = ResourceUtils.getRelativePath(backup.getAbsolutePath(), backupfolder, File.separator);
+					RepairFileInfo rfi = bghDB.getFileInfo(relative);
+					boolean restoreAnyways = false;
+					if (rfi == null) {
+						int reply = JOptionPane.showOptionDialog(null, "<html>The file:<br>"+relative+"<br>is not in the repair database. "
+								+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>", "Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION,
+								JOptionPane.WARNING_MESSAGE, null, new String[] {"Restore this file", "Skip restoring this file", "Cancel basegame restore"}, "default");
+						switch (reply) {
+							case JOptionPane.CANCEL_OPTION:
+								return false;
+							case JOptionPane.NO_OPTION:
+								continue;
+							case JOptionPane.YES_OPTION:
+								restoreAnyways = true;
+								break;
+						}
+					}
+					if (!restoreAnyways) {
+						//verify the file
+						if (backup.length() != rfi.filesize) {
+							//MISMATCH!
+							int reply = JOptionPane.showOptionDialog(null, "<html>The filesize of the file:<br>"+relative+"<br>does not match the one stored in the repair game database.<br>"
+									+ backup.length() +" bytes (backup) vs "+rfi.filesize+" bytes (database)<br><br>"
+									+ "This file could be corrupted or modified since the database was created.<br>"
+									+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>", "Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION,
+									JOptionPane.WARNING_MESSAGE, null, new String[] {"Restore this file", "Skip restoring this file", "Cancel basegame restore"}, "default");
+							switch (reply) {
+								case JOptionPane.CANCEL_OPTION:
+									return false;
+								case JOptionPane.NO_OPTION:
+									continue;
+								case JOptionPane.YES_OPTION:
+									restoreAnyways = true;
+									break;
+							}
+						}
+					}
+					
+					if (!restoreAnyways) {
+						//this is outside of the previous if statement as the previous one could set the restoreAnyways variable again.
+						try {
+							if (!MD5Checksum.getMD5Checksum(backup.getAbsolutePath()).equals(rfi.md5)){
+								int reply = JOptionPane.showOptionDialog(null, "<html>The hash of the file:<br>"+relative+"<br>does not match the one stored in the repair game database.<br>"
+										+ "This file has changed modified since the database was created.<br>"
+										+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>", "Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION,
+										JOptionPane.WARNING_MESSAGE, null, new String[] {"Restore this file", "Skip restoring this file", "Cancel basegame restore"}, "default");
+								switch (reply) {
+									case JOptionPane.CANCEL_OPTION:
+										return false;
+									case JOptionPane.NO_OPTION:
+										continue;
+									case JOptionPane.YES_OPTION:
+										restoreAnyways = true;
+										break;
+								}
+							}
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							ModManager.debugLogger.writeException(e);
+						}
+					}
+					
+					
+					
+					
+					
 					//restore it					
-					//http://stackoverflow.com/questions/204784/how-to-construct-a-relative-path-in-java-from-two-absolute-paths-or-urls
-					String relative = new File(backupfolder).toURI().relativize(backup.toURI()).getPath();
-					System.out.println("Relative path for restoration is "+relative);
+					//String relative = new File(backupfolder).toURI().relativize(backup.toURI()).getPath();
+					ModManager.debugLogger.writeMessage("Restoring "+relative);
 					try {
 						publish(ModType.BASEGAME + ": Restoring "+backup.getName());
 						Files.copy(Paths.get(backup.toString()), Paths.get(ModManagerWindow.appendSlash(me3dir)+relative), StandardCopyOption.REPLACE_EXISTING);
@@ -322,7 +395,7 @@ public class RestoreFilesWindow extends JDialog {
 		ModManager.debugLogger.writeMessage("Finished restoring data.");
 		callingWindow.labelStatus.setText("Game files restored");
 		callingWindow.labelStatus.setVisible(true);
-		dispose();
+		//dispose();
 	}
 
 	/**

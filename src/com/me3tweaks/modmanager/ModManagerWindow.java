@@ -52,6 +52,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
+import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
@@ -69,14 +71,14 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			buttonStartGameDLC;
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
-	JMenu actionMenu, toolsMenu, helpMenu;
+	JMenu actionMenu, toolsMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionGetME3Exp, actionReload,
 			actionExit;
-	JMenuItem toolsBackupDLC;
+	JMenuItem toolsBackupDLC, toolsBackupBasegame;
 	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame,
 			toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC,
-			toolsRevertCoal, toolsAutoTOC, toolsWavelistParser,
-			toolsDifficultyParser, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+			toolsRevertCoal, toolsAutoTOC, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+	JMenuItem sqlWavelistParser,sqlDifficultyParser, sqlAIWeaponParser;
 	JMenuItem helpPost, helpAbout;
 	JList<String> listMods;
 	JProgressBar progressBar;
@@ -341,13 +343,11 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		actionMenu = new JMenu("Actions");
 		actionModMaker = new JMenuItem("Create a mod");
 		actionVisitMe = new JMenuItem("Open ME3Tweaks.com");
-		actionGetME3Exp = new JMenuItem("Get ME3 Explorer");
 		actionReload = new JMenuItem("Reload Mods");
 		actionExit = new JMenuItem("Exit");
 
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
-		actionMenu.add(actionGetME3Exp);
 		actionMenu.addSeparator();
 		actionMenu.add(actionReload);
 		actionMenu.add(actionExit);
@@ -355,7 +355,6 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
 		actionReload.addActionListener(this);
-		actionGetME3Exp.addActionListener(this);
 		actionExit.addActionListener(this);
 		menuBar.add(actionMenu);
 
@@ -364,6 +363,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 		toolsModMaker = new JMenuItem("Enter modmaker code");
 		toolsBackupDLC = new JMenuItem("Backup DLCs");
+		toolsBackupBasegame = new JMenuItem("Update basegame file database");
 		toolsRevertDLCCoalesced = new JMenuItem("Revert DLC & Coalesced");
 		toolsRevertBasegame = new JMenuItem("Restore basegame files");
 		toolsRevertAllDLC = new JMenuItem("Restore all DLCs");
@@ -373,8 +373,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		
 		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
 		toolsAutoTOC = new JMenuItem("Update TOC of current selected");
-		toolsWavelistParser = new JMenuItem("Wavelist Parser");
-		toolsDifficultyParser = new JMenuItem("Biodifficulty Parser");
+		
 
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
@@ -382,6 +381,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		
 		toolsModMaker.addActionListener(this);
 		toolsBackupDLC.addActionListener(this);
+		toolsBackupBasegame.addActionListener(this);
 		toolsRevertDLCCoalesced.addActionListener(this);
 		toolsRevertBasegame.addActionListener(this);
 		toolsRevertAllDLC.addActionListener(this);
@@ -389,15 +389,17 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsRevertMPDLC.addActionListener(this);
 		toolsRevertCoal.addActionListener(this);
 		toolsAutoTOC.addActionListener(this);
-		toolsWavelistParser.addActionListener(this);
-		toolsDifficultyParser.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
 		
+		
+		
+		
 		toolsMenu.add(toolsModMaker);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsBackupDLC);
+		toolsMenu.add(toolsBackupBasegame);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsRevertDLCCoalesced);
 		toolsMenu.add(toolsRevertBasegame);
@@ -407,15 +409,28 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsMenu.add(toolsRevertCoal);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsAutoTOC);
-		if (ModManager.IS_DEBUG) {
-			toolsMenu.add(toolsWavelistParser);
-			toolsMenu.add(toolsDifficultyParser);
-		}
+		
 		toolsMenu.add(toolsInstallLauncherWV);
 		toolsMenu.add(toolsInstallBinkw32);
 		toolsMenu.add(toolsUninstallBinkw32);
 		menuBar.add(toolsMenu);
 
+		sqlMenu = new JMenu("SQL");
+		sqlWavelistParser = new JMenuItem("Wavelist Parser");
+		sqlDifficultyParser = new JMenuItem("Biodifficulty Parser");
+		sqlAIWeaponParser = new JMenuItem("BioAI Parser");
+		
+		sqlWavelistParser.addActionListener(this);
+		sqlDifficultyParser.addActionListener(this);
+		sqlAIWeaponParser.addActionListener(this);
+		
+		sqlMenu.add(sqlWavelistParser);
+		sqlMenu.add(sqlDifficultyParser);
+		sqlMenu.add(sqlAIWeaponParser);
+		if (ModManager.IS_DEBUG) {
+			menuBar.add(sqlMenu);
+		}
+		
 		// Help
 		helpMenu = new JMenu("Help");
 		helpPost = new JMenuItem("View Instructions");
@@ -498,6 +513,10 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 		if (e.getSource() == toolsBackupDLC) {
 			backupDLC(fieldBiogameDir.getText());
+		} else
+			
+		if (e.getSource() == toolsBackupBasegame) {
+			createBasegameDB(fieldBiogameDir.getText());
 		} else
 
 		if (e.getSource() == toolsRevertCoal) {
@@ -599,12 +618,16 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			autoTOC();
 		} else
 
-		if (e.getSource() == toolsWavelistParser) {
+		if (e.getSource() == sqlWavelistParser) {
 			new WavelistGUI();
 		} else
 
-		if (e.getSource() == toolsDifficultyParser) {
+		if (e.getSource() == sqlDifficultyParser) {
 			new DifficultyGUI();
+		} else 
+			
+		if (e.getSource() == sqlAIWeaponParser) {
+			new BioAIGUI();
 		} else 
 			
 		if (e.getSource() == toolsInstallLauncherWV) {
@@ -616,6 +639,11 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		if (e.getSource() == toolsUninstallBinkw32) {
 			uninstallBinkw32Bypass();
 		}
+	}
+
+	private void createBasegameDB(String biogameDir) {
+		File file = new File(biogameDir);
+		new BasegameHashDB(file.getParent(), true);
 	}
 
 	private void backupDLC(String bioGameDir) {

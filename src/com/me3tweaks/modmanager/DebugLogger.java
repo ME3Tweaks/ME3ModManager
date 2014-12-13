@@ -3,6 +3,9 @@ package com.me3tweaks.modmanager;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLException;
+
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /** Used in Mod Manager 2.0 and above as a way to write console messages to a file when the jar file is wrapped in the exe.
  * @author FemShep
@@ -19,7 +22,7 @@ public class DebugLogger {
 	/**
 	 * Called if you want to use the debug logger.
 	 */
-	protected void initialize(){
+	public void initialize(){
 		logFile = new File("me3cmm_last_run_log.txt");
 		try {
 			if (logFile.exists()){
@@ -59,6 +62,20 @@ public class DebugLogger {
 				// TODO Auto-generated catch block
 				System.out.println("cannot write to log file! IOException");
 				e.printStackTrace();
+			}
+		}
+	}
+
+	public void writeException(Exception e) {
+		if (ModManager.logging){
+			try {
+				System.err.println("[L-E]: "+ ExceptionUtils.getStackTrace(e));
+				fw.write(ExceptionUtils.getStackTrace(e));
+				fw.write(System.getProperty("line.separator"));
+			} catch (IOException ex) {
+				// TODO Auto-generated catch block
+				System.out.println("cannot write to log file! IOException");
+				ex.printStackTrace();
 			}
 		}
 	}
