@@ -1,13 +1,11 @@
 package com.me3tweaks.modmanager.valueparsers.bioai;
 
-import java.util.ArrayList;
-import java.util.Stack;
-
-import com.me3tweaks.modmanager.valueparsers.biodifficulty.Stat;
-
-
 public class Range {
 	double X, Y;
+	/**
+	 * BioAI range value, in the form of (X=1.8f,Y=2.0f).
+	 * @param value String to parse
+	 */
 	public Range(String value) {
 		//get name
 		String workingStr;

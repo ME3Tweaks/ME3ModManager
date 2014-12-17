@@ -30,7 +30,7 @@ import org.xml.sax.InputSource;
 
 public class BioAIGUI extends JFrame implements ActionListener {
 	JTextArea input, output;
-	JButton parse, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generateUpdate, copy;
+	JButton parse, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generatePublish, copy;
 	JTextField tableNameField;
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
@@ -88,8 +88,8 @@ public class BioAIGUI extends JFrame implements ActionListener {
 		JPanel PHPPanel = new JPanel(new BorderLayout());
 		generateFork = new JButton("Generate Fork");
 		generateFork.addActionListener(this);
-		generateUpdate = new JButton("Generate Update");
-		generateUpdate.addActionListener(this);
+		generatePublish = new JButton("Generate Publish");
+		generatePublish.addActionListener(this);
 		generateLoad = new JButton("Generate Load");
 		generateLoad.addActionListener(this);
 		
@@ -97,7 +97,7 @@ public class BioAIGUI extends JFrame implements ActionListener {
 		//generateInsert.addActionListener(this);
 		PHPPanel.add(generateFork, BorderLayout.NORTH);
 		PHPPanel.add(generateLoad, BorderLayout.CENTER);
-		PHPPanel.add(generateUpdate, BorderLayout.SOUTH);
+		PHPPanel.add(generatePublish, BorderLayout.SOUTH);
 		
 		//PHP Panel 2 (rightside)
 		JPanel PHPPanel2 = new JPanel(new BorderLayout());
@@ -212,6 +212,8 @@ public class BioAIGUI extends JFrame implements ActionListener {
 			generateTable();
 		} else if (e.getSource() == generateFork){
 			generateForkPHP();
+		} else if (e.getSource() == generatePublish) {
+			generatePublish();
 		} else if (e.getSource() == generateLoad){
 			generateLoad();
 		} else if (e.getSource() == generateVariables) {
@@ -266,10 +268,27 @@ public class BioAIGUI extends JFrame implements ActionListener {
 						sb.append("_max - Y VAL*/\n");
 					} catch (StringIndexOutOfBoundsException strException){
 						//its a direct str
-						sb.append(Double.parseDouble(prop.getTextContent()));
-						sb.append(", /*");
-						sb.append(prop.getAttribute("name"));
-						sb.append("*/\n");
+						try {
+							sb.append(Double.parseDouble(prop.getTextContent()));
+							sb.append(", /*");
+							sb.append(prop.getAttribute("name"));
+							sb.append("*/\n");
+						} catch (NumberFormatException nfe) {
+							if (prop.getTextContent().toLowerCase().equals("true") || prop.getTextContent().toLowerCase().equals("false")) {
+								//ITS A BOOLEAN
+								if (prop.getTextContent().toLowerCase().equals("true")) {
+									sb.append(1);
+								} else {
+									sb.append(0);
+								}
+							} else {
+								//just post it.
+								sb.append(prop.getTextContent());
+							}
+							sb.append(", /*");
+							sb.append(prop.getAttribute("name"));
+							sb.append("*/\n");
+						}
 					}
 				}
 			}
@@ -323,12 +342,28 @@ public class BioAIGUI extends JFrame implements ActionListener {
 						sb.append(prop.getAttribute("name"));
 						sb.append(" Y VAL*/\n");
 					} catch (StringIndexOutOfBoundsException strException){
-						//its a direct str
-						sb.append("\t");
-						sb.append(prop.getAttribute("name"));
-						sb.append(" FLOAT NOT NULL, /*");
-						sb.append(prop.getAttribute("name"));
-						sb.append("*/\n");
+						//its a float... maybe.
+						try {
+							sb.append("\t");
+							sb.append(prop.getAttribute("name"));
+							sb.append(" FLOAT NOT NULL, /*");
+							sb.append(prop.getAttribute("name"));
+							sb.append("*/\n");
+						} catch (NumberFormatException nfe) {
+							if (prop.getTextContent().toLowerCase().equals("true") || prop.getTextContent().toLowerCase().equals("false")) {
+								//ITS A BOOLEAN
+								sb.append(" BOOLEAN");
+							} else {
+								//just post it as VARCHAR.
+								sb.append(" VARCHAR(5)");
+							}
+							sb.append("\t");
+							sb.append(prop.getAttribute("name"));
+							
+							sb.append(" NOT NULL, /*");
+							sb.append(prop.getAttribute("name"));
+							sb.append("*/\n");
+						}
 					}
 				}
 			}
@@ -337,6 +372,84 @@ public class BioAIGUI extends JFrame implements ActionListener {
 			sb.append("\tFOREIGN KEY (mod_id) REFERENCES modmaker_mods(mod_id) ON DELETE CASCADE,\n"); //end of SQL statement
 			sb.append("\tPRIMARY KEY(mod_id)\n");
 			sb.append(") ENGINE=INNODB;");
+			output.setText(sb.toString());
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
+	}
+	
+	private void generatePublish() {
+		// g
+		String input_text = input.getText();
+		StringBuilder sb = new StringBuilder();
+		sb.append("//");
+		sb.append(tableNameField.getText());
+		sb.append("*/\n");
+		sb.append("if ($this->mod->mod_aiweapon_");
+		sb.append(tableNameField.getText());
+		sb.append("_modified_genesis) {");
+		sb.append("\n");
+		try {
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			
+			NodeList section = doc.getElementsByTagName("Section");
+			Element sectionElement = (Element) section.item(0);
+			NodeList propertyList = sectionElement.getChildNodes();
+			//We are now at at the "sections" array.
+			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+			for (int k = 0; k < propertyList.getLength(); k++){
+				//for every property in this filenode (of the data to merge)...
+				Node scannednode = propertyList.item(k);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element prop = (Element) scannednode;
+					try {
+						new Range(prop.getTextContent()); //check if its a range. discard variable
+						sb.append("\t");
+						sb.append("array_push($basegameBioAIElements, $this->createProperty(\"");
+						sb.append(sectionElement.getAttribute("name"));
+						sb.append("\", \"");
+						sb.append(prop.getAttribute("name"));
+						sb.append("\", createRange(");
+						//min
+						sb.append("$this->mod->mod_aiweapon_");
+						sb.append(tableNameField.getText());
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_min,");
+						//max
+						sb.append("$this->mod->mod_aiweapon_");
+						sb.append(tableNameField.getText());
+						sb.append("_");
+						sb.append(prop.getAttribute("name"));
+						sb.append("_max,");
+						if (prop.getTextContent().contains("f")) {
+							//its a float
+							sb.append(" true, true), ");
+						} else {
+							sb.append(" false, false), ");
+						}
+						sb.append(" \"2\"));");
+						sb.append("\n");
+					} catch (StringIndexOutOfBoundsException strException){
+						//its a float... maybe.
+						//array_push($basegameBioAIElements, $this->createProperty("sfxgamecontent.sfxweapon_ai_gethprimerifle", "idealtargetdistance", $this->mod->mod_aiweapon_gethprimerifle_idealtargetdistance."f", "2"));
+						sb.append("\t");
+						sb.append("array_push($basegameBioAIElements, $this->createProperty(\"sfxgamecontent.sfxweapon_ai_");
+						sb.append(tableNameField.getText());
+						sb.append("\", \"");
+						sb.append(prop.getAttribute("name"));
+						sb.append("\", $this->mod->mod_aiweapon_");
+						sb.append(prop.getAttribute("name"));
+						sb.append(".\"f\", \"2\"));");
+						sb.append("\n");
+					}
+				}
+			}
+			sb.append("}");
 			output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();
@@ -688,12 +801,12 @@ public class BioAIGUI extends JFrame implements ActionListener {
 			output.setText(e.getMessage());
 		}
 		// modified
-		sb.append("\tpublic $mod_aiweapons_");
+		sb.append("\tpublic $mod_aiweapon_");
 		sb.append(weaponName);
 		sb.append("_");
 		sb.append("modified = null;\n");
 		//modified_genesis
-		sb.append("\tpublic $mod_aiweapons_");
+		sb.append("\tpublic $mod_aiweapon_");
 		sb.append(weaponName);
 		sb.append("_");
 		sb.append("modified_genesis = null;\n");

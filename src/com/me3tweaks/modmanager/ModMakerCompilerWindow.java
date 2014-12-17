@@ -523,7 +523,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				//				+ FilenameUtils.removeExtension(coal)+".xml");
 				ProcessBuilder compileProcessBuilder = new ProcessBuilder(
 						compilerPath, path + "\\coalesceds\\"
-								+ FilenameUtils.removeExtension(coal)+".xml", "--mode=ToBin", "--keep-whitespace");
+								+ FilenameUtils.removeExtension(coal)+"\\"+FilenameUtils.removeExtension(coal)+".xml", "--mode=ToBin");
 				//log it
 				ModManager.debugLogger.writeMessage("Executing compile command: "+
 						compilerPath+" "+ path + "\\coalesceds\\"
@@ -926,19 +926,21 @@ public class ModMakerCompilerWindow extends JDialog {
 	class TLKWorker extends SwingWorker<Void, Integer> {
 		private JProgressBar progress;
 		boolean error = false;
+		int jobsToDo = 0, jobsDone = 0;
 
 		public TLKWorker(JProgressBar progress) {
 			ModManager.debugLogger.writeMessage("Beginning TLK Decompile operation.");
 			this.progress = progress;
-			currentOperationLabel.setText("Localizing Mod...");
+			currentOperationLabel.setText("Creating language specific changes...");
 			progress.setIndeterminate(true);
+			progress.setValue(0);
 		}
 
 		protected Void doInBackground() throws Exception {
-			if (true) {
+			/*if (true) {
 				ModManager.debugLogger.writeMessage("Debug skipping TLK");
 				return null; //skip tlk, mod doesn't have it
-			}
+			}*/
 			NodeList tlkElementNodeList = doc.getElementsByTagName("TLKData");
 			if (tlkElementNodeList.getLength() < 1) {
 				ModManager.debugLogger.writeMessage("No TLK in mod file, or length is 0.");
@@ -948,9 +950,17 @@ public class ModMakerCompilerWindow extends JDialog {
 			
 				
 			NodeList tlkNodeList = tlkElement.getChildNodes();
-			//Iterate over the coalesceds.
+			//Iterate over the tlk entries.
+			//get number of jobs.
 			for (int i = 0; i < tlkNodeList.getLength(); i++) {
 				//coalNode is a node containing the coalesced module, such as <MP1> or <BASEGAME>
+				Node tlkNode = tlkNodeList.item(i);
+				if (tlkNode.getNodeType() == Node.ELEMENT_NODE) {
+					jobsToDo+=3; //decomp, edit, comp
+				}
+			}
+			
+			for (int i = 0; i < tlkNodeList.getLength(); i++) {
 				Node tlkNode = tlkNodeList.item(i);
 				if (tlkNode.getNodeType() == Node.ELEMENT_NODE) {
 					String tlkType = tlkNode.getNodeName(); //get the tlk name so we can figure out what tlk to modify
@@ -962,11 +972,24 @@ public class ModMakerCompilerWindow extends JDialog {
 					
 					//START OF TLK DECOMPILE=========================================================
 					ArrayList<String> commandBuilder = new ArrayList<String>();
-					commandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
+					/*
+					 ME3 EXPLORER VERSION
+				    commandBuilder.add("");
 					commandBuilder.add("-tlkeditor");
 					commandBuilder.add("decompile");
 					commandBuilder.add(ModManagerWindow.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
 					commandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
+					*/
+					String path = Paths.get(".").toAbsolutePath().normalize()
+							.toString();
+					String compilerPath = path
+							+ "\\Tankmaster TLK\\MassEffect3.TlkEditor.exe";
+					commandBuilder.add(compilerPath);
+					commandBuilder.add(ModManagerWindow.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
+					commandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
+					commandBuilder.add("--mode");
+					commandBuilder.add("ToXml");
+					commandBuilder.add("--no-ui");
 					
 					//System.out.println("Building command");
 					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
@@ -977,41 +1000,29 @@ public class ModMakerCompilerWindow extends JDialog {
 					}
 					ModManager.debugLogger.writeMessage("Executing TLK Decompile command: "+sb.toString());
 					Process p = null;
-						int returncode = 1;
-						try {
-							ProcessBuilder pb = new ProcessBuilder(command);
-							ModManager.debugLogger.writeMessage("Executing process for TLK Decompile Job.");
-							//p = Runtime.getRuntime().exec(command);
-							p = pb.start();
-							returncode = p.waitFor();
-						} catch (IOException | InterruptedException e) {
-							ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
-							e.printStackTrace();
-						}
+					int returncode = 1;
+					try {
+						ProcessBuilder pb = new ProcessBuilder(command);
+						pb.redirectErrorStream(true);
+						ModManager.debugLogger.writeMessage("Executing process for TLK Decompile Job.");
+						p = pb.start();
+						returncode = p.waitFor();
+						ModManager.debugLogger.writeMessage("TLK Job return code: "+returncode);
+					} catch (IOException | InterruptedException e) {
+						ModManager.debugLogger.writeException(e);
+					}
+					this.publish(++jobsDone);
 					//END OF DECOMPILE==================================================
 					//load the decompiled XML file into memory
-					ModManager.debugLogger.writeMessage("Loading TLK XML "+tlkType+" into memory.");
-					
-					/*{ //scope variables.
-					RandomAccessFile raInputFile = new RandomAccessFile("tlk\\BIOGame_"+tlkType+".xml", "rw");
-					raInputFile.seek(20);
-					raInputFile.writeByte(49);
-					String origHeaderRow = raInputFile.readLine();
-					System.out.println("Rest of line: "+origHeaderRow);
-					//System.out.println(origHeaderRow.replace("1.0", "1.1"));
-					//raInputFile.writeUTF(origHeaderRow.replace("1.0", "1.1"));
-					raInputFile.close();
-					}*/
-					//String xml = ModManager.readFile("tlk\\BIOGame_"+tlkType+".xml", StandardCharsets.UTF_8);
-					//xml = ModManager.stripInvalidXmlCharacters(xml); //get rid of the shit it makes
-					//Document tlkXMLFile = ModManager.loadXMLFromString(xml);
-					//Document tlkXMLFile = dbFactory.newDocumentBuilder().parse("tlk\\BIOGame_"+tlkType+".xml");
-					Document tlkXMLFile = null;
+					ModManager.debugLogger.writeMessage("Loading TLK XML (file 0) "+tlkType+" into memory.");
+					String tlkFile0 = ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+"\\"+"BIOGame_"+tlkType+"0.xml"; //tankmaster's compiler splits it into files.
+					DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+					Document tlkXMLFile = dBuilder.parse(tlkFile0);
 					tlkXMLFile.getDocumentElement().normalize();
 					ModManager.debugLogger.writeMessage("Loaded TLK "+tlkXMLFile.getDocumentURI()+" into memory.");
 					
 					//id only test
-					NodeList stringsInTLK = tlkXMLFile.getElementsByTagName("id");
+					NodeList stringsInTLK = tlkXMLFile.getElementsByTagName("String");
 					
 					NodeList localizedNodeList = tlkNode.getChildNodes();
 					//Iterate over the tlk entries.
@@ -1023,21 +1034,18 @@ public class ModMakerCompilerWindow extends JDialog {
 							
 							String id = stringElement.getAttribute("id");
 							String content = stringElement.getTextContent();
-							ModManager.debugLogger.writeMessage("Found string "+id+": "+content);
+							ModManager.debugLogger.writeMessage("Scanning for string id "+id+"...");
 							
 							//scan XML for it...
 							for (int s = 0; s < stringsInTLK.getLength(); s++){
 								//get node
 								Node tlkStringNode = stringsInTLK.item(s);
 								if (tlkStringNode.getNodeType() == Node.ELEMENT_NODE) {
-									Element idNode = (Element) tlkStringNode;
-									if (idNode.getTextContent().equals(id)) {
-										System.err.println("MATCH. Setting string content to "+content);
-										Element parentElement = (Element) idNode.getParentNode();
-										NodeList dataNodes = parentElement.getElementsByTagName("data");
-										System.out.println("Number of data nodes: "+dataNodes.getLength());
-										Element dataElement = (Element) dataNodes.item(0);
-										dataElement.setTextContent(content);
+									Element stringTLKElement = (Element) tlkStringNode;
+									//System.out.println("Checking "+id+" vs "+stringTLKElement.getAttribute("id"));
+									if (stringTLKElement.getAttribute("id").equals(id)) {
+										ModManager.debugLogger.writeMessage("Updating string id "+id+" to "+content);
+										stringTLKElement.setTextContent(content);
 									}
 								}
 							}
@@ -1046,31 +1054,22 @@ public class ModMakerCompilerWindow extends JDialog {
 					//end of the file node.
 					//Time to save the file...
 					Transformer transformer = TransformerFactory.newInstance().newTransformer();
-					File outputFile = new File("tlk\\BIOGame_"+tlkType+".xml");
+					File outputFile = new File(tlkFile0);
 					Result output = new StreamResult(outputFile);
 					Source input = new DOMSource(tlkXMLFile);
 					ModManager.debugLogger.writeMessage("Saving file: "+outputFile.toString());
 					transformer.transform(input, output);
-					
-					/*{ //scope variables.
-					RandomAccessFile raInputFile = new RandomAccessFile("tlk\\BIOGame_"+tlkType+".xml", "rw");
-					raInputFile.seek(17);
-					raInputFile.writeByte(48); //0
-					String origHeaderRow = raInputFile.readLine();
-					System.out.println("Rest of line: "+origHeaderRow);
-					//System.out.println(origHeaderRow.replace("1.0", "1.1"));
-					//raInputFile.writeUTF(origHeaderRow.replace("1.0", "1.1"));
-					raInputFile.close();
-					} */
-					
+
+					this.publish(++jobsDone);
 					//create new TLK file from this.
 					//START OF TLK COMPILE=========================================================
 					ArrayList<String> tlkCompileCommandBuilder = new ArrayList<String>();
-					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
-					tlkCompileCommandBuilder.add("-tlkeditor");
-					tlkCompileCommandBuilder.add("compile");
+					tlkCompileCommandBuilder.add(compilerPath);
 					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
-					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
+					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".tlk");
+					tlkCompileCommandBuilder.add("--mode");
+					tlkCompileCommandBuilder.add("ToTlk");
+					tlkCompileCommandBuilder.add("--no-ui");
 					
 					//System.out.println("Building command");
 					String[] tlkCompilecommand = tlkCompileCommandBuilder.toArray(new String[commandBuilder.size()]);
@@ -1083,6 +1082,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					p = null;
 						try {
 							ProcessBuilder pb = new ProcessBuilder(tlkCompilecommand);
+							pb.redirectErrorStream(true);
 							ModManager.debugLogger.writeMessage("Executing process for TLK Compile Job.");
 							//p = Runtime.getRuntime().exec(command);
 							p = pb.start();
@@ -1092,9 +1092,15 @@ public class ModMakerCompilerWindow extends JDialog {
 							e.printStackTrace();
 						}
 					//END OF COMPILE==================================================
+					this.publish(++jobsDone);
 				}
 			}
 			return null;
+		}
+		
+		@Override
+		protected void process(List<Integer> numCompleted) {
+			progress.setValue((int)(100 / (jobsToDo / (float)numCompleted.get(0))));
 		}
 
 		protected void done() {
@@ -1140,7 +1146,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				compCoalDir.mkdirs();
 				String fileNameWithOutExt = FilenameUtils.removeExtension(reqcoal);
 				//copy coal
-				File coalFile = new File("coalesceds\\"+reqcoal);
+				File coalFile = new File("coalesceds\\"+fileNameWithOutExt+"\\"+reqcoal);
 				File destCoal = new File(compCoalDir+"\\"+reqcoal);
 				destCoal.delete();
 				if (coalFile.renameTo(destCoal)){
@@ -1163,7 +1169,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					String[] tlkFiles = {"INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL"};
 					for (String tlkFilename : tlkFiles) {
 						File compiledTLKFile = new File("tlk\\"+"BIOGame_"+tlkFilename+".tlk");
-						if (compiledTLKFile.exists()) {
+						if (!compiledTLKFile.exists()) {
 							ModManager.debugLogger.writeMessage("TLK file "+compiledTLKFile+" is missing, might not have been compiled by this modmaker version. skipping.");
 							continue;
 						}
