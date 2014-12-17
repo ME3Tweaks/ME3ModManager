@@ -80,9 +80,6 @@ public class AutoTocWindow extends JDialog {
 		protected TOCWorker(Mod mod) {
 			this.mod = mod;
 			for (ModJob job : mod.jobs) {
-				if (job.modType == ModJob.BASEGAME) {
-					continue; //skip basegame toc
-				}
 				for (String file : job.newFiles) {
 					String filename = FilenameUtils.getName(file);
 					if (filename.equals("PCConsoleTOC.bin")) {
@@ -105,10 +102,11 @@ public class AutoTocWindow extends JDialog {
 			for (ModJob job : mod.jobs){
 				//get path to PCConsoleTOC
 				for (String newFile : job.newFiles) {
-					if (newFile.equals("PCConsoleTOC.bin")) {
+					
+					String filename = FilenameUtils.getName(newFile);
+					if (filename.equals("PCConsoleTOC.bin")) {
 						continue; //this doens't need updated.
 					}
-					String filename = FilenameUtils.getName(newFile);
 					String modulePath = FilenameUtils.getFullPath(newFile); //inside mod, folders like PATCH2 or MP4. Already has a / on the end.
 					ArrayList<String> commandBuilder = new ArrayList<String>();
 					// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
