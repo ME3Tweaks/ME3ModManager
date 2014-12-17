@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +53,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
 	String code, modName, modDescription, modId, modDev;
 	ModManagerWindow callingWindow;
-	private static int TOTAL_STEPS = 10;
+	private static double TOTAL_STEPS = 10;
 	private static String DOWNLOADED_XML_FILENAME = "mod_info";
 	private int stepsCompleted = 1;
 	ArrayList<String> requiredCoals = new ArrayList<String>();
@@ -329,7 +328,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		case "Default_DLC_UPD_Patch02.bin":
 			return "/BIOGame/DLC/DLC_UPD_Patch02/PCConsoleTOC.bin";
 		case "Coalesced.bin":
-			//not used
 			return "\\BIOGame\\PCConsoleTOC.bin";
 		default:
 			ModManager.debugLogger.writeMessage("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: "+coalName);
@@ -482,7 +480,6 @@ public class ModMakerCompilerWindow extends JDialog {
 				currentOperationLabel.setText("Decompiling "
 						+ coalsToDecompile.get(numCompleted.get(0)));
 			}
-			System.out.println("100 / ("+numCoals+" / "+numCompleted.get(0)+" = "+(100 / (numCoals / numCompleted.get(0))));
 			progress.setValue((int) (100 / (numCoals / (float)numCompleted.get(0))));
 		}
 
@@ -551,7 +548,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		protected void done() {
 			// Coals downloaded
 			stepsCompleted+=2;
-			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
+			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))));
 			ModManager.debugLogger.writeMessage("Coals recompiled");
 			new TLKWorker(progress).execute();
 			//new TOCDownloadWorker(coalsToCompile, progress).execute();
@@ -1155,16 +1152,15 @@ public class ModMakerCompilerWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("ERROR! Didn't move "+reqcoal+" to the proper mod element directory. Could already exist.");
 				}
 				//copy pcconsoletoc
-				if (!reqcoal.equals("Coalesced.bin")) {
-					File tocFile = new File("toc\\"+coalFilenameToShortName(reqcoal)+"\\PCConsoleTOC.bin");
-					File destToc = new File(compCoalDir+"\\PCConsoleTOC.bin");
-					destToc.delete();
-					if (tocFile.renameTo(destToc)){
-						ModManager.debugLogger.writeMessage("Moved "+reqcoal+" TOC to proper mod element directory");
-					} else {
-						ModManager.debugLogger.writeMessage("ERROR! Didn't move "+reqcoal+" TOC to the proper mod element directory. Could already exist.");
-					}
+				File tocFile = new File("toc\\"+coalFilenameToShortName(reqcoal)+"\\PCConsoleTOC.bin");
+				File destToc = new File(compCoalDir+"\\PCConsoleTOC.bin");
+				destToc.delete();
+				if (tocFile.renameTo(destToc)){
+					ModManager.debugLogger.writeMessage("Moved "+reqcoal+" TOC to proper mod element directory");
 				} else {
+					ModManager.debugLogger.writeMessage("ERROR! Didn't move "+reqcoal+" TOC to the proper mod element directory. Could already exist.");
+				}
+				if (reqcoal.equals("Coalesced.bin")) {
 					//it is basegame. copy the tlk files!
 					String[] tlkFiles = {"INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL"};
 					for (String tlkFilename : tlkFiles) {
@@ -1186,7 +1182,6 @@ public class ModMakerCompilerWindow extends JDialog {
 				
 				//TODO: Add PCConsoleTOC.bin to the desc file.
 				boolean basegame = 	reqcoal.equals("Coalesced.bin");
-				
 				ini.put(coalNameToModDescName(reqcoal), "moddir", coalFilenameToShortName(reqcoal));
 				
 				if (basegame) {
@@ -1206,6 +1201,8 @@ public class ModMakerCompilerWindow extends JDialog {
 							continue;
 						}
 					}
+					newsb.append(";PCConsoleTOC.bin");
+					replacesb.append(";"+coalFileNameToDLCTOCDir(reqcoal));
 					ini.put(coalNameToModDescName(reqcoal), "newfiles", newsb.toString());
 					ini.put(coalNameToModDescName(reqcoal), "replacefiles", replacesb.toString());					
 				} else {
@@ -1238,7 +1235,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		//TOC the mod
-		ModManager.debugLogger.writeMessage("Running autotoc on compiled mod.");
+		ModManager.debugLogger.writeMessage("Running autotoc on modmaker mod.");
 		Mod newMod = new Mod(moddesc.toString());
 		new AutoTocWindow(callingWindow, newMod);
 		stepsCompleted++;
@@ -1259,12 +1256,12 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		public TOCDownloadWorker(ArrayList<String> tocsToDownload,
 				JProgressBar progress) {
+			progress.setIndeterminate(false);
 			this.tocsToDownload = tocsToDownload;
 			if (this.tocsToDownload.contains("Coalesced.bin")) {
 				this.numtoc = tocsToDownload.size() - 1;
 			} else {
 				this.numtoc = tocsToDownload.size();
-
 			}
 			this.progress = progress;
 			if (numtoc > 0) {
@@ -1276,9 +1273,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		protected Void doInBackground() throws Exception {
 			int tocsCompleted = 0;
 			for (String toc : tocsToDownload) {
-				if (toc.equals("Coalesced.bin")) {
-					continue; //ignore basegame
-				}
 				try {
 					String link = "http://www.me3tweaks.com/toc/" + coalFilenameToShortName(toc) + "/PCConsoleTOC.bin";
 					ModManager.debugLogger.writeMessage("Downloading TOC file: "+link);
@@ -1310,7 +1304,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			// Coals downloaded
 			ModManager.debugLogger.writeMessage("TOCs downloaded");
 			stepsCompleted++;
-			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
+			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))));
 			createCMMMod();
 		}
 	}

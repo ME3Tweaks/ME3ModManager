@@ -385,7 +385,7 @@ public class BioAIGUI extends JFrame implements ActionListener {
 		StringBuilder sb = new StringBuilder();
 		sb.append("//");
 		sb.append(tableNameField.getText());
-		sb.append("*/\n");
+		sb.append("\n");
 		sb.append("if ($this->mod->mod_aiweapon_");
 		sb.append(tableNameField.getText());
 		sb.append("_modified_genesis) {");
@@ -409,11 +409,17 @@ public class BioAIGUI extends JFrame implements ActionListener {
 					try {
 						new Range(prop.getTextContent()); //check if its a range. discard variable
 						sb.append("\t");
-						sb.append("array_push($basegameBioAIElements, $this->createProperty(\"");
-						sb.append(sectionElement.getAttribute("name"));
+						sb.append("array_push($");
+						String pathname = sectionElement.getAttribute("name");
+						if (pathname.contains("mp4")){
+							sb.append("mp4BioAIElements, $this->createProperty(\"");
+						} else {
+							sb.append("basegameBioAIElements, $this->createProperty(\"");
+						}
+						sb.append(pathname);
 						sb.append("\", \"");
 						sb.append(prop.getAttribute("name"));
-						sb.append("\", createRange(");
+						sb.append("\", $this->createRange(");
 						//min
 						sb.append("$this->mod->mod_aiweapon_");
 						sb.append(tableNameField.getText());
@@ -438,13 +444,27 @@ public class BioAIGUI extends JFrame implements ActionListener {
 						//its a float... maybe.
 						//array_push($basegameBioAIElements, $this->createProperty("sfxgamecontent.sfxweapon_ai_gethprimerifle", "idealtargetdistance", $this->mod->mod_aiweapon_gethprimerifle_idealtargetdistance."f", "2"));
 						sb.append("\t");
-						sb.append("array_push($basegameBioAIElements, $this->createProperty(\"sfxgamecontent.sfxweapon_ai_");
-						sb.append(tableNameField.getText());
+						sb.append("array_push($");
+						String pathname = sectionElement.getAttribute("name");
+						if (pathname.contains("mp4")){
+							sb.append("mp4BioAIElements, $this->createProperty(\"");
+						} else {
+							sb.append("basegameBioAIElements, $this->createProperty(\"");
+						}
+						sb.append(pathname);
 						sb.append("\", \"");
 						sb.append(prop.getAttribute("name"));
 						sb.append("\", $this->mod->mod_aiweapon_");
+						sb.append(tableNameField.getText());
+						sb.append("_");
 						sb.append(prop.getAttribute("name"));
-						sb.append(".\"f\", \"2\"));");
+						sb.append(".\"f\", \"");
+						if (pathname.contains("mp4")){
+							sb.append("0");
+						} else {
+							sb.append("2");
+						}
+						sb.append("\"));");
 						sb.append("\n");
 					}
 				}

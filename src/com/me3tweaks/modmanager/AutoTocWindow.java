@@ -13,6 +13,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
@@ -102,22 +103,19 @@ public class AutoTocWindow extends JDialog {
 		public Boolean doInBackground() {
 			//get list of all files to update for the progress bar
 			for (ModJob job : mod.jobs){
-				if (job.modType == ModJob.BASEGAME) {
-					continue; //we don't TOC the basegame.
-				}
 				//get path to PCConsoleTOC
 				for (String newFile : job.newFiles) {
-					String filename = FilenameUtils.getName(newFile);
-					if (filename.equals("PCConsoleTOC.bin")) {
-						continue;
+					if (newFile.equals("PCConsoleTOC.bin")) {
+						continue; //this doens't need updated.
 					}
+					String filename = FilenameUtils.getName(newFile);
 					String modulePath = FilenameUtils.getFullPath(newFile); //inside mod, folders like PATCH2 or MP4. Already has a / on the end.
 					ArrayList<String> commandBuilder = new ArrayList<String>();
 					// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
 					commandBuilder.add(me3explorer);
 					commandBuilder.add("-toceditorupdate");
 					commandBuilder.add(modulePath+"PCConsoleTOC.bin");
-					commandBuilder.add(filename); //internal filename (of DLC)
+					commandBuilder.add(filename); //internal filename (if in DLC)
 					commandBuilder.add(Long.toString((new File(newFile)).length()));
 					
 					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
@@ -172,14 +170,11 @@ public class AutoTocWindow extends JDialog {
 		protected void done() {
 			if (numtoc != completed){
 				//failed something
-				/*StringBuilder sb = new StringBuilder();
-				sb.append("Failed to TOC the following files in the following folders:\n");
-				for (String jobName : failedJobs){
-					sb.append(" - "+jobName+"\n");
-				}
+				StringBuilder sb = new StringBuilder();
+				sb.append("Failed to TOC at least one of the folders.");
 				callingWindow.labelStatus.setText(" Failed to install at least 1 part of mod");
-				JOptionPane.showMessageDialog(null, sb.toString(), "Error",
-						JOptionPane.ERROR_MESSAGE); */
+				JOptionPane.showMessageDialog(null, sb.toString(), "AutoTOC Error",
+						JOptionPane.ERROR_MESSAGE);
 			} else {
 				//we're good
 				callingWindow.labelStatus.setText(mod.getModName()+" TOC files updated");
