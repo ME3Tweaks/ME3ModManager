@@ -5,7 +5,7 @@ public class Enemy {
 	int min, max, maxperwave;
 	
 	public Enemy(String str) {
-		System.out.println(str);
+		//System.out.println(str);
 		String workingStr;
 		//(EnemyType="WAVE_RPR_Husk", MinCount=2, MaxCount=2)
 		int charIndex = str.indexOf('\"'); // first ", which is the lead into the name.

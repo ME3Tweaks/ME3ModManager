@@ -14,7 +14,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
@@ -55,9 +54,9 @@ import org.json.simple.parser.ParseException;
 import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
+import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI;
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
-import com.sun.jna.platform.win32.Win32Exception;
 import com.sun.jna.platform.win32.WinReg;
 
 @SuppressWarnings("serial")
@@ -78,7 +77,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame,
 			toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC,
 			toolsRevertCoal, toolsAutoTOC, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
-	JMenuItem sqlWavelistParser,sqlDifficultyParser, sqlAIWeaponParser;
+	JMenuItem sqlWavelistParser,sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser;
 	JMenuItem helpPost, helpAbout;
 	JList<String> listMods;
 	JProgressBar progressBar;
@@ -419,14 +418,17 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		sqlWavelistParser = new JMenuItem("Wavelist Parser");
 		sqlDifficultyParser = new JMenuItem("Biodifficulty Parser");
 		sqlAIWeaponParser = new JMenuItem("BioAI Parser");
+		sqlPowerCustomActionParser = new JMenuItem("CustomAction Parser");
 		
 		sqlWavelistParser.addActionListener(this);
 		sqlDifficultyParser.addActionListener(this);
 		sqlAIWeaponParser.addActionListener(this);
+		sqlPowerCustomActionParser.addActionListener(this);
 		
 		sqlMenu.add(sqlWavelistParser);
 		sqlMenu.add(sqlDifficultyParser);
 		sqlMenu.add(sqlAIWeaponParser);
+		sqlMenu.add(sqlPowerCustomActionParser);
 		if (ModManager.IS_DEBUG) {
 			menuBar.add(sqlMenu);
 		}
@@ -630,6 +632,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			new BioAIGUI();
 		} else 
 			
+		if (e.getSource() == sqlPowerCustomActionParser) {
+			new PowerCustomActionGUI();
+		} else
 		if (e.getSource() == toolsInstallLauncherWV) {
 			installBypass();
 		} else 

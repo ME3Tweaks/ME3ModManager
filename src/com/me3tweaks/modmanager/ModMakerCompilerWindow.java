@@ -663,6 +663,7 @@ public class ModMakerCompilerWindow extends JDialog {
 							Document iniFile = dbFactory.newDocumentBuilder().parse("coalesceds\\"+foldername+"\\"+iniFileName);
 							iniFile.getDocumentElement().normalize();
 							ModManager.debugLogger.writeMessage("Loaded "+iniFile.getDocumentURI()+" into memory.");
+							//ModManager.printDocument(iniFile, System.out);
 							NodeList assetList = iniFile.getElementsByTagName("CoalesceAsset");
 							Element coalesceAsset = (Element) assetList.item(0);
 							NodeList sectionsTagList = coalesceAsset.getElementsByTagName("Sections");
@@ -699,7 +700,7 @@ public class ModMakerCompilerWindow extends JDialog {
 										isArrayProperty = true;
 									}
 									
-									String newValue = newproperty.getTextContent();
+									String newValue = property.getTextContent();
 									
 									//first tokenize the path...
 									String path = property.getAttribute("path");
@@ -760,10 +761,16 @@ public class ModMakerCompilerWindow extends JDialog {
 									
 									//we've drilled down as far as we can.
 									
+									if (path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies")) {
+										ModManager.printDocument(iniFile, System.out);
+										System.out.println("Currently drilling to set data: "+newValue);
+									}
+									
 									//we are where we want to be. Now we can set the property or array value.
 									//drilled is the element (parent of our property) that we want.
 									NodeList props = drilled.getChildNodes(); //get children of the path (<property> list)
 									ModManager.debugLogger.writeMessage("Number of child property/elements to search: "+props.getLength());
+									boolean foundProperty = false;
 									for (int m = 0; m < props.getLength(); m++){
 										Node propertyNode = props.item(m);
 										if (propertyNode.getNodeType() == Node.ELEMENT_NODE) {
@@ -773,6 +780,7 @@ public class ModMakerCompilerWindow extends JDialog {
 												if (itemToModify.getAttribute("name").equals(newPropName)) {
 													itemToModify.setTextContent(newValue);
 													ModManager.debugLogger.writeMessage("Set "+newPropName+" to "+newValue);
+													foundProperty = true;
 													break;
 												}
 											} else {
@@ -787,6 +795,7 @@ public class ModMakerCompilerWindow extends JDialog {
 													//Must use individual matching algorithms so we can figure out if something matches.
 													case "exactvalue": {
 														if (itemToModify.getTextContent().equals(newValue)) {
+															ModManager.debugLogger.writeMessage("Property match found.");
 															match = true;
 														}
 													}
@@ -794,9 +803,6 @@ public class ModMakerCompilerWindow extends JDialog {
 													case "biodifficulty": {
 														//Match on Category (name)
 														Category existing = new Category(itemToModify.getTextContent());
-														if (existing.categoryname.equals("Praetorian")){
-															ModManager.debugLogger.writeMessage("breakpoint");
-														}
 														Category importing = new Category(newValue);
 														if (existing.matchIdentifiers(importing)) {
 															ModManager.debugLogger.writeMessage("Match found: "+existing.categoryname);
@@ -814,10 +820,16 @@ public class ModMakerCompilerWindow extends JDialog {
 														Wave importing = new Wave(newValue);
 														if (existing.matchIdentifiers(importing)) {
 															match = true;
+															ModManager.debugLogger.writeMessage("Wavelist match on "+existing.difficulty);
 															newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
 														} else {
 															//CHECK FOR COLLECTOR PLAT WAVE 5.
 															String cplatwave5 = "(Difficulty=DO_Level3,Enemies=( (EnemyType=\"WAVE_COL_Scion\"), (EnemyType=\"WAVE_COL_Praetorian\", MinCount=1, MaxCount=1), (EnemyType=\"WAVE_CER_Phoenix\", MinCount=2, MaxCount=2), (EnemyType=\"WAVE_CER_Phantom\", MinCount=3, MaxCount=3) ))";
+															if (path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies") && importing.difficulty.equals("DO_Level3")) {
+																System.out.println("BREAK");
+																
+															}
+															//System.out.println(itemToModify.getTextContent());
 															if (itemToModify.getTextContent().equals(cplatwave5) && path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies") && importing.difficulty.equals("DO_Level4")) {
 																match = true;
 																newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
@@ -863,6 +875,7 @@ public class ModMakerCompilerWindow extends JDialog {
 														break;
 													} //end matching algorithm switch
 													if (match) {
+														foundProperty = true;
 														switch (operation) {
 														case "subtraction":
 															Node itemParent = itemToModify.getParentNode();
@@ -882,10 +895,50 @@ public class ModMakerCompilerWindow extends JDialog {
 																    JOptionPane.ERROR_MESSAGE);
 															break;
 														} //end operation switch
+														continue;
 													}
 												}
 											}
 										}
+									}
+									if (foundProperty != true) {
+										StringBuilder sb = new StringBuilder();
+										sb.append("<html>Could not find the following attribute:<br>");
+										sb.append("Coalesced File: ");
+										sb.append(intCoalName);
+										sb.append("<br>");
+										sb.append("Subfile: ");
+										sb.append(fileNode.getNodeName());
+										sb.append("<br>");
+										
+										
+										sb.append("Path: ");
+										sb.append(path);
+										sb.append("<br>");
+										sb.append("Operation: ");
+										sb.append(operation);
+										sb.append("<br>");
+										if (isArrayProperty) {
+											sb.append("====ARRAY ATTRIBUTE INFO=======<br>");
+											sb.append("Array matching algorithm: ");
+											sb.append(arrayType);
+											sb.append("<br>Matching type: ");
+											sb.append(matchontype);
+										} else {
+											sb.append("====STANDARD ATTRIBUTE INFO====<br>");
+											sb.append("Keyed Property Name: ");
+											sb.append(newPropName);
+										}
+										sb.append("<br>=================");
+										sb.append("<br>");
+										sb.append("New data: ");
+										sb.append(newValue);
+										sb.append("</html>");
+										
+										JOptionPane.showMessageDialog(null,
+											    sb.toString(),
+											    "Compiling Error",
+											    JOptionPane.ERROR_MESSAGE);
 									}
 								}
 							}
