@@ -395,7 +395,7 @@ public class RestoreFilesWindow extends JDialog {
 		ModManager.debugLogger.writeMessage("Finished restoring data.");
 		callingWindow.labelStatus.setText("Game files restored");
 		callingWindow.labelStatus.setVisible(true);
-		//dispose();
+		dispose();
 	}
 
 	/**

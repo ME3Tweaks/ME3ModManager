@@ -33,12 +33,12 @@ public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
 	public static long BUILD_NUMBER = 26L;
-	public static final String BUILD_DATE = "12/12/2014";
+	public static final String BUILD_DATE = "12/22/2014";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
-	public static double MODMAKER_VERSION_SUPPORT = 1.1; //max modmaker version
+	public static double MODMAKER_VERSION_SUPPORT = 1.2; //max modmaker version
 	
 	public static void main(String[] args) {		
 		//Set and get debugging mode from wini
@@ -66,8 +66,13 @@ public class ModManager {
 							System.out.println("Logging mode disabled");
 						}
 					} catch (NumberFormatException e){
-						System.out.println("Number format exception reading the log mode - log mod disabled");
+						System.out.println("Number format exception reading the log mode - log mode disabled");
 					}
+				}
+				String superDebugStr  = settingsini.get("Settings", "superdebug");
+				if (superDebugStr!= null && superDebugStr.equals("SUPERDEBUG")) {
+					System.out.println("Forcing SUPERDEBUG mode on");
+					IS_DEBUG = true;
 				}
 			} catch (InvalidFileFormatException e) {
 				System.out.println("Invalid file format exception. Logging mode disabled");

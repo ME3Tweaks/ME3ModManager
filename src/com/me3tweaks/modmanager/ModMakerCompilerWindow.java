@@ -56,6 +56,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	private static double TOTAL_STEPS = 10;
 	private static String DOWNLOADED_XML_FILENAME = "mod_info";
 	private int stepsCompleted = 1;
+	private double modMakerVersion;
 	ArrayList<String> requiredCoals = new ArrayList<String>();
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
@@ -127,6 +128,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		ModManager.debugLogger.writeMessage("Fetching mod from "+link);
 		try {
 			File downloaded = new File(DOWNLOADED_XML_FILENAME);
+			downloaded.delete();
 			FileUtils.copyURLToFile(new URL(link), downloaded);
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			doc = dBuilder.parse(downloaded);
@@ -349,7 +351,8 @@ public class ModMakerCompilerWindow extends JDialog {
 		
 		NodeList modmakerVersionElement = infoElement.getElementsByTagName("ModMakerVersion");
 		String modModMakerVersion = modmakerVersionElement.item(0).getTextContent();
-		if (Double.parseDouble(modModMakerVersion) > ModManager.MODMAKER_VERSION_SUPPORT) {
+		modMakerVersion = Double.parseDouble(modModMakerVersion);
+		if (modMakerVersion > ModManager.MODMAKER_VERSION_SUPPORT) {
 			//ERROR! We can't compile this version.
 			ModManager.debugLogger.writeMessage("FATAL ERROR: This version of mod manager does not support this version of modmaker.");
 			ModManager.debugLogger.writeMessage("FATAL ERROR: This version supports up to ModMaker version: "+ModManager.MODMAKER_VERSION_SUPPORT);
@@ -358,6 +361,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				    "<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>",
 				    "Compiling Error",
 				    JOptionPane.ERROR_MESSAGE);
+			error = true;
 			dispose();
 			return;
 		}
@@ -625,6 +629,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			this.progress = progress;
 			currentOperationLabel.setText("Merging Coalesced files...");
 			progress.setIndeterminate(true);
+			progress.setValue(0);
 		}
 
 		protected Void doInBackground() throws Exception {
@@ -761,11 +766,6 @@ public class ModMakerCompilerWindow extends JDialog {
 									
 									//we've drilled down as far as we can.
 									
-									if (path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies")) {
-										ModManager.printDocument(iniFile, System.out);
-										System.out.println("Currently drilling to set data: "+newValue);
-									}
-									
 									//we are where we want to be. Now we can set the property or array value.
 									//drilled is the element (parent of our property) that we want.
 									NodeList props = drilled.getChildNodes(); //get children of the path (<property> list)
@@ -894,51 +894,52 @@ public class ModMakerCompilerWindow extends JDialog {
 																    "Compiling Error",
 																    JOptionPane.ERROR_MESSAGE);
 															break;
-														} //end operation switch
-														continue;
-													}
-												}
-											}
-										}
-									}
+														} //end operation [switch]
+														break;
+													} //end of match = true [if]
+												} //end of array matchontype check [if]
+											} //end of array property [if]
+										} //end of property = element node (not junk) [if]
+									} //end of props.length to search through. [for loop]
 									if (foundProperty != true) {
-										StringBuilder sb = new StringBuilder();
-										sb.append("<html>Could not find the following attribute:<br>");
-										sb.append("Coalesced File: ");
-										sb.append(intCoalName);
-										sb.append("<br>");
-										sb.append("Subfile: ");
-										sb.append(fileNode.getNodeName());
-										sb.append("<br>");
-										
-										
-										sb.append("Path: ");
-										sb.append(path);
-										sb.append("<br>");
-										sb.append("Operation: ");
-										sb.append(operation);
-										sb.append("<br>");
-										if (isArrayProperty) {
-											sb.append("====ARRAY ATTRIBUTE INFO=======<br>");
-											sb.append("Array matching algorithm: ");
-											sb.append(arrayType);
-											sb.append("<br>Matching type: ");
-											sb.append(matchontype);
-										} else {
-											sb.append("====STANDARD ATTRIBUTE INFO====<br>");
-											sb.append("Keyed Property Name: ");
-											sb.append(newPropName);
+										if (modMakerVersion > 1.0) {
+											StringBuilder sb = new StringBuilder();
+											sb.append("<html>Could not find the following attribute:<br>");
+											sb.append("Coalesced File: ");
+											sb.append(intCoalName);
+											sb.append("<br>");
+											sb.append("Subfile: ");
+											sb.append(fileNode.getNodeName());
+											sb.append("<br>");
+											
+											sb.append("Path: ");
+											sb.append(path);
+											sb.append("<br>");
+											sb.append("Operation: ");
+											sb.append(operation);
+											sb.append("<br>");
+											if (isArrayProperty) {
+												sb.append("====ARRAY ATTRIBUTE INFO=======<br>");
+												sb.append("Array matching algorithm: ");
+												sb.append(arrayType);
+												sb.append("<br>Matching type: ");
+												sb.append(matchontype);
+											} else {
+												sb.append("====STANDARD ATTRIBUTE INFO====<br>");
+												sb.append("Keyed Property Name: ");
+												sb.append(newPropName);
+											}
+											sb.append("<br>=================");
+											sb.append("<br>");
+											sb.append("New data: ");
+											sb.append(newValue);
+											sb.append("</html>");
+											
+											JOptionPane.showMessageDialog(null,
+												    sb.toString(),
+												    "Compiling Error",
+												    JOptionPane.ERROR_MESSAGE);
 										}
-										sb.append("<br>=================");
-										sb.append("<br>");
-										sb.append("New data: ");
-										sb.append(newValue);
-										sb.append("</html>");
-										
-										JOptionPane.showMessageDialog(null,
-											    sb.toString(),
-											    "Compiling Error",
-											    JOptionPane.ERROR_MESSAGE);
 									}
 								}
 							}
@@ -1310,6 +1311,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		public TOCDownloadWorker(ArrayList<String> tocsToDownload,
 				JProgressBar progress) {
 			progress.setIndeterminate(false);
+			progress.setValue(0);
 			this.tocsToDownload = tocsToDownload;
 			if (this.tocsToDownload.contains("Coalesced.bin")) {
 				this.numtoc = tocsToDownload.size() - 1;
