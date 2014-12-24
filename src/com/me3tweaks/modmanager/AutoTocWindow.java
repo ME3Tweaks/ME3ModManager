@@ -91,7 +91,7 @@ public class AutoTocWindow extends JDialog {
 			}
 			failedTOC = new ArrayList<String>();
 			progressBar.setValue(0);
-			me3explorer = ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe";
+			me3explorer = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe";
 			ModManager.debugLogger.writeMessage("Starting the AutoTOC utility. Number of toc updates to do: "+numtoc);
 			ModManager.debugLogger.writeMessage("Using ME3Explorer from: "+me3explorer);
 		}

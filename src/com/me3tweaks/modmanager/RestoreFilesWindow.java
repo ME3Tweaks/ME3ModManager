@@ -138,7 +138,7 @@ public class RestoreFilesWindow extends JDialog {
 						publish(ModType.BASEGAME + ": Loading repair database");
 						processRestoreBasegame();
 					} else {
-						processRestoreJob(ModManagerWindow.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManagerWindow.appendSlash(ModType.getDLCPath(restoreType)), restoreType);
+						processRestoreJob(ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(restoreType)), restoreType);
 					}
 					completed++;
 					publish(Integer.toString(completed));
@@ -155,9 +155,9 @@ public class RestoreFilesWindow extends JDialog {
 		 */
 		private boolean processRestoreBasegame() {
 			//load Basegame DB
-			BasegameHashDB bghDB = new BasegameHashDB(new File(BioGameDir).getParent(), false);
+			BasegameHashDB bghDB = new BasegameHashDB(null,new File(BioGameDir).getParent(), false);
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
-			String backupfolder = ModManagerWindow.appendSlash(me3dir)+"cmmbackup\\";
+			String backupfolder = ModManager.appendSlash(me3dir)+"cmmbackup\\";
 			File backupdir = new File(backupfolder);
 			if (backupdir.exists()){
 				Collection<File> backupfiles = FileUtils.listFiles(new File(backupfolder), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
@@ -234,7 +234,7 @@ public class RestoreFilesWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("Restoring "+relative);
 					try {
 						publish(ModType.BASEGAME + ": Restoring "+backup.getName());
-						Files.copy(Paths.get(backup.toString()), Paths.get(ModManagerWindow.appendSlash(me3dir)+relative), StandardCopyOption.REPLACE_EXISTING);
+						Files.copy(Paths.get(backup.toString()), Paths.get(ModManager.appendSlash(me3dir)+relative), StandardCopyOption.REPLACE_EXISTING);
 					} catch (IOException e) {
 						return false;
 					}

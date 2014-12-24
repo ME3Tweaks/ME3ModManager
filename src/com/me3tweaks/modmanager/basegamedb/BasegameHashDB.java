@@ -47,6 +47,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 	HashmapWorker hmw;
 	boolean showGUI = false;
 	boolean databaseLoaded = false;
+	JFrame callingWindow;
 	private static Statement stmt = null;
 	
 	public static void main(String[] args) {
@@ -55,10 +56,11 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		ModManager.debugLogger = new DebugLogger();
 		ModManager.debugLogger.initialize();
 		ModManager.logging = true;
-		new BasegameHashDB("I:/Origin Games/Mass Effect 3/", true);
+		new BasegameHashDB(null, "I:/Origin Games/Mass Effect 3/", true);
 	}
 	
-	public BasegameHashDB(String basePath, boolean showGUI){
+	public BasegameHashDB(JFrame callingWindow, String basePath, boolean showGUI){
+		this.callingWindow = callingWindow;
 		this.showGUI = showGUI;
 		this.basePath = basePath;
 		if (showGUI) {
@@ -98,12 +100,13 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		consoleArea.setWrapStyleWord(true);
 		consoleArea.setText("The basegame repair database functions like Origin's repair game feature, but allows you to keep mods installed (such as texture swaps) as your default configuration.\n"
 				+ "\nIt will take several minutes to create or update the database. When files are installed through a BASEGAME mod descriptor, files that are backed up are checked against this database for authenticity.\n"
-				+ "\nFiles that fail this check mean that the currently installed file does not match the one you will restore to, and it will prevent losing your original configuration.");
+				+ "\nFiles that fail this check when restoring indicates that the currently backed up file does not match your default configuration, and will prompt you before it is restored.");
 		consoleArea.setEditable(false);
 		
 		rootPanel.add(consoleArea,BorderLayout.CENTER);
 		getContentPane().add(rootPanel);
 		this.setPreferredSize(new Dimension(405,305));
+		
 		this.addWindowListener(new java.awt.event.WindowAdapter() {
 		    @Override
 		    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
@@ -123,6 +126,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		setTitle("Basegame Repair Database");
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		pack();
+		this.setLocationRelativeTo(callingWindow);
 	}
 	
 	

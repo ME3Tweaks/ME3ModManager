@@ -67,7 +67,7 @@ public class Mod {
 		// Backwards compatibility for mods that are built to target older versions of mod manager (NO DLC)
 		if (modcmmver < 2.0f) {
 			ModManager.debugLogger.writeMessage("Modcmmver is less than 2, checking for coalesced.bin in folder (legacy)");
-			File file = new File(ModManagerWindow.appendSlash(modPath) + "Coalesced.bin");
+			File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
 			if (!file.exists()) {
 				ModManager.debugLogger.writeMessage(modName + " doesn't have Coalesced.bin and is marked as legacy, marking as invalid.");
 				return;
@@ -120,7 +120,7 @@ public class Mod {
 					newJob = new ModJob();
 				} else {
 					//DLC Job
-					newJob = new ModJob(ModType.getDLCPath(modHeader));
+					newJob = new ModJob(ModType.getDLCPath(modHeader), modHeader);
 					if (modHeader.equals(ModType.TESTPATCH)) {
 						newJob.TESTPATCH = true;
 					}
@@ -135,7 +135,7 @@ public class Mod {
 					}
 					
 					//Add the file swap to task job - if this method returns false it means a file doesn't exist somewhere
-					if (!(newJob.addFileReplace(ModManagerWindow.appendSlash(modDescFile.getParent()) + ModManagerWindow.appendSlash(iniModDir) + newFile, oldFile))){
+					if (!(newJob.addFileReplace(ModManager.appendSlash(modDescFile.getParent()) + ModManager.appendSlash(iniModDir) + newFile, oldFile))){
 						ModManager.debugLogger.writeMessage("Failed to add file to replace (File likely does not exist), marking as invalid.");
 						return;
 					}
@@ -155,7 +155,7 @@ public class Mod {
 				ModManager.debugLogger.writeMessage("Coalesced flag: "+modCoalFlag);
 
 				if (modCoalFlag != 0) {
-					File file = new File(ModManagerWindow.appendSlash(modPath) + "Coalesced.bin");
+					File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
 					ModManager.debugLogger.writeMessage("Coalesced flag was set, verifying its location");
 					
 					if (!file.exists()) {

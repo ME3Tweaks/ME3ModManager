@@ -40,7 +40,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	}
 
 	public PowerCustomActionGUI() {
-		this.setTitle("ME3CMM BioAI Parser Tool");
+		this.setTitle("ME3CMM SFXCustomAction Parser Tool");
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(
 				getClass().getResource("/resource/icon32.png")));
 		this.setMinimumSize(new Dimension(490, 500));
@@ -52,7 +52,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	private void setupWindow() {
 		JPanel bioaiGUI = new JPanel(new BorderLayout());
 		JLabel instructionsLabel = new JLabel(
-				"<html>ME3CMM SFXCustomAction Parser<br>Enter the SFXCustomACtion text below, as XML, starting with a &lt;Section&gt; tag, including all powers you wish to parse, and end with the final power's closing section tag.</html>");
+				"<html>ME3CMM SFXCustomAction Parser<br>Enter the SFXCustomAction text below, as XML, starting with a &lt;Section&gt; tag, including all powers you wish to parse, and end with the final power's closing section tag.</html>");
 		bioaiGUI.add(instructionsLabel, BorderLayout.NORTH);
 		instructionsLabel
 		.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -78,34 +78,31 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		generateTable.addActionListener(this);
 		generateInsert = new JButton("Generate SQL");
 		generateInsert.addActionListener(this);
-		SQLPanel.add(generateTable, BorderLayout.CENTER);
-		SQLPanel.add(generateInsert, BorderLayout.SOUTH);
-		
-		//PHP stuff
-		JPanel PHPPanel = new JPanel(new BorderLayout());
 		generateFork = new JButton("Generate Fork");
 		generateFork.addActionListener(this);
-		generatePublish = new JButton("Generate Publish");
-		generatePublish.addActionListener(this);
+		SQLPanel.add(generateTable, BorderLayout.NORTH);
+		SQLPanel.add(generateInsert, BorderLayout.CENTER);
+		SQLPanel.add(generateFork, BorderLayout.SOUTH);
+		//PHP stuff
+		JPanel PHPPanel = new JPanel(new BorderLayout());
+		
+		
+		generateVariables = new JButton("Generate Vars");
+		generateVariables.addActionListener(this);
 		generateLoad = new JButton("Generate Load");
 		generateLoad.addActionListener(this);
+		generatePublish = new JButton("Generate Publish");
+		generatePublish.addActionListener(this);
 		
 		//enerateInsert = new JButton("Generate SQL");
 		//generateInsert.addActionListener(this);
-		PHPPanel.add(generateFork, BorderLayout.NORTH);
+		PHPPanel.add(generateVariables, BorderLayout.NORTH);
 		PHPPanel.add(generateLoad, BorderLayout.CENTER);
 		PHPPanel.add(generatePublish, BorderLayout.SOUTH);
-		
-		//PHP Panel 2 (rightside)
-		JPanel PHPPanel2 = new JPanel(new BorderLayout());
-		generateVariables = new JButton("Generate Vars");
-		generateVariables.addActionListener(this);
-		PHPPanel2.add(generateVariables, BorderLayout.NORTH);
 		
 		JPanel modmakerPanel = new JPanel(new BorderLayout());
 		modmakerPanel.add(SQLPanel, BorderLayout.WEST);
 		modmakerPanel.add(PHPPanel, BorderLayout.CENTER);
-		modmakerPanel.add(PHPPanel2, BorderLayout.EAST);
 		JPanel buttonPanel = new JPanel(new BorderLayout());
 		buttonPanel.add(parse, BorderLayout.WEST);
 		buttonPanel.add(modmakerPanel, BorderLayout.EAST);
@@ -123,7 +120,6 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		inputScrollPane.setVerticalScrollBarPolicy(
 		                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		outputScrollPane.setPreferredSize(new Dimension(250, 250));
-		
 		
 		copy = new JButton("Copy");
 		copy.addActionListener(this);
@@ -281,6 +277,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			
 			NodeList section = doc.getElementsByTagName("Section");
 			Element sectionElement = (Element) section.item(0);
+			String tableSuffix = getTableName(sectionElement.getAttribute("name"));
 			NodeList propertyList = sectionElement.getChildNodes();
 			//We are now at at the "sections" array.
 			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
@@ -290,7 +287,21 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
 					Element prop = (Element) scannednode;
 					sb.append("\t");
+					String data = prop.getTextContent();
+					String name = prop.getAttribute("name");
+					if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
+						//its a boolean.
+						sb.append(name);
+						sb.append(" BOOLEAN NOT NULL,\n");
+						continue;
+					}
+					if (DetonationParameters.isDetonationParameters(data)) {
+						DetonationParameters dp = new DetonationParameters(tableSuffix, data);
+					}
 					
+					if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+						BaseRankUpgrade bru = new BaseRankUpgrade(tableSuffix, data);
+					}
 				}
 			}
 			sb.append("\tfalse, /*modified*/\n");
@@ -304,40 +315,71 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	}
 
 	private void generateTable() {
-		// g
 		String input_text = getInput();
 		StringBuilder sb = new StringBuilder();
-		sb.append("/*");
-		//sb.append(tableNameField.getText());
-		sb.append("*/\n");
-		sb.append("CREATE TABLE modmaker_aiweapon_");
-		//sb.append(tableNameField.getText());
-		sb.append(" (\n");
-		sb.append("\t mod_id INT NOT NULL,\n");
-		try {
+		try { //Load document
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(input_text));
 			doc = dBuilder.parse(is);
 			doc.getDocumentElement().normalize();
-			
 			NodeList section = doc.getElementsByTagName("Section");
-			Element sectionElement = (Element) section.item(0);
-			NodeList propertyList = sectionElement.getChildNodes();
-			//We are now at at the "sections" array.
-			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
-			for (int k = 0; k < propertyList.getLength(); k++){
-				//for every property in this filenode (of the data to merge)...
-				Node scannednode = propertyList.item(k);
-				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-					Element prop = (Element) scannednode;
-					
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				String tableSuffix = getTableName(sectionElement.getAttribute("name"));
+				sb.append("/*");
+				sb.append(tableSuffix);
+				sb.append("*/\n");
+				sb.append("CREATE TABLE modmaker_powers_");
+				sb.append(tableSuffix);
+				sb.append(" (\n");
+				sb.append("\tmod_id INT NOT NULL,\n");
+				
+				NodeList propertyList = sectionElement.getChildNodes();
+				//We are now at at the "sections" array.
+				//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+				for (int k = 0; k < propertyList.getLength(); k++){
+					//for every property in this filenode (of the data to merge)...
+					Node scannednode = propertyList.item(k);
+					if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+						Element prop = (Element) scannednode;
+						sb.append("\t");
+						String data = prop.getTextContent();
+						String name = prop.getAttribute("name");
+						if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
+							//its a boolean.
+							sb.append(name);
+							sb.append(" BOOLEAN NOT NULL,\n");
+							continue;
+						}
+						if (DetonationParameters.isDetonationParameters(data)) {
+							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
+							continue;
+						}
+						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+							BaseRankUpgrade bru = new BaseRankUpgrade(tableSuffix, data);
+							continue;
+						}
+						try {
+							double dubs = Double.parseDouble(data);
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						try {
+							int ints = Integer.parseInt(data);
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						System.out.println("UNKNOWN: "+data);
+					}
 				}
+				sb.append("\tmodified boolean NOT NULL,\n");
+				sb.append("\tmodified_genesis boolean NOT NULL,\n");
+				sb.append("\tFOREIGN KEY (mod_id) REFERENCES modmaker_mods(mod_id) ON DELETE CASCADE,\n"); //end of SQL statement
+				sb.append("\tPRIMARY KEY(mod_id)\n");
+				sb.append(") ENGINE=INNODB;\n\n");
 			}
-			sb.append("\tmodified boolean NOT NULL,\n");
-			sb.append("\tmodified_genesis boolean NOT NULL,\n");
-			sb.append("\tFOREIGN KEY (mod_id) REFERENCES modmaker_mods(mod_id) ON DELETE CASCADE,\n"); //end of SQL statement
-			sb.append("\tPRIMARY KEY(mod_id)\n");
-			sb.append(") ENGINE=INNODB;");
 			output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();
@@ -640,5 +682,11 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		String wrappedXML = input.getText();
 		wrappedXML = "<custompowers>"+wrappedXML+"</custompowers>";
 		return wrappedXML;
+	}
+	
+	private String getTableName(String sectionName) {
+		String str = sectionName.substring(sectionName.indexOf('.')+1);
+		str = str.replaceAll("sfxpowercustomaction", "");
+		return str;
 	}
 }

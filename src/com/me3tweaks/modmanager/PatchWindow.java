@@ -120,8 +120,8 @@ public class PatchWindow extends JDialog {
 		}
 		
 		private boolean processBasegameJob(ModJob job) {
-			File bgdir = new File(ModManagerWindow.appendSlash(BioGameDir));
-			String me3dir = ModManagerWindow.appendSlash(bgdir.getParent());
+			File bgdir = new File(ModManager.appendSlash(BioGameDir));
+			String me3dir = ModManager.appendSlash(bgdir.getParent());
 			//Make backup folder if it doesn't exist
 			String backupfolderpath = me3dir.toString()+"cmmbackup\\";
 			File cmmbackupfolder = new File(backupfolderpath);
@@ -172,13 +172,13 @@ public class PatchWindow extends JDialog {
 			// TODO Auto-generated method stub
 			//System.out.println("Processing DLCJOB");
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManagerWindow.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
+			commandBuilder.add(ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
 			commandBuilder.add("-dlcinject");
 			String sfarName = "Default.sfar";
 			if (job.TESTPATCH) {
 				sfarName = "Patch_001.sfar";
 			}
-			commandBuilder.add(ModManagerWindow.appendSlash(BioGameDir)+ModManagerWindow.appendSlash(job.getDLCFilePath())+sfarName);
+			commandBuilder.add(ModManager.appendSlash(BioGameDir)+ModManager.appendSlash(job.getDLCFilePath())+sfarName);
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles();
 			ModManager.debugLogger.writeMessage("Number of files to replace: "+filesToReplace.length);

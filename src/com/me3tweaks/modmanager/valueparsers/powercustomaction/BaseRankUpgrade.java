@@ -9,9 +9,8 @@ public class BaseRankUpgrade {
 	String formula;
 	HashMap<Integer, Double> rankBonuses;
 	
-	
 	/**
-	 * Creates a new Detonation Parameters object. If this throws an exception it is not a valid detonationobjects value.
+	 * Creates a new Detonation Parameters object.
 	 * @param valueToParse
 	 */
 	public BaseRankUpgrade(String tableName, String valueToParse) {
@@ -63,7 +62,7 @@ public class BaseRankUpgrade {
 	
 	public static boolean isRankBonusUpgrade(String input) {
 		//input = "(BaseValue=0.075f,Formula=BonusIsHardValue,RankBonuses[2]=0.05f)";
-		if (input.contains("formula") || input.contains("RankBonuses")) {
+		if (input.contains("BaseValue") || input.contains("formula") || input.contains("RankBonuses")) {
 			return true;
 		}
 		return false;

@@ -1028,16 +1028,16 @@ public class ModMakerCompilerWindow extends JDialog {
 				    commandBuilder.add("");
 					commandBuilder.add("-tlkeditor");
 					commandBuilder.add("decompile");
-					commandBuilder.add(ModManagerWindow.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
-					commandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
+					commandBuilder.add(ModManager.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
+					commandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
 					*/
 					String path = Paths.get(".").toAbsolutePath().normalize()
 							.toString();
 					String compilerPath = path
 							+ "\\Tankmaster TLK\\MassEffect3.TlkEditor.exe";
 					commandBuilder.add(compilerPath);
-					commandBuilder.add(ModManagerWindow.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
-					commandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
+					commandBuilder.add(ModManager.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
+					commandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
 					commandBuilder.add("--mode");
 					commandBuilder.add("ToXml");
 					commandBuilder.add("--no-ui");
@@ -1066,7 +1066,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					//END OF DECOMPILE==================================================
 					//load the decompiled XML file into memory
 					ModManager.debugLogger.writeMessage("Loading TLK XML (file 0) "+tlkType+" into memory.");
-					String tlkFile0 = ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+"\\"+"BIOGame_"+tlkType+"0.xml"; //tankmaster's compiler splits it into files.
+					String tlkFile0 = ModManager.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+"\\"+"BIOGame_"+tlkType+"0.xml"; //tankmaster's compiler splits it into files.
 					DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 					Document tlkXMLFile = dBuilder.parse(tlkFile0);
 					tlkXMLFile.getDocumentElement().normalize();
@@ -1116,8 +1116,8 @@ public class ModMakerCompilerWindow extends JDialog {
 					//START OF TLK COMPILE=========================================================
 					ArrayList<String> tlkCompileCommandBuilder = new ArrayList<String>();
 					tlkCompileCommandBuilder.add(compilerPath);
-					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
-					tlkCompileCommandBuilder.add(ModManagerWindow.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".tlk");
+					tlkCompileCommandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
+					tlkCompileCommandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".tlk");
 					tlkCompileCommandBuilder.add("--mode");
 					tlkCompileCommandBuilder.add("ToTlk");
 					tlkCompileCommandBuilder.add("--no-ui");

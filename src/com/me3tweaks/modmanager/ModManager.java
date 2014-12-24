@@ -121,9 +121,9 @@ public class ModManager {
 		//Got a list of subdirs. Now loop them to find all coalesced/patch/ini files
 		ArrayList<Mod> availableMod = new ArrayList<Mod>();
 		for(int i = 0; i<subdirs.length;i++){
-			File searchSubDirDesc = new File(ModManagerWindow.appendSlash(subdirs[i].toString())+"moddesc.ini");
+			File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString())+"moddesc.ini");
 			if (searchSubDirDesc.exists()){
-				Mod validatingMod = new Mod(ModManagerWindow.appendSlash(subdirs[i].getAbsolutePath())+"moddesc.ini");
+				Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath())+"moddesc.ini");
 				if (validatingMod.isValidMod()){
 					availableMod.add(validatingMod);
 				}
@@ -155,7 +155,7 @@ public class ModManager {
 		if (cOriginal.exists() == false){
 			//Attempt to copy an original
 			try {
-				String coalDirHash = MD5Checksum.getMD5Checksum(ModManagerWindow.appendSlash(origDir)+"CookedPCConsole\\Coalesced.bin");
+				String coalDirHash = MD5Checksum.getMD5Checksum(ModManager.appendSlash(origDir)+"CookedPCConsole\\Coalesced.bin");
 				ModManager.debugLogger.writeMessage("Patch 3 Coalesced Original Hash: "+coalDirHash);
 				ModManager.debugLogger.writeMessage("Current Patch 3 Coalesced Hash: "+patch3CoalescedHash);
 				
@@ -167,7 +167,7 @@ public class ModManager {
 				} else {
 					//Make a backup of it
 					String destFile = "Coalesced.original";
-					String sourceFile = ModManagerWindow.appendSlash(origDir)+"Coalesced.bin";
+					String sourceFile = ModManager.appendSlash(origDir)+"Coalesced.bin";
 					String[] command = { "cmd.exe", "/c", "copy", "/Y", sourceFile, destFile };
 							try {
 								Process p = Runtime.getRuntime().exec(command);
@@ -208,7 +208,7 @@ public class ModManager {
 	}
 	
 	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
-		File executable = new File(ModManagerWindow.appendSlash(System.getProperty("user.dir"))+"ME3Explorer.exe");
+		File executable = new File(ModManager.appendSlash(System.getProperty("user.dir"))+"ME3Explorer.exe");
 		ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: "+executable.getAbsolutePath());
 		
 		if (!executable.exists()){
@@ -230,7 +230,7 @@ public class ModManager {
 			
 		}
 		ModManager.debugLogger.writeMessage("Found ME3Explorer: "+executable.getAbsolutePath());
-		return ModManagerWindow.appendSlash(executable.getParent());//ModManagerWindow.appendSlash("ME3Explorer_0102w_beta");
+		return ModManager.appendSlash(executable.getParent());//ModManager.appendSlash("ME3Explorer_0102w_beta");
 	}
 	
 	  /**
@@ -379,5 +379,21 @@ public class ModManager {
 
 	    transformer.transform(new DOMSource(doc), 
 	         new StreamResult(new OutputStreamWriter(out, "UTF-8")));
+	}
+	
+	/**
+	 * Appends a slash onto the end of a string if not already there.
+	 * 
+	 * @param string
+	 *            Original string
+	 * @return Original string with a slash on the end if it was not there
+	 *         previously.
+	 */
+	protected static String appendSlash(String string) {
+		if (string.charAt(string.length() - 1) == '\\') {
+			return string;
+		} else {
+			return string + "\\";
+		}
 	}
 }

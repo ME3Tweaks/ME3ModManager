@@ -28,7 +28,7 @@ public class AboutWindow extends JDialog {
 	public AboutWindow(JFrame callingWindow) {
 		this.setTitle("About Coalesced Mod Manager");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(380, 338));
+		this.setPreferredSize(new Dimension(380, 365));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
@@ -51,6 +51,7 @@ public class AboutWindow extends JDialog {
 								+ "<br>Uses json-simple: https://code.google.com/p/json-simple/"
 								+ "<br>Uses Apache Commons-io: http://commons.apache.org/proper/commons-io/"
 								+ "<br>Uses JNA: https://github.com/twall/jnaJNA"
+								+ "<br>ModMaker uses TLK and Coalesce tools from TankMaster. Thanks TankMaster!"
 								+ "<br>Packaged with Launch4j: http://launch4j.sourceforge.net/"
 								+ "<br>"
 								+ "<br>Mass Effect 3 is a registered trademark of Electronic Arts."

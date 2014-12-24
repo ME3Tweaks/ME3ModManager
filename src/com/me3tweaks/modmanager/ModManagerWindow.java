@@ -368,7 +368,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsRevertAllDLC = new JMenuItem("Restore all DLCs");
 		toolsRevertSPDLC = new JMenuItem("Restore SP DLCs");
 		toolsRevertMPDLC = new JMenuItem("Restore MP DLCs");
-		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
+		toolsRevertCoal = new JMenuItem("Restore vanilla Coalesced.bin");
 		
 		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
 		toolsAutoTOC = new JMenuItem("Update TOC of current selected");
@@ -454,7 +454,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			ModManager.debugLogger.writeMessage("Didn't find Coalesced.original - checking existing installed one, will copy if verified.");
 			//try to copy the current one
 			String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e";
-			File coalesced = new File(appendSlash(fieldBiogameDir.getText()
+			File coalesced = new File(ModManager.appendSlash(fieldBiogameDir.getText()
 					.toString()) + "CookedPCConsole\\Coalesced.bin");
 			// Take the MD5 first to verify it.
 			try {
@@ -599,7 +599,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		} else
 
 		if (e.getSource() == buttonStartGame) {
-			startGame(appendSlash(fieldBiogameDir.getText()));
+			startGame(ModManager.appendSlash(fieldBiogameDir.getText()));
 		} else
 
 		if (e.getSource() == actionGetME3Exp) {
@@ -648,7 +648,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 	private void createBasegameDB(String biogameDir) {
 		File file = new File(biogameDir);
-		new BasegameHashDB(file.getParent(), true);
+		new BasegameHashDB(this,file.getParent(), true);
 	}
 
 	private void backupDLC(String bioGameDir) {
@@ -668,12 +668,30 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		}
 		return;
 	}
+	
+	private void autoBackupDLC(String bioGameDir, String dlcName) {
+		// Check that biogame is valid
+		if (validateBIOGameDir()) {
+			new BackupWindow(this, bioGameDir, dlcName);
+		} else {
+			// Biogame is invalid
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
+							"Invalid BioGame Directory",
+							JOptionPane.ERROR_MESSAGE);
+			labelStatus.setText(" DLC backup failed");
+			labelStatus.setVisible(true);
+		}
+		return;
+	}
 
 	/**
 	 * Checks that the user has chosen a correct biogame directory.
 	 */
 	private void checkForValidBioGame() {
-		File coalesced = new File(appendSlash(dirChooser.getSelectedFile()
+		File coalesced = new File(ModManager.appendSlash(dirChooser.getSelectedFile()
 				.toString()) + "CookedPCConsole\\Coalesced.bin");
 		if (coalesced.exists()) {
 			String YesNo[] = { "Yes", "No" };
@@ -690,9 +708,9 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
-					ini.put("Settings", "biogame_dir", appendSlash(dirChooser
+					ini.put("Settings", "biogame_dir", ModManager.appendSlash(dirChooser
 							.getSelectedFile().toString()));
-					ModManager.debugLogger.writeMessage(appendSlash(dirChooser
+					ModManager.debugLogger.writeMessage(ModManager.appendSlash(dirChooser
 							.getSelectedFile().toString()));
 					ini.store();
 				} catch (InvalidFileFormatException e) {
@@ -718,7 +736,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	 * @return True if valid, false otherwise
 	 */
 	private boolean validateBIOGameDir() {
-		File coalesced = new File(appendSlash(fieldBiogameDir.getText())
+		File coalesced = new File(ModManager.appendSlash(fieldBiogameDir.getText())
 				+ "CookedPCConsole\\Coalesced.bin");
 		if (coalesced.exists()) {
 			return true;
@@ -810,7 +828,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		labelStatus.setVisible(true);
 
 		// Validate BioGame Dir
-		File coalesced = new File(appendSlash(fieldBiogameDir.getText())
+		File coalesced = new File(ModManager.appendSlash(fieldBiogameDir.getText())
 				+ "CookedPCConsole\\" + "Coalesced.bin");
 		if (ModManager.logging) {
 			ModManager.debugLogger.writeMessage("Validating BioGame dir: "
@@ -833,7 +851,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		if (mod.modsCoal()) {
 			if (ModManager.checkDoOriginal(fieldBiogameDir.getText())) {
 				// check source file
-				File source = new File(appendSlash(mod.getModPath())
+				File source = new File(ModManager.appendSlash(mod.getModPath())
 						+ "Coalesced.bin");
 
 				if (!source.exists()) {
@@ -850,7 +868,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 				}
 
 				String destFile = coalesced.toString();
-				String sourceFile = appendSlash(listDescriptors.get(
+				String sourceFile = ModManager.appendSlash(listDescriptors.get(
 						listMods.getSelectedValue().toString()).getModPath())
 						+ "Coalesced.bin";
 				try {
@@ -881,20 +899,47 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		}
 
 		if (mod.getJobs().length > 0) {
-			if (checkBackedUp()) {
-				new PatchWindow(this, mod.getJobs(), fieldBiogameDir.getText(),
-						mod);
-			}
+			checkBackedUp(mod);
+			new PatchWindow(this, mod.getJobs(), fieldBiogameDir.getText(),mod);
 		} else {
-			if (ModManager.logging) {
-				ModManager.debugLogger
-						.writeMessage("No dlc mod job, finishing mod installation");
-			}
+			ModManager.debugLogger.writeMessage("No dlc mod job, finishing mod installation");
 		}
 		return true;
 	}
 
-	private boolean checkBackedUp() {
+	private void checkBackedUp(Mod mod) {
+		ModJob[] jobs = mod.getJobs();
+		for (ModJob job: jobs) {
+			if (job.modType == ModJob.BASEGAME) {
+				continue; //we can't really check for a .bak of Coalesced.
+			}
+			//Default.sfar
+			File backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText())+job.DLCFilePath+"\\Default.sfar.bak");
+			System.out.println("Checking for backup file: "+backFile.getAbsolutePath());
+			if (true || !backFile.exists()) {
+				//Patch_001.sfar
+			    backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText())+job.DLCFilePath+"\\Patch_001.sfar.bak");
+				System.out.println("Checking for backup file: "+backFile.getAbsolutePath());
+				
+				if (true || !backFile.exists()) {
+					String YesNo[] = { "Yes", "No" }; // Yes/no buttons
+					int showDLCBackup = JOptionPane
+							.showOptionDialog(
+									null,
+									"<html>"+job.jobName+" DLC has not been backed up.<br>Back it up now?</hmtl>",
+									"Backup DLC",
+									JOptionPane.YES_NO_OPTION,
+									JOptionPane.QUESTION_MESSAGE, null, YesNo,
+									YesNo[0]);
+					if (showDLCBackup == 0) {
+						autoBackupDLC(fieldBiogameDir.getText(), job.jobName);
+					}
+				}
+			}
+			//Patch001.sfar
+		}
+		
+		/*
 		Wini ini;
 		boolean answer = true;
 		try {
@@ -934,23 +979,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			System.err
 					.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
 		}
-		return answer;
-	}
-
-	/**
-	 * Appends a slash onto the end of a string if not already there.
-	 * 
-	 * @param string
-	 *            Original string
-	 * @return Original string with a slash on the end if it was not there
-	 *         previously.
-	 */
-	protected static String appendSlash(String string) {
-		if (string.charAt(string.length() - 1) == '\\') {
-			return string;
-		} else {
-			return string + "\\";
-		}
+		return answer;*/
 	}
 
 	/**
@@ -1059,7 +1088,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 						.getMD5Checksum(cOriginal.toString()))) {
 					// file is indeed the original
 					// Copy
-					String destFile = appendSlash(bioGameDir)
+					String destFile = ModManager.appendSlash(bioGameDir)
 							+ "CookedPCConsole\\Coalesced.bin";
 					if (new File(destFile).exists() == false) {
 						JOptionPane
@@ -1076,7 +1105,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 					Files.copy(
 							new File(
-									appendSlash(System.getProperty("user.dir"))
+									ModManager.appendSlash(System.getProperty("user.dir"))
 											+ sourceFile).toPath(), new File(
 									destFile).toPath(),
 							StandardCopyOption.REPLACE_EXISTING);
@@ -1097,14 +1126,14 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 					return false;
 				}
 			} catch (Exception e) {
-				System.err.println("Unable to restore original Coalesced.");
-				labelStatus.setText(" Coalesced.bin not restored");
+				ModManager.debugLogger.writeException(e);
+				labelStatus.setText("Coalesced.bin not restored");
 				labelStatus.setVisible(true);
 				e.printStackTrace();
 				return false;
 			}
 		} else {
-			labelStatus.setText(" Coalesced.bin not restored");
+			labelStatus.setText("Coalesced.bin not restored");
 			labelStatus.setVisible(true);
 			JOptionPane
 					.showMessageDialog(

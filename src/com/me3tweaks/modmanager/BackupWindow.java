@@ -52,6 +52,11 @@ public class BackupWindow extends JDialog {
 
 	ModManagerWindow callingWindow;
 
+	/**
+	 * Manually invoked backup window
+	 * @param callingWindow
+	 * @param BioGameDir
+	 */
 	public BackupWindow(ModManagerWindow callingWindow, String BioGameDir) {
 		// callingWindow.setEnabled(false);
 		this.callingWindow = callingWindow;
@@ -88,10 +93,54 @@ public class BackupWindow extends JDialog {
 		} catch (IOException e) {
 			System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
 		}
-		
-		
-		
 		this.setVisible(true);
+	}
+
+	/**
+	 * Automated backup window
+	 * @param modManagerWindow
+	 * @param bioGameDir
+	 * @param dlcName DLC to backup
+	 */
+	public BackupWindow(ModManagerWindow callingWindow, String bioGameDir,
+			String dlcName) {
+		// callingWindow.setEnabled(false);
+				this.callingWindow = callingWindow;
+				this.BioGameDir = bioGameDir;
+				checkboxMap = new HashMap<String, JCheckBox>();
+				failedBackups = new ArrayList<String>();
+
+				this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+				this.setTitle("DLC Backup");
+				this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+				this.setPreferredSize(new Dimension(260, 77));
+				this.setResizable(false);
+
+				setupWindowAutomated(dlcName);
+
+				this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+				this.pack();
+				this.setLocationRelativeTo(callingWindow);
+				//Set the backup flag to true
+				/*Wini ini;
+				try {
+					File settings = new File(ModManager.settingsFilename);
+					if (!settings.exists()) {
+						ModManager.debugLogger.writeMessage("Created new settings file, didn't previously exist.");
+						settings.createNewFile();
+					}
+					ini = new Wini(settings);
+					ini.put("Settings", "dlc_backed_up", "1");
+					ini.store();
+					ModManager.debugLogger.writeMessage("Set the DLC backed up flag to 1.");
+				} catch (InvalidFileFormatException e) {
+					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
+					e.printStackTrace();
+				} catch (IOException e) {
+					System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				}*/
+				new backupDLCJob(BioGameDir, new String[] {dlcName}, true).execute();
+				this.setVisible(true);
 	}
 
 	private void setupWindow() {
@@ -125,7 +174,7 @@ public class BackupWindow extends JDialog {
 		for (String dlcName : headerArray) {
 			JCheckBox checkbox = new JCheckBox(dlcName);
 			// checkBoxPanel.add(checkbox);
-			String filepath = ModManagerWindow.appendSlash(BioGameDir) + ModManagerWindow.appendSlash(ModType.getDLCPath(dlcName));
+			String filepath = ModManager.appendSlash(BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
 			File dlcPath = new File(filepath);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
@@ -178,7 +227,7 @@ public class BackupWindow extends JDialog {
 		backupButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				//write to settings
-				new backupDLCJob(BioGameDir, getJobs()).execute();
+				new backupDLCJob(BioGameDir, getJobs(), false).execute();
 			}
 		});
 
@@ -202,6 +251,23 @@ public class BackupWindow extends JDialog {
 		});
 	}
 
+	private void setupWindowAutomated(String dlcName){
+		JPanel rootPanel = new JPanel(new BorderLayout());
+		JPanel northPanel = new JPanel(new BorderLayout());
+		infoLabel = new JLabel("Backing up "+dlcName+"...");
+		northPanel.add(infoLabel, BorderLayout.NORTH);
+
+		progressBar = new JProgressBar(0, 100);
+		progressBar.setStringPainted(true);
+		progressBar.setIndeterminate(true);
+		progressBar.setEnabled(false);
+		// progressBar.setPreferredSize(new Dimension(0, 28));
+		northPanel.add(progressBar, BorderLayout.SOUTH);
+		rootPanel.add(northPanel, BorderLayout.NORTH);
+		rootPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
+		add(rootPanel);
+	}
+	
 	private String[] getJobs() {
 		String[] dlcNames = ModType.getHeaderNameArray();
 		ArrayList<String> jobs = new ArrayList<String>();
@@ -226,14 +292,18 @@ public class BackupWindow extends JDialog {
 		int numjobs = 0;
 		String bioGameDir;
 		String[] jobs;
+		boolean closeOnComplete;
 
-		protected backupDLCJob(String bioGameDir, String[] jobs) {
-			backupButton.setEnabled(false);
-
+		protected backupDLCJob(String bioGameDir, String[] jobs, boolean closeOnComplete) {
+			if (backupButton != null) {
+				backupButton.setEnabled(false);
+				infoLabel.setText("Backing up DLC...");
+			}
+			this.closeOnComplete = closeOnComplete;
 			this.jobs = jobs;
 			this.bioGameDir = bioGameDir;
 			numjobs = jobs.length;
-			infoLabel.setText("Backing up DLC...");
+			
 			ModManager.debugLogger.writeMessage("Starting the backupDLCJob utility. Number of jobs to do: " + numjobs);
 		}
 
@@ -244,7 +314,7 @@ public class BackupWindow extends JDialog {
 			for (String dlcName : jobs) {
 				if (windowOpen == true) {// if the window is closed this will quickly finish this thread after the current job finishes
 					ModManager.debugLogger.writeMessage("Processing backup job");
-					if (processBackupJob(ModManagerWindow.appendSlash(bioGameDir) + ModManagerWindow.appendSlash(ModType.getDLCPath(dlcName)),dlcName,sfarHashes)){
+					if (processBackupJob(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName)),dlcName,sfarHashes)){
 						completed++;
 					}
 					publish(Integer.toString(completed));
@@ -342,18 +412,21 @@ public class BackupWindow extends JDialog {
 		protected void done() {
 			showFailedBackups();
 			finishBackup(completed);
+			if (closeOnComplete) {
+				dispose();
+			}
 			return;
 		}
 	}
 
 	protected void finishBackup(int completed) {
-		if (ModManager.logging){
-			ModManager.debugLogger.writeMessage("Finished backing up DLCs.");
-		}
-		callingWindow.labelStatus.setText(" " + completed + " DLCs backed up.");
+		ModManager.debugLogger.writeMessage("Finished backing up DLCs.");
+		callingWindow.labelStatus.setText(completed + " DLCs backed up.");
 		callingWindow.labelStatus.setVisible(true);
-		backupButton.setEnabled(true);
-		infoLabel.setText("Select DLCs to backup.");
+		if (backupButton != null) {
+			backupButton.setEnabled(true);
+			infoLabel.setText("Select DLCs to backup.");
+		}
 	}
 
 	public void addFailure(String dlcName, String reason) {
