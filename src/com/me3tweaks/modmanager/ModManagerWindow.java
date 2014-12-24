@@ -916,12 +916,12 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			//Default.sfar
 			File backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText())+job.DLCFilePath+"\\Default.sfar.bak");
 			System.out.println("Checking for backup file: "+backFile.getAbsolutePath());
-			if (true || !backFile.exists()) {
+			if (!backFile.exists()) {
 				//Patch_001.sfar
 			    backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText())+job.DLCFilePath+"\\Patch_001.sfar.bak");
 				System.out.println("Checking for backup file: "+backFile.getAbsolutePath());
 				
-				if (true || !backFile.exists()) {
+				if (!backFile.exists()) {
 					String YesNo[] = { "Yes", "No" }; // Yes/no buttons
 					int showDLCBackup = JOptionPane
 							.showOptionDialog(
