@@ -32,10 +32,10 @@ import org.w3c.dom.Document;
 public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
-	public static long BUILD_NUMBER = 26L;
-	public static final String BUILD_DATE = "12/22/2014";
+	public static long BUILD_NUMBER = 25L;
+	public static final String BUILD_DATE = "12/25/2014";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.2; //max modmaker version
@@ -73,6 +73,9 @@ public class ModManager {
 				if (superDebugStr!= null && superDebugStr.equals("SUPERDEBUG")) {
 					System.out.println("Forcing SUPERDEBUG mode on");
 					IS_DEBUG = true;
+					debugLogger.initialize();
+					logging = true;
+					debugLogger.writeMessage("Starting logger. Mod Manager version"+ModManager.VERSION+" Build "+ModManager.BUILD_NUMBER);
 				}
 			} catch (InvalidFileFormatException e) {
 				System.out.println("Invalid file format exception. Logging mode disabled");

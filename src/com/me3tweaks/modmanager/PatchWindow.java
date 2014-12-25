@@ -21,7 +21,12 @@ import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
+
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+
+import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
+import com.me3tweaks.modmanager.basegamedb.RepairFileInfo;
 
 @SuppressWarnings("serial")
 /**
@@ -120,6 +125,7 @@ public class PatchWindow extends JDialog {
 		}
 		
 		private boolean processBasegameJob(ModJob job) {
+			publish("Processing basegame files...");
 			File bgdir = new File(ModManager.appendSlash(BioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
 			//Make backup folder if it doesn't exist
@@ -127,9 +133,8 @@ public class PatchWindow extends JDialog {
 			File cmmbackupfolder = new File(backupfolderpath);
 			cmmbackupfolder.mkdirs();
 			ModManager.debugLogger.writeMessage("Basegame backup directory should have been created if it does not exist already.");
-			
-			
 			//Prep replacement job
+			BasegameHashDB bghDB = null; //don't load if not necessary.
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles(); 
 			int numFilesToReplace = filesToReplace.length;
@@ -146,23 +151,104 @@ public class PatchWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Checking for backup file at "+backupfile);
 				if (!backupfile.exists()) {
 					//backup the file
-					
+					if (bghDB == null) {
+						publish(ModType.BASEGAME + ": Loading repair database");
+						bghDB = new BasegameHashDB(null,new File(BioGameDir).getParent(), false);
+					}
 					Path backuppath = Paths.get(backupfile.toString());
 					backupfile.getParentFile().mkdirs();
+					
+					String relative = ResourceUtils.getRelativePath(basegamefile.getAbsolutePath(), me3dir, File.separator);
+					RepairFileInfo rfi = bghDB.getFileInfo(relative);
+					//validate file to backup.
+					boolean justInstall = false;
+					boolean installAndUpdate = false;
+					if (rfi == null) {
+						int reply = JOptionPane.showOptionDialog(null, "<html>The file:<br>"+relative+"<br>is not in the repair database. "
+								+ "Installing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.<br></html>", "Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION,
+								JOptionPane.WARNING_MESSAGE, null, new String[] {"Add to DB and install", "Install file", "Cancel mod installation"}, "default");
+						switch (reply) {
+							case JOptionPane.CANCEL_OPTION:
+								return false;
+							case JOptionPane.NO_OPTION:
+								justInstall = true;
+								break;
+							case JOptionPane.YES_OPTION:
+								installAndUpdate = true;
+								break;
+						}
+					}
+					
+					//Check filesize
+					if (!justInstall && !installAndUpdate) {
+						if (basegamefile.length() != rfi.filesize) {
+							//MISMATCH!
+							int reply = JOptionPane.showOptionDialog(null, "<html>The filesize of the file:<br>"+relative+"<br>does not match the one stored in the repair game database.<br>"
+									+ basegamefile.length() +" bytes (installed) vs "+rfi.filesize+" bytes (database)<br><br>"
+									+ "This file could be corrupted or modified since the database was created.<br>"
+									+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when you restore.<br></html>", "Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION,
+									JOptionPane.WARNING_MESSAGE, null, new String[] {"Backup and update DB", "Backup this file", "Cancel mod installation"}, "default");
+							switch (reply) {
+								case JOptionPane.CANCEL_OPTION:
+									return false;
+								case JOptionPane.NO_OPTION:
+									justInstall = true;
+									break;
+								case JOptionPane.YES_OPTION:
+									installAndUpdate = true;
+									break;
+							}
+						}
+					}
+					
+					//Check hash
+					if (!justInstall && !installAndUpdate) {
+						//this is outside of the previous if statement as the previous one could set the restoreAnyways variable again.
+						try {
+							if (!MD5Checksum.getMD5Checksum(basegamefile.getAbsolutePath()).equals(rfi.md5)){
+								int reply = JOptionPane.showOptionDialog(null, "<html>The hash of the file:<br>"+relative+"<br>does not match the one stored in the repair game database.<br>"
+										+ "This file has changed since the database was created.<br>"
+										+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when restoring.<br></html>", "Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION,
+										JOptionPane.WARNING_MESSAGE, null, new String[] {"Backup and update DB", "Backup this file", "Cancel mod installation"}, "default");
+								switch (reply) {
+									case JOptionPane.CANCEL_OPTION:
+										return false;
+									case JOptionPane.NO_OPTION:
+										justInstall = true;
+										break;
+									case JOptionPane.YES_OPTION:
+										installAndUpdate = true;
+										break;
+								}
+							}
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							ModManager.debugLogger.writeException(e);
+						}
+					}
+					
 					try {
 						//backup and then copy file
 						Files.copy(originalpath, backuppath);
 						ModManager.debugLogger.writeMessage("Backed up "+fileToReplace);
+						if (installAndUpdate) {
+							ArrayList<File> updateFile = new ArrayList<File>();
+							updateFile.add(basegamefile);
+							bghDB.updateDB(updateFile);
+						}
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
 				}
+				//install file.
 				try {
+					ModManager.debugLogger.writeMessage("Installing mod file: "+newFile);
+					publish(ModType.BASEGAME + ": Installing "+FilenameUtils.getName(newFile));
 					Path newfilepath = Paths.get(newFile);
 					Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
 					ModManager.debugLogger.writeMessage("Installed mod file: "+newFile);
 				} catch (IOException e) {
-					e.printStackTrace();
+					ModManager.debugLogger.writeException(e);
 				}
 			}
 			return true;

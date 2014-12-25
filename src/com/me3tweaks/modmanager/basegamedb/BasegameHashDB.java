@@ -70,8 +70,6 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		} else {
 			loadDatabase();
 		}
-		
-
 	}
 	
 	private void setupWindow() {
@@ -98,14 +96,15 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		consoleArea = new JTextArea();
 		consoleArea.setLineWrap(true);
 		consoleArea.setWrapStyleWord(true);
-		consoleArea.setText("The basegame repair database functions like Origin's repair game feature, but allows you to keep mods installed (such as texture swaps) as your default configuration.\n"
-				+ "\nIt will take several minutes to create or update the database. When files are installed through a BASEGAME mod descriptor, files that are backed up are checked against this database for authenticity.\n"
-				+ "\nFiles that fail this check when restoring indicates that the currently backed up file does not match your default configuration, and will prompt you before it is restored.");
+		consoleArea.setText("The basegame repair database keeps track of your preferred configuration of files, so when restoring you get a certain set of files restored, such as texture swaps or a specific Coalesced file.\n"
+				+ "\nUpdate the database only when your game is in the state you want to always restore to. For example, vanilla. It will take several minutes to create or update the database. When files are installed through a BASEGAME mod descriptor, files that are backed up and restored are checked against this database for authenticity.\n"
+				+ "\nFiles that fail this check when restoring indicates that the currently backed up file does not match your default configuration, and will prompt you before it is restored."
+				+ "\n\nNote that this database only covers the basegame files and not files in DLC.");
 		consoleArea.setEditable(false);
 		
 		rootPanel.add(consoleArea,BorderLayout.CENTER);
 		getContentPane().add(rootPanel);
-		this.setPreferredSize(new Dimension(405,305));
+		this.setPreferredSize(new Dimension(405,370));
 		
 		this.addWindowListener(new java.awt.event.WindowAdapter() {
 		    @Override
@@ -168,7 +167,11 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		ModManager.debugLogger.writeMessage("Starting repairinfo thread.");
 		hmw = new HashmapWorker(filesToHash,progressBar);
 		hmw.execute();
-				
+	}
+	
+	public void updateDB(ArrayList<File> filesToUpdate) {
+		hmw = new HashmapWorker(filesToUpdate,null);
+		hmw.execute();
 	}
 	
 	class HashmapWorker extends SwingWorker<Void, Integer> {
@@ -178,13 +181,17 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 
 		public HashmapWorker(ArrayList<File> filesToHash,
 				JProgressBar progress) {
+			ModManager.debugLogger.writeMessage("Loading HashmapWorker...");
 			this.filesToHash = filesToHash;
 			this.numFiles = filesToHash.size();
 			this.progress = progress;
-			infoLabel.setText("Preparing to create restoration map...");
+			if (showGUI) {
+				infoLabel.setText("Preparing to create restoration map...");
+			}
 		}
 
 		protected Void doInBackground() throws Exception {
+			ModManager.debugLogger.writeMessage("Starting background thread for basegame hash db");
 			PreparedStatement insertStatement, selectStatement,updateStatement = null;
 			DatabaseMetaData dbmd = dbConnection.getMetaData();
 			ResultSet rs = dbmd.getTables(null, null, "BASEGAMEFILES", null);
@@ -215,12 +222,14 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 			updateStatement = dbConnection.prepareStatement(updateString);
 			for (File file : filesToHash) {
 				String fileKey = ResourceUtils.getRelativePath(file.getAbsolutePath(), basePath, File.separator);
+				ModManager.debugLogger.writeMessage("Cataloging "+fileKey);
 				//select first, to see if it's in the DB...
 				selectStatement.setString(1, fileKey);
 				selectStatement.execute();
 				ResultSet srs = selectStatement.getResultSet();
 				if (!srs.next()){
 					//INSERT - ITS NOT THERE.
+					ModManager.debugLogger.writeMessage("Inserting entry "+fileKey);
 					try
 			        {
 						insertStatement.setString(1, fileKey);
@@ -233,6 +242,8 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 			        	ModManager.debugLogger.writeException(sqlExcept);
 			        }
 				} else {
+					//UPDATE SINCE IT EXISTS.
+					ModManager.debugLogger.writeMessage("Updating entry "+fileKey);
 					try
 			        {
 						updateStatement.setString(3, fileKey);
@@ -246,30 +257,32 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 			        }
 				}
 				
-				//UPDATE SINCE IT EXISTS.
-				
-				//Thread.sleep(50);
 				filesProcessed++;
 				this.publish(filesProcessed);
 			}
+			ModManager.debugLogger.writeMessage("Shutting down basegame db thread");
 			return null;
 		}
 
 		@Override
 		protected void process(List<Integer> numCompleted) {
-			if (numFiles > numCompleted.get(0)) {
-				String fileName = ResourceUtils.getRelativePath(filesToHash.get(numCompleted.get(0)).getAbsolutePath(), basePath, File.separator);
-				infoLabel.setText("<html>Cataloging file information for:<br>"
-						+ fileName+"</html>");
+			if (showGUI) {
+				if (numFiles > numCompleted.get(0)) {
+					String fileName = ResourceUtils.getRelativePath(filesToHash.get(numCompleted.get(0)).getAbsolutePath(), basePath, File.separator);
+					infoLabel.setText("<html>Cataloging file information for:<br>"
+							+ fileName+"</html>");
+				}
+				progress.setValue((int) (100 / (numFiles / (float)numCompleted.get(0))));
 			}
-			progress.setValue((int) (100 / (numFiles / (float)numCompleted.get(0))));
 		}
 
 		protected void done() {
 			// Coals decompiled
-			progress.setValue(100);
-			infoLabel.setText("<html>The repair database has been updated.</html>");
-			startMap.setEnabled(true);
+			if (showGUI) {
+				progress.setValue(100);
+				infoLabel.setText("<html>The repair database has been updated.</html>");
+				startMap.setEnabled(true);
+			}
 			ModManager.debugLogger.writeMessage("Hashmap created.");
 		}
 	}

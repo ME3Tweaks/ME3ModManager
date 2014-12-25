@@ -212,7 +212,7 @@ public class RestoreFilesWindow extends JDialog {
 						try {
 							if (!MD5Checksum.getMD5Checksum(backup.getAbsolutePath()).equals(rfi.md5)){
 								int reply = JOptionPane.showOptionDialog(null, "<html>The hash of the file:<br>"+relative+"<br>does not match the one stored in the repair game database.<br>"
-										+ "This file has changed modified since the database was created.<br>"
+										+ "This file has changed since the database was created.<br>"
 										+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>", "Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION,
 										JOptionPane.WARNING_MESSAGE, null, new String[] {"Restore this file", "Skip restoring this file", "Cancel basegame restore"}, "default");
 								switch (reply) {

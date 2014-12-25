@@ -51,7 +51,7 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
-	String code, modName, modDescription, modId, modDev;
+	String code, modName, modDescription, modId, modDev, modVer;
 	ModManagerWindow callingWindow;
 	private static double TOTAL_STEPS = 10;
 	private static String DOWNLOADED_XML_FILENAME = "mod_info";
@@ -346,6 +346,14 @@ public class ModMakerCompilerWindow extends JDialog {
 		NodeList descElement = infoElement.getElementsByTagName("Description");
 		modDescription = descElement.item(0).getTextContent();
 		
+		NodeList devElement = infoElement.getElementsByTagName("Author");
+		modDev = devElement.item(0).getTextContent();
+		
+		NodeList versionElement = infoElement.getElementsByTagName("Version");
+		if (versionElement.getLength() > 0) {
+			modVer = devElement.item(0).getTextContent();
+		}
+		
 		NodeList idElement = infoElement.getElementsByTagName("id");
 		modId = idElement.item(0).getTextContent();
 		
@@ -370,7 +378,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		File moddir = new File(modName);
 		if (moddir.isDirectory()) {
 			try {
-				ModManager.debugLogger.writeMessage("DEBUGGING: Remove existing mod directory");
+				ModManager.debugLogger.writeMessage("Removing existing mod directory");
 				FileUtils.deleteDirectory(moddir);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -1190,7 +1198,9 @@ public class ModMakerCompilerWindow extends JDialog {
 			ini.put("ModInfo", "moddesc", modDescription+"<br>Created with ME3Tweaks ModMaker.");
 			ini.put("ModInfo", "modsite", "https://me3tweaks.com/modmaker");
 			ini.put("ModInfo", "modid", modId);
-			
+			if (modVer != null) {
+				ini.put("ModInfo", "modver", modVer);
+			}
 			// Create directories, move files to them
 			for (String reqcoal : requiredCoals) {
 				File compCoalDir = new File(moddir.toString() + "\\"+coalFilenameToShortName(reqcoal)); //MP4, PATCH2 folders in mod package
@@ -1276,8 +1286,11 @@ public class ModMakerCompilerWindow extends JDialog {
 				}
 			}
 			ini.store();
+			ModManager.debugLogger.writeMessage("Cleaning up...");
 			try {
 				FileUtils.deleteDirectory(new File("tlk"));
+				FileUtils.deleteDirectory(new File("toc"));
+				FileUtils.deleteDirectory(new File("coalesceds"));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1285,12 +1298,16 @@ public class ModMakerCompilerWindow extends JDialog {
 		} catch (InvalidFileFormatException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			System.err.println("Mod file encountered an I/O error while attempting to write it. Mod Descriptor not saved.");
+			ModManager.debugLogger.writeMessage("IOException in CreateCMMMod()!");
+			ModManager.debugLogger.writeException(e);
 		}
 
 		//TOC the mod
 		ModManager.debugLogger.writeMessage("Running autotoc on modmaker mod.");
 		Mod newMod = new Mod(moddesc.toString());
+		if (!newMod.validMod) {
+			//SOMETHING WENT WRONG!
+		}
 		new AutoTocWindow(callingWindow, newMod);
 		stepsCompleted++;
 
