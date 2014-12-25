@@ -84,7 +84,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	ListSelectionModel listSelectionModel;
 	JSplitPane splitPane;
 	JLabel labelStatus;
-	String selectMod = "Select a mod on the left to view its description or to apply it.";
+	String selectMod = "Select a mod on the left to view its description and apply it.";
 	static HashMap<String, Mod> listDescriptors;
 
 	public ModManagerWindow(boolean isUpdate) {
@@ -366,6 +366,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		
 		toolsModMaker.addActionListener(this);
+		toolsAutoTOC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);

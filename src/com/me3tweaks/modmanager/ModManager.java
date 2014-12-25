@@ -35,7 +35,7 @@ public class ModManager {
 	public static long BUILD_NUMBER = 25L;
 	public static final String BUILD_DATE = "12/25/2014";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.2; //max modmaker version
@@ -76,6 +76,11 @@ public class ModManager {
 					debugLogger.initialize();
 					logging = true;
 					debugLogger.writeMessage("Starting logger. Mod Manager version"+ModManager.VERSION+" Build "+ModManager.BUILD_NUMBER);
+				}
+				String forcedVersion  = settingsini.get("Settings", "forceversion");
+				if (forcedVersion!= null && !forcedVersion.equals("")) {
+					System.out.println("Forcing version id: "+forcedVersion);
+					BUILD_NUMBER = Long.parseLong(forcedVersion);
 				}
 			} catch (InvalidFileFormatException e) {
 				System.out.println("Invalid file format exception. Logging mode disabled");
