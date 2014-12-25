@@ -121,6 +121,12 @@ public class RestoreFilesWindow extends JDialog {
 			case RestoreMode.MP:
 				modTypes = ModType.getMPHeaderNameArray();
 				break;
+			case RestoreMode.MPBASE:
+				modTypes = ModType.getMPBaseHeaderNameArray();
+				break;
+			case RestoreMode.SPBASE:
+				modTypes = ModType.getSPBaseHeaderNameArray();
+				break;
 			}
 
 			numjobs = modTypes.length;

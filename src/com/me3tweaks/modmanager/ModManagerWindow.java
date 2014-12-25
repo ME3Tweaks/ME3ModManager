@@ -70,13 +70,13 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			buttonStartGameDLC;
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
-	JMenu actionMenu, toolsMenu, sqlMenu, helpMenu;
+	JMenu actionMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionGetME3Exp, actionReload,
 			actionExit;
-	JMenuItem toolsBackupDLC, toolsBackupBasegame;
-	JMenuItem toolsModMaker, toolsRevertDLCCoalesced, toolsRevertBasegame,
-			toolsRevertAllDLC, toolsRevertSPDLC, toolsRevertMPDLC,
-			toolsRevertCoal, toolsAutoTOC, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+	JMenuItem backupBackupDLC, backupBasegame;
+	JMenuItem toolsModMaker, restoreRevertEverything, restoreRevertBasegame,
+			restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
+			restoreRevertCoal, toolsAutoTOC, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem sqlWavelistParser,sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser;
 	JMenuItem helpPost, helpAbout;
 	JList<String> listMods;
@@ -359,61 +359,69 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 		// Tools
 		toolsMenu = new JMenu("Tools");
-
 		toolsModMaker = new JMenuItem("Enter modmaker code");
-		toolsBackupDLC = new JMenuItem("Backup DLCs");
-		toolsBackupBasegame = new JMenuItem("Update basegame file database");
-		toolsRevertDLCCoalesced = new JMenuItem("Revert DLC & Coalesced");
-		toolsRevertBasegame = new JMenuItem("Restore basegame files");
-		toolsRevertAllDLC = new JMenuItem("Restore all DLCs");
-		toolsRevertSPDLC = new JMenuItem("Restore SP DLCs");
-		toolsRevertMPDLC = new JMenuItem("Restore MP DLCs");
-		toolsRevertCoal = new JMenuItem("Restore vanilla Coalesced.bin");
-		
-		toolsRevertCoal = new JMenuItem("Restore original Coalesced.bin");
-		toolsAutoTOC = new JMenuItem("Update TOC of current selected");
-		
-
+		toolsAutoTOC = new JMenuItem("Run AutoTOC on currently selected");
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		
 		toolsModMaker.addActionListener(this);
-		toolsBackupDLC.addActionListener(this);
-		toolsBackupBasegame.addActionListener(this);
-		toolsRevertDLCCoalesced.addActionListener(this);
-		toolsRevertBasegame.addActionListener(this);
-		toolsRevertAllDLC.addActionListener(this);
-		toolsRevertSPDLC.addActionListener(this);
-		toolsRevertMPDLC.addActionListener(this);
-		toolsRevertCoal.addActionListener(this);
-		toolsAutoTOC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
-		
-		
-		
-		
+
 		toolsMenu.add(toolsModMaker);
 		toolsMenu.addSeparator();
-		toolsMenu.add(toolsBackupDLC);
-		toolsMenu.add(toolsBackupBasegame);
-		toolsMenu.addSeparator();
-		toolsMenu.add(toolsRevertDLCCoalesced);
-		toolsMenu.add(toolsRevertBasegame);
-		toolsMenu.add(toolsRevertAllDLC);
-		toolsMenu.add(toolsRevertSPDLC);
-		toolsMenu.add(toolsRevertMPDLC);
-		toolsMenu.add(toolsRevertCoal);
-		toolsMenu.addSeparator();
 		toolsMenu.add(toolsAutoTOC);
-		
 		toolsMenu.add(toolsInstallLauncherWV);
 		toolsMenu.add(toolsInstallBinkw32);
 		toolsMenu.add(toolsUninstallBinkw32);
 		menuBar.add(toolsMenu);
 
+		//BACKUP
+		backupMenu = new JMenu("Backup");
+		backupBackupDLC = new JMenuItem("Backup DLCs");
+		backupBasegame = new JMenuItem("Update basegame file database");
+		
+		backupBackupDLC.addActionListener(this);
+		backupBasegame.addActionListener(this);
+		
+		backupMenu.add(backupBackupDLC);
+		backupMenu.add(backupBasegame);
+		menuBar.add(backupMenu);
+		
+		//RESTORE
+		restoreMenu = new JMenu("Restore");
+		restoreRevertEverything = new JMenuItem("Restore everything");
+		restoreRevertBasegame = new JMenuItem("Restore basegame files");
+		restoreRevertAllDLC = new JMenuItem("Restore all DLCs");
+		restoreRevertSPDLC = new JMenuItem("Restore SP DLCs");
+		restoreRevertSPBaseDLC = new JMenuItem("Restore SP DLC + Basegame");
+		restoreRevertMPDLC = new JMenuItem("Restore MP DLCs");
+		restoreRevertMPBaseDLC = new JMenuItem("Restore MP DLC + Basegame");
+		restoreRevertCoal = new JMenuItem("Restore vanilla Coalesced.bin");
+		
+		restoreRevertEverything.addActionListener(this);
+		restoreRevertBasegame.addActionListener(this);
+		restoreRevertAllDLC.addActionListener(this);
+		restoreRevertSPDLC.addActionListener(this);
+		restoreRevertSPBaseDLC.addActionListener(this);
+		restoreRevertMPDLC.addActionListener(this);
+		restoreRevertMPBaseDLC.addActionListener(this);
+		restoreRevertCoal.addActionListener(this);
+		
+		restoreMenu.add(restoreRevertEverything);
+		restoreMenu.add(restoreRevertBasegame);
+		restoreMenu.add(restoreRevertAllDLC);
+		restoreMenu.addSeparator();
+		restoreMenu.add(restoreRevertMPDLC);
+		restoreMenu.add(restoreRevertMPBaseDLC);
+		restoreMenu.add(restoreRevertSPDLC);
+		restoreMenu.add(restoreRevertSPBaseDLC);
+		restoreMenu.addSeparator();
+		restoreMenu.add(restoreRevertCoal);
+		menuBar.add(restoreMenu);
+		
 		sqlMenu = new JMenu("SQL");
 		sqlWavelistParser = new JMenuItem("Wavelist Parser");
 		sqlDifficultyParser = new JMenuItem("Biodifficulty Parser");
@@ -461,11 +469,11 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 				if (patch3CoalescedHash.equals(MD5Checksum.getMD5Checksum(coalesced.toString()))) {
 					//back it up
 					Files.copy(coalesced.toPath(), restoreTest.toPath());
-					toolsRevertCoal.setEnabled(true);
+					restoreRevertCoal.setEnabled(true);
 					ModManager.debugLogger.writeMessage("Backed up Coalesced.");
 				} else {
 					ModManager.debugLogger.writeMessage("Didn't back up coalecsed, hash mismatch.");
-					toolsRevertCoal.setEnabled(false);
+					restoreRevertCoal.setEnabled(false);
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -513,33 +521,38 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			new ModMakerWindow(this, fieldBiogameDir.getText());
 		} else
 
-		if (e.getSource() == toolsBackupDLC) {
+		if (e.getSource() == backupBackupDLC) {
 			backupDLC(fieldBiogameDir.getText());
 		} else
 			
-		if (e.getSource() == toolsBackupBasegame) {
+		if (e.getSource() == backupBasegame) {
 			createBasegameDB(fieldBiogameDir.getText());
 		} else
 
-		if (e.getSource() == toolsRevertCoal) {
+		if (e.getSource() == restoreRevertCoal) {
 			restoreCoalesced(fieldBiogameDir.getText());
 		} else
 
-		if (e.getSource() == toolsRevertAllDLC) {
+		if (e.getSource() == restoreRevertAllDLC) {
 			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.ALL);
 		} else
 
-		if (e.getSource() == toolsRevertBasegame) {
+		if (e.getSource() == restoreRevertBasegame) {
 			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.BASEGAME);
 		} else
 
-		if (e.getSource() == toolsRevertSPDLC) {
+		if (e.getSource() == restoreRevertSPDLC) {
 			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.SP);
-		} else if (e.getSource() == toolsRevertMPDLC) {
+		} else if (e.getSource() == restoreRevertMPDLC) {
 			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.MP);
 		} else
+		if (e.getSource() == restoreRevertSPBaseDLC) {
+			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.SPBASE);
+		} else if (e.getSource() == restoreRevertMPBaseDLC) {
+			restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.MPBASE);
+		} else
 
-		if (e.getSource() == toolsRevertDLCCoalesced) {
+		if (e.getSource() == restoreRevertEverything) {
 			restoreEverything(fieldBiogameDir.getText());
 		} else
 
@@ -1159,12 +1172,12 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			new RestoreFilesWindow(this, bioGameDir, restoreMode);
 			return true;
 		} else {
-			labelStatus.setText(" DLC Restoration Failed");
+			labelStatus.setText("Restore Failed");
 			labelStatus.setVisible(true);
 			JOptionPane
 					.showMessageDialog(
 							null,
-							"The BioGame directory is not valid. DLC cannot be restored.",
+							"The BioGame directory is not valid. Files cannot be restored.",
 							"Invalid BioGame Directory",
 							JOptionPane.ERROR_MESSAGE);
 			return false;
