@@ -1176,7 +1176,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 	}
 
-
 	/**
 	 * Creates a CMM Mod package from the completed previous steps.
 	 */

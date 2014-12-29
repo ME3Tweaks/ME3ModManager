@@ -32,10 +32,10 @@ import org.w3c.dom.Document;
 public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
-	public static long BUILD_NUMBER = 25L;
+	public static long BUILD_NUMBER = 26L;
 	public static final String BUILD_DATE = "12/25/2014";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.2; //max modmaker version
@@ -126,7 +126,7 @@ public class ModManager {
 		};
 		File[] subdirs = fileDir.listFiles(fileFilter);
 		
-		//Got a list of subdirs. Now loop them to find all coalesced/patch/ini files
+		//Got a list of subdirs. Now loop them to find all moddesc.ini files
 		ArrayList<Mod> availableMod = new ArrayList<Mod>();
 		for(int i = 0; i<subdirs.length;i++){
 			File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString())+"moddesc.ini");
@@ -151,6 +151,34 @@ public class ModManager {
 		}
 		Arrays.sort(returnMods,java.text.Collator.getInstance());
 		return returnMods;
+	}
+	
+	public static ArrayList<Mod> getCMM3ModsFromDirectory(){
+		File fileDir = new File(System.getProperty("user.dir"));
+		// This filter only returns directories
+		FileFilter fileFilter = new FileFilter() {
+		    public boolean accept(File file) {
+		        return file.isDirectory();
+		    }
+		};
+		File[] subdirs = fileDir.listFiles(fileFilter);
+		
+		//Got a list of subdirs. Now loop them to find all moddesc.ini files
+		ArrayList<Mod> availableMod = new ArrayList<Mod>();
+		for(int i = 0; i<subdirs.length;i++){
+			File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString())+"moddesc.ini");
+			if (searchSubDirDesc.exists()){
+				Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath())+"moddesc.ini");
+				if (validatingMod.isValidMod() && validatingMod.cmmVer >= 3){
+					availableMod.add(validatingMod);
+				}
+			}
+		}
+		
+		/*for (Mod i:availableMod){
+			ModManagerWindow.listDescriptors.put(i.getModName(),i);
+		}*/
+		return availableMod;
 	}
 
 

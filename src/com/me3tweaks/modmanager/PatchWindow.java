@@ -283,7 +283,7 @@ public class PatchWindow extends JDialog {
 			for (String arg : command){
 				sb.append(arg+" ");
 			}
-			ModManager.debugLogger.writeMessage(sb.toString());
+			ModManager.debugLogger.writeMessage("Executing injection command: "+sb.toString());
 			Process p = null;
 				int returncode = 1;
 				try {

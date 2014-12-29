@@ -613,7 +613,7 @@ public class BioAIGUI extends JFrame implements ActionListener {
 		sb.append("\t\t$this->mod_aiweapon_");
 		sb.append(weaponName);
 		sb.append("_modified_genesis = $row['modified_genesis'];\n");
-        sb.append("\t}\n");
+        sb.append("\t}\n\n");
 		
 		output.setText(sb.toString());
 	}

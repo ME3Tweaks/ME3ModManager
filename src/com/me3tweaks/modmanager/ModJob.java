@@ -13,9 +13,7 @@ public class ModJob {
 	protected static final int BASEGAME = 1;
 	protected static final int DLC = 0;
 	protected boolean TESTPATCH = false; //testpatch flag for patch window
-	
-	
-	int modType;
+	protected int modType;
 	String DLCFilePath, jobName;
 	ArrayList<String> newFiles;
 	ArrayList<String> filesToReplace;
@@ -73,4 +71,32 @@ public class ModJob {
 	public String[] getFilesToReplace() {
 		return filesToReplace.toArray(new String[filesToReplace.size()]);
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((DLCFilePath == null) ? 0 : DLCFilePath.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ModJob other = (ModJob) obj;
+		if (DLCFilePath == null) {
+			if (other.DLCFilePath != null)
+				return false;
+		} else if (!DLCFilePath.equals(other.DLCFilePath))
+			return false;
+		return true;
+	}
+	
+	
 }

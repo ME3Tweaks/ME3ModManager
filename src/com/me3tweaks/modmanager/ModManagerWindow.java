@@ -16,6 +16,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.BorderFactory;
@@ -44,6 +45,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -71,12 +73,13 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
 	JMenu actionMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
-	JMenuItem actionModMaker, actionVisitMe, actionGetME3Exp, actionReload,
+	JMenuItem actionModMaker, actionVisitMe, actionOpenME3Exp, actionReload,
 			actionExit;
 	JMenuItem backupBackupDLC, backupBasegame;
-	JMenuItem toolsModMaker, restoreRevertEverything, restoreRevertBasegame,
+	JMenuItem toolsModMaker, toolsMergeMod, toolsAutoTOC, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+	JMenuItem restoreRevertEverything, restoreRevertBasegame,
 			restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
-			restoreRevertCoal, toolsAutoTOC, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+			restoreRevertCoal;
 	JMenuItem sqlWavelistParser,sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser;
 	JMenuItem helpPost, helpAbout;
 	JList<String> listMods;
@@ -233,7 +236,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 		// Title Panel
 		JPanel titlePanel = new JPanel(new BorderLayout());
-		titlePanel.add(new JLabel("Mass Effect 3 - Coalesced Mod Manager "
+		titlePanel.add(new JLabel("Mass Effect 3 Coalesced Mod Manager "
 				+ ModManager.VERSION, SwingConstants.LEFT), BorderLayout.WEST);
 
 		// BioGameDir Panel
@@ -258,7 +261,12 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 
 		// ModsList
 		JPanel modsListPanel = new JPanel(new BorderLayout());
-		JLabel availableModsLabel = new JLabel("  Available Mods:");
+		//JLabel availableModsLabel = new JLabel("  Available Mods:");
+		TitledBorder modListsBorder = BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+				"Available Mods");
+		
+		
 		listDescriptors = new HashMap<String, Mod>();
 		listMods = new JList<String>(ModManager.getModsFromDirectory());
 		listMods.addListSelectionListener(this);
@@ -268,12 +276,17 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-		modsListPanel.add(availableModsLabel, BorderLayout.NORTH);
+		//modsListPanel.add(availableModsLabel, BorderLayout.NORTH);
+		modsListPanel.setBorder(modListsBorder);
 		modsListPanel.add(listScroller, BorderLayout.CENTER);
 
 		// DescriptionField
 		JPanel descriptionPanel = new JPanel(new BorderLayout());
-		JLabel descriptionLabel = new JLabel("Mod Description:");
+		//JLabel descriptionLabel = new JLabel("Mod Description:");
+		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+				"Mod Description");
+		descriptionPanel.setBorder(descriptionBorder);
 		fieldDescription = new JTextArea(selectMod);
 		scrollDescription = new JScrollPane(fieldDescription);
 
@@ -286,14 +299,14 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		scrollDescription
 				.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-		descriptionPanel.add(descriptionLabel, BorderLayout.NORTH);
+		//descriptionPanel.add(descriptionLabel, BorderLayout.NORTH);
 		descriptionPanel.add(scrollDescription, BorderLayout.CENTER);
 		fieldDescription.setCaretPosition(0);
 
 		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, modsListPanel,
 				descriptionPanel);
 		splitPane.setOneTouchExpandable(false);
-		splitPane.setDividerLocation(175);
+		splitPane.setDividerLocation(185);
 
 		// SouthPanel
 		JPanel southPanel = new JPanel(new BorderLayout());
@@ -342,17 +355,20 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		actionMenu = new JMenu("Actions");
 		actionModMaker = new JMenuItem("Create a mod");
 		actionVisitMe = new JMenuItem("Open ME3Tweaks.com");
+		actionOpenME3Exp = new JMenuItem("Run ME3Explorer");
 		actionReload = new JMenuItem("Reload Mods");
 		actionExit = new JMenuItem("Exit");
 
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
 		actionMenu.addSeparator();
+		actionMenu.add(actionOpenME3Exp);
 		actionMenu.add(actionReload);
 		actionMenu.add(actionExit);
 
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
+		actionOpenME3Exp.addActionListener(this);
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
 		menuBar.add(actionMenu);
@@ -360,18 +376,22 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		// Tools
 		toolsMenu = new JMenu("Tools");
 		toolsModMaker = new JMenuItem("Enter modmaker code");
+		toolsMergeMod = new JMenuItem("Merge mods...");
 		toolsAutoTOC = new JMenuItem("Run AutoTOC on currently selected");
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		
 		toolsModMaker.addActionListener(this);
+		toolsMergeMod.addActionListener(this);
 		toolsAutoTOC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
 
 		toolsMenu.add(toolsModMaker);
+		toolsMenu.addSeparator();
+		toolsMenu.add(toolsMergeMod);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsAutoTOC);
 		toolsMenu.add(toolsInstallLauncherWV);
@@ -616,7 +636,24 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			startGame(ModManager.appendSlash(fieldBiogameDir.getText()));
 		} else
 
-		if (e.getSource() == actionGetME3Exp) {
+		if (e.getSource() == actionOpenME3Exp) {
+			ArrayList<String> commandBuilder = new ArrayList<String>();
+			commandBuilder.add(ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true))+"ME3Explorer.exe");
+			//System.out.println("Building command");
+			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+			//Debug stuff
+			StringBuilder sb = new StringBuilder();
+			for (String arg : command){
+				sb.append(arg+" ");
+			}
+			ModManager.debugLogger.writeMessage("Executing me3explorer command: "+sb.toString());
+			try {
+				ProcessBuilder pb = new ProcessBuilder(command);
+				pb.start();
+			} catch (IOException ex) {
+				ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+			}
+					/*
 			URI theURI;
 			try {
 				theURI = new URI("http://goo.gl/1zJXp");
@@ -627,9 +664,11 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			} catch (IOException ex) {
 				// TODO Auto-generated catch block
 				ex.printStackTrace();
-			}
+			}*/
 		} else
-
+		if (e.getSource() == toolsMergeMod) {
+			new MergeModWindow(this);
+		} else
 		if (e.getSource() == toolsAutoTOC) {
 			autoTOC();
 		} else
