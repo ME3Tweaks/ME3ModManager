@@ -33,7 +33,7 @@ public class ModManager {
 	
 	public static final String VERSION = "3.0 Public Beta";
 	public static long BUILD_NUMBER = 26L;
-	public static final String BUILD_DATE = "12/25/2014";
+	public static final String BUILD_DATE = "12/30/2014";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
@@ -169,7 +169,7 @@ public class ModManager {
 			File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString())+"moddesc.ini");
 			if (searchSubDirDesc.exists()){
 				Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath())+"moddesc.ini");
-				if (validatingMod.isValidMod() && validatingMod.cmmVer >= 3){
+				if (validatingMod.isValidMod() && validatingMod.modCMMVer >= 3){
 					availableMod.add(validatingMod);
 				}
 			}

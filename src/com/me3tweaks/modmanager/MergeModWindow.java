@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -18,6 +17,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -205,13 +205,21 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 		if (e.getSource() == mergeButton) {
 			Mod mod1 = mods.get(leftMods.getSelectedIndex());
 			Mod mod2 = mods.get(rightMods.getSelectedIndex());
+			System.out.println("merge window: merge clicked");
 			if (mod1.canMergeWith(mod2)) {
-				Mod merged = mod1.mergeWith(mod2);
+				String s = (String) JOptionPane.showInputDialog(this, "Enter a new name for this mod. The new mod's files will be placed in this folder.","Merged Mod Name", JOptionPane.PLAIN_MESSAGE, null, null, null);
+				if (s!=null && !s.equals("")) {
+					s = s.trim();
+					Mod merged = mod1.mergeWith(mod2,s);
+					merged.createNewMod();
+					dispose();
+					callingWindow.dispose();
+					new ModManagerWindow(false);
+				}
 				
 			} else {
 				new MergeConflictResolutionWindow(this, mod1, mod2);
 			}
 		}
-		
 	}
 }

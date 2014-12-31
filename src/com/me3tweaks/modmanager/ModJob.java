@@ -3,6 +3,8 @@ package com.me3tweaks.modmanager;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.apache.commons.io.FilenameUtils;
+
 /** Contains data that the DLC Injector can understand.
  * It is typically passed as a property container object. (object that contains properties)
  * @author FemShep
@@ -59,6 +61,18 @@ public class ModJob {
 			ModManager.debugLogger.writeMessage("Source file doesn't exist: "+newFile);
 			return false;
 		}
+		if (modType == BASEGAME) {
+			//check first char is \
+			if (fileToReplace.charAt(0) != '\\'){
+				fileToReplace = "\\"+fileToReplace;
+			}
+		} else {
+			//its dlc
+			if (fileToReplace.charAt(0) != '/'){
+				fileToReplace = "/"+fileToReplace;
+			}
+		}
+		
 		newFiles.add(newFile);
 		filesToReplace.add(fileToReplace);
 		return true;
@@ -96,6 +110,19 @@ public class ModJob {
 		} else if (!DLCFilePath.equals(other.DLCFilePath))
 			return false;
 		return true;
+	}
+	
+	/**
+	 * Returns if this job has a PCConsoleTOC in it already
+	 * @return
+	 */
+	public boolean hasTOC() {
+		for (String newFile : newFiles) {
+			if (FilenameUtils.getName(newFile).equals("PCConsoleTOC.bin")) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	

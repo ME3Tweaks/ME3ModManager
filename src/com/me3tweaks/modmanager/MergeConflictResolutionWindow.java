@@ -17,17 +17,16 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
 import org.apache.commons.io.FilenameUtils;
 
 public class MergeConflictResolutionWindow extends JDialog implements ActionListener {
-	JTextField newNameField;
 	JButton mergeButton, favorLeft, favorRight;
 	HashMap<String, ArrayList<String>> conflictFiles;
 	HashMap<String, ArrayList<ButtonGroup>> buttonGroups;
@@ -87,6 +86,7 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 	        
 	        for (String conflictFile : pairs.getValue()) {
 		        JPanel singleConflictPanel = new JPanel(new BorderLayout());
+		        System.out.println(conflictFile);
 		        TitledBorder conflictBorder = BorderFactory.createTitledBorder(
 						BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
 						FilenameUtils.getName(conflictFile));
@@ -116,16 +116,17 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 		        moduleConflictPanel.add(singleConflictPanel);
 	        }
 	        conflictPanel.add(moduleConflictPanel);
-	        it.remove(); // avoids a ConcurrentModificationException
+	        //it.remove(); // avoids a ConcurrentModificationException
 	    }
-		//for (String )
-		
+	    
+	    JPanel bottomPanel = new JPanel(new BorderLayout());
 		mergeButton = new JButton("Merge Mods");
 		mergeButton.addActionListener(this);
 		mergeButton.setEnabled(false);
+		bottomPanel.add(mergeButton);
 		contentPanel.add(topPanel, BorderLayout.NORTH);
 		contentPanel.add(conflictPanel, BorderLayout.CENTER);
-		contentPanel.add(mergeButton, BorderLayout.SOUTH);
+		contentPanel.add(bottomPanel, BorderLayout.SOUTH);
 		
 		contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
 		add(listScroller);
@@ -141,13 +142,23 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 			if (canSubmit()) {
 				mergeButton.setEnabled(true);
 			}
+			return;
 		}
-		System.out.println(e.getActionCommand());
+		if (e.getSource() == mergeButton) {
+			resolveConflicts();
+			return;
+		}
+		if (e.getSource() == favorLeft) {
+			favorAll(false);
+			return;
+		}
+		if (e.getSource() == favorRight) {
+			favorAll(true);
+		}
 	}
 	
 	private boolean canSubmit() {
 		for (Map.Entry<String, ArrayList<ButtonGroup>> entry : buttonGroups.entrySet()) {
-		    String key = entry.getKey();
 		    ArrayList<ButtonGroup> groups = entry.getValue();
 			for (int i = 0; i < groups.size(); i++) { //for all groups
 				ButtonGroup bg = groups.get(i);
@@ -170,27 +181,127 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 		return true;
 	}
 	
-	private void resolveConflicts() {
+	private void favorAll(boolean right) {
 		for (Map.Entry<String, ArrayList<ButtonGroup>> entry : buttonGroups.entrySet()) {
 		    String key = entry.getKey();
 		    ArrayList<ButtonGroup> groups = entry.getValue();
 			for (int i = 0; i < groups.size(); i++) { //for all groups
 				ButtonGroup bg = groups.get(i);
 				Enumeration<AbstractButton> enumer = bg.getElements();
-				int X = MergeModWindow.LEFT;
+				boolean isFirst = true;
 				while (enumer.hasMoreElements()) { //for buttons in the group
 					JRadioButton button = (JRadioButton) enumer.nextElement();
-					if (button.isSelected()) {
+					if (!right) {
+						button.setSelected(true);
 						break;
-					}
-					if (X == MergeModWindow.LEFT) {
-						X = MergeModWindow.RIGHT; //
+					} else if (isFirst) {
+						isFirst = false;
+						continue;
 					} else {
-						System.err.print("Cannot resolve conflicts, one box was not selected!");
+						button.setSelected(true);
+						break;
 					}
 				}
 			}
 		}
+		if (canSubmit()) {
+			mergeButton.setEnabled(true);
+		}
 	}
-
+	
+	private void resolveConflicts() {
+		String s = (String) JOptionPane.showInputDialog(this, "Enter a new name for this mod. The new mod's files will be placed in this folder.","Merged Mod Name", JOptionPane.PLAIN_MESSAGE, null, null, null);
+		if (s!=null && !s.equals("")){
+			s = s.trim();
+			//HashMap<String, ModFile> resolvedFiles = new HashMap<String, ModFile>();
+			Mod merged = mod1.mergeWith(mod2,s);
+			for (Map.Entry<String, ArrayList<ButtonGroup>> entry : buttonGroups.entrySet()) {
+			    String key = entry.getKey();
+			    ArrayList<ButtonGroup> groups = entry.getValue();
+				for (int i = 0; i < groups.size(); i++) { //for all groups
+					ButtonGroup bg = groups.get(i);
+					Enumeration<AbstractButton> enumer = bg.getElements();
+					boolean isLeft = true;
+					//int X = MergeModWindow.LEFT;
+					boolean resolved = false;
+					while (enumer.hasMoreElements()) { //for buttons in the group
+						JRadioButton button = (JRadioButton) enumer.nextElement();
+						/*if (X == MergeModWindow.LEFT && button.isSelected()) {
+							System.out.println("Don't need to do anything as merge conflict leaves mod1 conflict file intact");
+							break;
+						} else {
+							X = MergeModWindow.RIGHT;
+						}*/
+						
+						if (isLeft) {
+							if (button.isSelected()) {
+								System.out.println("Don't need to do anything as merge conflict leaves mod1 conflict file intact");
+								resolved = true;
+								break;
+							} else {
+								isLeft = false;
+							}
+						} else {
+						//if (X == MergeModWindow.RIGHT && button.isSelected()) {
+							System.out.println("CONFLICT IS LEFT: "+isLeft+" for conflict file in "+key);
+							for (ModJob job : merged.jobs) { //merging into mod1
+								if (job.jobName.equals(key)) {
+									//System.out.println("SCANNING FOR: "+job.jobName+": "+job.getFilesToReplace()[x]);
+									ArrayList<String> conflictingFilesInModule = conflictFiles.get(job.jobName);
+									for (String conflictFile : conflictingFilesInModule) {
+										int updateIndex = -1;
+										//for every conflict file...
+										for (int x = 0; x < job.getFilesToReplace().length; x++) {
+											//get index so we can update the newFiles that correspodn to it.
+											if (job.getFilesToReplace()[x].equals(conflictFile)) {
+												System.out.println("FOUND MOD 1 CONFLICT FILE INDEX: "+job.getFilesToReplace()[x]+" "+x);
+												updateIndex = x;
+												break;
+											}
+										}
+										
+										//got the index for mod 1.
+										//get the index for mod 2 so we can look up new path
+										String conflictFilePath = null;
+										for (ModJob mod2job : mod2.jobs) { //find job in mod2
+											if (mod2job.jobName.equals(key)) {
+												for (int x = 0; x < mod2job.getFilesToReplace().length; x++) {
+													if (mod2job.getFilesToReplace()[x].equals(conflictFile)) {
+														System.out.println("FOUND MOD2 FILE INDEX: "+job.getFilesToReplace()[x]+" "+x);
+														conflictFilePath = mod2job.getNewFiles()[x];
+														break;
+													}
+												}
+											}
+										}
+										System.out.println("MOD 2 FILE: "+conflictFilePath);
+										
+										//got new path, now to update it...
+										job.getNewFiles()[updateIndex] = conflictFilePath;
+										resolved = true;
+										//done! whew.
+										
+									}
+									
+									//String findingIndexOf = conflictingFilesInModule.get(conflictingFilesInModule.indexOf(key));
+									
+									//if (job.get)
+								}
+							}
+							if (!resolved) {
+								System.err.println("COULD NOT RESOLVE...");
+							}
+						}
+					}
+				}
+			}
+			//create new mod
+			merged.createNewMod();
+			JOptionPane.showMessageDialog(this, "<html>Merge successful.<br>Mod Manager will now reload mods.</html>", "Mods merged", JOptionPane.INFORMATION_MESSAGE);
+			dispose();
+			callingWindow.dispose();
+			callingWindow.callingWindow.dispose();
+			new ModManagerWindow(false);
+		}
+	}
 }

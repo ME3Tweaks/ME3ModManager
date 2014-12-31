@@ -1337,7 +1337,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			this.progress = progress;
 			if (numtoc > 0) {
 				currentOperationLabel.setText("Downloading "
-						+ tocsToDownload.get(0));
+						+ coalToTOCString(tocsToDownload.get(0)));
 			}
 		}
 
@@ -1395,5 +1395,28 @@ public class ModMakerCompilerWindow extends JDialog {
 	    } catch (Exception ex) {
 	        throw new RuntimeException("Error converting to String", ex);
 	    }
+	}
+
+	public String coalToTOCString(String coalName) {
+		switch (coalName) {
+		case "Default_DLC_CON_MP1.bin":
+			return "MP1 PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP2.bin":
+			return "MP2 PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP3.bin":
+			return "MP3 PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP4.bin":
+			return "MP4 PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP5.bin":
+			return "MP5 PCConsoleTOC.bin";
+		case "Default_DLC_UPD_Patch01.bin":
+			return "PATCH1 PCConsoleTOC.bin";
+		case "Default_DLC_UPD_Patch02.bin":
+			return "PATCH2 PCConsoleTOC.bin";
+		case "Coalesced.bin":
+			return "BASEGAME PCConsoleTOC.bin";
+		default:
+			return null;
+		}
 	}
 }

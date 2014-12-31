@@ -12,6 +12,7 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -60,9 +61,6 @@ public class AutoTocWindow extends JDialog {
 		progressBar.setIndeterminate(false);
 		aboutPanel.add(progressBar, BorderLayout.CENTER);
 		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-		
-		
-		
 		this.getContentPane().add(aboutPanel);
 	}
 	
@@ -80,12 +78,25 @@ public class AutoTocWindow extends JDialog {
 		protected TOCWorker(Mod mod) {
 			this.mod = mod;
 			for (ModJob job : mod.jobs) {
+				boolean hasTOC = false;
+				//find out if it has a toc file
 				for (String file : job.newFiles) {
 					String filename = FilenameUtils.getName(file);
 					if (filename.equals("PCConsoleTOC.bin")) {
-						continue;
-					} else {
-						numtoc++;
+						hasTOC = true;
+						break;
+					}
+				}
+				
+				if (hasTOC) { //calc files
+					for (String file : job.newFiles) {
+						String filename = FilenameUtils.getName(file);
+						if (filename.equals("PCConsoleTOC.bin")) {
+							continue;
+						} else {
+							hasTOC = true;
+							numtoc++;
+						}
 					}
 				}
 			}
@@ -100,47 +111,58 @@ public class AutoTocWindow extends JDialog {
 		public Boolean doInBackground() {
 			//get list of all files to update for the progress bar
 			for (ModJob job : mod.jobs){
-				//get path to PCConsoleTOC
-				for (String newFile : job.newFiles) {
-					
-					String filename = FilenameUtils.getName(newFile);
+				boolean hasTOC = false;
+				for (String file : job.newFiles) {
+					String filename = FilenameUtils.getName(file);
 					if (filename.equals("PCConsoleTOC.bin")) {
-						continue; //this doens't need updated.
+						hasTOC = true;
+						break;
 					}
-					String modulePath = FilenameUtils.getFullPath(newFile); //inside mod, folders like PATCH2 or MP4. Already has a / on the end.
-					ArrayList<String> commandBuilder = new ArrayList<String>();
-					// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-					commandBuilder.add(me3explorer);
-					commandBuilder.add("-toceditorupdate");
-					commandBuilder.add(modulePath+"PCConsoleTOC.bin");
-					commandBuilder.add(filename); //internal filename (if in DLC)
-					commandBuilder.add(Long.toString((new File(newFile)).length()));
-					
-					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-					//Debug stuff
-					StringBuilder sb = new StringBuilder();
-					for (String arg : command){
-						sb.append(arg+" ");
-					}
-					
-					Process p = null;
-					int returncode = 1;
-					ModManager.debugLogger.writeMessage("Executing process for TOC Update: "+sb.toString());
-					try {
-						ProcessBuilder pb = new ProcessBuilder(command);
-						p = pb.start();
-						returncode = p.waitFor();
-					} catch (IOException e) {
-						e.printStackTrace();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					if (returncode != 0) {
-						System.out.println("SOMETHINGS WRONG.");
-						//failedTOC.add(filepath);
-					} else {
-						completed++;
-						publish(Integer.toString(completed));
+				}
+				
+				if (hasTOC) { //toc this job
+					//get path to PCConsoleTOC
+					for (String newFile : job.newFiles) {
+						
+						String filename = FilenameUtils.getName(newFile);
+						if (filename.equals("PCConsoleTOC.bin")) {
+							continue; //this doens't need updated.
+						}
+						String modulePath = FilenameUtils.getFullPath(newFile); //inside mod, folders like PATCH2 or MP4. Already has a / on the end.
+						ArrayList<String> commandBuilder = new ArrayList<String>();
+						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+						commandBuilder.add(me3explorer);
+						commandBuilder.add("-toceditorupdate");
+						commandBuilder.add(modulePath+"PCConsoleTOC.bin");
+						commandBuilder.add(filename); //internal filename (if in DLC)
+						commandBuilder.add(Long.toString((new File(newFile)).length()));
+						
+						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+						//Debug stuff
+						StringBuilder sb = new StringBuilder();
+						for (String arg : command){
+							sb.append(arg+" ");
+						}
+						
+						Process p = null;
+						int returncode = 1;
+						ModManager.debugLogger.writeMessage("Executing process for TOC Update: "+sb.toString());
+						try {
+							ProcessBuilder pb = new ProcessBuilder(command);
+							p = pb.start();
+							returncode = p.waitFor();
+						} catch (IOException e) {
+							e.printStackTrace();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+						if (returncode != 0) {
+							System.out.println("SOMETHINGS WRONG.");
+							//failedTOC.add(filepath);
+						} else {
+							completed++;
+							publish(Integer.toString(completed));
+						}
 					}
 				}
 			}
@@ -169,13 +191,17 @@ public class AutoTocWindow extends JDialog {
 			if (numtoc != completed){
 				//failed something
 				StringBuilder sb = new StringBuilder();
-				sb.append("Failed to TOC at least one of the folders.");
-				callingWindow.labelStatus.setText(" Failed to install at least 1 part of mod");
+				sb.append("Failed to TOC at least one of the files in this mod.");
+				if (callingWindow != null) {
+					callingWindow.labelStatus.setText(" Failed to TOC at least 1 file in mod");
+				}
 				JOptionPane.showMessageDialog(null, sb.toString(), "AutoTOC Error",
 						JOptionPane.ERROR_MESSAGE);
 			} else {
 				//we're good
-				callingWindow.labelStatus.setText(mod.getModName()+" TOC files updated");
+				if (callingWindow != null) {
+					callingWindow.labelStatus.setText(mod.getModName()+" TOC files updated");
+				}
 				dispose();
 			}
 			return;

@@ -72,11 +72,12 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			buttonStartGameDLC;
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
-	JMenu actionMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
+	JMenu actionMenu, modMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionOpenME3Exp, actionReload,
 			actionExit;
+	JMenuItem modutilsHeader, modutilsInfoEditor,modutilsAutoTOC;
 	JMenuItem backupBackupDLC, backupBasegame;
-	JMenuItem toolsModMaker, toolsMergeMod, toolsAutoTOC, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+	JMenuItem toolsModMaker, toolsMergeMod, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem restoreRevertEverything, restoreRevertBasegame,
 			restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
 			restoreRevertCoal;
@@ -372,19 +373,34 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
 		menuBar.add(actionMenu);
-
+		
+		//MOD TOOLS
+		modMenu = new JMenu("Mod Utils");
+		modutilsHeader = new JMenuItem("No mod selected");
+		modutilsHeader.setEnabled(false);
+		modutilsInfoEditor = new JMenuItem("Edit name/description");
+		modutilsInfoEditor.addActionListener(this);
+		modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
+		modutilsAutoTOC.addActionListener(this);
+		
+		modMenu.add(modutilsHeader);
+		modMenu.addSeparator();
+		modMenu.add(modutilsInfoEditor);
+		modMenu.add(modutilsAutoTOC);
+		modMenu.setEnabled(false);
+		menuBar.add(modMenu);
+		
 		// Tools
 		toolsMenu = new JMenu("Tools");
 		toolsModMaker = new JMenuItem("Enter modmaker code");
 		toolsMergeMod = new JMenuItem("Merge mods...");
-		toolsAutoTOC = new JMenuItem("Run AutoTOC on currently selected");
+		
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		
 		toolsModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
-		toolsAutoTOC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
@@ -393,12 +409,14 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsMergeMod);
 		toolsMenu.addSeparator();
-		toolsMenu.add(toolsAutoTOC);
+		
 		toolsMenu.add(toolsInstallLauncherWV);
 		toolsMenu.add(toolsInstallBinkw32);
 		toolsMenu.add(toolsUninstallBinkw32);
 		menuBar.add(toolsMenu);
 
+
+		
 		//BACKUP
 		backupMenu = new JMenu("Backup");
 		backupBackupDLC = new JMenuItem("Backup DLCs");
@@ -669,10 +687,12 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		if (e.getSource() == toolsMergeMod) {
 			new MergeModWindow(this);
 		} else
-		if (e.getSource() == toolsAutoTOC) {
+		if (e.getSource() == modutilsAutoTOC) {
 			autoTOC();
 		} else
-
+		if (e.getSource() == modutilsInfoEditor) {
+			showInfoEditor();
+		} else
 		if (e.getSource() == sqlWavelistParser) {
 			new WavelistGUI();
 		} else
@@ -697,6 +717,17 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		if (e.getSource() == toolsUninstallBinkw32) {
 			uninstallBinkw32Bypass();
 		}
+	}
+
+	private void showInfoEditor() {
+		// TODO Auto-generated method stub
+		String selectedValue = listMods.getSelectedValue();
+		if (selectedValue == null) {
+			return; // shouldn't be able to toc an unselected mod eh?
+		}
+		//System.out.println("SELECTED VALUE: " + selectedValue);
+		Mod mod = listDescriptors.get(selectedValue);
+		new ModInfoEditor(this, mod);
 	}
 
 	private void createBasegameDB(String biogameDir) {
@@ -1050,7 +1081,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		}
 		Mod selectedMod = lookupModByFileName(modName);
 
-		return selectedMod.getModDescription();
+		return selectedMod.getModDisplayDescription();
 	}
 
 	/**
@@ -1082,6 +1113,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			if (listMods.getSelectedIndex() == -1) {
 				buttonApplyMod.setEnabled(false);
 				fieldDescription.setText(selectMod);
+				modMenu.setEnabled(false);
 			} else {
 				// Update mod description
 				fieldDescription.setText(getModDescription(listMods
@@ -1089,6 +1121,8 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 				fieldDescription.setCaretPosition(0);
 				buttonApplyMod.setEnabled(checkIfNone(listMods
 						.getSelectedValue().toString()));
+				modutilsHeader.setText(listMods.getSelectedValue());
+				modMenu.setEnabled(true);
 			}
 		}
 	}
@@ -1325,7 +1359,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		if (selectedValue == null) {
 			return; // shouldn't be able to toc an unselected mod eh?
 		}
-		System.out.println("SELECTED VALUE: " + selectedValue);
+		//System.out.println("SELECTED VALUE: " + selectedValue);
 		Mod mod = listDescriptors.get(selectedValue);
 		new AutoTocWindow(this, mod);
 	}

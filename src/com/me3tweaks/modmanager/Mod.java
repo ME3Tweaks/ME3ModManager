@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -21,7 +22,7 @@ public class Mod {
 	private String modSite;
 	private String modmp;
 	private String modVersion;
-	protected int cmmVer = 1;
+	protected double modCMMVer = 1.0;
 
 	public boolean isValidMod() {
 		return validMod;
@@ -65,17 +66,17 @@ public class Mod {
 		modName = modini.get("ModInfo", "modname");
 		ModManager.debugLogger.writeMessage("------------------Reading "+modName+"------------------");
 		// Check if this mod has been made for Mod Manager 2.0 or legacy mode
-		float modcmmver = 1.0f;
+		modCMMVer = 1.0f;
 		try {
-			modcmmver = Float.parseFloat(modini.get("ModManager", "cmmver"));
+			modCMMVer = Float.parseFloat(modini.get("ModManager", "cmmver"));
 		} catch (NumberFormatException e) {
 			ModManager.debugLogger.writeMessage("Didn't read a ModManager version of the mod. Setting modtype to legacy");
-			modcmmver = 1.0f;
+			modCMMVer = 1.0f;
 		}
 
 		// Backwards compatibility for mods that are built to target older versions of mod manager (NO DLC)
-		if (modcmmver < 2.0f) {
-			cmmVer = 1;
+		if (modCMMVer < 2.0f) {
+			modCMMVer = 1.0f;
 			ModManager.debugLogger.writeMessage("Modcmmver is less than 2, checking for coalesced.bin in folder (legacy)");
 			File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
 			if (!file.exists()) {
@@ -83,7 +84,7 @@ public class Mod {
 				return;
 			}
 			addTask(ModType.COAL, null);
-			setModDescription(true);
+			setModDisplayDescription(true);
 
 			validMod = true;
 			ModManager.debugLogger.writeMessage(modName + " valid, marked as legacy mod. Added coalesced swap job, marked valid, finish reading mod.");
@@ -124,7 +125,7 @@ public class Mod {
 
 				// Check to make sure the filenames are the same, and if they are, then the mod is going to be valid.
 				// Start building the mod job.
-				cmmVer = 3;
+				modCMMVer = 3.0;
 				ModJob newJob;
 				if (modHeader.equals(ModType.BASEGAME)){
 					newJob = new ModJob();
@@ -156,8 +157,8 @@ public class Mod {
 		}
 
 		// Backwards compatibility for Mod Manager 2's modcoal flag (has now moved to [BASEGAME] as of 3.0)
-		if (modcmmver < 3.0f && modcmmver>=2.0f) {
-			cmmVer = 2;
+		if (modCMMVer < 3.0f && modCMMVer>=2.0f) {
+			modCMMVer = 2.0;
 			ModManager.debugLogger.writeMessage(modName + ": Checking for modcoal in moddesc.ini because moddesc targets cmm2.0");
 			
 			int modCoalFlag = 0;
@@ -185,14 +186,14 @@ public class Mod {
 		
 		
 			ModManager.debugLogger.writeMessage("Finished reading mod.");
-			if (modcmmver < 3.0f) {
+			if (modCMMVer < 3.0f) {
 				//only print if it's not able to use BASEGAME
 				ModManager.debugLogger.writeMessage("Coalesced Swap: "+modCoal);
 			}
 			ModManager.debugLogger.writeMessage("Number of Mod Jobs:" +jobs.size());
 		if (jobs.size() > 0 || modCoal == true) {
 			ModManager.debugLogger.writeMessage("Mod Marked as valid, finish reading mod.");
-			setModDescription(false);
+			setModDisplayDescription(false);
 			validMod = true;
 		}
 		
@@ -200,25 +201,24 @@ public class Mod {
 		// Add MP Changer
 		if (modini.get("ModInfo", "modmp") != null) {
 			modmp = modini.get("ModInfo", "modmp");
+			ModManager.debugLogger.writeMessage("Detected multiplayer modification");
 		}
 		// Add developer
 		if (modini.get("ModInfo", "moddev") != null) {
 			modAuthor = modini.get("ModInfo", "moddev");
-			ModManager.debugLogger.writeMessage("Mod Marked as valid, finish reading mod.");
+			ModManager.debugLogger.writeMessage("Detected developer name");
 		}
 		// Add Devsite
 		if (modini.get("ModInfo", "modsite") != null) {
 			modSite = modini.get("ModInfo", "modsite");
+			ModManager.debugLogger.writeMessage("Detected developer site");
 		}
 		
 		// Add Modmaker
 		if (modini.get("ModInfo", "modid") != null) {
 			modmakerCode = modini.get("ModInfo", "modid");
+			ModManager.debugLogger.writeMessage("Detected modmaker code");
 		}
-		
-		
-		
-		
 		ModManager.debugLogger.writeMessage("--------------------------END OF "+modName+"--------------------------");
 	}
 
@@ -272,8 +272,16 @@ public class Mod {
 	public String getModName() {
 		return modName;
 	}
+	
+	/**
+	 * Sets this mod description. It should be run through breakfixer() first.
+	 * @param desc
+	 */
+	public void setModDescription(String desc) {
+		this.modDescription = desc;
+	}
 
-	public void setModDescription(boolean markedLegacy) {
+	public void setModDisplayDescription(boolean markedLegacy) {
 		modDisplayDescription = "This mod has no description in it's moddesc.ini file or there was an error reading the description of this mod.";
 		if (modDescFile == null) {
 			ModManager.debugLogger.writeMessage("Mod Desc file is null, unable to read description");
@@ -334,8 +342,12 @@ public class Mod {
 		}
 	}
 
-	public String getModDescription() {
+	public String getModDisplayDescription() {
 		return modDisplayDescription;
+	}
+	
+	public String getModDescription(){ 
+		return modDescription;
 	}
 
 	/**
@@ -345,7 +357,7 @@ public class Mod {
 	 *            String to parse
 	 * @return String that has been fixed
 	 */
-	private String breakFixer(String string) {
+	public static String breakFixer(String string) {
 		String br = "<br>";
 		if (string == null) {
 			return string;
@@ -383,11 +395,12 @@ public class Mod {
 			}
 			//scanned for matching job. Found it. Iterate over files...
 			for (String file : job.getFilesToReplace()) {
-				if (file.equals("PCConsoleTOC.bin")) {
+				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
 					continue;
 				}
 				for (String otherfile : otherCorrespondingJob.getFilesToReplace()) {
 					if (file.equals(otherfile)) {
+						System.out.println("Merge conflicts with file to update "+file);
 						return false;
 					}
 				}			
@@ -418,6 +431,7 @@ public class Mod {
 					if (file.equals(otherfile)) {
 						if (conflicts.containsKey(job.jobName)){
 							conflicts.get(job.jobName).add(file);
+							System.out.println("ADDING TO CONFLICT LIST: "+file);
 						} else {
 							ArrayList<String> conflictFiles = new ArrayList<String>();
 							conflictFiles.add(file);
@@ -440,13 +454,13 @@ public class Mod {
 	 * @param folderName mod's foldername
  	 * @return moddesc.ini file as a string
 	 */
-	public String createModDescIni() {
+	public String createModDescIni(double cmmVersion) {
 		// Write mod descriptor file
 		try {
 			Wini ini = new Wini();
 			
 			//put modmanager, modinfo
-			ini.put("ModManager", "cmmver", 3.0);
+			ini.put("ModManager", "cmmver", cmmVersion);
 			ini.put("ModInfo", "modname", modName);
 			ini.put("ModInfo", "moddev", modAuthor);
 			if (modVersion != null) {
@@ -457,6 +471,12 @@ public class Mod {
 			}
 			if (modVersion != null) {
 				ini.put("ModInfo", "modver", modVersion);
+			}
+			if (modmp != null) {
+				ini.put("ModInfo", "modmp", modmp);
+			}
+			if (modSite != null) {
+				ini.put("ModInfo", "modsite", modSite);
 			}
 			if (modmakerCode != null) {
 				ini.put("ModInfo", "modid", modmakerCode);
@@ -495,123 +515,6 @@ public class Mod {
 			
 		}
 		return "failure";
-		
-
-			
-			
-			
-			/*
-			// Create directories, move files to them
-			for (String reqcoal : requiredCoals) {
-				File compCoalDir = new File(moddir.toString() + "\\"+coalFilenameToShortName(reqcoal)); //MP4, PATCH2 folders in mod package
-				compCoalDir.mkdirs();
-				String fileNameWithOutExt = FilenameUtils.removeExtension(reqcoal);
-				//copy coal
-				File coalFile = new File("coalesceds\\"+fileNameWithOutExt+"\\"+reqcoal);
-				File destCoal = new File(compCoalDir+"\\"+reqcoal);
-				destCoal.delete();
-				if (coalFile.renameTo(destCoal)){
-					ModManager.debugLogger.writeMessage("Moved "+reqcoal+" to proper mod element directory");
-				} else {
-					ModManager.debugLogger.writeMessage("ERROR! Didn't move "+reqcoal+" to the proper mod element directory. Could already exist.");
-				}
-				//copy pcconsoletoc
-				File tocFile = new File("toc\\"+coalFilenameToShortName(reqcoal)+"\\PCConsoleTOC.bin");
-				File destToc = new File(compCoalDir+"\\PCConsoleTOC.bin");
-				destToc.delete();
-				if (tocFile.renameTo(destToc)){
-					ModManager.debugLogger.writeMessage("Moved "+reqcoal+" TOC to proper mod element directory");
-				} else {
-					ModManager.debugLogger.writeMessage("ERROR! Didn't move "+reqcoal+" TOC to the proper mod element directory. Could already exist.");
-				}
-				if (reqcoal.equals("Coalesced.bin")) {
-					//it is basegame. copy the tlk files!
-					String[] tlkFiles = {"INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL"};
-					for (String tlkFilename : tlkFiles) {
-						File compiledTLKFile = new File("tlk\\"+"BIOGame_"+tlkFilename+".tlk");
-						if (!compiledTLKFile.exists()) {
-							ModManager.debugLogger.writeMessage("TLK file "+compiledTLKFile+" is missing, might not have been compiled by this modmaker version. skipping.");
-							continue;
-						}
-						File destTLKFile= new File(compCoalDir+"\\BIOGame_"+tlkFilename+".tlk");
-						if (compiledTLKFile.renameTo(destTLKFile)){
-							ModManager.debugLogger.writeMessage("Moved "+compiledTLKFile+" TLK to BASEGAME directory");
-						} else {
-							ModManager.debugLogger.writeMessage("ERROR! Didn't move "+compiledTLKFile+" TLK to the BASEGAME directory. Could already exist.");
-						}
-					}
-				}
-
-				File compCoalSourceDir = new File("coalesceds\\"+fileNameWithOutExt);
-				
-				//TODO: Add PCConsoleTOC.bin to the desc file.
-				boolean basegame = 	reqcoal.equals("Coalesced.bin");
-				ini.put(coalNameToModDescName(reqcoal), "moddir", coalFilenameToShortName(reqcoal));
-				
-				if (basegame) {
-					StringBuilder newsb = new StringBuilder();
-					StringBuilder replacesb = new StringBuilder();
-					//coalesced
-					newsb.append(reqcoal);
-					replacesb.append(coalFileNameToDLCDir(reqcoal));
-					
-					//tlk, if they exist.
-					String[] tlkFiles = {"INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL"};
-					for (String tlkFilename : tlkFiles) {
-						File basegameTLKFile = new File(compCoalDir+"\\BIOGame_"+tlkFilename+".tlk");
-						if (basegameTLKFile.exists()) {
-							newsb.append(";BIOGame_"+tlkFilename+".tlk");
-							replacesb.append(";\\BIOGame\\CookedPCConsole\\BIOGame_"+tlkFilename+".tlk");
-							continue;
-						}
-					}
-					newsb.append(";PCConsoleTOC.bin");
-					replacesb.append(";"+coalFileNameToDLCTOCDir(reqcoal));
-					ini.put(coalNameToModDescName(reqcoal), "newfiles", newsb.toString());
-					ini.put(coalNameToModDescName(reqcoal), "replacefiles", replacesb.toString());					
-				} else {
-					ini.put(coalNameToModDescName(reqcoal), "newfiles", reqcoal+";PCConsoleTOC.bin");
-					ini.put(coalNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal)+";"+coalFileNameToDLCTOCDir(reqcoal));					
-				}
-
-
-				
-				try {
-					if (!ModManager.IS_DEBUG) {
-						FileUtils.deleteDirectory(compCoalSourceDir);
-					}
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			ini.store();
-			ModManager.debugLogger.writeMessage("Cleaning up...");
-			try {
-				FileUtils.deleteDirectory(new File("tlk"));
-				FileUtils.deleteDirectory(new File("toc"));
-				FileUtils.deleteDirectory(new File("coalesceds"));
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} catch (InvalidFileFormatException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			ModManager.debugLogger.writeMessage("IOException in CreateCMMMod()!");
-			ModManager.debugLogger.writeException(e);
-		}
-
-		//TOC the mod
-		ModManager.debugLogger.writeMessage("Running autotoc on modmaker mod.");
-		Mod newMod = new Mod(moddesc.toString());
-		if (!newMod.validMod) {
-			//SOMETHING WENT WRONG!
-		}
-		new AutoTocWindow(callingWindow, newMod);
-
-		//Mod Created!
-		return null;*/
 	}
 	
 	private Object getStandardFolderName(String jobName) {
@@ -640,14 +543,95 @@ public class Mod {
 	}
 
 	/**
-	 * Creates a CMM Mod package from the completed previous steps.
+	 * Merges this mod with another, ignoring conflict files from the parameter mod. 
+	 * @param other Other mod to merge with
+	 * @return
 	 */
-	private void createCMMMod() {
-		
+	public Mod mergeWith(Mod other, String newName) {
+		this.modName = newName;
+		HashMap<String, ArrayList<String>> ignoreFiles = getConflictsWithMod(other);
+		for (ModJob otherjob : other.jobs){
+			ModJob myCorrespendingJob = null;
+			for (ModJob job : jobs){
+				if (otherjob.equals(job)) {
+					myCorrespendingJob = job;
+					break;
+				}
+			}
+			if (myCorrespendingJob == null) {
+				System.out.println("Merging entire job: "+otherjob.jobName);
+				jobs.add(otherjob); 
+				continue;
+			}
+			String[] otherNewFiles = otherjob.getNewFiles();
+			String[] otherReplacePaths = otherjob.getFilesToReplace();
+			for (int i = 0; i < otherNewFiles.length; i++) {
+				String otherfile = otherNewFiles[i];
+				System.out.println("CURRENT JOB: "+myCorrespendingJob.jobName);
+				if (ignoreFiles != null && ignoreFiles.get(otherjob.jobName) != null && ignoreFiles.get(otherjob.jobName).contains(otherReplacePaths[i])){
+					System.out.println("SKIPPING CONFLICT MERGE: "+otherReplacePaths[i]);
+					continue;
+				} else {
+					if (FilenameUtils.getName(otherfile).equals("PCConsoleTOC.bin")) {
+						System.out.println("CHECKING IF SHOULD ADD TOC, EXIST IN THIS JOB ALREADY: "+myCorrespendingJob.hasTOC());
+						//check if its there already
+						if (myCorrespendingJob.hasTOC()) {
+							continue;//skip toc
+						}
+					}
+					System.out.println("Merging file replace: "+otherfile);
+					myCorrespendingJob.addFileReplace(otherfile, otherReplacePaths[i]);
+				}
+			}			
+		}
+		return this;
+	}
+	
+	//public boolean addConflictFile(String jobName, )
+	
+	
+	/**
+	 * Creates a new mod package in a folder with the same name as this mod. Creates a moddesc.ini file based on jobs in this mod.
+	 */
+	public void createNewMod() {
+		File modFolder = new File(modName);
+		modFolder.mkdirs();
+		for (ModJob job : jobs){
+			File moduleDir = new File(modFolder+File.separator+getStandardFolderName(job.jobName));
+			moduleDir.mkdirs();
+			//scanned for matching job. Found it. Iterate over files...
+			for (String mergefile : job.getNewFiles()) {
+				File file = new File(mergefile);
+				String baseName = FilenameUtils.getName(mergefile);
+				try {
+					File destinationFile = new File(moduleDir+File.separator+baseName);
+					ModManager.debugLogger.writeMessage("Copying to new mod folder: "+file.getAbsolutePath()+" to "+destinationFile.getAbsolutePath());
+					FileUtils.copyFile(file, destinationFile);
+				} catch (IOException e) {
+					ModManager.debugLogger.writeMessage("IOException while merging mods.");
+					ModManager.debugLogger.writeException(e);
+				}
+				System.out.println(job.jobName+": "+file);
+			}			
+		}
+		try {
+			ModManager.debugLogger.writeMessage("Creating moddesc.ini...");
+			FileUtils.writeStringToFile(new File(modFolder+File.separator+"moddesc.ini"), createModDescIni(3.0));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeMessage("IOException while merging mods.");
+			ModManager.debugLogger.writeException(e);
+			e.printStackTrace();
+		}
+		Mod newMod = new Mod(modFolder+File.separator+"moddesc.ini");
+		new AutoTocWindow(null, newMod);
 	}
 
-	public Mod mergeWith(Mod mod2) {
-		// TODO Auto-generated method stub
-		return null;
+	public static String convertNewlineToBr(String input) {
+		return input.replaceAll("\n", "<br>");
+	}
+
+	public void setModName(String modName) {
+		this.modName = modName;
 	}
 }
