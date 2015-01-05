@@ -1,5 +1,6 @@
 package com.me3tweaks.modmanager;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
@@ -20,7 +21,10 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -70,7 +74,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.callingWindow = callingWindow;
 		this.setTitle("ModMaker Compiler");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(420, 228));
+		this.setPreferredSize(new Dimension(420, 200));
 		// this.setResizable(false);
 		// this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
@@ -88,12 +92,23 @@ public class ModMakerCompilerWindow extends JDialog {
 		JPanel modMakerPanel = new JPanel();
 		modMakerPanel.setLayout(new BoxLayout(modMakerPanel,
 				BoxLayout.PAGE_AXIS));
-		infoLabel = new JLabel("Preparing to compile " + code + "...");
-		modMakerPanel.add(infoLabel);
-
-		JLabel overall = new JLabel("Overall progress");
-		JLabel current = new JLabel("Current operation");
-		currentOperationLabel = new JLabel("Downloading mod information...");
+		JPanel infoPane = new JPanel();
+		infoPane.setLayout(new BoxLayout(infoPane,BoxLayout.LINE_AXIS));
+		infoLabel = new JLabel("Preparing to compile " + code + "...", SwingConstants.CENTER);
+		infoPane.add(Box.createHorizontalGlue());
+		infoPane.add(infoLabel);
+		infoPane.add(Box.createHorizontalGlue());
+		
+		modMakerPanel.add(infoPane);
+		//JLabel overall = new JLabel("Overall progress");
+		TitledBorder overallBorder = BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+				"Overall Progress");
+		//JLabel current = new JLabel("Current operation");
+		TitledBorder currentBorder = BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+				"Current Operation");
+		currentOperationLabel = new JLabel("Downloading mod information...", SwingConstants.CENTER);
 		overallProgress = new JProgressBar(0, 100);
 		overallProgress.setStringPainted(true);
 		overallProgress.setIndeterminate(false);
@@ -103,14 +118,19 @@ public class ModMakerCompilerWindow extends JDialog {
 		currentStepProgress.setStringPainted(true);
 		currentStepProgress.setIndeterminate(false);
 		currentStepProgress.setEnabled(false);
+		
+		JPanel overallPanel = new JPanel();
+		overallPanel.setBorder(overallBorder);
+		overallPanel.add(overallProgress);
 
-		modMakerPanel.add(overall);
-		modMakerPanel.add(overallProgress);
+		modMakerPanel.add(overallPanel);
 		modMakerPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-		modMakerPanel.add(current);
-		modMakerPanel.add(currentOperationLabel);
-		modMakerPanel.add(currentStepProgress);
-
+		JPanel currentPanel = new JPanel(new BorderLayout());
+		currentPanel.setBorder(currentBorder);
+		
+		currentPanel.add(currentOperationLabel);
+		currentPanel.add(currentStepProgress, BorderLayout.SOUTH);
+		modMakerPanel.add(currentPanel);
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		this.getContentPane().add(modMakerPanel);
@@ -1366,7 +1386,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		protected void process(List<Integer> numCompleted) {
 			if (numtoc > numCompleted.get(0)) {
 				currentOperationLabel.setText("Downloading "
-						+ tocsToDownload.get(numCompleted.get(0)));
+						+ coalFilenameToShortName(tocsToDownload.get(numCompleted.get(0))) +"/PCConsoleTOC.bin");
 			}
 			progress.setValue((int)(100 / (numtoc / (float)numCompleted.get(0))));
 		}

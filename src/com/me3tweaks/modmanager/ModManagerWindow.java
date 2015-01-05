@@ -557,7 +557,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 				}
 			}
 		} else if (e.getSource() == toolsModMaker) {
-			new ModMakerWindow(this, fieldBiogameDir.getText());
+			new ModMakerEntryWindow(this, fieldBiogameDir.getText());
 		} else
 
 		if (e.getSource() == backupBackupDLC) {
