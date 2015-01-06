@@ -36,7 +36,25 @@ public class HTMLParams {
 	private boolean isSilencer = false;
 	private boolean hasPenetration = false;
 	private boolean isVenom = false;
+	private boolean hasSpareAmmo = true;
+	private boolean hasReloadSpeed = true;
 
+	public boolean hasReloadSpeed() {
+		return hasReloadSpeed;
+	}
+	
+	public void setReloadSpeed(boolean hasReloadSpeed) {
+		this.hasReloadSpeed = hasReloadSpeed;
+	}
+	
+	public boolean hasSpareAmmo() {
+		return hasSpareAmmo;
+	}
+	
+	public void setSpareAmmo(boolean hasSpareAmmo) {
+		this.hasSpareAmmo = hasSpareAmmo;
+	}
+	
 	public boolean isVenom() {
 		return isVenom;
 	}

@@ -46,7 +46,7 @@
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <?php require ($root."/links.php"); ?>
     <link href="/styles/gallery.css" type="text/css" rel="stylesheet"/>
-    <title>Editing <?=$mod->mod_name;?> - HUMAN_NAME | Mass Effect 3 Tweaks</title>
+    <title>HUMAN_NAME | <?=$mod->mod_name;?> | Mass Effect 3 Tweaks ModMaker</title>
     <link rel="stylesheet" type="text/css" href="/styles/tooltipster.css" />
     <script src="/js/jquery.freetile.js"></script>
     <script src="/modmaker/js/attribute_tiler.js"></script>
@@ -98,15 +98,10 @@ AMMOPERSHOT_BLOCK
 ROUNDSPERBURST_BLOCK
 MAGSIZE_BLOCK
 SPAREAMMO_BLOCK
-                    <div class="modmaker_entry">
-                        <div class="defaultbox">
-                            <span class="inputtag defaultboxitem">Reload Speed</span>
-                            <span class="modmaker_default defaultboxitem">Default: <?=$defaultsmod->weapon->mod_weapon_WEAPON_NAME_reloadduration_max?> seconds</span>
-                        </div>
-                        <input id="reloadduration_max" class="short_input" type="text" name="reloadduration_max" placeholder="Reload Time" value="<?=$mod->weapon->mod_weapon_WEAPON_NAME_reloadduration_max?>">
-                    </div>
+RELOADSPEED_BLOCK
                 </div>
 DAMAGE_CONTAINER
+PENETRATION_CONTAINER
 CHARGING_CONTAINER
 WEIGHT_BLOCK
 RPM_CONTAINER

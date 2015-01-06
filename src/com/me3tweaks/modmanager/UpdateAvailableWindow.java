@@ -106,7 +106,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 
 		
 		//aboutPanel.add(loggingMode, BorderLayout.SOUTH);
-		updatePanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+		panel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 		panel.add(updatePanel, BorderLayout.NORTH);
 		panel.add(actionPanel, BorderLayout.CENTER);
 		panel.add(sizeLabel,BorderLayout.SOUTH);
@@ -190,7 +190,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	            ex.printStackTrace();
 	            setProgress(0);
 	            error = true;
-	            cancel(true);          
+	            cancel(true);      
 	        }
 	        return null;
 	    }
@@ -203,6 +203,8 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	    	//TODO: Install update through the update script
 	    	if (!error) {
 	    		runUpdateScript();
+	    	} else {
+	    		dispose();
 	    	}
 	    }  
 	}
@@ -295,15 +297,12 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == updateButton){
 			updateButton.setEnabled(false);
+			nextUpdateButton.setEnabled(false);
 			File updateDir = new File("update");
 			updateDir.mkdirs();
 			DownloadTask task = new DownloadTask("update");
 			task.addPropertyChangeListener(this);
 			task.execute();
-		} else 
-		if (e.getSource() == notNowButton) {
-			dispose();
-			return;
 		} else 
 		if (e.getSource() == nextUpdateButton) {
 			//write to ini that we don't want update
@@ -314,7 +313,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 					settings.createNewFile();
 				ini = new Wini(settings);
 				ini.put("Settings", "nextupdatedialogbuild", build+1);
-				ModManager.debugLogger.writeMessage("Ignoring current update, will show again when "+(build+1)+ " is released.");
+				ModManager.debugLogger.writeMessage("Ignoring current update, will show again when build "+(build+1)+ " is released.");
 				ini.store();
 			} catch (InvalidFileFormatException ex) {
 				ex.printStackTrace();

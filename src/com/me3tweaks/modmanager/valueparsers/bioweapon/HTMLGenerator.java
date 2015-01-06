@@ -59,12 +59,13 @@ public class HTMLGenerator {
 	static String minrefirePlaceholder = "MINREFIRE_BLOCK";
 	static String tracerangePlaceholder = "TRACERANGE_BLOCK";
 	static String gethshotgunPlaceholder = "GETHSHOTGUN_BLOCK";
-	static String penetrationPlaceholder = "PENETRATION_BLOCK";
+	static String penetrationPlaceholder = "PENETRATION_CONTAINER";
 	static String arcpistolPlaceholder = "ARCPISTOL_BLOCK";
 	static String silencerPlaceholder = "SILENCER_CONTAINER";
 	static String maxchargePlaceholder = "MAXCHARGE_BLOCK";
 	static String minchargePlaceholder = "MINCHARGE_BLOCK";
 	static String venomPlaceholder = "VENOM_CONTAINER";
+	static String reloadspeedPlaceholder = "RELOADSPEED_BLOCK";
 	//REPLACEMENTS
 	static String balanceChangesBlock = ""+
 			"<div class=\"newlinediv\">\n"+
@@ -86,7 +87,6 @@ public class HTMLGenerator {
     "HEADSHOT_BLOCK\n"+
     "DAMAGEOVERTIME_BLOCK\n"+
     "GETHSHOTGUN_BLOCK\n"+
-    "PENETRATION_BLOCK\n"+
     "                </div>";
 	
 	static String damageBlock = ""+
@@ -281,6 +281,15 @@ public class HTMLGenerator {
 			"                    <hr>\n"+
 			"RECHARGE_RATE_BLOCK";
 	
+	static String reloadspeedBlock = ""+
+	"                    <div class=\"modmaker_entry\">\n"+               
+	"                        <div class=\"defaultbox\">\n"+               
+	"                            <span class=\"inputtag defaultboxitem\">Reload Speed</span>\n"+               
+	"                            <span class=\"modmaker_default defaultboxitem\">Default: <?=\\$defaultsmod->weapon->mod_weapon_WEAPON_NAME_reloadduration_max?> seconds</span>\n"+               
+	"                        </div>\n"+               
+	"                        <input id=\"reloadduration_max\" class=\"short_input\" type=\"text\" name=\"reloadduration_max\" placeholder=\"Reload Time\" value=\"<?=\\$mod->weapon->mod_weapon_WEAPON_NAME_reloadduration_max?>\">\n"+               
+	"                    </div>";
+	
 	static String rechargeRateBlock = ""+
 			"                    <div class=\"modmaker_entry\">\n" +
 			"                        <div class=\"defaultbox\">\n" +
@@ -360,14 +369,21 @@ public class HTMLGenerator {
 			"                        <input id=\"ammopershot\" class=\"short_input\" type=\"text\" name=\"ammopershot\" placeholder=\"Ammo Per Shot\" value=\"<?=\\$mod->weapon->mod_weapon_WEAPON_NAME_ammopershot?>\">\n" +
 			"                    </div>\n";
 	
+	
 	static String penetrationBlock = ""+
+			"                <!-- WEAPON WEIGHT -->\n" + 
+			"                <div class=\"modmaker_attribute_wrapper\">\n" + 
+			"                    <img class=\"guide purple_card\" src=\"/images/modmaker/weapons/shared/penetrate.jpg\">\n" + 
+			"                    <h2 class=\"modmaker_attribute_title\">Weapon Penetration</h2>\n" + 
+			"                    <p>Penetration determines how far through blocking objects a round will go and still do damage on impact.</p>\n" + 
 			"                    <div class=\"modmaker_entry\">\n" +
 			"                        <div class=\"defaultbox\">\n" +
 			"                            <span class=\"inputtag defaultboxitem\">Penetration Distance</span>\n" +
 			"                            <span class=\"modmaker_default defaultboxitem\">Default: <?=\\$defaultsmod->weapon->mod_weapon_WEAPON_NAME_distancepenetrated?> cm</span>\n" +
 			"                        </div>\n" +
 			"                        <input id=\"distancepenetrated\" class=\"short_input\" type=\"text\" name=\"distancepenetrated\" placeholder=\"Ammo Per Shot\" value=\"<?=\\$mod->weapon->mod_weapon_WEAPON_NAME_distancepenetrated?>\">\n" +
-			"                    </div>\n";
+			"                    </div>\n"+
+			"                </div>";
 	
 	static String chargingContainer = ""+
 			"                <!-- WEAPON CHARGING -->\n" +
@@ -442,7 +458,7 @@ public class HTMLGenerator {
 	static String reckoningBlock = ""+
 			"                <!-- CHAKRAM LAUNCHER SETTINGS -->\n" +
 			"                <div class=\"modmaker_attribute_wrapper\">\n" +
-			"                    <img class=\"guide purple_card\" src=\"/images/modmaker/weapons/reckoning/reckoning_block.jpg\">\n" +
+			"                    <img class=\"guide purple_card\" src=\"/images/modmaker/weapons/reckoning/chakramcharge.jpg\">\n" +
 			"                    <h2 class=\"modmaker_attribute_title\">Chakram Launcher Charging</h2>\n" +
 			"                    <p>The Chakram Launcher uses a different naming style of stats for charging compared to other charging weapons.</p>\n" +
 			"                    <div class=\"modmaker_entry\">\n" +
@@ -829,15 +845,15 @@ public class HTMLGenerator {
 		fileMap.put("heavy_cain", params_heavy_cain);
 
 		HTMLParams params_heavy_flamethrower_npc= new HTMLParams();
-		params_heavy_flamethrower_npc.setHumanName("NPC Flamethrower");
-		params_heavy_flamethrower_npc.setDescription("These settings affect the flamethrower that non-player characters in singleplayer use.");
+		params_heavy_flamethrower_npc.setHumanName("M-451 Firestorm (NPC)");
+		params_heavy_flamethrower_npc.setDescription("These settings affect the flamethrower that non-player characters in single player use.");
 		params_heavy_flamethrower_npc.setFileName("npcflamethrower.php");
 		params_heavy_flamethrower_npc.setLoadName("Heavyflamethrowernpc");
 		params_heavy_flamethrower_npc.setBalanceChanges(null);
 		fileMap.put("heavy_flamethrower_npc", params_heavy_flamethrower_npc);
 
 		HTMLParams params_heavy_flamethrower_player= new HTMLParams();
-		params_heavy_flamethrower_player.setHumanName("Player Flamethrower");
+		params_heavy_flamethrower_player.setHumanName("M-451 Firestorm (Player)");
 		params_heavy_flamethrower_player.setDescription("These settings affect the flamethrower that Shepard uses on some single player missions.");
 		params_heavy_flamethrower_player.setFileName("playerflamethrower.php");
 		params_heavy_flamethrower_player.setLoadName("Heavyflamethrowerplayer");
@@ -1445,6 +1461,21 @@ public class HTMLGenerator {
 		params_sniperrifle_mantis.setZoomPenalty(false);
 		params_sniperrifle_valiant.setZoomPenalty(false);
 		params_sniperrifle_viper.setZoomPenalty(false);
+		
+		params_heavy_blackstar.setReloadSpeed(false);
+		params_heavy_cain.setReloadSpeed(false);
+		params_heavy_flamethrower_npc.setReloadSpeed(false);
+		params_heavy_flamethrower_player.setReloadSpeed(false);
+		params_heavy_minigun.setReloadSpeed(false);
+		params_heavy_mountedgun.setReloadSpeed(false);
+		params_heavy_titanmissilelauncher.setReloadSpeed(false);
+		params_heavy_blackstar.setSpareAmmo(false);
+		params_heavy_cain.setSpareAmmo(false);
+		params_heavy_flamethrower_npc.setSpareAmmo(false);
+		params_heavy_flamethrower_player.setSpareAmmo(false);
+		params_heavy_titanmissilelauncher.setSpareAmmo(false);
+
+		
 		generatePages();
 	}
 	
@@ -1532,7 +1563,7 @@ public class HTMLGenerator {
 							Element prop = (Element) scannednode;
 							String name = prop.getAttribute("name");
 							switch (name) {
-								case "zoomaccfirepenalty":
+								case "maxspareammo":
 									hasZoomPenalty = true;
 									break;
 							}
@@ -1542,7 +1573,7 @@ public class HTMLGenerator {
 					if (!hasZoomPenalty) {
 						sb.append("params_");
 						sb.append(tableName);
-						sb.append(".setZoomPenalty(false);\n");						
+						sb.append(".setSpareAmmo(false);\n");						
 					}
 
 					/*
@@ -1674,7 +1705,7 @@ public class HTMLGenerator {
 			    page = page.replaceAll(recoilContainerPlaceholder, recoilContainer);
 	    	}
 		    
-		    if (hasDamage || value.hasDamageOverTime() || value.hasHeadshotMultiplier() || (!noPenetration && value.hasPenetration())) {
+		    if (hasDamage || value.hasDamageOverTime() || value.hasHeadshotMultiplier()) {
 			    page = page.replaceAll(damageContainerPlaceholder, damageContainer);
 		    } else {
 			    page = page.replaceAll(damageContainerPlaceholder, "");
@@ -1838,7 +1869,11 @@ public class HTMLGenerator {
 			    	page = page.replaceAll(rechargeRatePlaceholder, "");
 		    	}
 	    	} else {
-		    	page = page.replaceAll(spareAmmoPlaceholder, spareAmmoBlock);
+	    		if (value.hasSpareAmmo()) {
+	    			page = page.replaceAll(spareAmmoPlaceholder, spareAmmoBlock);
+	    		} else {
+	    			page = page.replaceAll(spareAmmoPlaceholder, "");
+	    		}
 	    	}
 	    	
 	    	//charging
@@ -1860,6 +1895,11 @@ public class HTMLGenerator {
 		    	page = page.replaceAll(forcefirePlaceholder, "");
 	    	}
 	    	
+	    	if (value.hasReloadSpeed()) {
+		    	page = page.replaceAll(reloadspeedPlaceholder, reloadspeedBlock);
+	    	} else {
+		    	page = page.replaceAll(reloadspeedPlaceholder, "");
+	    	}
 	    	
 	    	if (hasRecoil) {
 	    		page = page.replaceAll(recoilStatPlaceholder, recoilStatBlock);

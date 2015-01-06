@@ -158,7 +158,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			long latest_build = (long) latest_object.get("latest_build_number");
 			if (latest_build <= ModManager.BUILD_NUMBER) {
 				labelStatus.setVisible(true);
-				ModManager.debugLogger.writeMessage("No updates, at latest version (or could not contact server.)");
+				ModManager.debugLogger.writeMessage("No updates, at latest version. (or could not contact update server.)");
 				labelStatus.setText("No updates available");
 				fr.close();
 				local_json.delete();
@@ -782,8 +782,8 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			int saveDir = JOptionPane.showOptionDialog(null,
 					"BioGame directory set to: "
 							+ dirChooser.getSelectedFile().toString()
-							+ "\nSave this path for next time?",
-					"Save directory path?", JOptionPane.YES_NO_OPTION,
+							+ "\nSave this path?",
+					"Save BIOGame path?", JOptionPane.YES_NO_OPTION,
 					JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
 			if (saveDir == 0) {
 				Wini ini;
@@ -803,7 +803,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 					System.err
 							.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
 				}
-				labelStatus.setText(" Saved BioGame directory to me3cmm.ini");
+				labelStatus.setText("Saved BioGame directory to me3cmm.ini");
 				labelStatus.setVisible(true);
 			}
 			fieldBiogameDir.setText(dirChooser.getSelectedFile().toString());
@@ -1349,8 +1349,8 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	 * @param code
 	 *            Code to use for downloading the mod.
 	 */
-	public void startModMaker(String code) {
-		new ModMakerCompilerWindow(this, code);
+	public void startModMaker(String code, ArrayList<String> languages) {
+		new ModMakerCompilerWindow(this, code, languages);
 	}
 
 	private void autoTOC() {

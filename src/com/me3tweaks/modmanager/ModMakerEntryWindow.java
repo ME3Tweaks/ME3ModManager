@@ -1,21 +1,18 @@
 package com.me3tweaks.modmanager;
 
-import java.awt.Component;
+import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,25 +27,38 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.plaf.basic.BasicScrollPaneUI.HSBChangeListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 
+import org.ini4j.InvalidFileFormatException;
+import org.ini4j.Wini;
+
 @SuppressWarnings("serial")
 public class ModMakerEntryWindow extends JDialog implements ActionListener{
+	private static final String ALL_LANG = "All languages";
+	private static final String ENGLISH = "English";
+	private static final String RUSSIAN = "Russian";
+	private static final String SPANISH = "Spanish";
+	private static final String POLISH = "Polish";
+	private static final String FRENCH = "French";
+	private static final String ITALIAN = "Italian";
+	private static final String GERMAN = "German";
+	private static final int DIALOG_WIDTH = 400;
+	private static final int DIALOG_HEIGHT = 200;
 	JLabel infoLabel;
 	JButton downloadButton;
 	JTextField codeField;
 	String biogameDir;
 	private JComboBox<String> languageChoices;
-	private String[] languages = {"All languages", "English", "Russian", "German"};
+	private String[] languages = {ALL_LANG, ENGLISH, RUSSIAN, SPANISH, POLISH, FRENCH, ITALIAN, GERMAN};
 	boolean hasDLCBypass = false;
 	ModManagerWindow callingWindow;
+	private JButton makeModButton;
+	private JButton browseModsButton;
 
 	public ModMakerEntryWindow(JFrame callingWindow, String biogameDir) {
 		this.callingWindow = (ModManagerWindow) callingWindow;
@@ -77,13 +87,24 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener{
 		infoPane.add(infoLabel);
 		infoPane.add(Box.createHorizontalGlue());
 		modMakerPanel.add(infoPane);
+		
+		JPanel languageChoicesPanel = new JPanel();
+		languageChoicesPanel.setLayout(new BoxLayout(languageChoicesPanel, BoxLayout.LINE_AXIS));
+		languageChoicesPanel.setMaximumSize(new Dimension(550, 30));
+		TitledBorder languageBorder = BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+				"Languages to compile");
+		languageChoicesPanel.setBorder(languageBorder);
+		languageChoices = new JComboBox<String>(languages);
+		languageChoicesPanel.add(languageChoices);
+		modMakerPanel.add(languageChoicesPanel);
+		
+		//download panel
 		JPanel codeDownloadPanel = new JPanel();
 		codeDownloadPanel.setLayout(new BoxLayout(codeDownloadPanel, BoxLayout.LINE_AXIS));
 		codeDownloadPanel.add(Box.createHorizontalGlue());
 		
 		codeField = new JTextField(6);
-		// validationLabel = new JLabel("");
-		//codeField.setInputVerifier(validator);
 		//validation
 		((AbstractDocument)codeField.getDocument()).setDocumentFilter(new DocumentFilter(){
 		    Pattern pattern = Pattern.compile("-{0,1}\\d+");
@@ -103,41 +124,80 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener{
 		});
 		codeField.setMaximumSize(new Dimension(60, 20));
 		codeDownloadPanel.add(codeField);
-		
+		codeDownloadPanel.add(Box.createRigidArea(new Dimension(10, 10)));
 		
 		downloadButton = new JButton("Download & Compile");
-		downloadButton.setPreferredSize(new Dimension(185, 19));
-		codeDownloadPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		downloadButton.setPreferredSize(new Dimension(185, 22));
+		//codeDownloadPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		codeDownloadPanel.add(downloadButton);
 		codeDownloadPanel.add(Box.createHorizontalGlue());
 		modMakerPanel.add(codeDownloadPanel);
-		
-		JPanel languageChoicesPanel = new JPanel();
-		TitledBorder languageBorder = BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
-				"Languages to compile");
-		languageChoicesPanel.setBorder(languageBorder);
-		languageChoices = new JComboBox<String>(languages);
-		languageChoicesPanel.add(languageChoices);
-		modMakerPanel.add(languageChoicesPanel);
 		modMakerPanel.add(Box.createVerticalGlue());
-		modMakerPanel.add(new JLabel("<html>Don't have a code? Create a mod at http://me3tweaks.com/modmaker or pick a mod others have made.</html>"));
+
 		
+		
+		JPanel getCodePane = new JPanel();
+		getCodePane.setLayout(new BoxLayout(getCodePane,BoxLayout.LINE_AXIS));
+		getCodePane.add(Box.createHorizontalGlue());
+		
+		makeModButton = new JButton("Create a mod");
+		browseModsButton = new JButton("Browse mods");
+		makeModButton.addActionListener(this);
+		browseModsButton.addActionListener(this);
+		getCodePane.add(makeModButton);
+		getCodePane.add(Box.createRigidArea(new Dimension(10, 5)));
+		getCodePane.add(browseModsButton);
+		getCodePane.add(Box.createHorizontalGlue());
+		modMakerPanel.add(getCodePane);
+		modMakerPanel.add(Box.createVerticalGlue());
 		if (!hasDLCBypass) {
-			modMakerPanel.add(new JLabel(" "));
-			modMakerPanel.add(new JLabel("<html>The Launcher_WV.exe DLC bypass will be installed so your mod will work. To use mods you will need to use Start Game from Mod Manager. Tab and ` will open the console in game. Your game will not be modified by this file.</html>"));
+			JPanel launcherWVPanel = new JPanel();
+			launcherWVPanel.setLayout(new BoxLayout(launcherWVPanel,BoxLayout.LINE_AXIS));
+			launcherWVPanel.add(Box.createHorizontalGlue());
+			launcherWVPanel.add(new JLabel("<html>The Launcher_WV.exe DLC bypass will be installed so your mod will work.<br>To use mods you will need to use Start Game from Mod Manager.<br>Tab and ` will open the console in game.<br>Your game will not be modified by this file.</html>"), BorderLayout.CENTER);
+			launcherWVPanel.add(Box.createHorizontalGlue());
+			modMakerPanel.add(launcherWVPanel);
+			setPreferredSize(new Dimension(DIALOG_WIDTH,DIALOG_HEIGHT+90));
+		} else {
+			setPreferredSize(new Dimension(DIALOG_WIDTH,DIALOG_HEIGHT));
+			
 		}
 		codeField.addActionListener(this);
 		downloadButton.addActionListener(this);
+		
+		//set focus to codeField
+		addWindowListener( new WindowAdapter() {
+		    public void windowOpened( WindowEvent e ){
+		    	codeField.requestFocus();
+		    }
+		}); 
 		
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 		add(modMakerPanel);
 		
 		setResizable(false);
-		setPreferredSize(new Dimension(400,300));
 		setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		pack();
 		setLocationRelativeTo(callingWindow);
+		
+		//set combobox from settings
+		Wini settingsini;
+		try {
+			settingsini = new Wini(new File(ModManager.settingsFilename));
+			String modmakerLanguage = settingsini.get("Settings",
+					"modmaker_language");
+			if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
+				//language setting exists
+				languageChoices.setSelectedItem(modmakerLanguage);
+			}
+		} catch (InvalidFileFormatException e) {
+			ModManager.debugLogger
+					.writeMessage("Invalid INI! Did the user modify it by hand?");
+			e.printStackTrace();
+		} catch (IOException e) {
+			ModManager.debugLogger
+					.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting is stored to disk.");
+		}
 	}
 	
 	/**
@@ -218,23 +278,110 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener{
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		getLanguages();
 		if (e.getSource() == downloadButton) {
-			startModmaker();
+			startModmaker(getLanguages());
 		} else
 		if (e.getSource() == codeField) {
-			//enter was pressed
-			startModmaker();
+			//enter button
+			startModmaker(getLanguages());
+		} else
+		if (e.getSource() == makeModButton){
+			URI theURI;
+			try {
+				theURI = new URI("https://me3tweaks.com/modmaker");
+				java.awt.Desktop.getDesktop().browse(theURI);
+				dispose();
+			} catch (URISyntaxException ex) {
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			} catch (IOException ex) {
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			}
+		} else 
+		if (e.getSource() == browseModsButton) {
+			URI theURI;
+			try {
+				theURI = new URI("https://me3tweaks.com/modmaker/gallery");
+				java.awt.Desktop.getDesktop().browse(theURI);
+				dispose();
+			} catch (URISyntaxException ex) {
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			} catch (IOException ex) {
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			}
 		}
+			
+			
+		
 	}
 	
-	private void startModmaker(){
+	private ArrayList<String> getLanguages() {
+		ArrayList<String> languagesToCompile = new ArrayList<String>();
+		String chosen = languageChoices.getSelectedItem().toString();
+		System.err.println("USER SELECTED: "+chosen);
+		switch(chosen) {
+		case ALL_LANG:
+			languagesToCompile.add("INT");
+			languagesToCompile.add("RUS");
+			languagesToCompile.add("ESN");
+			languagesToCompile.add("POL");
+			languagesToCompile.add("FRA");
+			languagesToCompile.add("ITA");
+			languagesToCompile.add("DEU");
+			break;
+		case ENGLISH:
+			languagesToCompile.add("INT");
+			break;
+		case RUSSIAN:
+			languagesToCompile.add("RUS");
+			break;
+		case SPANISH:
+			languagesToCompile.add("ESN");
+			break;
+		case POLISH:
+			languagesToCompile.add("POL");
+			break;
+		case FRENCH:
+			languagesToCompile.add("FRA");
+			break;
+		case ITALIAN:
+			languagesToCompile.add("ITA");
+			break;
+		case GERMAN:
+			languagesToCompile.add("DEU");
+			break;
+		default:
+			break;
+		}
+		return languagesToCompile;
+	}
+	
+	private void startModmaker(ArrayList<String> languages){
 		dispose();
 		boolean shouldContinue = true;
 		if (!hasDLCBypass) {
 			shouldContinue =installBypass();
 		}
 		if (shouldContinue){
-			callingWindow.startModMaker(codeField.getText().toString());
+			Wini ini;
+			try {
+				File settings = new File(ModManager.settingsFilename);
+				if (!settings.exists())
+					settings.createNewFile();
+				ini = new Wini(settings);
+				ini.put("Settings", "modmaker_language", languageChoices.getSelectedItem());
+				ini.store();
+			} catch (InvalidFileFormatException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				System.err
+						.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+			}
+			callingWindow.startModMaker(codeField.getText().toString(), languages);
 		}
 	}
 	
