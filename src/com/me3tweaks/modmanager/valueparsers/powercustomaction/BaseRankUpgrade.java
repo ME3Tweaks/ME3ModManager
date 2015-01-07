@@ -5,7 +5,9 @@ import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 public class BaseRankUpgrade {
-	double baseValue;
+	int intBaseValue;
+	double doubleBaseValue;
+	boolean isDouble = false;
 	String formula;
 	HashMap<Integer, Double> rankBonuses;
 	
@@ -49,7 +51,13 @@ public class BaseRankUpgrade {
 			
 			switch(var){
 			case "BaseValue":
-				baseValue = Double.parseDouble(val);
+				try {
+					intBaseValue = Integer.parseInt(val);
+				} catch (Exception e) {
+					doubleBaseValue = Double.parseDouble(val);
+					isDouble = true;
+				}
+				
 				break;
 			case "Formula": //same thing, typical bioware.
 				formula = val;

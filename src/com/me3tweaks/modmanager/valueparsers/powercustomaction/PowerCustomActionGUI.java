@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -18,7 +19,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -33,7 +33,11 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	JButton parse, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generatePublish, copy;
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
-
+	private boolean detonateBlockedByObjects = true;
+	private boolean detonateDistanceSorted = true;
+	private boolean detonateImpactDeadPawns = false;
+	private boolean detonateImpactFriends = false;
+	private boolean detonateImpactPlaceables = true;
 
 	public static void main(String[] args) throws IOException {
 		new PowerCustomActionGUI();
@@ -216,7 +220,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						String propName = prop.getAttribute("name");
 						String data = prop.getTextContent();
 						System.out.println("Found property: "+prop.getAttribute("name")+"");
-						if (data.equals("true") || data.equals("false")){
+						if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
 							//its a boolean.
 							System.out.println("BOOLEAN: "+propName);
 							sb.append(varPrefix);
@@ -265,7 +269,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		sb.append("/*");
 		//sb.append(tableNameField.getText());
 		sb.append(" data*/\n");
-		sb.append("INSERT INTO modmaker_aiweapon_");
+		sb.append("INSERT INTO modmaker_powers_");
 		//sb.append(tableNameField.getText());
 		sb.append(" VALUES(\n");
 		sb.append("\t1, /*GENESIS MOD ID*/\n");
@@ -342,31 +346,66 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 					Node scannednode = propertyList.item(k);
 					if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
 						Element prop = (Element) scannednode;
-						sb.append("\t");
+						
 						String data = prop.getTextContent();
 						String name = prop.getAttribute("name");
 						if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
 							//its a boolean.
+							sb.append("\t");
 							sb.append(name);
 							sb.append(" BOOLEAN NOT NULL,\n");
 							continue;
 						}
 						if (DetonationParameters.isDetonationParameters(data)) {
 							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
+							//add detonation params
+							sb.append("\tdetonationparam_blockedbyobjects BOOLEAN NOT NULL,\n");
+							sb.append("\tdetonationparam_distancesorted BOOLEAN NOT NULL,\n");
+							sb.append("\tdetonationparam_impactdeadpawns BOOLEAN NOT NULL,\n");
+							sb.append("\tdetonationparam_impactfriends BOOLEAN NOT NULL,\n");
+							sb.append("\tdetonationparam_impactplaceables BOOLEAN NOT NULL,\n");
 							continue;
 						}
 						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+							System.out.println(data+" is a baserankupgrade");
 							BaseRankUpgrade bru = new BaseRankUpgrade(tableSuffix, data);
+							sb.append("\t");
+							sb.append(name);
+							sb.append(" ");
+							if (bru.isDouble) {
+								sb.append("FLOAT");
+							} else {
+								sb.append("INT");
+							}
+							sb.append(" NOT NULL,\n");
+							
+							for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+							    int rank = entry.getKey();
+							    //double upgrade = entry.getValue();
+							    sb.append("\t");
+								sb.append(name);
+								sb.append("_rankbonus_");
+								sb.append(rank);
+								sb.append(" FLOAT NOT NULL, \n");
+							}
 							continue;
-						}
-						try {
-							double dubs = Double.parseDouble(data);
-							continue;
-						} catch (NumberFormatException e) {
 							
 						}
 						try {
 							int ints = Integer.parseInt(data);
+							sb.append("\t");
+							sb.append(name);
+							sb.append(" INT NOT NULL,\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						
+						try {
+							double dubs = Double.parseDouble(data);
+							sb.append("\t");
+							sb.append(name);
+							sb.append(" FLOAT NOT NULL,\n");
 							continue;
 						} catch (NumberFormatException e) {
 							
@@ -394,7 +433,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		sb.append("//");
 		//sb.append(tableNameField.getText());
 		sb.append("\n");
-		sb.append("if ($this->mod->mod_aiweapon_");
+		sb.append("if ($this->mod->mod_powers_");
 		//sb.append(tableNameField.getText());
 		sb.append("_modified_genesis) {");
 		sb.append("\n");
@@ -435,7 +474,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		StringBuilder sb = new StringBuilder();
 		
 		//public function loadNAME(){
-		sb.append("\tpublic function loadAIWeapon");
+		sb.append("\tpublic function loadpowers");
 		sb.append(Character.toUpperCase(weaponName.charAt(0)) + weaponName.toLowerCase().substring(1)); //have only first letter capitalized.
 		sb.append("(){\n");
 		//doubletab from here on
@@ -459,10 +498,10 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				}
 			}
 			//modified, genesis
-			sb.append("\t\t$this->mod_aiweapon_");
+			sb.append("\t\t$this->mod_powers_");
 			sb.append(weaponName);
 			sb.append("_modified = null;\n");
-			sb.append("\t\t$this->mod_aiweapon_");
+			sb.append("\t\t$this->mod_powers_");
 			sb.append(weaponName);
 			sb.append("_modified_genesis = null;\n");
 		} catch (Exception e){
@@ -509,10 +548,10 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			output.setText(e.getMessage());
 		}
 		//modified, genesis
-		sb.append("\t\t$this->mod_aiweapon_");
+		sb.append("\t\t$this->mod_powers_");
 		sb.append(weaponName);
 		sb.append("_modified = $row['modified'];\n");
-		sb.append("\t\t$this->mod_aiweapon_");
+		sb.append("\t\t$this->mod_powers_");
 		sb.append(weaponName);
 		sb.append("_modified_genesis = $row['modified_genesis'];\n");
         sb.append("\t}\n");
@@ -665,12 +704,12 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			output.setText(e.getMessage());
 		}
 		// modified
-		sb.append("\tpublic $mod_aiweapon_");
+		sb.append("\tpublic $mod_powers_");
 		sb.append(weaponName);
 		sb.append("_");
 		sb.append("modified = null;\n");
 		//modified_genesis
-		sb.append("\tpublic $mod_aiweapon_");
+		sb.append("\tpublic $mod_powers_");
 		sb.append(weaponName);
 		sb.append("_");
 		sb.append("modified_genesis = null;\n");
@@ -686,6 +725,10 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	
 	private String getTableName(String sectionName) {
 		String str = sectionName.substring(sectionName.indexOf('.')+1);
+		if (str.equals("sfxpowercustomaction")) {
+			return "sfxpowercustomaction_base";
+		}
+
 		str = str.replaceAll("sfxpowercustomaction", "");
 		return str;
 	}
