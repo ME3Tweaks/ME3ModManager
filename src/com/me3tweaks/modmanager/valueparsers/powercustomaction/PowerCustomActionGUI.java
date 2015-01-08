@@ -427,16 +427,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	}
 	
 	private void generatePublish() {
-		// g
 		String input_text = getInput();
 		StringBuilder sb = new StringBuilder();
-		sb.append("//");
-		//sb.append(tableNameField.getText());
-		sb.append("\n");
-		sb.append("if ($this->mod->mod_powers_");
-		//sb.append(tableNameField.getText());
-		sb.append("_modified_genesis) {");
-		sb.append("\n");
+		
 		try {
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(input_text));
@@ -444,19 +437,100 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			doc.getDocumentElement().normalize();
 			
 			NodeList section = doc.getElementsByTagName("Section");
-			Element sectionElement = (Element) section.item(0);
-			NodeList propertyList = sectionElement.getChildNodes();
-			//We are now at at the "sections" array.
-			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
-			for (int k = 0; k < propertyList.getLength(); k++){
-				//for every property in this filenode (of the data to merge)...
-				Node scannednode = propertyList.item(k);
-				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-					Element prop = (Element) scannednode;
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				if (sectionElement.getNodeType() == Node.ELEMENT_NODE) {
+					//We are now at at a section element. this is a table/weapon
+					String path = sectionElement.getAttribute("name");
+					String tableName = getTableName(path);
+					String dlcElement = "$basegameBioGameElements";
+					if (path.contains("mp1")) {
+						dlcElement = "$mp1BioGameElements";
+					}
+					if (path.contains("mp2")) {
+						dlcElement = "$mp2BioGameElements";		
+					}
+					if (path.contains("mp3")) {
+						dlcElement = "$mp3BioGameElements";
+					}
+					if (path.contains("mp4")) {
+						dlcElement = "$mp4BioGameElements";
+					}
+					if (path.contains("mp5")) {
+						dlcElement = "$mp5BioGameElements";
+					}
 					
-				}
-			}
-			sb.append("}");
+					sb.append("//");
+					sb.append(tableName);
+					sb.append("\n");
+					sb.append("if ($this->mod->powers->mod_powers_");
+					sb.append(tableName);
+					sb.append("_modified_genesis) {");
+					sb.append("\n");
+
+					NodeList propertyList = sectionElement.getChildNodes();
+					//We are now at at the attribute list.
+					for (int k = 0; k < propertyList.getLength(); k++){
+						//for every property in this filenode (of the data to merge)...
+						Node scannednode = propertyList.item(k);
+						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+							Element prop = (Element) scannednode;
+							String data = prop.getTextContent();
+							String name = prop.getAttribute("name");
+							System.out.println("Getting type for: "+path+" "+name);
+							int type = Integer.parseInt(prop.getAttribute("type"));
+							
+							if (DetonationParameters.isDetonationParameters(data)) {
+								DetonationParameters dp = new DetonationParameters(tableName, data);
+								//add detonation params
+								//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
+
+								sb.append("\t");
+								sb.append("array_push(");
+								sb.append(dlcElement);
+								sb.append(", $this->createProperty(\"");
+								sb.append(path);
+								sb.append("\", \"");
+								sb.append(prop.getAttribute("name"));
+								//createDetonationParameters
+								sb.append("\", $this->createDetonationParameters(");
+								
+							    sb.append("$mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_blockedbyobjects;\n");
+								
+							    sb.append("\tpublic $mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_distancesorted;\n");
+								
+							    sb.append("\t$this->mod->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactdeadpawns;\n");
+								
+							    sb.append("$this->mod->powers->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactfriends;\n");
+								
+							    sb.append("$this->mod->powers->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactplaceables), ");
+								sb.append(type);
+								sb.append(");\n");
+								continue;
+							}
+							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+								System.out.println(data+" is a baserankupgrade");
+								BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
+							
+							
+							}
+							
+						} //end if property element
+					} //end property loop
+					sb.append("}\n\n");
+				} //end section element
+			} //end section loop
+			
 			output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();
@@ -468,14 +542,13 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		// get name of enemy
 		// Parse the enemy
 		String input_text = getInput();
-		String weaponName = "placeholder";
 		String tableName = "placeholder";
 		
 		StringBuilder sb = new StringBuilder();
 		
 		//public function loadNAME(){
 		sb.append("\tpublic function loadpowers");
-		sb.append(Character.toUpperCase(weaponName.charAt(0)) + weaponName.toLowerCase().substring(1)); //have only first letter capitalized.
+		sb.append(Character.toUpperCase(tableName.charAt(0)) + tableName.toLowerCase().substring(1)); //have only first letter capitalized.
 		sb.append("(){\n");
 		//doubletab from here on
 		try {
@@ -499,10 +572,10 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			}
 			//modified, genesis
 			sb.append("\t\t$this->mod_powers_");
-			sb.append(weaponName);
+			sb.append(tableName);
 			sb.append("_modified = null;\n");
 			sb.append("\t\t$this->mod_powers_");
-			sb.append(weaponName);
+			sb.append(tableName);
 			sb.append("_modified_genesis = null;\n");
 		} catch (Exception e){
 			e.printStackTrace();
@@ -549,10 +622,10 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		}
 		//modified, genesis
 		sb.append("\t\t$this->mod_powers_");
-		sb.append(weaponName);
+		sb.append(tableName);
 		sb.append("_modified = $row['modified'];\n");
 		sb.append("\t\t$this->mod_powers_");
-		sb.append(weaponName);
+		sb.append(tableName);
 		sb.append("_modified_genesis = $row['modified_genesis'];\n");
         sb.append("\t}\n");
 		
@@ -564,38 +637,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	 */
 	public void generateForkPHP(){
 		String input_text = getInput();
-		String weaponName = "placeholder";
-		String tableName = "placeholder";
 		StringBuilder sb = new StringBuilder();
-		sb.append("//");
-		sb.append(weaponName.toUpperCase());
-		sb.append("\n"); 
-		//echo "<br>Beginning TABLENAME fork.";
-		sb.append("//echo \"<br>Beginning ");
-		sb.append(weaponName);
-		sb.append(" fork.\";\n");
-		
-		//$stmt = $dbh->prepare("SELECT * FROM modmaker_enemies_centurion WHERE mod_id=:fork_parent");
-		sb.append("$stmt = $dbh->prepare(\"SELECT * FROM ");
-		sb.append(tableName);
-		sb.append(" WHERE mod_id=:fork_parent\");\n");
-		//$stmt->bindValue(":fork_parent", $original_id);
-		sb.append("$stmt->bindValue(\":fork_parent\", $original_id);\n");
-		//$stmt->execute();
-		sb.append("$stmt->execute();\n");
-		//$NAMEs = $stmt->fetchAll();
-		sb.append("$");
-		sb.append(weaponName);
-		sb.append("s = $stmt->fetchAll();\n");
-		//foreach ($NAMEs as $NAMErow) {
-		sb.append("foreach($");
-		sb.append(weaponName);
-		sb.append("s as $");
-		sb.append(weaponName);
-		sb.append("row) {\n");
-		sb.append("\t$stmt = $dbh->prepare(\"INSERT INTO ");
-		sb.append(tableName);
-		sb.append(" VALUES(:mod_id, ");
 		try {
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(input_text));
@@ -603,118 +645,215 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			doc.getDocumentElement().normalize();
 			
 			NodeList section = doc.getElementsByTagName("Section");
-			Element sectionElement = (Element) section.item(0);
-			NodeList propertyList = sectionElement.getChildNodes();
-			//We are now at at the "sections" array.
-			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
-			for (int k = 0; k < propertyList.getLength(); k++){
-				//for every property in this filenode (of the data to merge)...
-				Node scannednode = propertyList.item(k);
-				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-					Element prop = (Element) scannednode;
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				if (sectionElement.getNodeType() == Node.ELEMENT_NODE) {
+					String tableName = getTableName(sectionElement.getAttribute("name"));
 					
+					sb.append("\t//");
+					sb.append(tableName.toUpperCase());
+					sb.append("\n"); 
+					//echo "<br>Beginning TABLENAME fork.";
+					sb.append("\t//echo \"<br>Beginning ");
+					sb.append(tableName);
+					sb.append(" fork.\";\n");
+					
+					//$stmt = $dbh->prepare("SELECT * FROM modmaker_enemies_centurion WHERE mod_id=:fork_parent");
+					sb.append("\t$stmt = $dbh->prepare(\"SELECT * FROM modmaker_weapon");
+					sb.append(tableName);
+					sb.append(" WHERE mod_id=:fork_parent\");\n");
+					//$stmt->bindValue(":fork_parent", $original_id);
+					sb.append("\t$stmt->bindValue(\":fork_parent\", $original_id);\n");
+					//$stmt->execute();
+					sb.append("\t$stmt->execute();\n");
+					//$NAMEs = $stmt->fetchAll();
+					sb.append("\t$");
+					sb.append(tableName);
+					sb.append("row = $stmt->fetch();\n");
+					//foreach ($NAMEs as $NAMErow) {
+					sb.append("\t$stmt = $dbh->prepare(\"INSERT INTO modmaker_weapon");
+					sb.append(tableName);
+					sb.append(" VALUES(:mod_id, ");
+
+					NodeList propertyList = sectionElement.getChildNodes();
+					//We are now at at the "sections" array.
+					//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+					for (int k = 0; k < propertyList.getLength(); k++){
+						//for every property in this filenode (of the data to merge)...
+						Node scannednode = propertyList.item(k);
+						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+							Element prop = (Element) scannednode;
+							String name = prop.getAttribute("name");
+							
+							sb.append(", ");
+						}
+					}
+					sb.append("false, :modified_genesis)\");\n");
+					sb.append("\t$stmt->bindValue(\":mod_id\", $mod_id);\n");
+					
+					for (int k = 0; k < propertyList.getLength(); k++){
+						//for every property in this filenode (of the data to merge)...
+						Node scannednode = propertyList.item(k);
+						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+							Element prop = (Element) scannednode;
+							String name = prop.getAttribute("name");
+							/*try {
+								//min
+								new Range(prop.getTextContent());
+								sb.append("\t$stmt->bindValue(\":");
+								sb.append(name);
+								sb.append("_min\", $");
+								sb.append(tableName);
+								sb.append("row['");
+								sb.append(name);
+								sb.append("_min']);\n");
+								//max
+								sb.append("\t$stmt->bindValue(\":");
+								sb.append(name);
+								sb.append("_max\", $");
+								sb.append(tableName);
+								sb.append("row['");
+								sb.append(name);
+								sb.append("_max']);\n");
+							} catch (StringIndexOutOfBoundsException strException){
+								sb.append("\t$stmt->bindValue(\":");
+								sb.append(name);
+								sb.append("\", $");
+								sb.append(tableName);
+								sb.append("row['");
+								sb.append(name);
+								sb.append("']);\n");
+							}*/
+						}
+					}
+					//bind modified_genesis
+					sb.append("\t$stmt->bindValue(\":modified_genesis\", $");
+					sb.append(tableName);
+					sb.append("row['");
+					sb.append("modified_genesis");
+					sb.append("']);\n");
+					
+					//if (!$stmt->execute()) {
+					sb.append("\tif (!$stmt->execute()) {\n");
+					//echo "NAME FORK FAIL."
+					sb.append("\t\techo \"");
+					sb.append(tableName);
+					sb.append(" FORK FAIL: \".print_r($stmt->errorInfo());\n");
+					sb.append("\t\treturn ob_get_clean();\n");
+					// } else {
+					sb.append("\t} else {\n");
+					//echo "<br>Finished NAME fork
+					sb.append("\t\t//echo \"<br>Finished ");
+					sb.append(tableName);
+					sb.append(" fork.\";\n");
+					//closing brackets
+					sb.append("\t}\n\n");
 				}
 			}
-			//output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();
 			output.setText(e.getMessage());
 		}
-		sb.append("false, :modified_genesis)\");\n");
-		sb.append("\t$stmt->bindValue(\":mod_id\", $mod_id);\n");
-		
-		try {
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-			InputSource is = new InputSource(new StringReader(input_text));
-			doc = dBuilder.parse(is);
-			doc.getDocumentElement().normalize();
-			
-			NodeList section = doc.getElementsByTagName("Section");
-			Element sectionElement = (Element) section.item(0);
-			NodeList propertyList = sectionElement.getChildNodes();
-			//We are now at at the "sections" array.
-			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
-			for (int k = 0; k < propertyList.getLength(); k++){
-				//for every property in this filenode (of the data to merge)...
-				Node scannednode = propertyList.item(k);
-				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-					Element prop = (Element) scannednode;
-					
-				}
-			}
-			//output.setText(sb.toString());
-		} catch (Exception e){
-			e.printStackTrace();
-			output.setText(e.getMessage());
-		}
-		//bind modified_genesis
-		sb.append("\t$stmt->bindValue(\":modified_genesis\", $");
-		sb.append(weaponName);
-		sb.append("row['");
-		sb.append("modified_genesis");
-		sb.append("']);\n");
-		
-		//if (!$stmt->execute()) {
-		sb.append("\tif (!$stmt->execute()) {\n");
-		//echo "NAME FORK FAIL."
-		sb.append("\t\t//echo \"");
-		sb.append(weaponName);
-		sb.append(" FORK FAIL: \".print_r($stmt->errorInfo());\n");
-		sb.append("\t\treturn ERROR_SQL_GENERIC;\n");
-		// } else {
-		sb.append("\t} else {\n");
-		//echo "<br>Finished NAME fork
-		sb.append("\t\t//echo \"<br>Finished ");
-		sb.append(weaponName);
-		sb.append(" fork.\";\n");
-		//closing brackets
-		sb.append("\t}\n");
-		sb.append("}");
 		output.setText(sb.toString());
 	}
 	
 	private void generateVariables() {		
 		String input_text = getInput();
-		String weaponName = "placeholder";
 		StringBuilder sb = new StringBuilder();
-		sb.append("\t//");
-		sb.append(weaponName);
-		sb.append("\n");
-		try {
+		try { //Load document
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(input_text));
 			doc = dBuilder.parse(is);
 			doc.getDocumentElement().normalize();
-			
 			NodeList section = doc.getElementsByTagName("Section");
-			Element sectionElement = (Element) section.item(0);
-			NodeList propertyList = sectionElement.getChildNodes();
-			//We are now at at the "sections" array.
-			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
-			for (int k = 0; k < propertyList.getLength(); k++){
-				//for every property in this filenode (of the data to merge)...
-				Node scannednode = propertyList.item(k);
-				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-					Element prop = (Element) scannednode;
-					
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				String tableSuffix = getTableName(sectionElement.getAttribute("name"));
+				sb.append("\t/*");
+				sb.append(tableSuffix);
+				sb.append("*/\n");
+				
+				NodeList propertyList = sectionElement.getChildNodes();
+				//We are now at at the "sections" array.
+				//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+				for (int k = 0; k < propertyList.getLength(); k++){
+					//for every property in this filenode (of the data to merge)...
+					Node scannednode = propertyList.item(k);
+					if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+						Element prop = (Element) scannednode;
+						
+						String data = prop.getTextContent();
+						String name = prop.getAttribute("name");
+						if (DetonationParameters.isDetonationParameters(data)) {
+							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
+							//add detonation params
+							
+							
+						    sb.append("\tpublic $mod_powers_");
+							sb.append(tableSuffix);
+							sb.append("_detonationparam_blockedbyobjects;\n");
+							
+						    sb.append("\tpublic $mod_powers_");
+							sb.append(tableSuffix);
+							sb.append("_detonationparam_distancesorted;\n");
+							
+						    sb.append("\tpublic $mod_powers_");
+							sb.append(tableSuffix);
+							sb.append("_detonationparam_impactdeadpawns;\n");
+							
+						    sb.append("\tpublic $mod_powers_");
+							sb.append(tableSuffix);
+							sb.append("_detonationparam_impactfriends;\n");
+							
+						    sb.append("\tpublic $mod_powers_");
+							sb.append(tableSuffix);
+							sb.append("_detonationparam_impactplaceables;\n");
+							
+							continue;
+						}
+						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+							System.out.println(data+" is a baserankupgrade");
+							BaseRankUpgrade bru = new BaseRankUpgrade(tableSuffix, data);
+						    sb.append("\tpublic $mod_powers_");
+							sb.append(tableSuffix);
+							sb.append("_");
+							sb.append(name);
+							sb.append(";\n");	
+
+							for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+							    int rank = entry.getKey();
+							    //double upgrade = entry.getValue();
+							    sb.append("\tpublic $mod_powers_");
+								sb.append(tableSuffix);
+								sb.append("_rankbonus_");
+								sb.append(rank);
+								sb.append(";\n");
+							}
+							continue;
+							
+						}
+						
+						//append it otherwise.
+					    sb.append("\tpublic $mod_powers_");
+						sb.append(tableSuffix);
+						sb.append("_");
+						sb.append(name);
+						sb.append(";\n");						
+					}
 				}
+				sb.append("\tpublic $mod_powers_");
+				sb.append(tableSuffix);
+				sb.append("_modified;\n");
+				
+				sb.append("\tpublic $mod_powers_");
+				sb.append(tableSuffix);
+				sb.append("_modified_genesis;\n");
 			}
+			output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();
 			output.setText(e.getMessage());
 		}
-		// modified
-		sb.append("\tpublic $mod_powers_");
-		sb.append(weaponName);
-		sb.append("_");
-		sb.append("modified = null;\n");
-		//modified_genesis
-		sb.append("\tpublic $mod_powers_");
-		sb.append(weaponName);
-		sb.append("_");
-		sb.append("modified_genesis = null;\n");
-		
-		output.setText(sb.toString());
 	}
 	
 	private String getInput(){
