@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager.valueparsers.powercustomaction;
 
 import java.util.HashMap;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 public class BaseRankUpgrade {
@@ -9,14 +10,14 @@ public class BaseRankUpgrade {
 	double doubleBaseValue;
 	boolean isDouble = false;
 	String formula;
-	HashMap<Integer, Double> rankBonuses;
+	TreeMap<Integer, Double> rankBonuses;
 	
 	/**
 	 * Creates a new Detonation Parameters object.
 	 * @param valueToParse
 	 */
 	public BaseRankUpgrade(String tableName, String valueToParse) {
-		rankBonuses = new HashMap<Integer, Double>();
+		rankBonuses = new TreeMap<Integer, Double>();
 		//valueToParse = "(BlockedByObjects=true,DistancedSorted=true,ImpactDeadPawns=false,ImpactFriends=false,ImpactPlaceables=true)";
 		//remove bioware's shitty QA
 		String workingStr = valueToParse.replaceAll(";", "");

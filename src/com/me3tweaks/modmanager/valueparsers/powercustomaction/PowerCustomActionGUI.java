@@ -263,16 +263,8 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	}
 
 	private void generateSQL(){
-		// g
 		String input_text = getInput();
 		StringBuilder sb = new StringBuilder();
-		sb.append("/*");
-		//sb.append(tableNameField.getText());
-		sb.append(" data*/\n");
-		sb.append("INSERT INTO modmaker_powers_");
-		//sb.append(tableNameField.getText());
-		sb.append(" VALUES(\n");
-		sb.append("\t1, /*GENESIS MOD ID*/\n");
 		try {
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(input_text));
@@ -282,6 +274,16 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			NodeList section = doc.getElementsByTagName("Section");
 			Element sectionElement = (Element) section.item(0);
 			String tableSuffix = getTableName(sectionElement.getAttribute("name"));
+			
+			sb.append("/*");
+			sb.append(tableSuffix);
+			sb.append(" data*/\n");
+			sb.append("INSERT INTO modmaker_powers_");
+			sb.append(tableSuffix);
+			sb.append(" VALUES(\n");
+			sb.append("\t1, /*GENESIS MOD ID*/\n");
+			
+			
 			NodeList propertyList = sectionElement.getChildNodes();
 			//We are now at at the "sections" array.
 			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
@@ -290,22 +292,88 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				Node scannednode = propertyList.item(k);
 				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
 					Element prop = (Element) scannednode;
-					sb.append("\t");
+					
 					String data = prop.getTextContent();
 					String name = prop.getAttribute("name");
 					if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
+						sb.append("\t");
 						//its a boolean.
+						sb.append(data);
+						sb.append(", /*");
 						sb.append(name);
-						sb.append(" BOOLEAN NOT NULL,\n");
+						sb.append("*/\n");
 						continue;
 					}
 					if (DetonationParameters.isDetonationParameters(data)) {
 						DetonationParameters dp = new DetonationParameters(tableSuffix, data);
+						sb.append("\t");
+						sb.append((dp.blockedByObjects) ? "1" : "0");
+						sb.append(", /*detonationparam_blockedbyobjects*/\n");
+						sb.append("\t");
+						sb.append((dp.distanceSorted) ? "1" : "0");
+						sb.append(", /*detonationparam_distancesorted*/\n");
+						sb.append("\t");
+						sb.append((dp.impactDeadPawns) ? "1" : "0");
+						sb.append(", /*detonationparam_impactdeadpawns*/\n");
+						sb.append("\t");
+						sb.append((dp.impactFriends) ? "1" : "0");
+						sb.append(", /*detonationparam_impactfriends*/\n");
+						sb.append("\t");
+						sb.append((dp.impactPlaceables) ? "1" : "0");
+						sb.append(", /*detonationparam_impactplaceables*/\n");
+						continue;
 					}
 					
 					if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
 						BaseRankUpgrade bru = new BaseRankUpgrade(tableSuffix, data);
+						sb.append("\t");
+						if (bru.isDouble) {
+							sb.append(bru.doubleBaseValue);
+						} else {
+							sb.append(bru.intBaseValue);
+						}
+						sb.append(", /*BASEVALUE of ");
+						sb.append(name);
+						sb.append("*/\n");
+						
+						for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+						    double bonus = entry.getValue();
+							int rank = entry.getKey();
+						    //double upgrade = entry.getValue();
+							sb.append("\t");
+							sb.append(bonus);
+							sb.append(", /*");
+							sb.append(name);
+							sb.append("_rankbonus_");
+							sb.append(rank);
+							sb.append("*/\n");
+						}
+						continue;
 					}
+					try {
+						int ints = Integer.parseInt(data);
+						sb.append("\t");
+						sb.append(ints);
+						sb.append(", /*");
+						sb.append(name);
+						sb.append("*/\n");
+						continue;
+					} catch (NumberFormatException e) {
+						
+					}
+					
+					try {
+						double dubs = Double.parseDouble(data);
+						sb.append("\t");
+						sb.append(dubs);
+						sb.append(", /*");
+						sb.append(name);
+						sb.append("*/\n");
+						continue;
+					} catch (NumberFormatException e) {
+						
+					}
+					System.err.println("Not inserting into SQL: "+name);
 				}
 			}
 			sb.append("\tfalse, /*modified*/\n");
@@ -389,7 +457,6 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append(" FLOAT NOT NULL, \n");
 							}
 							continue;
-							
 						}
 						try {
 							int ints = Integer.parseInt(data);
@@ -567,7 +634,30 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				Node scannednode = propertyList.item(k);
 				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
 					Element prop = (Element) scannednode;
-					
+					String name = prop.getAttribute("name");
+					String data = prop.getTextContent();
+					if (DetonationParameters.isDetonationParameters(data)) {
+						DetonationParameters dp = new DetonationParameters(tableName, data);
+						//add detonation params
+						//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
+						sb.append(":detonationparam_blockedbyobjects,");
+						sb.append(":detonationparam_distancesorted,");
+						sb.append(":detonationparam_impactdeadpawns,");
+						sb.append(":detonationparam_impactfriends,");
+						sb.append(":detonationparam_impactplaceables,");
+						continue;
+					}
+					if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+						BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
+						sb.append(":");
+						sb.append(name);
+						
+						for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+							Integer rank = entry.getKey();
+							Double bonus = entry.getValue();
+						    
+						}
+					}
 				}
 			}
 			//modified, genesis
@@ -659,7 +749,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 					sb.append(" fork.\";\n");
 					
 					//$stmt = $dbh->prepare("SELECT * FROM modmaker_enemies_centurion WHERE mod_id=:fork_parent");
-					sb.append("\t$stmt = $dbh->prepare(\"SELECT * FROM modmaker_weapon");
+					sb.append("\t$stmt = $dbh->prepare(\"SELECT * FROM modmaker_powers_");
 					sb.append(tableName);
 					sb.append(" WHERE mod_id=:fork_parent\");\n");
 					//$stmt->bindValue(":fork_parent", $original_id);
@@ -671,7 +761,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 					sb.append(tableName);
 					sb.append("row = $stmt->fetch();\n");
 					//foreach ($NAMEs as $NAMErow) {
-					sb.append("\t$stmt = $dbh->prepare(\"INSERT INTO modmaker_weapon");
+					sb.append("\t$stmt = $dbh->prepare(\"INSERT INTO modmaker_powers_");
 					sb.append(tableName);
 					sb.append(" VALUES(:mod_id, ");
 
@@ -684,7 +774,36 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
 							Element prop = (Element) scannednode;
 							String name = prop.getAttribute("name");
-							
+							String data = prop.getTextContent();
+							if (DetonationParameters.isDetonationParameters(data)) {
+								DetonationParameters dp = new DetonationParameters(tableName, data);
+								//add detonation params
+								//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
+								sb.append(":detonationparam_blockedbyobjects, ");
+								sb.append(":detonationparam_distancesorted, ");
+								sb.append(":detonationparam_impactdeadpawns, ");
+								sb.append(":detonationparam_impactfriends, ");
+								sb.append(":detonationparam_impactplaceables, ");
+								continue;
+							}
+							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+								BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
+								sb.append(":");
+								sb.append(name);
+								sb.append(", ");
+								
+								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+								    int rank = entry.getKey();
+								    //double upgrade = entry.getValue();
+									sb.append(name);
+									sb.append("_rankbonus_");
+									sb.append(rank);
+									sb.append(", ");
+								}
+								continue;
+							}
+							sb.append(":");
+							sb.append(name);
 							sb.append(", ");
 						}
 					}
@@ -697,25 +816,45 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
 							Element prop = (Element) scannednode;
 							String name = prop.getAttribute("name");
-							/*try {
-								//min
-								new Range(prop.getTextContent());
+							String data = prop.getTextContent();
+							if (DetonationParameters.isDetonationParameters(data)) {
+								DetonationParameters dp = new DetonationParameters(tableName, data);
+								//add detonation params
+								//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
+								
 								sb.append("\t$stmt->bindValue(\":");
-								sb.append(name);
-								sb.append("_min\", $");
+								sb.append("detonationparam_blockedbyobjects");
+								sb.append("\", $");
 								sb.append(tableName);
-								sb.append("row['");
-								sb.append(name);
-								sb.append("_min']);\n");
-								//max
+								sb.append("row['detonationparam_blockedbyobjects']);\n");
+								
 								sb.append("\t$stmt->bindValue(\":");
-								sb.append(name);
-								sb.append("_max\", $");
+								sb.append("detonationparam_distancesorted");
+								sb.append("\", $");
 								sb.append(tableName);
-								sb.append("row['");
-								sb.append(name);
-								sb.append("_max']);\n");
-							} catch (StringIndexOutOfBoundsException strException){
+								sb.append("row['detonationparam_distancesorted']);\n");
+								
+								sb.append("\t$stmt->bindValue(\":");
+								sb.append("detonationparam_impactdeadpawns");
+								sb.append("\", $");
+								sb.append(tableName);
+								sb.append("row['detonationparam_impactdeadpawns']);\n");
+								
+								sb.append("\t$stmt->bindValue(\":");
+								sb.append("detonationparam_impactfriends");
+								sb.append("\", $");
+								sb.append(tableName);
+								sb.append("row['detonationparam_impactfriends']);\n");
+								
+								sb.append("\t$stmt->bindValue(\":");
+								sb.append("detonationparam_impactplaceables");
+								sb.append("\", $");
+								sb.append(tableName);
+								sb.append("row['detonationparam_impactplaceables']);\n");
+								continue;
+							}
+							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+								BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
 								sb.append("\t$stmt->bindValue(\":");
 								sb.append(name);
 								sb.append("\", $");
@@ -723,7 +862,32 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append("row['");
 								sb.append(name);
 								sb.append("']);\n");
-							}*/
+								
+								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+								    int rank = entry.getKey();
+								    //double upgrade = entry.getValue();
+									
+									sb.append("\t$stmt->bindValue(\":");
+									sb.append(name);
+									sb.append("_rankbonus_");
+									sb.append(rank);
+									sb.append("\", $");
+									sb.append(tableName);
+									sb.append("row['");
+									sb.append(name);
+									sb.append("_rankbonus_");
+									sb.append(rank);
+									sb.append("']);\n");
+								}
+								continue;
+							}
+							sb.append("\t$stmt->bindValue(\":");
+							sb.append(name);
+							sb.append("\", $");
+							sb.append(tableName);
+							sb.append("row['");
+							sb.append(name);
+							sb.append("']);\n");
 						}
 					}
 					//bind modified_genesis
