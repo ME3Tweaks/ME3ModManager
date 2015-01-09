@@ -27,20 +27,30 @@ public class DetonationParameters {
 			String val = assignment.substring(equalsIndex+1,assignment.length());
 			switch(var){
 			case "BlockedByObjects":
+				System.out.println("BlockedByObjects: "+val);
 				blockedByObjects = Boolean.parseBoolean(val);
+				System.out.println("evaled to "+blockedByObjects);
 				break;
 			case "DistancedSorted": //same thing, typical bioware.
 			case "DistanceSorted":
+				System.out.println("DistanceSorted: "+val);
 				distanceSorted = Boolean.parseBoolean(val);
+				System.out.println("evaled to "+distanceSorted);
 				break;
 			case "ImpactPlaceables":
-				impactFriends = Boolean.parseBoolean(val);
+				System.out.println("ImpactPlaceables: "+val);
+				impactPlaceables = Boolean.parseBoolean(val);
+				System.out.println("evaled to "+impactPlaceables);
 				break;
 			case "ImpactDeadPawns":
+				System.out.println("ImpactDeadPawns: "+val);
 				impactDeadPawns = Boolean.parseBoolean(val);
+				System.out.println("evaled to "+impactDeadPawns);
 				break;
 			case "ImpactFriends":
-				blockedByObjects = Boolean.parseBoolean(val);
+				System.out.println("ImpactFriends: "+val);
+				impactFriends = Boolean.parseBoolean(val);
+				System.out.println("evaled to "+impactFriends);
 				break;
 			case "ConeAngle":
 				coneAngle = Double.parseDouble(val);

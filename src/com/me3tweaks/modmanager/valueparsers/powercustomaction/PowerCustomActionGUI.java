@@ -30,14 +30,16 @@ import org.xml.sax.InputSource;
 
 public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	JTextArea input, output;
-	JButton parse, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generatePublish, copy;
+	JButton parse, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generatePublish, generatePHPValidation, generateJSValidation, copy;
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
-	private boolean detonateBlockedByObjects = true;
-	private boolean detonateDistanceSorted = true;
-	private boolean detonateImpactDeadPawns = false;
-	private boolean detonateImpactFriends = false;
-	private boolean detonateImpactPlaceables = true;
+	private enum DetonationParams {
+		detonationparam_blockedbyobjects,
+		detonationparam_distancesorted,
+		detonationparam_impactdeadpawns,
+		detonationparam_impactfriends,
+		detonationparam_impactplaceables
+		};
 
 	public static void main(String[] args) throws IOException {
 		new PowerCustomActionGUI();
@@ -70,7 +72,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		JScrollPane inputScrollPane = new JScrollPane(input);
 		inputScrollPane.setVerticalScrollBarPolicy(
 		                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		inputScrollPane.setPreferredSize(new Dimension(250, 250));
+		inputScrollPane.setPreferredSize(new Dimension(250, 270));
 		
 		parse = new JButton("Parse");
 		parse.addActionListener(this);
@@ -86,7 +88,14 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		generateFork.addActionListener(this);
 		SQLPanel.add(generateTable, BorderLayout.NORTH);
 		SQLPanel.add(generateInsert, BorderLayout.CENTER);
-		SQLPanel.add(generateFork, BorderLayout.SOUTH);
+		//extra bottom
+		JPanel JSBottom = new JPanel(new BorderLayout());
+		generateJSValidation = new JButton("Generate JS Val");
+		generateJSValidation.addActionListener(this);
+		JSBottom.add(generateFork,BorderLayout.NORTH);
+		JSBottom.add(generateJSValidation,BorderLayout.SOUTH);
+
+		SQLPanel.add(JSBottom, BorderLayout.SOUTH);
 		//PHP stuff
 		JPanel PHPPanel = new JPanel(new BorderLayout());
 		
@@ -102,7 +111,15 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		//generateInsert.addActionListener(this);
 		PHPPanel.add(generateVariables, BorderLayout.NORTH);
 		PHPPanel.add(generateLoad, BorderLayout.CENTER);
-		PHPPanel.add(generatePublish, BorderLayout.SOUTH);
+		
+		//extra bottom
+		JPanel PHPBottom = new JPanel(new BorderLayout());
+		generatePHPValidation = new JButton("Generate PHP Val");
+		generatePHPValidation.addActionListener(this);
+		PHPBottom.add(generatePublish,BorderLayout.NORTH);
+		PHPBottom.add(generatePHPValidation,BorderLayout.SOUTH);
+
+		PHPPanel.add(PHPBottom, BorderLayout.SOUTH);
 		
 		JPanel modmakerPanel = new JPanel(new BorderLayout());
 		modmakerPanel.add(SQLPanel, BorderLayout.WEST);
@@ -173,6 +190,10 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			generateLoad();
 		} else if (e.getSource() == generateVariables) {
 			generateVariables();
+		} else if (e.getSource() == generatePHPValidation) {
+			generatePHPValidation();
+		} else if (e.getSource() == generateJSValidation) {
+			generateJSValidation();
 		} else if (e.getSource() == copy) {
 			String myString = output.getText();
 			StringSelection stringSelection = new StringSelection (myString);
@@ -446,7 +467,14 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append("INT");
 							}
 							sb.append(" NOT NULL,\n");
-							
+							if (bru.formula != null) {
+								//put in formula
+								sb.append("\t");
+								sb.append(name);
+								sb.append("_formula VARCHAR(");
+								sb.append(bru.formula.length());
+								sb.append(") NOT NULL,\n");
+							}
 							for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 							    int rank = entry.getKey();
 							    //double upgrade = entry.getValue();
@@ -545,6 +573,10 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							String data = prop.getTextContent();
 							String name = prop.getAttribute("name");
 							System.out.println("Getting type for: "+path+" "+name);
+							if (prop.getAttribute("type") == null || prop.getAttribute("type").equals("")) {
+								System.err.println("No type for "+name+", skipping.");
+								continue;
+							}
 							int type = Integer.parseInt(prop.getAttribute("type"));
 							
 							if (DetonationParameters.isDetonationParameters(data)) {
@@ -562,34 +594,109 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								//createDetonationParameters
 								sb.append("\", $this->createDetonationParameters(");
 								
-							    sb.append("$mod_powers_");
+							    sb.append("$this->mod->powers->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_blockedbyobjects;\n");
-								
-							    sb.append("\tpublic $mod_powers_");
-								sb.append(tableName);
-								sb.append("_detonationparam_distancesorted;\n");
-								
-							    sb.append("\t$this->mod->mod_powers_");
-								sb.append(tableName);
-								sb.append("_detonationparam_impactdeadpawns;\n");
+								sb.append("_detonationparam_blockedbyobjects,");
 								
 							    sb.append("$this->mod->powers->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_impactfriends;\n");
+								sb.append("_detonationparam_distancesorted,");
+								
+							    sb.append("$this->mod->powers->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactdeadpawns,");
+								
+							    sb.append("$this->mod->powers->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactfriends,");
 								
 							    sb.append("$this->mod->powers->mod_powers_");
 								sb.append(tableName);
 								sb.append("_detonationparam_impactplaceables), ");
 								sb.append(type);
-								sb.append(");\n");
+								sb.append("));\n");
 								continue;
 							}
 							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
 								System.out.println(data+" is a baserankupgrade");
 								BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
+								sb.append("\t");
+								sb.append("array_push(");
+								sb.append(dlcElement);
+								sb.append(", $this->createProperty(\"");
+								sb.append(path);
+								sb.append("\", \"");
+								sb.append(prop.getAttribute("name"));
+								sb.append("\", \"(BaseValue=\".$this->mod->powers->mod_powers_");
+								sb.append(tableName);
+								sb.append("_");
+								sb.append(name);
+								sb.append(".\"");
+								//add formula
+								if (bru.formula != null) {
+									sb.append(",Formula=");
+									sb.append(bru.formula);
+								}
+								
+								//add ranks
+								//,RankBonuses[0]=0,RankBonuses[1]=0.25f,RankBonuses[2]=0.25f,RankBonuses[3]=0
+								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+								    int rank = entry.getKey();
+								    double bonus = entry.getValue();
+								    //double upgrade = entry.getValue();
+									sb.append(",RankBonuses[");
+									sb.append(rank);
+									sb.append("]=");
+									sb.append(bonus);
+									sb.append("f");
+								}
+								
+								sb.append(")\", ");
+								sb.append(type);
+								sb.append("));\n");
+								continue;
+							}
 							
+							try {
+								int ints = Integer.parseInt(data);
+								sb.append("\t");
+								sb.append("array_push(");
+								sb.append(dlcElement);
+								sb.append(", $this->createProperty(\"");
+								sb.append(path);
+								sb.append("\", \"");
+								sb.append(prop.getAttribute("name"));
+								sb.append("\", $this->mod->powers->mod_powers_");
+								sb.append(tableName);
+								sb.append("_");
+								sb.append(name);
+								sb.append(", ");
+								sb.append(type);
+								sb.append("));\n");
+								continue;
+							} catch (NumberFormatException e) {
+								
+							}
 							
+							try {
+								double dubs = Double.parseDouble(data);
+								sb.append("\t");
+								sb.append("array_push(");
+								sb.append(dlcElement);
+								sb.append(", $this->createProperty(\"");
+								sb.append(path);
+								sb.append("\", \"");
+								sb.append(prop.getAttribute("name"));
+								sb.append("\", $this->mod->powers->mod_powers_");
+								sb.append(tableName);
+								sb.append("_");
+								sb.append(name);
+								sb.append(".\"f\", ");
+								sb.append(type);
+								sb.append("));\n");
+								continue;
+							} catch (NumberFormatException e) {
+								
 							}
 							
 						} //end if property element
@@ -606,18 +713,8 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	}
 	
 	private void generateLoad(){
-		// get name of enemy
-		// Parse the enemy
 		String input_text = getInput();
-		String tableName = "placeholder";
-		
 		StringBuilder sb = new StringBuilder();
-		
-		//public function loadNAME(){
-		sb.append("\tpublic function loadpowers");
-		sb.append(Character.toUpperCase(tableName.charAt(0)) + tableName.toLowerCase().substring(1)); //have only first letter capitalized.
-		sb.append("(){\n");
-		//doubletab from here on
 		try {
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(input_text));
@@ -625,103 +722,209 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			doc.getDocumentElement().normalize();
 			
 			NodeList section = doc.getElementsByTagName("Section");
-			Element sectionElement = (Element) section.item(0);
-			NodeList propertyList = sectionElement.getChildNodes();
-			//We are now at at the "sections" array.
-			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
-			for (int k = 0; k < propertyList.getLength(); k++){
-				//for every property in this filenode (of the data to merge)...
-				Node scannednode = propertyList.item(k);
-				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-					Element prop = (Element) scannednode;
-					String name = prop.getAttribute("name");
-					String data = prop.getTextContent();
-					if (DetonationParameters.isDetonationParameters(data)) {
-						DetonationParameters dp = new DetonationParameters(tableName, data);
-						//add detonation params
-						//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
-						sb.append(":detonationparam_blockedbyobjects,");
-						sb.append(":detonationparam_distancesorted,");
-						sb.append(":detonationparam_impactdeadpawns,");
-						sb.append(":detonationparam_impactfriends,");
-						sb.append(":detonationparam_impactplaceables,");
-						continue;
-					}
-					if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
-						BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
-						sb.append(":");
-						sb.append(name);
-						
-						for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
-							Integer rank = entry.getKey();
-							Double bonus = entry.getValue();
-						    
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				if (sectionElement.getNodeType() == Node.ELEMENT_NODE) {
+					String tableName = getTableName(sectionElement.getAttribute("name"));
+					String loadName = getLoadName(tableName);
+					//public function loadWeaponX() {
+					sb.append("\tpublic function loadPower");
+					sb.append(Character.toUpperCase(loadName.charAt(0)) + loadName.toLowerCase().substring(1)); //have only first letter capitalized.
+					sb.append("(){\n");
+					//inner vars
+					NodeList propertyList = sectionElement.getChildNodes();
+					/*for (int k = 0; k < propertyList.getLength(); k++){
+						Node scannednode = propertyList.item(k);
+						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+							Element prop = (Element) scannednode;
+							String data = prop.getTextContent();
+							String name = prop.getAttribute("name");
+							
+							if (DetonationParameters.isDetonationParameters(data)) {
+								DetonationParameters dp = new DetonationParameters(tableName, data);
+								//add detonation params
+								//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
+
+								
+								sb.append("\t\t$this->mod_power_");
+								sb.append(tableName);
+								sb.append("_detonationparam_blockedbyobjects = null;\n");
+								
+								sb.append("\t\t$this->mod_power_");
+								sb.append(tableName);
+								sb.append("_detonationparam_distancesorted = null;\n");
+								
+								sb.append("\t\t$this->mod_power_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactdeadpawns = null;\n");
+								
+								sb.append("\t\t$this->mod_power_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactfriends = null;\n");
+								
+								sb.append("\t\t$this->mod_power_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactplaceables = null;\n");
+								continue;
+							}
+							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+								BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
+								sb.append("\t\t$this->mod_power_");
+								sb.append(tableName);
+								sb.append("_");
+								sb.append(name);
+								sb.append(" = null;\n");
+								
+								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+								    int rank = entry.getKey();
+								    //double upgrade = entry.getValue();
+									sb.append("\t\t$this->mod_power_");
+									sb.append(tableName);
+									sb.append("_");
+									sb.append(name);
+									sb.append("_rankbonus_");
+									sb.append(rank);
+									sb.append(" = null;\n");
+								}
+								continue;
+							}
+							sb.append("\t\t$this->mod_power_");
+							sb.append(tableName);
+							sb.append("_");
+							sb.append(name);
+							sb.append(" = null;\n");
+						} //end scanned element node
+					}//end property loop
+					
+					//clear modified, genesis
+					sb.append("\t\t$this->mod_power_");
+					sb.append(tableName);
+					sb.append("_modified = null;\n");
+					sb.append("\t\t$this->mod_power_");
+					sb.append(tableName);
+					sb.append("_modified_genesis = null;\n\n");*/
+					
+					sb.append("\t\trequire($_SERVER['DOCUMENT_ROOT'].\"/db-middleman.php\");\n");
+					
+					//load values from DB
+					sb.append("\t\t//Load values from DB\n");
+					
+					//select * from modmaker_enemies_NAME where mod_id=:mod
+					sb.append("\t\t$sql = \"SELECT * FROM modmaker_powers_");
+					sb.append(tableName);
+					sb.append(" WHERE mod_id=:mod_id\";\n");
+					
+					sb.append("\t\t$stmt = $dbh->prepare($sql);\n");
+					sb.append("\t\t$stmt->bindValue(\":mod_id\", $this->mod_id);\n");
+					sb.append("\t\t$stmt->execute();\n");
+					sb.append("\t\t$row = $stmt->fetch();\n");
+					
+					//iterate over properties again, for loading via row
+					for (int k = 0; k < propertyList.getLength(); k++){
+						Node scannednode = propertyList.item(k);
+						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+							Element prop = (Element) scannednode;
+							String data = prop.getTextContent();
+							String name = prop.getAttribute("name");
+							if (DetonationParameters.isDetonationParameters(data)) {
+								DetonationParameters dp = new DetonationParameters(tableName, data);
+								//add detonation params
+								sb.append("\t\t$this->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_blockedbyobjects");
+								sb.append(" = $row['");
+								sb.append("detonationparam_blockedbyobjects");
+								sb.append("'];\n");
+								
+								sb.append("\t\t$this->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_distancesorted");
+								sb.append(" = $row['");
+								sb.append("detonationparam_distancesorted");
+								sb.append("'];\n");
+								
+								sb.append("\t\t$this->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactdeadpawns");
+								sb.append(" = $row['");
+								sb.append("detonationparam_impactdeadpawns");
+								sb.append("'];\n");
+								
+								sb.append("\t\t$this->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactfriends");
+								sb.append(" = $row['");
+								sb.append("detonationparam_impactfriends");
+								sb.append("'];\n");
+								
+								sb.append("\t\t$this->mod_powers_");
+								sb.append(tableName);
+								sb.append("_detonationparam_impactplaceables");
+								sb.append(" = $row['");
+								sb.append("detonationparam_impactplaceables");
+								sb.append("'];\n");
+								continue;
+							}
+							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+								BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
+								sb.append("\t\t$this->mod_powers_");
+								sb.append(tableName);
+								sb.append("_");
+								sb.append(name);
+								sb.append(" = $row['");
+								sb.append(name);
+								sb.append("'];\n");
+								
+								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+								    int rank = entry.getKey();
+								    //double upgrade = entry.getValue();
+									
+									sb.append("\t\t$this->mod_powers_");
+									sb.append(tableName);
+									sb.append("_");
+									sb.append(name);
+									sb.append("_rankbonus_");
+									sb.append(rank);
+									sb.append(" = $row['");
+									sb.append(name);
+									sb.append("_rankbonus_");
+									sb.append(rank);
+									sb.append("'];\n");
+								}
+								continue;
+							}
+							sb.append("\t\t$this->mod_powers_");
+							sb.append(tableName);
+							sb.append("_");
+							sb.append(name);
+							sb.append(" = $row['");
+							sb.append(name);
+							sb.append("'];\n");
 						}
 					}
-				}
-			}
-			//modified, genesis
-			sb.append("\t\t$this->mod_powers_");
-			sb.append(tableName);
-			sb.append("_modified = null;\n");
-			sb.append("\t\t$this->mod_powers_");
-			sb.append(tableName);
-			sb.append("_modified_genesis = null;\n");
-		} catch (Exception e){
-			e.printStackTrace();
-			output.setText(e.getMessage());
-		}
-		
-		sb.append("\t\trequire($_SERVER['DOCUMENT_ROOT'].\"/db-middleman.php\");\n");
-		
-		//load values from DB
-		sb.append("\t\t//Load values from DB\n");
-		
-		//select * from modmaker_enemies_NAME where mod_id=:mod
-		sb.append("\t\t$sql = \"SELECT * FROM ");
-		sb.append(tableName);
-		sb.append(" WHERE mod_id=:mod_id\";\n");
-		
-		sb.append("\t\t$stmt = $dbh->prepare($sql);\n");
-		sb.append("\t\t$stmt->bindValue(\":mod_id\", $this->mod_id);\n");
-		sb.append("\t\t$stmt->execute();\n");
-		sb.append("\t\t$row = $stmt->fetch();\n");
-		//generate variables, load from row
-		try {
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-			InputSource is = new InputSource(new StringReader(input_text));
-			doc = dBuilder.parse(is);
-			doc.getDocumentElement().normalize();
-			
-			NodeList section = doc.getElementsByTagName("Section");
-			Element sectionElement = (Element) section.item(0);
-			NodeList propertyList = sectionElement.getChildNodes();
-			//We are now at at the "sections" array.
-			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
-			for (int k = 0; k < propertyList.getLength(); k++){
-				//for every property in this filenode (of the data to merge)...
-				Node scannednode = propertyList.item(k);
-				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-					Element prop = (Element) scannednode;
+					//load modified, genesis
+					//modified, genesis
+					sb.append("\t\t$this->mod_powers_");
+					sb.append(tableName);
+					sb.append("_modified = $row['modified'];\n");
+					sb.append("\t\t$this->mod_powers_");
+					sb.append(tableName);
+					sb.append("_modified_genesis = $row['modified_genesis'];\n");
+			        sb.append("\t}\n");
 					
-				}
-			}
+				} //end section element loop
+				
+			}//end section loop
+			
+			//generate variables, load from row
+			
+			output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();
 			output.setText(e.getMessage());
 		}
-		//modified, genesis
-		sb.append("\t\t$this->mod_powers_");
-		sb.append(tableName);
-		sb.append("_modified = $row['modified'];\n");
-		sb.append("\t\t$this->mod_powers_");
-		sb.append(tableName);
-		sb.append("_modified_genesis = $row['modified_genesis'];\n");
-        sb.append("\t}\n");
-		
-		output.setText(sb.toString());
 	}
-	
+
 	/**
 	 * Generates fork code for ModMaker's fork handler
 	 */
@@ -955,23 +1158,23 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_blockedbyobjects;\n");
+							sb.append("_detonationparam_blockedbyobjects = null;\n");
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_distancesorted;\n");
+							sb.append("_detonationparam_distancesorted = null;\n");
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_impactdeadpawns;\n");
+							sb.append("_detonationparam_impactdeadpawns = null;\n");
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_impactfriends;\n");
+							sb.append("_detonationparam_impactfriends = null;\n");
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_impactplaceables;\n");
+							sb.append("_detonationparam_impactplaceables = null;\n");
 							
 							continue;
 						}
@@ -982,16 +1185,18 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							sb.append(tableSuffix);
 							sb.append("_");
 							sb.append(name);
-							sb.append(";\n");	
+							sb.append(" = null;\n");	
 
 							for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 							    int rank = entry.getKey();
 							    //double upgrade = entry.getValue();
 							    sb.append("\tpublic $mod_powers_");
 								sb.append(tableSuffix);
+								sb.append("_");
+								sb.append(name);
 								sb.append("_rankbonus_");
 								sb.append(rank);
-								sb.append(";\n");
+								sb.append(" = null;\n");
 							}
 							continue;
 							
@@ -1002,22 +1207,223 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						sb.append(tableSuffix);
 						sb.append("_");
 						sb.append(name);
-						sb.append(";\n");						
+						sb.append(" = null;\n");						
 					}
 				}
 				sb.append("\tpublic $mod_powers_");
 				sb.append(tableSuffix);
-				sb.append("_modified;\n");
+				sb.append("_modified = null;\n");
 				
 				sb.append("\tpublic $mod_powers_");
 				sb.append(tableSuffix);
-				sb.append("_modified_genesis;\n");
+				sb.append("_modified_genesis = null;\n");
 			}
 			output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();
 			output.setText(e.getMessage());
 		}
+	}
+	
+	private void generatePHPValidation() {
+		String input_text = getInput();
+		StringBuilder sb = new StringBuilder();
+		try { //Load document
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			NodeList section = doc.getElementsByTagName("Section");
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				String tableSuffix = getTableName(sectionElement.getAttribute("name"));
+				sb.append("\tcase \"");
+				sb.append(tableSuffix);
+				sb.append("\":\n");
+				
+				NodeList propertyList = sectionElement.getChildNodes();
+				//We are now at at the "sections" array.
+				//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+				for (int k = 0; k < propertyList.getLength(); k++){
+					//for every property in this filenode (of the data to merge)...
+					Node scannednode = propertyList.item(k);
+					if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+						Element prop = (Element) scannednode;
+						
+						String data = prop.getTextContent();
+						String name = prop.getAttribute("name");
+						if (DetonationParameters.isDetonationParameters(data)) {
+							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
+							//add detonation params
+							for (DetonationParams param : DetonationParams.values()){
+								String dparam = param.toString();
+								sb.append("\t\t//");
+								sb.append(dparam);
+								sb.append("\n");
+							    sb.append("\t\tif (isset($_POST['");
+								sb.append(dparam);
+								sb.append("'])) {\n");
+								sb.append("\t\t\t$updateinfo['");
+								sb.append(dparam);
+								sb.append("'] = true;\n");
+								sb.append("\t\t} else {\n");
+								sb.append("\t\t\t$updateinfo['");
+								sb.append(dparam);
+								sb.append("'] = false;\n");
+								sb.append("\t\t}\n\n");
+							}
+							continue;
+						}
+						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+							BaseRankUpgrade bru = new BaseRankUpgrade(tableSuffix, data);
+							//BASE VALUE
+							sb.append("\t\t//");
+							sb.append(name);
+							sb.append("\n");
+							
+							sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['");
+							sb.append(name);
+							sb.append("']);\n");
+
+							sb.append("\t\tif (is_null($shouldadd)){\n");
+							sb.append("\t\t\t$updateinfo['");
+							sb.append(name);
+							sb.append("'] = $_POST['");
+							sb.append(name);
+							sb.append("'];");
+							
+							sb.append("\t\t} else {\n");
+							sb.append("\t\t\tarray_push($status, \"");
+							sb.append(name);
+							sb.append(" \".$shouldadd);\n");
+							sb.append("\t\t}\n\n");
+
+
+							for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+							    int rank = entry.getKey();
+							    //RANKBONUSES
+								sb.append("\t\t//");
+								sb.append(name);
+								sb.append("\n");
+								
+								sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['");
+								sb.append(name);
+								sb.append("_rankbonus_");
+								sb.append(rank);
+								sb.append("']);\n");
+
+								sb.append("\t\tif (is_null($shouldadd)){\n");
+								sb.append("\t\t\t$updateinfo['");
+								sb.append(name);
+								sb.append("_rankbonus_");
+								sb.append(rank);
+								sb.append("'] = $_POST['");
+								sb.append(name);
+								sb.append("_rankbonus_");
+								sb.append(rank);
+								sb.append("'];\n");
+								
+								sb.append("\t\t} else {\n");
+								sb.append("\t\t\tarray_push($status, \"");
+								sb.append(name);
+								sb.append("_rankbonus_");
+								sb.append(rank);
+								sb.append(" \".$shouldadd);\n");
+								sb.append("\t\t}\n\n");
+							}
+							continue;
+						}
+						//ints, dubs
+						try {
+							int ints = Integer.parseInt(data);
+							sb.append("\t\t//");
+							sb.append(name);
+							sb.append("\n");
+							
+							sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_int($_POST['");
+							sb.append(name);
+							sb.append("']);\n");
+
+							sb.append("\t\tif (is_null($shouldadd)){\n");
+							sb.append("\t\t\t$updateinfo['");
+							sb.append(name);
+
+							sb.append("'] = $_POST['");
+							sb.append(name);
+							sb.append("'];\n");
+							
+							sb.append("\t\t} else {\n");
+							sb.append("\t\t\tarray_push($status, \"");
+							sb.append(name);
+							sb.append(" \".$shouldadd);\n");
+							sb.append("\t\t}\n\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						
+						try {
+							double dubs = Double.parseDouble(data);
+							sb.append("\t\t//");
+							sb.append(name);
+							sb.append("\n");
+							
+							sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['");
+							sb.append(name);
+							sb.append("']);\n");
+
+							sb.append("\t\tif (is_null($shouldadd)){\n");
+							sb.append("\t\t\t$updateinfo['");
+							sb.append(name);
+							sb.append("'] = $_POST['");
+							sb.append(name);
+							sb.append("'];\n");
+							
+							sb.append("\t\t} else {\n");
+							sb.append("\t\t\tarray_push($status, \"");
+							sb.append(name);
+							sb.append(" \".$shouldadd);\n");
+							sb.append("\t\t}\n\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+					}
+				}
+
+				sb.append("\t\t$mod->loadPowerFunctions();\n");
+				sb.append("\t\t$result = $mod->powers->updatePower('");
+				sb.append(tableSuffix);
+				sb.append("', $updateinfo);\n");
+				
+				sb.append("\t\tif (is_null($result) and count($status)<=0) {\n");
+				sb.append("\t\t\t$_SESSION['powers_update'] = \"");
+				sb.append(tableSuffix);
+				sb.append(" updated.\";\n");
+				
+				sb.append("\t\t\theader('Location: /modmaker/edit/'.$id.'/powers');\n");;
+				sb.append("\t\t\tdie();\n");
+				sb.append("\t\t} else {\n");
+				sb.append("\t\t\tarray_push($status, $result);\n");
+				sb.append("\t\t\t$SESSION['");
+				sb.append(tableSuffix);
+				sb.append("_status'] = $status;\n");
+				sb.append("\t\t\theader('Location: /modmaker/edit/'.$id.'/powers/");
+				sb.append(tableSuffix);
+				sb.append("');\n");
+				sb.append("\t\t\tdie();\n");
+				sb.append("\t\t}\n");
+				sb.append("\t\tbreak;\n\n");
+			}
+			output.setText(sb.toString());
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
+	}
+	
+	private void generateJSValidation(){ 
+		
 	}
 	
 	private String getInput(){
@@ -1033,6 +1439,14 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		}
 
 		str = str.replaceAll("sfxpowercustomaction", "");
-		return str;
+		if (str.charAt(0) == '_') {
+			return str.substring(1);
+		} else {
+			return str;
+		}
+	}
+	
+	private String getLoadName(String tableName) {
+		return tableName.replaceAll("_", "");
 	}
 }
