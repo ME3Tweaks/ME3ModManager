@@ -392,7 +392,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		
 		// Tools
 		toolsMenu = new JMenu("Tools");
-		toolsModMaker = new JMenuItem("Enter modmaker code");
+		toolsModMaker = new JMenuItem("Enter ME3Tweaks ModMaker code");
 		toolsMergeMod = new JMenuItem("Merge mods...");
 		
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");

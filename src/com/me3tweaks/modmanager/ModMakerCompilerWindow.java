@@ -134,7 +134,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		currentPanel.add(currentStepProgress, BorderLayout.SOUTH);
 		modMakerPanel.add(currentPanel);
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-
+		setResizable(false);
 		this.getContentPane().add(modMakerPanel);
 		}
 
@@ -220,7 +220,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * @param coalName Coalesced file
 	 * @return Corresponding heading
 	 */
-	protected String coalNameToModDescName(String coalName) {
+	protected String coalFileNameToModDescName(String coalName) {
 		switch (coalName) {
 		case "Default_DLC_CON_MP1.bin":
 			return "RESURGENCE";
@@ -1265,14 +1265,14 @@ public class ModMakerCompilerWindow extends JDialog {
 					for (String tlkFilename : tlkFiles) {
 						File compiledTLKFile = new File("tlk\\"+"BIOGame_"+tlkFilename+".tlk");
 						if (!compiledTLKFile.exists()) {
-							ModManager.debugLogger.writeMessage("TLK file "+compiledTLKFile+" is missing, might not have been compiled by this modmaker version. skipping.");
+							ModManager.debugLogger.writeMessage("TLK file "+compiledTLKFile+" is missing, might not have been selected for compilation. skipping.");
 							continue;
 						}
 						File destTLKFile= new File(compCoalDir+"\\BIOGame_"+tlkFilename+".tlk");
 						if (compiledTLKFile.renameTo(destTLKFile)){
 							ModManager.debugLogger.writeMessage("Moved "+compiledTLKFile+" TLK to BASEGAME directory");
 						} else {
-							ModManager.debugLogger.writeMessage("ERROR! Didn't move "+compiledTLKFile+" TLK to the BASEGAME directory. Could already exist.");
+							ModManager.debugLogger.writeMessage("Didn't move "+compiledTLKFile+" TLK to the BASEGAME directory. Could already exist.");
 						}
 					}
 				}
@@ -1281,7 +1281,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				
 				//TODO: Add PCConsoleTOC.bin to the desc file.
 				boolean basegame = 	reqcoal.equals("Coalesced.bin");
-				ini.put(coalNameToModDescName(reqcoal), "moddir", coalFilenameToShortName(reqcoal));
+				ini.put(coalFileNameToModDescName(reqcoal), "moddir", coalFilenameToShortName(reqcoal));
 				
 				if (basegame) {
 					StringBuilder newsb = new StringBuilder();
@@ -1302,11 +1302,11 @@ public class ModMakerCompilerWindow extends JDialog {
 					}
 					newsb.append(";PCConsoleTOC.bin");
 					replacesb.append(";"+coalFileNameToDLCTOCDir(reqcoal));
-					ini.put(coalNameToModDescName(reqcoal), "newfiles", newsb.toString());
-					ini.put(coalNameToModDescName(reqcoal), "replacefiles", replacesb.toString());					
+					ini.put(coalFileNameToModDescName(reqcoal), "newfiles", newsb.toString());
+					ini.put(coalFileNameToModDescName(reqcoal), "replacefiles", replacesb.toString());					
 				} else {
-					ini.put(coalNameToModDescName(reqcoal), "newfiles", reqcoal+";PCConsoleTOC.bin");
-					ini.put(coalNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal)+";"+coalFileNameToDLCTOCDir(reqcoal));					
+					ini.put(coalFileNameToModDescName(reqcoal), "newfiles", reqcoal+";PCConsoleTOC.bin");
+					ini.put(coalFileNameToModDescName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal)+";"+coalFileNameToDLCTOCDir(reqcoal));					
 				}
 
 
@@ -1320,12 +1320,64 @@ public class ModMakerCompilerWindow extends JDialog {
 					e.printStackTrace();
 				}
 			}
+			
+			System.out.println("BREAK");
+			
+			//TLK Only, no coalesced
+			if (languages.size() > 0 && !requiredCoals.contains("Coalesced.bin")) {
+				File compCoalDir = new File(moddir.toString() + "\\"+coalFilenameToShortName("Coalesced.bin")); //MP4, PATCH2 folders in mod package
+				compCoalDir.mkdirs();
+				ini.put(coalFileNameToModDescName("Coalesced.bin"), "moddir", coalFilenameToShortName("Coalesced.bin"));
+				
+				//MOVE THE TLK FILES
+				for (String tlkFilename : languages) {
+					File compiledTLKFile = new File("tlk\\"+"BIOGame_"+tlkFilename+".tlk");
+					if (!compiledTLKFile.exists()) {
+						ModManager.debugLogger.writeMessage("TLK file "+compiledTLKFile+" is missing, might not have been selected for compilation. skipping.");
+						continue;
+					}
+					File destTLKFile= new File(compCoalDir+"\\BIOGame_"+tlkFilename+".tlk");
+					if (compiledTLKFile.renameTo(destTLKFile)){
+						ModManager.debugLogger.writeMessage("Moved "+compiledTLKFile+" TLK to BASEGAME directory");
+					} else {
+						ModManager.debugLogger.writeMessage("Didn't move "+compiledTLKFile+" TLK to the BASEGAME directory. Could already exist.");
+					}
+				}
+				
+				//MOVE PCCONSOLETOC.bin
+				File tocFile = new File("toc\\"+coalFilenameToShortName("Coalesced.bin")+"\\PCConsoleTOC.bin");
+				File destToc = new File(compCoalDir+"\\PCConsoleTOC.bin");
+				destToc.delete();
+				if (tocFile.renameTo(destToc)){
+					ModManager.debugLogger.writeMessage("Moved BASEGAME TOC to proper mod element directory");
+				} else {
+					ModManager.debugLogger.writeMessage("ERROR! Didn't move BASEGAME TOC to the proper mod element directory. Could already exist.");
+				}
+				StringBuilder newsb = new StringBuilder();
+				StringBuilder replacesb = new StringBuilder();
+				
+				//tlk, if they exist.
+				for (String tlkFilename : languages) {
+					File basegameTLKFile = new File(compCoalDir+"\\BIOGame_"+tlkFilename+".tlk");
+					if (basegameTLKFile.exists()) {
+						newsb.append(";BIOGame_"+tlkFilename+".tlk");
+						replacesb.append(";\\BIOGame\\CookedPCConsole\\BIOGame_"+tlkFilename+".tlk");
+						continue;
+					}
+				}
+				newsb.append(";PCConsoleTOC.bin");
+				replacesb.append(";"+coalFileNameToDLCTOCDir("Coalesced.bin"));
+				ini.put(coalFileNameToModDescName("Coalesced.bin"), "newfiles", newsb.toString());
+				ini.put(coalFileNameToModDescName("Coalesced.bin"), "replacefiles", replacesb.toString());					
+			}
 			ini.store();
 			ModManager.debugLogger.writeMessage("Cleaning up...");
 			try {
-				FileUtils.deleteDirectory(new File("tlk"));
-				FileUtils.deleteDirectory(new File("toc"));
-				FileUtils.deleteDirectory(new File("coalesceds"));
+				if (!ModManager.IS_DEBUG) {
+					FileUtils.deleteDirectory(new File("tlk"));
+					FileUtils.deleteDirectory(new File("toc"));
+					FileUtils.deleteDirectory(new File("coalesceds"));
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1340,19 +1392,27 @@ public class ModMakerCompilerWindow extends JDialog {
 		//TOC the mod
 		ModManager.debugLogger.writeMessage("Running autotoc on modmaker mod.");
 		Mod newMod = new Mod(moddesc.toString());
+		boolean error = false;
 		if (!newMod.validMod) {
 			//SOMETHING WENT WRONG!
+			error = true;
+			JOptionPane.showMessageDialog(this, modName+" was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure debugging is enabled in Help>About.\nContact FemShep if you need help via the forums.", "Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
-		new AutoTocWindow(callingWindow, newMod);
-		stepsCompleted++;
-
-		//Mod Created!
 		File file = new File(DOWNLOADED_XML_FILENAME);
 		file.delete();
-		dispose();
-		JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
-		callingWindow.dispose();
-		new ModManagerWindow(false);
+		if (!error) {
+			new AutoTocWindow(callingWindow, newMod);
+			stepsCompleted++;
+	
+			//Mod Created!
+			
+			dispose();
+			JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
+			callingWindow.dispose();
+			new ModManagerWindow(false); 
+		} else {
+			dispose();
+		}
 	}
 	
 	class TOCDownloadWorker extends SwingWorker<Void, Integer> {
@@ -1364,16 +1424,15 @@ public class ModMakerCompilerWindow extends JDialog {
 				JProgressBar progress) {
 			progress.setIndeterminate(true);
 			progress.setValue(0);
-			this.tocsToDownload = tocsToDownload;
-			if (this.tocsToDownload.contains("Coalesced.bin")) {
-				this.numtoc = tocsToDownload.size() - 1;
-			} else {
-				this.numtoc = tocsToDownload.size();
+			this.tocsToDownload = new ArrayList<String>(tocsToDownload); //clone for downloading
+			if (languages.size() > 0 && !this.tocsToDownload.contains("Coalesced.bin")) {
+				this.tocsToDownload.add("Coalesced.bin");
 			}
+			this.numtoc = this.tocsToDownload.size();
 			this.progress = progress;
 			if (numtoc > 0) {
 				currentOperationLabel.setText("Downloading "
-						+ coalToTOCString(tocsToDownload.get(0)));
+						+ coalToTOCString(this.tocsToDownload.get(0)));
 			}
 		}
 
@@ -1392,6 +1451,8 @@ public class ModMakerCompilerWindow extends JDialog {
 					e.printStackTrace();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}

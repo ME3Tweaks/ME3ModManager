@@ -28,7 +28,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+@SuppressWarnings("serial")
 public class PowerCustomActionGUI extends JFrame implements ActionListener {
+	private static boolean isRunningAsMain = false;
 	JTextArea input, output;
 	JButton parse, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generatePublish, generatePHPValidation, generateJSValidation, copy;
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -42,9 +44,10 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		};
 
 	public static void main(String[] args) throws IOException {
+		isRunningAsMain  = true;
 		new PowerCustomActionGUI();
 	}
-
+	
 	public PowerCustomActionGUI() {
 		this.setTitle("ME3CMM SFXCustomAction Parser Tool");
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(
@@ -133,6 +136,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		JPanel outputPanel = new JPanel(new BorderLayout());
 		JLabel outputLabel = new JLabel("Output");
 		output = new JTextArea(20, 30);
+		output.setTabSize(4);
 		output.setEditable(false);
 		output.setLineWrap(true);
 		output.setWrapStyleWord(false);
@@ -154,6 +158,17 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		
 		bioaiGUI.add(splitPane, BorderLayout.CENTER);
 		this.getContentPane().add(bioaiGUI);
+		
+		
+		this.addWindowListener(new java.awt.event.WindowAdapter() {
+		    @Override
+		    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+	        	if (isRunningAsMain) {
+	        		System.exit(0);
+	        	}
+		    }
+		});
+		
 		pack();
 }
 
@@ -258,21 +273,6 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
 							BaseRankUpgrade bru = new BaseRankUpgrade(varPrefix, data);
 						}
-						/*try {
-							Range test = new Range(prop.getTextContent());
-							sb.append(prop.getAttribute("name"));
-							sb.append(": ");
-							sb.append(test.X);
-							sb.append(" - ");
-							sb.append(test.Y);
-							sb.append("\n");
-						} catch (StringIndexOutOfBoundsException strException){
-							//its a direct str
-							sb.append(prop.getAttribute("name"));
-							sb.append(": ");
-							sb.append(prop.getTextContent());
-							sb.append("\n");
-						} */
 					}
 				}
 			}
@@ -316,6 +316,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 					
 					String data = prop.getTextContent();
 					String name = prop.getAttribute("name");
+					if (name.equals("force")){
+						name = "vforce";
+					}
 					if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
 						sb.append("\t");
 						//its a boolean.
@@ -438,6 +441,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						
 						String data = prop.getTextContent();
 						String name = prop.getAttribute("name");
+						if (name.equals("force")){
+							name = "vforce";
+						}
 						if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
 							//its a boolean.
 							sb.append("\t");
@@ -505,7 +511,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						} catch (NumberFormatException e) {
 							
 						}
-						System.out.println("UNKNOWN: "+data);
+						System.out.println("Ignoring property: "+name);
 					}
 				}
 				sb.append("\tmodified boolean NOT NULL,\n");
@@ -572,6 +578,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							Element prop = (Element) scannednode;
 							String data = prop.getTextContent();
 							String name = prop.getAttribute("name");
+							if (name.equals("force")){
+								name = "vforce";
+							}
 							System.out.println("Getting type for: "+path+" "+name);
 							if (prop.getAttribute("type") == null || prop.getAttribute("type").equals("")) {
 								System.err.println("No type for "+name+", skipping.");
@@ -646,9 +655,13 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								    //double upgrade = entry.getValue();
 									sb.append(",RankBonuses[");
 									sb.append(rank);
-									sb.append("]=");
-									sb.append(bonus);
-									sb.append("f");
+									sb.append("]=\".$this->mod->powers->mod_powers_");
+									sb.append(tableName);
+									sb.append("_");
+									sb.append(name);
+									sb.append("_rankbonus_");
+									sb.append(rank);
+									sb.append(".\"f");
 								}
 								
 								sb.append(")\", ");
@@ -698,7 +711,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							} catch (NumberFormatException e) {
 								
 							}
-							
+							System.err.println("Not publishing property: "+name);
 						} //end if property element
 					} //end property loop
 					sb.append("}\n\n");
@@ -733,76 +746,6 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 					sb.append("(){\n");
 					//inner vars
 					NodeList propertyList = sectionElement.getChildNodes();
-					/*for (int k = 0; k < propertyList.getLength(); k++){
-						Node scannednode = propertyList.item(k);
-						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-							Element prop = (Element) scannednode;
-							String data = prop.getTextContent();
-							String name = prop.getAttribute("name");
-							
-							if (DetonationParameters.isDetonationParameters(data)) {
-								DetonationParameters dp = new DetonationParameters(tableName, data);
-								//add detonation params
-								//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
-
-								
-								sb.append("\t\t$this->mod_power_");
-								sb.append(tableName);
-								sb.append("_detonationparam_blockedbyobjects = null;\n");
-								
-								sb.append("\t\t$this->mod_power_");
-								sb.append(tableName);
-								sb.append("_detonationparam_distancesorted = null;\n");
-								
-								sb.append("\t\t$this->mod_power_");
-								sb.append(tableName);
-								sb.append("_detonationparam_impactdeadpawns = null;\n");
-								
-								sb.append("\t\t$this->mod_power_");
-								sb.append(tableName);
-								sb.append("_detonationparam_impactfriends = null;\n");
-								
-								sb.append("\t\t$this->mod_power_");
-								sb.append(tableName);
-								sb.append("_detonationparam_impactplaceables = null;\n");
-								continue;
-							}
-							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
-								BaseRankUpgrade bru = new BaseRankUpgrade(tableName, data);
-								sb.append("\t\t$this->mod_power_");
-								sb.append(tableName);
-								sb.append("_");
-								sb.append(name);
-								sb.append(" = null;\n");
-								
-								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
-								    int rank = entry.getKey();
-								    //double upgrade = entry.getValue();
-									sb.append("\t\t$this->mod_power_");
-									sb.append(tableName);
-									sb.append("_");
-									sb.append(name);
-									sb.append("_rankbonus_");
-									sb.append(rank);
-									sb.append(" = null;\n");
-								}
-								continue;
-							}
-							sb.append("\t\t$this->mod_power_");
-							sb.append(tableName);
-							sb.append("_");
-							sb.append(name);
-							sb.append(" = null;\n");
-						} //end scanned element node
-					}//end property loop
-					
-					//clear modified, genesis
-					sb.append("\t\t$this->mod_power_");
-					sb.append(tableName);
-					sb.append("_modified = null;\n");
-					sb.append("\t\t$this->mod_power_");
-					sb.append(tableName);
-					sb.append("_modified_genesis = null;\n\n");*/
 					
 					sb.append("\t\trequire($_SERVER['DOCUMENT_ROOT'].\"/db-middleman.php\");\n");
 					
@@ -826,6 +769,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							Element prop = (Element) scannednode;
 							String data = prop.getTextContent();
 							String name = prop.getAttribute("name");
+							if (name.equals("force")){
+								name = "vforce";
+							}
 							if (DetonationParameters.isDetonationParameters(data)) {
 								DetonationParameters dp = new DetonationParameters(tableName, data);
 								//add detonation params
@@ -893,13 +839,34 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								}
 								continue;
 							}
-							sb.append("\t\t$this->mod_powers_");
-							sb.append(tableName);
-							sb.append("_");
-							sb.append(name);
-							sb.append(" = $row['");
-							sb.append(name);
-							sb.append("'];\n");
+							try {
+								int ints = Integer.parseInt(data);
+								sb.append("\t\t$this->mod_powers_");
+								sb.append(tableName);
+								sb.append("_");
+								sb.append(name);
+								sb.append(" = $row['");
+								sb.append(name);
+								sb.append("'];\n");
+								continue;
+							} catch (NumberFormatException e) {
+								
+							}
+							
+							try {
+								double dubs = Double.parseDouble(data);
+								sb.append("\t\t$this->mod_powers_");
+								sb.append(tableName);
+								sb.append("_");
+								sb.append(name);
+								sb.append(" = $row['");
+								sb.append(name);
+								sb.append("'];\n");
+								continue;
+							} catch (NumberFormatException e) {
+								
+							}
+							System.out.println("Not generating load for property: "+name);
 						}
 					}
 					//load modified, genesis
@@ -977,6 +944,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
 							Element prop = (Element) scannednode;
 							String name = prop.getAttribute("name");
+							if (name.equals("force")){
+								name = "vforce";
+							}
 							String data = prop.getTextContent();
 							if (DetonationParameters.isDetonationParameters(data)) {
 								DetonationParameters dp = new DetonationParameters(tableName, data);
@@ -1005,9 +975,29 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								}
 								continue;
 							}
-							sb.append(":");
-							sb.append(name);
-							sb.append(", ");
+							
+							try {
+								int ints = Integer.parseInt(data);
+								sb.append(":");
+								sb.append(name);
+								sb.append(", ");
+								continue;
+							} catch (NumberFormatException e) {
+								
+							}
+							
+							try {
+								double dubs = Double.parseDouble(data);
+								sb.append(":");
+								sb.append(name);
+								sb.append(", ");
+								continue;
+							} catch (NumberFormatException e) {
+								
+							}
+							System.out.println("Not generating fork substitution (1) for property: "+name);
+							
+							
 						}
 					}
 					sb.append("false, :modified_genesis)\");\n");
@@ -1019,6 +1009,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
 							Element prop = (Element) scannednode;
 							String name = prop.getAttribute("name");
+							if (name.equals("force")){
+								name = "vforce";
+							}
 							String data = prop.getTextContent();
 							if (DetonationParameters.isDetonationParameters(data)) {
 								DetonationParameters dp = new DetonationParameters(tableName, data);
@@ -1084,13 +1077,36 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								}
 								continue;
 							}
-							sb.append("\t$stmt->bindValue(\":");
-							sb.append(name);
-							sb.append("\", $");
-							sb.append(tableName);
-							sb.append("row['");
-							sb.append(name);
-							sb.append("']);\n");
+							
+							try {
+								int ints = Integer.parseInt(data);
+								sb.append("\t$stmt->bindValue(\":");
+								sb.append(name);
+								sb.append("\", $");
+								sb.append(tableName);
+								sb.append("row['");
+								sb.append(name);
+								sb.append("']);\n");
+								continue;
+							} catch (NumberFormatException e) {
+								
+							}
+							
+							try {
+								double dubs = Double.parseDouble(data);
+								sb.append("\t$stmt->bindValue(\":");
+								sb.append(name);
+								sb.append("\", $");
+								sb.append(tableName);
+								sb.append("row['");
+								sb.append(name);
+								sb.append("']);\n");
+								continue;
+							} catch (NumberFormatException e) {
+								
+							}
+							System.out.println("Not generating fork substitution (2) for property: "+name);
+							
 						}
 					}
 					//bind modified_genesis
@@ -1151,6 +1167,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						
 						String data = prop.getTextContent();
 						String name = prop.getAttribute("name");
+						if (name.equals("force")){
+							name = "vforce";
+						}
 						if (DetonationParameters.isDetonationParameters(data)) {
 							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
 							//add detonation params
@@ -1201,13 +1220,30 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							continue;
 							
 						}
+						try {
+							int ints = Integer.parseInt(data);
+							sb.append("\tpublic $mod_powers_");
+							sb.append(tableSuffix);
+							sb.append("_");
+							sb.append(name);
+							sb.append(" = null;\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
 						
-						//append it otherwise.
-					    sb.append("\tpublic $mod_powers_");
-						sb.append(tableSuffix);
-						sb.append("_");
-						sb.append(name);
-						sb.append(" = null;\n");						
+						try {
+							double dubs = Double.parseDouble(data);
+							sb.append("\tpublic $mod_powers_");
+							sb.append(tableSuffix);
+							sb.append("_");
+							sb.append(name);
+							sb.append(" = null;\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						System.out.println("Not generating variable for property: "+name);
 					}
 				}
 				sb.append("\tpublic $mod_powers_");
@@ -1240,6 +1276,8 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				sb.append("\tcase \"");
 				sb.append(tableSuffix);
 				sb.append("\":\n");
+				sb.append("\t\t$status = array();\n");
+				sb.append("\t\t$updateinfo = array();\n");
 				
 				NodeList propertyList = sectionElement.getChildNodes();
 				//We are now at at the "sections" array.
@@ -1252,6 +1290,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						
 						String data = prop.getTextContent();
 						String name = prop.getAttribute("name");
+						if (name.equals("force")){
+							name = "vforce";
+						}
 						if (DetonationParameters.isDetonationParameters(data)) {
 							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
 							//add detonation params
@@ -1290,7 +1331,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							sb.append(name);
 							sb.append("'] = $_POST['");
 							sb.append(name);
-							sb.append("'];");
+							sb.append("'];\n");
 							
 							sb.append("\t\t} else {\n");
 							sb.append("\t\t\tarray_push($status, \"");
@@ -1388,6 +1429,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						} catch (NumberFormatException e) {
 							
 						}
+						System.err.println("Not generating validation for: "+name);
 					}
 				}
 
@@ -1405,7 +1447,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				sb.append("\t\t\tdie();\n");
 				sb.append("\t\t} else {\n");
 				sb.append("\t\t\tarray_push($status, $result);\n");
-				sb.append("\t\t\t$SESSION['");
+				sb.append("\t\t\t$_SESSION['");
 				sb.append(tableSuffix);
 				sb.append("_status'] = $status;\n");
 				sb.append("\t\t\theader('Location: /modmaker/edit/'.$id.'/powers/");
@@ -1423,7 +1465,115 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	}
 	
 	private void generateJSValidation(){ 
-		
+		String input_text = getInput();
+		StringBuilder sb = new StringBuilder();
+		try { //Load document
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			NodeList section = doc.getElementsByTagName("Section");
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				String tableSuffix = getTableName(sectionElement.getAttribute("name"));
+				sb.append("$(document).ready(function(){\n");
+				sb.append("\t$('#form input[type=\"text\"]').tooltipster({\n");
+				sb.append("\t\ttrigger: 'custom', // default is 'hover' which is no good here\n");
+				sb.append("\t\tonlyOne: false,    // allow multiple tips to be open at a time\n");
+				sb.append("\t\tposition: 'top'  // display the tips to the right of the element\n");
+				sb.append("\t});\n");
+				sb.append("\t//form validation rules\n");
+				sb.append("\t$(\"#form\").validate({\n");
+				sb.append("\t\terrorPlacement: function (error, element) {\n");
+				sb.append("\t\t\t$(element).tooltipster('update', $(error).text());\n");
+				sb.append("\t\t\t$(element).tooltipster('show');\n");
+				sb.append("\t\t},\n");
+				sb.append("\t\tsuccess: function (label, element) {\n");
+				sb.append("\t\t\t$(element).tooltipster('hide');\n");
+				sb.append("\t\t},\n");
+				sb.append("\t\trules: {\n");
+
+				NodeList propertyList = sectionElement.getChildNodes();
+				//We are now at at the "sections" array.
+				//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+				for (int k = 0; k < propertyList.getLength(); k++){
+					//for every property in this filenode (of the data to merge)...
+					Node scannednode = propertyList.item(k);
+					if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+						Element prop = (Element) scannednode;
+						
+						String data = prop.getTextContent();
+						String name = prop.getAttribute("name");
+						if (name.equals("force")){
+							name = "vforce";
+						}
+						if (DetonationParameters.isDetonationParameters(data)) {
+							//can't validate checkboxes
+							continue;
+						}
+						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+							BaseRankUpgrade bru = new BaseRankUpgrade(tableSuffix, data);
+							//BASE VALUE
+							sb.append("\t\t\t");
+							sb.append(name);
+							sb.append(": {\n");
+							sb.append("\t\t\t\trequired: true,\n");
+							sb.append("\t\t\t\tmin: 0\n");
+							sb.append("\t\t\t},\n");
+
+							for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+							    int rank = entry.getKey();
+							    //RANKBONUSES
+								sb.append("\t\t\t");
+								sb.append(name);
+								sb.append("_rankbonus_");
+								sb.append(rank);
+								sb.append(": {\n");
+								sb.append("\t\t\t\trequired: true,\n");
+								sb.append("\t\t\t\tmin: 0\n");
+								sb.append("\t\t\t},\n");
+							}
+							continue;
+						}
+						//ints, dubs
+						try {
+							int ints = Integer.parseInt(data);
+							sb.append("\t\t\t");
+							sb.append(name);
+							sb.append(": {\n");
+							sb.append("\t\t\t\trequired: true,\n");
+							sb.append("\t\t\t\tmin: 0\n");
+							sb.append("\t\t\t},\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						
+						try {
+							double dubs = Double.parseDouble(data);
+							sb.append("\t\t\t");
+							sb.append(name);
+							sb.append(": {\n");
+							sb.append("\t\t\t\trequired: true,\n");
+							sb.append("\t\t\t\tmin: 0\n");
+							sb.append("\t\t\t},\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						System.err.println("Not generating JS Validation for "+name);
+					}
+				}
+
+				sb.append("\t\t}\n");
+				sb.append("\t});\n");
+				sb.append("});\n");
+			}
+			output.setText(sb.toString());
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
 	}
 	
 	private String getInput(){

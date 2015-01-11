@@ -4,11 +4,12 @@ import java.util.StringTokenizer;
 
 public class DetonationParameters {
 	String tableName;
-	boolean blockedByObjects;
-	boolean distanceSorted;
-	boolean impactPlaceables;
-	boolean impactDeadPawns;
-	boolean impactFriends;
+	//defaults
+	boolean blockedByObjects = true;
+	boolean distanceSorted = true;
+	boolean impactPlaceables = false;
+	boolean impactDeadPawns = false;
+	boolean impactFriends = false;
 	double coneAngle;
 	int hitDirectionOffset;
 	
