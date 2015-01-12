@@ -719,25 +719,103 @@ public class ModMakerCompilerWindow extends JDialog {
 								if (newproperty.getNodeType() == Node.ELEMENT_NODE) {
 									//<Property type="2" name="defaultgravityz" path="engine.worldinfo">-50</Property>
 									boolean isArrayProperty = false;
+									boolean isSection = false;
 									Element property = (Element) newproperty;
 									String newPropName = null;
 									String arrayType = null;
 									String operation = null;
 									String matchontype = null;
 									String UE3type = null;
-									if (property.getNodeName().equals("Property")) {
-										//Property
+									String nodeName = property.getNodeName();
+									switch (nodeName) {
+									case "Property":
 										newPropName = property.getAttribute("name");
-										operation = property.getAttribute("none");
+										operation = property.getAttribute("operation");
+										UE3type = property.getAttribute("type");
+										System.out.println(newPropName+" is a property");
+
 										isArrayProperty = false;
-									} else {
-										//ArrayProperty
-										//<ArrayProperty path="sfxgamempcontent.sfxdifficultyhandlermp&amp;level2difficultydata" type="3" arraytype="biodifficulty" matchontype="3" operation="modify">(Cate...</ArrayProperty>
+										break;
+									case "ArrayProperty":
 										arrayType = property.getAttribute("arraytype");
 										matchontype = property.getAttribute("matchontype");
 										operation = property.getAttribute("operation");
 										UE3type = property.getAttribute("type");
+										System.out.println("Array property");
+
 										isArrayProperty = true;
+										break;
+									case "Section":
+										
+										newPropName = property.getAttribute("name");
+										System.out.println(newPropName+" is a section");
+										operation = property.getAttribute("operation");
+										isArrayProperty = false;
+										isSection = true;
+										break;
+									}
+									
+									if (isSection) {
+										//can't drill to it.
+										switch (operation) {
+										case "addition":
+											//adds a section
+											ModManager.debugLogger.writeMessage("Creating new section: "+newPropName);
+											Element newElement;
+											newElement = iniFile.createElement("Section");
+											newElement.setAttribute("name", newPropName);
+											sections.appendChild(newElement);
+											break;
+										case "subtraction":
+											//remove this section
+											ModManager.debugLogger.writeMessage("Subtracting section: "+newPropName);
+											boolean sectionFound = false;
+											for (int l = 0; l < SectionList.getLength(); l++) {
+												//iterate over all sections...
+												Node n = SectionList.item(l); //L, not a 1.
+												if (n.getNodeType() == Node.ELEMENT_NODE) {
+													Element sectionElem = (Element) n;
+													if (sectionElem.getAttribute("name").equals(newPropName)) {
+														//this is the one to remove.
+														sections.removeChild(n);
+														sectionFound = true;
+														break;
+													}
+												}
+											}
+											if (sectionFound) {
+												continue;
+											} else {
+												System.err.println("SHOULDNT REACH THIS! SUBTRACT SECTION");
+												continue;
+											}
+										case "clear":
+											//gets rid of all children, leaving the node
+											ModManager.debugLogger.writeMessage("Clearing section: "+newPropName);
+											boolean cleared = false;
+											for (int l = 0; l < SectionList.getLength(); l++) {
+												//iterate over all sections...
+												Node n = SectionList.item(l); //L, not a 1.
+												if (n.getNodeType() == Node.ELEMENT_NODE) {
+													Element sectionElem = (Element) n;
+													if (sectionElem.getAttribute("name").equals(newPropName)) {
+														//this is the one to remove.
+														while (n.hasChildNodes()) {
+													        n.removeChild(n.getFirstChild());
+														}
+														cleared = true;
+														break;
+													}
+												}
+											}
+											if (cleared) {
+												continue;
+											} else {
+												System.err.println("SHOULDNT REACH THIS! CLEAR SECTION");
+												continue;
+											}
+										}
+										continue;
 									}
 									
 									String newValue = property.getTextContent();
@@ -790,14 +868,24 @@ public class ModMakerCompilerWindow extends JDialog {
 										return null;
 									}
 									if (operation.equals("addition")) {
+										//only for arrays
 										//we won't find anything to match, since it obviously can't exist. Add it from here.
 										ModManager.debugLogger.writeMessage("Creating new property with operation ADDITION");
-										Element newElement = drilled.getOwnerDocument().createElement("Value");
-										newElement.setAttribute("type", UE3type);
+										Element newElement;
+										if (isArrayProperty) {
+											newElement = drilled.getOwnerDocument().createElement("Value");
+										} else {
+											newElement = drilled.getOwnerDocument().createElement("Property");
+											newElement.setAttribute("name", newPropName);
+										}
+										if (UE3type != null && !UE3type.equals("")) {
+											newElement.setAttribute("type", UE3type);
+										}
 										newElement.setTextContent(newValue);
 										drilled.appendChild(newElement);
 										continue; //continue property loop
 									}
+									
 									
 									//we've drilled down as far as we can.
 									
@@ -812,10 +900,28 @@ public class ModMakerCompilerWindow extends JDialog {
 											Element itemToModify = (Element) propertyNode;
 											//Check on property
 											if (!isArrayProperty) {
-												if (itemToModify.getAttribute("name").equals(newPropName)) {
-													itemToModify.setTextContent(newValue);
-													ModManager.debugLogger.writeMessage("Set "+newPropName+" to "+newValue);
-													foundProperty = true;
+												//property
+												boolean shouldBreak = false;
+												switch (operation) {
+												case "assignment":
+													if (itemToModify.getAttribute("name").equals(newPropName)) {
+														itemToModify.setTextContent(newValue);
+														ModManager.debugLogger.writeMessage("Assigning "+newPropName+" to "+newValue);
+														foundProperty = true;
+														shouldBreak = true;
+													}
+													break;
+												case "subtraction":
+													if (itemToModify.getAttribute("name").equals(newPropName)) {
+														ModManager.debugLogger.writeMessage("Subtracting property "+newPropName);
+														Node itemParent = itemToModify.getParentNode();
+														itemParent.removeChild(itemToModify);
+														foundProperty = true;
+														shouldBreak = true;
+														break;
+													}
+												}
+												if (shouldBreak) {
 													break;
 												}
 											} else {
@@ -982,7 +1088,7 @@ public class ModMakerCompilerWindow extends JDialog {
 							//Time to save the file...
 							Transformer transformer = TransformerFactory.newInstance().newTransformer();
 							transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-						    transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+						    transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "1");
 							File outputFile = new File("coalesceds\\"+foldername+"\\"+iniFileName);
 							Result output = new StreamResult(outputFile);
 							Source input = new DOMSource(iniFile);

@@ -218,7 +218,6 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	}
 	
 	private void parse() {
-		// TODO Auto-generated method stub
 		// parse it.
 		String input_text = getInput();
 		StringBuilder sb = new StringBuilder();
@@ -359,6 +358,15 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						sb.append(", /*BASEVALUE of ");
 						sb.append(name);
 						sb.append("*/\n");
+						
+						if (bru.formula != null) {
+							sb.append("\t\"");
+							sb.append(bru.formula);
+							sb.append("\", /*");
+							sb.append(name);
+							sb.append("_formula");
+							sb.append("*/\n");
+						}
 						
 						for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 						    double bonus = entry.getValue();
@@ -821,6 +829,18 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append(name);
 								sb.append("'];\n");
 								
+								//formula
+								if (bru.formula != null) {
+									sb.append("\t\t$this->mod_powers_");
+									sb.append(tableName);
+									sb.append("_");
+									sb.append(name);
+									sb.append("_formula");
+									sb.append(" = $row['");
+									sb.append(name);
+									sb.append("_formula");
+									sb.append("'];\n");
+								}
 								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 								    int rank = entry.getKey();
 								    //double upgrade = entry.getValue();
@@ -964,10 +984,16 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append(":");
 								sb.append(name);
 								sb.append(", ");
-								
+								if (bru.formula != null) {
+									sb.append(":");
+									sb.append(name);
+									sb.append("_formula");
+									sb.append(", ");
+								}
 								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 								    int rank = entry.getKey();
 								    //double upgrade = entry.getValue();
+								    sb.append(":");
 									sb.append(name);
 									sb.append("_rankbonus_");
 									sb.append(rank);
@@ -1058,6 +1084,18 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append("row['");
 								sb.append(name);
 								sb.append("']);\n");
+								
+								if (bru.formula != null) {
+									sb.append("\t$stmt->bindValue(\":");
+									sb.append(name);
+									sb.append("_formula");
+									sb.append("\", $");
+									sb.append(tableName);
+									sb.append("row['");
+									sb.append(name);
+									sb.append("_formula");
+									sb.append("']);\n");
+								}
 								
 								for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 								    int rank = entry.getKey();
@@ -1206,6 +1244,15 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							sb.append(name);
 							sb.append(" = null;\n");	
 
+							//TODO: FORMULA
+							if (bru.formula != null) {
+								sb.append("\tpublic $mod_powers_");
+								sb.append(tableSuffix);
+								sb.append("_");
+								sb.append(name);
+								sb.append("_formula");
+								sb.append(" = null;\n");	
+							}
 							for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 							    int rank = entry.getKey();
 							    //double upgrade = entry.getValue();
