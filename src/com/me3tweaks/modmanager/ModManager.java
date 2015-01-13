@@ -34,6 +34,7 @@ public class ModManager {
 	
 	public static final String VERSION = "3.0";
 	public static long BUILD_NUMBER = 31L;
+
 	public static final String BUILD_DATE = "1/12/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
