@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -32,7 +33,7 @@ import org.w3c.dom.Document;
 public class ModManager {
 	
 	public static final String VERSION = "3.0";
-	public static long BUILD_NUMBER = 29L;
+	public static long BUILD_NUMBER = 31L;
 	public static final String BUILD_DATE = "1/12/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
@@ -41,6 +42,15 @@ public class ModManager {
 	public static double MODMAKER_VERSION_SUPPORT = 1.3; //max modmaker version
 	
 	public static void main(String[] args) {		
+		//SETUI LOOK
+		 try {
+	            // Set cross-platform Java L&F (also called "Metal")
+	        UIManager.setLookAndFeel(
+	            UIManager.getCrossPlatformLookAndFeelClassName());
+	    } catch (Exception e) {
+	    	System.err.println("Couldn't set the UI interface style");
+	    }
+		
 		//Set and get debugging mode from wini
 		debugLogger = new DebugLogger();
 		if (ModManager.IS_DEBUG) {

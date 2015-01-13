@@ -6,12 +6,12 @@ public class DetonationParameters {
 	String tableName;
 	//defaults
 	boolean blockedByObjects = true;
-	boolean distanceSorted = true;
+	boolean distancedSorted = true;
 	boolean impactPlaceables = false;
 	boolean impactDeadPawns = false;
 	boolean impactFriends = false;
-	double coneAngle;
-	int hitDirectionOffset;
+	double coneAngle = -1;
+	int hitDirectionOffset = -1;
 	
 	/**
 	 * Creates a new Detonation Parameters object. If this throws an exception it is not a valid detonationobjects value.
@@ -28,35 +28,28 @@ public class DetonationParameters {
 			String val = assignment.substring(equalsIndex+1,assignment.length());
 			switch(var){
 			case "BlockedByObjects":
-				System.out.println("BlockedByObjects: "+val);
 				blockedByObjects = Boolean.parseBoolean(val);
-				System.out.println("evaled to "+blockedByObjects);
 				break;
-			case "DistancedSorted": //same thing, typical bioware.
-			case "DistanceSorted":
-				System.out.println("DistanceSorted: "+val);
-				distanceSorted = Boolean.parseBoolean(val);
-				System.out.println("evaled to "+distanceSorted);
+			case "DistanceSorted": //same thing, typical bioware.
+				System.err.println("USING SPECIAL SPELLING: DISTANCESORTED");
+			case "DistancedSorted":
+				distancedSorted = Boolean.parseBoolean(val);
 				break;
 			case "ImpactPlaceables":
-				System.out.println("ImpactPlaceables: "+val);
 				impactPlaceables = Boolean.parseBoolean(val);
-				System.out.println("evaled to "+impactPlaceables);
 				break;
 			case "ImpactDeadPawns":
-				System.out.println("ImpactDeadPawns: "+val);
 				impactDeadPawns = Boolean.parseBoolean(val);
-				System.out.println("evaled to "+impactDeadPawns);
 				break;
 			case "ImpactFriends":
-				System.out.println("ImpactFriends: "+val);
 				impactFriends = Boolean.parseBoolean(val);
-				System.out.println("evaled to "+impactFriends);
 				break;
 			case "ConeAngle":
+				System.err.println("Found a coneangle");
 				coneAngle = Double.parseDouble(val);
 				break;
 			case "HitDirectionOffset":
+				System.err.println("Found a hitdirectionoffset");
 				val = val.substring(val.indexOf('=')+1,val.indexOf(')'));
 				
 				break;

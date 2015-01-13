@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -32,15 +33,15 @@ import org.xml.sax.InputSource;
 public class PowerCustomActionGUI extends JFrame implements ActionListener {
 	private static boolean isRunningAsMain = false;
 	JTextArea input, output;
-	JButton parse, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generatePublish, generatePHPValidation, generateJSValidation, copy;
+	JButton generateHTMLInput, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generatePublish, generatePHPValidation, generateJSValidation, copy;
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
 	private enum DetonationParams {
-		detonationparam_blockedbyobjects,
-		detonationparam_distancesorted,
-		detonationparam_impactdeadpawns,
-		detonationparam_impactfriends,
-		detonationparam_impactplaceables
+		_blockedbyobjects,
+		_distancesorted,
+		_impactdeadpawns,
+		_impactfriends,
+		_impactplaceables
 		};
 
 	public static void main(String[] args) throws IOException {
@@ -77,8 +78,8 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		inputScrollPane.setPreferredSize(new Dimension(250, 270));
 		
-		parse = new JButton("Parse");
-		parse.addActionListener(this);
+		generateHTMLInput = new JButton("Generate HTML");
+		generateHTMLInput.addActionListener(this);
 		
 		
 		// sql stuff
@@ -128,7 +129,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		modmakerPanel.add(SQLPanel, BorderLayout.WEST);
 		modmakerPanel.add(PHPPanel, BorderLayout.CENTER);
 		JPanel buttonPanel = new JPanel(new BorderLayout());
-		buttonPanel.add(parse, BorderLayout.WEST);
+		buttonPanel.add(generateHTMLInput, BorderLayout.WEST);
 		buttonPanel.add(modmakerPanel, BorderLayout.EAST);
 		
 		inputPanel.add(inputScrollPane, BorderLayout.CENTER);
@@ -191,8 +192,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == parse) {
-			parse();
+		if (e.getSource() == generateHTMLInput) {
+			//parse();
+			generateHTMLInputs();
 		} else if (e.getSource() == generateInsert) {
 			generateSQL();
 		} else if (e.getSource() == generateTable) {
@@ -318,6 +320,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 					if (name.equals("force")){
 						name = "vforce";
 					}
+					if (name.equals("range")) {
+						name = "vrange";
+					}
 					if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
 						sb.append("\t");
 						//its a boolean.
@@ -331,19 +336,36 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						DetonationParameters dp = new DetonationParameters(tableSuffix, data);
 						sb.append("\t");
 						sb.append((dp.blockedByObjects) ? "1" : "0");
-						sb.append(", /*detonationparam_blockedbyobjects*/\n");
+						sb.append(", /*");
+						sb.append(name);
+						sb.append("_blockedbyobjects*/\n");
 						sb.append("\t");
-						sb.append((dp.distanceSorted) ? "1" : "0");
-						sb.append(", /*detonationparam_distancesorted*/\n");
+						sb.append((dp.distancedSorted) ? "1" : "0");
+						sb.append(", /*");
+						sb.append(name);
+						sb.append("_distancesorted*/\n");
 						sb.append("\t");
 						sb.append((dp.impactDeadPawns) ? "1" : "0");
-						sb.append(", /*detonationparam_impactdeadpawns*/\n");
+						sb.append(", /*");
+						sb.append(name);
+						sb.append("_impactdeadpawns*/\n");
 						sb.append("\t");
 						sb.append((dp.impactFriends) ? "1" : "0");
-						sb.append(", /*detonationparam_impactfriends*/\n");
+						sb.append(", /*");
+						sb.append(name);
+						sb.append("_impactfriends*/\n");
 						sb.append("\t");
 						sb.append((dp.impactPlaceables) ? "1" : "0");
-						sb.append(", /*detonationparam_impactplaceables*/\n");
+						sb.append(", /*");
+						sb.append(name);
+						sb.append("_impactplaceables*/\n");
+						if (dp.coneAngle >= 0) {
+							sb.append("\t");
+							sb.append(dp.coneAngle);
+							sb.append(", /*");
+							sb.append(name);
+							sb.append("_coneangle*/\n");
+						}
 						continue;
 					}
 					
@@ -452,6 +474,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (name.equals("force")){
 							name = "vforce";
 						}
+						if (name.equals("range")) {
+							name = "vrange";
+						}
 						if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
 							//its a boolean.
 							sb.append("\t");
@@ -462,11 +487,26 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (DetonationParameters.isDetonationParameters(data)) {
 							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
 							//add detonation params
-							sb.append("\tdetonationparam_blockedbyobjects BOOLEAN NOT NULL,\n");
-							sb.append("\tdetonationparam_distancesorted BOOLEAN NOT NULL,\n");
-							sb.append("\tdetonationparam_impactdeadpawns BOOLEAN NOT NULL,\n");
-							sb.append("\tdetonationparam_impactfriends BOOLEAN NOT NULL,\n");
-							sb.append("\tdetonationparam_impactplaceables BOOLEAN NOT NULL,\n");
+							sb.append("\t");
+							sb.append(name);
+							sb.append("_blockedbyobjects BOOLEAN NOT NULL,\n");
+							sb.append("\t");
+							sb.append(name);
+							sb.append("_distancesorted BOOLEAN NOT NULL,\n");
+							sb.append("\t");
+							sb.append(name);
+							sb.append("_impactdeadpawns BOOLEAN NOT NULL,\n");
+							sb.append("\t");
+							sb.append(name);
+							sb.append("_impactfriends BOOLEAN NOT NULL,\n");
+							sb.append("\t");
+							sb.append(name);
+							sb.append("_impactplaceables BOOLEAN NOT NULL,\n");
+							if (dp.coneAngle >= 0) {
+								sb.append("\t");
+								sb.append(name);
+								sb.append("_coneangle FLOAT NOT NULL,\n");
+							}
 							continue;
 						}
 						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
@@ -589,6 +629,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							if (name.equals("force")){
 								name = "vforce";
 							}
+							if (name.equals("range")) {
+								name = "vrange";
+							}
 							System.out.println("Getting type for: "+path+" "+name);
 							if (prop.getAttribute("type") == null || prop.getAttribute("type").equals("")) {
 								System.err.println("No type for "+name+", skipping.");
@@ -613,23 +656,43 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								
 							    sb.append("$this->mod->powers->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_blockedbyobjects,");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_blockedbyobjects,");
 								
 							    sb.append("$this->mod->powers->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_distancesorted,");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_distancesorted,");
 								
 							    sb.append("$this->mod->powers->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_impactdeadpawns,");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_impactdeadpawns,");
 								
 							    sb.append("$this->mod->powers->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_impactfriends,");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_impactfriends,");
 								
 							    sb.append("$this->mod->powers->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_impactplaceables), ");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_impactplaceables");
+								
+								
+								if (dp.coneAngle >= 0) {
+									 sb.append(",$this->mod->powers->mod_powers_");
+										sb.append(tableName);
+										sb.append("_");
+										sb.append(name);
+										sb.append("_coneangle.\"f\"");
+								}
+								sb.append("),");
 								sb.append(type);
 								sb.append("));\n");
 								continue;
@@ -643,7 +706,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append(", $this->createProperty(\"");
 								sb.append(path);
 								sb.append("\", \"");
-								sb.append(prop.getAttribute("name"));
+								sb.append(prop.getAttribute("name")); //keep this, as its the proper one to publish to.
 								sb.append("\", \"(BaseValue=\".$this->mod->powers->mod_powers_");
 								sb.append(tableName);
 								sb.append("_");
@@ -780,43 +843,73 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							if (name.equals("force")){
 								name = "vforce";
 							}
+							if (name.equals("range")) {
+								name = "vrange";
+							}
 							if (DetonationParameters.isDetonationParameters(data)) {
 								DetonationParameters dp = new DetonationParameters(tableName, data);
 								//add detonation params
 								sb.append("\t\t$this->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_blockedbyobjects");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_blockedbyobjects");
 								sb.append(" = $row['");
-								sb.append("detonationparam_blockedbyobjects");
+								sb.append(name);
+								sb.append("_blockedbyobjects");
 								sb.append("'];\n");
 								
 								sb.append("\t\t$this->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_distancesorted");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_distancesorted");
 								sb.append(" = $row['");
-								sb.append("detonationparam_distancesorted");
+								sb.append(name);
+								sb.append("_distancesorted");
 								sb.append("'];\n");
 								
 								sb.append("\t\t$this->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_impactdeadpawns");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_impactdeadpawns");
 								sb.append(" = $row['");
-								sb.append("detonationparam_impactdeadpawns");
+								sb.append(name);
+								sb.append("_impactdeadpawns");
 								sb.append("'];\n");
 								
 								sb.append("\t\t$this->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_impactfriends");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_impactfriends");
 								sb.append(" = $row['");
-								sb.append("detonationparam_impactfriends");
+								sb.append(name);
+								sb.append("_impactfriends");
 								sb.append("'];\n");
 								
 								sb.append("\t\t$this->mod_powers_");
 								sb.append(tableName);
-								sb.append("_detonationparam_impactplaceables");
+								sb.append("_");
+								sb.append(name);
+								sb.append("_impactplaceables");
 								sb.append(" = $row['");
-								sb.append("detonationparam_impactplaceables");
+								sb.append(name);
+								sb.append("_impactplaceables");
 								sb.append("'];\n");
+								
+								if(dp.coneAngle >= 0) {
+									sb.append("\t\t$this->mod_powers_");
+									sb.append(tableName);
+									sb.append("_");
+									sb.append(name);
+									sb.append("_coneangle");
+									sb.append(" = $row['");
+									sb.append(name);
+									sb.append("_coneangle");
+									sb.append("'];\n");
+								}
 								continue;
 							}
 							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
@@ -967,16 +1060,34 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							if (name.equals("force")){
 								name = "vforce";
 							}
+							if (name.equals("range")) {
+								name = "vrange";
+							}
 							String data = prop.getTextContent();
 							if (DetonationParameters.isDetonationParameters(data)) {
 								DetonationParameters dp = new DetonationParameters(tableName, data);
 								//add detonation params
 								//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
-								sb.append(":detonationparam_blockedbyobjects, ");
-								sb.append(":detonationparam_distancesorted, ");
-								sb.append(":detonationparam_impactdeadpawns, ");
-								sb.append(":detonationparam_impactfriends, ");
-								sb.append(":detonationparam_impactplaceables, ");
+								sb.append(":");
+								sb.append(name);
+								sb.append("_blockedbyobjects, ");
+								sb.append(":");
+								sb.append(name);
+								sb.append("_distancesorted, ");
+								sb.append(":");
+								sb.append(name);
+								sb.append("_impactdeadpawns, ");
+								sb.append(":");
+								sb.append(name);
+								sb.append("_impactfriends, ");
+								sb.append(":");
+								sb.append(name);
+								sb.append("_impactplaceables, ");
+								if (dp.coneAngle >= 0) {
+									sb.append(":");
+									sb.append(name);
+									sb.append("_coneangle, ");
+								}
 								continue;
 							}
 							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
@@ -1038,6 +1149,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							if (name.equals("force")){
 								name = "vforce";
 							}
+							if (name.equals("range")) {
+								name = "vrange";
+							}
 							String data = prop.getTextContent();
 							if (DetonationParameters.isDetonationParameters(data)) {
 								DetonationParameters dp = new DetonationParameters(tableName, data);
@@ -1045,34 +1159,60 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								//array_push($patch2BioGameElements, $this->createProperty("sfxgamempcontent.sfxpowercustomactionmp_aihacking", "evolve_cooldownbonus", $this->mod->mod_powers_aihacking_evolve_cooldownbonus.'f', "0"));
 								
 								sb.append("\t$stmt->bindValue(\":");
-								sb.append("detonationparam_blockedbyobjects");
+								sb.append(name);
+								sb.append("_blockedbyobjects");
 								sb.append("\", $");
 								sb.append(tableName);
-								sb.append("row['detonationparam_blockedbyobjects']);\n");
+								sb.append("row['");
+								sb.append(name);
+								sb.append("_blockedbyobjects']);\n");
 								
 								sb.append("\t$stmt->bindValue(\":");
-								sb.append("detonationparam_distancesorted");
+								sb.append(name);
+								sb.append("_distancesorted");
 								sb.append("\", $");
 								sb.append(tableName);
-								sb.append("row['detonationparam_distancesorted']);\n");
+								sb.append("row['");
+								sb.append(name);
+								sb.append("_distancesorted']);\n");
 								
 								sb.append("\t$stmt->bindValue(\":");
-								sb.append("detonationparam_impactdeadpawns");
+								sb.append(name);
+								sb.append("_impactdeadpawns");
 								sb.append("\", $");
 								sb.append(tableName);
-								sb.append("row['detonationparam_impactdeadpawns']);\n");
+								sb.append("row['");
+								sb.append(name);
+								sb.append("_impactdeadpawns']);\n");
 								
 								sb.append("\t$stmt->bindValue(\":");
-								sb.append("detonationparam_impactfriends");
+								sb.append(name);
+								sb.append("_impactfriends");
 								sb.append("\", $");
 								sb.append(tableName);
-								sb.append("row['detonationparam_impactfriends']);\n");
+								sb.append("row['");
+								sb.append(name);
+								sb.append("_impactfriends']);\n");
 								
 								sb.append("\t$stmt->bindValue(\":");
-								sb.append("detonationparam_impactplaceables");
+								sb.append(name);
+								sb.append("_impactplaceables");
 								sb.append("\", $");
 								sb.append(tableName);
-								sb.append("row['detonationparam_impactplaceables']);\n");
+								sb.append("row['");
+								sb.append(name);
+								sb.append("_impactplaceables']);\n");
+								
+								if (dp.coneAngle >= 0) {
+									sb.append("\t$stmt->bindValue(\":");
+									sb.append(name);
+									sb.append("_coneangle");
+									sb.append("\", $");
+									sb.append(tableName);
+									sb.append("row['");
+									sb.append(name);
+									sb.append("_coneangle']);\n");
+								}
 								continue;
 							}
 							if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
@@ -1208,6 +1348,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (name.equals("force")){
 							name = "vforce";
 						}
+						if (name.equals("range")) {
+							name = "vrange";
+						}
 						if (DetonationParameters.isDetonationParameters(data)) {
 							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
 							//add detonation params
@@ -1215,24 +1358,41 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_blockedbyobjects = null;\n");
+							sb.append("_");
+							sb.append(name);
+							sb.append("_blockedbyobjects = null;\n");
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_distancesorted = null;\n");
+							sb.append("_");
+							sb.append(name);
+							sb.append("_distancesorted = null;\n");
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_impactdeadpawns = null;\n");
+							sb.append("_");
+							sb.append(name);
+							sb.append("_impactdeadpawns = null;\n");
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_impactfriends = null;\n");
+							sb.append("_");
+							sb.append(name);
+							sb.append("_impactfriends = null;\n");
 							
 						    sb.append("\tpublic $mod_powers_");
 							sb.append(tableSuffix);
-							sb.append("_detonationparam_impactplaceables = null;\n");
-							
+							sb.append("_");
+							sb.append(name);
+							sb.append("_impactplaceables = null;\n");
+
+							if (dp.coneAngle >= 0) {
+							    sb.append("\tpublic $mod_powers_");
+								sb.append(tableSuffix);
+								sb.append("_");
+								sb.append(name);
+								sb.append("_coneangle = null;\n");
+							}
 							continue;
 						}
 						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
@@ -1340,24 +1500,58 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (name.equals("force")){
 							name = "vforce";
 						}
+						if (name.equals("range")) {
+							name = "vrange";
+						}
 						if (DetonationParameters.isDetonationParameters(data)) {
 							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
 							//add detonation params
 							for (DetonationParams param : DetonationParams.values()){
 								String dparam = param.toString();
 								sb.append("\t\t//");
+								sb.append(name);
 								sb.append(dparam);
 								sb.append("\n");
 							    sb.append("\t\tif (isset($_POST['");
+							    sb.append(name);
 								sb.append(dparam);
 								sb.append("'])) {\n");
 								sb.append("\t\t\t$updateinfo['");
+								sb.append(name);
 								sb.append(dparam);
 								sb.append("'] = true;\n");
 								sb.append("\t\t} else {\n");
 								sb.append("\t\t\t$updateinfo['");
+								sb.append(name);
 								sb.append(dparam);
 								sb.append("'] = false;\n");
+								sb.append("\t\t}\n\n");
+							}
+							
+							//CONEANGLE
+							if (dp.coneAngle >= 0 ){
+								sb.append("\t\t//");
+								sb.append(name);
+								sb.append("\n");
+								
+								sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['");
+								sb.append(name);
+								sb.append("_coneangle");
+								sb.append("']);\n");
+
+								sb.append("\t\tif (is_null($shouldadd)){\n");
+								sb.append("\t\t\t$updateinfo['");
+								sb.append(name);
+								sb.append("_coneangle");
+								sb.append("'] = $_POST['");
+								sb.append(name);
+								sb.append("'];\n");
+								
+								sb.append("\t\t} else {\n");
+								sb.append("\t\t\tarray_push($status, \"");
+								sb.append(name);
+								sb.append("_coneangle");
+								sb.append(" \".$shouldadd);\n");
 								sb.append("\t\t}\n\n");
 							}
 							continue;
@@ -1554,8 +1748,20 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						if (name.equals("force")){
 							name = "vforce";
 						}
+						if (name.equals("range")) {
+							name = "vrange";
+						}
 						if (DetonationParameters.isDetonationParameters(data)) {
-							//can't validate checkboxes
+							DetonationParameters dp = new DetonationParameters(null, data);
+							if (dp.coneAngle >= 0) {
+								sb.append("\t\t\t");
+								sb.append(name);
+								sb.append("_coneangle");
+								sb.append(": {\n");
+								sb.append("\t\t\t\trequired: true,\n");
+								sb.append("\t\t\t\tmin: 0\n");
+								sb.append("\t\t\t},\n");
+							}
 							continue;
 						}
 						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
@@ -1617,6 +1823,182 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				sb.append("});\n");
 			}
 			output.setText(sb.toString());
+		} catch (Exception e){
+			e.printStackTrace();
+			output.setText(e.getMessage());
+		}
+	}
+	
+	private void generateHTMLInputs() {
+		String input_text = getInput();
+		String wrapper = "\t\t\t\t<!-- AUTO GENERATED -->\n"+
+							"\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"+
+							"\t\t\t\t\t<img class=\"guide purple_card\" src=\"/images/common/no_image.png\">\n"+
+							"\t\t\t\t\t<h2 class=\"modmaker_attribute_title\">Auto Generated Properties</h2>\n"+
+							"\t\t\t\t\t<p>These properties need to be moved to their proper boxes.</p>\n"+
+							"INPUTS_PLACEHOLDER"+
+							"\t\t\t\t</div>";
+		String inputTemplate = "\t\t\t\t\t<div class=\"modmaker_entry\">\n"+
+				"\t\t\t\t\t\t<div class=\"defaultbox\">\n"+
+				"\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">VARNAME</span>\n"+
+				"\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: <\\?=\\$defaultsmod->powers->mod_powers_TABLENAME_VARNAME;?></span>\n"+
+				"\t\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t\t<input id=\"VARNAME\" class=\"short_input\" type=\"text\" name=\"VARNAME\" placeholder=\"VARNAME\" value=\"<?=\\$mod->powers->mod_powers_TABLENAME_VARNAME;?>\">\n"+
+				"\t\t\t\t\t</div>";
+		String detonationParamsTemplate = "<!-- DETONATIONVARNAME PARAMETERS  -->\n"+
+				"\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"+
+				"\t\t\t\t\t<img class=\"guide hard\" src=\"/images/modmaker/powers/TABLENAME/explosion.jpg\">\n"+
+				"\t\t\t\t\t<h2 class=\"modmaker_attribute_title\">Detonation Parameters</h2>\n"+
+				"\t\t\t\t\t<p>Detonation paramters determine what gets hit when TABLENAME detonate.</p>\n"+
+				"\t\t\t\t\t<div class=\"modmaker_entry\">\n"+
+				"\t\t\t\t\t\t<div class=\"defaultbox\">\n"+
+				"\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Blocked By Objects</span>\n"+
+				"\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: BLOCKED_BY_OBJECTS</span>\n"+
+				"\t\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_blockedbyobjects\" type=\"checkbox\" name=\"DETONATIONVARNAME_blockedbyobjects\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_blockedbyobjects) ? \"checked\" : \"\"?>>\n"+
+				"\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t<div class=\"modmaker_entry\">\n"+
+				"\t\t\t\t\t\t<div class=\"defaultbox\">\n"+
+				"\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Distance Sorted</span>\n"+
+				"\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: DISTANCE_SORTED</span>\n"+
+				"\t\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_distancesorted\" type=\"checkbox\" name=\"DETONATIONVARNAME_distancesorted\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_distancesorted) ? \"checked\" : \"\"?>>\n"+
+				"\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t<div class=\"modmaker_entry\">\n"+
+				"\t\t\t\t\t\t<div class=\"defaultbox\">\n"+
+				"\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Impacts Dead Characters</span>\n"+
+				"\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: IMPACTS_DEAD_CHARS</span>\n"+
+				"\t\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_impactdeadpawns\" type=\"checkbox\" name=\"DETONATIONVARNAME_impactdeadpawns\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_impactdeadpawns) ? \"checked\" : \"\"?>>\n"+
+				"\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t<div class=\"modmaker_entry\">\n"+
+				"\t\t\t\t\t\t<div class=\"defaultbox\">\n"+
+				"\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Impacts Friendlies</span>\n"+
+				"\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: IMPACTS_FRIENDS</span>\n"+
+				"\t\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_impactfriends\" type=\"checkbox\" name=\"DETONATIONVARNAME_impactfriends\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_impactfriends) ? \"checked\" : \"\"?>>\n"+
+				"\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t<div class=\"modmaker_entry\">\n"+
+				"\t\t\t\t\t\t<div class=\"defaultbox\">\n"+
+				"\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Impacts Placeables</span>\n"+
+				"\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: IMPACTS_PLACEABLES</span>\n"+
+				"\t\t\t\t\t\t</div>\n"+
+				"\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_impactplaceables\" type=\"checkbox\" name=\"DETONATIONVARNAME_impactplaceables\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_impactplaceables) ? \"checked\" : \"\"?>>\n"+
+				"\t\t\t\t\t</div>\n"+
+				"CONEANGLE"+
+				"\t\t\t\t\n</div>";
+		try { //Load document
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(input_text));
+			doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			ArrayList<String> inputs = new ArrayList<String>();
+			ArrayList<String> detonationBlocks = new ArrayList<String>();
+			NodeList section = doc.getElementsByTagName("Section");
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				String tableSuffix = getTableName(sectionElement.getAttribute("name"));
+				NodeList propertyList = sectionElement.getChildNodes();
+				//We are now at at the "sections" array.
+				//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+				for (int k = 0; k < propertyList.getLength(); k++){
+					//for every property in this filenode (of the data to merge)...
+					Node scannednode = propertyList.item(k);
+					if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+						Element prop = (Element) scannednode;
+						
+						String data = prop.getTextContent();
+						String name = prop.getAttribute("name");
+						if (name.equals("force")){
+							name = "vforce";
+						}
+						if (name.equals("range")) {
+							name = "vrange";
+						}
+						if (DetonationParameters.isDetonationParameters(data)) {
+							DetonationParameters dp = new DetonationParameters(tableSuffix, data);
+							String detblock = detonationParamsTemplate;
+							detblock = detblock.replaceAll("DETONATIONVARNAME", name);
+							detblock = detblock.replaceAll("TABLENAME", tableSuffix);
+							//add detonation params
+							for (DetonationParams param : DetonationParams.values()){
+								String dparam = param.toString();
+								switch (dparam) {
+								case "_blockedbyobjects":
+									detblock = detblock.replaceAll("BLOCKED_BY_OBJECTS", (dp.blockedByObjects) ? "True" : "False");
+									break;
+								case "_distancesorted":
+									detblock = detblock.replaceAll("DISTANCE_SORTED", (dp.distancedSorted) ? "True" : "False");
+									break;
+								case "_impactdeadpawns":
+									detblock = detblock.replaceAll("IMPACTS_DEAD_CHARS", (dp.impactDeadPawns) ? "True" : "False");
+									break;
+								case "_impactfriends":
+									detblock = detblock.replaceAll("IMPACTS_FRIENDS", (dp.impactFriends) ? "True" : "False");
+									break;
+								case "_impactplaceables":
+									detblock = detblock.replaceAll("IMPACTS_PLACEABLES", (dp.impactPlaceables) ? "True" : "False");
+									break;
+								default:
+									System.err.println("UNKNOWN DETONATION PARAM: "+dparam);
+								}
+							}
+							if (dp.coneAngle >= 0) {
+								String inputTmp = inputTemplate;
+								inputTmp = inputTmp.replaceAll("VARNAME", name+"_coneangle").replaceAll("TABLENAME", tableSuffix);
+								inputTmp = inputTmp + "\n";
+								detblock = detblock.replaceAll("CONEANGLE", inputTmp);
+							} else {
+								detblock = detblock.replaceAll("CONEANGLE", "");
+							}
+							detonationBlocks.add(detblock);
+							continue;
+						}
+						if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
+							BaseRankUpgrade bru = new BaseRankUpgrade(tableSuffix, data);
+							//BASE VALUE
+							inputs.add(inputTemplate.replaceAll("VARNAME", name).replaceAll("TABLENAME", tableSuffix));
+							//dont need to do formula
+							for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+							    int rank = entry.getKey();
+							    //RANKBONUSES
+								inputs.add(inputTemplate.replaceAll("VARNAME", name+"_rankbonus_"+rank).replaceAll("TABLENAME", tableSuffix));
+							}
+							continue;
+						}
+						//ints, dubs
+						try {
+							int ints = Integer.parseInt(data);
+							inputs.add(inputTemplate.replaceAll("VARNAME", name).replaceAll("TABLENAME", tableSuffix));
+
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						
+						try {
+							double dubs = Double.parseDouble(data);
+							inputs.add(inputTemplate.replaceAll("VARNAME", name).replaceAll("TABLENAME", tableSuffix));
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						System.err.println("Not generating input for: "+name);
+					}
+				}
+			}
+			
+			//build string
+			StringBuilder sb = new StringBuilder();
+			for (String input : inputs) {
+				sb.append(input);
+				sb.append("\n");
+			}
+			String wrap = wrapper.replaceAll("INPUTS_PLACEHOLDER", sb.toString());
+			for (String det : detonationBlocks) {
+				wrap = wrap+det;
+			}
+			output.setText(wrap);
 		} catch (Exception e){
 			e.printStackTrace();
 			output.setText(e.getMessage());
