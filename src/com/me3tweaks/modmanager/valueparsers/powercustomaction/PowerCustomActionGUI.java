@@ -712,6 +712,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append("_");
 								sb.append(name);
 								sb.append(".\"");
+								if (bru.isDouble) {
+									sb.append("f");
+								}
 								//add formula
 								if (bru.formula != null) {
 									sb.append(",Formula=");
@@ -1299,7 +1302,8 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 					//echo "NAME FORK FAIL."
 					sb.append("\t\techo \"");
 					sb.append(tableName);
-					sb.append(" FORK FAIL: \".print_r($stmt->errorInfo());\n");
+					sb.append(" fork failed:<br>\";\n");
+					sb.append("\t\tprint_r($stmt->errorInfo());\n");
 					sb.append("\t\treturn ob_get_clean();\n");
 					// } else {
 					sb.append("\t} else {\n");
@@ -1532,6 +1536,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							if (dp.coneAngle >= 0 ){
 								sb.append("\t\t//");
 								sb.append(name);
+								sb.append("_coneangle");
 								sb.append("\n");
 								
 								sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['");
@@ -1545,6 +1550,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 								sb.append("_coneangle");
 								sb.append("'] = $_POST['");
 								sb.append(name);
+								sb.append("_coneangle");
 								sb.append("'];\n");
 								
 								sb.append("\t\t} else {\n");

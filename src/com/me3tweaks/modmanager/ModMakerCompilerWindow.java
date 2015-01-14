@@ -485,6 +485,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			this.progress = progress;
 			currentOperationLabel.setText("Decompiling "
 					+ this.coalsToDecompile.get(0));
+			progress.setValue(0);
 		}
 
 		protected Void doInBackground() throws Exception {
