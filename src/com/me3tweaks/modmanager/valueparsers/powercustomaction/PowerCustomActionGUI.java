@@ -1727,7 +1727,8 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				sb.append("\t$('#form input[type=\"text\"]').tooltipster({\n");
 				sb.append("\t\ttrigger: 'custom', // default is 'hover' which is no good here\n");
 				sb.append("\t\tonlyOne: false,    // allow multiple tips to be open at a time\n");
-				sb.append("\t\tposition: 'top'  // display the tips to the right of the element\n");
+				sb.append("\t\tposition: 'top',\n");
+				sb.append("\t\tanimation: 'grow'\n");
 				sb.append("\t});\n");
 				sb.append("\t//form validation rules\n");
 				sb.append("\t$(\"#form\").validate({\n");
