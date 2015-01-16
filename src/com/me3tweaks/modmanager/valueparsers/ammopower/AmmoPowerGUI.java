@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -36,13 +35,6 @@ public class AmmoPowerGUI extends JFrame implements ActionListener {
 	JButton generateHTMLInput, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generatePublish, generatePHPValidation, generateJSValidation, copy;
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
-	private enum DetonationParams {
-		_blockedbyobjects,
-		_distancesorted,
-		_impactdeadpawns,
-		_impactfriends,
-		_impactplaceables
-		};
 
 	public static void main(String[] args) throws IOException {
 		isRunningAsMain  = true;
@@ -287,74 +279,77 @@ public class AmmoPowerGUI extends JFrame implements ActionListener {
 			doc.getDocumentElement().normalize();
 			
 			NodeList section = doc.getElementsByTagName("Section");
-			Element sectionElement = (Element) section.item(0);
-			String tableSuffix = getTableName(sectionElement.getAttribute("name"));
-			
-			sb.append("/*");
-			sb.append(tableSuffix);
-			sb.append(" data*/\n");
-			sb.append("INSERT INTO modmaker_ammopower_");
-			sb.append(tableSuffix);
-			sb.append(" VALUES(\n");
-			sb.append("\t1, /*GENESIS MOD ID*/\n");
-			
-			
-			NodeList propertyList = sectionElement.getChildNodes();
-			//We are now at at the "sections" array.
-			//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
-			for (int k = 0; k < propertyList.getLength(); k++){
-				//for every property in this filenode (of the data to merge)...
-				Node scannednode = propertyList.item(k);
-				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
-					Element prop = (Element) scannednode;
-					String data = prop.getTextContent();
-					String name = propNameToSqlName(prop.getAttribute("name"));
-					if (name.equals("force")){
-						name = "vforce";
-					}
-					if (name.equals("range")) {
-						name = "vrange";
-					}
-
-					if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
-						sb.append("\t");
-						//its a boolean.
-						sb.append(data);
-						sb.append(", /*");
-						sb.append(name);
-						sb.append("*/\n");
-						continue;
-					}
-					
-					try {
-						int ints = Integer.parseInt(data);
-						sb.append("\t");
-						sb.append(ints);
-						sb.append(", /*");
-						sb.append(name);
-						sb.append("*/\n");
-						continue;
-					} catch (NumberFormatException e) {
+			//iterate over sections
+			for (int i = 0; i < section.getLength(); i++) {
+				Element sectionElement = (Element) section.item(i);
+				String tableSuffix = getTableName(sectionElement.getAttribute("name"));
+				
+				sb.append("/*");
+				sb.append(tableSuffix);
+				sb.append(" data*/\n");
+				sb.append("INSERT INTO modmaker_ammopower_");
+				sb.append(tableSuffix);
+				sb.append(" VALUES(\n");
+				sb.append("\t1, /*GENESIS MOD ID*/\n");
+				
+				
+				NodeList propertyList = sectionElement.getChildNodes();
+				//We are now at at the "sections" array.
+				//We now need to iterate over the dataElement list of properties's path attribute, and drill into this one so we know where to replace.
+				for (int k = 0; k < propertyList.getLength(); k++){
+					//for every property in this filenode (of the data to merge)...
+					Node scannednode = propertyList.item(k);
+					if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+						Element prop = (Element) scannednode;
+						String data = prop.getTextContent();
+						String name = propNameToSqlName(prop.getAttribute("name"));
+						if (name.equals("force")){
+							name = "vforce";
+						}
+						if (name.equals("range")) {
+							name = "vrange";
+						}
+	
+						if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")){
+							sb.append("\t");
+							//its a boolean.
+							sb.append(data);
+							sb.append(", /*");
+							sb.append(name);
+							sb.append("*/\n");
+							continue;
+						}
 						
-					}
-					
-					try {
-						double dubs = Double.parseDouble(data);
-						sb.append("\t");
-						sb.append(dubs);
-						sb.append(", /*");
-						sb.append(name);
-						sb.append("*/\n");
-						continue;
-					} catch (NumberFormatException e) {
+						try {
+							int ints = Integer.parseInt(data);
+							sb.append("\t");
+							sb.append(ints);
+							sb.append(", /*");
+							sb.append(name);
+							sb.append("*/\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
 						
+						try {
+							double dubs = Double.parseDouble(data);
+							sb.append("\t");
+							sb.append(dubs);
+							sb.append(", /*");
+							sb.append(name);
+							sb.append("*/\n");
+							continue;
+						} catch (NumberFormatException e) {
+							
+						}
+						System.err.println("Not inserting into SQL: "+name);
 					}
-					System.err.println("Not inserting into SQL: "+name);
 				}
+				sb.append("\tfalse, /*modified*/\n");
+				sb.append("\tfalse /*genesis modified*/\n");
+				sb.append(");\n"); //end of SQL statement
 			}
-			sb.append("\tfalse, /*modified*/\n");
-			sb.append("\tfalse /*genesis modified*/\n");
-			sb.append(");"); //end of SQL statement
 			output.setText(sb.toString());
 		} catch (Exception e){
 			e.printStackTrace();

@@ -141,6 +141,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	private void getModInfo() {
 		//String link = "http://www.me3tweaks.com/modmaker/download.php?id="
 		//		+ code;
+		ModManager.debugLogger.writeMessage("================DOWNLOADING MOD INFORMATION==============");
 		String link;
 		if (ModManager.IS_DEBUG) {
 			link = "https://webdev-c9-mgamerz.c9.io/modmaker/download.php?id="+ code;
@@ -152,8 +153,11 @@ public class ModMakerCompilerWindow extends JDialog {
 			File downloaded = new File(DOWNLOADED_XML_FILENAME);
 			downloaded.delete();
 			FileUtils.copyURLToFile(new URL(link), downloaded);
+			ModManager.debugLogger.writeMessage("Mod downloaded to "+downloaded);
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			ModManager.debugLogger.writeMessage("Loading mod information into memory.");
 			doc = dBuilder.parse(downloaded);
+			ModManager.debugLogger.writeMessage("Mod information loaded into memory.");
 			doc.getDocumentElement().normalize();
 			NodeList errors = doc.getElementsByTagName("error");
 			if (errors.getLength() > 0) {
@@ -164,6 +168,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					    "<html>No mod with id "+code+" was found on ME3Tweaks.</html>",
 					    "Compiling Error",
 					    JOptionPane.ERROR_MESSAGE);
+				ModManager.debugLogger.writeMessage("Downloaded mod information indicates this mod doesn't exist on modmaker.");
 				return;
 			}
 			parseModInfo();
@@ -360,33 +365,41 @@ public class ModMakerCompilerWindow extends JDialog {
 	}
 
 	protected void parseModInfo() {
+		ModManager.debugLogger.writeMessage("============Parsing modinfo==============");
 		NodeList infoNodeList = doc.getElementsByTagName("ModInfo");
 		infoElement = (Element) infoNodeList.item(0); //it'll be the only element. Hopefully!
 		NodeList nameElement = infoElement.getElementsByTagName("Name");
 		modName = nameElement.item(0).getTextContent();
+		ModManager.debugLogger.writeMessage("Mod Name: "+modName);
 		
 		NodeList descElement = infoElement.getElementsByTagName("Description");
 		modDescription = descElement.item(0).getTextContent();
+		ModManager.debugLogger.writeMessage("Mod Description: "+modDescription);
 		
 		NodeList devElement = infoElement.getElementsByTagName("Author");
 		modDev = devElement.item(0).getTextContent();
+		ModManager.debugLogger.writeMessage("Mod Dev: "+modDev);
 		
 		NodeList versionElement = infoElement.getElementsByTagName("Version");
 		if (versionElement.getLength() > 0) {
 			modVer = devElement.item(0).getTextContent();
+			ModManager.debugLogger.writeMessage("Mod Version: "+modVer);
 		}
 		
 		NodeList idElement = infoElement.getElementsByTagName("id");
 		modId = idElement.item(0).getTextContent();
+		ModManager.debugLogger.writeMessage("ModMaker ID: "+modId);
 		
 		NodeList modmakerVersionElement = infoElement.getElementsByTagName("ModMakerVersion");
 		String modModMakerVersion = modmakerVersionElement.item(0).getTextContent();
+		ModManager.debugLogger.writeMessage("Mod information file was built using modmaker "+modModMakerVersion);
+		
 		modMakerVersion = Double.parseDouble(modModMakerVersion);
 		if (modMakerVersion > ModManager.MODMAKER_VERSION_SUPPORT) {
 			//ERROR! We can't compile this version.
 			ModManager.debugLogger.writeMessage("FATAL ERROR: This version of mod manager does not support this version of modmaker.");
 			ModManager.debugLogger.writeMessage("FATAL ERROR: This version supports up to ModMaker version: "+ModManager.MODMAKER_VERSION_SUPPORT);
-			ModManager.debugLogger.writeMessage("FATAL ERROR: This version was built with ModMaker version: "+modModMakerVersion);
+			ModManager.debugLogger.writeMessage("FATAL ERROR: This mod was built with ModMaker version: "+modModMakerVersion);
 			JOptionPane.showMessageDialog(null,
 				    "<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>",
 				    "Compiling Error",
@@ -400,7 +413,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		File moddir = new File(modName);
 		if (moddir.isDirectory()) {
 			try {
-				ModManager.debugLogger.writeMessage("Removing existing mod directory");
+				ModManager.debugLogger.writeMessage("Removing existing mod directory, will recreate when complete");
 				FileUtils.deleteDirectory(moddir);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -425,7 +438,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
 				//filters out the #text nodes. Don't know what those really are.
 				String intCoalName = fileNode.getNodeName();
-				ModManager.debugLogger.writeMessage("File descriptor found in mod: "+intCoalName);	
+				ModManager.debugLogger.writeMessage("ini file descriptor found in mod: "+intCoalName);	
 				requiredCoals.add(shortNameToCoalFilename(intCoalName));
 			}
 		}
@@ -446,8 +459,10 @@ public class ModMakerCompilerWindow extends JDialog {
 										// null pointer
 			File coalFile = new File("coalesceds/" + coal);
 			if (!coalFile.exists()) {
+				ModManager.debugLogger.writeMessage("Coal doesn't exist, need to download: "+coal);
 				numToDownload++;
 			} else {
+				ModManager.debugLogger.writeMessage("Coal already exists, skipping download: "+coal);
 				coals.remove(i);
 			}
 		}
@@ -480,6 +495,8 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		public DecompilerWorker(ArrayList<String> coalsToDecompile,
 				JProgressBar progress) {
+			ModManager.debugLogger.writeMessage("==================DecompilerWorker==============");
+
 			this.coalsToDecompile = coalsToDecompile;
 			this.numCoals = coalsToDecompile.size();
 			this.progress = progress;
@@ -497,6 +514,9 @@ public class ModMakerCompilerWindow extends JDialog {
 						+ "\\Tankmaster Compiler\\MassEffect3.Coalesce.exe";
 				ProcessBuilder decompileProcessBuilder = new ProcessBuilder(
 						compilerPath, path + "\\coalesceds\\"
+								+ coal);
+				ModManager.debugLogger.writeMessage("Executing decompile command: "+
+						compilerPath+" "+ path + "\\coalesceds\\ "
 								+ coal);
 				decompileProcessBuilder.redirectErrorStream(true);
 				decompileProcessBuilder
@@ -534,6 +554,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		public CompilerWorker(ArrayList<String> coalsToCompile,
 				JProgressBar progress) {
+			ModManager.debugLogger.writeMessage("==================CompilerWorker==============");
 			this.coalsToCompile = coalsToCompile;
 			this.numCoals = coalsToCompile.size();
 			this.progress = progress;
@@ -558,8 +579,8 @@ public class ModMakerCompilerWindow extends JDialog {
 								+ FilenameUtils.removeExtension(coal)+"\\"+FilenameUtils.removeExtension(coal)+".xml", "--mode=ToBin");
 				//log it
 				ModManager.debugLogger.writeMessage("Executing compile command: "+
-						compilerPath+" "+ path + "\\coalesceds\\"
-								+ FilenameUtils.removeExtension(coal)+".xml --mode=ToBin --keep-whitespace");
+						compilerPath+" "+path + "\\coalesceds\\"
+								+ FilenameUtils.removeExtension(coal)+"\\"+FilenameUtils.removeExtension(coal)+".xml --mode=ToBin");
 				compileProcessBuilder.redirectErrorStream(true);
 				compileProcessBuilder
 						.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -586,8 +607,6 @@ public class ModMakerCompilerWindow extends JDialog {
 			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))));
 			ModManager.debugLogger.writeMessage("Coals recompiled");
 			new TLKWorker(progress, languages).execute();
-			//new TOCDownloadWorker(coalsToCompile, progress).execute();
-			//new TOCDownloadWorker(coalsToCompile, progress).execute();
 		}
 	}
 
@@ -616,14 +635,17 @@ public class ModMakerCompilerWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("Downloading Coalesced: "+link);
 					FileUtils.copyURLToFile(new URL(link), new File(
 							"coalesceds/" + coal));
+					ModManager.debugLogger.writeMessage("Saved coalesced to: "+(new File(
+							"coalesceds/" + coal)).getAbsolutePath());
 					coalsCompeted++;
 					this.publish(coalsCompeted);
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					ModManager.debugLogger.writeMessage("Failed to download coalesced file due to malformed URL.");
+					ModManager.debugLogger.writeException(e);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					ModManager.debugLogger.writeMessage("Failed to download coalesced file due to IO Exception.");
+					ModManager.debugLogger.writeException(e);
 				}
 			}
 			return null;
@@ -661,7 +683,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		boolean error = false;
 
 		public MergeWorker(JProgressBar progress) {
-			ModManager.debugLogger.writeMessage("Beginning MERGE operation.");
+			ModManager.debugLogger.writeMessage("=============MERGEWORKER=============");
 			this.progress = progress;
 			currentOperationLabel.setText("Merging Coalesced files...");
 			progress.setIndeterminate(true);
@@ -691,7 +713,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (coalNode.getNodeType() == Node.ELEMENT_NODE) {
 					String intCoalName = coalNode.getNodeName(); //get the coal name so we can figure out what folder to look in.
 					ModManager.debugLogger.writeMessage("Read coalecesed ID: "+intCoalName);
-					ModManager.debugLogger.writeMessage("---------------------START OF "+intCoalName+"-------------------------");
+					ModManager.debugLogger.writeMessage("---------------------MODMAKER COMPILER START OF "+intCoalName+"-------------------------");
 
 					String foldername = FilenameUtils.removeExtension(shortNameToCoalFilename(intCoalName));
 					NodeList filesNodeList = coalNode.getChildNodes();
@@ -1081,6 +1103,7 @@ public class ModMakerCompilerWindow extends JDialog {
 												    sb.toString(),
 												    "Compiling Error",
 												    JOptionPane.ERROR_MESSAGE);
+											ModManager.debugLogger.writeMessage(sb.toString());
 										}
 									}
 								}
@@ -1323,16 +1346,23 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * Creates a CMM Mod package from the completed previous steps.
 	 */
 	private void createCMMMod() {
+		ModManager.debugLogger.writeMessage("----Creating CMM Mod Package and descriptor-----");
+		boolean error = false;
 		currentOperationLabel.setText("Creating mod directory and descriptor...");
 		File moddir = new File(modName);
+		ModManager.debugLogger.writeMessage("Mod package directory set to: "+moddir.getAbsolutePath());
 		moddir.mkdirs(); // created mod directory
 
 		// Write mod descriptor file
 		Wini ini;
 		File moddesc = new File(moddir + "\\moddesc.ini");
 		try {
-			if (!moddesc.exists())
+			ModManager.debugLogger.writeMessage("Checking for moddesc.ini: "+moddesc.getAbsolutePath());
+			if (!moddesc.exists()) {
+				ModManager.debugLogger.writeMessage("moddesc.ini does not exist, creating new one for this mod.");
 				moddesc.createNewFile();
+			}
+			ModManager.debugLogger.writeMessage("Creating in-memory moddesc.ini");
 			ini = new Wini(moddesc);
 			ini.put("ModManager", "cmmver", 3.0);
 			ini.put("ModInfo", "modname", modName);
@@ -1384,9 +1414,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					}
 				}
 
-				File compCoalSourceDir = new File("coalesceds\\"+fileNameWithOutExt);
 				
-				//TODO: Add PCConsoleTOC.bin to the desc file.
 				boolean basegame = 	reqcoal.equals("Coalesced.bin");
 				ini.put(coalFileNameToModDescName(reqcoal), "moddir", coalFilenameToShortName(reqcoal));
 				
@@ -1417,18 +1445,17 @@ public class ModMakerCompilerWindow extends JDialog {
 				}
 
 
-				
+				File compCoalSourceDir = new File("coalesceds\\"+fileNameWithOutExt);
 				try {
 					if (!ModManager.IS_DEBUG) {
 						FileUtils.deleteDirectory(compCoalSourceDir);
+						ModManager.debugLogger.writeMessage("Deleted compiled coal directory: "+compCoalSourceDir);
 					}
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					ModManager.debugLogger.writeMessage("IOException deleting compCoalSourceDir.");
+					ModManager.debugLogger.writeException(e);
 				}
 			}
-			
-			System.out.println("BREAK");
 			
 			//TLK Only, no coalesced
 			if (languages.size() > 0 && !requiredCoals.contains("Coalesced.bin")) {
@@ -1477,42 +1504,50 @@ public class ModMakerCompilerWindow extends JDialog {
 				ini.put(coalFileNameToModDescName("Coalesced.bin"), "newfiles", newsb.toString());
 				ini.put(coalFileNameToModDescName("Coalesced.bin"), "replacefiles", replacesb.toString());					
 			}
+			ModManager.debugLogger.writeMessage("Writing memory ini to disk.");
 			ini.store();
-			ModManager.debugLogger.writeMessage("Cleaning up...");
+			ModManager.debugLogger.writeMessage("Removing temporary directories:");
 			try {
 				if (!ModManager.IS_DEBUG) {
 					FileUtils.deleteDirectory(new File("tlk"));
+					ModManager.debugLogger.writeMessage("Deleted tlk");
 					FileUtils.deleteDirectory(new File("toc"));
+					ModManager.debugLogger.writeMessage("Deleted toc");
 					FileUtils.deleteDirectory(new File("coalesceds"));
+					ModManager.debugLogger.writeMessage("Deleted coalesceds");
 				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				ModManager.debugLogger.writeMessage("IOException deleting one of the tlk/toc/coalesced directories.");
+				ModManager.debugLogger.writeException(e);
 			}
 		} catch (InvalidFileFormatException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			ModManager.debugLogger.writeMessage("IOException in CreateCMMMod()!");
+			ModManager.debugLogger.writeMessage("IOException in main chunk of CreateCMMMod()! Setting error flag to true.");
 			ModManager.debugLogger.writeException(e);
+			error=true;
 		}
 
 		//TOC the mod
-		ModManager.debugLogger.writeMessage("Running autotoc on modmaker mod.");
+		ModManager.debugLogger.writeMessage("Loading moddesc for verification...");
 		Mod newMod = new Mod(moddesc.toString());
-		boolean error = false;
+		
 		if (!newMod.validMod) {
 			//SOMETHING WENT WRONG!
+			ModManager.debugLogger.writeMessage("Mod failed validation. Setting error flag to true.");
 			error = true;
 			JOptionPane.showMessageDialog(this, modName+" was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure debugging is enabled in Help>About.\nContact FemShep if you need help via the forums.", "Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
 		File file = new File(DOWNLOADED_XML_FILENAME);
 		file.delete();
+		ModManager.debugLogger.writeMessage("Deleted downloaded me3tweaks modinfo file");
 		if (!error) {
+			ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: "+modName);
 			new AutoTocWindow(callingWindow, newMod);
 			stepsCompleted++;
-	
+			ModManager.debugLogger.writeMessage("Mod successfully created:" +modName);
+			ModManager.debugLogger.writeMessage("===========END OF MODMAKER========");
 			//Mod Created!
-			
 			dispose();
 			JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
 			callingWindow.dispose();
@@ -1541,6 +1576,8 @@ public class ModMakerCompilerWindow extends JDialog {
 				currentOperationLabel.setText("Downloading "
 						+ coalToTOCString(this.tocsToDownload.get(0)));
 			}
+			ModManager.debugLogger.writeMessage("============TOCDownloadWorker==========");
+			
 		}
 
 		protected Void doInBackground() throws Exception {
@@ -1551,6 +1588,8 @@ public class ModMakerCompilerWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("Downloading TOC file: "+link);
 					FileUtils.copyURLToFile(new URL(link), new File(
 							"toc/" + coalFilenameToShortName(toc) +"/PCConsoleTOC.bin"));
+					ModManager.debugLogger.writeMessage("Saved TOC file to "+(new File(
+							"toc/" + coalFilenameToShortName(toc) +"/PCConsoleTOC.bin")).getAbsolutePath());
 					tocsCompleted++;
 					this.publish(tocsCompleted);
 				} catch (MalformedURLException e) {
@@ -1558,9 +1597,9 @@ public class ModMakerCompilerWindow extends JDialog {
 					e.printStackTrace();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					ModManager.debugLogger.writeException(e);
 				} catch (Exception e) {
-					e.printStackTrace();
+					ModManager.debugLogger.writeException(e);
 				}
 			}
 			return null;
@@ -1568,6 +1607,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		@Override
 		protected void process(List<Integer> numCompleted) {
+			
 			progress.setIndeterminate(false);
 			if (numtoc > numCompleted.get(0)) {
 				currentOperationLabel.setText("Downloading "
