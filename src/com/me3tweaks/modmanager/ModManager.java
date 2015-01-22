@@ -33,7 +33,7 @@ import org.w3c.dom.Document;
 public class ModManager {
 	
 	public static final String VERSION = "3.0";
-	public static long BUILD_NUMBER = 31L;
+	public static long BUILD_NUMBER = 30L;
 
 	public static final String BUILD_DATE = "1/12/2015";
 	public static DebugLogger debugLogger;
@@ -350,7 +350,7 @@ public class ModManager {
 	}
 	
 	public static boolean installBinkw32Bypass(String biogamedir){
-		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer. Will backup original to binkw32_orig.dll");
+		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer. Will backup original to binkw23.dll");
 		//extract and install binkw32.dll
 		//from http://stackoverflow.com/questions/7168747/java-creating-self-extracting-jar-that-can-extract-parts-of-itself-out-of-the-a
         //ClassLoader cl = ModManager.class.getClassLoader();

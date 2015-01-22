@@ -214,7 +214,28 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "Default_DLC_UPD_Patch02.bin";
 		case "BASEGAME":
 			return "Coalesced.bin";
+		case "TESTPATCH":
+			return "Default_DLC_TestPatch.bin";
+		case "FROM_ASHES":
+			return "Default_DLC_HEN_PR.bin";
+		case "APPEARANCE":
+			return "Default_DLC_CON_APP01.bin";
+		case "FIREFIGHT":
+			return "Default_DLC_CON_GUN01.bin";
+		case "GROUNDSIDE":
+			return "Default_DLC_CON_GUN02.bin";
+		case "EXTENDED_CUT":
+			return "Default_DLC_CON_END.bin";
+		case "LEVIATHAN":
+			return "Default_DLC_CON_Pack001.bin";
+		case "OMEGA":
+			return "Default_DLC_CON_Pack002.bin";
+		case "CITADEL":
+			return "Default_DLC_CON_Pack003.bin";
+		case "CITADEL_BASE":
+			return "Default_DLC_CON_Pack003_Base.bin";
 		default:
+			ModManager.debugLogger.writeMessage("ERROR: UNKNOWN COAL FROM SHORTNAME: "+shortName);
 			return null;
 		}
 	}
@@ -243,13 +264,34 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "PATCH2";
 		case "Coalesced.bin":
 			return "BASEGAME";
+		case "Default_DLC_TestPatch.bin":
+			return "TESTPATCH";
+		case "Default_DLC_HEN_PR.bin":
+			return "FROM_ASHES";
+		case "Default_DLC_CON_APP01.bin":
+			return "APPEARANCE";
+		case "Default_DLC_CON_GUN01.bin":
+			return "FIREFIGHT";
+		case "Default_DLC_CON_GUN02.bin":
+			return "GROUNDSIDE";
+		case "Default_DLC_CON_END.bin":
+			return "EXTENDED_CUT";
+		case "Default_DLC_CON_Pack001.bin":
+			return "LEVIATHAN";
+		case "Default_DLC_CON_Pack002.bin":
+			return "OMEGA";
+		case "Default_DLC_CON_Pack003.bin":
+			return "CITADEL";
+		case "Default_DLC_CON_Pack003_Base.bin":
+			return "CITADEL_BASE";
 		default:
+			ModManager.debugLogger.writeMessage("ERROR: Unable to convert "+coalName+" to it's filename.");
 			return null;
 		}
 	}
 
 	/**
-	 * Converts a coal filename (Default_DLC_CON_MP3.bin) into the short name for the DLC (MP3
+	 * Converts a coal filename (Default_DLC_CON_MP3.bin) into the short name for the DLC folder for mod packages
 	 * 
 	 * @param coalName
 	 *            Filename to convert to a short name
@@ -273,6 +315,26 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "PATCH2";
 		case "Coalesced.bin":
 			return "BASEGAME";
+		case "Default_DLC_TestPatch.bin":
+			return "TESTPATCH";
+		case "Default_DLC_HEN_PR.bin":
+			return "FROM_ASHES";
+		case "Default_DLC_CON_APP01.bin":
+			return "APPEARANCE";
+		case "Default_DLC_CON_GUN01.bin":
+			return "FIREFIGHT";
+		case "Default_DLC_CON_GUN02.bin":
+			return "GROUNDSIDE";
+		case "Default_DLC_CON_END.bin":
+			return "EXTENDED_CUT";
+		case "Default_DLC_CON_Pack001.bin":
+			return "LEVIATHAN";
+		case "Default_DLC_CON_Pack002.bin":
+			return "OMEGA";
+		case "Default_DLC_CON_Pack003.bin":
+			return "CITADEL";
+		case "Default_DLC_CON_Pack003_Base.bin":
+			return "CITADEL_BASE";
 		default:
 			ModManager.debugLogger.writeMessage("UNRECOGNIZED COAL FILE: "+coalName);
 			return null;
@@ -302,8 +364,28 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "/BIOGame/DLC/DLC_UPD_Patch02/CookedPCConsole/Default_DLC_UPD_Patch02.bin";
 		case "Coalesced.bin":
 			return "\\BIOGame\\CookedPCConsole\\Coalesced.bin";
+		case "Default_DLC_TestPatch.bin":
+			return "/BIOGame/DLC/DLC_TestPatch/CookedPCConsole/Default_DLC_TestPatch.bin";
+		case "Default_DLC_HEN_PR.bin":
+			return "/BIOGame/DLC/DLC_HEN_PR/CookedPCConsole/Default_DLC_HEN_PR.bin";
+		case "Default_DLC_CON_APP01.bin":
+			return "/BIOGame/DLC/DLC_CON_APP01/CookedPCConsole/Default_DLC_CON_APP01.bin";
+		case "Default_DLC_CON_GUN01.bin":
+			return "/BIOGame/DLC/DLC_CON_GUN01/CookedPCConsole/Default_DLC_CON_GUN01.bin";
+		case "Default_DLC_CON_GUN02.bin":
+			return "/BIOGame/DLC/DLC_CON_GUN02/CookedPCConsole/Default_DLC_CON_GUN02.bin";
+		case "Default_DLC_CON_END.bin":
+			return "/BIOGame/DLC/DLC_CON_END/CookedPCConsole/Default_DLC_CON_END.bin";
+		case "Default_DLC_CON_Pack001.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack001/CookedPCConsole/Default_DLC_CON_Pack001.bin";
+		case "Default_DLC_CON_Pack002.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack002/CookedPCConsole/Default_DLC_CON_Pack002.bin";
+		case "Default_DLC_CON_Pack003.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack003/CookedPCConsole/Default_DLC_CON_Pack003.bin";
+		case "Default_DLC_CON_Pack003_Base.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack003_Base/CookedPCConsole/Default_DLC_CON_Pack003_Base.bin";
 		default:
-			ModManager.debugLogger.writeMessage("UNRECOGNIZED COAL FILE: "+coalName);
+			ModManager.debugLogger.writeMessage("ERROR: UNRECOGNIZED COAL FILE: "+coalName);
 			return null;
 		}
 	}
@@ -358,6 +440,29 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "/BIOGame/DLC/DLC_UPD_Patch02/PCConsoleTOC.bin";
 		case "Coalesced.bin":
 			return "\\BIOGame\\PCConsoleTOC.bin";
+			
+			
+		case "Default_DLC_TestPatch.bin":
+			return "/BIOGame/DLC/DLC_TestPatch/PCConsoleTOC.bin";
+		case "Default_DLC_HEN_PR.bin":
+			return "/BIOGame/DLC/DLC_HEN_PR/PCConsoleTOC.bin";
+		case "Default_DLC_CON_APP01.bin":
+			return "/BIOGame/DLC/DLC_CON_APP01/PCConsoleTOC.bin";
+		case "Default_DLC_CON_GUN01.bin":
+			return "/BIOGame/DLC/DLC_CON_GUN01/PCConsoleTOC.bin";
+		case "Default_DLC_CON_GUN02.bin":
+			return "/BIOGame/DLC/DLC_CON_GUN02/PCConsoleTOC.bin";
+		case "Default_DLC_CON_END.bin":
+			return "/BIOGame/DLC/DLC_CON_END/PCConsoleTOC.bin";
+		case "Default_DLC_CON_Pack001.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack001/PCConsoleTOC.bin";
+		case "Default_DLC_CON_Pack002.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack002/PCConsoleTOC.bin";
+		case "Default_DLC_CON_Pack003.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack003/PCConsoleTOC.bin";
+		case "Default_DLC_CON_Pack003_Base.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack003_Base/PCConsoleTOC.bin";	
+		
 		default:
 			ModManager.debugLogger.writeMessage("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: "+coalName);
 			return null;
@@ -535,6 +640,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				currentOperationLabel.setText("Decompiling "
 						+ coalsToDecompile.get(numCompleted.get(0)));
 			}
+			progress.setIndeterminate(false);
 			progress.setValue((int) (100 / (numCoals / (float)numCompleted.get(0))));
 		}
 
@@ -542,7 +648,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			// Coals decompiled
 			stepsCompleted++;
 			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))  + 0.5));
-			ModManager.debugLogger.writeMessage("Coals decompiled");
+			ModManager.debugLogger.writeMessage("COALS: DECOMPILED...");
 			new MergeWorker(progress).execute();
 		}
 	}
@@ -598,6 +704,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				currentOperationLabel.setText("Recompiling "
 						+ coalsToCompile.get(numCompleted.get(0)));
 			}
+			progress.setIndeterminate(false);
 			progress.setValue((int) (100 / ((double)numCoals / numCompleted.get(0)) + 0.5)); //crazy rounding trick for integer.
 		}
 
@@ -605,7 +712,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			// Coals downloaded
 			stepsCompleted+=2;
 			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))));
-			ModManager.debugLogger.writeMessage("Coals recompiled");
+			ModManager.debugLogger.writeMessage("COALS: RECOMPILED...");
 			new TLKWorker(progress, languages).execute();
 		}
 	}
@@ -873,7 +980,7 @@ public class ModMakerCompilerWindow extends JDialog {
 										if (!pathfound) {
 											dispose();
 											JOptionPane.showMessageDialog(null,
-												    "<html>Could not find the path "+path+" to property.</html>",
+												    "<html>Could not find the path "+path+" to property.<br>Module: "+intCoalName+"<br>File: "+iniFileName+"</html>",
 												    "Compiling Error",
 												    JOptionPane.ERROR_MESSAGE);
 											error = true;
@@ -885,7 +992,7 @@ public class ModMakerCompilerWindow extends JDialog {
 										dispose();
 										error = true;
 										JOptionPane.showMessageDialog(null,
-											    "<html>Could not find the path "+path+" to property.</html>",
+											    "<html>Could not find the path "+path+" to property.<br>Module: "+intCoalName+"<br>File: "+iniFileName+"</html>",
 											    "Compiling Error",
 											    JOptionPane.ERROR_MESSAGE);
 										return null;
