@@ -33,14 +33,14 @@ import org.w3c.dom.Document;
 public class ModManager {
 	
 	public static final String VERSION = "3.0";
-	public static long BUILD_NUMBER = 30L;
+	public static long BUILD_NUMBER = 31L;
 
-	public static final String BUILD_DATE = "1/12/2015";
+	public static final String BUILD_DATE = "1/22/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
-	public static double MODMAKER_VERSION_SUPPORT = 1.3; //max modmaker version
+	public static double MODMAKER_VERSION_SUPPORT = 1.4; //max modmaker version
 	
 	public static void main(String[] args) {		
 		//SETUI LOOK
