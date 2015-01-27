@@ -45,7 +45,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -56,6 +55,7 @@ import org.json.simple.parser.ParseException;
 import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
+import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI;
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
@@ -81,7 +81,7 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 	JMenuItem restoreRevertEverything, restoreRevertBasegame,
 			restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
 			restoreRevertCoal;
-	JMenuItem sqlWavelistParser,sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser;
+	JMenuItem sqlWavelistParser,sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlConsumableParser, sqlGearParser;
 	JMenuItem helpPost, helpAbout;
 	JList<String> listMods;
 	JProgressBar progressBar;
@@ -466,16 +466,22 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 		sqlDifficultyParser = new JMenuItem("Biodifficulty Parser");
 		sqlAIWeaponParser = new JMenuItem("BioAI Parser");
 		sqlPowerCustomActionParser = new JMenuItem("CustomAction Parser");
+		sqlConsumableParser = new JMenuItem("Consumable Parser");
+		sqlGearParser = new JMenuItem("Gear Parser");
 		
 		sqlWavelistParser.addActionListener(this);
 		sqlDifficultyParser.addActionListener(this);
 		sqlAIWeaponParser.addActionListener(this);
 		sqlPowerCustomActionParser.addActionListener(this);
+		sqlConsumableParser.addActionListener(this);
+		sqlGearParser.addActionListener(this);
 		
 		sqlMenu.add(sqlWavelistParser);
 		sqlMenu.add(sqlDifficultyParser);
 		sqlMenu.add(sqlAIWeaponParser);
 		sqlMenu.add(sqlPowerCustomActionParser);
+		sqlMenu.add(sqlConsumableParser);
+		sqlMenu.add(sqlGearParser);
 		if (ModManager.IS_DEBUG) {
 			menuBar.add(sqlMenu);
 		}
@@ -671,18 +677,6 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			} catch (IOException ex) {
 				ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
 			}
-					/*
-			URI theURI;
-			try {
-				theURI = new URI("http://goo.gl/1zJXp");
-				java.awt.Desktop.getDesktop().browse(theURI);
-			} catch (URISyntaxException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			}*/
 		} else
 		if (e.getSource() == toolsMergeMod) {
 			new MergeModWindow(this);
@@ -707,6 +701,12 @@ public class ModManagerWindow extends JFrame implements ActionListener,
 			
 		if (e.getSource() == sqlPowerCustomActionParser) {
 			new PowerCustomActionGUI();
+		} else
+		if (e.getSource() == sqlConsumableParser) {
+			new ConsumableGUI();
+		} else
+		if (e.getSource() == sqlGearParser) {
+			//new GearGUI();
 		} else
 		if (e.getSource() == toolsInstallLauncherWV) {
 			installBypass();
