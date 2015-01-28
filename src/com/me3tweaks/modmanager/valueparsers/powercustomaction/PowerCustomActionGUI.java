@@ -1860,7 +1860,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				"\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"+
 				"\t\t\t\t\t<img class=\"guide hard\" src=\"/images/modmaker/powers/TABLENAME/explosion.jpg\">\n"+
 				"\t\t\t\t\t<h2 class=\"modmaker_attribute_title\">Detonation Parameters</h2>\n"+
-				"\t\t\t\t\t<p>Detonation paramters determine what gets hit when TABLENAME detonate.</p>\n"+
+				"\t\t\t\t\t<p>Detonation paramaters determine what gets hit when TABLENAME detonate.</p>\n"+
 				"\t\t\t\t\t<div class=\"modmaker_entry\">\n"+
 				"\t\t\t\t\t\t<div class=\"defaultbox\">\n"+
 				"\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Blocked By Objects</span>\n"+

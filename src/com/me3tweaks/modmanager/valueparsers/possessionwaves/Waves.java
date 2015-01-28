@@ -44,7 +44,7 @@ public class Waves {
 	public String createWavesString() {
 		StringBuilder str = new StringBuilder();
 		boolean first = true;
-		for (int i = 0; i < possessionwaves.length; i++) {
+		for (int i = 0; i <= possessionwaves.length; i++) {
 			if (first) {
 				first = false;
 			} else {
