@@ -1115,7 +1115,8 @@ public class ModMakerCompilerWindow extends JDialog {
 														Difficulty importing = new Difficulty(newValue);
 														if (existing.matchIdentifiers(importing)) {
 															match = true;
-															newValue = importing.createDifficultyString(); //doens't really matter, but makes me feel good my code works
+															//newValue = importing.createDifficultyString(); //doens't really matter, but makes me feel good my code works
+															//and it was broken
 														}
 													}
 													break;

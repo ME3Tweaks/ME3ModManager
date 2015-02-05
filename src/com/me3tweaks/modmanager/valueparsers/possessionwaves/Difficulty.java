@@ -20,41 +20,9 @@ public class Difficulty {
 		workingStr = workingStr.substring(charIndex);
 		charIndex = workingStr.indexOf('=');
 		workingStr = workingStr.substring(charIndex+1, workingStr.length() - 1); //get rid of final ) and Waves=
-		System.out.println("Remaining str to do: "+workingStr);
-
+		//System.out.println("Remaining str to do: "+workingStr);
 		waves = new Waves(workingStr);
-		
 		return;
-		//generate stats
-		//stats = new ArrayList<Waves>();
-		/*
-		charIndex = 0;
-		int openBraces = 0;
-		while (workingStr.length() > 0){
-			if (workingStr.charAt(charIndex) == '(') {
-				openBraces++;
-				charIndex++;
-				continue;
-			}
-			if (workingStr.charAt(charIndex) == ')') {
-				openBraces--;
-				charIndex++;
-				if (openBraces <= 0) {
-					//we finished one
-					stats.add(new Waves(workingStr.substring(0, charIndex)));
-					if (charIndex < workingStr.length()){
-						workingStr = workingStr.substring(charIndex+1);
-					} else {
-						break; //we finished
-					}
-					charIndex = 0;
-				}
-				continue;
-			}
-			//its none of the above 2
-			charIndex++;
-		} */
-		//category finished.
 	}
 	
 	public void merge(Difficulty mergeFrom) {

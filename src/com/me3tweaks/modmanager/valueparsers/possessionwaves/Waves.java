@@ -6,6 +6,7 @@ public class Waves {
 	boolean[] possessionwaves = new boolean[11];
 	
 	public Waves(String str) {
+		System.out.println("Parsing possessionwaves: "+str);
 		String workingStr = str;
 		workingStr = workingStr.substring(1,workingStr.length()-1); //get rid of ( and ) on the outside
 		int waveIndex = 0;
@@ -42,6 +43,7 @@ public class Waves {
 	}
 
 	public String createWavesString() {
+		System.out.println("BREAK");
 		StringBuilder str = new StringBuilder();
 		boolean first = true;
 		for (int i = 0; i <= possessionwaves.length; i++) {

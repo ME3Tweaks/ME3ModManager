@@ -7,6 +7,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import javax.swing.JTextArea;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -1725,6 +1727,9 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 			doc.getDocumentElement().normalize();
 			NodeList section = doc.getElementsByTagName("Section");
 			for (int i = 0; i < section.getLength(); i++) {
+				if (section.getLength() > 1) {
+					sb = new StringBuilder(); //clear it.
+				}
 				Element sectionElement = (Element) section.item(i);
 				String tableSuffix = getTableName(sectionElement.getAttribute("name"));
 				sb.append("$(document).ready(function(){\n");
@@ -1833,8 +1838,17 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				sb.append("\t\t}\n");
 				sb.append("\t});\n");
 				sb.append("});\n");
+				if (section.getLength() > 1) {
+					//File js = new File("js/");
+					//js.mkdirs();
+					FileUtils.writeStringToFile(new File("js/"+tableSuffix+".js"), sb.toString());
+				}
 			}
-			output.setText(sb.toString());
+			if (section.getLength() > 1) {
+				output.setText("Files written to js/ folder.");
+			} else {
+				output.setText(sb.toString());
+			}
 		} catch (Exception e){
 			e.printStackTrace();
 			output.setText(e.getMessage());
@@ -1849,7 +1863,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 							"\t\t\t\t\t<h2 class=\"modmaker_attribute_title\">Auto Generated Properties</h2>\n"+
 							"\t\t\t\t\t<p>These properties need to be moved to their proper boxes.</p>\n"+
 							"INPUTS_PLACEHOLDER"+
-							"\t\t\t\t</div>";
+							"\t\t\t\t</div>\n";
 		String inputTemplate = "\t\t\t\t\t<div class=\"modmaker_entry\">\n"+
 				"\t\t\t\t\t\t<div class=\"defaultbox\">\n"+
 				"\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">VARNAME</span>\n"+
@@ -1857,7 +1871,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				"\t\t\t\t\t\t</div>\n"+
 				"\t\t\t\t\t\t<input id=\"VARNAME\" class=\"short_input\" type=\"text\" name=\"VARNAME\" placeholder=\"VARNAME\" value=\"<?=\\$mod->powers->mod_powers_TABLENAME_VARNAME;?>\">\n"+
 				"\t\t\t\t\t</div>";
-		String detonationParamsTemplate = "<!-- DETONATIONVARNAME PARAMETERS  -->\n"+
+		String detonationParamsTemplate = "\t\t\t\t<!-- DETONATIONVARNAME PARAMETERS  -->\n"+
 				"\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"+
 				"\t\t\t\t\t<img class=\"guide hard\" src=\"/images/modmaker/powers/TABLENAME/explosion.jpg\">\n"+
 				"\t\t\t\t\t<h2 class=\"modmaker_attribute_title\">Detonation Parameters</h2>\n"+
@@ -1898,7 +1912,7 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 				"\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_impactplaceables\" type=\"checkbox\" name=\"DETONATIONVARNAME_impactplaceables\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_impactplaceables) ? \"checked\" : \"\"?>>\n"+
 				"\t\t\t\t\t</div>\n"+
 				"CONEANGLE"+
-				"\t\t\t\t\n</div>";
+				"\t\t\t\t</div>";
 		try { //Load document
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(input_text));
@@ -1997,20 +2011,42 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						}
 						System.err.println("Not generating input for: "+name);
 					}
+				} //end of section props
+				if (section.getLength() > 1 ) {
+					if (section.getLength() > 1) {
+						//File js = new File("js/");
+						//js.mkdirs();
+						//build string
+						StringBuilder sb = new StringBuilder();
+						for (String input : inputs) {
+							sb.append(input);
+							sb.append("\n");
+						}
+						String wrap = wrapper.replaceAll("INPUTS_PLACEHOLDER", sb.toString());
+						for (String det : detonationBlocks) {
+							wrap = wrap+det;
+						}
+						FileUtils.writeStringToFile(new File("htmlphp/"+tableSuffix+".php"), wrap);
+						inputs = new ArrayList<String>();
+						detonationBlocks = new ArrayList<String>();
+					}
 				}
-			}
+			} //end of section loop
 			
-			//build string
-			StringBuilder sb = new StringBuilder();
-			for (String input : inputs) {
-				sb.append(input);
-				sb.append("\n");
+			if (section.getLength() > 1 ) {
+				output.setText("Wrote HTML/PHP to htmlphp/");
+			} else {
+				StringBuilder sb = new StringBuilder();
+				for (String input : inputs) {
+					sb.append(input);
+					sb.append("\n");
+				}
+				String wrap = wrapper.replaceAll("INPUTS_PLACEHOLDER", sb.toString());
+				for (String det : detonationBlocks) {
+					wrap = wrap+det;
+				}
+				output.setText(wrap);
 			}
-			String wrap = wrapper.replaceAll("INPUTS_PLACEHOLDER", sb.toString());
-			for (String det : detonationBlocks) {
-				wrap = wrap+det;
-			}
-			output.setText(wrap);
 		} catch (Exception e){
 			e.printStackTrace();
 			output.setText(e.getMessage());
