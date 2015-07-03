@@ -33,11 +33,11 @@ import org.w3c.dom.Document;
 public class ModManager {
 	
 	public static final String VERSION = "3.0";
-	public static long BUILD_NUMBER = 33L;
+	public static long BUILD_NUMBER = 34L;
 
-	public static final String BUILD_DATE = "1/27/2015";
+	public static final String BUILD_DATE = "7/2/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.4; //max modmaker version
