@@ -78,6 +78,10 @@ public class AutoTocWindow extends JDialog {
 		protected TOCWorker(Mod mod) {
 			this.mod = mod;
 			for (ModJob job : mod.jobs) {
+				if (job.modType == ModJob.CUSTOMDLC) {
+					//don't autotoc custom DLC
+					continue;
+				}
 				boolean hasTOC = false;
 				//find out if it has a toc file
 				for (String file : job.newFiles) {
@@ -111,6 +115,9 @@ public class AutoTocWindow extends JDialog {
 		public Boolean doInBackground() {
 			//get list of all files to update for the progress bar
 			for (ModJob job : mod.jobs){
+				if (job.modType == ModJob.CUSTOMDLC) {
+					continue;
+				}
 				boolean hasTOC = false;
 				for (String file : job.newFiles) {
 					String filename = FilenameUtils.getName(file);
@@ -192,12 +199,23 @@ public class AutoTocWindow extends JDialog {
 				//failed something
 				StringBuilder sb = new StringBuilder();
 				sb.append("Failed to TOC at least one of the files in this mod.");
-				if (callingWindow != null) {
-					callingWindow.labelStatus.setText(" Failed to TOC at least 1 file in mod");
+				for (ModJob job : mod.jobs) {
+					if (job.modType == ModJob.CUSTOMDLC) {
+						JOptionPane.showMessageDialog(null, "This mod includes custom DLC content. Custom DLC content must be manually TOCed.", "AutoTOC Info",
+								JOptionPane.INFORMATION_MESSAGE);
+					}
 				}
-				JOptionPane.showMessageDialog(null, sb.toString(), "AutoTOC Error",
-						JOptionPane.ERROR_MESSAGE);
+				if (callingWindow != null) {
+					callingWindow.labelStatus.setText("Failed to TOC at least 1 file in mod");
+				}
+				
 			} else {
+				for (ModJob job : mod.jobs) {
+					if (job.modType == ModJob.CUSTOMDLC) {
+						JOptionPane.showMessageDialog(null, "This mod includes custom DLC content. Custom DLC content must be manually TOCed.", "AutoTOC Info",
+								JOptionPane.INFORMATION_MESSAGE);
+					}
+				}
 				//we're good
 				if (callingWindow != null) {
 					callingWindow.labelStatus.setText(mod.getModName()+" TOC files updated");

@@ -23,6 +23,7 @@ public class ModType {
 	protected static final String APP01 = "APPEARANCE";
 	protected static final String GUN01 = "FIREFIGHT";
 	protected static final String GUN02 = "GROUNDSIDE";
+	protected static final String CUSTOMDLC = "CUSTOMDLC";
 	
 	
 	/* DONT DELETE

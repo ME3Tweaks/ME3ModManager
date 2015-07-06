@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
@@ -32,17 +33,18 @@ import org.w3c.dom.Document;
 
 public class ModManager {
 	
-	public static final String VERSION = "3.0";
-	public static long BUILD_NUMBER = 34L;
+	public static final String VERSION = "3.1 RC";
+	public static long BUILD_NUMBER = 35L;
 
-	public static final String BUILD_DATE = "7/2/2015";
+	public static final String BUILD_DATE = "7/5/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.4; //max modmaker version
 	
 	public static void main(String[] args) {		
+		System.out.println("Starting mod manager");
 		//SETUI LOOK
 		 try {
 	            // Set cross-platform Java L&F (also called "Metal")
@@ -122,12 +124,12 @@ public class ModManager {
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeMessage("--update-from number format exception.");
 			}
-
 		}
+		ModManager.debugLogger.writeMessage("Showing mod window");
 		new ModManagerWindow(isUpdate);
 	}
 	
-	public static String[] getModsFromDirectory(){
+	public static ArrayList<Mod> getModsFromDirectory(){
 		File fileDir = new File(System.getProperty("user.dir"));
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
@@ -149,19 +151,8 @@ public class ModManager {
 			}
 		}
 		
-		for (Mod i:availableMod){
-			ModManagerWindow.listDescriptors.put(i.getModName(),i);
-		}
-		if (availableMod.size()==0){
-			return new String[]{"No Mods Available"};
-		}
-		String[] returnMods = new String[availableMod.size()];
-		for(int i = 0; i<availableMod.size();i++){
-			ModManager.debugLogger.writeMessage("Adding mod "+availableMod.get(i).getModName());
-			returnMods[i]=availableMod.get(i).getModName();
-		}
-		Arrays.sort(returnMods,java.text.Collator.getInstance());
-		return returnMods;
+		Collections.sort(availableMod);
+		return availableMod;
 	}
 	
 	public static ArrayList<Mod> getCMM3ModsFromDirectory(){

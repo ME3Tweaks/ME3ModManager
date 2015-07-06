@@ -14,9 +14,13 @@ public class ModJob {
 	//job types
 	protected static final int BASEGAME = 1;
 	protected static final int DLC = 0;
+	protected static final int CUSTOMDLC = 2;
 	protected boolean TESTPATCH = false; //testpatch flag for patch window
 	protected int modType;
 	String DLCFilePath, jobName;
+	ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
+	ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
+	
 	ArrayList<String> newFiles;
 	ArrayList<String> filesToReplace;
 	
@@ -90,11 +94,11 @@ public class ModJob {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result
-				+ ((DLCFilePath == null) ? 0 : DLCFilePath.hashCode());
+		result = prime * result + ((DLCFilePath == null) ? 0 : DLCFilePath.hashCode());
+		result = prime * result + modType;
 		return result;
-	}
-
+	}	
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -109,9 +113,11 @@ public class ModJob {
 				return false;
 		} else if (!DLCFilePath.equals(other.DLCFilePath))
 			return false;
+		if (modType != other.modType)
+			return false;
 		return true;
 	}
-	
+
 	/**
 	 * Returns if this job has a PCConsoleTOC in it already
 	 * @return

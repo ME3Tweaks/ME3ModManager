@@ -79,4 +79,19 @@ public class DebugLogger {
 			}
 		}
 	}
+
+	public void writeError(String message) {
+		if (ModManager.logging){
+			try {
+				System.err.println("[L:E]: "+message);
+				fw.write("WARN/ERROR: ");
+				fw.write(message);
+				fw.write(System.getProperty("line.separator"));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.out.println("cannot write to log file! IOException");
+				e.printStackTrace();
+			}
+		}
+	}
 }
