@@ -31,6 +31,8 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.w3c.dom.Document;
 
+import com.me3tweaks.modmanager.modupdater.ModXMLTools;
+
 public class ModManager {
 	
 	public static final String VERSION = "3.1 RC";
@@ -45,6 +47,7 @@ public class ModManager {
 	
 	public static void main(String[] args) {		
 		System.out.println("Starting mod manager");
+		
 		//SETUI LOOK
 		 try {
 	            // Set cross-platform Java L&F (also called "Metal")
@@ -427,7 +430,7 @@ public class ModManager {
 	 * @return Original string with a slash on the end if it was not there
 	 *         previously.
 	 */
-	protected static String appendSlash(String string) {
+	public static String appendSlash(String string) {
 		if (string.charAt(string.length() - 1) == '\\') {
 			return string;
 		} else {

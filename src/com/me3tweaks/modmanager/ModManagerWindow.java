@@ -54,7 +54,9 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
-import com.me3tweaks.modmanager.modfilelist.ModXMLTools;
+import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
+import com.me3tweaks.modmanager.modupdater.ModXMLTools;
+import com.me3tweaks.modmanager.modupdater.UpdatePackage;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
@@ -74,7 +76,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionOpenME3Exp, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsAutoTOC, modutilsUninstallCustomDLC;
+	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsAutoTOC, modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupBasegame;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
@@ -111,7 +113,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER + ").", "Update Complete",
 					JOptionPane.INFORMATION_MESSAGE);
 		}
-		new UpdateCheckThread().execute();
+		//new UpdateCheckThread().execute();
 		this.setVisible(true);
 
 	}
@@ -372,6 +374,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsUninstallCustomDLC = new JMenuItem("Uninstall this mod's custom DLC");
 		modutilsUninstallCustomDLC.addActionListener(this);
 
+		modutilsCheckforupdate = new JMenuItem("Check for newer version (ME3Tweaks)");
+		modutilsCheckforupdate.addActionListener(this);
+		
 		modMenu.add(modutilsHeader);
 		if (ModManager.IS_DEBUG) {
 			modMenu.add(modutilsUpdateXMLGenerator);
@@ -380,6 +385,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.add(modutilsInfoEditor);
 		modMenu.add(modutilsAutoTOC);
 		modMenu.add(modutilsUninstallCustomDLC);
+		modMenu.add(modutilsCheckforupdate);
 		modMenu.setEnabled(false);
 		menuBar.add(modMenu);
 
@@ -677,6 +683,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			uninstallCustomDLC();
 		} else if (e.getSource() == sqlWavelistParser) {
 			new WavelistGUI();
+		} else if (e.getSource() == modutilsCheckforupdate) {
+			checkForModUpdate();
 		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
 			System.out.println(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
 		} else if (e.getSource() == sqlDifficultyParser) {
@@ -699,6 +707,26 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			installBinkw32Bypass();
 		} else if (e.getSource() == toolsUninstallBinkw32) {
 			uninstallBinkw32Bypass();
+		}
+	}
+
+	/**
+	 * Downloads from ME3Tweaks a manifest of the latest version of a mod.
+	 * It then checks the version of the local mod against it. If the other one is higher a list of files to update and delete are constructed and
+	 * then a user can elect to update
+	 */
+	private void checkForModUpdate() {
+		Mod mod = modModel.get(modList.getSelectedIndex());
+		UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
+		if (upackage != null) {
+			//an update is available
+			int result = JOptionPane.showConfirmDialog(this, "An update to "+mod.getModName()+" is available from ME3Tweaks.\nLocal Version: "+mod.getVersion()+"\nServer Version: "+upackage.getVersion()+"\nUpgrade this mod?","Update available", JOptionPane.YES_NO_OPTION);
+			if (result == JOptionPane.YES_OPTION) {
+				ModUpdateWindow muw = new ModUpdateWindow(this, upackage);
+				muw.startUpdate();
+			}
+		} else {
+			labelStatus.setText(mod.getModName()+" is up to date with ME3Tweaks");
 		}
 	}
 
@@ -1067,6 +1095,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				buttonApplyMod.setEnabled(checkIfNone(modList.getSelectedValue().toString()));
 				modutilsHeader.setText(modModel.get(modList.getSelectedIndex()).getModName());
 				modMenu.setEnabled(true);
+				modutilsCheckforupdate.setEnabled(true);
 				if (selectedMod.containsCustomDLCJob()) {
 					modutilsUninstallCustomDLC.setEnabled(true);
 					modutilsUninstallCustomDLC.setText("Uninstall this mod's custom DLC content");
