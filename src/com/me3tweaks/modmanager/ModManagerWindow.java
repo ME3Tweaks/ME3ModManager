@@ -54,6 +54,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
+import com.me3tweaks.modmanager.modfilelist.ModXMLTools;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
@@ -88,6 +89,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	final String selectAModDescription = "Select a mod on the left to view its description and apply it.";
 	DefaultListModel<Mod> modModel;
 	//static HashMap<String, Mod> listDescriptors;
+	private JMenuItem modutilsUpdateXMLGenerator;
 
 	public ModManagerWindow(boolean isUpdate) {
 		this.isUpdate = isUpdate;
@@ -361,6 +363,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu = new JMenu("Mod Utils");
 		modutilsHeader = new JMenuItem("No mod selected");
 		modutilsHeader.setEnabled(false);
+		modutilsUpdateXMLGenerator = new JMenuItem("Generate Mod XML");
+		modutilsUpdateXMLGenerator.addActionListener(this);
 		modutilsInfoEditor = new JMenuItem("Edit name/description");
 		modutilsInfoEditor.addActionListener(this);
 		modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
@@ -369,6 +373,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsUninstallCustomDLC.addActionListener(this);
 
 		modMenu.add(modutilsHeader);
+		if (ModManager.IS_DEBUG) {
+			modMenu.add(modutilsUpdateXMLGenerator);
+		}
 		modMenu.addSeparator();
 		modMenu.add(modutilsInfoEditor);
 		modMenu.add(modutilsAutoTOC);
@@ -670,9 +677,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			uninstallCustomDLC();
 		} else if (e.getSource() == sqlWavelistParser) {
 			new WavelistGUI();
-		} else
-
-		if (e.getSource() == sqlDifficultyParser) {
+		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
+			System.out.println(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
+		} else if (e.getSource() == sqlDifficultyParser) {
 			new DifficultyGUI();
 		} else
 

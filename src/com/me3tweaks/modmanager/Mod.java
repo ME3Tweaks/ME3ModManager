@@ -14,17 +14,18 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
-public class Mod implements Comparable<Mod>{
+public class Mod implements Comparable<Mod> {
 	File modDescFile;
 	boolean validMod = false, modCoal = false;
 	String modName, modDisplayDescription, modDescription, modPath, modifyString;
 	ArrayList<ModJob> jobs;
 	private String modAuthor;
-	private String modmakerCode;
+	private int modmakerCode = 0;
 	private String modSite;
 	private String modmp;
 	private String modVersion;
 	protected double modCMMVer = 1.0;
+	private int classicCode;
 
 	public boolean isValidMod() {
 		return validMod;
@@ -208,8 +209,8 @@ public class Mod implements Comparable<Mod>{
 					String destFolder = destStrok.nextToken();
 
 					File sf = new File(modFolderPath + sourceFolder);
-					if (!sf.exists()){
-						ModManager.debugLogger.writeError("Custom DLC Source folder does not exist: "+sf.getAbsolutePath()+", mod marked as invalid");
+					if (!sf.exists()) {
+						ModManager.debugLogger.writeError("Custom DLC Source folder does not exist: " + sf.getAbsolutePath() + ", mod marked as invalid");
 						return;
 					}
 					List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
@@ -264,12 +265,27 @@ public class Mod implements Comparable<Mod>{
 		}
 		ModManager.debugLogger.writeMessage("Number of Mod Jobs:" + jobs.size());
 		if (jobs.size() > 0 || modCoal == true) {
-			ModManager.debugLogger.writeMessage("Mod Marked as valid, finish reading mod.");
+			ModManager.debugLogger.writeMessage("Verified source files, mod should be OK to install");
 			setModDisplayDescription(false);
 			validMod = true;
 		}
 
 		// read additional parameters
+		// Add version
+		if (modini.get("ModInfo", "modver") != null) {
+			modVersion = modini.get("ModInfo", "modver");
+			ModManager.debugLogger.writeMessage("Detected mod version: " + modVersion);
+		}
+
+		if (modini.get("ModInfo", "updatecode") != null) {
+			try {
+				classicCode = Integer.parseInt(modini.get("ModInfo", "updatecode"));
+				ModManager.debugLogger.writeMessage("Detected me3tweaks update code: " + classicCode);
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeError("Classic update code is not an integer");
+			}
+		}
+
 		// Add MP Changer
 		if (modini.get("ModInfo", "modmp") != null) {
 			modmp = modini.get("ModInfo", "modmp");
@@ -288,14 +304,20 @@ public class Mod implements Comparable<Mod>{
 
 		// Add Modmaker
 		if (modini.get("ModInfo", "modid") != null) {
-			modmakerCode = modini.get("ModInfo", "modid");
-			ModManager.debugLogger.writeMessage("Detected modmaker code");
+			try {
+				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
+				ModManager.debugLogger.writeMessage("Detected modmaker code");
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer.");
+			}
 		}
 
 		if (modCMMVer > 3.1) {
 			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version");
-
 		}
+		
+		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for this mod");
+
 		ModManager.debugLogger.writeMessage("--------------------------END OF " + modName + "--------------------------");
 	}
 
@@ -389,8 +411,7 @@ public class Mod implements Comparable<Mod>{
 		modDisplayDescription += "\n";
 
 		// Add modversion
-		if (modini.get("ModInfo", "modver") != null) {
-			modVersion = modini.get("ModInfo", "modver");
+		if (modVersion != null) {
 			modDisplayDescription += "\nMod Version: " + modVersion;
 		}
 		// Add mod manager build version
@@ -402,24 +423,21 @@ public class Mod implements Comparable<Mod>{
 		modDisplayDescription += getModifyString();
 
 		// Add MP Changer
-		if (modini.get("ModInfo", "modmp") != null) {
-			modmp = modini.get("ModInfo", "modmp");
+		if (modmp != null) {
 			modDisplayDescription += "\nModifies Multiplayer: " + modmp;
 		}
 		// Add developer
-		if (modini.get("ModInfo", "moddev") != null) {
-			modAuthor = modini.get("ModInfo", "moddev");
+		if (modAuthor != null) {
 			modDisplayDescription += "\nMod Developer: " + modAuthor;
 		}
 		// Add Devsite
-		if (modini.get("ModInfo", "modsite") != null) {
-			modSite = modini.get("ModInfo", "modsite");
+		if (modSite != null) {
 			modDisplayDescription += "\nMod Site: " + modSite;
 		}
 
 		// Add Modmaker
-		if (modini.get("ModInfo", "modid") != null) {
-			modmakerCode = modini.get("ModInfo", "modid");
+		if (modmakerCode > 0) {
+			//modmakerCode = modini.get("ModInfo", "modid");
 			modDisplayDescription += "\nModMaker code: " + modmakerCode;
 		}
 	}
@@ -551,9 +569,6 @@ public class Mod implements Comparable<Mod>{
 			ini.put("ModManager", "cmmver", cmmVersion);
 			ini.put("ModInfo", "modname", modName);
 			ini.put("ModInfo", "moddev", modAuthor);
-			if (modVersion != null) {
-				ini.put("ModInfo", "modver", modVersion);
-			}
 			if (modDescription != null) {
 				ini.put("ModInfo", "moddesc", modDescription);
 			}
@@ -566,8 +581,8 @@ public class Mod implements Comparable<Mod>{
 			if (modSite != null) {
 				ini.put("ModInfo", "modsite", modSite);
 			}
-			if (modmakerCode != null) {
-				ini.put("ModInfo", "modid", modmakerCode);
+			if (modmakerCode > 0) {
+				ini.put("ModInfo", "modid", Integer.toString(modmakerCode));
 			}
 
 			for (ModJob job : jobs) {
@@ -735,7 +750,7 @@ public class Mod implements Comparable<Mod>{
 			if (job.modType == ModJob.CUSTOMDLC) {
 				for (String sourceFolder : job.sourceFolders) {
 					try {
-						File srcFolder = new File(ModManager.appendSlash(modDescFile.getParentFile().getAbsolutePath())+sourceFolder);
+						File srcFolder = new File(ModManager.appendSlash(modDescFile.getParentFile().getAbsolutePath()) + sourceFolder);
 						File destFolder = new File(modFolder + File.separator + sourceFolder); //source folder is a string
 						ModManager.debugLogger.writeMessage("Copying custom DLC folder: " + srcFolder.getAbsolutePath() + " to " + destFolder.getAbsolutePath());
 						FileUtils.copyDirectory(srcFolder, destFolder);
@@ -792,6 +807,7 @@ public class Mod implements Comparable<Mod>{
 
 	/**
 	 * Checks if this mod has a job for custom DLC
+	 * 
 	 * @return true if contains custom DLC job, false otherwise
 	 */
 	public boolean containsCustomDLCJob() {
@@ -804,5 +820,39 @@ public class Mod implements Comparable<Mod>{
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Attempts to parse the mod version from the CMM string If it fails it
+	 * returns a 0
+	 * 
+	 * @return
+	 */
+	public double getVersion() {
+		try {
+			return Double.parseDouble(modVersion);
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+	}
+
+	public int getClassicUpdateCode() {
+		if (classicCode <= 0) {
+			return 0;
+		}
+
+		return classicCode;
+	}
+
+	public int getModMakerCode() {
+		return modmakerCode;
+	}
+
+	public String getDescFile() {
+		return modPath + File.separator + "moddesc.ini";
+	}
+
+	public double getCMMVer() {
+		return modCMMVer;
 	}
 }
