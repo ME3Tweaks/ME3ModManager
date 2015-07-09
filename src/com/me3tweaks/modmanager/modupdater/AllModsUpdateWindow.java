@@ -39,6 +39,7 @@ public class AllModsUpdateWindow extends JDialog {
 	private ArrayList<Mod> updateableMods;
 	private ArrayList<UpdatePackage> upackages;
 	private AllModsDownloadTask amdt;
+	private JLabel operationLabel;
 
 	public AllModsUpdateWindow(JFrame callingWindow, ArrayList<Mod> updateableMods) {
 		this.updateableMods = updateableMods;
@@ -61,7 +62,7 @@ public class AllModsUpdateWindow extends JDialog {
 	private void setupWindow() {
 		this.setTitle("Mod Updater");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(300, 90));
+		this.setPreferredSize(new Dimension(320, 70));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
@@ -71,8 +72,8 @@ public class AllModsUpdateWindow extends JDialog {
 		JPanel panel = new JPanel(new BorderLayout());
 
 		statusLabel = new JLabel("0 mods out of date");
-
-		panel.add(new JLabel("Obtaining latest mod information from ME3Tweaks..."), BorderLayout.NORTH);
+		operationLabel = new JLabel("Obtaining latest mod information from ME3Tweaks...");
+		panel.add(operationLabel, BorderLayout.NORTH);
 		panel.add(statusLabel, BorderLayout.SOUTH);
 		// updatePanel.add(actionPanel);
 		// updatePanel.add(sizeLabel);
@@ -93,9 +94,6 @@ public class AllModsUpdateWindow extends JDialog {
 	 * 
 	 */
 	class AllModsDownloadTask extends SwingWorker<Void, Object> {
-		private int numModstoUpdate;
-		private int numProcessed;
-
 		public void pause() {
 			try {
 				this.wait();
@@ -141,7 +139,10 @@ public class AllModsUpdateWindow extends JDialog {
 			if (AllModsUpdateWindow.this.userChose < 0) {
 				return null;
 			}
-
+			
+			//user chose yes
+			publish("NOTIFY_START");
+			int numToGo = upackages.size();
 			for (UpdatePackage upackage : upackages) {
 				ModManager.debugLogger.writeMessage("Processing: " + upackage.getMod().getModName());
 				ModUpdateWindow muw = new ModUpdateWindow(upackage);
@@ -149,6 +150,7 @@ public class AllModsUpdateWindow extends JDialog {
 				while (muw.isShowing()) {
 					Thread.sleep(500);
 				}
+				publish(new Integer(--numToGo));
 			}
 
 			return null;
@@ -162,7 +164,7 @@ public class AllModsUpdateWindow extends JDialog {
 					String command = (String) obj;
 					switch (command) {
 					case "PROMPT_USER":
-						String updatetext = upackages.size()+" mod"+(upackages.size()==1?"":"s")+" have available updates on ME3Tweaks:\n";
+						String updatetext = upackages.size()+" mod"+(upackages.size()==1?" has":"s have")+" available updates on ME3Tweaks:\n";
 						for (UpdatePackage upackage : upackages) {
 							updatetext += " - "+upackage.getMod().getModName()+" "+upackage.getMod().getVersion()+" => "+upackage.getVersion()+"\n";
 						}
@@ -176,6 +178,10 @@ public class AllModsUpdateWindow extends JDialog {
 							userChose = -1;
 							break;
 						}
+						break;
+					case "NOTIFY_START":
+						AllModsUpdateWindow.this.setLocation(getX(), (getY() - 160));
+						operationLabel.setText("Updating mods from ME3Tweaks.com");
 						break;
 					}
 					return;

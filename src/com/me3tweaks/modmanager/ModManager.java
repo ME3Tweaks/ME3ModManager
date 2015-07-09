@@ -45,7 +45,7 @@ public class ModManager {
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.4; //max modmaker version
 	
-	public static void main(String[] args) {		
+	public static void main(String[] args) {	
 		System.out.println("Starting mod manager");
 		
 		//SETUI LOOK
