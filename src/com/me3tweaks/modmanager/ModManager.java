@@ -128,11 +128,13 @@ public class ModManager {
 				ModManager.debugLogger.writeMessage("--update-from number format exception.");
 			}
 		}
-		ModManager.debugLogger.writeMessage("Showing mod window");
+		ModManager.debugLogger.writeMessage("ME3CMM is running from: "+System.getProperty("user.dir"));
+		ModManager.debugLogger.writeMessage("========End of startup=========");
 		new ModManagerWindow(isUpdate);
 	}
 	
 	public static ArrayList<Mod> getModsFromDirectory(){
+		ModManager.debugLogger.writeMessage("==Getting list of mods in directory==");
 		File fileDir = new File(System.getProperty("user.dir"));
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
@@ -141,11 +143,12 @@ public class ModManager {
 		    }
 		};
 		File[] subdirs = fileDir.listFiles(fileFilter);
-		
+		System.out.println(subdirs.length);
 		//Got a list of subdirs. Now loop them to find all moddesc.ini files
 		ArrayList<Mod> availableMod = new ArrayList<Mod>();
 		for(int i = 0; i<subdirs.length;i++){
 			File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString())+"moddesc.ini");
+			System.out.println("Searching for file: "+searchSubDirDesc);
 			if (searchSubDirDesc.exists()){
 				Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath())+"moddesc.ini");
 				if (validatingMod.isValidMod()){
@@ -431,10 +434,10 @@ public class ModManager {
 	 *         previously.
 	 */
 	public static String appendSlash(String string) {
-		if (string.charAt(string.length() - 1) == '\\') {
+		if (string.charAt(string.length() - 1) == File.separatorChar) {
 			return string;
 		} else {
-			return string + "\\";
+			return string + File.separator;
 		}
 	}
 }

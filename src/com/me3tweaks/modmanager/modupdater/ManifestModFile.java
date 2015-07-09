@@ -12,7 +12,7 @@ public class ManifestModFile {
 	
 	public ManifestModFile(String relativePath, String hash, long filesize) {
 		super();
-		this.relativePath = relativePath;
+		this.relativePath = relativePath.replaceAll("\\\\", "/");
 		this.hash = hash;
 		this.filesize = filesize;
 	}
