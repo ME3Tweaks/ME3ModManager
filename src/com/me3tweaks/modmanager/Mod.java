@@ -91,7 +91,6 @@ public class Mod implements Comparable<Mod> {
 				return;
 			}
 			addTask(ModType.COAL, null);
-			setModDisplayDescription(true);
 
 			validMod = true;
 			ModManager.debugLogger.writeMessage(modName + " valid, marked as legacy mod. Added coalesced swap job, marked valid, finish reading mod.");
@@ -315,9 +314,8 @@ public class Mod implements Comparable<Mod> {
 		if (modCMMVer > 3.1) {
 			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version");
 		}
-		
+		setModDisplayDescription(modCMMVer < 3.0);
 		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for this mod");
-
 		ModManager.debugLogger.writeMessage("--------------------------END OF " + modName + "--------------------------");
 	}
 
