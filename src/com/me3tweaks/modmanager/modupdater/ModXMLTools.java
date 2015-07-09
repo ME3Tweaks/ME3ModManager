@@ -149,59 +149,42 @@ public class ModXMLTools {
 			updateURL = "http://me3tweaks.com/mods/getlatest";
 		}
 		ModManager.debugLogger.writeMessage("=========Checking for update of " + mod.getModName() + "=========");
-
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
-		// params.add(new BasicNameValuePair("updatecode",
-		// Integer.toString(mod.getClassicUpdateCode())));
-		params.add(new BasicNameValuePair("updatecode", Integer.toString(mod.getClassicUpdateCode())));
-
-		URIBuilder urib;
-		String responseString = null;
-		try {
-			urib = new URIBuilder(updateURL);
-			urib.setParameters(params);
-			HttpClient httpClient = HttpClientBuilder.create().build();
-			URI uri = urib.build();
-			HttpResponse response = httpClient.execute(new HttpGet(uri));
-			responseString = new BasicResponseHandler().handleResponse(response);
-		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if (mod.getModMakerCode() > 0) {
+			Document doc = getOnlineInfo(updateURL, true, mod.getModMakerCode());
+			return checkForModMakerUpdate(mod, doc);
 		}
+		if (mod.getModMakerCode() <= 0) {
+			Document doc = getOnlineInfo(updateURL, false, mod.getClassicUpdateCode());
+			return checkForClassicUpdate(mod, doc);
+		}
+		return null;
+	}
 
-		if (responseString == null) {
-			// error occured
+	private static UpdatePackage checkForModMakerUpdate(Mod mod, Document doc) {
+		// got document, now parse metainfo
+		NodeList modList = doc.getElementsByTagName("modmakermod");
+		if (modList.getLength() < 1) {
+			ModManager.debugLogger.writeMessage("XML response has no <modmakermod> tags, error from server");
 			return null;
 		}
 
-		// got XML, build document for reading
-		Document doc = null;
-		try {
-			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-			InputSource is = new InputSource();
-			is.setCharacterStream(new StringReader(responseString));
-			doc = db.parse(is);
-		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		// for all mods in serverlist
+		for (int i = 0; i < modList.getLength(); i++) {
+			Element modElem = (Element) modList.item(i);
+			double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
+			String serverModName = modElem.getAttribute("name");
+			if (mod.getVersion() >= serverModVer) {
+				ModManager.debugLogger.writeMessage("Mod up to date");
+				continue; // not an update
+			} else {
+				ModManager.debugLogger.writeMessage("ModMaker Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
+				return new UpdatePackage(mod, serverModName, serverModVer);
+			}
 		}
+		return null;
+	}
 
-		if (doc == null) {
-			return null;
-		}
-
+	private static UpdatePackage checkForClassicUpdate(Mod mod, Document doc) {
 		// got document, now parse metainfo
 		NodeList modList = doc.getElementsByTagName("mod");
 		if (modList.getLength() < 1) {
@@ -305,7 +288,7 @@ public class ModXMLTools {
 					if (!existsOnServer) {
 						// file needs to be removed
 						ModManager.debugLogger.writeMessage("Coalesced.bin is not in updated version of mod on server, marking for removal");
-						filesToRemove.add(ModManager.appendSlash(mod.getModPath())+"Coalesced.bin");
+						filesToRemove.add(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
 					}
 				}
 			}
@@ -314,8 +297,64 @@ public class ModXMLTools {
 					+ filesToRemove.size());
 			return new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
 		}
+		return null;
+	}// end classic update
 
-		return null; // shouldn't get here at this time
+	private static Document getOnlineInfo(String updateURL, boolean modmakerMod, int updatecode) {
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		// params.add(new BasicNameValuePair("updatecode",
+		// Integer.toString(mod.getClassicUpdateCode())));
+		params.add(new BasicNameValuePair("updatecode", Integer.toString(updatecode)));
+		params.add(new BasicNameValuePair("moddtype", modmakerMod ? "modmaker" :"classic"));
+
+		URIBuilder urib;
+		String responseString = null;
+		try {
+			urib = new URIBuilder(updateURL);
+			urib.setParameters(params);
+			HttpClient httpClient = HttpClientBuilder.create().build();
+			URI uri = urib.build();
+			HttpResponse response = httpClient.execute(new HttpGet(uri));
+			responseString = new BasicResponseHandler().handleResponse(response);
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		if (responseString == null) {
+			// error occured
+			return null;
+		}
+
+		// got XML, build document for reading
+		Document doc = null;
+		try {
+			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			InputSource is = new InputSource();
+			is.setCharacterStream(new StringReader(responseString));
+			doc = db.parse(is);
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		if (doc == null) {
+			return null;
+		}
+		
+		return doc;
 	}
 
 	public static boolean executeUpdate(UpdatePackage update) {

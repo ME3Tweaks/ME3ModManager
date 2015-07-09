@@ -32,6 +32,7 @@ import com.me3tweaks.modmanager.modupdater.ModUpdateWindow.HTTPDownloadUtil;
 @SuppressWarnings("serial")
 public class AllModsUpdateWindow extends JDialog {
 	boolean error = false;
+	int userChose = 0; // -1 no, 0 hasn't picked, 1 yes
 	JButton cancelButton;
 	JLabel statusLabel;
 	private JFrame callingWindow;
@@ -48,7 +49,7 @@ public class AllModsUpdateWindow extends JDialog {
 		amdt.execute();
 		setVisible(true);
 	}
-	
+
 	public AllModsDownloadTask getAmdt() {
 		return amdt;
 	}
@@ -66,10 +67,10 @@ public class AllModsUpdateWindow extends JDialog {
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
-		
+
 		JPanel panel = new JPanel(new BorderLayout());
 
-		statusLabel = new JLabel("0/0 files downloaded");
+		statusLabel = new JLabel("0 mods out of date");
 
 		panel.add(new JLabel("Obtaining latest mod information from ME3Tweaks..."), BorderLayout.NORTH);
 		panel.add(statusLabel, BorderLayout.SOUTH);
@@ -84,8 +85,7 @@ public class AllModsUpdateWindow extends JDialog {
 	void setStatusText(String text) {
 		statusLabel.setText(text);
 	}
-	
-	
+
 	/**
 	 * Execute file download in a background thread and update the progress.
 	 * 
@@ -94,9 +94,10 @@ public class AllModsUpdateWindow extends JDialog {
 	 */
 	class AllModsDownloadTask extends SwingWorker<Void, Object> {
 		private int numModstoUpdate;
-		private int numProcessed;		
+		private int numProcessed;
+
 		public void pause() {
-		    try {
+			try {
 				this.wait();
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -105,10 +106,10 @@ public class AllModsUpdateWindow extends JDialog {
 		}
 
 		public synchronized void resume() {
-		    this.notify();
-		    ModManager.debugLogger.writeMessage("Sent resume wakeup notification");
+			this.notify();
+			ModManager.debugLogger.writeMessage("Sent resume wakeup notification");
 		}
-		
+
 		/**
 		 * Executed in background thread
 		 */
@@ -117,21 +118,31 @@ public class AllModsUpdateWindow extends JDialog {
 			// Iterate through files to download and put them in the update
 			// folder
 			upackages = new ArrayList<UpdatePackage>();
-			for (Mod mod : updateableMods){
+			for (Mod mod : updateableMods) {
 				UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
 				if (upackage != null) {
-					//update available
+					// update available
 					upackages.add(upackage);
+					publish(new Integer(upackages.size()));
 				} else {
-					ModManager.debugLogger.writeMessage(mod.getModName()+" is up to date/not eligible");
+					ModManager.debugLogger.writeMessage(mod.getModName() + " is up to date/not eligible");
 				}
 			}
-			
+
 			if (upackages.size() <= 0) {
 				return null;
 			}
-			
-			for (UpdatePackage upackage : upackages){
+
+			publish("PROMPT_USER");
+			while (AllModsUpdateWindow.this.userChose == 0) {
+				Thread.sleep(500);
+			}
+
+			if (AllModsUpdateWindow.this.userChose < 0) {
+				return null;
+			}
+
+			for (UpdatePackage upackage : upackages) {
 				ModManager.debugLogger.writeMessage("Processing: " + upackage.getMod().getModName());
 				ModUpdateWindow muw = new ModUpdateWindow(upackage);
 				muw.startAllModsUpdate(AllModsUpdateWindow.this);
@@ -139,13 +150,43 @@ public class AllModsUpdateWindow extends JDialog {
 					Thread.sleep(500);
 				}
 			}
-			
+
 			return null;
 		}
 
 		@Override
 		public void process(List<Object> chunks) {
-			setStatusText(numProcessed + "/" + numModstoUpdate + " mods updated");
+			for (Object obj : chunks) {
+				if (obj instanceof String) {
+					//its a command
+					String command = (String) obj;
+					switch (command) {
+					case "PROMPT_USER":
+						String updatetext = upackages.size()+" mod"+(upackages.size()==1?"":"s")+" have available updates on ME3Tweaks:\n";
+						for (UpdatePackage upackage : upackages) {
+							updatetext += " - "+upackage.getMod().getModName()+" "+upackage.getMod().getVersion()+" => "+upackage.getVersion()+"\n";
+						}
+						updatetext += "Update these mods?";
+						int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
+						switch (result) {
+						case JOptionPane.YES_OPTION:
+							userChose = 1;
+							break;
+						case JOptionPane.NO_OPTION:
+							userChose = -1;
+							break;
+						}
+						break;
+					}
+					return;
+				}
+				if (obj instanceof Integer) {
+					//its a progress update
+					Integer i = (Integer) obj;
+					statusLabel.setText(i+" mod"+(i==1?"":"s")+" out of date");
+				}
+			}
+			
 		}
 
 		/**
@@ -159,16 +200,20 @@ public class AllModsUpdateWindow extends JDialog {
 				JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.");
 				return;
 			}
-			JOptionPane.showMessageDialog(callingWindow, upackages.size()+" mod(s) have been successfully updated.\nMod Manager will now reload mods.");
+
+			if (AllModsUpdateWindow.this.userChose < 0) {
+				return;
+			}
+
+			JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.");
 			callingWindow.dispose();
 			new ModManagerWindow(false);
 		}
 	}
 
-
 	public void continueUpdating() {
 		ModManager.debugLogger.writeMessage("Resuming all-mods update thread");
 		amdt.resume();
-		
+
 	}
 }

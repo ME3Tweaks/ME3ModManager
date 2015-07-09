@@ -12,6 +12,7 @@ import java.io.IOException;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -24,15 +25,14 @@ import org.apache.commons.io.FileUtils;
 
 public class ModInfoEditor extends JDialog implements ActionListener {
 	private Mod mod;
-	private ModManagerWindow callingWindow;
 	private JTextField modNameField;
 	private JTextArea modDescriptionField;
 	private JButton saveButton;
 	
-	public ModInfoEditor(ModManagerWindow modManagerWindow, Mod mod) {
-		this.callingWindow = modManagerWindow;
+	public ModInfoEditor(JFrame frame, Mod mod) {
 		this.mod = mod;
 		setupWindow();
+		this.setLocationRelativeTo(frame);
 		this.setVisible(true);
 	}
 
@@ -79,7 +79,6 @@ public class ModInfoEditor extends JDialog implements ActionListener {
 		add(contentPanel);
 		
 		this.pack();
-		this.setLocationRelativeTo(callingWindow);
 	}
 
 	@Override
@@ -94,7 +93,6 @@ public class ModInfoEditor extends JDialog implements ActionListener {
 			} catch (IOException e1) {
 				ModManager.debugLogger.writeException(e1);
 			}
-			callingWindow.dispose();
 			dispose();
 			new ModManagerWindow(false);
 		}
