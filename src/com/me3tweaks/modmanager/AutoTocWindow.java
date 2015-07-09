@@ -25,19 +25,16 @@ import org.apache.commons.io.FilenameUtils;
 public class AutoTocWindow extends JDialog {
 	JLabel infoLabel;
 	JProgressBar progressBar;
-	ModManagerWindow callingWindow;
 	Mod mod;
 	JCheckBox loggingMode;
 
 	/**
 	 * Makes a new AutoTOC window and starts the autotoc.
-	 * @param callingWindow The ModManagerWindow (used for updating the status text.)
 	 * @param mod Mod to toc.
 	 * @param modmaker flag to use if this is a modmaker or user initiated TOC update.
 	 */
-	public AutoTocWindow(ModManagerWindow callingWindow, Mod mod) {
+	public AutoTocWindow(Mod mod) {
 		this.mod = mod;
-		this.callingWindow = callingWindow;
 		this.setTitle("AutoTOC");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(380, 138));
@@ -46,7 +43,7 @@ public class AutoTocWindow extends JDialog {
 		setupWindow();
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.pack();
-		this.setLocationRelativeTo(callingWindow);
+		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		performTOC();
 		this.setVisible(true);
 	}
@@ -205,8 +202,8 @@ public class AutoTocWindow extends JDialog {
 								JOptionPane.INFORMATION_MESSAGE);
 					}
 				}
-				if (callingWindow != null) {
-					callingWindow.labelStatus.setText("Failed to TOC at least 1 file in mod");
+				if (ModManagerWindow.ACTIVE_WINDOW != null) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to TOC at least 1 file in mod");
 				}
 				
 			} else {
@@ -217,8 +214,8 @@ public class AutoTocWindow extends JDialog {
 					}
 				}
 				//we're good
-				if (callingWindow != null) {
-					callingWindow.labelStatus.setText(mod.getModName()+" TOC files updated");
+				if (ModManagerWindow.ACTIVE_WINDOW != null) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(mod.getModName()+" TOC files updated");
 				}
 				dispose();
 			}

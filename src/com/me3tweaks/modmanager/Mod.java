@@ -787,7 +787,7 @@ public class Mod implements Comparable<Mod> {
 			e.printStackTrace();
 		}
 		Mod newMod = new Mod(modFolder + File.separator + "moddesc.ini");
-		new AutoTocWindow(null, newMod);
+		new AutoTocWindow(newMod);
 	}
 
 	public static String convertNewlineToBr(String input) {

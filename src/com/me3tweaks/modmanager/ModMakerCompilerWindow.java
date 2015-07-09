@@ -17,6 +17,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -56,7 +57,7 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
 	String code, modName, modDescription, modId, modDev, modVer;
-	ModManagerWindow callingWindow;
+	JFrame callingWindow;
 	private static double TOTAL_STEPS = 9;
 	private static String DOWNLOADED_XML_FILENAME = "mod_info";
 	private int stepsCompleted = 1;
@@ -70,7 +71,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;
 
-	public ModMakerCompilerWindow(ModManagerWindow callingWindow, String code, ArrayList<String> languages) {
+	public ModMakerCompilerWindow(String code, ArrayList<String> languages) {
 		this.code = code;
 		this.languages = languages;
 		this.callingWindow = callingWindow;
@@ -1315,7 +1316,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						String compilerPath = path
 								+ "\\Tankmaster TLK\\MassEffect3.TlkEditor.exe";
 						commandBuilder.add(compilerPath);
-						commandBuilder.add(ModManager.appendSlash(callingWindow.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
+						commandBuilder.add(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())+"CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
 						commandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString())+"BIOGame_"+tlkType+".xml");
 						commandBuilder.add("--mode");
 						commandBuilder.add("ToXml");
@@ -1651,14 +1652,14 @@ public class ModMakerCompilerWindow extends JDialog {
 		ModManager.debugLogger.writeMessage("Deleted downloaded me3tweaks modinfo file");
 		if (!error) {
 			ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: "+modName);
-			new AutoTocWindow(callingWindow, newMod);
+			new AutoTocWindow(newMod);
 			stepsCompleted++;
 			ModManager.debugLogger.writeMessage("Mod successfully created:" +modName);
 			ModManager.debugLogger.writeMessage("===========END OF MODMAKER========");
 			//Mod Created!
 			dispose();
+			//updater supresses this window
 			JOptionPane.showMessageDialog(this, modName+" was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
-			callingWindow.dispose();
 			new ModManagerWindow(false); 
 		} else {
 			dispose();

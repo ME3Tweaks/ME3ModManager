@@ -15,6 +15,8 @@ public class UpdatePackage {
 	private String serverFolderName;
 	private Mod mod;
 	private double version;
+	private boolean modmakerupdate;
+	private String serverModName;
 	
 	public ArrayList<ManifestModFile> getFilesToDownload() {
 		return filesToDownload;
@@ -34,6 +36,15 @@ public class UpdatePackage {
 	public void setServerFolderName(String serverFolderName) {
 		this.serverFolderName = serverFolderName;
 	}
+	
+	/**
+	 * Classic mod constructor for update package
+	 * @param mod
+	 * @param version Server version
+	 * @param filesToDownload
+	 * @param filesToDelete
+	 * @param serverFolderName
+	 */
 	public UpdatePackage(Mod mod, double version, ArrayList<ManifestModFile> filesToDownload, ArrayList<String> filesToDelete, String serverFolderName) {
 		super();
 		this.mod = mod;
@@ -41,6 +52,20 @@ public class UpdatePackage {
 		this.filesToDownload = filesToDownload;
 		this.filesToDelete = filesToDelete;
 		this.serverFolderName = serverFolderName;
+		this.modmakerupdate = false;
+	}
+	
+	/**
+	 * ModMaker update constructor
+	 * @param mod Mod to update
+	 * @param serverModName Foldername where it will be placed (used if removing old version)
+	 * @param version Server version Server version of mod
+	 */
+	public UpdatePackage(Mod mod, String serverModName, double version){
+		this.mod = mod;
+		this.version = version;
+		this.serverModName = serverModName;
+		this.modmakerupdate = true;
 	}
 	
 	public Mod getMod() {
@@ -56,4 +81,17 @@ public class UpdatePackage {
 	public void setVersion(double version) {
 		this.version = version;
 	}
+	public boolean isModmakerupdate() {
+		return modmakerupdate;
+	}
+	public void setModmakerupdate(boolean modmakerupdate) {
+		this.modmakerupdate = modmakerupdate;
+	}
+	public String getServerModName() {
+		return serverModName;
+	}
+	public void setServerModName(String serverModName) {
+		this.serverModName = serverModName;
+	}
+	
 }

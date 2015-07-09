@@ -68,6 +68,7 @@ import com.sun.jna.platform.win32.WinReg;
 
 @SuppressWarnings("serial")
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
+	public static ModManagerWindow ACTIVE_WINDOW;
 	boolean isUpdate;
 	JTextField fieldBiogameDir;
 	JTextArea fieldDescription;
@@ -95,10 +96,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem modutilsUpdateXMLGenerator;
 	private JMenuItem toolsCheckallmodsforupdate;
 
+	/**
+	 * Opens a new Mod Manager window. Disposes of old ones if one is open. 
+	 * Automatically makes window visible so it will block the UI thread.
+	 * @param isUpdate If this is an upgrade from a previous version of mod manager
+	 */
 	public ModManagerWindow(boolean isUpdate) {
+		if (ACTIVE_WINDOW != null) {
+			ACTIVE_WINDOW.dispose();
+			ACTIVE_WINDOW = null;
+		}
 		this.isUpdate = isUpdate;
 		ModManager.debugLogger.writeMessage("Starting ModManagerWindow init");
 		initializeWindow();
+		ACTIVE_WINDOW = this;
+		this.setVisible(true);
 	}
 
 	private void initializeWindow() {
@@ -118,8 +130,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					JOptionPane.INFORMATION_MESSAGE);
 		}
 		// new UpdateCheckThread().execute();
-		this.setVisible(true);
-
 	}
 
 	class UpdateCheckThread extends SwingWorker<Void, Object> {
@@ -728,8 +738,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		ArrayList<Mod> updateableMods = new ArrayList<Mod>();
 		for (int i = 0; i < modModel.size(); i++){
 			Mod mod = modModel.get(i);
-			if (mod.getClassicUpdateCode() > 0 && mod.getVersion() > 0) {
+			if ((mod.getClassicUpdateCode() > 0 || mod.getModMakerCode() > 0) && mod.getVersion() > 0) {
 				updateableMods.add(mod);
+				continue;
 			}
 		}
 		
@@ -1367,7 +1378,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 *            Code to use for downloading the mod.
 	 */
 	public void startModMaker(String code, ArrayList<String> languages) {
-		new ModMakerCompilerWindow(this, code, languages);
+		new ModMakerCompilerWindow(code, languages);
 	}
 
 	private void autoTOC() {
@@ -1378,7 +1389,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		// System.out.println("SELECTED VALUE: " + selectedValue);
 		Mod mod = modModel.getElementAt(selectedIndex);
-		new AutoTocWindow(this, mod);
+		new AutoTocWindow(mod);
 	}
 
 	private boolean installBypass() {
