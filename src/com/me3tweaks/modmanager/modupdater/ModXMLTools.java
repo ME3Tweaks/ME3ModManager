@@ -74,6 +74,8 @@ public class ModXMLTools {
 		rootElement.setAttribute("type", "classic");
 		rootElement.setAttribute("version", Double.toString(mod.getVersion()));
 		rootElement.setAttribute("updatecode", Integer.toString(mod.getClassicUpdateCode()));
+		rootElement.setAttribute("folder", "PUT_SERVER_FOLDER_HERE");
+		rootElement.setAttribute("manifesttype", "full");
 
 		for (ModJob job : mod.getJobs()) {
 			for (String srcFile : job.getNewFiles()) {
@@ -164,7 +166,7 @@ public class ModXMLTools {
 		// got document, now parse metainfo
 		NodeList modList = doc.getElementsByTagName("modmakermod");
 		if (modList.getLength() < 1) {
-			ModManager.debugLogger.writeMessage("XML response has no <modmakermod> tags, error from server");
+			ModManager.debugLogger.writeError("XML response has no <modmakermod> tags, error from server");
 			return null;
 		}
 
@@ -188,7 +190,8 @@ public class ModXMLTools {
 		// got document, now parse metainfo
 		NodeList modList = doc.getElementsByTagName("mod");
 		if (modList.getLength() < 1) {
-			ModManager.debugLogger.writeMessage("XML response has no <mod> tags, error from server");
+			ModManager.debugLogger.writeError("XML response has no <mod> tags, error from server");
+			ModManager.debugLogger.writeMessage(ModMakerCompilerWindow.docToString(doc));
 			return null;
 		}
 
@@ -260,7 +263,7 @@ public class ModXMLTools {
 				System.out.println("Checking for files that are no longer necessary");
 				for (ModJob job : mod.getJobs()) {
 					for (String srcFile : job.getNewFiles()) {
-						String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase();
+						String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
 						boolean existsOnServer = false;
 						for (ManifestModFile mf : serverFiles) {
 							if (mf.getRelativePath().toLowerCase().equals(relativePath)) {
@@ -305,7 +308,7 @@ public class ModXMLTools {
 		// params.add(new BasicNameValuePair("updatecode",
 		// Integer.toString(mod.getClassicUpdateCode())));
 		params.add(new BasicNameValuePair("updatecode", Integer.toString(updatecode)));
-		params.add(new BasicNameValuePair("moddtype", modmakerMod ? "modmaker" :"classic"));
+		params.add(new BasicNameValuePair("modtype", modmakerMod ? "modmaker" :"classic"));
 
 		URIBuilder urib;
 		String responseString = null;
@@ -314,6 +317,7 @@ public class ModXMLTools {
 			urib.setParameters(params);
 			HttpClient httpClient = HttpClientBuilder.create().build();
 			URI uri = urib.build();
+			ModManager.debugLogger.writeMessage("Getting latest mod info from link: "+uri.toASCIIString());
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
 		} catch (URISyntaxException e) {

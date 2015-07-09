@@ -827,6 +827,9 @@ public class Mod implements Comparable<Mod> {
 	 * @return
 	 */
 	public double getVersion() {
+		if (modVersion == null) {
+			return 0;
+		}
 		try {
 			return Double.parseDouble(modVersion);
 		} catch (NumberFormatException e) {

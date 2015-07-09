@@ -28,7 +28,11 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FileUtils;
+import org.ini4j.InvalidFileFormatException;
+import org.ini4j.Wini;
 
+import com.me3tweaks.modmanager.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
@@ -45,29 +49,58 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 	public ModUpdateWindow(UpdatePackage upackage) {
 		this.upackage = upackage;
 		if (ModManager.IS_DEBUG) {
-			downloadSource = "https://webdev-mgamerz.c9.io/mods/updates/";
+			downloadSource = "http://webdev-mgamerz.c9.io/mods/updates/";
 		} else {
 			downloadSource = "http://me3tweaks.com/mods/updates/";
 		}
-		
+
 		setupWindow();
 	}
 
+	/**
+	 * Starts a single-mod update process
+	 * @param frame
+	 */
 	public void startUpdate(JFrame frame) {
-		DownloadTask task = new DownloadTask(upackage);
-		task.addPropertyChangeListener(this);
-		task.execute();
-		setLocationRelativeTo(frame);
-		setVisible(true); //EDT will stall until this modal window closes
+		if (upackage.isModmakerupdate()) {
+			//get default language
+			//set combobox from settings
+			new ModMakerCompilerWindow(Integer.toString(upackage.getMod().getModMakerCode()), ModMakerEntryWindow.getDefaultLanguages());
+		} else {
+			DownloadTask task = new DownloadTask(upackage);
+			task.addPropertyChangeListener(this);
+			task.execute();
+			setLocationRelativeTo(frame);
+			setVisible(true); //EDT will stall until this modal window closes
+		}
 		new ModManagerWindow(false);
 	}
-	
-	public void startAllModsUpdate(AllModsUpdateWindow amuw){
-		DownloadTask task = new DownloadTask(upackage,amuw);
-		task.addPropertyChangeListener(this);
-		task.execute();
-		setLocationRelativeTo(amuw);
-		setVisible(true);
+
+	/**
+	 * Starts a multi-mod update process (does not display modals)
+	 * @param amuw
+	 */
+	public void startAllModsUpdate(AllModsUpdateWindow amuw) {
+		if (upackage.isModmakerupdate()) {
+			//get default language
+			//set combobox from settings
+			statusLabel.setText("Upgrading via ModMaker Compiler");
+			ModMakerCompilerWindow mcw = new ModMakerCompilerWindow(upackage.getMod(), ModMakerEntryWindow.getDefaultLanguages());
+			while (mcw.isShowing()) {
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} else {
+			DownloadTask task = new DownloadTask(upackage, amuw);
+			task.addPropertyChangeListener(this);
+			task.execute();
+			setLocationRelativeTo(amuw);
+			setVisible(true);
+		}
 	}
 
 	private void setupWindow() {
@@ -78,8 +111,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.pack();
-		
-		
+
 		JPanel panel = new JPanel(new BorderLayout());
 
 		downloadProgress = new JProgressBar();
@@ -248,8 +280,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			// TODO: Install update through the update script
 			dispose();
 			if (amuw == null) {
-				JOptionPane.showMessageDialog(null, upackage.getMod().getModName()
-						+ " has been successfully updated.\nMod Manager will now reload mods.");
+				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nMod Manager will now reload mods.");
 			}
 		}
 	}
