@@ -768,6 +768,8 @@ public class Mod implements Comparable<Mod> {
 			//upgrade to highest cmm ver
 			modCMMVer = other.modCMMVer;
 		}
+		
+		modmakerCode = 0;
 		return this;
 	}
 
