@@ -23,6 +23,7 @@ public class Mod implements Comparable<Mod> {
 	private int modmakerCode = 0;
 	private String modSite;
 	private String modmp;
+	private double compiledAgainstModmakerVersion;
 	private String modVersion;
 	protected double modCMMVer = 1.0;
 	private int classicCode;
@@ -308,6 +309,42 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessage("Detected modmaker code");
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer.");
+			}
+		}
+
+		//modmaker compiledagainst flag (1.5+)
+		if (modini.get("ModInfo", "compiledagainst") != null) {
+			try {
+				compiledAgainstModmakerVersion = Double.parseDouble(modini.get("ModInfo", "compiledagainst"));
+				ModManager.debugLogger.writeMessage("Server version compiled against: " + compiledAgainstModmakerVersion);
+				if (compiledAgainstModmakerVersion < 1.5) {
+					try {
+						int ver = Integer.parseInt(modVersion);
+						ver++;
+						modVersion = Integer.toString(ver);
+						ModManager.debugLogger.writeMessage("ModMaker mod (<1.5), +1 to revision.");
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeError("ModMaker version failed to resolve to an integer.");
+						modVersion = Integer.toString(1);
+					}
+				}
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer.");
+			}
+		} else {
+			if (modmakerCode > 0) {
+				//modmaker mod
+				compiledAgainstModmakerVersion = 1.4;
+				ModManager.debugLogger.writeMessage("Unknown server version, assuming 1.4 compilation target: " + compiledAgainstModmakerVersion);
+				try {
+					int ver = Integer.parseInt(modVersion);
+					ver++;
+					modVersion = Integer.toString(ver);
+					ModManager.debugLogger.writeMessage("ModMaker mod (<1.5), +1 to revision.");
+				} catch (NumberFormatException e) {
+					ModManager.debugLogger.writeError("ModMaker version failed to resolve to an integer.");
+					modVersion = Integer.toString(1);
+				}
 			}
 		}
 
@@ -855,5 +892,12 @@ public class Mod implements Comparable<Mod> {
 
 	public double getCMMVer() {
 		return modCMMVer;
+	}
+
+	public boolean isME3TweaksUpdatable() {
+		if ((getClassicUpdateCode() > 0 || getModMakerCode() > 0) && getVersion() > 0) {
+			return true;
+		}
+		return false;
 	}
 }

@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -81,15 +82,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsAutoTOC, modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupBasegame;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
-	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC,
-			restoreRevertSPBaseDLC, restoreRevertCoal;
+	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
+			restoreRevertCoal;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlConsumableParser, sqlGearParser;
 	JMenuItem helpPost, helpAbout;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
 	JSplitPane splitPane;
-	JLabel labelStatus;
+	public JLabel labelStatus;
 	final String selectAModDescription = "Select a mod on the left to view its description and apply it.";
 	DefaultListModel<Mod> modModel;
 	// static HashMap<String, Mod> listDescriptors;
@@ -97,9 +98,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem toolsCheckallmodsforupdate;
 
 	/**
-	 * Opens a new Mod Manager window. Disposes of old ones if one is open. 
+	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
 	 * Automatically makes window visible so it will block the UI thread.
-	 * @param isUpdate If this is an upgrade from a previous version of mod manager
+	 * 
+	 * @param isUpdate
+	 *            If this is an upgrade from a previous version of mod manager
 	 */
 	public ModManagerWindow(boolean isUpdate) {
 		if (ACTIVE_WINDOW != null) {
@@ -125,26 +128,68 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.pack();
 		setLocationRelativeTo(null);
 		if (isUpdate) {
-			JOptionPane.showMessageDialog(this,
-					"Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER + ").", "Update Complete",
+			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER + ").", "Update Complete",
 					JOptionPane.INFORMATION_MESSAGE);
 		}
-		// new UpdateCheckThread().execute();
+
+		if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
+			//ask user
+			int result = JOptionPane.showConfirmDialog(this,
+					"Mod Manager can automatically keep your mods up to date with ME3Tweaks checking once every three days.\nWould you like to turn this feature on?",
+					"Mod Auto-Update", JOptionPane.YES_NO_CANCEL_OPTION);
+			if (result != JOptionPane.CANCEL_OPTION) {
+				Wini ini;
+				try {
+					File settings = new File(ModManager.settingsFilename);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					ini.put("Settings", "autoupdatemods", result == JOptionPane.YES_OPTION ? "true" : "false");
+					ini.put("Settings", "declinedautoupdate", result == JOptionPane.YES_OPTION ? "false" : "true");
+					ini.store();
+				} catch (InvalidFileFormatException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				}
+			}
+		}
+
+		new UpdateCheckThread().execute();
 	}
 
 	class UpdateCheckThread extends SwingWorker<Void, Object> {
 
 		@Override
 		public Void doInBackground() {
-			return checkForUpdates();
+			checkForUpdates();
+			checkForModUpdates();
+			return null;
+		}
+
+		private void checkForModUpdates() {
+			// TODO Auto-generated method stub
+			long threeDaysMs = 259200000L;
+			if (ModManager.AUTO_UPDATE_MODS) {
+				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > threeDaysMs) {
+					publish("Auto Updater: Checking for mod updates");
+					checkAllModsForUpdates(false);
+				}
+			}
+		}
+
+		@Override
+		protected void process(List<Object> chunks) {
+			Object latest = chunks.get(chunks.size() - 1);
+			if (latest instanceof String) {
+				String latestUpdate = (String) latest;
+				labelStatus.setText(latestUpdate);
+			}
 		}
 
 		@Override
 		protected void done() {
-			try {
-				// label.setText(get());
-			} catch (Exception ignore) {
-			}
+
 		}
 	}
 
@@ -155,14 +200,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		try {
 			String update_check_link;
 			if (ModManager.IS_DEBUG) {
-				update_check_link = "https://webdev-c9-mgamerz.c9.io/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
-
+				update_check_link = "http://webdev-c9-mgamerz.c9.io/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 			} else {
-				update_check_link = "http://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
+				update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 			}
 			String latest_version = "latest_version";
 			File local_json = new File(latest_version);
-			FileUtils.copyURLToFile(new URL(update_check_link), local_json);
+			try {
+				FileUtils.copyURLToFile(new URL(update_check_link), local_json);
+			} catch (Exception e){
+				ModManager.debugLogger.writeError("Error checking for updates:");
+				ModManager.debugLogger.writeException(e);
+				labelStatus.setText("Error checking for update (check logs)");
+			}
 			JSONParser parser = new JSONParser();
 			FileReader fr = new FileReader(latest_version);
 			JSONObject latest_object = (JSONObject) parser.parse(fr);
@@ -170,13 +220,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (latest_build <= ModManager.BUILD_NUMBER) {
 				labelStatus.setVisible(true);
 				ModManager.debugLogger.writeMessage("No updates, at latest version. (or could not contact update server.)");
-				labelStatus.setText("No updates available");
+				labelStatus.setText("No Mod Manager updates available");
 				fr.close();
 				local_json.delete();
 				return null;
 			}
-			ModManager.debugLogger.writeMessage("Update check: Local:" + ModManager.BUILD_NUMBER + " Latest: " + latest_build + ", is less? "
-					+ (ModManager.BUILD_NUMBER < latest_build));
+			ModManager.debugLogger
+					.writeMessage("Update check: Local:" + ModManager.BUILD_NUMBER + " Latest: " + latest_build + ", is less? " + (ModManager.BUILD_NUMBER < latest_build));
 
 			boolean showUpdate = true;
 			// make sure the user hasn't declined this one.
@@ -221,6 +271,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				fr.close();
 				local_json.delete();
 			}
+
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -249,8 +300,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// BioGameDir Panel
 		JPanel cookedDirPanel = new JPanel(new BorderLayout());
-		TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
-				"Mass Effect 3 BIOGame Directory");
+		TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory");
 		fieldBiogameDir = new JTextField();
 		fieldBiogameDir.setText(getLocationText(fieldBiogameDir));
 		buttonBioGameDir = new JButton("Browse...");
@@ -316,8 +366,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JPanel applyPanel = new JPanel(new BorderLayout());
 
 		// ApplyPanel
-		labelStatus = new JLabel("Status");
-		labelStatus.setVisible(false);
+		labelStatus = new JLabel("Loaded mods");
+		labelStatus.setVisible(true);
 
 		// ProgressBar
 		progressBar = new JProgressBar();
@@ -416,7 +466,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		toolsCheckallmodsforupdate = new JMenuItem("Check eligible mods for updates");
-		
+
 		toolsModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
 		toolsCheckallmodsforupdate.addActionListener(this);
@@ -707,8 +757,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new WavelistGUI();
 		} else if (e.getSource() == modutilsCheckforupdate) {
 			checkForModUpdate();
-		} else if (e.getSource() == toolsCheckallmodsforupdate){
-			checkAllModsForUpdates();
+		} else if (e.getSource() == toolsCheckallmodsforupdate) {
+			checkAllModsForUpdates(true);
 		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
 			System.out.println(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
 		} else if (e.getSource() == sqlDifficultyParser) {
@@ -734,22 +784,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
-	private void checkAllModsForUpdates() {
-		ArrayList<Mod> updateableMods = new ArrayList<Mod>();
-		for (int i = 0; i < modModel.size(); i++){
+	private void checkAllModsForUpdates(boolean isManualCheck) {
+		ArrayList<Mod> updatableMods = new ArrayList<Mod>();
+		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.get(i);
-			if ((mod.getClassicUpdateCode() > 0 || mod.getModMakerCode() > 0) && mod.getVersion() > 0) {
-				updateableMods.add(mod);
-				continue;
+			if (mod.isME3TweaksUpdatable()) {
+				updatableMods.add(mod);
 			}
 		}
-		
-		if (updateableMods.size() > 0) {
-			new AllModsUpdateWindow(this, updateableMods);
+
+		if (updatableMods.size() > 0) {
+			new AllModsUpdateWindow(this, isManualCheck, updatableMods);
 		} else {
-			JOptionPane.showMessageDialog(null, "No mods are eligible for the Mod Manager update service.\nEligible mods include ModMaker mods and ones hosted on ME3Tweaks.com.", "No updateable mods", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(null, "No mods are eligible for the Mod Manager update service.\nEligible mods include ModMaker mods and ones hosted on ME3Tweaks.com.",
+					"No updatable mods", JOptionPane.WARNING_MESSAGE);
 		}
-		
+
 	}
 
 	/**
@@ -763,10 +813,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
 		if (upackage != null) {
 			// an update is available
-			int result = JOptionPane.showConfirmDialog(
-					this,
-					"An update to " + mod.getModName() + " is available from ME3Tweaks.\nLocal Version: " + mod.getVersion() + "\nServer Version: "
-							+ upackage.getVersion() + "\nUpgrade this mod?", "Update available", JOptionPane.YES_NO_OPTION);
+			int result = JOptionPane.showConfirmDialog(this, "An update to " + mod.getModName() + " is available from ME3Tweaks.\nLocal Version: " + mod.getVersion()
+					+ "\nServer Version: " + upackage.getVersion() + "\nUpgrade this mod?", "Update available", JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) {
 				ModUpdateWindow muw = new ModUpdateWindow(upackage);
 				muw.startUpdate(this);
@@ -844,15 +892,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		File file = new File(biogameDir);
 		new BasegameHashDB(this, file.getParent(), true);
 	}
-	
+
 	private void backupDLC(String bioGameDir) {
 		// Check that biogame is valid
 		if (validateBIOGameDir()) {
 			new BackupWindow(this, bioGameDir);
 		} else {
 			// Biogame is invalid
-			JOptionPane.showMessageDialog(null,
-					"The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
+			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
 					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			labelStatus.setText(" DLC backup failed");
 			labelStatus.setVisible(true);
@@ -866,8 +913,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new BackupWindow(this, bioGameDir, dlcName);
 		} else {
 			// Biogame is invalid
-			JOptionPane.showMessageDialog(null,
-					"The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
+			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
 					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			labelStatus.setText(" DLC backup failed");
 			labelStatus.setVisible(true);
@@ -882,8 +928,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		File coalesced = new File(ModManager.appendSlash(dirChooser.getSelectedFile().toString()) + "CookedPCConsole\\Coalesced.bin");
 		if (coalesced.exists()) {
 			String YesNo[] = { "Yes", "No" };
-			int saveDir = JOptionPane.showOptionDialog(null, "BioGame directory set to: " + dirChooser.getSelectedFile().toString() + "\nSave this path?",
-					"Save BIOGame path?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
+			int saveDir = JOptionPane.showOptionDialog(null, "BioGame directory set to: " + dirChooser.getSelectedFile().toString() + "\nSave this path?", "Save BIOGame path?",
+					JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
 			if (saveDir == 0) {
 				Wini ini;
 				try {
@@ -1019,11 +1065,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (!source.exists()) {
 					labelStatus.setText("Mod not installed");
 					labelStatus.setVisible(true);
-					JOptionPane
-							.showMessageDialog(
-									null,
-									"Coalesced.bin was not found in the Mod file's directory.\nIt might have moved, been deleted, or renamed.\nPlease check this mod's directory.",
-									"Coalesced not found", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,
+							"Coalesced.bin was not found in the Mod file's directory.\nIt might have moved, been deleted, or renamed.\nPlease check this mod's directory.",
+							"Coalesced not found", JOptionPane.ERROR_MESSAGE);
 
 					return false;
 				}
@@ -1038,8 +1082,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						labelStatus.setText(" Injecting files into DLC modules...");
 					}
 				} catch (IOException e) {
-					JOptionPane.showMessageDialog(null, "Copying Coalesced.bin failed. Stack trace:\n" + e.getMessage(), "Error copying Coalesced.bin",
-							JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "Copying Coalesced.bin failed. Stack trace:\n" + e.getMessage(), "Error copying Coalesced.bin", JOptionPane.ERROR_MESSAGE);
 					labelStatus.setText(" Mod failed to install");
 				}
 			} else {
@@ -1075,8 +1118,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 				if (!backFile.exists()) {
 					String YesNo[] = { "Yes", "No" }; // Yes/no buttons
-					int showDLCBackup = JOptionPane.showOptionDialog(null, "<html>" + job.jobName + " DLC has not been backed up.<br>Back it up now?</hmtl>",
-							"Backup DLC", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
+					int showDLCBackup = JOptionPane.showOptionDialog(null, "<html>" + job.jobName + " DLC has not been backed up.<br>Back it up now?</hmtl>", "Backup DLC",
+							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
 					if (showDLCBackup == 0) {
 						autoBackupDLC(fieldBiogameDir.getText(), job.jobName);
 					}
@@ -1138,15 +1181,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				buttonApplyMod.setEnabled(false);
 				fieldDescription.setText(selectAModDescription);
 				modMenu.setEnabled(false);
+				modMenu.setToolTipText("Select a mod to enable this menu");
 			} else {
 				Mod selectedMod = modModel.get(modList.getSelectedIndex());
+				modMenu.setToolTipText(null);
+
 				// Update mod description
 				fieldDescription.setText(selectedMod.getModDisplayDescription());
 				fieldDescription.setCaretPosition(0);
 				buttonApplyMod.setEnabled(checkIfNone(modList.getSelectedValue().toString()));
 				modutilsHeader.setText(modModel.get(modList.getSelectedIndex()).getModName());
 				modMenu.setEnabled(true);
-				modutilsCheckforupdate.setEnabled(true);
+				if (selectedMod.isME3TweaksUpdatable()) {
+					modutilsCheckforupdate.setEnabled(true);
+					modutilsCheckforupdate.setText("Update mod from ME3Tweaks");
+					modutilsCheckforupdate.setToolTipText("Checks for updates on ME3Tweaks.com and upgrades this mod");
+				} else {
+					modutilsCheckforupdate.setEnabled(false);
+					modutilsCheckforupdate.setText("Mod not eligible for ME3Tweaks updating");
+					modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
+				}
+
 				if (selectedMod.containsCustomDLCJob()) {
 					modutilsUninstallCustomDLC.setEnabled(true);
 					modutilsUninstallCustomDLC.setText("Uninstall this mod's custom DLC content");
@@ -1205,11 +1260,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					// Copy
 					String destFile = ModManager.appendSlash(bioGameDir) + "CookedPCConsole\\Coalesced.bin";
 					if (new File(destFile).exists() == false) {
-						JOptionPane
-								.showMessageDialog(
-										null,
-										"Coalesced.bin to be restored was not found in the specified BIOGame\\CookedPCConsole directory.\nYou must fix the directory before you can restore Coalesced.",
-										"Coalesced not found", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(null,
+								"Coalesced.bin to be restored was not found in the specified BIOGame\\CookedPCConsole directory.\nYou must fix the directory before you can restore Coalesced.",
+								"Coalesced not found", JOptionPane.ERROR_MESSAGE);
 						labelStatus.setText("Coalesced.bin not restored");
 						labelStatus.setVisible(true);
 						return false;
@@ -1225,11 +1278,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					labelStatus.setText("Coalesced.bin not restored.");
 					labelStatus.setVisible(true);
-					JOptionPane
-							.showMessageDialog(
-									null,
-									"Your backed up original Coalesced.bin file does not match the known original from Mass Effect 3.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.",
-									"Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,
+							"Your backed up original Coalesced.bin file does not match the known original from Mass Effect 3.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.",
+							"Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
 					return false;
 				}
 			} catch (Exception e) {
@@ -1242,11 +1293,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			labelStatus.setText("Coalesced.bin not restored");
 			labelStatus.setVisible(true);
-			JOptionPane
-					.showMessageDialog(
-							null,
-							"The backed up Coalesced.bin file (Coalesced.original) does not exist.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.\n\nThis error should have been caught but can be thrown due to file system changes \nwhile the program is open.",
-							"Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null,
+					"The backed up Coalesced.bin file (Coalesced.original) does not exist.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.\n\nThis error should have been caught but can be thrown due to file system changes \nwhile the program is open.",
+					"Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
 
 		}
 		return false;
@@ -1268,8 +1317,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			labelStatus.setText("Restore Failed");
 			labelStatus.setVisible(true);
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid. Files cannot be restored.", "Invalid BioGame Directory",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid. Files cannot be restored.", "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 	}
@@ -1304,8 +1352,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// check if the new one exists
 		if (!executable.exists()) {
-			JOptionPane.showMessageDialog(null, "Unable to find game executable in the specified directory:\n" + executable.getAbsolutePath()
-					+ "\nMake sure your BIOGame directory is correct.", "Unable to Launch Game", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null,
+					"Unable to find game executable in the specified directory:\n" + executable.getAbsolutePath() + "\nMake sure your BIOGame directory is correct.",
+					"Unable to Launch Game", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		// Executable exists.
@@ -1427,6 +1476,5 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		return result;
 	}
-	
-	
+
 }

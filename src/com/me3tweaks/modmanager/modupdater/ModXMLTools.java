@@ -8,6 +8,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -33,6 +35,7 @@ import com.me3tweaks.modmanager.Mod;
 import com.me3tweaks.modmanager.ModJob;
 import com.me3tweaks.modmanager.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
 
 public class ModXMLTools {
@@ -148,7 +151,7 @@ public class ModXMLTools {
 		if (ModManager.IS_DEBUG) {
 			updateURL = "http://webdev-mgamerz.c9.io/mods/getlatest";
 		} else {
-			updateURL = "http://me3tweaks.com/mods/getlatest";
+			updateURL = "https://me3tweaks.com/mods/getlatest";
 		}
 		ModManager.debugLogger.writeMessage("=========Checking for update of " + mod.getModName() + "=========");
 		if (mod.getModMakerCode() > 0) {
@@ -214,8 +217,7 @@ public class ModXMLTools {
 			NodeList serverFileList = modElem.getElementsByTagName("sourcefile");
 			for (int j = 0; j < serverFileList.getLength(); j++) {
 				Element fileElem = (Element) serverFileList.item(j);
-				ManifestModFile metafile = new ManifestModFile(fileElem.getTextContent(), fileElem.getAttribute("hash"), Long.parseLong(fileElem
-						.getAttribute("size")));
+				ManifestModFile metafile = new ManifestModFile(fileElem.getTextContent(), fileElem.getAttribute("hash"), Long.parseLong(fileElem.getAttribute("size")));
 				serverFiles.add(metafile);
 			}
 
@@ -238,8 +240,8 @@ public class ModXMLTools {
 				// check size
 				if (localFile.length() != mf.getFilesize()) {
 					newFiles.add(mf);
-					ModManager.debugLogger.writeMessage(mf.getRelativePath() + " size has changed (local: " + localFile.length() + " | server: "
-							+ mf.getFilesize() + "), adding to update list");
+					ModManager.debugLogger
+							.writeMessage(mf.getRelativePath() + " size has changed (local: " + localFile.length() + " | server: " + mf.getFilesize() + "), adding to update list");
 					continue;
 				}
 
@@ -296,8 +298,7 @@ public class ModXMLTools {
 				}
 			}
 
-			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: "
-					+ filesToRemove.size());
+			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: " + filesToRemove.size());
 			return new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
 		}
 		return null;
@@ -308,7 +309,7 @@ public class ModXMLTools {
 		// params.add(new BasicNameValuePair("updatecode",
 		// Integer.toString(mod.getClassicUpdateCode())));
 		params.add(new BasicNameValuePair("updatecode", Integer.toString(updatecode)));
-		params.add(new BasicNameValuePair("modtype", modmakerMod ? "modmaker" :"classic"));
+		params.add(new BasicNameValuePair("modtype", modmakerMod ? "modmaker" : "classic"));
 
 		URIBuilder urib;
 		String responseString = null;
@@ -317,7 +318,7 @@ public class ModXMLTools {
 			urib.setParameters(params);
 			HttpClient httpClient = HttpClientBuilder.create().build();
 			URI uri = urib.build();
-			ModManager.debugLogger.writeMessage("Getting latest mod info from link: "+uri.toASCIIString());
+			ModManager.debugLogger.writeMessage("Getting latest mod info from link: " + uri.toASCIIString());
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
 		} catch (URISyntaxException e) {
@@ -357,19 +358,7 @@ public class ModXMLTools {
 		if (doc == null) {
 			return null;
 		}
-		
+
 		return doc;
-	}
-
-	public static boolean executeUpdate(UpdatePackage update) {
-
-	}
-
-	public static String prepareModMakerUpdateSubmission() {
-
-	}
-
-	public static String checkForModMakerUpdates() {
-
 	}
 }

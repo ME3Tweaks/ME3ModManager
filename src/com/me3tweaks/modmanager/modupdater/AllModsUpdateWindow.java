@@ -4,10 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,16 +18,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
-import org.apache.commons.io.FileUtils;
+import org.ini4j.InvalidFileFormatException;
+import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.Mod;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.ResourceUtils;
-import com.me3tweaks.modmanager.modupdater.ModUpdateWindow.HTTPDownloadUtil;
 
 @SuppressWarnings("serial")
 public class AllModsUpdateWindow extends JDialog {
@@ -36,19 +34,22 @@ public class AllModsUpdateWindow extends JDialog {
 	JButton cancelButton;
 	JLabel statusLabel;
 	private JFrame callingWindow;
-	private ArrayList<Mod> updateableMods;
+	private ArrayList<Mod> updatableMods;
 	private ArrayList<UpdatePackage> upackages;
 	private AllModsDownloadTask amdt;
 	private JLabel operationLabel;
+	private boolean showUI;
 
-	public AllModsUpdateWindow(JFrame callingWindow, ArrayList<Mod> updateableMods) {
-		this.updateableMods = updateableMods;
+	public AllModsUpdateWindow(JFrame callingWindow, boolean showUI, ArrayList<Mod> updatableMods) {
+		this.updatableMods = updatableMods;
 		this.callingWindow = callingWindow;
-
+		this.showUI = showUI;
 		setupWindow();
 		amdt = new AllModsDownloadTask();
 		amdt.execute();
-		setVisible(true);
+		if (showUI) {
+			setVisible(true);
+		}
 	}
 
 	public AllModsDownloadTask getAmdt() {
@@ -71,7 +72,7 @@ public class AllModsUpdateWindow extends JDialog {
 
 		JPanel panel = new JPanel(new BorderLayout());
 
-		statusLabel = new JLabel("0 mods out of date");
+		statusLabel = new JLabel("Connecting");
 		operationLabel = new JLabel("Obtaining latest mod information from ME3Tweaks...");
 		panel.add(operationLabel, BorderLayout.NORTH);
 		panel.add(statusLabel, BorderLayout.SOUTH);
@@ -81,6 +82,16 @@ public class AllModsUpdateWindow extends JDialog {
 		// aboutPanel.add(loggingMode, BorderLayout.SOUTH);
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		this.getContentPane().add(panel);
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosed(WindowEvent e) {
+				System.out.println("Dialog is closing");
+				if (amdt != null) {
+					amdt.cancel(false);
+				}
+			}
+		});
 	}
 
 	void setStatusText(String text) {
@@ -94,6 +105,9 @@ public class AllModsUpdateWindow extends JDialog {
 	 * 
 	 */
 	class AllModsDownloadTask extends SwingWorker<Void, Object> {
+		int numToGo = 0;
+		boolean canceled = false;
+
 		public void pause() {
 			try {
 				this.wait();
@@ -116,18 +130,25 @@ public class AllModsUpdateWindow extends JDialog {
 			// Iterate through files to download and put them in the update
 			// folder
 			upackages = new ArrayList<UpdatePackage>();
-			for (Mod mod : updateableMods) {
+			for (Mod mod : updatableMods) {
+				if (canceled) {
+					return null;
+				}
+				publish(mod.getModName());
 				UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
 				if (upackage != null) {
 					// update available
 					upackages.add(upackage);
-					publish(new Integer(upackages.size()));
 				} else {
 					ModManager.debugLogger.writeMessage(mod.getModName() + " is up to date/not eligible");
 				}
 			}
 
 			if (upackages.size() <= 0) {
+				return null;
+			}
+
+			if (canceled) {
 				return null;
 			}
 
@@ -139,11 +160,14 @@ public class AllModsUpdateWindow extends JDialog {
 			if (AllModsUpdateWindow.this.userChose < 0) {
 				return null;
 			}
-			
+
 			//user chose yes
 			publish("NOTIFY_START");
-			int numToGo = upackages.size();
+			numToGo = upackages.size();
 			for (UpdatePackage upackage : upackages) {
+				if (canceled) {
+					return null;
+				}
 				ModManager.debugLogger.writeMessage("Processing: " + upackage.getMod().getModName());
 				ModUpdateWindow muw = new ModUpdateWindow(upackage);
 				muw.startAllModsUpdate(AllModsUpdateWindow.this);
@@ -164,18 +188,20 @@ public class AllModsUpdateWindow extends JDialog {
 					String command = (String) obj;
 					switch (command) {
 					case "PROMPT_USER":
-						String updatetext = upackages.size()+" mod"+(upackages.size()==1?" has":"s have")+" available updates on ME3Tweaks:\n";
+						String updatetext = upackages.size() + " mod" + (upackages.size() == 1 ? " has" : "s have") + " available updates on ME3Tweaks:\n";
 						for (UpdatePackage upackage : upackages) {
-							updatetext += " - "+upackage.getMod().getModName()+" "+upackage.getMod().getVersion()+" => "+upackage.getVersion()+"\n";
+							updatetext += " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + "\n";
 						}
 						updatetext += "Update these mods?";
 						int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
 						switch (result) {
 						case JOptionPane.YES_OPTION:
 							userChose = 1;
+							setVisible(true);
 							break;
 						case JOptionPane.NO_OPTION:
 							userChose = -1;
+							canceled = true;
 							break;
 						}
 						break;
@@ -183,16 +209,19 @@ public class AllModsUpdateWindow extends JDialog {
 						AllModsUpdateWindow.this.setLocation(getX(), (getY() - 160));
 						operationLabel.setText("Updating mods from ME3Tweaks.com");
 						break;
+					default:
+						statusLabel.setText("Checking "+command);
+						break;
 					}
 					return;
 				}
 				if (obj instanceof Integer) {
 					//its a progress update
 					Integer i = (Integer) obj;
-					statusLabel.setText(i+" mod"+(i==1?"":"s")+" out of date");
+					statusLabel.setText(i + " mod" + (i == 1 ? "" : "s") + " out of date");
 				}
 			}
-			
+
 		}
 
 		/**
@@ -200,10 +229,41 @@ public class AllModsUpdateWindow extends JDialog {
 		 */
 		@Override
 		protected void done() {
+			if (!showUI) {
+				//autoupdate, update last check date
+				Wini ini;
+				try {
+					File settings = new File(ModManager.settingsFilename);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					ini.put("Settings", "lastautocheck", System.currentTimeMillis());
+					ModManager.debugLogger.writeMessage("Updating last-autocheck date in ini");
+					ini.store();
+				} catch (InvalidFileFormatException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				}
+			}
+
+			if (isCancelled() && !canceled) {
+				canceled = true; //next canceled check will dispose of this window
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Reload ME3CMM to see completed updates (if any)");
+				return;
+			}
+
 			dispose();
+			if (canceled) {
+				return;
+			}
 
 			if (upackages.size() <= 0) {
-				JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.");
+				if (AllModsUpdateWindow.this.showUI) {
+					JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.", "Mods up to date", JOptionPane.INFORMATION_MESSAGE);
+				} else {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Auto updater: Mods are up to date");
+				}
 				return;
 			}
 
@@ -211,8 +271,7 @@ public class AllModsUpdateWindow extends JDialog {
 				return;
 			}
 
-			JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.");
-			callingWindow.dispose();
+			JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.","Mods updated", JOptionPane.INFORMATION_MESSAGE);
 			new ModManagerWindow(false);
 		}
 	}
