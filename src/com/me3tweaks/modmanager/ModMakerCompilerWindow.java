@@ -1487,6 +1487,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			ini.put("ModInfo", "moddesc", modDescription + "<br>Created with ME3Tweaks ModMaker.");
 			ini.put("ModInfo", "modsite", "https://me3tweaks.com/modmaker");
 			ini.put("ModInfo", "modid", modId);
+			ini.put("ModInfo", "compiledagainst", modMakerVersion);
 			if (modVer != null) {
 				ini.put("ModInfo", "modver", modVer);
 			}
