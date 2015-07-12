@@ -85,7 +85,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
 			restoreRevertCoal;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlConsumableParser, sqlGearParser;
-	JMenuItem helpPost, helpAbout;
+	JMenuItem helpPost, helpForums, helpAbout;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
@@ -558,12 +558,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		// Help
 		helpMenu = new JMenu("Help");
 		helpPost = new JMenuItem("View Instructions");
+		helpForums = new JMenuItem("Forums");
 		helpAbout = new JMenuItem("About...");
 
+		helpForums.addActionListener(this);
 		helpPost.addActionListener(this);
 		helpAbout.addActionListener(this);
 
 		helpMenu.add(helpPost);
+		helpMenu.add(helpForums);
 		helpMenu.add(helpAbout);
 		menuBar.add(helpMenu);
 
@@ -630,7 +633,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 		} else if (e.getSource() == toolsModMaker) {
-			new ModMakerEntryWindow(this, fieldBiogameDir.getText());
+			if (validateBIOGameDir()) {
+				ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
+				new ModMakerEntryWindow(this, fieldBiogameDir.getText());
+			} else {
+				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
 		} else
 
 		if (e.getSource() == backupBackupDLC) {
@@ -715,6 +726,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// TODO Auto-generated catch block
 				ex.printStackTrace();
 			}
+		} else 
+		if (e.getSource() == helpForums){
+			URI theURI;
+			try {
+				theURI = new URI("http://me3explorer.freeforums.org/me3tweaks-f33.html");
+				java.awt.Desktop.getDesktop().browse(theURI);
+			} catch (URISyntaxException ex) {
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			} catch (IOException ex) {
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			}
 		}
 		if (e.getSource() == helpAbout) {
 			new AboutWindow(this);
@@ -760,7 +784,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == toolsCheckallmodsforupdate) {
 			checkAllModsForUpdates(true);
 		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
-			System.out.println(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
+			ModManager.debugLogger.writeMessage(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
 		} else if (e.getSource() == sqlDifficultyParser) {
 			new DifficultyGUI();
 		} else
