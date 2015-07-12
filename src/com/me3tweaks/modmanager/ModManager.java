@@ -35,14 +35,14 @@ import com.me3tweaks.modmanager.modupdater.ModXMLTools;
 
 public class ModManager {
 
-	public static final String VERSION = "3.1 RC2";
-	public static long BUILD_NUMBER = 36L;
+	public static final String VERSION = "3.1 RC2.01";
+	public static long BUILD_NUMBER = 37L;
 
-	public static final String BUILD_DATE = "7/9/2015";
+	public static final String BUILD_DATE = "7/12/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
-	public static boolean logging = false;
+	public static boolean logging = true; //default to true
 	public static double MODMAKER_VERSION_SUPPORT = 1.5; //max modmaker version
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;

@@ -204,67 +204,77 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	 * @return
 	 */
 	private boolean validateModMakerPrereqs() {
-		String wvdlcBink32MD5 = "5a826dd66ad28f0099909d84b3b51ea4"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
-		String wvdlcBink32MD5_2 = "05540bee10d5e3985608c81e8b6c481a"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
-
-		File bgdir = new File(biogameDir);
-		File gamedir = bgdir.getParentFile();
-		ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
-		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
+		ModManager.debugLogger.writeMessage("Verifying prereqs");
 		try {
-			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
-			if (binkhash.equals(wvdlcBink32MD5) || binkhash.equals(wvdlcBink32MD5_2)) {
-				ModManager.debugLogger.writeMessage("Binkw32 DLC bypass installed");
-				hasDLCBypass = true;
-			} else {
-				// Check for LauncherWV.
-				File Launcher_WV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
-				File LauncherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\LauncherWV.exe");
-				if (Launcher_WV.exists() || LauncherWV.exists()) {
-					//does exist
+			String wvdlcBink32MD5 = "5a826dd66ad28f0099909d84b3b51ea4"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
+			String wvdlcBink32MD5_2 = "05540bee10d5e3985608c81e8b6c481a"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
+
+			File bgdir = new File(biogameDir);
+			File gamedir = bgdir.getParentFile();
+			ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
+			File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
+			try {
+				String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
+				if (binkhash.equals(wvdlcBink32MD5) || binkhash.equals(wvdlcBink32MD5_2)) {
+					ModManager.debugLogger.writeMessage("Binkw32 DLC bypass installed");
 					hasDLCBypass = true;
-					ModManager.debugLogger.writeMessage("Launcher WV DLC bypass installed");
 				} else {
-					// it doesn't exist... extract our copy of binkw32.dll
-					hasDLCBypass = false;
-					//Failure
-					/*
-					 * dispose(); JOptionPane.showMessageDialog(null,
-					 * "<html>You don't have a way to bypass the DLC check.<br>To satisfy the requirement you need one of the following:<br> - Binkw32.dll DLC bypass in the binaries folder<br> - LauncherWV.exe in the Binaries folder<br><br>Information on how to fulfill this requirement can be found on me3tweaks.com.</html>"
-					 * , "Prerequesites Error", JOptionPane.ERROR_MESSAGE);
-					 */
-					ModManager.debugLogger.writeMessage("Binkw32.dll bypass hash failed, hash is: " + binkhash);
-					ModManager.debugLogger.writeMessage("LauncherWV was not found in Win32 as Launcher_WV or LauncherWV.");
-					ModManager.debugLogger.writeMessage("Advertising the DLC bypass install.");
-					return true; //we will install binkw32.
+					// Check for LauncherWV.
+					File Launcher_WV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
+					File LauncherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\LauncherWV.exe");
+					if (Launcher_WV.exists() || LauncherWV.exists()) {
+						//does exist
+						hasDLCBypass = true;
+						ModManager.debugLogger.writeMessage("Launcher WV DLC bypass installed");
+					} else {
+						// it doesn't exist... extract our copy of binkw32.dll
+						hasDLCBypass = false;
+						//Failure
+						/*
+						 * dispose(); JOptionPane.showMessageDialog(null,
+						 * "<html>You don't have a way to bypass the DLC check.<br>To satisfy the requirement you need one of the following:<br> - Binkw32.dll DLC bypass in the binaries folder<br> - LauncherWV.exe in the Binaries folder<br><br>Information on how to fulfill this requirement can be found on me3tweaks.com.</html>"
+						 * , "Prerequesites Error", JOptionPane.ERROR_MESSAGE);
+						 */
+						ModManager.debugLogger.writeMessage("Binkw32.dll bypass hash failed, hash is: " + binkhash);
+						ModManager.debugLogger.writeMessage("LauncherWV was not found in Win32 as Launcher_WV or LauncherWV.");
+						ModManager.debugLogger.writeMessage("Advertising the DLC bypass install.");
+						return true; //we will install binkw32.
+					}
 				}
+			} catch (Exception e) {
+				ModManager.debugLogger.writeMessage("Exception attempting to verify binkw32.dll");
+				ModManager.debugLogger.writeException(e);
+			}
+
+			File tankMasterCompiler = new File("Tankmaster Compiler/MassEffect3.Coalesce.exe");
+
+			if (!tankMasterCompiler.exists()) {
+				dispose();
+				JOptionPane.showMessageDialog(null,
+						"<html>You need TankMaster's Coalesced Compiler in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 3 in the TankMaster Compiler folder.</html>",
+						"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
+
+				ModManager.debugLogger.writeMessage("Tankmaster's compiler not detected. Abort. Searched at: " + tankMasterCompiler.toString());
+				return false;
+			}
+			ModManager.debugLogger.writeMessage("Detected TankMaster coalesced compiler");
+
+			String me3explorerdir = ModManager.getME3ExplorerEXEDirectory(false);
+			if (me3explorerdir == null) {
+				dispose();
+				JOptionPane.showMessageDialog(null,
+						"<html>You need ME3Explorer in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 3 in the ME3Explorer folder.</html>",
+						"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
+
+				ModManager.debugLogger.writeMessage("ME3Explorer not detected. Abort.");
+				return false;
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		File tankMasterCompiler = new File("Tankmaster Compiler/MassEffect3.Coalesce.exe");
-
-		if (!tankMasterCompiler.exists()) {
-			dispose();
-			JOptionPane.showMessageDialog(null,
-					"<html>You need TankMaster's Coalesced Compiler in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 3 in the TankMaster Compiler folder.</html>",
-					"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
-
-			ModManager.debugLogger.writeMessage("Tankmaster's compiler not detected. Abort. Searched at: " + tankMasterCompiler.toString());
-			return false;
-		}
-		ModManager.debugLogger.writeMessage("Detected TankMaster coalesced compiler");
-
-		String me3explorerdir = ModManager.getME3ExplorerEXEDirectory(false);
-		if (me3explorerdir == null) {
-			dispose();
-			JOptionPane.showMessageDialog(null,
-					"<html>You need ME3Explorer in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 3 in the ME3Explorer folder.</html>",
-					"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
-
-			ModManager.debugLogger.writeMessage("ME3Explorer not detected. Abort.");
+			JOptionPane
+					.showMessageDialog(null,
+							"<html>An error occured while attempting to check prerequesites for ModMaker:<br>" + e.getMessage()
+									+ "<br>Please report this to FemShep with the debugging log at femshep@me3tweaks.com.</html>",
+							"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		//All prereqs met.
@@ -347,24 +357,21 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		return languagesToCompile;
 	}
 
-	public static ArrayList<String> getDefaultLanguages(){
+	public static ArrayList<String> getDefaultLanguages() {
 		String defaultLang = ALL_LANG;
 		Wini settingsini;
 		try {
 			settingsini = new Wini(new File(ModManager.settingsFilename));
-			String modmakerLanguage = settingsini.get("Settings",
-					"modmaker_language");
+			String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
 			if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
 				//language setting exists
 				defaultLang = modmakerLanguage;
 			}
 		} catch (InvalidFileFormatException e) {
-			ModManager.debugLogger
-					.writeMessage("Invalid INI! Did the user modify it by hand?");
+			ModManager.debugLogger.writeMessage("Invalid INI! Did the user modify it by hand?");
 			e.printStackTrace();
 		} catch (IOException e) {
-			ModManager.debugLogger
-					.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting is stored to disk.");
+			ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting is stored to disk.");
 		}
 		return getLanguages(defaultLang);
 	}
