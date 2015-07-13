@@ -26,6 +26,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import jdk.nashorn.internal.scripts.JO;
+
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -42,7 +44,7 @@ public class ModManager {
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
-	public static boolean logging = true; //default to true
+	public static boolean logging = false; //default to true
 	public static double MODMAKER_VERSION_SUPPORT = 1.5; //max modmaker version
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
@@ -50,7 +52,7 @@ public class ModManager {
 
 	public static void main(String[] args) {
 		System.out.println("Starting mod manager");
-
+		
 		//SETUI LOOK
 		try {
 			// Set cross-platform Java L&F (also called "Metal")
@@ -131,6 +133,9 @@ public class ModManager {
 				System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 			}
 		}
+		installLauncherWV(null);
+		System.exit(1);
+		
 		boolean isUpdate = false;
 		if (args.length > 1 && args[0].equals("--update-from")) {
 			//This is being run as an update
@@ -346,6 +351,7 @@ public class ModManager {
 	}
 
 	public static boolean installLauncherWV(String biogamedir) {
+		biogamedir = "C:\\Users\\mjperez\\Desktop\\TESTFLD\\BIOGame";
 		ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
 		File bgdir = new File(biogamedir);
 		if (!bgdir.exists()) {
@@ -356,8 +362,9 @@ public class ModManager {
 
 		File gamedir = bgdir.getParentFile();
 
-		ModManager.debugLogger.writeMessage("Set binary win32 folder to game folder to: " + gamedir.toString());
 		File launcherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
+		ModManager.debugLogger.writeMessage("Set binary win32 folder to game folder to: " + launcherWV.getAbsolutePath());
+
 		//File bink32_orig = new File(gamedir.toString()+"\\Binaries\\Win32\\binkw32_orig.dll");
 
 		//File bink32 = new File("dlcpatcher/binkw32.dll");
@@ -367,6 +374,7 @@ public class ModManager {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
+			JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of the ME3CMM.exe.\nPlease report this to femshep.", "Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
