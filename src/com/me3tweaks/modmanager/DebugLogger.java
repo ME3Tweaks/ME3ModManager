@@ -3,7 +3,6 @@ package com.me3tweaks.modmanager;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLException;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -52,7 +51,7 @@ public class DebugLogger {
 		}
 	}
 	
-	public void writeMessage(String message){
+	public synchronized void writeMessage(String message){
 		if (ModManager.logging){
 			try {
 				System.out.println("[L]: "+message);
@@ -66,7 +65,7 @@ public class DebugLogger {
 		}
 	}
 
-	public void writeException(Exception e) {
+	public synchronized void writeException(Exception e) {
 		if (ModManager.logging){
 			try {
 				System.err.println("[L-E]: "+ ExceptionUtils.getStackTrace(e));
@@ -80,7 +79,7 @@ public class DebugLogger {
 		}
 	}
 
-	public void writeError(String message) {
+	public synchronized void writeError(String message) {
 		if (ModManager.logging){
 			try {
 				System.err.println("[L:E]: "+message);
