@@ -14,7 +14,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
 import javax.swing.JOptionPane;
@@ -26,21 +25,17 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jdk.nashorn.internal.scripts.JO;
-
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.w3c.dom.Document;
 
-import com.me3tweaks.modmanager.modupdater.ModXMLTools;
-
 public class ModManager {
 
-	public static final String VERSION = "3.1 RC2.01";
-	public static long BUILD_NUMBER = 37L;
+	public static final String VERSION = "3.1 RC2.02";
+	public static long BUILD_NUMBER = 36L;
 
-	public static final String BUILD_DATE = "7/12/2015";
+	public static final String BUILD_DATE = "7/13/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
@@ -133,8 +128,6 @@ public class ModManager {
 				System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 			}
 		}
-		installLauncherWV(null);
-		System.exit(1);
 		
 		boolean isUpdate = false;
 		if (args.length > 1 && args[0].equals("--update-from")) {
@@ -351,7 +344,6 @@ public class ModManager {
 	}
 
 	public static boolean installLauncherWV(String biogamedir) {
-		biogamedir = "C:\\Users\\mjperez\\Desktop\\TESTFLD\\BIOGame";
 		ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
 		File bgdir = new File(biogamedir);
 		if (!bgdir.exists()) {

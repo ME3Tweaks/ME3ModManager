@@ -17,7 +17,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -84,8 +83,8 @@ public class ModMakerCompilerWindow extends JDialog {
 		// this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-
-		getModInfo();
+		new ModDownloadWorker().execute();
+		
 		if (!error) {
 			this.setVisible(true);
 		}
@@ -106,12 +105,194 @@ public class ModMakerCompilerWindow extends JDialog {
 		setupWindow();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 
-		getModInfo();
 		if (!error) {
 			this.setVisible(true);
 		}
 	}
+	
+	class ModDownloadWorker extends SwingWorker<Void, Object> {
+		boolean running = true;
+		@Override
+		protected Void doInBackground() throws Exception {
+			getModInfo();
+			return null;
+		}
+		
+		private void getModInfo() {
+			//String link = "http://www.me3tweaks.com/modmaker/download.php?id="
+			//		+ code;
+			ModManager.debugLogger.writeMessage("================DOWNLOADING MOD INFORMATION==============");
+			String link;
+			if (ModManager.IS_DEBUG) {
+				link = "http://webdev-c9-mgamerz.c9.io/modmaker/download.php?id=" + code;
+			} else {
+				link = "https://me3tweaks.com/modmaker/download.php?id=" + code;
+			}
+			ModManager.debugLogger.writeMessage("Fetching mod from " + link);
+			try {
+				File downloaded = new File(DOWNLOADED_XML_FILENAME);
+				downloaded.delete();
+				FileUtils.copyURLToFile(new URL(link), downloaded);
+				ModManager.debugLogger.writeMessage("Mod downloaded to " + downloaded);
+				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+				ModManager.debugLogger.writeMessage("Loading mod information into memory.");
+				doc = dBuilder.parse(downloaded);
+				ModManager.debugLogger.writeMessage("Mod information loaded into memory.");
+				doc.getDocumentElement().normalize();
+				NodeList errors = doc.getElementsByTagName("error");
+				if (errors.getLength() > 0) {
+					//error occured.
+					dispose();
+					publish(new ThreadCommand("ERROR", "<html>No mod with id " + code + " was found on ME3Tweaks.</html>"));
+					running = false;
+					return;
+				}
+				parseModInfo();
+			} catch (MalformedURLException e) {
+				running = false;
+				ModManager.debugLogger.writeException(e);
+			} catch (IOException e) {
+				running = false;
+				ModManager.debugLogger.writeException(e);
+			} catch (ParserConfigurationException e) {
+				running = false;
+				ModManager.debugLogger.writeException(e);
+			} catch (SAXException e) {
+				running = false;
+				ModManager.debugLogger.writeException(e);
+			} catch (Exception e) {
+				running = false;
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+		
+		public void process(List<Object> chunks) {
+			for (Object obj : chunks){
+				if (obj instanceof ThreadCommand) {
+					ThreadCommand error = (ThreadCommand) obj;
+					String cmd = error.getCommand();
+					switch(cmd) {
+					case "ERROR":
+						JOptionPane.showMessageDialog(null, error.getMessage(), "Compiling Error", JOptionPane.ERROR_MESSAGE);
+						ModManager.debugLogger.writeMessage(error.getMessage());
+						dispose();
+						break;
+					case "UPDATE_INFO":
+						infoLabel.setText(error.getMessage());
+						break;
+					case "UPDATE_OPERATION":
+						currentOperationLabel.setText(error.getMessage());
+						break;
+					}
+				}
+			}
+		}
+		protected void parseModInfo() {
+			ModManager.debugLogger.writeMessage("============Parsing modinfo==============");
+			NodeList infoNodeList = doc.getElementsByTagName("ModInfo");
+			infoElement = (Element) infoNodeList.item(0); //it'll be the only element. Hopefully!
+			NodeList nameElement = infoElement.getElementsByTagName("Name");
+			modName = nameElement.item(0).getTextContent();
+			ModManager.debugLogger.writeMessage("Mod Name: " + modName);
+			publish(new ThreadCommand("UPDATE_INFO", "Preparing to compile "+modName));
+			NodeList descElement = infoElement.getElementsByTagName("Description");
+			modDescription = descElement.item(0).getTextContent();
+			ModManager.debugLogger.writeMessage("Mod Description: " + modDescription);
 
+			NodeList devElement = infoElement.getElementsByTagName("Author");
+			modDev = devElement.item(0).getTextContent();
+			ModManager.debugLogger.writeMessage("Mod Dev: " + modDev);
+
+			NodeList versionElement = infoElement.getElementsByTagName("Revision");
+			if (versionElement.getLength() > 0) {
+				modVer = versionElement.item(0).getTextContent();
+				ModManager.debugLogger.writeMessage("Mod Version: " + modVer);
+			}
+
+			NodeList idElement = infoElement.getElementsByTagName("id");
+			modId = idElement.item(0).getTextContent();
+			ModManager.debugLogger.writeMessage("ModMaker ID: " + modId);
+
+			NodeList modmakerVersionElement = infoElement.getElementsByTagName("ModMakerVersion");
+			String modModMakerVersion = modmakerVersionElement.item(0).getTextContent();
+			ModManager.debugLogger.writeMessage("Mod information file was built using modmaker " + modModMakerVersion);
+
+			modMakerVersion = Double.parseDouble(modModMakerVersion);
+			if (modMakerVersion > ModManager.MODMAKER_VERSION_SUPPORT) {
+				//ERROR! We can't compile this version.
+				ModManager.debugLogger.writeMessage("FATAL ERROR: This version of mod manager does not support this version of modmaker.");
+				ModManager.debugLogger.writeMessage("FATAL ERROR: This version supports up to ModMaker version: " + ModManager.MODMAKER_VERSION_SUPPORT);
+				ModManager.debugLogger.writeMessage("FATAL ERROR: This mod was built with ModMaker version: " + modModMakerVersion);
+				publish(new ThreadCommand("ERROR", "<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>"));
+				error = true;
+				return;
+			}
+
+			//Check the name
+			File moddir = new File(modName);
+			if (moddir.isDirectory()) {
+				try {
+					ModManager.debugLogger.writeMessage("Removing existing mod directory, will recreate when complete");
+					FileUtils.deleteDirectory(moddir);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				/*
+				 * dispose(); JOptionPane.showMessageDialog(null,
+				 * "<html>A mod with this name already exists.</html>",
+				 * "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				 */
+			}
+
+			//Debug remove
+			publish(new ThreadCommand("UPDATE_INFO", "Compiling " + modName + "..."));
+			NodeList dataNodeList = doc.getElementsByTagName("ModData");
+			dataElement = (Element) dataNodeList.item(0);
+			NodeList fileNodeList = dataElement.getChildNodes();
+			//Find the coals it needs, iterate over the files list.
+			for (int i = 0; i < fileNodeList.getLength(); i++) {
+				Node fileNode = fileNodeList.item(i);
+				if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
+					//filters out the #text nodes. Don't know what those really are.
+					String intCoalName = fileNode.getNodeName();
+					ModManager.debugLogger.writeMessage("ini file descriptor found in mod: " + intCoalName);
+					requiredCoals.add(shortNameToCoalFilename(intCoalName));
+				}
+			}
+
+			// Check Coalesceds
+			File coalDir = new File("coalesceds");
+			coalDir.mkdirs(); // creates if it doens't exist. otherwise nothing.
+			ArrayList<String> coals = new ArrayList<String>(requiredCoals); // copy
+																			// so we
+																			// don't
+																			// modify
+																			// the
+																			// required
+																			// ones
+			int numToDownload = 0;
+			for (int i = coals.size() - 1; i >= 0; i--) {
+				String coal = coals.get(i); // go in reverse order otherwise we get
+											// null pointer
+				File coalFile = new File("coalesceds/" + coal);
+				if (!coalFile.exists()) {
+					ModManager.debugLogger.writeMessage("Coal doesn't exist, need to download: " + coal);
+					numToDownload++;
+				} else {
+					ModManager.debugLogger.writeMessage("Coal already exists, skipping download: " + coal);
+					coals.remove(i);
+				}
+			}
+			if (numToDownload > 0) {
+				currentOperationLabel.setText("Downloading Coalesced files...");
+				currentStepProgress.setIndeterminate(false);
+			}
+			// Check and download
+			new CoalDownloadWorker(coals, currentStepProgress).execute();
+		}
+	}
 	private void setupWindow() {
 		this.setTitle("ModMaker Compiler");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -122,7 +303,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		modMakerPanel.setLayout(new BoxLayout(modMakerPanel, BoxLayout.PAGE_AXIS));
 		JPanel infoPane = new JPanel();
 		infoPane.setLayout(new BoxLayout(infoPane, BoxLayout.LINE_AXIS));
-		infoLabel = new JLabel("Preparing to compile " + code + "...", SwingConstants.CENTER);
+		infoLabel = new JLabel("Downloading mod delta for code " + code + "...", SwingConstants.CENTER);
 		infoPane.add(Box.createHorizontalGlue());
 		infoPane.add(infoLabel);
 		infoPane.add(Box.createHorizontalGlue());
@@ -161,54 +342,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.pack();
 	}
 
-	private void getModInfo() {
-		//String link = "http://www.me3tweaks.com/modmaker/download.php?id="
-		//		+ code;
-		ModManager.debugLogger.writeMessage("================DOWNLOADING MOD INFORMATION==============");
-		String link;
-		if (ModManager.IS_DEBUG) {
-			link = "http://webdev-c9-mgamerz.c9.io/modmaker/download.php?id=" + code;
-		} else {
-			link = "https://me3tweaks.com/modmaker/download.php?id=" + code;
-		}
-		ModManager.debugLogger.writeMessage("Fetching mod from " + link);
-		try {
-			File downloaded = new File(DOWNLOADED_XML_FILENAME);
-			downloaded.delete();
-			FileUtils.copyURLToFile(new URL(link), downloaded);
-			ModManager.debugLogger.writeMessage("Mod downloaded to " + downloaded);
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-			ModManager.debugLogger.writeMessage("Loading mod information into memory.");
-			doc = dBuilder.parse(downloaded);
-			ModManager.debugLogger.writeMessage("Mod information loaded into memory.");
-			doc.getDocumentElement().normalize();
-			NodeList errors = doc.getElementsByTagName("error");
-			if (errors.getLength() > 0) {
-				//error occured.
-				dispose();
-				error = true;
-				JOptionPane.showMessageDialog(null, "<html>No mod with id " + code + " was found on ME3Tweaks.</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
-				ModManager.debugLogger.writeMessage("Downloaded mod information indicates this mod doesn't exist on modmaker.");
-				return;
-			}
-			parseModInfo();
-		} catch (MalformedURLException e) {
-			error = true;
-			e.printStackTrace();
-		} catch (IOException e) {
-			error = true;
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			error = true;
-			e.printStackTrace();
-		} catch (SAXException e) {
-			error = true;
-			e.printStackTrace();
-		} catch (Exception e) {
-			error = true;
-		}
-	}
-
+	
 	/**
 	 * 
 	 * Converts a short name (e.g. MP3, MP4) into the DLC or original coalesced
@@ -502,115 +636,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 	}
 
-	protected void parseModInfo() {
-		ModManager.debugLogger.writeMessage("============Parsing modinfo==============");
-		NodeList infoNodeList = doc.getElementsByTagName("ModInfo");
-		infoElement = (Element) infoNodeList.item(0); //it'll be the only element. Hopefully!
-		NodeList nameElement = infoElement.getElementsByTagName("Name");
-		modName = nameElement.item(0).getTextContent();
-		ModManager.debugLogger.writeMessage("Mod Name: " + modName);
-
-		NodeList descElement = infoElement.getElementsByTagName("Description");
-		modDescription = descElement.item(0).getTextContent();
-		ModManager.debugLogger.writeMessage("Mod Description: " + modDescription);
-
-		NodeList devElement = infoElement.getElementsByTagName("Author");
-		modDev = devElement.item(0).getTextContent();
-		ModManager.debugLogger.writeMessage("Mod Dev: " + modDev);
-
-		NodeList versionElement = infoElement.getElementsByTagName("Revision");
-		if (versionElement.getLength() > 0) {
-			modVer = versionElement.item(0).getTextContent();
-			ModManager.debugLogger.writeMessage("Mod Version: " + modVer);
-		}
-
-		NodeList idElement = infoElement.getElementsByTagName("id");
-		modId = idElement.item(0).getTextContent();
-		ModManager.debugLogger.writeMessage("ModMaker ID: " + modId);
-
-		NodeList modmakerVersionElement = infoElement.getElementsByTagName("ModMakerVersion");
-		String modModMakerVersion = modmakerVersionElement.item(0).getTextContent();
-		ModManager.debugLogger.writeMessage("Mod information file was built using modmaker " + modModMakerVersion);
-
-		modMakerVersion = Double.parseDouble(modModMakerVersion);
-		if (modMakerVersion > ModManager.MODMAKER_VERSION_SUPPORT) {
-			//ERROR! We can't compile this version.
-			ModManager.debugLogger.writeMessage("FATAL ERROR: This version of mod manager does not support this version of modmaker.");
-			ModManager.debugLogger.writeMessage("FATAL ERROR: This version supports up to ModMaker version: " + ModManager.MODMAKER_VERSION_SUPPORT);
-			ModManager.debugLogger.writeMessage("FATAL ERROR: This mod was built with ModMaker version: " + modModMakerVersion);
-			JOptionPane.showMessageDialog(null,
-					"<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>",
-					"Compiling Error", JOptionPane.ERROR_MESSAGE);
-			error = true;
-			dispose();
-			return;
-		}
-
-		//Check the name
-		File moddir = new File(modName);
-		if (moddir.isDirectory()) {
-			try {
-				ModManager.debugLogger.writeMessage("Removing existing mod directory, will recreate when complete");
-				FileUtils.deleteDirectory(moddir);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			/*
-			 * dispose(); JOptionPane.showMessageDialog(null,
-			 * "<html>A mod with this name already exists.</html>",
-			 * "Compiling Error", JOptionPane.ERROR_MESSAGE);
-			 */
-		}
-
-		//Debug remove
-		infoLabel.setText("Compiling " + modName + "...");
-		NodeList dataNodeList = doc.getElementsByTagName("ModData");
-		dataElement = (Element) dataNodeList.item(0);
-		NodeList fileNodeList = dataElement.getChildNodes();
-		//Find the coals it needs, iterate over the files list.
-		for (int i = 0; i < fileNodeList.getLength(); i++) {
-			Node fileNode = fileNodeList.item(i);
-			if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
-				//filters out the #text nodes. Don't know what those really are.
-				String intCoalName = fileNode.getNodeName();
-				ModManager.debugLogger.writeMessage("ini file descriptor found in mod: " + intCoalName);
-				requiredCoals.add(shortNameToCoalFilename(intCoalName));
-			}
-		}
-
-		// Check Coalesceds
-		File coalDir = new File("coalesceds");
-		coalDir.mkdirs(); // creates if it doens't exist. otherwise nothing.
-		ArrayList<String> coals = new ArrayList<String>(requiredCoals); // copy
-																		// so we
-																		// don't
-																		// modify
-																		// the
-																		// required
-																		// ones
-		int numToDownload = 0;
-		for (int i = coals.size() - 1; i >= 0; i--) {
-			String coal = coals.get(i); // go in reverse order otherwise we get
-										// null pointer
-			File coalFile = new File("coalesceds/" + coal);
-			if (!coalFile.exists()) {
-				ModManager.debugLogger.writeMessage("Coal doesn't exist, need to download: " + coal);
-				numToDownload++;
-			} else {
-				ModManager.debugLogger.writeMessage("Coal already exists, skipping download: " + coal);
-				coals.remove(i);
-			}
-		}
-		if (numToDownload > 0) {
-			currentOperationLabel.setText("Downloading Coalesced files...");
-			currentStepProgress.setIndeterminate(false);
-		}
-		// Check and download
-		new CoalDownloadWorker(coals, currentStepProgress).execute();
-	}
-
 	/**
 	 * Runs the Coalesced files through Tankmasters decompiler
 	 */
@@ -794,9 +819,8 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * files.
 	 */
 	class MergeWorker extends SwingWorker<Void, Integer> {
-		private int numFilesToMerge;
-		private JProgressBar progress;
 		boolean error = false;
+		JProgressBar progress;
 
 		public MergeWorker(JProgressBar progress) {
 			ModManager.debugLogger.writeMessage("=============MERGEWORKER=============");
@@ -807,7 +831,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		protected Void doInBackground() throws Exception {
-			int coalsCompeted = 0;
 			// we are going to parse the mod_data array and then look at all the
 			// files in the array.
 			// Haha wow this is going to be ugly.
