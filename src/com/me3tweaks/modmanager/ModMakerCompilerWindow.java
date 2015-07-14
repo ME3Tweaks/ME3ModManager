@@ -104,6 +104,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		// this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		new ModDownloadWorker().execute();
 
 		if (!error) {
 			this.setVisible(true);
