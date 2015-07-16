@@ -902,4 +902,16 @@ public class Mod implements Comparable<Mod> {
 		}
 		return false;
 	}
+
+	public String getAuthor() {
+		return modAuthor;
+	}
+
+	public void setModUpdateCode(int i) {
+		classicCode = i;
+	}
+
+	public void setVersion(double i) {
+		modVersion = Double.toString(i);
+	}
 }
