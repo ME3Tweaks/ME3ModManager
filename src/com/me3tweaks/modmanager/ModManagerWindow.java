@@ -809,11 +809,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void checkAllModsForUpdates(boolean isManualCheck) {
+		ArrayList<Mod> updateDescs = new ArrayList<Mod>();
+		for (int i = 0; i < modModel.size(); i++) {
+			Mod mod = modModel.getElementAt(i);
+			if ("MoonShine".equals(mod.getAuthor())){
+				if ("360 Controller Support".equals(mod.getModName())){
+					if (mod.getVersion() == 0) {
+						mod.setModUpdateCode(15);
+						mod.setVersion(1);
+					}
+				}
+			}
+		}
+		
+		
 		ArrayList<Mod> updatableMods = new ArrayList<Mod>();
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.get(i);
 			if (mod.isME3TweaksUpdatable()) {
 				updatableMods.add(mod);
+			} else {
+				ModManager.debugLogger.writeMessage(mod.getModName()+" is not me3tweaks updatable");
 			}
 		}
 
