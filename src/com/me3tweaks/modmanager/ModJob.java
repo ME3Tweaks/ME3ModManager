@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -130,6 +131,4 @@ public class ModJob {
 		}
 		return false;
 	}
-	
-	
 }
