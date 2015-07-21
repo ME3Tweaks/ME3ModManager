@@ -172,6 +172,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			long threeDaysMs = 259200000L;
 			if (ModManager.AUTO_UPDATE_MODS) {
 				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > threeDaysMs) {
+					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "+ModManager.getDurationBreakdown(System.currentTimeMillis()-ModManager.LAST_AUTOUPDATE_CHECK)+" since the last update check.");
 					publish("Auto Updater: Checking for mod updates");
 					checkAllModsForUpdates(false);
 				}
@@ -707,7 +708,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == actionReload) {
 			// Reload this jframe
 			new ModManagerWindow(false);
-			dispose();
 		} else
 
 		if (e.getSource() == actionExit) {
