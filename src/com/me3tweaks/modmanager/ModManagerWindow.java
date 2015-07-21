@@ -55,6 +55,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
+import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
 import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
 import com.me3tweaks.modmanager.modupdater.ModXMLTools;
@@ -71,7 +73,7 @@ import com.sun.jna.platform.win32.WinReg;
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
 	public static ModManagerWindow ACTIVE_WINDOW;
 	boolean isUpdate;
-	JTextField fieldBiogameDir;
+	public JTextField fieldBiogameDir;
 	JTextArea fieldDescription;
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;

@@ -31,11 +31,11 @@ import org.apache.commons.io.FileUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
-import com.me3tweaks.modmanager.ModMakerCompilerWindow;
-import com.me3tweaks.modmanager.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
+import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 
 @SuppressWarnings("serial")
 public class ModUpdateWindow extends JDialog implements PropertyChangeListener {

@@ -1,4 +1,4 @@
-package com.me3tweaks.modmanager;
+package com.me3tweaks.modmanager.modmaker;
 
 import java.awt.BorderLayout;
 import java.awt.Dialog;
@@ -36,6 +36,10 @@ import javax.swing.text.DocumentFilter;
 
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+
+import com.me3tweaks.modmanager.MD5Checksum;
+import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
 
 @SuppressWarnings("serial")
 public class ModMakerEntryWindow extends JDialog implements ActionListener {
@@ -246,7 +250,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 				ModManager.debugLogger.writeException(e);
 			}
 
-			File tankMasterCompiler = new File("Tankmaster Compiler/MassEffect3.Coalesce.exe");
+			File tankMasterCompiler = new File(ModManager.getTankMasterCompilerDir()+"MassEffect3.Coalesce.exe");
 
 			if (!tankMasterCompiler.exists()) {
 				dispose();

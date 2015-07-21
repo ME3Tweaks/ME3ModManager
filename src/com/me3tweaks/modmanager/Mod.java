@@ -695,8 +695,14 @@ public class Mod implements Comparable<Mod> {
 		return "Failed to write new moddesc.ini file";
 	}
 
-	public static String getStandardFolderName(String jobName) {
-		switch (jobName) {
+	/**
+	 * Gets the standard folder name a mod uses for a module.
+	 * Essentially is a Header => Internal converter
+	 * @param header
+	 * @return
+	 */
+	public static String getStandardFolderName(String header) {
+		switch (header) {
 		case "BASEGAME":
 			return "BASEGAME";
 		case "RESURGENCE":
@@ -908,7 +914,6 @@ public class Mod implements Comparable<Mod> {
 		}
 		return false;
 	}
-<<<<<<< HEAD
 
 	public String getAuthor() {
 		return modAuthor;
@@ -920,8 +925,7 @@ public class Mod implements Comparable<Mod> {
 
 	public void setVersion(double i) {
 		modVersion = Double.toString(i);
-=======
-	
+	}	
 	
 	/**
 	 * Returns true if this mod has a job that modifies the basegame coalesced
@@ -961,6 +965,5 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 		return null;
->>>>>>> 1cee31c043e7bafa98667dc4efb5bbc0aa75871d
 	}
 }

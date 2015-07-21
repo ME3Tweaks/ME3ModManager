@@ -32,6 +32,8 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.w3c.dom.Document;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+
 public class ModManager {
 
 	public static final String VERSION = "3.1";
@@ -42,7 +44,7 @@ public class ModManager {
 	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false; //default to true
-	public static double MODMAKER_VERSION_SUPPORT = 1.5; //max modmaker version
+	public static double MODMAKER_VERSION_SUPPORT = 1.6; //max modmaker version
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static long LAST_AUTOUPDATE_CHECK;
@@ -232,6 +234,20 @@ public class ModManager {
 				FileUtils.moveDirectory(updatedir, new File(ModManager.getUpdateDir()));
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY!");
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+		
+		//move databases folder
+		//move update folder
+		ModManager.debugLogger.writeMessage("Checking if using old databases dir");
+		File databasedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "databases/");
+		if (databasedir.exists()) {
+			ModManager.debugLogger.writeMessage("Moving update to databases/");
+			try {
+				FileUtils.moveDirectory(databasedir, new File(ModManager.getDatabaseDir()));
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE databases TO data/ DIRECTORY!");
 				ModManager.debugLogger.writeException(e);
 			}
 		}
@@ -600,17 +616,17 @@ public class ModManager {
 
 	public static String getTankMasterCompilerDir() {
 		File file = new File(getDataDir() + "tankmaster_coalesce/");
-		file.mkdirs();
+		//file.mkdirs();
 		return appendSlash(file.getAbsolutePath());	}
 
 	public static String getTankMasterTLKDir() {
 		File file = new File(getDataDir() + "tankmaster_tlk/");
-		file.mkdirs();
+		//file.mkdirs();
 		return appendSlash(file.getAbsolutePath());	}
 
 	public static String getUpdateDir() {
 		File file = new File(getDataDir() + "update/");
-		file.mkdirs();
+		//file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
 
@@ -652,16 +668,16 @@ public class ModManager {
 	 * Returns if the specified coalesced (job) is in the pristine folder and
 	 * the hash matches the known good value for it
 	 * 
-	 * @param jobName
-	 *            ModType.X coal name
+	 * @param name value to use to see if has pristine coalesced
+	 * @param mode mode to parse name as
 	 * @return true if pristine, false if doesn't exist (or otherwise)
 	 */
-	public static boolean hasPristineCoalesced(String jobName) {
-		File coal = new File(getPristineCoalesced(jobName));
+	public static boolean hasPristineCoalesced(String name, int mode) {
+		File coal = new File(getPristineCoalesced(name, mode));
 		if (!coal.exists()) {
 			return false;
 		}
-		return false;
+		return true;
 	}
 
 	public static String getOverrideDir() {
@@ -672,14 +688,27 @@ public class ModManager {
 
 	/**
 	 * Gets the path of a pristine coalesced with the given filename
+	 * @param mode ME3TweaksUtils mode indicating what the name variable is
 	 * 
 	 * @param basegame
 	 * @return
 	 */
-	public static String getPristineCoalesced(String jobName) {
-		File f = new File(getPristineDir() + Mod.getStandardFolderName(jobName));
+	public static String getPristineCoalesced(String name, int mode) {
+		switch (mode) {
+		case ME3TweaksUtils.FILENAME:
+			name = ME3TweaksUtils.internalNameToHeaderName(ME3TweaksUtils.coalFilenameToInternalName(name));
+			break;
+		case ME3TweaksUtils.HEADER:
+			//do nothing
+			break;
+		case ME3TweaksUtils.INTERNAL:
+			name = ME3TweaksUtils.internalNameToHeaderName(name);
+			break;
+		}
+		
+		File f = new File(getPristineDir() + Mod.getStandardFolderName(name));
 		f.mkdirs();
-		return appendSlash(f.getAbsolutePath()) + ME3TweaksUtils.internalNameToCoalFilename(jobName);
+		return appendSlash(f.getAbsolutePath()) + ME3TweaksUtils.headerNameToCoalFilename(name);
 	}
 
 	public static String getTempDir() {
@@ -690,7 +719,7 @@ public class ModManager {
 
 	public static String getDatabaseDir() {
 		File file = new File(getDataDir() + "databases");
-		file.mkdirs();
+		//file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
 }
