@@ -21,6 +21,8 @@ import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FileUtils;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+
 
 /**
  * This window injects a user's customized set of keybinds into the base coalesced file by swapping the BioInput.xml file after decompilation
@@ -85,7 +87,7 @@ public class KeybindsInjectionWindow extends JDialog {
 			if (basegamecoal == null) {
 				if (!ModManager.hasPristineCoalesced(ModType.BASEGAME)){
 					publish("Getting pristine Coalesced.bin file");
-					ME3TweaksUtils.downloadPristineCoalesced(ModType.BASEGAME);
+					ME3TweaksUtils.downloadPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER);
 				}
 				//String pristineBase = ModManager.getPristineCoalesced(ModType.BASEGAME);
 				ModJob basegamejob = null;

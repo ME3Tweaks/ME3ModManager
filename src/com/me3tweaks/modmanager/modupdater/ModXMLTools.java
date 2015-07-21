@@ -33,10 +33,10 @@ import org.xml.sax.SAXException;
 import com.me3tweaks.modmanager.MD5Checksum;
 import com.me3tweaks.modmanager.Mod;
 import com.me3tweaks.modmanager.ModJob;
-import com.me3tweaks.modmanager.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
+import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 
 public class ModXMLTools {
 	static DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
