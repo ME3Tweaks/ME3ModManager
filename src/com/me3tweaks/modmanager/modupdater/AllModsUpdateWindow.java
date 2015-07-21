@@ -168,6 +168,7 @@ public class AllModsUpdateWindow extends JDialog {
 				if (canceled) {
 					return null;
 				}
+				publish(new Integer(numToGo));
 				ModManager.debugLogger.writeMessage("Processing: " + upackage.getMod().getModName());
 				ModUpdateWindow muw = new ModUpdateWindow(upackage);
 				muw.startAllModsUpdate(AllModsUpdateWindow.this);
@@ -230,6 +231,7 @@ public class AllModsUpdateWindow extends JDialog {
 		@Override
 		protected void done() {
 			if (!showUI) {
+				ModManager.debugLogger.writeMessage("Auto-Updater thread: performing done()");
 				//autoupdate, update last check date
 				Wini ini;
 				try {

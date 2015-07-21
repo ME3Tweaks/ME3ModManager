@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
@@ -32,12 +33,12 @@ import org.w3c.dom.Document;
 
 public class ModManager {
 
-	public static final String VERSION = "3.1 RC2.03";
-	public static long BUILD_NUMBER = 39L;
+	public static final String VERSION = "3.1";
+	public static long BUILD_NUMBER = 40L;
 
 	public static final String BUILD_DATE = "7/13/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false; //default to true
 	public static double MODMAKER_VERSION_SUPPORT = 1.5; //max modmaker version
@@ -61,7 +62,8 @@ public class ModManager {
 		if (ModManager.IS_DEBUG) {
 			debugLogger.initialize();
 			logging = true;
-			debugLogger.writeMessage("Starting logger due to Debug flag");
+			debugLogger.writeMessage("Starting logger due to Debug flag. Auto updates enabled");
+			AUTO_UPDATE_MODS = true;
 		} else {
 			Wini settingsini;
 			try {
@@ -101,6 +103,8 @@ public class ModManager {
 				if (autoupdate != null && autoupdate.equals("true")) {
 					System.out.println("Enabling mod auto-updates");
 					AUTO_UPDATE_MODS = true;
+				} else {
+					System.out.println("AUTO UPDATE: "+autoupdate);
 				}
 
 				if (AUTO_UPDATE_MODS == false) {
@@ -466,4 +470,38 @@ public class ModManager {
 			return string + File.separator;
 		}
 	}
+	
+	/**
+     * Convert a millisecond duration to a string format
+     * 
+     * @param millis A duration to convert to a string form
+     * @return A string of the form "X Days Y Hours Z Minutes A Seconds".
+     */
+    public static String getDurationBreakdown(long millis)
+    {
+        if(millis < 0)
+        {
+            throw new IllegalArgumentException("Duration must be greater than zero!");
+        }
+
+        long days = TimeUnit.MILLISECONDS.toDays(millis);
+        millis -= TimeUnit.DAYS.toMillis(days);
+        long hours = TimeUnit.MILLISECONDS.toHours(millis);
+        millis -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
+        millis -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
+
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(days);
+        sb.append(" Days ");
+        sb.append(hours);
+        sb.append(" Hours ");
+        sb.append(minutes);
+        sb.append(" Minutes ");
+        sb.append(seconds);
+        sb.append(" Seconds");
+
+        return(sb.toString());
+    }
 }
