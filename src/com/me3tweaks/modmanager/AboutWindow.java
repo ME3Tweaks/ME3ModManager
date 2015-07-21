@@ -26,19 +26,20 @@ public class AboutWindow extends JDialog {
 	JCheckBox loggingMode;
 
 	public AboutWindow(JFrame callingWindow) {
-		this.setTitle("About Coalesced Mod Manager");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(380, 365));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
-		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 		this.setVisible(true);
 	}
 
 	private void setupWindow() {
+		this.setTitle("About Coalesced Mod Manager");
+		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		this.setPreferredSize(new Dimension(380, 365));
+		this.setResizable(false);
+		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		
+		
 		JPanel aboutPanel = new JPanel(new BorderLayout());
 		infoLabel = new JLabel(
 				"<html>Mass Effect 3 - Coalesced Mod Manager<br> Version "
@@ -72,7 +73,7 @@ public class AboutWindow extends JDialog {
 
 					if (loggingMode.isSelected()) {
 						ini.put("Settings", "logging_mode", "1");
-						JOptionPane.showMessageDialog(null, "A log file will be generated in the ME3CMM.exe directory with the filename 'me3cmm_last_run_log.txt'.\nUse this to debug your moddesc files.\nClose ME3CMM before opening your log file.\nYou must restart Mod Manager for logging to take effect.\nNote: Logs will continue to be made every time the program is run.", "Logging Mode", JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane.showMessageDialog(null, "A log file will be generated in the ME3CMM.exe directory with the filename 'me3cmm_last_run_log.txt'.\nUse this to debug Mod Manager.\nClose ME3CMM before opening your log file.\nYou must restart Mod Manager for logging to take effect.\nNote: Logs will continue to be made every time the program is run.", "Logging Mode", JOptionPane.INFORMATION_MESSAGE);
 					} else {
 						ini.put("Settings", "logging_mode", "0");
 						ModManager.logging = false;
@@ -88,5 +89,6 @@ public class AboutWindow extends JDialog {
 		aboutPanel.add(loggingMode, BorderLayout.SOUTH);
 		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 		this.getContentPane().add(aboutPanel);
+		this.pack();
 	}
 }
