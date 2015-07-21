@@ -327,7 +327,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	
 	public void runUpdateScript() {
 		// TODO Auto-generated method stub
-		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", System.getProperty("user.dir")+"\\update\\updater.cmd" };
+		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getUpdateDir()+"updater.cmd" };
 		try {
 			Runtime.getRuntime().exec(command);
 		} catch (IOException e) {
@@ -343,16 +343,15 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	 * @return True if created, false otherwise.
 	 */
 	private boolean buildUpdateScript(){
-		String updateFolder = System.getProperty("user.dir")+"\\update\\";
 		StringBuilder sb = new StringBuilder();
-		sb.append("::Update script for Mod Manager 3.0 (Build "+build+")");
+		sb.append("::Update script for Mod Manager 3.1 (Build "+build+")");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("@echo off");
 		sb.append("\r\n");
 		sb.append("echo Current directory: %CD%");
 		sb.append("\r\n");
-		sb.append("pushd update");
+		sb.append("pushd data\\update");
 		sb.append("\r\n");
 		sb.append("::Wait for 2 seconds so the JVM fully exits.");
 		sb.append("\r\n");
@@ -363,7 +362,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("::Extract update");
 		sb.append("\r\n");
-		sb.append("7za.exe -y x ME3CMM.7z -o"+updateFolder+"NewVersion");
+		sb.append("7za.exe -y x ME3CMM.7z -o"+ModManager.getUpdateDir()+"NewVersion");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Check for build-in update script");
@@ -405,7 +404,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		//sb.append("pause");
 		//sb.append("exit");
 		try {
-			String updatePath = new File(".\\update\\updater.cmd").getAbsolutePath();
+			String updatePath = new File(ModManager.getUpdateDir()+"updater.cmd").getAbsolutePath();
 			Files.write( Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

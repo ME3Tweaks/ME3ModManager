@@ -25,6 +25,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -32,12 +33,12 @@ import org.w3c.dom.Document;
 
 public class ModManager {
 
-	public static final String VERSION = "3.1 RC2.03";
-	public static long BUILD_NUMBER = 39L;
+	public static final String VERSION = "3.1";
+	public static long BUILD_NUMBER = 40L;
 
-	public static final String BUILD_DATE = "7/13/2015";
+	public static final String BUILD_DATE = "7/20/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false; //default to true
 	public static double MODMAKER_VERSION_SUPPORT = 1.5; //max modmaker version
@@ -47,7 +48,7 @@ public class ModManager {
 
 	public static void main(String[] args) {
 		System.out.println("Starting mod manager");
-		
+
 		//SETUI LOOK
 		try {
 			// Set cross-platform Java L&F (also called "Metal")
@@ -76,7 +77,8 @@ public class ModManager {
 							System.out.println("Logging mode is enabled");
 							debugLogger.initialize();
 							logging = true;
-							debugLogger.writeMessage("Starting logger. Mod Manager version" + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
+							debugLogger.writeMessage("Starting logger. Mod Manager version" + ModManager.VERSION + " Build "
+									+ ModManager.BUILD_NUMBER);
 						} else {
 							System.out.println("Logging mode disabled");
 						}
@@ -110,7 +112,7 @@ public class ModManager {
 						ASKED_FOR_AUTO_UPDATE = true;
 					}
 				}
-				
+
 				//last check date
 				String lastAutoCheck = settingsini.get("Settings", "lastautocheck");
 				if (lastAutoCheck != null) {
@@ -128,7 +130,7 @@ public class ModManager {
 				System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 			}
 		}
-		
+
 		boolean isUpdate = false;
 		if (args.length > 1 && args[0].equals("--update-from")) {
 			//This is being run as an update
@@ -136,7 +138,8 @@ public class ModManager {
 				long oldbuild = Long.parseLong(args[1]);
 				if (oldbuild >= ModManager.BUILD_NUMBER) {
 					//SOMETHING WAS WRONG!
-					JOptionPane.showMessageDialog(null, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed",
+							JOptionPane.ERROR_MESSAGE);
 					ModManager.debugLogger.writeMessage("UPDATE FAILED!");
 				} else {
 					//update ok
@@ -151,35 +154,124 @@ public class ModManager {
 			}
 		}
 		ModManager.debugLogger.writeMessage("ME3CMM is running from: " + System.getProperty("user.dir"));
+		doFileSystemUpdate();
 		ModManager.debugLogger.writeMessage("========End of startup=========");
 		new ModManagerWindow(isUpdate);
 	}
 
+	/**
+	 * Moves folders to data/ and mods/ from configurations prior to Build 40
+	 */
+	private static void doFileSystemUpdate() {
+		//check classic folders (same as me3cmm.exe)
+		//move to new mods/ directory
+		File modsDir = new File(ModManager.getModsDir());
+		if (!modsDir.exists()) {
+			modsDir.mkdirs();
+		}
+
+		ModManager.debugLogger.writeMessage("==Looking for mods in running directory, will move valid ones to mods/==");
+		ArrayList<Mod> modsToMove = new ArrayList<Mod>(getValidMods(System.getProperty("user.dir")));
+		for (Mod mod : modsToMove) {
+			try {
+				FileUtils.moveDirectory(new File(mod.getModPath()), new File(ModManager.getModsDir() + mod.getModName()));
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE MOD TO mods/ DIRECTORY!");
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+
+		//Move ME3Explorer
+		ModManager.debugLogger.writeMessage("Checking if using old ME3Explorer dir");
+		File me3expDir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "ME3Explorer/");
+		if (me3expDir.exists()) {
+			ModManager.debugLogger.writeMessage("Moving ME3Explorer to data/");
+			try {
+				FileUtils.moveDirectory(me3expDir, new File(ModManager.getME3ExplorerEXEDirectory(false)));
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE ME3EXPLORER TO /data/ME3EXPLORER!");
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+
+		//Move TankMaster Compiler
+		ModManager.debugLogger.writeMessage("Checking if using old tankmaster compiler dir");
+		File tcoalDiD = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "Tankmaster Compiler/");
+		if (tcoalDiD.exists()) {
+			ModManager.debugLogger.writeMessage("Moving TankMaster Compiler to data/");
+			try {
+				FileUtils.moveDirectory(tcoalDiD, new File(ModManager.getTankMasterCompilerDir()));
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE TANKMASTER COMPILER TO data/ DIRECTORY!");
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+		//Move TankMaster TLK
+		ModManager.debugLogger.writeMessage("Checking if using old tankmaster tlk dir");
+		File tlkdir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "Tankmaster TLK/");
+		if (tlkdir.exists()) {
+			ModManager.debugLogger.writeMessage("Moving TankMaster TLK to data/");
+			try {
+				FileUtils.moveDirectory(tlkdir, new File(ModManager.getTankMasterTLKDir()));
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE TANKMASTER TLK TO data/ DIRECTORY!");
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+
+		//move update folder
+		ModManager.debugLogger.writeMessage("Checking if using old update dir");
+		File updatedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "update/");
+		if (updatedir.exists()) {
+			ModManager.debugLogger.writeMessage("Moving update to data/");
+			try {
+				FileUtils.moveDirectory(updatedir, new File(ModManager.getUpdateDir()));
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY!");
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+	}
+
 	public static ArrayList<Mod> getModsFromDirectory() {
-		ModManager.debugLogger.writeMessage("==Getting list of mods in directory==");
-		File fileDir = new File(System.getProperty("user.dir"));
+		ModManager.debugLogger.writeMessage("==Getting list of mods in mods directory==");
+		File modsDir = new File(ModManager.getModsDir());
+		ArrayList<Mod> availableMod = new ArrayList<Mod>(getValidMods(modsDir.getAbsolutePath()));
+		Collections.sort(availableMod);
+		return availableMod;
+	}
+
+	/**
+	 * Gets valid mods from the given directory by looking for subfolders with
+	 * moddesc.ini files
+	 * 
+	 * @return
+	 */
+	private static ArrayList<Mod> getValidMods(String path) {
+		File modsDir = new File(path);
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
 			public boolean accept(File file) {
 				return file.isDirectory();
 			}
 		};
-		File[] subdirs = fileDir.listFiles(fileFilter);
-		System.out.println(subdirs.length);
-		//Got a list of subdirs. Now loop them to find all moddesc.ini files
+		File[] subdirs = modsDir.listFiles(fileFilter);
 		ArrayList<Mod> availableMod = new ArrayList<Mod>();
-		for (int i = 0; i < subdirs.length; i++) {
-			File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini");
-			System.out.println("Searching for file: " + searchSubDirDesc);
-			if (searchSubDirDesc.exists()) {
-				Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
-				if (validatingMod.isValidMod()) {
-					availableMod.add(validatingMod);
+
+		if (subdirs != null && subdirs.length > 0) {
+			//Got a list of subdirs. Now loop them to find all moddesc.ini files
+			for (int i = 0; i < subdirs.length; i++) {
+				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini");
+				System.out.println("Searching for file: " + searchSubDirDesc);
+				if (searchSubDirDesc.exists()) {
+					Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
+					if (validatingMod.isValidMod()) {
+						availableMod.add(validatingMod);
+					}
 				}
 			}
 		}
 
-		Collections.sort(availableMod);
 		return availableMod;
 	}
 
@@ -230,11 +322,15 @@ public class ModManager {
 
 				if (!coalDirHash.equals(patch3CoalescedHash)) {
 					String[] YesNo = { "Yes", "No" };
-					int keepInstalling = JOptionPane.showOptionDialog(null,
-							"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
-									+ coalDirHash + "\nPatch 3 Coalesced.bin's hash: " + patch3CoalescedHash
-									+ "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? ",
-							"Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
+					int keepInstalling = JOptionPane
+							.showOptionDialog(
+									null,
+									"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
+											+ coalDirHash
+											+ "\nPatch 3 Coalesced.bin's hash: "
+											+ patch3CoalescedHash
+											+ "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? ",
+									"Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
 					if (keepInstalling == 0)
 						return true;
 					return false;
@@ -261,7 +357,8 @@ public class ModManager {
 
 						p.waitFor();
 					} catch (IOException e) {
-						ModManager.debugLogger.writeMessage("Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install.");
+						ModManager.debugLogger
+								.writeMessage("Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install.");
 						ModManager.debugLogger.writeMessage(e.getMessage());
 						return false;
 					} catch (InterruptedException e) {
@@ -279,31 +376,6 @@ public class ModManager {
 		}
 		//Backup exists
 		return true;
-	}
-
-	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
-		File executable = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "ME3Explorer.exe");
-		ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: " + executable.getAbsolutePath());
-
-		if (!executable.exists()) {
-			//try another file
-			executable = new File("ME3Explorer\\ME3Explorer.exe");
-			ModManager.debugLogger.writeMessage("Searching for ME3Explorer exe: " + executable.getAbsolutePath());
-			if (!executable.exists()) {
-				ModManager.debugLogger.writeMessage("Could not find ME3Explorer.");
-				if (showDialog) {
-					StringBuilder sb = new StringBuilder();
-					sb.append("Failed to find ME3Explorer.exe in the following directories:\n");
-					sb.append(" - " + System.getProperty("user.dir") + "\n");
-					sb.append(" - " + System.getProperty("user.dir") + "\\ME3Explorer\\" + "\n");
-					JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
-				}
-				return null;
-			}
-
-		}
-		ModManager.debugLogger.writeMessage("Found ME3Explorer: " + executable.getAbsolutePath());
-		return ModManager.appendSlash(executable.getParent());//ModManager.appendSlash("ME3Explorer_0102w_beta");
 	}
 
 	/**
@@ -327,7 +399,8 @@ public class ModManager {
 
 			int readBytes;
 			byte[] buffer = new byte[4096];
-			jarFolder = new File(ModManager.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath().replace('\\', '/');
+			jarFolder = new File(ModManager.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath()
+					.replace('\\', '/');
 			//resStreamOut = new FileOutputStream(jarFolder + resourceName);
 			resStreamOut = new FileOutputStream(exportPath);
 			while ((readBytes = stream.read(buffer)) > 0) {
@@ -347,7 +420,8 @@ public class ModManager {
 		ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
 		File bgdir = new File(biogamedir);
 		if (!bgdir.exists()) {
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.",
+			JOptionPane.showMessageDialog(null,
+					"The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.",
 					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
@@ -366,7 +440,8 @@ public class ModManager {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
-			JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of the ME3CMM.exe.\nPlease report this to femshep.", "Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of the ME3CMM.exe.\nPlease report this to femshep.",
+					"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -465,5 +540,119 @@ public class ModManager {
 		} else {
 			return string + File.separator;
 		}
+	}
+
+	/**
+	 * Gets the mods directory, including a final slash
+	 * 
+	 * @return
+	 */
+	public static String getModsDir() {
+		return appendSlash(System.getProperty("user.dir")) + "mods/";
+	}
+
+	/**
+	 * Gets the data/ folder, returning with an appended slash
+	 * 
+	 * @return
+	 */
+	public static String getDataDir() {
+		return appendSlash(System.getProperty("user.dir")) + "data/";
+	}
+
+	public static String getTankMasterCompilerDir() {
+		File file = new File(getDataDir() + "tankmaster_coalesce/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());	}
+
+	public static String getTankMasterTLKDir() {
+		File file = new File(getDataDir() + "tankmaster_tlk/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());	}
+
+	public static String getUpdateDir() {
+		File file = new File(getDataDir() + "update/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * Gets ME3Explorer directory, with slash on the end
+	 * 
+	 * @param showDialog
+	 *            set to true to show dialog if me3explorer is not found
+	 * @return
+	 */
+	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
+		File me3expdir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "data/ME3Explorer/");
+		if (!me3expdir.exists() && showDialog) {
+			JOptionPane.showMessageDialog(null,
+					"Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.",
+					"ME3Explorer Error", JOptionPane.ERROR_MESSAGE);
+		}
+		return appendSlash(System.getProperty("user.dir")) + "/data/ME3Explorer/";
+	}
+
+	/**
+	 * Gets the modmaker compiling directory
+	 * 
+	 * @return
+	 */
+	public static String getCompilingDir() {
+		File file = new File(getDataDir() + "modmaker/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	public static String getPristineDir() {
+		File file = new File(getCompilingDir() + "pristine/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * Returns if the specified coalesced (job) is in the pristine folder and
+	 * the hash matches the known good value for it
+	 * 
+	 * @param jobName
+	 *            ModType.X coal name
+	 * @return true if pristine, false if doesn't exist (or otherwise)
+	 */
+	public static boolean hasPristineCoalesced(String jobName) {
+		File coal = new File(getPristineCoalesced(jobName));
+		if (!coal.exists()) {
+			return false;
+		}
+		return false;
+	}
+
+	public static String getOverrideDir() {
+		File f = new File(getDataDir() + "override/");
+		f.mkdirs();
+		return appendSlash(f.getAbsolutePath());
+	}
+
+	/**
+	 * Gets the path of a pristine coalesced with the given filename
+	 * 
+	 * @param basegame
+	 * @return
+	 */
+	public static String getPristineCoalesced(String jobName) {
+		File f = new File(getPristineDir() + Mod.getStandardFolderName(jobName));
+		f.mkdirs();
+		return appendSlash(f.getAbsolutePath()) + ME3TweaksUtils.internalNameToCoalFilename(jobName);
+	}
+
+	public static String getTempDir() {
+		File file = new File(getDataDir() + "temp");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	public static String getDatabaseDir() {
+		File file = new File(getDataDir() + "databases");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
 	}
 }

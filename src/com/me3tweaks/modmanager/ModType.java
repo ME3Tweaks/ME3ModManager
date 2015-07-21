@@ -3,9 +3,9 @@ package com.me3tweaks.modmanager;
 import java.util.HashMap;
 
 public class ModType {
-	//DLC Header names
+	//DLC Header names (ModDesc.ini)
 	protected static final String COAL = "COALESCED"; //Used with Legacy and 2.0
-	protected static final String BASEGAME = "BASEGAME"; //Used in 3.0
+	protected static final String BASEGAME = "BASEGAME"; //Used in 3.0+
 	protected static final String MP1 = "RESURGENCE";
 	protected static final String MP2 = "REBELLION";
 	protected static final String MP3 = "EARTH";

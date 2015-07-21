@@ -134,9 +134,9 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		ModManager.debugLogger.writeMessage("Loading basegame database.");
 		try {
             // connect method #1 - embedded driver
-			File databases = new File("databases/");
+			File databases = new File(ModManager.getDatabaseDir());
 			databases.mkdirs();
-            String repairInfoURL = "jdbc:derby:databases/repairinfo;create=true";
+            String repairInfoURL = "jdbc:derby:data/databases/repairinfo;create=true";
             dbConnection = DriverManager.getConnection(repairInfoURL);
             if (dbConnection != null) {
             	ModManager.debugLogger.writeMessage("Loaded basegame database.");
