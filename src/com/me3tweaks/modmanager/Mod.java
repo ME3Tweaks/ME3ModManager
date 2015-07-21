@@ -56,6 +56,11 @@ public class Mod implements Comparable<Mod> {
 		}
 	}
 
+	/**
+	 * Returns the legacy modcoal variable.
+	 * This being true indicates a Coalesced.bin file in the mod root should be installed in legacy mode.
+	 * @return true if legacy coal install, false otherwise
+	 */
 	public boolean modsCoal() {
 		return modCoal;
 	}
@@ -690,7 +695,7 @@ public class Mod implements Comparable<Mod> {
 		return "Failed to write new moddesc.ini file";
 	}
 
-	private Object getStandardFolderName(String jobName) {
+	public static String getStandardFolderName(String jobName) {
 		switch (jobName) {
 		case "BASEGAME":
 			return "BASEGAME";
@@ -780,8 +785,8 @@ public class Mod implements Comparable<Mod> {
 	 * Copies files to the new directory based on the name of this mod. Creates
 	 * a moddesc.ini file based on jobs in this mod.
 	 */
-	public void createNewMod() {
-		File modFolder = new File(modName);
+	public Mod createNewMod() {
+		File modFolder = new File(ModManager.getModsDir()+modName);
 		modFolder.mkdirs();
 		for (ModJob job : jobs) {
 			if (job.modType == ModJob.CUSTOMDLC) {
@@ -827,6 +832,7 @@ public class Mod implements Comparable<Mod> {
 		}
 		Mod newMod = new Mod(modFolder + File.separator + "moddesc.ini");
 		new AutoTocWindow(newMod);
+		return newMod;
 	}
 
 	public static String convertNewlineToBr(String input) {
@@ -902,6 +908,7 @@ public class Mod implements Comparable<Mod> {
 		}
 		return false;
 	}
+<<<<<<< HEAD
 
 	public String getAuthor() {
 		return modAuthor;
@@ -913,5 +920,47 @@ public class Mod implements Comparable<Mod> {
 
 	public void setVersion(double i) {
 		modVersion = Double.toString(i);
+=======
+	
+	
+	/**
+	 * Returns true if this mod has a job that modifies the basegame coalesced
+	 * @return true if basegame coal is swapped, false otherwise
+	 */
+	public boolean modifiesBasegameCoalesced(){
+		for (ModJob job : jobs) {
+			if (job.jobName == ModType.COAL){
+				return true;
+			}
+			for (String file : job.filesToReplace){
+				file = file.replaceAll("\\\\", "/"); //make sure all are the same (since the yall work)
+				if (file.toLowerCase().equals("/BIOGame/CookedPCConsole/Coalesced.bin".toLowerCase())){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Gets this mods basegame coalesced file it will install.
+	 * 
+	 * @return new basegame coalesced file, or null if this mod does not specify one
+	 */
+	public String getBasegameCoalesced(){
+		for (ModJob job : jobs) {
+			if (job.jobName == ModType.COAL){
+				return modPath + "Coalesced.bin";
+			}
+			for (int i = 0; i < job.filesToReplace.size(); i++){
+				String file = job.filesToReplace.get(i);
+				file = file.replaceAll("\\\\", "/"); //make sure all are the same (since the yall work)
+				if (file.toLowerCase().equals("/BIOGame/CookedPCConsole/Coalesced.bin".toLowerCase())){
+					return job.newFiles.get(i);
+				}
+			}
+		}
+		return null;
+>>>>>>> 1cee31c043e7bafa98667dc4efb5bbc0aa75871d
 	}
 }

@@ -79,7 +79,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionOpenME3Exp, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsAutoTOC, modutilsUninstallCustomDLC, modutilsCheckforupdate;
+	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupBasegame;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
@@ -155,13 +155,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		new UpdateCheckThread().execute();
+		//new UpdateCheckThread().execute();
 	}
 
 	class UpdateCheckThread extends SwingWorker<Void, Object> {
 
 		@Override
 		public Void doInBackground() {
+			File f7za = new File(ModManager.getUpdateDir()+"7za.exe");
+			if (!f7za.exists()){
+				new Get7ZipThread().execute();
+			}
+			
 			checkForUpdates();
 			checkForModUpdates();
 			return null;
@@ -177,6 +182,41 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					checkAllModsForUpdates(false);
 				}
 			}
+		}
+
+		@Override
+		protected void process(List<Object> chunks) {
+			Object latest = chunks.get(chunks.size() - 1);
+			if (latest instanceof String) {
+				String latestUpdate = (String) latest;
+				labelStatus.setText(latestUpdate);
+			}
+		}
+
+		@Override
+		protected void done() {
+
+		}
+	}
+	
+	class Get7ZipThread extends SwingWorker<Void, Object> {
+
+		@Override
+		public Void doInBackground() {
+			String url = "http://me3tweaks.com/modmanager/7za.exe";
+			try {
+				File updateDir = new File(ModManager.getUpdateDir());
+				updateDir.mkdirs();
+				FileUtils.copyURLToFile(new URL(url),new File(ModManager.getUpdateDir()+"7za.exe"));
+				publish("Downloaded Update Unzipper into data directory");
+				ModManager.debugLogger.writeMessage("Downloaded missing 7za.exe file for updating Mod Manager");
+
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("Error downloading 7za into update folder");
+				publish("Error downloading 7za for updating");
+				ModManager.debugLogger.writeException(e);
+			}
+			return null;
 		}
 
 		@Override
@@ -284,6 +324,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	/**
+	 * Checks if the keybindings override file exists.
+	 * @return true if exists, false otherwise
+	 */
+	private boolean checkForKeybindsOverride(){
+		File bioinputxml = new File(System.getProperty("user.dir")+"/data/override/bioinput.xml");
+		return bioinputxml.exists();
 	}
 
 	private JFrame setupWindow(JFrame frame) {
@@ -431,6 +480,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu = new JMenu("Mod Utils");
 		modutilsHeader = new JMenuItem("No mod selected");
 		modutilsHeader.setEnabled(false);
+		modutilsInstallCustomKeybinds = new JMenuItem("Install custom keybinds into this mod");
+		modutilsInstallCustomKeybinds.addActionListener(this);
 		modutilsUpdateXMLGenerator = new JMenuItem("Generate Mod XML");
 		modutilsUpdateXMLGenerator.addActionListener(this);
 		modutilsInfoEditor = new JMenuItem("Edit name/description");
@@ -448,6 +499,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			modMenu.add(modutilsUpdateXMLGenerator);
 		}
 		modMenu.addSeparator();
+		modMenu.add(modutilsInstallCustomKeybinds);
 		modMenu.add(modutilsInfoEditor);
 		modMenu.add(modutilsAutoTOC);
 		modMenu.add(modutilsUninstallCustomDLC);
@@ -462,7 +514,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsOpenME3Dir = new JMenuItem("Open BIOGame directory");
 		toolsOpenME3Dir.addActionListener(this);
-
+		
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
@@ -781,6 +833,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new WavelistGUI();
 		} else if (e.getSource() == modutilsCheckforupdate) {
 			checkForModUpdate();
+		} else if (e.getSource() == modutilsInstallCustomKeybinds) {
+			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()));
 		} else if (e.getSource() == toolsCheckallmodsforupdate) {
 			checkAllModsForUpdates(true);
 		} else if (e.getSource() == modutilsUpdateXMLGenerator) {

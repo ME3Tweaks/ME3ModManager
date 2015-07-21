@@ -264,7 +264,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 
 			// Check Coalesceds
-			File coalDir = new File("coalesceds");
+			File coalDir = new File(ModManager.getCompilingDir()+"coalesceds");
 			coalDir.mkdirs(); // creates if it doens't exist. otherwise nothing.
 			ArrayList<String> coals = new ArrayList<String>(requiredCoals); // copy
 																			// so we
@@ -277,7 +277,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			for (int i = coals.size() - 1; i >= 0; i--) {
 				String coal = coals.get(i); // go in reverse order otherwise we get
 											// null pointer
-				File coalFile = new File("coalesceds/" + coal);
+				File coalFile = new File(ModManager.getCompilingDir()+"coalesceds/" + coal);
 				if (!coalFile.exists()) {
 					ModManager.debugLogger.writeMessage("Coal doesn't exist, need to download: " + coal);
 					numToDownload++;
@@ -669,9 +669,10 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected Void doInBackground() throws Exception {
 			int coalsDecompiled = 0;
-			String path = Paths.get(".").toAbsolutePath().normalize().toString();
+			//String path = Paths.get(".").toAbsolutePath().normalize().toString();
+			String path = ModManager.getCompilingDir();
 			for (String coal : coalsToDecompile) {
-				String compilerPath = path + "\\Tankmaster Compiler\\MassEffect3.Coalesce.exe";
+				String compilerPath = ModManager.getTankMasterCompilerDir()+"MassEffect3.Coalesce.exe";
 				ProcessBuilder decompileProcessBuilder = new ProcessBuilder(compilerPath, path + "\\coalesceds\\" + coal);
 				ModManager.debugLogger.writeMessage("Executing decompile command: " + compilerPath + " " + path + "\\coalesceds\\ " + coal);
 				decompileProcessBuilder.redirectErrorStream(true);
@@ -719,9 +720,9 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected Void doInBackground() throws Exception {
 			int coalsCompiled = 0;
-			String path = Paths.get(".").toAbsolutePath().normalize().toString();
+			String path = ModManager.getCompilingDir();
 			for (String coal : coalsToCompile) {
-				String compilerPath = path + "\\Tankmaster Compiler\\MassEffect3.Coalesce.exe";
+				String compilerPath = ModManager.getTankMasterCompilerDir()+"MassEffect3.Coalesce.exe";
 				//ProcessBuilder compileProcessBuilder = new ProcessBuilder(
 				//		compilerPath, "--xml2bin", path + "\\coalesceds\\"
 				//				+ FilenameUtils.removeExtension(coal)+".xml");

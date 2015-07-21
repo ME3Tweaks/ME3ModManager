@@ -166,7 +166,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 		public DownloadTask(UpdatePackage upackage) {
 			String modpath = upackage.getMod().getModPath();
-			String updateFolder = ResourceUtils.getRelativePath(modpath, System.getProperty("user.dir"), File.separator);
+			String updateFolder = ResourceUtils.getRelativePath(modpath, ModManager.getModsDir(), File.separator);
 			this.saveDirectory = "update" + File.separator + updateFolder;
 			this.upackage = upackage;
 			numFilesToDownload = upackage.getFilesToDownload().size();
@@ -179,7 +179,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 		public DownloadTask(UpdatePackage upackage, AllModsUpdateWindow amuw) {
 			String modpath = upackage.getMod().getModPath();
-			String updateFolder = ResourceUtils.getRelativePath(modpath, System.getProperty("user.dir"), File.separator);
+			String updateFolder = ResourceUtils.getRelativePath(modpath, ModManager.getModsDir(), File.separator);
 			this.saveDirectory = "update" + File.separator + updateFolder;
 			this.upackage = upackage;
 			this.amuw = amuw;
