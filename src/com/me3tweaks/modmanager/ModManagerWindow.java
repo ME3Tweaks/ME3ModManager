@@ -629,7 +629,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void verifyBackupCoalesced() {
-		File restoreTest = new File("Coalesced.original");
+		File restoreTest = new File(ModManager.getDataDir()+"Coalesced.original");
 		if (!restoreTest.exists()) {
 			ModManager.debugLogger.writeMessage("Didn't find Coalesced.original - checking existing installed one, will copy if verified.");
 			// try to copy the current one
@@ -1175,11 +1175,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					if (mod.getJobs().length == 0) {
 						labelStatus.setText(" " + mod.getModName() + " installed");
 					} else {
-						labelStatus.setText(" Injecting files into DLC modules...");
+						labelStatus.setText("Injecting files into DLC modules...");
 					}
 				} catch (IOException e) {
 					JOptionPane.showMessageDialog(null, "Copying Coalesced.bin failed. Stack trace:\n" + e.getMessage(), "Error copying Coalesced.bin", JOptionPane.ERROR_MESSAGE);
-					labelStatus.setText(" Mod failed to install");
+					labelStatus.setText("Mod failed to install");
 				}
 			} else {
 
@@ -1347,7 +1347,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 																			// the
 																			// final
 																			// one
-		File cOriginal = new File("Coalesced.original");
+		File cOriginal = new File(ModManager.getDataDir()+"Coalesced.original");
 		if (cOriginal.exists()) {
 			// Take the MD5 first to verify it.
 			try {
@@ -1363,9 +1363,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						labelStatus.setVisible(true);
 						return false;
 					}
-					String sourceFile = "Coalesced.original";
+					String sourceFile = ModManager.getDataDir()+"Coalesced.original";
 
-					Files.copy(new File(ModManager.appendSlash(System.getProperty("user.dir")) + sourceFile).toPath(), new File(destFile).toPath(),
+					Files.copy(new File(sourceFile).toPath(), new File(destFile).toPath(),
 							StandardCopyOption.REPLACE_EXISTING);
 					ModManager.debugLogger.writeMessage("Restored Coalesced.bin");
 					labelStatus.setText("Coalesced.bin restored");
@@ -1390,7 +1390,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			labelStatus.setText("Coalesced.bin not restored");
 			labelStatus.setVisible(true);
 			JOptionPane.showMessageDialog(null,
-					"The backed up Coalesced.bin file (Coalesced.original) does not exist.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.\n\nThis error should have been caught but can be thrown due to file system changes \nwhile the program is open.",
+					"The backed up Coalesced.bin file (data/Coalesced.original) does not exist.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.\n\nThis error should have been caught but can be thrown due to file system changes \nwhile the program is open.",
 					"Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
 
 		}

@@ -64,14 +64,13 @@ public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
 	String code, modName, modDescription, modId, modDev, modVer;
 	private static double TOTAL_STEPS = 9;
-	private static String DOWNLOADED_XML_FILENAME = "mod_info";
+	public static String DOWNLOADED_XML_FILENAME = ModManager.getCompilingDir()+"mod_info";
 	private int stepsCompleted = 1;
 	private double modMakerVersion;
 	ArrayList<String> requiredCoals = new ArrayList<String>();
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
 	ArrayList<String> languages;
-	//JSONObject mod_object, mod_info;
 	Element infoElement, dataElement, tlkElement;
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;

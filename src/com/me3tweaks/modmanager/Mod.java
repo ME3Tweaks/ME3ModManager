@@ -253,6 +253,8 @@ public class Mod implements Comparable<Mod> {
 					if (!file.exists()) {
 						ModManager.debugLogger.writeMessage(modName + " doesn't have Coalesced.bin even though flag was set. Marking as invalid.");
 						return;
+					} else {
+						ModManager.debugLogger.writeMessage("Coalesced.bin is OK");
 					}
 					addTask(ModType.COAL, null);
 				}
@@ -952,10 +954,11 @@ public class Mod implements Comparable<Mod> {
 	 * @return new basegame coalesced file, or null if this mod does not specify one
 	 */
 	public String getBasegameCoalesced(){
+		if (modsCoal()){
+			return ModManager.appendSlash(modPath) + "Coalesced.bin";
+		}
 		for (ModJob job : jobs) {
-			if (job.jobName == ModType.COAL){
-				return modPath + "Coalesced.bin";
-			}
+			System.out.println("GETBASECOAL SCANNING: "+job.jobName);
 			for (int i = 0; i < job.filesToReplace.size(); i++){
 				String file = job.filesToReplace.get(i);
 				file = file.replaceAll("\\\\", "/"); //make sure all are the same (since the yall work)
