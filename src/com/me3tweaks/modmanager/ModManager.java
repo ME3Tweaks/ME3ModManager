@@ -33,6 +33,7 @@ import org.ini4j.Wini;
 import org.w3c.dom.Document;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 
 public class ModManager {
 
@@ -239,7 +240,6 @@ public class ModManager {
 		}
 		
 		//move databases folder
-		//move update folder
 		ModManager.debugLogger.writeMessage("Checking if using old databases dir");
 		File databasedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "databases/");
 		if (databasedir.exists()) {
@@ -251,6 +251,23 @@ public class ModManager {
 				ModManager.debugLogger.writeException(e);
 			}
 		}
+		
+		//move coalesced.original folder
+		ModManager.debugLogger.writeMessage("Checking if should move coalesced.original");
+		File coalOrig = new File("Coalesced.original");
+		if (coalOrig.exists()) {
+			ModManager.debugLogger.writeMessage("Moving Coalesced.original to data/");
+			try {
+				FileUtils.moveFile(coalOrig, new File(ModManager.getDataDir()+"Coalesced.original"));
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE Coalesced.original TO data/ DIRECTORY!");
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+		
+		//cleanup
+		File mod_info = new File(ModMakerCompilerWindow.DOWNLOADED_XML_FILENAME);
+		mod_info.delete();
 	}
 
 	public static ArrayList<Mod> getModsFromDirectory() {
@@ -332,7 +349,7 @@ public class ModManager {
 	 */
 	public static boolean checkDoOriginal(String origDir) {
 		String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e"; //This is Patch 3 Coalesced's hash
-		File cOriginal = new File("Coalesced.original");
+		File cOriginal = new File(ModManager.getDataDir()+"Coalesced.original");
 		if (cOriginal.exists() == false) {
 			//Attempt to copy an original
 			try {
@@ -356,7 +373,7 @@ public class ModManager {
 					return false;
 				} else {
 					//Make a backup of it
-					String destFile = "Coalesced.original";
+					String destFile = ModManager.getDataDir()+"Coalesced.original";
 					String sourceFile = ModManager.appendSlash(origDir) + "Coalesced.bin";
 					String[] command = { "cmd.exe", "/c", "copy", "/Y", sourceFile, destFile };
 					try {
@@ -638,13 +655,13 @@ public class ModManager {
 	 * @return
 	 */
 	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
-		File me3expdir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "data/ME3Explorer/");
+		File me3expdir = new File(getDataDir()+"ME3Explorer/");
 		if (!me3expdir.exists() && showDialog) {
 			JOptionPane.showMessageDialog(null,
 					"Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.",
 					"ME3Explorer Error", JOptionPane.ERROR_MESSAGE);
 		}
-		return appendSlash(System.getProperty("user.dir")) + "/data/ME3Explorer/";
+		return appendSlash(me3expdir.getAbsolutePath());
 	}
 
 	/**

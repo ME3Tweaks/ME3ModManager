@@ -3,7 +3,7 @@ package com.me3tweaks.modmanager.valueparsers.possessionwaves;
 import com.me3tweaks.modmanager.ModManager;
 
 public class Waves {
-	boolean[] possessionwaves = new boolean[11];
+	public boolean[] possessionwaves = new boolean[11];
 	
 	public Waves(String str) {
 		System.out.println("Parsing possessionwaves: "+str);
