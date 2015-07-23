@@ -54,7 +54,7 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 		// callingWindow.setEnabled(false);
 		this.callingWindow = callingWindow;
 		listDescriptors = new HashMap<String, Mod>();
-		mods = ModManager.getCMM3ModsFromDirectory();
+		mods = callingWindow.getCMM3ModsFromDirectory();
 		setupWindow();
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.pack();

@@ -221,6 +221,9 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 			selectStatement = dbConnection.prepareStatement(selectString);
 			updateStatement = dbConnection.prepareStatement(updateString);
 			for (File file : filesToHash) {
+				if (file.getAbsolutePath().endsWith(".bak")){
+					continue; //skip backups
+				}
 				String fileKey = ResourceUtils.getRelativePath(file.getAbsolutePath(), basePath, File.separator);
 				ModManager.debugLogger.writeMessage("Cataloging "+fileKey);
 				//select first, to see if it's in the DB...

@@ -15,9 +15,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JOptionPane;
+import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -40,9 +42,9 @@ public class ModManager {
 	public static final String VERSION = "3.1";
 	public static long BUILD_NUMBER = 40L;
 
-	public static final String BUILD_DATE = "7/20/2015";
+	public static final String BUILD_DATE = "7/22/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false; //default to true
 	public static double MODMAKER_VERSION_SUPPORT = 1.6; //max modmaker version
@@ -60,6 +62,8 @@ public class ModManager {
 		} catch (Exception e) {
 			System.err.println("Couldn't set the UI interface style");
 		}
+        ToolTipManager.sharedInstance().setDismissDelay(15000);
+
 
 		//Set and get debugging mode from wini
 		debugLogger = new DebugLogger();
@@ -268,6 +272,19 @@ public class ModManager {
 		//cleanup
 		File mod_info = new File(ModMakerCompilerWindow.DOWNLOADED_XML_FILENAME);
 		mod_info.delete();
+		File tlk = new File("tlk");
+		File toc = new File("toc");
+		File coalesceds = new File("coalesceds");
+		try {
+			FileUtils.deleteDirectory(toc);
+			FileUtils.deleteDirectory(tlk);
+			FileUtils.deleteDirectory(coalesceds);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+
 	}
 
 	public static ArrayList<Mod> getModsFromDirectory() {
@@ -312,8 +329,8 @@ public class ModManager {
 		return availableMod;
 	}
 
-	public static ArrayList<Mod> getCMM3ModsFromDirectory() {
-		File fileDir = new File(System.getProperty("user.dir"));
+/*	public static ArrayList<Mod> getCMM3ModsFromDirectory() {
+		File fileDir = new File(getModsDir());
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
 			public boolean accept(File file) {
@@ -334,12 +351,12 @@ public class ModManager {
 			}
 		}
 
-		/*
+		
 		 * for (Mod i:availableMod){
 		 * ModManagerWindow.listDescriptors.put(i.getModName(),i); }
-		 */
+		 
 		return availableMod;
-	}
+	}*/
 
 	/**
 	 * Checks for a file called Coalesced.original. If it exists, it will exit
@@ -694,7 +711,34 @@ public class ModManager {
 		if (!coal.exists()) {
 			return false;
 		}
-		return true;
+		//check hash
+		try {
+			String hash = MD5Checksum.getMD5Checksum(coal.getAbsolutePath());
+			HashMap<String,String> coalHashes = ME3TweaksUtils.getCoalHashesMap();
+			//convert to header so we can check MODTYPE in hashmap
+			String key = "error";
+			switch (mode) {
+			case ME3TweaksUtils.FILENAME:
+				key = ME3TweaksUtils.internalNameToHeaderName(ME3TweaksUtils.coalFilenameToInternalName(name));
+				break;
+			case ME3TweaksUtils.HEADER:
+				//do nothing
+				break;
+			case ME3TweaksUtils.INTERNAL:
+				key = ME3TweaksUtils.internalNameToHeaderName(name);
+				break;
+			}
+			
+			if (hash.equals(coalHashes.get(key))){
+				return true;
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeError("ERROR GENERATING HASH FOR PRISTING COALESCED: "+coal.getAbsolutePath());
+			ModManager.debugLogger.writeException(e);
+			return false;
+		}
+		return false;
 	}
 
 	public static String getOverrideDir() {
@@ -726,6 +770,75 @@ public class ModManager {
 		File f = new File(getPristineDir() + Mod.getStandardFolderName(name));
 		f.mkdirs();
 		return appendSlash(f.getAbsolutePath()) + ME3TweaksUtils.headerNameToCoalFilename(name);
+	}
+	
+	/**
+	 * Gets the path of a pristine TOC with the given filename
+	 * @param mode ME3TweaksUtils mode indicating what the name variable is
+	 * 
+	 * @param mode Mode indicating what name is as a constant type
+	 * @return
+	 */
+	public static String getPristineTOC(String name, int mode) {
+		switch (mode) {
+		case ME3TweaksUtils.FILENAME:
+			name = ME3TweaksUtils.internalNameToHeaderName(ME3TweaksUtils.coalFilenameToInternalName(name));
+			break;
+		case ME3TweaksUtils.HEADER:
+			//do nothing
+			break;
+		case ME3TweaksUtils.INTERNAL:
+			name = ME3TweaksUtils.internalNameToHeaderName(name);
+			break;
+		}
+		
+		File f = new File(getPristineDir() + Mod.getStandardFolderName(name));
+		f.mkdirs();
+		return appendSlash(f.getAbsolutePath()) + "PCConsoleTOC.bin";
+	}
+	
+	/**
+	 * Returns if the specified coalesced (job) is in the pristine folder and
+	 * the hash matches the known good value for it
+	 * 
+	 * @param name value to use to see if has pristine coalesced
+	 * @param mode mode to parse name as
+	 * @return true if pristine, false if doesn't exist (or otherwise)
+	 */
+	public static boolean hasPristineTOC(String name, int mode) {
+		File toc = new File(getPristineTOC(name, mode));
+		if (!toc.exists()) {
+			return false;
+		}
+		
+		//check hash
+		try {
+			String hash = MD5Checksum.getMD5Checksum(toc.getAbsolutePath());
+			HashMap<String,String> tocHashes = ME3TweaksUtils.getTOCHashesMap();
+			//convert to header so we can check MODTYPE in hashmap
+			String key = "error";
+			switch (mode) {
+			case ME3TweaksUtils.FILENAME:
+				key = ME3TweaksUtils.internalNameToHeaderName(ME3TweaksUtils.coalFilenameToInternalName(name));
+				break;
+			case ME3TweaksUtils.HEADER:
+				//do nothing
+				break;
+			case ME3TweaksUtils.INTERNAL:
+				key = ME3TweaksUtils.internalNameToHeaderName(name);
+				break;
+			}
+			
+			if (hash.equals(tocHashes.get(key))){
+				return true;
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeError("ERROR GENERATING HASH FOR PRISTING TOC: "+toc.getAbsolutePath());
+			ModManager.debugLogger.writeException(e);
+			return false;
+		}
+		return false;
 	}
 
 	public static String getTempDir() {

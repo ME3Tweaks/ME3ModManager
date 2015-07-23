@@ -4,26 +4,27 @@ import java.util.HashMap;
 
 public class ModType {
 	//DLC Header names (ModDesc.ini)
-	protected static final String COAL = "COALESCED"; //Used with Legacy and 2.0
-	protected static final String BASEGAME = "BASEGAME"; //Used in 3.0+
-	protected static final String MP1 = "RESURGENCE";
-	protected static final String MP2 = "REBELLION";
-	protected static final String MP3 = "EARTH";
-	protected static final String MP4 = "RETALIATION";
-	protected static final String MP5 = "RECKONING";
-	protected static final String PATCH1 = "PATCH1";
-	protected static final String PATCH2 = "PATCH2";
-	protected static final String TESTPATCH = "TESTPATCH";
-	protected static final String HEN_PR = "FROM_ASHES";
-	protected static final String END = "EXTENDED_CUT";
-	protected static final String EXP1 = "LEVIATHAN";
-	protected static final String EXP2 = "OMEGA";
-	protected static final String EXP3 = "CITADEL";
-	protected static final String EXP3B = "CITADEL_BASE";
-	protected static final String APP01 = "APPEARANCE";
-	protected static final String GUN01 = "FIREFIGHT";
-	protected static final String GUN02 = "GROUNDSIDE";
-	protected static final String CUSTOMDLC = "CUSTOMDLC";
+	public static final String COAL = "COALESCED"; //Used with Legacy and 2.0
+	public static final String BASEGAME = "BASEGAME"; //Used in 3.0+
+	public static final String MP1 = "RESURGENCE";
+	public static final String MP2 = "REBELLION";
+	public static final String MP3 = "EARTH";
+	public static final String MP4 = "RETALIATION";
+	public static final String MP5 = "RECKONING";
+	public static final String PATCH1 = "PATCH1";
+	public static final String PATCH2 = "PATCH2";
+	public static final String TESTPATCH = "TESTPATCH";
+	public static final String HEN_PR = "FROM_ASHES";
+	public static final String END = "EXTENDED_CUT";
+	public static final String EXP1 = "LEVIATHAN";
+	public static final String EXP2 = "OMEGA";
+	public static final String EXP3 = "CITADEL";
+	public static final String EXP3B = "CITADEL_BASE";
+	public static final String APP01 = "APPEARANCE";
+	public static final String GUN01 = "FIREFIGHT";
+	public static final String GUN02 = "GROUNDSIDE";
+	public static final String CUSTOMDLC = "CUSTOMDLC";
+	public static final String BINI = "LIVEBALANCE";
 	
 	
 	/* DONT DELETE
