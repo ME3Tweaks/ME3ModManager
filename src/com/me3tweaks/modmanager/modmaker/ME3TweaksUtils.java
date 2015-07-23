@@ -10,11 +10,14 @@ import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.Mod;
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModType;
 
 public class ME3TweaksUtils {
 	public static final int FILENAME = 0;
 	public static final int HEADER = 1;
 	public static final int INTERNAL = 2;
+	
+	private static HashMap<String, String> coalHashMap, tocHashMap;
 
 	/**
 	 * Downloads a pristine coalesced to the correct pristine directory. This
@@ -49,9 +52,54 @@ public class ME3TweaksUtils {
 
 		String link = "http://me3tweaks.com/coal/" + filename;
 		File target = new File(ModManager.getPristineDir() + standardFolder + File.separator + filename);
+		target.delete();
 		try {
 			FileUtils.copyURLToFile(new URL(link), target);
 			ModManager.debugLogger.writeMessage("Downloaded Pristine Coalesced to: " + target.getAbsolutePath());
+		} catch (MalformedURLException e) {
+			ModManager.debugLogger.writeException(e);
+			return null;
+		} catch (IOException e) {
+			ModManager.debugLogger.writeException(e);
+			return null;
+		}
+		return target.getAbsolutePath();
+	}
+
+	/**
+	 * Downloads a pristine TOC to the correct pristine directory. This method
+	 * should be executed in the background.
+	 * 
+	 * @param name
+	 *            What to download (uses mode to figure out what this is)
+	 * @param mode
+	 *            indicates what what the name parameter is, which will convert
+	 *            to the correct filename on the server
+	 * @return newly download pristine file, null otherwise (if failed)
+	 */
+	public static String downloadPristineTOC(String name, int mode) {
+		ModManager.debugLogger.writeMessage("Getting pristine TOC for: " + name + " with mode " + mode);
+		String filename = "PCConsoleTOC.bin";
+		String standardFolder = "UNKNOWN_DEFAULT_FOLDER";
+		switch (mode) {
+		//convert to headers so standard folder works
+		case FILENAME:
+			standardFolder = Mod.getStandardFolderName(coalFilenameToHeaderName(name));
+			break;
+		case HEADER:
+			standardFolder = Mod.getStandardFolderName(name);
+			break;
+		case INTERNAL:
+			standardFolder = Mod.getStandardFolderName(internalNameToHeaderName(name));
+			break;
+		}
+
+		String link = "http://me3tweaks.com/toc/" + standardFolder + "/" + filename;
+		File target = new File(ModManager.getPristineDir() + standardFolder + File.separator + filename);
+		target.delete();
+		try {
+			FileUtils.copyURLToFile(new URL(link), target);
+			ModManager.debugLogger.writeMessage("Downloaded Pristine TOC to: " + target.getAbsolutePath());
 		} catch (MalformedURLException e) {
 			ModManager.debugLogger.writeException(e);
 			return null;
@@ -113,7 +161,7 @@ public class ME3TweaksUtils {
 			return null;
 		}
 	}
-	
+
 	public static String coalFilenameToHeaderName(String coalName) {
 		switch (coalName) {
 		case "Default_DLC_CON_MP1.bin":
@@ -356,27 +404,56 @@ public class ME3TweaksUtils {
 		}
 	}
 
-	/*
-	 * public static HashMap<String, String> getCoalHashesMap() {
-	 * HashMap<String,String> hashesMap = new HashMap<String,String>();
-	 * hashesMap.put(MP1,"a80cc9089d01ba62fa465e70253a8ab4");
-	 * hashesMap.put(MP2,"949a4197ac8fb97221f63da41f61c6b7");
-	 * hashesMap.put(MP3,"69fd670cac701dc16d034fb5ebb17524");
-	 * hashesMap.put(MP4,"10987f6f49a786637b045ba38e1cb78f");
-	 * hashesMap.put(MP5,"4645cc530f4f309dc7be4eb1dffccab6");
-	 * hashesMap.put(PATCH1,"f025e9b197bfa9e0ce24ca7aefc7b00f");
-	 * hashesMap.put(PATCH2,"77c5584cff4726ad754cbecefa38adad");
-	 * hashesMap.put(TESTPATCH,"c53a2ac7c3b6f62e76b3e529b7cc61e5");
-	 * hashesMap.put(HEN_PR,"64ab5bae7ae4ad75108009d76c73389b");
-	 * hashesMap.put(END,"a0f9f2acdba80acba100218f205e385e");
-	 * hashesMap.put(EXP1,"3b9b37d842378e96038c17389dd63032");
-	 * hashesMap.put(EXP2,"ba6f1055dff2cc63c72c34b59a2df9cb");
-	 * hashesMap.put(EXP3,"b361c4bca1ac106dbb0c4b629e7c3022");
-	 * hashesMap.put(EXP3B,"f4c66724f2cf26e4bbe3b62d9024b709");
-	 * hashesMap.put(APP01,"d27098a14da986f4562bda557ed778cc");
-	 * hashesMap.put(GUN01,"d05977324e5ef172e8d0f10ec664ab9f");
-	 * hashesMap.put(GUN02,"6d7fa053fac1696c6b64ea20669db5c0"); return
-	 * hashesMap; }
-	 */
-
+	public static HashMap<String, String> getCoalHashesMap() {
+		if (coalHashMap != null) {
+			return coalHashMap;
+		}
+		coalHashMap = new HashMap<String, String>();
+		coalHashMap.put(ModType.BASEGAME, "540053c7f6eed78d92099cf37f239e8e");
+		coalHashMap.put(ModType.MP1, "7206b8f7a3cadb5f1e425263638816b4");
+		coalHashMap.put(ModType.MP2, "48d9ceaa751e850cfc4fe39bd72339f3");
+		coalHashMap.put(ModType.MP3, "0493ab300be5513cad3bbcc1670b22ff");
+		coalHashMap.put(ModType.MP4, "35eb556e8757b265d3ee934a489796b4");
+		coalHashMap.put(ModType.MP5, "48eb9900ccbcd4927be7988e3939a765");
+		coalHashMap.put(ModType.PATCH1, "a3d61c61f4e6dfff4167d46c188f2dba");
+		coalHashMap.put(ModType.PATCH2, "3bf6ce760fcdd69e656ef10a1eb08692");
+		coalHashMap.put(ModType.TESTPATCH, "82f2ddaf4ecc9c60c2d083740069653a");
+		coalHashMap.put(ModType.HEN_PR, "d8007a2a44af5682c86dbdf327d44864");
+		coalHashMap.put(ModType.END, "e94e2fb635c01c6edcea018cc7b9701c");
+		coalHashMap.put(ModType.EXP1, "363a36372ef369b5ea8f00f662e467e4");
+		coalHashMap.put(ModType.EXP2, "c13410248a3bc6de4d653622d150eb80");
+		coalHashMap.put(ModType.EXP3, "8646b866e7660e7056681f14dcd2db76");
+		coalHashMap.put(ModType.EXP3B, "fbfd633f640eccf5f21ac1603a137d5a");
+		coalHashMap.put(ModType.APP01, "efe108aa8f2142734c07d888b79f4c0b");
+		coalHashMap.put(ModType.GUN01, "fe9084127be47b8c084dad67c64cd211");
+		coalHashMap.put(ModType.GUN02, "f3231b3855fdf288482a541b147dfca9");
+		coalHashMap.put(ModType.BINI, "1d3e646cdf9da8bcb8207d8fd961f7f5");
+		return coalHashMap;
+	}
+	
+	public static HashMap<String, String> getTOCHashesMap() {
+		if (tocHashMap != null) {
+			return tocHashMap;
+		}
+		tocHashMap = new HashMap<String, String>();
+		tocHashMap.put(ModType.BASEGAME, "07e157a9bc1bb7ee13f0310d8b165f08");
+		tocHashMap.put(ModType.MP1, "4ffa2aab35ba7e16243b8cf573629f0a");
+		tocHashMap.put(ModType.MP2, "7136eb641f5c1dca0e9c54583ad7560f");
+		tocHashMap.put(ModType.MP3, "25e8ae6f428a6d09058175b81d59451d");
+		tocHashMap.put(ModType.MP4, "32e5f7f628e16b53546a345a63a76d82");
+		tocHashMap.put(ModType.MP5, "74e86f1189403b01975a67d27dd0bc99");
+		tocHashMap.put(ModType.PATCH1, "ddc9f8aca8b4a1eabab5f28966b09718");
+		tocHashMap.put(ModType.PATCH2, "32e5f7f628e16b53546a345a63a76d82");
+		tocHashMap.put(ModType.TESTPATCH, "e5e7d1199145ebc08d6c1508318c2b55");
+		tocHashMap.put(ModType.HEN_PR, "0fcf41d28e5b8fdb4440068e45f9781d");
+		tocHashMap.put(ModType.END, "977880ad14ab246171f5c2c9e9975174");
+		tocHashMap.put(ModType.EXP1, "5ae9c8cfac5867982d3ec15adc2ba037");
+		tocHashMap.put(ModType.EXP2, "5497ab73be4c12ca9e4e0303d090ea72");
+		tocHashMap.put(ModType.EXP3, "5d8eb55ef0150b8e644c8dccb814f617");
+		tocHashMap.put(ModType.EXP3B, "0771adb534768b3a0229ca6f57e9ec5b");
+		tocHashMap.put(ModType.APP01, "21c396e4ae50b4d8b3cf55fe2b9c0722");
+		tocHashMap.put(ModType.GUN01, "53f06f917f27af46af25cae77f595d75");
+		tocHashMap.put(ModType.GUN02, "6c26b453dfaf663ebaeeafeac78440c2");
+		return tocHashMap;
+	}
 }

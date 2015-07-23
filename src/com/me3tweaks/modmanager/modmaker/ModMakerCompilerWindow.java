@@ -253,14 +253,8 @@ public class ModMakerCompilerWindow extends JDialog {
 					FileUtils.deleteDirectory(moddir);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					ModManager.debugLogger.writeException(e);
 				}
-
-				/*
-				 * dispose(); JOptionPane.showMessageDialog(null,
-				 * "<html>A mod with this name already exists.</html>",
-				 * "Compiling Error", JOptionPane.ERROR_MESSAGE);
-				 */
 			}
 
 			//Debug remove
@@ -1724,10 +1718,12 @@ public class ModMakerCompilerWindow extends JDialog {
 			tocDir.mkdirs();
 			for (String toc : tocsToDownload) {
 				try {
-					String link = "http://www.me3tweaks.com/toc/" + ME3TweaksUtils.coalFilenameToInternalName(toc) + "/PCConsoleTOC.bin";
-					ModManager.debugLogger.writeMessage("Downloading TOC file: " + link);
-					FileUtils.copyURLToFile(new URL(link), new File(ModManager.getCompilingDir()+"toc/" + ME3TweaksUtils.coalFilenameToInternalName(toc) + "/PCConsoleTOC.bin"));
-					ModManager.debugLogger.writeMessage("Saved TOC file to " + (new File("toc/" + ME3TweaksUtils.coalFilenameToInternalName(toc) + "/PCConsoleTOC.bin")).getAbsolutePath());
+					if (!ModManager.hasPristineTOC(toc, ME3TweaksUtils.FILENAME)){
+						ME3TweaksUtils.downloadPristineTOC(toc,ME3TweaksUtils.FILENAME);
+					}
+					File destTOC = new File(ModManager.getCompilingDir()+"toc/"+ME3TweaksUtils.coalFilenameToInternalName(toc)+"/PCConsoleTOC.bin"); //head should be same as standard folder
+					FileUtils.copyFile(new File(ModManager.getPristineTOC(toc, ME3TweaksUtils.FILENAME)), destTOC);
+					ModManager.debugLogger.writeMessage("Copied pristine TOC of COALESCED DLC("+toc+") to: " + destTOC.getAbsolutePath());
 					tocsCompleted++;
 					this.publish(tocsCompleted);
 				} catch (MalformedURLException e) {
