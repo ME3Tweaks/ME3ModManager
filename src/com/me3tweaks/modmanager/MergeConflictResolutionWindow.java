@@ -26,6 +26,9 @@ import javax.swing.border.TitledBorder;
 
 import org.apache.commons.io.FilenameUtils;
 
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModJob;
+
 public class MergeConflictResolutionWindow extends JDialog implements ActionListener {
 	JButton mergeButton, favorLeft, favorRight;
 	HashMap<String, ArrayList<String>> conflictFiles;
@@ -245,9 +248,9 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 						//if (X == MergeModWindow.RIGHT && button.isSelected()) {
 							System.out.println("CONFLICT IS LEFT: "+isLeft+" for conflict file in "+key);
 							for (ModJob job : merged.jobs) { //merging into mod1
-								if (job.jobName.equals(key)) {
+								if (job.getJobName().equals(key)) {
 									//System.out.println("SCANNING FOR: "+job.jobName+": "+job.getFilesToReplace()[x]);
-									ArrayList<String> conflictingFilesInModule = conflictFiles.get(job.jobName);
+									ArrayList<String> conflictingFilesInModule = conflictFiles.get(job.getJobName());
 									for (String conflictFile : conflictingFilesInModule) {
 										int updateIndex = -1;
 										//for every conflict file...
@@ -264,7 +267,7 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 										//get the index for mod 2 so we can look up new path
 										String conflictFilePath = null;
 										for (ModJob mod2job : mod2.jobs) { //find job in mod2
-											if (mod2job.jobName.equals(key)) {
+											if (mod2job.getJobName().equals(key)) {
 												for (int x = 0; x < mod2job.getFilesToReplace().length; x++) {
 													if (mod2job.getFilesToReplace()[x].equals(conflictFile)) {
 														System.out.println("FOUND MOD2 FILE INDEX: "+job.getFilesToReplace()[x]+" "+x);

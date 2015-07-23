@@ -40,6 +40,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -50,10 +51,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.AutoTocWindow;
-import com.me3tweaks.modmanager.Mod;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.ThreadCommand;
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
 import com.me3tweaks.modmanager.valueparsers.possessionwaves.Difficulty;
 import com.me3tweaks.modmanager.valueparsers.sharedassignment.SharedDifficulty;
@@ -145,13 +146,14 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 			ModManager.debugLogger.writeMessage("Fetching mod from " + link);
 			try {
-				File downloaded = new File(DOWNLOADED_XML_FILENAME);
-				downloaded.delete();
-				FileUtils.copyURLToFile(new URL(link), downloaded);
-				ModManager.debugLogger.writeMessage("Mod downloaded to " + downloaded);
+				String modDelta = IOUtils.toString(new URL(link));
+				//File downloaded = new File(DOWNLOADED_XML_FILENAME);
+				//downloaded.delete();
+				//FileUtils.copyURLToFile(new URL(link), downloaded);
+				ModManager.debugLogger.writeMessage("Mod delta downloaded to memory");
 				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-				ModManager.debugLogger.writeMessage("Loading mod information into memory.");
-				doc = dBuilder.parse(downloaded);
+				ModManager.debugLogger.writeMessage("Loading mod delta into document into memory.");
+				doc = dBuilder.parse(modDelta);
 				ModManager.debugLogger.writeMessage("Mod information loaded into memory.");
 				doc.getDocumentElement().normalize();
 				NodeList errors = doc.getElementsByTagName("error");
@@ -1653,9 +1655,9 @@ public class ModMakerCompilerWindow extends JDialog {
 					modName + " was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure debugging is enabled in Help>About.\nContact FemShep if you need help via the forums.",
 					"Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
-		File file = new File(DOWNLOADED_XML_FILENAME);
+/*		File file = new File(DOWNLOADED_XML_FILENAME);
 		file.delete();
-		ModManager.debugLogger.writeMessage("Deleted downloaded me3tweaks modinfo file");
+		ModManager.debugLogger.writeMessage("Deleted downloaded me3tweaks modinfo file");*/
 
 		if (mod != null) {
 			//its an update

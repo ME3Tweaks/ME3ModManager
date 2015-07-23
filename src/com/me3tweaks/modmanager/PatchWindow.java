@@ -27,6 +27,9 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
 import com.me3tweaks.modmanager.basegamedb.RepairFileInfo;
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.objects.ModType;
 
 @SuppressWarnings("serial")
 /**
@@ -112,7 +115,7 @@ public class PatchWindow extends JDialog {
 			for (ModJob job : jobs) {
 				ModManager.debugLogger.writeMessage("Starting mod job");
 				boolean result = false;
-				switch (job.modType) {
+				switch (job.getModType()) {
 				case ModJob.DLC:
 					result = processDLCJob(job);
 					break;
@@ -289,7 +292,7 @@ public class PatchWindow extends JDialog {
 			String[] newFiles = job.getNewFiles();
 			ModManager.debugLogger.writeMessage("Number of files to replace: " + filesToReplace.length);
 
-			publish("Injecting " + filesToReplace.length + " files into " + job.DLCFilePath + "\\" + sfarName);
+			publish("Injecting " + filesToReplace.length + " files into " + job.getDLCFilePath() + "\\" + sfarName);
 			for (int i = 0; i < filesToReplace.length; i++) {
 				commandBuilder.add(filesToReplace[i]);
 				commandBuilder.add(newFiles[i]);

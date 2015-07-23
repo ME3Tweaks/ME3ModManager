@@ -23,9 +23,9 @@ import javax.swing.SwingWorker;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
-import com.me3tweaks.modmanager.Mod;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.objects.Mod;
 
 @SuppressWarnings("serial")
 public class AllModsUpdateWindow extends JDialog {

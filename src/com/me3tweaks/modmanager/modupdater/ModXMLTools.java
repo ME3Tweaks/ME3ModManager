@@ -31,12 +31,12 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.MD5Checksum;
-import com.me3tweaks.modmanager.Mod;
-import com.me3tweaks.modmanager.ModJob;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModJob;
 
 public class ModXMLTools {
 	static DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();

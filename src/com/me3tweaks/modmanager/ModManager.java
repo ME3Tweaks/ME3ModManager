@@ -36,6 +36,7 @@ import org.w3c.dom.Document;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.objects.Mod;
 
 public class ModManager {
 
@@ -46,7 +47,7 @@ public class ModManager {
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
-	public static boolean logging = false; //default to true
+	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.6; //max modmaker version
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
@@ -164,6 +165,20 @@ public class ModManager {
 				ModManager.debugLogger.writeMessage("--update-from number format exception.");
 			}
 		}
+		if (args.length > 1 && args[0].equals("--minor-update-from")) {
+			//This is being run as a minor update
+			try {
+				long oldbuild = Long.parseLong(args[1]);
+				if (oldbuild == ModManager.BUILD_NUMBER) {
+					//SOMETHING WAS WRONG!
+					JOptionPane.showMessageDialog(null, "Minor update was applied.", "Update OK",
+							JOptionPane.INFORMATION_MESSAGE);
+					ModManager.debugLogger.writeMessage("MINOR UPDATE OK!");
+				} 
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeMessage("--minor-update-from number format exception.");
+			}
+		}
 		ModManager.debugLogger.writeMessage("ME3CMM is running from: " + System.getProperty("user.dir"));
 		doFileSystemUpdate();
 		ModManager.debugLogger.writeMessage("========End of startup=========");
@@ -232,11 +247,11 @@ public class ModManager {
 
 		//move update folder
 		ModManager.debugLogger.writeMessage("Checking if using old update dir");
-		File updatedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "update/");
+		File updatedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "tools/");
 		if (updatedir.exists()) {
 			ModManager.debugLogger.writeMessage("Moving update to data/");
 			try {
-				FileUtils.moveDirectory(updatedir, new File(ModManager.getUpdateDir()));
+				FileUtils.moveDirectory(updatedir, new File(ModManager.getToolsDir()));
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY!");
 				ModManager.debugLogger.writeException(e);
@@ -658,8 +673,8 @@ public class ModManager {
 		//file.mkdirs();
 		return appendSlash(file.getAbsolutePath());	}
 
-	public static String getUpdateDir() {
-		File file = new File(getDataDir() + "update/");
+	public static String getToolsDir() {
+		File file = new File(getDataDir() + "tools/");
 		//file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
@@ -694,6 +709,12 @@ public class ModManager {
 
 	public static String getPristineDir() {
 		File file = new File(getCompilingDir() + "pristine/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+	
+	public static String getPatchesDir() {
+		File file = new File(getDataDir() + "patchlibrary/");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
