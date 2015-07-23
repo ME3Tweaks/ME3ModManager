@@ -26,6 +26,9 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModJob;
+
 @SuppressWarnings("serial")
 public class MergeModWindow extends JDialog implements ListSelectionListener, ActionListener {
 	public static final int LEFT = 0;
@@ -182,7 +185,7 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 			panel.removeAll();
 			ModJob[] jobs = mod.getJobs();
 			for (ModJob job : jobs){
-				panel.add(new JLabel(job.jobName));
+				panel.add(new JLabel(job.getJobName()));
 				for (String file : job.getFilesToReplace()) {
 					//String display = ResourceUtils.getRelativePath(System.out.printlnSystem.getProperty("user.dir"),File.separator);
 					panel.add(new JLabel("  "+file));

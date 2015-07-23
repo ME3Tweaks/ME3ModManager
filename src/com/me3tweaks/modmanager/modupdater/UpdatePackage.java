@@ -2,7 +2,7 @@ package com.me3tweaks.modmanager.modupdater;
 
 import java.util.ArrayList;
 
-import com.me3tweaks.modmanager.Mod;
+import com.me3tweaks.modmanager.objects.Mod;
 
 /**
  * Contains info about an update that can be executed (downloading new files/deleting files)

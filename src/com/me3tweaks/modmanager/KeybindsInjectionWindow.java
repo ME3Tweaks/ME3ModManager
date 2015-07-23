@@ -23,6 +23,9 @@ import javax.swing.SwingWorker;
 import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.objects.ModType;
 
 
 /**
@@ -85,13 +88,13 @@ public class KeybindsInjectionWindow extends JDialog {
 			//copy mod to staging
 			boolean copyWholeDirectory = false;
 			String finalCoalDest = mod.getBasegameCoalesced(); //points to staging
-			String stagingPath = ModManager.getTempDir()+mod.modName+"/";
+			String stagingPath = ModManager.getTempDir()+mod.getModName()+"/";
 			String stagingIniPath = stagingPath+"moddesc.ini";
 			File staging = new File(stagingPath);
 			ModManager.debugLogger.writeMessage("Removing existing temp dir if any: "+staging.getAbsolutePath());
 			FileUtils.deleteDirectory(staging);
 			ModManager.debugLogger.writeMessage("Copying mod to staging directory");
-			FileUtils.copyDirectory(new File(mod.modPath), staging);
+			FileUtils.copyDirectory(new File(mod.getModPath()), staging);
 			ModManager.debugLogger.writeMessage("Reloading mod in staging area");
 			mod = new Mod(stagingIniPath);
 			if (!mod.isValidMod()){
@@ -112,7 +115,7 @@ public class KeybindsInjectionWindow extends JDialog {
 				ModJob basegamejob = null;
 				//check if it has basegame modjob
 				for (ModJob job : mod.jobs) {
-					if (job.modType == ModJob.BASEGAME){
+					if (job.getModType() == ModJob.BASEGAME){
 						basegamejob = job;
 						String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));

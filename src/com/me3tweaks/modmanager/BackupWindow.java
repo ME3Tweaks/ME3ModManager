@@ -35,6 +35,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
+import com.me3tweaks.modmanager.objects.ModType;
+
 @SuppressWarnings("serial")
 public class BackupWindow extends JDialog {
 	JLabel infoLabel;

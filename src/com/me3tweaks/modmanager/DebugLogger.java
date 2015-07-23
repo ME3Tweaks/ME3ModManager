@@ -93,4 +93,9 @@ public class DebugLogger {
 			}
 		}
 	}
+
+	public void writeErrorWithException(String error, Exception e) {
+		writeError(error);
+		writeException(e);
+	}
 }

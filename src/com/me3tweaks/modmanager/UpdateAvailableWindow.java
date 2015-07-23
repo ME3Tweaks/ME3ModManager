@@ -327,7 +327,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	
 	public void runUpdateScript() {
 		// TODO Auto-generated method stub
-		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getUpdateDir()+"updater.cmd" };
+		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getToolsDir()+"updater.cmd" };
 		try {
 			Runtime.getRuntime().exec(command);
 		} catch (IOException e) {
@@ -362,7 +362,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("::Extract update");
 		sb.append("\r\n");
-		sb.append("7za.exe -y x ME3CMM.7z -o"+ModManager.getUpdateDir()+"NewVersion");
+		sb.append("7za.exe -y x ME3CMM.7z -o"+ModManager.getToolsDir()+"NewVersion");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Check for build-in update script");
@@ -390,6 +390,11 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		//sb.append("pause");
 		sb.append("\r\n");
+		if (build == ModManager.BUILD_NUMBER) {
+			sb.append("ME3CMM.exe --minor-update-from ");
+		} else {
+			sb.append("ME3CMM.exe --update-from ");
+		}
 		sb.append("ME3CMM.exe --update-from ");
 		sb.append(ModManager.BUILD_NUMBER);
 		sb.append("\r\n");
@@ -404,7 +409,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		//sb.append("pause");
 		//sb.append("exit");
 		try {
-			String updatePath = new File(ModManager.getUpdateDir()+"updater.cmd").getAbsolutePath();
+			String updatePath = new File(ModManager.getToolsDir()+"updater.cmd").getAbsolutePath();
 			Files.write( Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

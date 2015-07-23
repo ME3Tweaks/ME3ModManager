@@ -23,6 +23,8 @@ import javax.swing.border.TitledBorder;
 
 import org.apache.commons.io.FileUtils;
 
+import com.me3tweaks.modmanager.objects.Mod;
+
 public class ModInfoEditor extends JDialog implements ActionListener {
 	private Mod mod;
 	private JTextField modNameField;

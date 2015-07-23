@@ -8,15 +8,15 @@ import java.util.HashMap;
 
 import org.apache.commons.io.FileUtils;
 
-import com.me3tweaks.modmanager.Mod;
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ModType;
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModType;
 
 public class ME3TweaksUtils {
 	public static final int FILENAME = 0;
 	public static final int HEADER = 1;
 	public static final int INTERNAL = 2;
-	
+
 	private static HashMap<String, String> coalHashMap, tocHashMap;
 
 	/**
@@ -108,6 +108,36 @@ public class ME3TweaksUtils {
 			return null;
 		}
 		return target.getAbsolutePath();
+	}
+
+	/**
+	 * Downloads the JDiffTools if they don't exist in the tools dir. If they do then this method does nothing.
+	 */
+	public static void downloadJDiffTools() {
+		ModManager.debugLogger.writeMessage("Downloading JoJo Diff Tools");
+
+		String difflink = "http://me3tweaks.com/modmanager/tools/jdiff.exe";
+		String patchlink = "http://me3tweaks.com/modmanager/tools/jptch.exe";
+
+		File diffTarget = new File(ModManager.getToolsDir() + "jdiff.exe");
+		File patchTarget = new File(ModManager.getToolsDir() + "jptch.exe");
+		try {
+			if (!diffTarget.exists()) {
+				FileUtils.copyURLToFile(new URL(difflink), diffTarget);
+				ModManager.debugLogger.writeMessage("Downloaded jdiff.exe to: " + diffTarget.getAbsolutePath());
+			}
+			if (!patchTarget.exists()) {
+				FileUtils.copyURLToFile(new URL(patchlink), patchTarget);
+				ModManager.debugLogger.writeMessage("Downloaded jptch.exe to: " + patchTarget.getAbsolutePath());
+			}
+		} catch (MalformedURLException e) {
+			ModManager.debugLogger.writeException(e);
+			return;
+		} catch (IOException e) {
+			ModManager.debugLogger.writeException(e);
+			return;
+		}
+		return;
 	}
 
 	/**
@@ -430,7 +460,7 @@ public class ME3TweaksUtils {
 		coalHashMap.put(ModType.BINI, "1d3e646cdf9da8bcb8207d8fd961f7f5");
 		return coalHashMap;
 	}
-	
+
 	public static HashMap<String, String> getTOCHashesMap() {
 		if (tocHashMap != null) {
 			return tocHashMap;

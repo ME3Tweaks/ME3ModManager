@@ -21,6 +21,9 @@ import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FilenameUtils;
 
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModJob;
+
 @SuppressWarnings("serial")
 public class AutoTocWindow extends JDialog {
 	JLabel infoLabel;
@@ -51,7 +54,7 @@ public class AutoTocWindow extends JDialog {
 	private void setupWindow() {
 		JPanel aboutPanel = new JPanel(new BorderLayout());
 		infoLabel = new JLabel(
-				"<html>Updating PCConsoleTOC on "+mod.modName+"</html>");
+				"<html>Updating PCConsoleTOC on "+mod.getModName()+"</html>");
 		aboutPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
@@ -75,7 +78,7 @@ public class AutoTocWindow extends JDialog {
 		protected TOCWorker(Mod mod) {
 			this.mod = mod;
 			for (ModJob job : mod.jobs) {
-				if (job.modType == ModJob.CUSTOMDLC) {
+				if (job.getModType() == ModJob.CUSTOMDLC) {
 					//don't autotoc custom DLC
 					continue;
 				}
@@ -112,7 +115,7 @@ public class AutoTocWindow extends JDialog {
 		public Boolean doInBackground() {
 			//get list of all files to update for the progress bar
 			for (ModJob job : mod.jobs){
-				if (job.modType == ModJob.CUSTOMDLC) {
+				if (job.getModType() == ModJob.CUSTOMDLC) {
 					continue;
 				}
 				boolean hasTOC = false;
@@ -197,7 +200,7 @@ public class AutoTocWindow extends JDialog {
 				StringBuilder sb = new StringBuilder();
 				sb.append("Failed to TOC at least one of the files in this mod.");
 				for (ModJob job : mod.jobs) {
-					if (job.modType == ModJob.CUSTOMDLC) {
+					if (job.getModType() == ModJob.CUSTOMDLC) {
 						JOptionPane.showMessageDialog(null, "This mod includes custom DLC content. Custom DLC content must be manually TOCed.", "AutoTOC Info",
 								JOptionPane.INFORMATION_MESSAGE);
 					}
@@ -208,7 +211,7 @@ public class AutoTocWindow extends JDialog {
 				
 			} else {
 				for (ModJob job : mod.jobs) {
-					if (job.modType == ModJob.CUSTOMDLC) {
+					if (job.getModType() == ModJob.CUSTOMDLC) {
 						JOptionPane.showMessageDialog(null, "This mod includes custom DLC content. Custom DLC content must be manually TOCed.", "AutoTOC Info",
 								JOptionPane.INFORMATION_MESSAGE);
 					}

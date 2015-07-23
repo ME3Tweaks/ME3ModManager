@@ -30,6 +30,7 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
 import com.me3tweaks.modmanager.basegamedb.RepairFileInfo;
+import com.me3tweaks.modmanager.objects.ModType;
 
 @SuppressWarnings("serial")
 public class RestoreFilesWindow extends JDialog {
