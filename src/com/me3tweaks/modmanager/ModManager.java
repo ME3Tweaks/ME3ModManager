@@ -37,6 +37,7 @@ import org.w3c.dom.Document;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModType;
 
 public class ModManager {
 
@@ -872,5 +873,35 @@ public class ModManager {
 		File file = new File(getDataDir() + "databases");
 		//file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
+	}
+
+	public static boolean hasPristinePatchSource(String targetPath, String targetModule) {
+		File file = new File(getPatchesDir()+"source/"+targetModule+File.separator+targetPath);
+		if (!file.exists()){
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
+	public static String getPatchSource(String targetPath, String targetModule) {
+		File sourceDestination = new File(getPatchesDir()+"source/"+targetModule+File.separator+targetPath);
+		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		if (targetModule.equals(ModType.BASEGAME)){
+			//copy
+			File sourceSource = new File(bioGameDir+targetPath);
+			try {
+				ModManager.debugLogger.writeMessage("Copying patch source file to library: "+sourceSource.getAbsolutePath()+" to "+sourceDestination.getAbsolutePath());
+				FileUtils.copyFile(sourceSource, sourceDestination);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				ModManager.debugLogger.writeErrorWithException("Failed to copy patch source for basegame file:", e);
+			}
+		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
+			return null;
+		}
+		
+		return "";
 	}
 }
