@@ -27,6 +27,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
 import com.me3tweaks.modmanager.basegamedb.RepairFileInfo;
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;

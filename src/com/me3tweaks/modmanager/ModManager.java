@@ -65,8 +65,7 @@ public class ModManager {
 		} catch (Exception e) {
 			System.err.println("Couldn't set the UI interface style");
 		}
-        ToolTipManager.sharedInstance().setDismissDelay(15000);
-
+		ToolTipManager.sharedInstance().setDismissDelay(15000);
 
 		//Set and get debugging mode from wini
 		debugLogger = new DebugLogger();
@@ -116,7 +115,7 @@ public class ModManager {
 					System.out.println("Enabling mod auto-updates");
 					AUTO_UPDATE_MODS = true;
 				} else {
-					System.out.println("AUTO UPDATE: "+autoupdate);
+					System.out.println("AUTO UPDATE: " + autoupdate);
 				}
 
 				if (AUTO_UPDATE_MODS == false) {
@@ -173,10 +172,9 @@ public class ModManager {
 				long oldbuild = Long.parseLong(args[1]);
 				if (oldbuild == ModManager.BUILD_NUMBER) {
 					//SOMETHING WAS WRONG!
-					JOptionPane.showMessageDialog(null, "Minor update was applied.", "Update OK",
-							JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(null, "Minor update was applied.", "Update OK", JOptionPane.INFORMATION_MESSAGE);
 					ModManager.debugLogger.writeMessage("MINOR UPDATE OK!");
-				} 
+				}
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeMessage("--minor-update-from number format exception.");
 			}
@@ -259,7 +257,7 @@ public class ModManager {
 				ModManager.debugLogger.writeException(e);
 			}
 		}
-		
+
 		//move databases folder
 		ModManager.debugLogger.writeMessage("Checking if using old databases dir");
 		File databasedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "databases/");
@@ -272,20 +270,20 @@ public class ModManager {
 				ModManager.debugLogger.writeException(e);
 			}
 		}
-		
+
 		//move coalesced.original folder
 		ModManager.debugLogger.writeMessage("Checking if should move coalesced.original");
 		File coalOrig = new File("Coalesced.original");
 		if (coalOrig.exists()) {
 			ModManager.debugLogger.writeMessage("Moving Coalesced.original to data/");
 			try {
-				FileUtils.moveFile(coalOrig, new File(ModManager.getDataDir()+"Coalesced.original"));
+				FileUtils.moveFile(coalOrig, new File(ModManager.getDataDir() + "Coalesced.original"));
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("FAILED TO MOVE Coalesced.original TO data/ DIRECTORY!");
 				ModManager.debugLogger.writeException(e);
 			}
 		}
-		
+
 		//cleanup
 		File mod_info = new File(ModMakerCompilerWindow.DOWNLOADED_XML_FILENAME);
 		mod_info.delete();
@@ -300,7 +298,6 @@ public class ModManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 
 	}
 
@@ -346,34 +343,28 @@ public class ModManager {
 		return availableMod;
 	}
 
-/*	public static ArrayList<Mod> getCMM3ModsFromDirectory() {
-		File fileDir = new File(getModsDir());
-		// This filter only returns directories
-		FileFilter fileFilter = new FileFilter() {
-			public boolean accept(File file) {
-				return file.isDirectory();
-			}
-		};
-		File[] subdirs = fileDir.listFiles(fileFilter);
-
-		//Got a list of subdirs. Now loop them to find all moddesc.ini files
-		ArrayList<Mod> availableMod = new ArrayList<Mod>();
-		for (int i = 0; i < subdirs.length; i++) {
-			File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini");
-			if (searchSubDirDesc.exists()) {
-				Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
-				if (validatingMod.isValidMod() && validatingMod.modCMMVer >= 3) {
-					availableMod.add(validatingMod);
-				}
-			}
-		}
-
-		
-		 * for (Mod i:availableMod){
-		 * ModManagerWindow.listDescriptors.put(i.getModName(),i); }
-		 
-		return availableMod;
-	}*/
+	/*
+	 * public static ArrayList<Mod> getCMM3ModsFromDirectory() { File fileDir =
+	 * new File(getModsDir()); // This filter only returns directories
+	 * FileFilter fileFilter = new FileFilter() { public boolean accept(File
+	 * file) { return file.isDirectory(); } }; File[] subdirs =
+	 * fileDir.listFiles(fileFilter);
+	 * 
+	 * //Got a list of subdirs. Now loop them to find all moddesc.ini files
+	 * ArrayList<Mod> availableMod = new ArrayList<Mod>(); for (int i = 0; i <
+	 * subdirs.length; i++) { File searchSubDirDesc = new
+	 * File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini"); if
+	 * (searchSubDirDesc.exists()) { Mod validatingMod = new
+	 * Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) +
+	 * "moddesc.ini"); if (validatingMod.isValidMod() && validatingMod.modCMMVer
+	 * >= 3) { availableMod.add(validatingMod); } } }
+	 * 
+	 * 
+	 * for (Mod i:availableMod){
+	 * ModManagerWindow.listDescriptors.put(i.getModName(),i); }
+	 * 
+	 * return availableMod; }
+	 */
 
 	/**
 	 * Checks for a file called Coalesced.original. If it exists, it will exit
@@ -383,7 +374,7 @@ public class ModManager {
 	 */
 	public static boolean checkDoOriginal(String origDir) {
 		String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e"; //This is Patch 3 Coalesced's hash
-		File cOriginal = new File(ModManager.getDataDir()+"Coalesced.original");
+		File cOriginal = new File(ModManager.getDataDir() + "Coalesced.original");
 		if (cOriginal.exists() == false) {
 			//Attempt to copy an original
 			try {
@@ -407,7 +398,7 @@ public class ModManager {
 					return false;
 				} else {
 					//Make a backup of it
-					String destFile = ModManager.getDataDir()+"Coalesced.original";
+					String destFile = ModManager.getDataDir() + "Coalesced.original";
 					String sourceFile = ModManager.appendSlash(origDir) + "Coalesced.bin";
 					String[] command = { "cmd.exe", "/c", "copy", "/Y", sourceFile, destFile };
 					try {
@@ -612,40 +603,39 @@ public class ModManager {
 			return string + File.separator;
 		}
 	}
-	
+
 	/**
-     * Convert a millisecond duration to a string format
-     * 
-     * @param millis A duration to convert to a string form
-     * @return A string of the form "X Days Y Hours Z Minutes A Seconds".
-     */
-    public static String getDurationBreakdown(long millis)
-    {
-        if(millis < 0)
-        {
-            throw new IllegalArgumentException("Duration must be greater than zero!");
-        }
+	 * Convert a millisecond duration to a string format
+	 * 
+	 * @param millis
+	 *            A duration to convert to a string form
+	 * @return A string of the form "X Days Y Hours Z Minutes A Seconds".
+	 */
+	public static String getDurationBreakdown(long millis) {
+		if (millis < 0) {
+			throw new IllegalArgumentException("Duration must be greater than zero!");
+		}
 
-        long days = TimeUnit.MILLISECONDS.toDays(millis);
-        millis -= TimeUnit.DAYS.toMillis(days);
-        long hours = TimeUnit.MILLISECONDS.toHours(millis);
-        millis -= TimeUnit.HOURS.toMillis(hours);
-        long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
-        millis -= TimeUnit.MINUTES.toMillis(minutes);
-        long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
+		long days = TimeUnit.MILLISECONDS.toDays(millis);
+		millis -= TimeUnit.DAYS.toMillis(days);
+		long hours = TimeUnit.MILLISECONDS.toHours(millis);
+		millis -= TimeUnit.HOURS.toMillis(hours);
+		long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
+		millis -= TimeUnit.MINUTES.toMillis(minutes);
+		long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
 
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(days);
-        sb.append(" Days ");
-        sb.append(hours);
-        sb.append(" Hours ");
-        sb.append(minutes);
-        sb.append(" Minutes ");
-        sb.append(seconds);
-        sb.append(" Seconds");
+		StringBuilder sb = new StringBuilder(64);
+		sb.append(days);
+		sb.append(" Days ");
+		sb.append(hours);
+		sb.append(" Hours ");
+		sb.append(minutes);
+		sb.append(" Minutes ");
+		sb.append(seconds);
+		sb.append(" Seconds");
 
-        return(sb.toString());
-    }
+		return (sb.toString());
+	}
 
 	/**
 	 * Gets the mods directory, including a final slash
@@ -668,12 +658,14 @@ public class ModManager {
 	public static String getTankMasterCompilerDir() {
 		File file = new File(getDataDir() + "tankmaster_coalesce/");
 		//file.mkdirs();
-		return appendSlash(file.getAbsolutePath());	}
+		return appendSlash(file.getAbsolutePath());
+	}
 
 	public static String getTankMasterTLKDir() {
 		File file = new File(getDataDir() + "tankmaster_tlk/");
 		//file.mkdirs();
-		return appendSlash(file.getAbsolutePath());	}
+		return appendSlash(file.getAbsolutePath());
+	}
 
 	public static String getToolsDir() {
 		File file = new File(getDataDir() + "tools/");
@@ -689,7 +681,7 @@ public class ModManager {
 	 * @return
 	 */
 	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
-		File me3expdir = new File(getDataDir()+"ME3Explorer/");
+		File me3expdir = new File(getDataDir() + "ME3Explorer/");
 		if (!me3expdir.exists() && showDialog) {
 			JOptionPane.showMessageDialog(null,
 					"Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.",
@@ -714,7 +706,7 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-	
+
 	public static String getPatchesDir() {
 		File file = new File(getDataDir() + "patchlibrary/");
 		file.mkdirs();
@@ -725,8 +717,10 @@ public class ModManager {
 	 * Returns if the specified coalesced (job) is in the pristine folder and
 	 * the hash matches the known good value for it
 	 * 
-	 * @param name value to use to see if has pristine coalesced
-	 * @param mode mode to parse name as
+	 * @param name
+	 *            value to use to see if has pristine coalesced
+	 * @param mode
+	 *            mode to parse name as
 	 * @return true if pristine, false if doesn't exist (or otherwise)
 	 */
 	public static boolean hasPristineCoalesced(String name, int mode) {
@@ -737,7 +731,7 @@ public class ModManager {
 		//check hash
 		try {
 			String hash = MD5Checksum.getMD5Checksum(coal.getAbsolutePath());
-			HashMap<String,String> coalHashes = ME3TweaksUtils.getCoalHashesMap();
+			HashMap<String, String> coalHashes = ME3TweaksUtils.getCoalHashesMap();
 			//convert to header so we can check MODTYPE in hashmap
 			String key = "error";
 			switch (mode) {
@@ -751,13 +745,13 @@ public class ModManager {
 				key = ME3TweaksUtils.internalNameToHeaderName(name);
 				break;
 			}
-			
-			if (hash.equals(coalHashes.get(key))){
+
+			if (hash.equals(coalHashes.get(key))) {
 				return true;
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			ModManager.debugLogger.writeError("ERROR GENERATING HASH FOR PRISTING COALESCED: "+coal.getAbsolutePath());
+			ModManager.debugLogger.writeError("ERROR GENERATING HASH FOR PRISTING COALESCED: " + coal.getAbsolutePath());
 			ModManager.debugLogger.writeException(e);
 			return false;
 		}
@@ -772,7 +766,9 @@ public class ModManager {
 
 	/**
 	 * Gets the path of a pristine coalesced with the given filename
-	 * @param mode ME3TweaksUtils mode indicating what the name variable is
+	 * 
+	 * @param mode
+	 *            ME3TweaksUtils mode indicating what the name variable is
 	 * 
 	 * @param basegame
 	 * @return
@@ -789,17 +785,20 @@ public class ModManager {
 			name = ME3TweaksUtils.internalNameToHeaderName(name);
 			break;
 		}
-		
+
 		File f = new File(getPristineDir() + Mod.getStandardFolderName(name));
 		f.mkdirs();
 		return appendSlash(f.getAbsolutePath()) + ME3TweaksUtils.headerNameToCoalFilename(name);
 	}
-	
+
 	/**
 	 * Gets the path of a pristine TOC with the given filename
-	 * @param mode ME3TweaksUtils mode indicating what the name variable is
 	 * 
-	 * @param mode Mode indicating what name is as a constant type
+	 * @param mode
+	 *            ME3TweaksUtils mode indicating what the name variable is
+	 * 
+	 * @param mode
+	 *            Mode indicating what name is as a constant type
 	 * @return
 	 */
 	public static String getPristineTOC(String name, int mode) {
@@ -814,18 +813,20 @@ public class ModManager {
 			name = ME3TweaksUtils.internalNameToHeaderName(name);
 			break;
 		}
-		
+
 		File f = new File(getPristineDir() + Mod.getStandardFolderName(name));
 		f.mkdirs();
 		return appendSlash(f.getAbsolutePath()) + "PCConsoleTOC.bin";
 	}
-	
+
 	/**
 	 * Returns if the specified coalesced (job) is in the pristine folder and
 	 * the hash matches the known good value for it
 	 * 
-	 * @param name value to use to see if has pristine coalesced
-	 * @param mode mode to parse name as
+	 * @param name
+	 *            value to use to see if has pristine coalesced
+	 * @param mode
+	 *            mode to parse name as
 	 * @return true if pristine, false if doesn't exist (or otherwise)
 	 */
 	public static boolean hasPristineTOC(String name, int mode) {
@@ -833,11 +834,11 @@ public class ModManager {
 		if (!toc.exists()) {
 			return false;
 		}
-		
+
 		//check hash
 		try {
 			String hash = MD5Checksum.getMD5Checksum(toc.getAbsolutePath());
-			HashMap<String,String> tocHashes = ME3TweaksUtils.getTOCHashesMap();
+			HashMap<String, String> tocHashes = ME3TweaksUtils.getTOCHashesMap();
 			//convert to header so we can check MODTYPE in hashmap
 			String key = "error";
 			switch (mode) {
@@ -851,15 +852,16 @@ public class ModManager {
 				key = ME3TweaksUtils.internalNameToHeaderName(name);
 				break;
 			}
-			
-			if (hash.equals(tocHashes.get(key))){
+
+			if (hash.equals(tocHashes.get(key))) {
 				return true;
 			} else {
-				ModManager.debugLogger.writeError(key+" TOC in pristine directory has failed hash check: "+hash+" vs known good value: "+tocHashes.get(key));
+				ModManager.debugLogger.writeError(key + " TOC in pristine directory has failed hash check: " + hash + " vs known good value: "
+						+ tocHashes.get(key));
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			ModManager.debugLogger.writeError("ERROR GENERATING HASH FOR PRISTING TOC: "+toc.getAbsolutePath());
+			ModManager.debugLogger.writeError("ERROR GENERATING HASH FOR PRISTING TOC: " + toc.getAbsolutePath());
 			ModManager.debugLogger.writeException(e);
 			return false;
 		}
@@ -879,15 +881,15 @@ public class ModManager {
 	}
 
 	public static boolean hasPristinePatchSource(String targetPath, String targetModule) {
-		File file = new File(getPatchesDir()+"source/"+targetModule+File.separator+targetPath);
-		ModManager.debugLogger.writeMessage("Checking for library patch source: "+file.getAbsolutePath()+", exists? "+file.exists());
-		if (!file.exists()){
+		File file = new File(getPatchesDir() + "source/" + targetModule + File.separator + targetPath);
+		ModManager.debugLogger.writeMessage("Checking for library patch source: " + file.getAbsolutePath() + ", exists? " + file.exists());
+		if (!file.exists()) {
 			return false;
 		} else {
 			return true;
 		}
 	}
-	
+
 	public static String getPatchSource(String targetPath, String targetModule) {
 		ModManager.debugLogger.writeMessage("Looking for patch source: ");
 		File sourceDestination = new File(getPatchesDir()+"source/"+ME3TweaksUtils.headerNameToInternalName(targetModule)+File.separator+targetPath);
@@ -896,32 +898,105 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
 		}
-		
 		if (targetModule.equals(ModType.BASEGAME)){
-			//copy
+			//we must use PCCEditor2 to decompress the file using the --decompress-pcc command line arg
 			File sourceSource = new File(bioGameDir+targetPath);
+			//run ME3EXPLORER --decompress-pcc
+			ArrayList<String> commandBuilder = new ArrayList<String>();
+			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
+			commandBuilder.add("--decompress-pcc");
+			commandBuilder.add(sourceSource.getAbsolutePath());
+			commandBuilder.add(sourceDestination.getAbsolutePath());
+			StringBuilder sb = new StringBuilder();
+			for (String arg : commandBuilder) {
+				sb.append("\""+arg + "\" ");
+			}
+
+			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER PccEd2 Decompress command: " + sb.toString());
+
+			ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
+			//patchProcessBuilder.redirectErrorStream(true);
+			//patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+			Process decompressProcess;
+			try {
+				decompressProcess = decompressProcessBuilder.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(decompressProcess.getInputStream()));
+				String line;
+				while ((line = reader.readLine()) != null)
+				    System.out.println(line);
+				int result = decompressProcess.waitFor();
+				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
+			} catch (IOException e) {
+				ModManager.debugLogger.writeException(e);
+			} catch (InterruptedException e) {
+				ModManager.debugLogger.writeException(e);
+			}
+
 			try {
 				ModManager.debugLogger.writeMessage("Copying patch source file to library: "+sourceSource.getAbsolutePath()+" to "+sourceDestination.getAbsolutePath());
 				FileUtils.copyFile(sourceSource, sourceDestination);
+				return sourceDestination.getAbsolutePath();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				ModManager.debugLogger.writeErrorWithException("Failed to copy patch source for basegame file:", e);
 			}
+		//END OF BASEGAME======================================================
 		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
 			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
 			return null;
+		} else {
+			//DLC===============================================================
+			//get .sfar path
+			String sfarName = "Default.sfar";
+			if (targetModule.equals(ModType.TESTPATCH)) {
+				sfarName = "Patch_001.sfar";
+			}
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + 
+					ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+						
+			ArrayList<String> commandBuilder = new ArrayList<String>();
+			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
+			commandBuilder.add("--extract-dlc-pcc");
+			commandBuilder.add(sfarPath);
+			commandBuilder.add(targetPath);
+			commandBuilder.add(sourceDestination.getAbsolutePath());
+			StringBuilder sb = new StringBuilder();
+			for (String arg : commandBuilder) {
+				sb.append("\""+arg + "\" ");
+			}
+
+			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());
+
+			ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
+			//patchProcessBuilder.redirectErrorStream(true);
+			//patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+			Process extractionProcess;
+			try {
+				extractionProcess = extractionProcessBuilder.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
+				String line;
+				while ((line = reader.readLine()) != null)
+				    System.out.println(line);
+				int result = extractionProcess.waitFor();
+				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
+				return sourceDestination.getAbsolutePath();
+			} catch (IOException e) {
+				ModManager.debugLogger.writeException(e);
+			} catch (InterruptedException e) {
+				ModManager.debugLogger.writeException(e);
+			}
 		}
-		
 		return null;
 	}
 
 	/**
 	 * Loads patch objects from the patchlibrary/patches directory
+	 * 
 	 * @return
 	 */
 	public static ArrayList<Patch> getPatchesFromDirectory() {
 		ModManager.debugLogger.writeMessage("Loading Patches from patchlibrary");
-		File modsDir = new File(getPatchesDir()+"patches/");
+		File modsDir = new File(getPatchesDir() + "patches/");
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
 			public boolean accept(File file) {
