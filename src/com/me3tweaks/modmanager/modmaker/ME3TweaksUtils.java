@@ -470,7 +470,7 @@ public class ME3TweaksUtils {
 		tocHashMap.put(ModType.MP1, "4ffa2aab35ba7e16243b8cf573629f0a");
 		tocHashMap.put(ModType.MP2, "7136eb641f5c1dca0e9c54583ad7560f");
 		tocHashMap.put(ModType.MP3, "25e8ae6f428a6d09058175b81d59451d");
-		tocHashMap.put(ModType.MP4, "32e5f7f628e16b53546a345a63a76d82");
+		tocHashMap.put(ModType.MP4, "ec1035b4153959a5a7f051616a5f257b");
 		tocHashMap.put(ModType.MP5, "74e86f1189403b01975a67d27dd0bc99");
 		tocHashMap.put(ModType.PATCH1, "ddc9f8aca8b4a1eabab5f28966b09718");
 		tocHashMap.put(ModType.PATCH2, "32e5f7f628e16b53546a345a63a76d82");

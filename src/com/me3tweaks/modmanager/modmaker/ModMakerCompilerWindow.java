@@ -250,7 +250,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 
 			//Check the name
-			File moddir = new File(modName);
+			File moddir = new File(ModManager.getModsDir()+modName);
 			if (moddir.isDirectory()) {
 				try {
 					ModManager.debugLogger.writeMessage("Removing existing mod directory, will recreate when complete");
@@ -1682,7 +1682,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			//its an update
 			if (!mod.getModName().equals(modName)) {
 				//mod on server has changed the name
-				ModManager.debugLogger.writeMessage("Deleted old mod directory as name has changed");
+				ModManager.debugLogger.writeMessage("Deleteing old mod directory as name has changed");
 				try {
 					FileUtils.deleteDirectory(new File(mod.getModPath()));
 				} catch (IOException e) {

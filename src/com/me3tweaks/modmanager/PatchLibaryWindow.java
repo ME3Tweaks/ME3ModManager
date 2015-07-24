@@ -14,6 +14,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -185,8 +186,11 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 			}
 			for (Patch patch : selectedPatches) {
 				ModManager.debugLogger.writeMessage("Applying patch "+patch.getPatchName()+" to "+mod.getModName());
-				patch.applyPatch(mod);
+				if (!patch.applyPatch(mod)){
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Patch failed to apply: "+patch.getPatchName(), "Patch not applied", JOptionPane.ERROR_MESSAGE);
+				}
 			}
+			new ModManagerWindow(false);
 		}
 	}
 	
