@@ -141,8 +141,10 @@ public class Patch {
 		//Prepare mod
 		String modSourceFile = mod.getModTaskPath(targetPath, targetModule);
 		if (modSourceFile == null){
+			ModManager.debugLogger.writeMessage(mod.getModName()+" does not appear to modify "+targetPath+" in module "+targetModule+", performing file fetch");
 			//we need to check if its in the patch library's source folder
 			if (!ModManager.hasPristinePatchSource(targetPath,targetModule)){
+				ModManager.debugLogger.writeMessage("Fetching source file from game");
 				modSourceFile = ModManager.getPatchSource(targetPath, targetModule);
 			}
 			if (modSourceFile == null) {
@@ -151,14 +153,12 @@ public class Patch {
 				return false;
 			}
 			
-			
-			
-			
-			
-			
-			
+			//copy sourcefile to mod dir
+			File libraryFile = new File(modSourceFile);
+			File modFile = new File(ModManager.appendSlash(mod.getModPath())+Mod.getStandardFolderName(targetModule)+File.separator+FilenameUtils.getName(targetPath));
+			FileUtils.copyFile(libraryFile, modFile);
+
 			//we need to add a task for this
-			ModManager.debugLogger.writeMessage(mod.getModName()+" does not appear to modify "+targetPath+" in module "+targetModule+", performing file fetch");
 			ModJob targetJob = null;
 			for (ModJob job : mod.jobs) {
 				if (job.getJobName().equals(targetModule)){
