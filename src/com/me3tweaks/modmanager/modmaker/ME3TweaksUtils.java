@@ -486,4 +486,57 @@ public class ME3TweaksUtils {
 		tocHashMap.put(ModType.GUN02, "6c26b453dfaf663ebaeeafeac78440c2");
 		return tocHashMap;
 	}
+	
+	/**
+	 * Converts the Coalesced.bin filenames to their respective PCConsoleTOC
+	 * directory in the .sfar files.
+	 * 
+	 * @param coalName
+	 *            name of coal being packed into the mod
+	 * @return path to the file to repalce
+	 */
+	public static String coalFileNameToDLCTOCDir(String coalName) {
+		switch (coalName) {
+		case "Default_DLC_CON_MP1.bin":
+			return "/BIOGame/DLC/DLC_CON_MP1/PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP2.bin":
+			return "/BIOGame/DLC/DLC_CON_MP2/PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP3.bin":
+			return "/BIOGame/DLC/DLC_CON_MP3/PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP4.bin":
+			return "/BIOGame/DLC/DLC_CON_MP4/PCConsoleTOC.bin";
+		case "Default_DLC_CON_MP5.bin":
+			return "/BIOGame/DLC/DLC_CON_MP5/PCConsoleTOC.bin";
+		case "Default_DLC_UPD_Patch01.bin":
+			return "/BIOGame/DLC/DLC_UPD_Patch01/PCConsoleTOC.bin";
+		case "Default_DLC_UPD_Patch02.bin":
+			return "/BIOGame/DLC/DLC_UPD_Patch02/PCConsoleTOC.bin";
+		case "Coalesced.bin":
+			return "\\BIOGame\\PCConsoleTOC.bin";
+		case "Default_DLC_TestPatch.bin":
+			return "/BIOGame/DLC/DLC_TestPatch/PCConsoleTOC.bin";
+		case "Default_DLC_HEN_PR.bin":
+			return "/BIOGame/DLC/DLC_HEN_PR/PCConsoleTOC.bin";
+		case "Default_DLC_CON_APP01.bin":
+			return "/BIOGame/DLC/DLC_CON_APP01/PCConsoleTOC.bin";
+		case "Default_DLC_CON_GUN01.bin":
+			return "/BIOGame/DLC/DLC_CON_GUN01/PCConsoleTOC.bin";
+		case "Default_DLC_CON_GUN02.bin":
+			return "/BIOGame/DLC/DLC_CON_GUN02/PCConsoleTOC.bin";
+		case "Default_DLC_CON_END.bin":
+			return "/BIOGame/DLC/DLC_CON_END/PCConsoleTOC.bin";
+		case "Default_DLC_CON_Pack001.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack001/PCConsoleTOC.bin";
+		case "Default_DLC_CON_Pack002.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack002/PCConsoleTOC.bin";
+		case "Default_DLC_CON_Pack003.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack003/PCConsoleTOC.bin";
+		case "Default_DLC_CON_Pack003_Base.bin":
+			return "/BIOGame/DLC/DLC_CON_Pack003_Base/PCConsoleTOC.bin";
+
+		default:
+			ModManager.debugLogger.writeMessage("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: " + coalName);
+			return null;
+		}
+	}
 }

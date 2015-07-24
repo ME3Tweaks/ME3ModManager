@@ -38,6 +38,7 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.Patch;
 
 public class ModManager {
 
@@ -877,6 +878,7 @@ public class ModManager {
 
 	public static boolean hasPristinePatchSource(String targetPath, String targetModule) {
 		File file = new File(getPatchesDir()+"source/"+targetModule+File.separator+targetPath);
+		ModManager.debugLogger.writeMessage("Checking for library patch source: "+file.getAbsolutePath()+", exists? "+file.exists());
 		if (!file.exists()){
 			return false;
 		} else {
@@ -885,8 +887,14 @@ public class ModManager {
 	}
 	
 	public static String getPatchSource(String targetPath, String targetModule) {
-		File sourceDestination = new File(getPatchesDir()+"source/"+targetModule+File.separator+targetPath);
+		ModManager.debugLogger.writeMessage("Looking for patch source: ");
+		File sourceDestination = new File(getPatchesDir()+"source/"+ME3TweaksUtils.headerNameToInternalName(targetModule)+File.separator+targetPath);
 		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		if (sourceDestination.exists()) {
+			ModManager.debugLogger.writeMessage("Patch source is already in library.");
+			return sourceDestination.getAbsolutePath();
+		}
+		
 		if (targetModule.equals(ModType.BASEGAME)){
 			//copy
 			File sourceSource = new File(bioGameDir+targetPath);
@@ -902,6 +910,39 @@ public class ModManager {
 			return null;
 		}
 		
-		return "";
+		return null;
+	}
+
+	/**
+	 * Loads patch objects from the patchlibrary/patches directory
+	 * @return
+	 */
+	public static ArrayList<Patch> getPatchesFromDirectory() {
+		ModManager.debugLogger.writeMessage("Loading Patches from patchlibrary");
+		File modsDir = new File(getPatchesDir()+"patches/");
+		// This filter only returns directories
+		FileFilter fileFilter = new FileFilter() {
+			public boolean accept(File file) {
+				return file.isDirectory();
+			}
+		};
+		File[] subdirs = modsDir.listFiles(fileFilter);
+		ArrayList<Patch> validPatches = new ArrayList<Patch>();
+
+		if (subdirs != null && subdirs.length > 0) {
+			//Got a list of subdirs. Now loop them to find all moddesc.ini files
+			for (int i = 0; i < subdirs.length; i++) {
+				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "patchdesc.ini");
+				System.out.println("Searching for file: " + searchSubDirDesc);
+				if (searchSubDirDesc.exists()) {
+					Patch validatingPatch = new Patch(searchSubDirDesc.getAbsolutePath());
+					if (validatingPatch.isValid()) {
+						validPatches.add(validatingPatch);
+					}
+				}
+			}
+		}
+
+		return validPatches;
 	}
 }
