@@ -3,6 +3,7 @@ package com.me3tweaks.modmanager.modmaker;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -48,6 +49,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.AutoTocWindow;
@@ -65,7 +67,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
 	String code, modName, modDescription, modId, modDev, modVer;
 	private static double TOTAL_STEPS = 9;
-	public static String DOWNLOADED_XML_FILENAME = ModManager.getCompilingDir()+"mod_info";
+	public static String DOWNLOADED_XML_FILENAME = ModManager.getCompilingDir() + "mod_info";
 	private int stepsCompleted = 1;
 	private double modMakerVersion;
 	ArrayList<String> requiredCoals = new ArrayList<String>();
@@ -153,7 +155,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Mod delta downloaded to memory");
 				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 				ModManager.debugLogger.writeMessage("Loading mod delta into document into memory.");
-				doc = dBuilder.parse(modDelta);
+				doc = dBuilder.parse(new InputSource(new ByteArrayInputStream(modDelta.getBytes("utf-8")))); //http://stackoverflow.com/questions/1706493/java-net-malformedurlexception-no-protocol
 				ModManager.debugLogger.writeMessage("Mod information loaded into memory.");
 				doc.getDocumentElement().normalize();
 				NodeList errors = doc.getElementsByTagName("error");
@@ -285,18 +287,111 @@ public class ModMakerCompilerWindow extends JDialog {
 																			// the
 																			// required
 																			// ones
-			/*for (int i = coals.size() - 1; i >= 0; i--) {
-				String coal = coals.get(i); // go in reverse order otherwise we get
-											// null pointer
-				File coalFile = new File(ModManager.getPristineCoalesced(coal, ME3TweaksUtils.FILENAME));
-				if (!coalFile.exists()) {
-					ModManager.debugLogger.writeMessage("Coal doesn't exist, need to download: " + coal);
-					numToDownload++;
-				} else {
-					ModManager.debugLogger.writeMessage("Coal already exists, skipping download: " + coal);
-					coals.remove(i);
-				}
-			}*/
+																			/*
+																			 * for
+																			 * (int
+																			 * i
+																			 * =
+																			 * coals
+																			 * .
+																			 * size
+																			 * (
+																			 * )
+																			 * -
+																			 * 1;
+																			 * i
+																			 * >=
+																			 * 0;
+																			 * i
+																			 * -
+																			 * -
+																			 * )
+																			 * {
+																			 * String
+																			 * coal
+																			 * =
+																			 * coals
+																			 * .
+																			 * get
+																			 * (
+																			 * i
+																			 * )
+																			 * ;
+																			 * //
+																			 * go
+																			 * in
+																			 * reverse
+																			 * order
+																			 * otherwise
+																			 * we
+																			 * get
+																			 * //
+																			 * null
+																			 * pointer
+																			 * File
+																			 * coalFile
+																			 * =
+																			 * new
+																			 * File
+																			 * (
+																			 * ModManager
+																			 * .
+																			 * getPristineCoalesced
+																			 * (
+																			 * coal,
+																			 * ME3TweaksUtils
+																			 * .
+																			 * FILENAME
+																			 * )
+																			 * )
+																			 * ;
+																			 * if
+																			 * (
+																			 * !
+																			 * coalFile
+																			 * .
+																			 * exists
+																			 * (
+																			 * )
+																			 * )
+																			 * {
+																			 * ModManager
+																			 * .
+																			 * debugLogger
+																			 * .
+																			 * writeMessage(
+																			 * "Coal doesn't exist, need to download: "
+																			 * +
+																			 * coal
+																			 * )
+																			 * ;
+																			 * numToDownload
+																			 * +
+																			 * +
+																			 * ;
+																			 * }
+																			 * else
+																			 * {
+																			 * ModManager
+																			 * .
+																			 * debugLogger
+																			 * .
+																			 * writeMessage(
+																			 * "Coal already exists, skipping download: "
+																			 * +
+																			 * coal
+																			 * )
+																			 * ;
+																			 * coals
+																			 * .
+																			 * remove
+																			 * (
+																			 * i
+																			 * )
+																			 * ;
+																			 * }
+																			 * }
+																			 */
 			currentOperationLabel.setText("Downloading Coalesced files...");
 			currentStepProgress.setIndeterminate(false);
 			// Check and download
@@ -361,49 +456,28 @@ public class ModMakerCompilerWindow extends JDialog {
 	 *            Coalesced file
 	 * @return Corresponding heading
 	 */
-	/*protected String coalFileNameToHeaderName(String coalName) {
-		switch (coalName) {
-		case "Default_DLC_CON_MP1.bin":
-			return "RESURGENCE";
-		case "Default_DLC_CON_MP2.bin":
-			return "REBELLION";
-		case "Default_DLC_CON_MP3.bin":
-			return "EARTH";
-		case "Default_DLC_CON_MP4.bin":
-			return "RETALIATION";
-		case "Default_DLC_CON_MP5.bin":
-			return "RECKONING";
-		case "Default_DLC_UPD_Patch01.bin":
-			return "PATCH1";
-		case "Default_DLC_UPD_Patch02.bin":
-			return "PATCH2";
-		case "Coalesced.bin":
-			return "BASEGAME";
-		case "Default_DLC_TestPatch.bin":
-			return "TESTPATCH";
-		case "Default_DLC_HEN_PR.bin":
-			return "FROM_ASHES";
-		case "Default_DLC_CON_APP01.bin":
-			return "APPEARANCE";
-		case "Default_DLC_CON_GUN01.bin":
-			return "FIREFIGHT";
-		case "Default_DLC_CON_GUN02.bin":
-			return "GROUNDSIDE";
-		case "Default_DLC_CON_END.bin":
-			return "EXTENDED_CUT";
-		case "Default_DLC_CON_Pack001.bin":
-			return "LEVIATHAN";
-		case "Default_DLC_CON_Pack002.bin":
-			return "OMEGA";
-		case "Default_DLC_CON_Pack003.bin":
-			return "CITADEL";
-		case "Default_DLC_CON_Pack003_Base.bin":
-			return "CITADEL_BASE";
-		default:
-			ModManager.debugLogger.writeMessage("ERROR: Unable to convert " + coalName + " to it's filename.");
-			return null;
-		}
-	}*/
+	/*
+	 * protected String coalFileNameToHeaderName(String coalName) { switch
+	 * (coalName) { case "Default_DLC_CON_MP1.bin": return "RESURGENCE"; case
+	 * "Default_DLC_CON_MP2.bin": return "REBELLION"; case
+	 * "Default_DLC_CON_MP3.bin": return "EARTH"; case
+	 * "Default_DLC_CON_MP4.bin": return "RETALIATION"; case
+	 * "Default_DLC_CON_MP5.bin": return "RECKONING"; case
+	 * "Default_DLC_UPD_Patch01.bin": return "PATCH1"; case
+	 * "Default_DLC_UPD_Patch02.bin": return "PATCH2"; case "Coalesced.bin":
+	 * return "BASEGAME"; case "Default_DLC_TestPatch.bin": return "TESTPATCH";
+	 * case "Default_DLC_HEN_PR.bin": return "FROM_ASHES"; case
+	 * "Default_DLC_CON_APP01.bin": return "APPEARANCE"; case
+	 * "Default_DLC_CON_GUN01.bin": return "FIREFIGHT"; case
+	 * "Default_DLC_CON_GUN02.bin": return "GROUNDSIDE"; case
+	 * "Default_DLC_CON_END.bin": return "EXTENDED_CUT"; case
+	 * "Default_DLC_CON_Pack001.bin": return "LEVIATHAN"; case
+	 * "Default_DLC_CON_Pack002.bin": return "OMEGA"; case
+	 * "Default_DLC_CON_Pack003.bin": return "CITADEL"; case
+	 * "Default_DLC_CON_Pack003_Base.bin": return "CITADEL_BASE"; default:
+	 * ModManager.debugLogger.writeMessage("ERROR: Unable to convert " +
+	 * coalName + " to it's filename."); return null; } }
+	 */
 
 	/**
 	 * Converts the Coalesced.bin filenames to their respective directory in the
@@ -488,60 +562,6 @@ public class ModMakerCompilerWindow extends JDialog {
 	}
 
 	/**
-	 * Converts the Coalesced.bin filenames to their respective PCConsoleTOC
-	 * directory in the .sfar files.
-	 * 
-	 * @param coalName
-	 *            name of coal being packed into the mod
-	 * @return path to the file to repalce
-	 */
-	protected String coalFileNameToDLCTOCDir(String coalName) {
-		switch (coalName) {
-		case "Default_DLC_CON_MP1.bin":
-			return "/BIOGame/DLC/DLC_CON_MP1/PCConsoleTOC.bin";
-		case "Default_DLC_CON_MP2.bin":
-			return "/BIOGame/DLC/DLC_CON_MP2/PCConsoleTOC.bin";
-		case "Default_DLC_CON_MP3.bin":
-			return "/BIOGame/DLC/DLC_CON_MP3/PCConsoleTOC.bin";
-		case "Default_DLC_CON_MP4.bin":
-			return "/BIOGame/DLC/DLC_CON_MP4/PCConsoleTOC.bin";
-		case "Default_DLC_CON_MP5.bin":
-			return "/BIOGame/DLC/DLC_CON_MP5/PCConsoleTOC.bin";
-		case "Default_DLC_UPD_Patch01.bin":
-			return "/BIOGame/DLC/DLC_UPD_Patch01/PCConsoleTOC.bin";
-		case "Default_DLC_UPD_Patch02.bin":
-			return "/BIOGame/DLC/DLC_UPD_Patch02/PCConsoleTOC.bin";
-		case "Coalesced.bin":
-			return "\\BIOGame\\PCConsoleTOC.bin";
-
-		case "Default_DLC_TestPatch.bin":
-			return "/BIOGame/DLC/DLC_TestPatch/PCConsoleTOC.bin";
-		case "Default_DLC_HEN_PR.bin":
-			return "/BIOGame/DLC/DLC_HEN_PR/PCConsoleTOC.bin";
-		case "Default_DLC_CON_APP01.bin":
-			return "/BIOGame/DLC/DLC_CON_APP01/PCConsoleTOC.bin";
-		case "Default_DLC_CON_GUN01.bin":
-			return "/BIOGame/DLC/DLC_CON_GUN01/PCConsoleTOC.bin";
-		case "Default_DLC_CON_GUN02.bin":
-			return "/BIOGame/DLC/DLC_CON_GUN02/PCConsoleTOC.bin";
-		case "Default_DLC_CON_END.bin":
-			return "/BIOGame/DLC/DLC_CON_END/PCConsoleTOC.bin";
-		case "Default_DLC_CON_Pack001.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack001/PCConsoleTOC.bin";
-		case "Default_DLC_CON_Pack002.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack002/PCConsoleTOC.bin";
-		case "Default_DLC_CON_Pack003.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack003/PCConsoleTOC.bin";
-		case "Default_DLC_CON_Pack003_Base.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack003_Base/PCConsoleTOC.bin";
-
-		default:
-			ModManager.debugLogger.writeMessage("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: " + coalName);
-			return null;
-		}
-	}
-
-	/**
 	 * Runs the Coalesced files through Tankmasters decompiler
 	 */
 	public void decompileMods() {
@@ -577,10 +597,10 @@ public class ModMakerCompilerWindow extends JDialog {
 			String path = ModManager.getCompilingDir();
 			for (String coal : coalsToDecompile) {
 				String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
-				
+
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(compilerPath);
-				commandBuilder.add(path+"coalesceds\\"+coal);
+				commandBuilder.add(path + "coalesceds\\" + coal);
 				//System.out.println("Building command");
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 				//Debug stuff
@@ -590,7 +610,6 @@ public class ModMakerCompilerWindow extends JDialog {
 				}
 				ModManager.debugLogger.writeMessage("Executing decompile command: " + sb.toString());
 
-				
 				ProcessBuilder decompileProcessBuilder = new ProcessBuilder(command);
 				decompileProcessBuilder.redirectErrorStream(true);
 				decompileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -695,11 +714,11 @@ public class ModMakerCompilerWindow extends JDialog {
 			int coalsCompeted = 0;
 			for (String coal : coalsToDownload) {
 				try {
-					if (!ModManager.hasPristineCoalesced(coal, ME3TweaksUtils.FILENAME)){
-						ME3TweaksUtils.downloadPristineCoalesced(coal,ME3TweaksUtils.FILENAME);
+					if (!ModManager.hasPristineCoalesced(coal, ME3TweaksUtils.FILENAME)) {
+						ME3TweaksUtils.downloadPristineCoalesced(coal, ME3TweaksUtils.FILENAME);
 					}
-					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(coal, ME3TweaksUtils.FILENAME)), new File(ModManager.getCompilingDir()+"coalesceds/"+coal));
-					ModManager.debugLogger.writeMessage("Copied pristine coalesced of "+coal+" to: " + (new File("coalesceds/" + coal)).getAbsolutePath());
+					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(coal, ME3TweaksUtils.FILENAME)), new File(ModManager.getCompilingDir() + "coalesceds/" + coal));
+					ModManager.debugLogger.writeMessage("Copied pristine coalesced of " + coal + " to: " + (new File("coalesceds/" + coal)).getAbsolutePath());
 					coalsCompeted++;
 					this.publish(coalsCompeted);
 				} catch (IOException e) {
@@ -722,13 +741,12 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected void done() {
 			// Coals downloaded
-			try { 
-	            get(); // this line can throw InterruptedException or ExecutionException
-	        } 
-	        catch (ExecutionException e) {
-	            ModManager.debugLogger.writeMessage("Error occured in CoalDownloadWorker():");
-	            ModManager.debugLogger.writeException(e);
-	        } catch (InterruptedException e) {
+			try {
+				get(); // this line can throw InterruptedException or ExecutionException
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeMessage("Error occured in CoalDownloadWorker():");
+				ModManager.debugLogger.writeException(e);
+			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				return;
@@ -785,7 +803,7 @@ public class ModMakerCompilerWindow extends JDialog {
 							//we now have a file ID such as biogame.
 							//We need to load that XML file now.
 							String iniFileName = fileNode.getNodeName() + ".xml";
-							Document iniFile = dbFactory.newDocumentBuilder().parse(ModManager.getCompilingDir()+"coalesceds\\" + foldername + "\\" + iniFileName);
+							Document iniFile = dbFactory.newDocumentBuilder().parse(ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
 							iniFile.getDocumentElement().normalize();
 							ModManager.debugLogger.writeMessage("Loaded " + iniFile.getDocumentURI() + " into memory.");
 							//ModManager.printDocument(iniFile, System.out);
@@ -1169,7 +1187,7 @@ public class ModMakerCompilerWindow extends JDialog {
 							Transformer transformer = TransformerFactory.newInstance().newTransformer();
 							transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 							transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "1");
-							File outputFile = new File(ModManager.getCompilingDir()+"coalesceds\\" + foldername + "\\" + iniFileName);
+							File outputFile = new File(ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
 							Result output = new StreamResult(outputFile);
 							Source input = new DOMSource(iniFile);
 							ModManager.debugLogger.writeMessage("Saving file: " + outputFile.toString());
@@ -1184,13 +1202,12 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected void done() {
 			// Merge thread finished
-			try { 
-	            get(); // this line can throw InterruptedException or ExecutionException
-	        } 
-	        catch (ExecutionException e) {
-	            ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
-	            ModManager.debugLogger.writeException(e);
-	        } catch (InterruptedException e) {
+			try {
+				get(); // this line can throw InterruptedException or ExecutionException
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
+				ModManager.debugLogger.writeException(e);
+			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				return;
@@ -1257,7 +1274,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						ModManager.debugLogger.writeMessage("---------------------START OF " + tlkType + "-------------------------");
 
 						//decompile TLK to tlk folder
-						File tlkdir = new File(ModManager.getCompilingDir()+"tlk/");
+						File tlkdir = new File(ModManager.getCompilingDir() + "tlk/");
 						tlkdir.mkdirs(); // created tlk directory
 
 						//START OF TLK DECOMPILE=========================================================
@@ -1445,7 +1462,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		boolean error = false;
 		currentOperationLabel.setText("Creating mod directory and descriptor...");
-		File moddir = new File(ModManager.getModsDir()+modName);
+		File moddir = new File(ModManager.getModsDir() + modName);
 		ModManager.debugLogger.writeMessage("Mod package directory set to: " + moddir.getAbsolutePath());
 		moddir.mkdirs(); // created mod directory
 
@@ -1470,46 +1487,46 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (modVer != null) {
 				ini.put("ModInfo", "modver", modVer);
 			}
-			
+
 			// Create directories, move files to them
 			for (String reqcoal : requiredCoals) {
 				File compCoalDir = new File(moddir.toString() + "\\" + ME3TweaksUtils.coalFilenameToInternalName(reqcoal)); //MP4, PATCH2 folders in mod package
 				compCoalDir.mkdirs();
 				String fileNameWithOutExt = FilenameUtils.removeExtension(reqcoal);
 				//copy coal
-				File coalFile = new File(ModManager.getCompilingDir()+"coalesceds\\" + fileNameWithOutExt + "\\" + reqcoal);
+				File coalFile = new File(ModManager.getCompilingDir() + "coalesceds\\" + fileNameWithOutExt + "\\" + reqcoal);
 				File destCoal = new File(compCoalDir + "\\" + reqcoal);
 				destCoal.delete();
-				ModManager.debugLogger.writeMessage("Moving Coalesced file: "+coalFile.getAbsolutePath()+" to "+destCoal.getAbsolutePath());
+				ModManager.debugLogger.writeMessage("Moving Coalesced file: " + coalFile.getAbsolutePath() + " to " + destCoal.getAbsolutePath());
 				if (coalFile.renameTo(destCoal)) {
 					ModManager.debugLogger.writeMessage("Moved " + reqcoal + " to proper mod element directory");
 				} else {
 					ModManager.debugLogger.writeError("ERROR! Didn't move " + reqcoal + " to the proper mod element directory. Could already exist.");
 				}
 				//copy pcconsoletoc
-				File tocFile = new File(ModManager.getCompilingDir()+"toc\\" + ME3TweaksUtils.coalFilenameToInternalName(reqcoal) + "\\PCConsoleTOC.bin");
+				File tocFile = new File(ModManager.getCompilingDir() + "toc\\" + ME3TweaksUtils.coalFilenameToInternalName(reqcoal) + "\\PCConsoleTOC.bin");
 				File destToc = new File(compCoalDir + "\\PCConsoleTOC.bin");
 				destToc.delete();
-				ModManager.debugLogger.writeMessage("Moving TOC file: "+tocFile.getAbsolutePath()+" to "+destToc.getAbsolutePath());
+				ModManager.debugLogger.writeMessage("Moving TOC file: " + tocFile.getAbsolutePath() + " to " + destToc.getAbsolutePath());
 				if (tocFile.renameTo(destToc)) {
 					ModManager.debugLogger.writeMessage("Moved " + reqcoal + " TOC to proper mod element directory");
 				} else {
 					ModManager.debugLogger.writeError("ERROR! Didn't move " + reqcoal + " TOC to the proper mod element directory. Could already exist.");
 				}
-				
+
 				//copy tlk
 				if (reqcoal.equals("Coalesced.bin")) {
 					ModManager.debugLogger.writeMessage("Coalesced pass: Checking for TLK files");
 					//it is basegame. copy the tlk files!
 					String[] tlkFiles = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL" };
 					for (String tlkFilename : tlkFiles) {
-						File compiledTLKFile = new File(ModManager.getCompilingDir()+"tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
+						File compiledTLKFile = new File(ModManager.getCompilingDir() + "tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
 						if (!compiledTLKFile.exists()) {
 							ModManager.debugLogger.writeMessage("TLK file " + compiledTLKFile + " is missing, might not have been selected for compilation. skipping.");
 							continue;
 						}
 						File destTLKFile = new File(compCoalDir + "\\BIOGame_" + tlkFilename + ".tlk");
-						ModManager.debugLogger.writeMessage("Moving TLK file: "+compiledTLKFile.getAbsolutePath()+" to "+destTLKFile.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("Moving TLK file: " + compiledTLKFile.getAbsolutePath() + " to " + destTLKFile.getAbsolutePath());
 						if (compiledTLKFile.renameTo(destTLKFile)) {
 							ModManager.debugLogger.writeMessage("Moved " + compiledTLKFile + " TLK to BASEGAME directory");
 						} else {
@@ -1551,15 +1568,15 @@ public class ModMakerCompilerWindow extends JDialog {
 						replacesb.append(";");
 					}
 					newsb.append("PCConsoleTOC.bin");
-					replacesb.append(coalFileNameToDLCTOCDir(reqcoal));
+					replacesb.append(ME3TweaksUtils.coalFileNameToDLCTOCDir(reqcoal));
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "newfiles", newsb.toString());
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles", replacesb.toString());
 				} else {
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "newfiles", reqcoal + ";PCConsoleTOC.bin");
-					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal) + ";" + coalFileNameToDLCTOCDir(reqcoal));
+					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal) + ";" + ME3TweaksUtils.coalFileNameToDLCTOCDir(reqcoal));
 				}
 
-				File compCoalSourceDir = new File(ModManager.getCompilingDir()+"coalesceds\\" + fileNameWithOutExt);
+				File compCoalSourceDir = new File(ModManager.getCompilingDir() + "coalesceds\\" + fileNameWithOutExt);
 				try {
 					if (!ModManager.IS_DEBUG) {
 						FileUtils.deleteDirectory(compCoalSourceDir);
@@ -1579,7 +1596,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 				//MOVE THE TLK FILES
 				for (String tlkFilename : languages) {
-					File compiledTLKFile = new File(ModManager.getCompilingDir()+"tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
+					File compiledTLKFile = new File(ModManager.getCompilingDir() + "tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
 					if (!compiledTLKFile.exists()) {
 						ModManager.debugLogger.writeMessage("TLK file " + compiledTLKFile + " is missing, might not have been selected for compilation. skipping.");
 						continue;
@@ -1593,7 +1610,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				}
 
 				//MOVE PCCONSOLETOC.bin
-				File tocFile = new File(ModManager.getCompilingDir()+"toc\\" + ME3TweaksUtils.coalFilenameToInternalName("Coalesced.bin") + "\\PCConsoleTOC.bin");
+				File tocFile = new File(ModManager.getCompilingDir() + "toc\\" + ME3TweaksUtils.coalFilenameToInternalName("Coalesced.bin") + "\\PCConsoleTOC.bin");
 				File destToc = new File(compCoalDir + "\\PCConsoleTOC.bin");
 				destToc.delete();
 				if (tocFile.renameTo(destToc)) {
@@ -1614,21 +1631,21 @@ public class ModMakerCompilerWindow extends JDialog {
 					}
 				}
 				newsb.append(";PCConsoleTOC.bin");
-				replacesb.append(";" + coalFileNameToDLCTOCDir("Coalesced.bin"));
+				replacesb.append(";" + ME3TweaksUtils.coalFileNameToDLCTOCDir("Coalesced.bin"));
 				ini.put(ME3TweaksUtils.coalFilenameToHeaderName("Coalesced.bin"), "newfiles", newsb.toString());
 				ini.put(ME3TweaksUtils.coalFilenameToHeaderName("Coalesced.bin"), "replacefiles", replacesb.toString());
-			}//end tlk only basegame
-			
+			} //end tlk only basegame
+
 			ModManager.debugLogger.writeMessage("Writing memory ini to disk.");
 			ini.store();
 			ModManager.debugLogger.writeMessage("Removing temporary directories:");
 			try {
 				if (!ModManager.IS_DEBUG) {
-					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir()+"tlk"));
+					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "tlk"));
 					ModManager.debugLogger.writeMessage("Deleted tlk");
-					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir()+"toc"));
+					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "toc"));
 					ModManager.debugLogger.writeMessage("Deleted toc");
-					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir()+"coalesceds"));
+					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "coalesceds"));
 					ModManager.debugLogger.writeMessage("Deleted coalesceds");
 				}
 			} catch (IOException e) {
@@ -1655,9 +1672,11 @@ public class ModMakerCompilerWindow extends JDialog {
 					modName + " was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure debugging is enabled in Help>About.\nContact FemShep if you need help via the forums.",
 					"Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
-/*		File file = new File(DOWNLOADED_XML_FILENAME);
-		file.delete();
-		ModManager.debugLogger.writeMessage("Deleted downloaded me3tweaks modinfo file");*/
+		/*
+		 * File file = new File(DOWNLOADED_XML_FILENAME); file.delete();
+		 * ModManager.debugLogger.writeMessage(
+		 * "Deleted downloaded me3tweaks modinfo file");
+		 */
 
 		if (mod != null) {
 			//its an update
@@ -1716,16 +1735,16 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected Void doInBackground() throws Exception {
 			int tocsCompleted = 0;
-			File tocDir = new File(ModManager.getCompilingDir()+"toc/");
+			File tocDir = new File(ModManager.getCompilingDir() + "toc/");
 			tocDir.mkdirs();
 			for (String toc : tocsToDownload) {
 				try {
-					if (!ModManager.hasPristineTOC(toc, ME3TweaksUtils.FILENAME)){
-						ME3TweaksUtils.downloadPristineTOC(toc,ME3TweaksUtils.FILENAME);
+					if (!ModManager.hasPristineTOC(toc, ME3TweaksUtils.FILENAME)) {
+						ME3TweaksUtils.downloadPristineTOC(toc, ME3TweaksUtils.FILENAME);
 					}
-					File destTOC = new File(ModManager.getCompilingDir()+"toc/"+ME3TweaksUtils.coalFilenameToInternalName(toc)+"/PCConsoleTOC.bin"); //head should be same as standard folder
+					File destTOC = new File(ModManager.getCompilingDir() + "toc/" + ME3TweaksUtils.coalFilenameToInternalName(toc) + "/PCConsoleTOC.bin"); //head should be same as standard folder
 					FileUtils.copyFile(new File(ModManager.getPristineTOC(toc, ME3TweaksUtils.FILENAME)), destTOC);
-					ModManager.debugLogger.writeMessage("Copied pristine TOC of COALESCED DLC("+toc+") to: " + destTOC.getAbsolutePath());
+					ModManager.debugLogger.writeMessage("Copied pristine TOC of COALESCED DLC(" + toc + ") to: " + destTOC.getAbsolutePath());
 					tocsCompleted++;
 					this.publish(tocsCompleted);
 				} catch (MalformedURLException e) {

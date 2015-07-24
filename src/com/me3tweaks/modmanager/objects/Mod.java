@@ -48,6 +48,9 @@ public class Mod implements Comparable<Mod> {
 	 *            Path to the moddesc.ini file.
 	 */
 	public Mod(String filepath) {
+		if (filepath == null) { 
+			return;
+		}
 		modifyString = "";
 		modDescFile = new File(filepath);
 		modPath = modDescFile.getParent();
@@ -55,7 +58,7 @@ public class Mod implements Comparable<Mod> {
 		try {
 			readDesc();
 		} catch (Exception e) {
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("Error reading moddesc.ini:", e);
 			setValidMod(false);
 			return;
 		}
@@ -444,8 +447,12 @@ public class Mod implements Comparable<Mod> {
 		}
 	}
 
+	/**
+	 * Returns mod's folder, with a / on the end
+	 * @return
+	 */
 	public String getModPath() {
-		return modPath;
+		return ModManager.appendSlash(modPath);
 	}
 
 	public String getModName() {

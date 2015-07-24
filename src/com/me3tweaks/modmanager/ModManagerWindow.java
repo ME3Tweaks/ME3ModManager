@@ -8,9 +8,7 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -88,7 +86,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem actionModMaker, actionVisitMe, actionOpenME3Exp, actionReload, actionExit;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupBasegame;
-	JMenuItem toolsModMaker, toolsMergeMod, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC,
 			restoreRevertSPBaseDLC, restoreRevertCoal;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlConsumableParser, sqlGearParser;
@@ -100,6 +98,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	public JLabel labelStatus;
 	final String selectAModDescription = "Select a mod on the left to view its description and apply it.";
 	DefaultListModel<Mod> modModel;
+	private ArrayList<Patch> patchList;
 	// static HashMap<String, Mod> listDescriptors;
 	private JMenuItem modutilsUpdateXMLGenerator;
 	private JMenuItem toolsCheckallmodsforupdate;
@@ -419,6 +418,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		for (Mod mod : modList) {
 			modModel.addElement(mod);
 		}
+		
+		//load patches
+		setPatchList(ModManager.getPatchesFromDirectory());
 
 		// DescriptionField
 		JPanel descriptionPanel = new JPanel(new BorderLayout());
@@ -452,8 +454,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		labelStatus.setVisible(true);
 
 		// ProgressBar
-		progressBar = new JProgressBar();
-		progressBar.setVisible(false);
 
 		// ButtonPanel
 		JPanel buttonPanel = new JPanel(new FlowLayout());
@@ -470,7 +470,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		buttonPanel.add(buttonApplyMod);
 		buttonPanel.add(buttonStartGame);
 		applyPanel.add(labelStatus, BorderLayout.WEST);
-		applyPanel.add(progressBar, BorderLayout.CENTER);
 		applyPanel.add(buttonPanel, BorderLayout.EAST);
 
 		southPanel.add(applyPanel, BorderLayout.SOUTH);
@@ -564,9 +563,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsMergeMod = new JMenuItem("Merge mods...");
 		toolsMergeMod.setToolTipText("Allows you to merge CMM3+ mods together and resolve conflicts between mods");
+		
+		toolsPatchLibary = new JMenuItem("Patch Library");
+		toolsPatchLibary.setToolTipText("Add premade mix-ins to mods using patches in your patch library");
 
 		toolsOpenME3Dir = new JMenuItem("Open BIOGame directory");
-		toolsOpenME3Dir.addActionListener(this);
 		toolsOpenME3Dir.setToolTipText("Opens a Windows Explorer window in the BIOGame Directory");
 
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
@@ -586,12 +587,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMergeMod.addActionListener(this);
 		toolsCheckallmodsforupdate.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
+		toolsPatchLibary.addActionListener(this);;
+		toolsOpenME3Dir.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
 
 		toolsMenu.add(toolsModMaker);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsMergeMod);
+		toolsMenu.add(toolsPatchLibary);
 		toolsMenu.add(toolsCheckallmodsforupdate);
 		toolsMenu.add(toolsOpenME3Dir);
 		toolsMenu.addSeparator();
@@ -977,6 +981,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()));
 		} else if (e.getSource() == toolsCheckallmodsforupdate) {
 			checkAllModsForUpdates(true);
+		} else if (e.getSource() == toolsPatchLibary) {
+			new PatchLibaryWindow();
 		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
 			ModManager.debugLogger.writeMessage(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
 		} else if (e.getSource() == sqlDifficultyParser) {
@@ -1772,6 +1778,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	public ArrayList<Patch> getPatchesFromLibrary() {
 
 		return null;
+	}
+
+	public ArrayList<Patch> getPatchList() {
+		return patchList;
+	}
+
+	public void setPatchList(ArrayList<Patch> patchList) {
+		this.patchList = patchList;
 	}
 
 }

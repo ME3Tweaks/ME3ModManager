@@ -2,8 +2,7 @@ package com.me3tweaks.modmanager.objects;
 
 import java.io.File;
 import java.io.IOException;
-
-import javax.swing.JOptionPane;
+import java.util.ArrayList;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -15,8 +14,8 @@ import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 
 /**
- * Patch class describes a patch file with metadata about the patch. It's similar
- * to the Mod class.
+ * Patch class describes a patch file with metadata about the patch. It's
+ * similar to the Mod class.
  * 
  * @author mgamerz
  *
@@ -46,37 +45,41 @@ public class Patch {
 			patchini = new Wini(patchDescIni);
 
 			patchFolderPath = ModManager.appendSlash(patchDescIni.getParent());
-			patchDescription = patchini.get("PatchInfo", "patchdescription");
+			patchDescription = patchini.get("PatchInfo", "patchdesc");
 			patchName = patchini.get("PatchInfo", "patchname");
 			ModManager.debugLogger.writeMessage("------------------Reading Patch" + patchName + "------------------");
+			ModManager.debugLogger.writeMessage("Patch Folder: " + patchFolderPath);
+			ModManager.debugLogger.writeMessage("Patch Name: " + patchName);
+			ModManager.debugLogger.writeMessage("Patch Description: " + patchDescription);
 			// Check if this mod has been made for Mod Manager 2.0 or legacy mode
 			patchCMMVer = 3.2f;
 			patchVersion = 1;
 			try {
 				patchCMMVer = Float.parseFloat(patchini.get("ModManager", "cmmver"));
-				ModManager.debugLogger.writeMessage("Patch Targets Mod Manager: "+patchCMMVer);
+				ModManager.debugLogger.writeMessage("Patch Targets Mod Manager: " + patchCMMVer);
 				patchVersion = Float.parseFloat(patchini.get("PatchInfo", "patchver"));
-				ModManager.debugLogger.writeMessage("Patch Version: "+patchVersion);
+				patchVersion = (double) Math.round(patchVersion * 10) / 10; //tenth rounding
+				ModManager.debugLogger.writeMessage("Patch Version: " + patchVersion);
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeMessage("Didn't read a target version (cmmver) in the descriptor file. Targetting 3.2.");
 				patchCMMVer = 3.2f;
+				ModManager.debugLogger.writeException(e);
 			}
-			
+
 			targetModule = patchini.get("PatchInfo", "targetmodule");
 			targetPath = patchini.get("PatchInfo", "targetfile");
 			targetSize = Long.parseLong(patchini.get("PatchInfo", "targetsize"));
-			ModManager.debugLogger.writeMessage("Patch Targets Module: "+targetModule);
-			ModManager.debugLogger.writeMessage("Patch Targets File in module: "+targetPath);
-			ModManager.debugLogger.writeMessage("Patch only works with files of size: "+targetSize);
+			ModManager.debugLogger.writeMessage("Patch Targets Module: " + targetModule);
+			ModManager.debugLogger.writeMessage("Patch Targets File in module: " + targetPath);
+			ModManager.debugLogger.writeMessage("Patch only works with files of size: " + targetSize);
 
-						
-			if (targetPath == null || targetModule == null || targetPath.equals("") || targetModule.equals("")){
+			if (targetPath == null || targetModule == null || targetPath.equals("") || targetModule.equals("")) {
 				ModManager.debugLogger.writeMessage("Invalid patch, targetfile or targetmodule was empty or missing");
 				isValid = false;
-			} else if (targetSize <= 0){
+			} else if (targetSize <= 0) {
 				ModManager.debugLogger.writeMessage("Invalid patch, target size of file to patch has to be bigger than 0");
 				isValid = false;
-			} else if (targetPath.endsWith("Coalesced.bin")){
+			} else if (targetPath.endsWith("Coalesced.bin")) {
 				ModManager.debugLogger.writeMessage("Invalid patch, patches do not work with Coalesced.bin");
 				isValid = false;
 			} else {
@@ -96,18 +99,19 @@ public class Patch {
 		}
 		ModManager.debugLogger.writeMessage("--------------------------END OF " + patchName + "--------------------------");
 	}
-	
+
 	/**
 	 * Moves this patch into the data/patches directory
+	 * 
 	 * @return True if successful, false otherwise
 	 */
-	public boolean importPatch(){
+	public boolean importPatch() {
 		ModManager.debugLogger.writeMessage("Importing patch to library");
-		String patchDirPath = ModManager.getPatchesDir()+"patches/";
+		String patchDirPath = ModManager.getPatchesDir() + "patches/";
 		File patchDir = new File(patchDirPath);
 		patchDir.mkdirs();
-		
-		String destinationDir = patchDirPath+getPatchName();
+
+		String destinationDir = patchDirPath + getPatchName();
 		File destDir = new File(destinationDir);
 		if (destDir.exists()) {
 			System.err.println("Destination directory already exists.");
@@ -123,82 +127,136 @@ public class Patch {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Applies this patch. Inserts itself as a task in the specified mod.
-	 * @param mod Mod to apply with
+	 * 
+	 * @param mod
+	 *            Mod to apply with
 	 * @return True if successful, false otherwise
 	 */
 	public boolean applyPatch(Mod mod) {
 		//We must check if the mod we are applying to already has this file. If it does we will apply to that mod.
 		//If it does not we will add new task for it.
 		//If the files are not the right size we will not apply.
-		File jpatch = new File(ModManager.getToolsDir()+"jptch.exe");
-		if (!jpatch.exists()) {
-			ME3TweaksUtils.downloadJDiffTools();
-		}
-		
-		//Prepare mod
-		String modSourceFile = mod.getModTaskPath(targetPath, targetModule);
-		if (modSourceFile == null){
-			ModManager.debugLogger.writeMessage(mod.getModName()+" does not appear to modify "+targetPath+" in module "+targetModule+", performing file fetch");
-			//we need to check if its in the patch library's source folder
-			if (!ModManager.hasPristinePatchSource(targetPath,targetModule)){
-				ModManager.debugLogger.writeMessage("Fetching source file from game");
-				modSourceFile = ModManager.getPatchSource(targetPath, targetModule);
-			}
-			if (modSourceFile == null) {
-				//couldn't copy or extract file, have nothing we can patch
-				ModManager.debugLogger.writeMessage(mod.getModName()+"'s patch "+getPatchName()+" was not able to acquire a source file to patch.");
-				return false;
-			}
-			
-			//copy sourcefile to mod dir
-			File libraryFile = new File(modSourceFile);
-			File modFile = new File(ModManager.appendSlash(mod.getModPath())+Mod.getStandardFolderName(targetModule)+File.separator+FilenameUtils.getName(targetPath));
-			FileUtils.copyFile(libraryFile, modFile);
+		ModManager.debugLogger.writeMessage("=============APPLY PATCH " + getPatchName() + "=============");
+		try {
 
-			//we need to add a task for this
-			ModJob targetJob = null;
-			for (ModJob job : mod.jobs) {
-				if (job.getJobName().equals(targetModule)){
-					targetJob = job;
-					String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
-					String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
-					System.out.println(relativepath);
-					String filename = FilenameUtils.getName(targetPath);
-					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME,ME3TweaksUtils.HEADER)), new File(ModManager.appendSlash(mod.getModPath())+relativepath+"Coalesced.bin"));
-					job.addFileReplace(mod.getModPath()+relativepath+"Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
-					break;
+			File jpatch = new File(ModManager.getToolsDir() + "jptch.exe");
+			if (!jpatch.exists()) {
+				ME3TweaksUtils.downloadJDiffTools();
+			}
+
+			if (!ModManager.hasPristineTOC(targetModule, ME3TweaksUtils.HEADER)) {
+				ME3TweaksUtils.downloadPristineTOC(targetModule, ME3TweaksUtils.HEADER);
+			}
+
+			//Prepare mod
+			String modSourceFile = mod.getModTaskPath(targetPath, targetModule);
+			if (modSourceFile == null) {
+				ModManager.debugLogger.writeMessage(mod.getModName() + " does not appear to modify " + targetPath + " in module " + targetModule + ", performing file fetch");
+				//we need to check if its in the patch library's source folder
+				modSourceFile = ModManager.getPatchSource(targetPath, targetModule);
+
+				if (modSourceFile == null) {
+					//couldn't copy or extract file, have nothing we can patch
+					ModManager.debugLogger.writeMessage(mod.getModName() + "'s patch " + getPatchName() + " was not able to acquire a source file to patch.");
+					return false;
 				}
+
+				//copy sourcefile to mod dir
+				File libraryFile = new File(modSourceFile);
+				if (libraryFile.length() != targetSize) {
+					ModManager.debugLogger.writeError("File that is going to be patched does not match patch descriptor size! Unable to apply patch");
+					return false;
+				}
+				//File modFile = new File(ModManager.appendSlash(mod.getModPath())+Mod.getStandardFolderName(targetModule)+File.separator+FilenameUtils.getName(targetPath));
+				//FileUtils.copyFile(libraryFile, modFile);
+
+				//we need to add a task for this
+				ModJob targetJob = null;
+				String standardFolder = ModManager.appendSlash(Mod.getStandardFolderName(targetModule));
+				String filename = FilenameUtils.getName(targetPath);
+				for (ModJob job : mod.jobs) {
+					if (job.getJobName().equals(targetModule)) {
+						ModManager.debugLogger.writeError("Adding file to existing job: " + targetModule);
+						targetJob = job;
+						String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
+						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
+						System.out.println(relativepath);
+						File modFilePath = new File(ModManager.appendSlash(mod.getModPath()) + relativepath + filename);
+						FileUtils.copyFile(new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER)), modFilePath);
+
+						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath);
+						break;
+					}
+				}
+
+				if (targetJob == null) {
+					ModManager.debugLogger.writeError("Creating new job: " + targetModule);
+					//no job for the module this task needs
+					//we need to add it as a new task and then add add a PCConsoleTOC for it
+					double newCmmVer = Math.max(mod.modCMMVer, 3.2);
+					ModJob job;
+					if (targetModule.equals(ModType.BASEGAME)) {
+						job = new ModJob();
+					} else {
+						job = new ModJob(ModType.getDLCPath(targetModule), targetModule);
+					}
+					File modulefolder = new File(ModManager.appendSlash(mod.getModPath() + standardFolder));
+					modulefolder.mkdirs();
+					ModManager.debugLogger.writeMessage("Adding PCConsoleTOC.bin to new job");
+					File tocSource = new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER));
+					File tocDest = new File(modulefolder + File.separator + "PCConsoleTOC.bin");
+					FileUtils.copyFile(tocSource, tocDest);
+					job.addFileReplace(tocSource.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)));
+
+					ModManager.debugLogger.writeMessage("Adding " + filename + " to new job");
+					File modFile = new File(modulefolder + File.separator + filename);
+					FileUtils.copyFile(libraryFile, modFile);
+					job.addFileReplace(modFile.getAbsolutePath(), targetPath);
+					mod.addTask(targetModule, job);
+					mod.modCMMVer = newCmmVer;
+				}
+
+				//write new moddesc.ini file
+				String descini = mod.createModDescIni(mod.modCMMVer);
+				ModManager.debugLogger.writeMessage("Updating moddesc.ini with updated job");
+				FileUtils.writeStringToFile(mod.modDescFile, descini);
+
+				//reload mod in staging with new job added
+				ModManager.debugLogger.writeMessage("Reloading updated mod with new moddesc.ini file");
+				mod = new Mod(mod.modDescFile.getAbsolutePath());
+				modSourceFile = mod.getModTaskPath(targetPath, targetModule);
 			}
-						
-			if (targetJob == null) {
-				//no basegame header, but has tasks, and does not mod coal
-				//means it doesn't modify basegame files at all so we can just add the header and set modver to 3 (or max of both in case of 2 as modcoal was not set)
-				double newCmmVer = Math.max(mod.modCMMVer, 3.0);
-				ModJob job = new ModJob();
-				File basegamefolder = new File(ModManager.appendSlash(mod.getModPath())+"BASEGAME");
-				basegamefolder.mkdirs();
-				FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME,ME3TweaksUtils.HEADER)), new File(ModManager.appendSlash(mod.getModPath())+"BASEGAME/Coalesced.bin"));
-				job.addFileReplace(ModManager.appendSlash(mod.getModPath())+"BASEGAME/Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
-				mod.addTask(ModType.BASEGAME, job);
-				mod.modCMMVer = newCmmVer;
+			//apply patch
+			ArrayList<String> commandBuilder = new ArrayList<String>();
+			commandBuilder.add(ModManager.getToolsDir() + "jptch.exe");
+
+			commandBuilder.add(modSourceFile);
+			commandBuilder.add(getPatchFolderPath() + "patch.jsf");
+			StringBuilder sb = new StringBuilder();
+			for (String arg : commandBuilder) {
+				sb.append("\""+arg + "\" ");
 			}
-			
-			//write new moddesc.ini file
-			String descini = mod.createModDescIni(mod.modCMMVer);
-			ModManager.debugLogger.writeMessage("Writing new moddesc.ini with new coal modding job");
-			FileUtils.writeStringToFile(new File(stagingIniPath) , descini);
-			
-			//reload mod in staging with new job added
-			ModManager.debugLogger.writeMessage("Reloading Staging mod with new moddesc.ini file");
-			mod = new Mod(stagingIniPath);
-			basegamecoal = mod.getBasegameCoalesced();
-		
+
+			ModManager.debugLogger.writeMessage("Executing JPATCH patch command: " + sb.toString());
+
+			ProcessBuilder patchProcessBuilder = new ProcessBuilder(commandBuilder);
+			//patchProcessBuilder.redirectErrorStream(true);
+			//patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+			Process patchProcess = patchProcessBuilder.start();
+			patchProcess.waitFor();
+			ModManager.debugLogger.writeMessage("File has been patched.");
+			return true;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeErrorWithException("IOException applying mod:", e);
+			return false;
+		} catch (InterruptedException e) {
+			ModManager.debugLogger.writeErrorWithException("Patching process was interrupted:", e);
+			return false;
 		}
-		
-		return false;
 	}
 
 	public String getTargetPath() {
