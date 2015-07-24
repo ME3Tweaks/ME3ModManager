@@ -42,7 +42,7 @@ import com.me3tweaks.modmanager.objects.Patch;
 
 public class ModManager {
 
-	public static final String VERSION = "3.1";
+	public static final String VERSION = "3.2";
 	public static long BUILD_NUMBER = 40L;
 
 	public static final String BUILD_DATE = "7/22/2015";
@@ -745,7 +745,7 @@ public class ModManager {
 				key = ME3TweaksUtils.internalNameToHeaderName(ME3TweaksUtils.coalFilenameToInternalName(name));
 				break;
 			case ME3TweaksUtils.HEADER:
-				//do nothing
+				key = name;
 				break;
 			case ME3TweaksUtils.INTERNAL:
 				key = ME3TweaksUtils.internalNameToHeaderName(name);
@@ -845,7 +845,7 @@ public class ModManager {
 				key = ME3TweaksUtils.internalNameToHeaderName(ME3TweaksUtils.coalFilenameToInternalName(name));
 				break;
 			case ME3TweaksUtils.HEADER:
-				//do nothing
+				key = name;
 				break;
 			case ME3TweaksUtils.INTERNAL:
 				key = ME3TweaksUtils.internalNameToHeaderName(name);
@@ -854,6 +854,8 @@ public class ModManager {
 			
 			if (hash.equals(tocHashes.get(key))){
 				return true;
+			} else {
+				ModManager.debugLogger.writeError(key+" TOC in pristine directory has failed hash check: "+hash+" vs known good value: "+tocHashes.get(key));
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

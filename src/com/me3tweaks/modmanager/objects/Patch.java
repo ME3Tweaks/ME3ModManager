@@ -1,15 +1,21 @@
 package com.me3tweaks.modmanager.objects;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+
+import javax.swing.JOptionPane;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
+import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 
@@ -139,6 +145,7 @@ public class Patch {
 		//We must check if the mod we are applying to already has this file. If it does we will apply to that mod.
 		//If it does not we will add new task for it.
 		//If the files are not the right size we will not apply.
+		boolean requiresreload = false;
 		ModManager.debugLogger.writeMessage("=============APPLY PATCH " + getPatchName() + "=============");
 		try {
 
@@ -154,6 +161,7 @@ public class Patch {
 			//Prepare mod
 			String modSourceFile = mod.getModTaskPath(targetPath, targetModule);
 			if (modSourceFile == null) {
+				requiresreload = true;
 				ModManager.debugLogger.writeMessage(mod.getModName() + " does not appear to modify " + targetPath + " in module " + targetModule + ", performing file fetch");
 				//we need to check if its in the patch library's source folder
 				modSourceFile = ModManager.getPatchSource(targetPath, targetModule);
@@ -227,14 +235,20 @@ public class Patch {
 				//reload mod in staging with new job added
 				ModManager.debugLogger.writeMessage("Reloading updated mod with new moddesc.ini file");
 				mod = new Mod(mod.modDescFile.getAbsolutePath());
+				new AutoTocWindow(mod);
 				modSourceFile = mod.getModTaskPath(targetPath, targetModule);
 			}
+			//rename file (so patch doesn't continuously recalculate itself)
+			File stagingFile = new File(ModManager.getTempDir()+"patch_staging"); //this file is used as base, and then patch puts file back in original place
+			stagingFile.delete();
+			FileUtils.moveFile(new File(modSourceFile), stagingFile);
+			
 			//apply patch
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getToolsDir() + "jptch.exe");
-
-			commandBuilder.add(modSourceFile);
+			commandBuilder.add(stagingFile.getAbsolutePath());
 			commandBuilder.add(getPatchFolderPath() + "patch.jsf");
+			commandBuilder.add(modSourceFile);
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {
 				sb.append("\""+arg + "\" ");
@@ -246,7 +260,12 @@ public class Patch {
 			//patchProcessBuilder.redirectErrorStream(true);
 			//patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 			Process patchProcess = patchProcessBuilder.start();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(patchProcess.getInputStream()));
+			String line;
+			while ((line = reader.readLine()) != null)
+			    System.out.println("tasklist: " + line);
 			patchProcess.waitFor();
+			stagingFile.delete();
 			ModManager.debugLogger.writeMessage("File has been patched.");
 			return true;
 		} catch (IOException e) {
