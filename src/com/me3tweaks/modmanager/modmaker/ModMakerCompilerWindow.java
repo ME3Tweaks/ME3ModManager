@@ -58,6 +58,7 @@ import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
+import com.me3tweaks.modmanager.valueparsers.enemytype.EnemyType;
 import com.me3tweaks.modmanager.valueparsers.possessionwaves.Difficulty;
 import com.me3tweaks.modmanager.valueparsers.sharedassignment.SharedDifficulty;
 import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
@@ -1037,7 +1038,7 @@ public class ModMakerCompilerWindow extends JDialog {
 													//Must use individual matching algorithms so we can figure out if something matches.
 													case "exactvalue": {
 														if (itemToModify.getTextContent().equals(newValue)) {
-															ModManager.debugLogger.writeMessage("Property match found.");
+															ModManager.debugLogger.writeMessage("exact Property match found.");
 															match = true;
 														}
 													}
@@ -1067,11 +1068,11 @@ public class ModMakerCompilerWindow extends JDialog {
 														} else {
 															//CHECK FOR COLLECTOR PLAT WAVE 5.
 															String cplatwave5 = "(Difficulty=DO_Level3,Enemies=( (EnemyType=\"WAVE_COL_Scion\"), (EnemyType=\"WAVE_COL_Praetorian\", MinCount=1, MaxCount=1), (EnemyType=\"WAVE_CER_Phoenix\", MinCount=2, MaxCount=2), (EnemyType=\"WAVE_CER_Phantom\", MinCount=3, MaxCount=3) ))";
-															if (path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies")
+															/*if (path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies")
 																	&& importing.difficulty.equals("DO_Level3")) {
 																System.out.println("BREAK");
 
-															}
+															}*/
 															//System.out.println(itemToModify.getTextContent());
 															if (itemToModify.getTextContent().equals(cplatwave5)
 																	&& path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies")
@@ -1081,7 +1082,7 @@ public class ModMakerCompilerWindow extends JDialog {
 															}
 														}
 													}
-														break;
+													break;
 													case "possessionwaves": {
 														//Match on Difficulty/DoLevel
 														//Match on Difficulty
@@ -1095,8 +1096,7 @@ public class ModMakerCompilerWindow extends JDialog {
 													}
 														break;
 													case "shareddifficulty":
-													case "wavebudget":
-													case "wavecost": {
+													case "wavebudget": {
 														//Match on SharedDifficulty (DO_Level)
 														SharedDifficulty existing = new SharedDifficulty(itemToModify.getTextContent());
 														SharedDifficulty importing = new SharedDifficulty(newValue);
@@ -1105,9 +1105,18 @@ public class ModMakerCompilerWindow extends JDialog {
 														}
 													}
 														break;
+													case "enemytype": 
+													case "wavecost":{ //wavecost is old name for enemytype (modmaker 1.6)
+														EnemyType existing = new EnemyType(itemToModify.getTextContent());
+														EnemyType importing = new EnemyType(newValue);
+														if (existing.matchIdentifier(importing)){
+															match = true;
+														}
+													}
+														break;
 													default:
-														ModManager.debugLogger.writeMessage(
-																"ERROR: Unknown matching algorithm: " + arrayType + " does this client need updated? Aborting this stat update.");
+														ModManager.debugLogger.writeError(
+																"ERROR: Unknown matching algorithm: " + arrayType + ". does this client need updated? Aborting this stat update.");
 														JOptionPane.showMessageDialog(null,
 																"<html>Unknown matching algorithm from ME3Tweaks: " + arrayType
 																		+ ".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",

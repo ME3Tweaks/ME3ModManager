@@ -33,14 +33,6 @@ public class Mod implements Comparable<Mod> {
 	private int classicCode;
 	private ArrayList<Patch> requiredPatches = new ArrayList<Patch>();
 
-	public boolean isValidMod() {
-		return validMod;
-	}
-
-	private void setValidMod(boolean validMod) {
-		this.validMod = validMod;
-	}
-
 	/**
 	 * Creates a new mod object.
 	 * 
@@ -384,7 +376,7 @@ public class Mod implements Comparable<Mod> {
 					Patch subPatch = new Patch(patchDesc.getAbsolutePath());
 					if (subPatch.isValid()) {
 						ModManager.debugLogger.writeMessage("Valid patch: "+subPatch.getPatchName()+", importing to library and processing");
-						subPatch.importPatch();
+						subPatch = subPatch.importPatch();
 						requiredPatches.add(subPatch);
 					}
 				}
@@ -1041,5 +1033,21 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 		return null;
+	}
+	
+	public ArrayList<Patch> getRequiredPatches() {
+		return requiredPatches;
+	}
+
+	public void setRequiredPatches(ArrayList<Patch> requiredPatches) {
+		this.requiredPatches = requiredPatches;
+	}
+
+	public boolean isValidMod() {
+		return validMod;
+	}
+
+	private void setValidMod(boolean validMod) {
+		this.validMod = validMod;
 	}
 }

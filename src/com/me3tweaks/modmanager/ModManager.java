@@ -42,10 +42,10 @@ import com.me3tweaks.modmanager.objects.Patch;
 
 public class ModManager {
 
-	public static final String VERSION = "3.2";
+	public static final String VERSION = "4.0 Beta 1";
 	public static long BUILD_NUMBER = 40L;
 
-	public static final String BUILD_DATE = "7/22/2015";
+	public static final String BUILD_DATE = "7/26/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
@@ -54,6 +54,7 @@ public class ModManager {
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static long LAST_AUTOUPDATE_CHECK;
+	public static int MIN_REQUIRED_ME3EXPLORER_REV = 706; //my custom build version
 
 	public static void main(String[] args) {
 		System.out.println("Starting mod manager");
@@ -247,11 +248,11 @@ public class ModManager {
 
 		//move update folder
 		ModManager.debugLogger.writeMessage("Checking if using old update dir");
-		File updatedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "tools/");
-		if (updatedir.exists()) {
+		File toolsdir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "update/");
+		if (toolsdir.exists()) {
 			ModManager.debugLogger.writeMessage("Moving update to data/");
 			try {
-				FileUtils.moveDirectory(updatedir, new File(ModManager.getToolsDir()));
+				FileUtils.moveDirectory(toolsdir, new File(ModManager.getToolsDir()));
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY!");
 				ModManager.debugLogger.writeException(e);
@@ -708,7 +709,7 @@ public class ModManager {
 	}
 
 	public static String getPatchesDir() {
-		File file = new File(getDataDir() + "patchlibrary/");
+		File file = new File(getDataDir() + "mixinlibrary/");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
@@ -914,7 +915,7 @@ public class ModManager {
 			for (String arg : commandBuilder) {
 				sb.append("\""+arg + "\" ");
 			}
-
+			sourceDestination.getParentFile().mkdirs();
 			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER Decompressor command (into library): " + sb.toString());
 
 			ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
@@ -957,7 +958,11 @@ public class ModManager {
 			commandBuilder.add(sourceDestination.getAbsolutePath());
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {
-				sb.append("\""+arg + "\" ");
+				if (arg.contains(" ")) {
+					sb.append("\""+arg + "\" ");
+				} else {
+					sb.append(arg + " ");
+				}
 			}
 			sourceDestination.getParentFile().mkdirs();
 			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());

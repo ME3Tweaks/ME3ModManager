@@ -35,32 +35,27 @@ import org.ini4j.Wini;
 import org.json.simple.JSONObject;
 
 @SuppressWarnings("serial")
-public class UpdateAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
-	String downloadLink, updateScriptLink;
+public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListener {
+	//String downloadLink, updateScriptLink;
 	boolean error = false;
 	String version;
 	long build;
-	JLabel introLabel, versionsLabel, changelogLabel, sizeLabel;
-	JButton updateButton, notNowButton, nextUpdateButton;
-	JSONObject updateInfo;
+	JLabel introLabel, statusLabel;
 	JProgressBar downloadProgress;
 
-	public UpdateAvailableWindow(JSONObject updateInfo, JFrame callingWindow) {
-		this.updateInfo = updateInfo;
-		build = (long) updateInfo.get("latest_build_number");
-		version = (String) updateInfo.get("latest_version_hr");
-		downloadLink = (String) updateInfo.get("download_link");
-		this.setTitle("Update Available");
+	public ME3ExplorerUpdater(JFrame callingWindow) {
+		this.setTitle("Required ME3Explorer Update");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		long width = (long) updateInfo.get("dialog_width"); //dialog size is determined by the latest build information. This is because it might have a long changelog.
-		long height = (long) updateInfo.get("dialog_height");
-		this.setPreferredSize(new Dimension((int)width, (int)height));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
+		DownloadTask task = new DownloadTask(ModManager.getTempDir());
+		task.addPropertyChangeListener(this);
+		ModManager.debugLogger.writeMessage("Downloading ME3Explorer.7z");
+		task.execute();
 		this.setVisible(true);
 	}
 
@@ -68,54 +63,27 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("An update to Mod Manager is available from ME3Tweaks.");
-		String latest_version_hr = (String) updateInfo.get("latest_version_hr");
-		long latest_build_number = (long) updateInfo.get("latest_build_number");
-
-		versionsLabel = new JLabel("<html>Local Version: "+ModManager.VERSION+" (Build "+ModManager.BUILD_NUMBER+")<br>"
-				+ "Latest Version: "+latest_version_hr+" (Build "+latest_build_number+")</html>");
-		String release_notes = (String) updateInfo.get("release_notes");
-		changelogLabel = new JLabel(release_notes);
-		updateButton = new JButton("Download Update");
-		updateButton.addActionListener(this);
-		notNowButton = new JButton("Not now");
-		notNowButton.addActionListener(this);
-		nextUpdateButton = new JButton("Remind me on the next update");
-		nextUpdateButton.addActionListener(this);
-		
+		introLabel = new JLabel("This version of Mod Manager requires an update to ME3Explorer.");
+		statusLabel = new JLabel("Downloading...");
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
 		downloadProgress.setIndeterminate(false);
 		downloadProgress.setEnabled(false);
 		
-		sizeLabel = new JLabel(" ");
 		
 		updatePanel.add(introLabel);
 		updatePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-		updatePanel.add(versionsLabel);
-		updatePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-
-		updatePanel.add(changelogLabel);
 		
 		JPanel actionPanel = new JPanel(new BorderLayout());
-		actionPanel.add(updateButton, BorderLayout.WEST);
-		actionPanel.add(nextUpdateButton, BorderLayout.EAST);
 		actionPanel.add(downloadProgress, BorderLayout.SOUTH);
-		//updatePanel.add(actionPanel);
-		//updatePanel.add(sizeLabel);
 
 		
-		//aboutPanel.add(loggingMode, BorderLayout.SOUTH);
 		panel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 		panel.add(updatePanel, BorderLayout.NORTH);
 		panel.add(actionPanel, BorderLayout.CENTER);
-		panel.add(sizeLabel,BorderLayout.SOUTH);
+		panel.add(statusLabel,BorderLayout.SOUTH);
 		this.getContentPane().add(panel);
 	}
-	
-    void setStatusText(String text) {
-    	sizeLabel.setText(text);
-    }
      
     /**
      * Update the progress bar's state whenever the progress of download changes.
@@ -140,6 +108,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	     
 	    public DownloadTask(String saveDirectory) {
 	        this.saveDirectory = saveDirectory;
+	        statusLabel.setText("Downloading...");
 	    }
 	     
 	    /**
@@ -152,10 +121,9 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 
 	        	//Download update
 	            HTTPDownloadUtil util = new HTTPDownloadUtil();
-	            util.downloadFile(downloadLink);
+	            util.downloadFile("http://me3tweaks.com/modmanager/tools/me3explorer.7z");
 	             
 	            // set file information on the GUI
-	            setStatusText("Downloading update...");
 	             
 	            String saveFilePath = saveDirectory + File.separator + util.getFileName();
 	 
@@ -185,7 +153,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	            	cancel(true);
 	            }
 	        } catch (IOException ex) {
-	            JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error downloading file: " + ex.getMessage(),
+	            JOptionPane.showMessageDialog(ME3ExplorerUpdater.this, "Error downloading file: " + ex.getMessage(),
 	                    "Error", JOptionPane.ERROR_MESSAGE);           
 	            ex.printStackTrace();
 	            setProgress(0);
@@ -292,50 +260,24 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	        return this.inputStream;
 	    }
 	}
-
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == updateButton){
-			updateButton.setEnabled(false);
-			nextUpdateButton.setEnabled(false);
-			File updateDir = new File("update");
-			updateDir.mkdirs();
-			DownloadTask task = new DownloadTask(ModManager.getTempDir());
-			task.addPropertyChangeListener(this);
-			task.execute();
-		} else 
-		if (e.getSource() == nextUpdateButton) {
-			//write to ini that we don't want update
-			Wini ini;
-			try {
-				File settings = new File(ModManager.settingsFilename);
-				if (!settings.exists())
-					settings.createNewFile();
-				ini = new Wini(settings);
-				ini.put("Settings", "nextupdatedialogbuild", build+1);
-				ModManager.debugLogger.writeMessage("Ignoring current update, will show again when build "+(build+1)+ " is released.");
-				ini.store();
-			} catch (InvalidFileFormatException ex) {
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
-			}
-			dispose();
-		}
-		
-	}
 	
 	public void runUpdateScript() {
 		// TODO Auto-generated method stub
-		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getTempDir()+"updater.cmd" };
+		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getTempDir()+"me3expupdater.cmd" };
 		try {
-			Runtime.getRuntime().exec(command);
+			ProcessBuilder p = new ProcessBuilder(command);
+			ModManager.debugLogger.writeMessage("Upgrading ME3Explorer.");
+			Process updater = p.start();
+			updater.waitFor();
+			ModManager.debugLogger.writeMessage("ME3Explorer should have been updated...");
+			dispose();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		ModManager.debugLogger.writeMessage("Upgrading to build "+build+", shutting down.");
-		System.exit(0);
 	}
 
 	/**
@@ -344,7 +286,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	 */
 	private boolean buildUpdateScript(){
 		StringBuilder sb = new StringBuilder();
-		sb.append("::Update script for Mod Manager 4 (Build "+build+")");
+		sb.append("::Update script for Mod Manager ME3Explorer (Build "+build+")");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("@echo off");
@@ -353,56 +295,41 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("pushd data\\temp");
 		sb.append("\r\n");
-		sb.append("::Wait for 2 seconds so the JVM fully exits.");
-		sb.append("\r\n");
-		sb.append("PING 1.1.1.1 -n 1 -w 2000 >NUL");
-		sb.append("\r\n");
-		sb.append("mkdir NewVersion");
+		sb.append("mkdir ME3EXPNewVersion");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Extract update");
 		sb.append("\r\n");
 		sb.append(ModManager.getToolsDir());
-		sb.append("7za.exe -y x ME3CMM.7z -o"+ModManager.getToolsDir()+"NewVersion");
+		sb.append("7za.exe -y x ME3Explorer.7z -o"+ModManager.getTempDir()+"ME3EXPNewVersion");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Check for build-in update script");
 		sb.append("\r\n");
-		sb.append("if exist NewVersion\\update.cmd (");
+		sb.append("if exist ME3EXPNewVersion\\me3expupdater.cmd (");
 		sb.append("\r\n");
-		sb.append("CALL NewVersion\\update.cmd");
+		sb.append("CALL ME3EXPNewVersion\\me3expupdater.cmd");
 		sb.append("\r\n");
 		sb.append(")");
 		sb.append("\r\n");
-		sb.append("::Update the files");
+		sb.append("::Remove old folder, copy new one");
 		sb.append("\r\n");
-		sb.append("xcopy /Y /S NewVersion "+System.getProperty("user.dir"));
+		sb.append("rmdir /S /Q ");
+		sb.append(ModManager.getME3ExplorerEXEDirectory(false));
 		sb.append("\r\n");
-		
+		sb.append("xcopy /Y /S ME3EXPNewVersion "+ModManager.getME3ExplorerEXEDirectory(false));
+		sb.append("\r\n");
 		sb.append("::Cleanup");
 		sb.append("\r\n");
-		sb.append("del /Q ME3CMM.7z");
+		sb.append("del /Q ME3Explorer.7z");
 		sb.append("\r\n");
-		sb.append("rmdir /S /Q NewVersion");
-		sb.append("\r\n");
-		sb.append("::Run Mod Manager");
-		sb.append("\r\n");
-		sb.append("popd");
-		sb.append("\r\n");
-		//sb.append("pause");
-		sb.append("\r\n");
-		if (build == ModManager.BUILD_NUMBER) {
-			sb.append("ME3CMM.exe --minor-update-from ");
-		} else {
-			sb.append("ME3CMM.exe --update-from ");
-		}
-		sb.append("ME3CMM.exe --update-from ");
-		sb.append(ModManager.BUILD_NUMBER);
+		sb.append("rmdir /S /Q ME3EXPNewVersion");
 		sb.append("\r\n");
 		sb.append("call :deleteSelf&exit /b");
 		sb.append("\r\n");
 		sb.append(":deleteSelf");
 		sb.append("\r\n");
+		//sb.append("pause");
 		sb.append("start /b \"\" cmd /c del \"%~f0\"&exit /b");
 		
 		
@@ -410,12 +337,12 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		//sb.append("pause");
 		//sb.append("exit");
 		try {
-			String updatePath = new File(ModManager.getToolsDir()+"updater.cmd").getAbsolutePath();
+			String updatePath = new File(ModManager.getTempDir()+"me3expupdater.cmd").getAbsolutePath();
 			Files.write( Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeMessage("Couldn't generate the update script. Must abort.");
-            JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error building update script: " + e.getClass()+"\nCannot continue.",
+            JOptionPane.showMessageDialog(ME3ExplorerUpdater.this, "Error building update script: " + e.getClass()+"\nCannot continue.",
                     "Updater Error", JOptionPane.ERROR_MESSAGE);           
 			error = true;
 			e.printStackTrace();
