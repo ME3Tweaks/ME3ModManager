@@ -124,9 +124,9 @@ public class Patch implements Comparable<Patch>{
 	/**
 	 * Moves this patch into the data/patches directory
 	 * 
-	 * @return True if successful, false otherwise
+	 * @return new patch object if successful, null otherwise
 	 */
-	public boolean importPatch() {
+	public Patch importPatch() {
 		ModManager.debugLogger.writeMessage("Importing patch to library");
 		String patchDirPath = ModManager.getPatchesDir() + "patches/";
 		File patchDir = new File(patchDirPath);
@@ -135,8 +135,8 @@ public class Patch implements Comparable<Patch>{
 		String destinationDir = patchDirPath + getPatchName();
 		File destDir = new File(destinationDir);
 		if (destDir.exists()) {
-			System.err.println("Destination directory already exists.");
-			return false;
+			ModManager.debugLogger.writeError("Cannot import patch: Destination directory already exists (patch with same name already exists in the patches folder)");
+			return null;
 		}
 		try {
 			ModManager.debugLogger.writeMessage("Moving patch to library");
@@ -144,9 +144,10 @@ public class Patch implements Comparable<Patch>{
 			ModManager.debugLogger.writeMessage("Patch migrated to library");
 		} catch (IOException e) {
 			ModManager.debugLogger.writeErrorWithException("Failed to import patch:", e);
-			return false;
+			return null;
 		}
-		return true;
+		ModManager.debugLogger.writeMessage("Reloading imported patch");
+		return new Patch(destinationDir+File.separator+"patchdesc.ini");
 	}
 
 	/**
@@ -160,7 +161,6 @@ public class Patch implements Comparable<Patch>{
 		//We must check if the mod we are applying to already has this file. If it does we will apply to that mod.
 		//If it does not we will add new task for it.
 		//If the files are not the right size we will not apply.
-		boolean requiresreload = false;
 		ModManager.debugLogger.writeMessage("=============APPLY PATCH " + getPatchName() + "=============");
 		try {
 
@@ -176,7 +176,6 @@ public class Patch implements Comparable<Patch>{
 			//Prepare mod
 			String modSourceFile = mod.getModTaskPath(targetPath, targetModule);
 			if (modSourceFile == null) {
-				requiresreload = true;
 				ModManager.debugLogger.writeMessage(mod.getModName() + " does not appear to modify " + targetPath + " in module " + targetModule + ", performing file fetch");
 				//we need to check if its in the patch library's source folder
 				modSourceFile = ModManager.getPatchSource(targetPath, targetModule);
@@ -193,27 +192,25 @@ public class Patch implements Comparable<Patch>{
 					ModManager.debugLogger.writeError("File that is going to be patched does not match patch descriptor size ("+libraryFile.length()+" vs one can be applied to: "+targetSize+")! Unable to apply patch");
 					return false;
 				}
-				//File modFile = new File(ModManager.appendSlash(mod.getModPath())+Mod.getStandardFolderName(targetModule)+File.separator+FilenameUtils.getName(targetPath));
-				//FileUtils.copyFile(libraryFile, modFile);
+				
+				File modFile = new File(ModManager.appendSlash(mod.getModPath())+Mod.getStandardFolderName(targetModule)+File.separator+FilenameUtils.getName(targetPath));
+				ModManager.debugLogger.writeMessage("Copying libary file to mod package: " + libraryFile.getAbsolutePath()+ " => "+modFile.getAbsolutePath());
+				FileUtils.copyFile(libraryFile, modFile);
 
-				//we need to add a task for this
+				//we need to add a task for this, lookup if job exists already
 				ModJob targetJob = null;
 				String standardFolder = ModManager.appendSlash(Mod.getStandardFolderName(targetModule));
 				String filename = FilenameUtils.getName(targetPath);
 				for (ModJob job : mod.jobs) {
 					if (job.getJobName().equals(targetModule)) {
-						ModManager.debugLogger.writeError("Adding file to existing job: " + targetModule);
+						ModManager.debugLogger.writeMessage("Checking existing job: " + targetModule);
 						targetJob = job;
 						String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
 
 						//ADD PATCH FILE TO JOB
 						File modFilePath = new File(ModManager.appendSlash(mod.getModPath()) + relativepath + filename);
-						if (!modFilePath.exists()) {
-							FileUtils.copyFile(new File(modSourceFile), modFilePath);
-						} else {
-							ModManager.debugLogger.writeError("Toc file to already is part of job: " + targetModule);
-						}
+						ModManager.debugLogger.writeMessage("Adding new mod task => " + targetModule+": add "+modFilePath.getAbsolutePath());
 						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath);
 
 						//CHECK IF JOB HAS TOC - SOME MIGHT NOT, FOR SOME WEIRD REASON
@@ -222,7 +219,7 @@ public class Patch implements Comparable<Patch>{
 						if (!tocFile.exists()) {
 							FileUtils.copyFile(new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER)), tocFile);
 						} else {
-							ModManager.debugLogger.writeError("Toc file to already is part of job: " + targetModule);
+							ModManager.debugLogger.writeMessage("Toc file already exists in module: " + targetModule);
 						}
 						//add toc to jobs
 						String tocTask = mod.getModTaskPath(ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)), targetModule);
@@ -235,7 +232,7 @@ public class Patch implements Comparable<Patch>{
 				}
 
 				if (targetJob == null) {
-					ModManager.debugLogger.writeError("Creating new job: " + targetModule);
+					ModManager.debugLogger.writeMessage("Creating new job: " + targetModule);
 					//no job for the module this task needs
 					//we need to add it as a new task and then add add a PCConsoleTOC for it
 					double newCmmVer = Math.max(mod.modCMMVer, 3.2);
@@ -251,11 +248,11 @@ public class Patch implements Comparable<Patch>{
 					File tocSource = new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER));
 					File tocDest = new File(modulefolder + File.separator + "PCConsoleTOC.bin");
 					FileUtils.copyFile(tocSource, tocDest);
-					job.addFileReplace(tocSource.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)));
+					job.addFileReplace(tocDest.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)));
 
 					ModManager.debugLogger.writeMessage("Adding " + filename + " to new job");
-					File modFile = new File(modulefolder + File.separator + filename);
-					FileUtils.copyFile(libraryFile, modFile);
+/*					File modFile = new File(modulefolder + File.separator + filename);
+					FileUtils.copyFile(libraryFile, modFile);*/
 					job.addFileReplace(modFile.getAbsolutePath(), targetPath);
 					mod.addTask(targetModule, job);
 					mod.modCMMVer = newCmmVer;
@@ -272,7 +269,7 @@ public class Patch implements Comparable<Patch>{
 				modSourceFile = mod.getModTaskPath(targetPath, targetModule);
 			}
 			if (modSourceFile == null) {
-				ModManager.debugLogger.writeError("Source file should have been copied to mod directory. ModDesc.ini is missing this task in its job list.");
+				ModManager.debugLogger.writeError("Source file should have been copied to mod directory already. ModDesc.ini however is missing a newfiles/replacefiles task in the job.");
 				return false;
 			}
 			//rename file (so patch doesn't continuously recalculate itself)
@@ -304,6 +301,7 @@ public class Patch implements Comparable<Patch>{
 			while ((line = reader.readLine()) != null)
 				System.out.println("tasklist: " + line);
 			patchProcess.waitFor();
+			System.out.println("BREAK");
 			stagingFile.delete();
 			ModManager.debugLogger.writeMessage("File has been patched.");
 			return true;

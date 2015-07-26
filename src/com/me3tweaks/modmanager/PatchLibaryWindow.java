@@ -4,8 +4,10 @@ import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.DefaultComboBoxModel;
@@ -52,9 +54,11 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 
 	private void setupWindow() {
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Patch Library");
+		this.setTitle("Mix-In Library");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(600, 480));
+		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+
 
 		JPanel contentPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -70,7 +74,8 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 		}
 		lrSplitPane.setLeftComponent(new JScrollPane(patchList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
-		patchDesc = new JTextArea("PATCH DESCRIPTION");
+		patchDesc = new JTextArea("Select one or more mix-ins (ctrl+click) on the left to see their descriptions.");
+
 		patchDesc.setLineWrap(true);
 		patchDesc.setWrapStyleWord(true);
 		patchDesc.setEditable(false);
@@ -93,7 +98,7 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 		modComboBox.setRenderer(new ModCellRenderer());
 
 		Mod mod = new Mod(null); //invalid
-		mod.setModName("Select a mod to patch");
+		mod.setModName("Select a mod to add mix-ins to");
 
 		modModel.addElement(mod);
 		for (int i = 0; i < ModManagerWindow.ACTIVE_WINDOW.modModel.getSize(); i++) {
@@ -101,10 +106,10 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 			modModel.addElement(loadedMod);
 		}
 
-		buttonApplyPatch = new JButton("Apply Patch");
+		buttonApplyPatch = new JButton("Apply Mix-Ins");
 		buttonApplyPatch.addActionListener(this);
 		buttonApplyPatch.setEnabled(false);
-		buttonApplyPatch.setToolTipText("Applies this patch to a mod");
+		buttonApplyPatch.setToolTipText("Applies the selected Mix-Ins to a mod");
 
 		//buttonStartGame = new JButton("Start Game");
 		//buttonStartGame.addActionListener(this);
@@ -144,9 +149,10 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
+		System.out.println("values have changed.");
 		if (e.getValueIsAdjusting() == false) {
 			if (patchList.getSelectedIndex() == -1) {
-				patchDesc.setText("Select one or more patches on the left to see their descriptions");
+				patchDesc.setText("Select one or more mix-ins (ctrl+click) on the left to see their descriptions.");
 				buttonApplyPatch.setEnabled(false);
 			}
 		} else {
@@ -187,17 +193,25 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 			if (!mod.isValidMod()) {
 				return; //this shouldn't be reachable anyways
 			}
-			boolean patchFailed = false;
-			for (Patch patch : selectedPatches) {
+			PatchApplicationWindow paw = new PatchApplicationWindow(this, new ArrayList<Patch>(selectedPatches), mod);
+			/*for (Patch patch : selectedPatches) {
 				ModManager.debugLogger.writeMessage("Applying patch " + patch.getPatchName() + " to " + mod.getModName());
 				if (!patch.applyPatch(mod)) {
 					patchFailed = true;
 					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Patch failed to apply: " + patch.getPatchName(), "Patch not applied", JOptionPane.ERROR_MESSAGE);
 				}
-			}
+			}*/
 			new AutoTocWindow(mod);
-			if (!patchFailed) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All patches were applied.", "Patches applied", JOptionPane.INFORMATION_MESSAGE);
+			ArrayList<Patch> failedpatches = paw.getFailedPatches();
+			if (failedpatches.size() <= 0) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mix-ins were applied.", "Mix-Ins applied", JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				String str = "The following Mix-Ins failed to apply:\n";
+				for (Patch p : failedpatches) {
+					str += " - "+p.getPatchName()+"\n";
+				}
+				str += "Check the debugging log to see why.";
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, str, "Mix-Ins Error", JOptionPane.ERROR_MESSAGE);
 			}
 			dispose();
 			new ModManagerWindow(false);

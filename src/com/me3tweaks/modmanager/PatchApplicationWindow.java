@@ -6,38 +6,33 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
-import org.ini4j.InvalidFileFormatException;
-import org.ini4j.Wini;
-
-import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
-import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
-import com.me3tweaks.modmanager.modupdater.ModXMLTools;
-import com.me3tweaks.modmanager.modupdater.UpdatePackage;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.Patch;
 
 public class PatchApplicationWindow extends JDialog {
 	private JLabel statusLabel;
 	private JLabel operationLabel;
-	private JDialog callingWindow;
+	private JDialog callingDialog;
+	private JFrame callingFrame;
+
 	private ArrayList<Patch> patches;
+	private ArrayList<Patch> failedPatches;
 	private Mod mod;
 	private PatchApplicationTask pat;
 
-	public PatchApplicationWindow(JDialog callingWindow, ArrayList<Patch> patches, Mod mod) {
-		this.callingWindow = callingWindow;
+	public PatchApplicationWindow(JDialog callingDialog, ArrayList<Patch> patches, Mod mod) {
+		ModManager.debugLogger.writeMessage("Starting mix-in applier.");
+		this.callingDialog = callingDialog;
 		this.patches = patches;
 		this.mod = mod;
 		setupWindow();
@@ -45,21 +40,41 @@ public class PatchApplicationWindow extends JDialog {
 		pat.execute();
 		setVisible(true);
 	}
+	
+	public PatchApplicationWindow(JFrame callingFrame, ArrayList<Patch> patches, Mod mod) {
+		ModManager.debugLogger.writeMessage("Starting mix-in applier.");
+		this.callingFrame = callingFrame;
+		this.patches = patches;
+		this.mod = mod;
+		setupWindow();
+		pat = new PatchApplicationTask();
+		pat.execute();
+		setVisible(true);
+	}
+	
+	public ArrayList<Patch> getFailedPatches() {
+		return failedPatches;
+	}
 
 	private void setupWindow() {
-		this.setTitle("Mod Updater");
+		failedPatches = new ArrayList<Patch>();
+		this.setTitle("Mix-in Installer");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(320, 70));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.pack();
-		this.setLocationRelativeTo(callingWindow);
-
+		if (callingDialog == null && callingDialog == null) {
+			this.setLocationRelativeTo(null);
+		} else {
+			this.setLocationRelativeTo(callingDialog == null ? callingFrame : callingDialog);
+		}
 		JPanel panel = new JPanel(new BorderLayout());
 
-		statusLabel = new JLabel("Applying patches to " + mod.getModName());
-		operationLabel = new JLabel("Applying: ");
+		operationLabel = new JLabel("Applying mix-ins to " + mod.getModName());
+		statusLabel = new JLabel("Applying: ");
+
 		panel.add(operationLabel, BorderLayout.NORTH);
 		panel.add(statusLabel, BorderLayout.SOUTH);
 		// updatePanel.add(actionPanel);
@@ -72,7 +87,7 @@ public class PatchApplicationWindow extends JDialog {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(WindowEvent e) {
-				System.out.println("Exit Patch Application");
+				System.out.println("Exit Mix-in Application");
 				if (pat != null) {
 					pat.cancel(false);
 				}
@@ -90,9 +105,12 @@ public class PatchApplicationWindow extends JDialog {
 		@Override
 		protected Void doInBackground() throws Exception {
 			for (Patch patch : patches) {
-				if (isCancelled()) {
+				if (!isCancelled()) {
 					publish(patch.getPatchName());
-					patch.applyPatch(mod);
+					boolean applied = patch.applyPatch(mod);
+					if (!applied) {
+						failedPatches.add(patch);
+					}
 				}
 			}
 			return null;
@@ -123,6 +141,11 @@ public class PatchApplicationWindow extends JDialog {
 		 */
 		@Override
 		protected void done() {
+			try {
+				get();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Error running patchapplicationwindow thread:", e);
+			}
 			dispose();
 		}
 	}
