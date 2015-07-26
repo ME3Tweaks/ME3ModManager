@@ -66,7 +66,7 @@ public class ModJob {
 	public boolean addFileReplace(String newFile, String fileToReplace) {
 		File file = new File(newFile);
 		if (!file.exists()){
-			ModManager.debugLogger.writeMessage("Source file doesn't exist: "+newFile);
+			ModManager.debugLogger.writeError("Source file doesn't exist: "+newFile);
 			return false;
 		}
 		if (getModType() == BASEGAME) {

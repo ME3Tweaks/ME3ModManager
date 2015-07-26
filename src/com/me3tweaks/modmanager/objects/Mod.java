@@ -84,7 +84,7 @@ public class Mod implements Comparable<Mod> {
 		String modFolderPath = ModManager.appendSlash(modDescFile.getParent());
 		modDisplayDescription = modini.get("ModInfo", "moddesc");
 		modName = modini.get("ModInfo", "modname");
-		ModManager.debugLogger.writeMessage("--------------------Reading " + modName + "--------------------");
+		ModManager.debugLogger.writeMessage("-------MOD----------------Reading " + modName + "--------------------");
 		// Check if this mod has been made for Mod Manager 2.0 or legacy mode
 		modCMMVer = 1.0f;
 		try {
@@ -170,14 +170,14 @@ public class Mod implements Comparable<Mod> {
 					// ModManager.debugLogger.writeMessage("Validating tokens: "+newFile+" vs
 					// "+oldFile);
 					if (!newFile.equals(getSfarFilename(oldFile))) {
-						ModManager.debugLogger.writeMessage("Filenames failed to match, mod marked as invalid: " + newFile + " vs " + getSfarFilename(oldFile));
+						ModManager.debugLogger.writeError("Filenames failed to match, mod marked as invalid: " + newFile + " vs " + getSfarFilename(oldFile));
 						return; // The names of the files don't match
 					}
 
 					// Add the file swap to task job - if this method returns
 					// false it means a file doesn't exist somewhere
 					if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile))) {
-						ModManager.debugLogger.writeMessage("Failed to add file to replace (File likely does not exist), marking as invalid.");
+						ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
 						return;
 					}
 				}
@@ -1020,6 +1020,10 @@ public class Mod implements Comparable<Mod> {
 	public String getModTaskPath(String modulePath, String header){
 		if (header.equals(ModType.COAL) && modsCoal()){
 			return ModManager.appendSlash(modPath) + "Coalesced.bin";
+		}
+		modulePath = modulePath.replaceAll("\\\\", "/");
+		if (!modulePath.startsWith("/")){
+			modulePath = "/"+modulePath;
 		}
 		for (ModJob job : jobs) {
 			if (!job.getJobName().equals(header)) {
