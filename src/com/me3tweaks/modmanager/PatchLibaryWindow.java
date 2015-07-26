@@ -16,6 +16,7 @@ import javax.swing.JDialog;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
@@ -54,7 +55,6 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 		this.setTitle("Patch Library");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(600, 480));
-		this.setResizable(false);
 
 		JPanel contentPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -68,25 +68,25 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 		for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
 			patchModel.addElement(patch);
 		}
-		lrSplitPane.setLeftComponent(patchList);
+		lrSplitPane.setLeftComponent(new JScrollPane(patchList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
 		patchDesc = new JTextArea("PATCH DESCRIPTION");
 		patchDesc.setLineWrap(true);
 		patchDesc.setWrapStyleWord(true);
 		patchDesc.setEditable(false);
-		lrSplitPane.setRightComponent(patchDesc);
+		lrSplitPane.setRightComponent(new JScrollPane(patchDesc, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
 		c.weighty = 1;
 		c.weightx = 1;
 		c.fill = GridBagConstraints.BOTH;
 		c.anchor = GridBagConstraints.NORTHWEST;
-		contentPanel.add(lrSplitPane,c);
-		
+		contentPanel.add(lrSplitPane, c);
+
 		//statusbar
 		// ButtonPanel
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints bc = new GridBagConstraints();
-		
+
 		modModel = new DefaultComboBoxModel<Mod>();
 		modComboBox = new JComboBox<Mod>();
 		modComboBox.setModel(modModel);
@@ -94,9 +94,9 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 
 		Mod mod = new Mod(null); //invalid
 		mod.setModName("Select a mod to patch");
-		
+
 		modModel.addElement(mod);
-		for (int i = 0; i < ModManagerWindow.ACTIVE_WINDOW.modModel.getSize(); i++){
+		for (int i = 0; i < ModManagerWindow.ACTIVE_WINDOW.modModel.getSize(); i++) {
 			Mod loadedMod = ModManagerWindow.ACTIVE_WINDOW.modModel.get(i);
 			modModel.addElement(loadedMod);
 		}
@@ -111,24 +111,24 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 		//buttonStartGame.setToolTipText("Starts the game. If LauncherWV DLC bypass is installed, it will that to launch the game instead");
 		bc.anchor = GridBagConstraints.WEST;
 		bc.weightx = 1;
-		buttonPanel.add(modComboBox,bc);
-		
+		buttonPanel.add(modComboBox, bc);
+
 		bc.anchor = GridBagConstraints.EAST;
-	//	bc.fill = GridBagConstraints.HORIZONTAL;
+		//	bc.fill = GridBagConstraints.HORIZONTAL;
 		bc.weightx = 0;
-		buttonPanel.add(buttonApplyPatch,bc);
-		buttonPanel.setBorder(new EmptyBorder(5,0,0,0));
+		buttonPanel.add(buttonApplyPatch, bc);
+		buttonPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
 		//buttonPanel.add(buttonStartGame);
 		c.gridy = 10;
 		c.weighty = 0;
-		contentPanel.add(buttonPanel,c);
-		
+		contentPanel.add(buttonPanel, c);
+
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(contentPanel);
 
 		//listeners
 		modComboBox.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (modComboBox.getSelectedIndex() > 0 && patchList.getSelectedIndex() > -1) {
@@ -138,7 +138,7 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 				}
 			}
 		});
-		
+
 		pack();
 	}
 
@@ -163,8 +163,11 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 				description += "\n\n";
 				description += patch.getPatchDescription();
 				description += "\n\n";
-				description += "Modifies: "+patch.getTargetModule()+" => "+patch.getTargetPath();
+				description += "Modifies: " + patch.getTargetModule() + " => " + patch.getTargetPath();
 				description += "\n";
+				if (patch.getPatchAuthor()!=null) {
+					description += "Created by "+patch.getPatchAuthor()+"\n";
+				}
 			}
 			patchDesc.setText(description);
 			if (modComboBox.getSelectedIndex() > 0) {
@@ -184,15 +187,21 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 			if (!mod.isValidMod()) {
 				return; //this shouldn't be reachable anyways
 			}
+			boolean patchFailed = false;
 			for (Patch patch : selectedPatches) {
-				ModManager.debugLogger.writeMessage("Applying patch "+patch.getPatchName()+" to "+mod.getModName());
-				if (!patch.applyPatch(mod)){
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Patch failed to apply: "+patch.getPatchName(), "Patch not applied", JOptionPane.ERROR_MESSAGE);
+				ModManager.debugLogger.writeMessage("Applying patch " + patch.getPatchName() + " to " + mod.getModName());
+				if (!patch.applyPatch(mod)) {
+					patchFailed = true;
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Patch failed to apply: " + patch.getPatchName(), "Patch not applied", JOptionPane.ERROR_MESSAGE);
 				}
 			}
+			new AutoTocWindow(mod);
+			if (!patchFailed) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All patches were applied.", "Patches applied", JOptionPane.INFORMATION_MESSAGE);
+			}
+			dispose();
 			new ModManagerWindow(false);
 		}
 	}
-	
 
 }

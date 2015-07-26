@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-import javax.swing.JOptionPane;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.ini4j.InvalidFileFormatException;
@@ -15,7 +13,6 @@ import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 
@@ -26,13 +23,14 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
  * @author mgamerz
  *
  */
-public class Patch {
+public class Patch implements Comparable<Patch>{
 	String targetPath, targetModule;
 	boolean isValid = false;
 
 	String patchName, patchDescription, patchFolderPath;
 	long targetSize;
 	double patchVersion, patchCMMVer;
+	private String patchAuthor;
 
 	public Patch(String descriptorPath) {
 		ModManager.debugLogger.writeMessage("Loading patch: " + descriptorPath);
@@ -53,7 +51,15 @@ public class Patch {
 			patchFolderPath = ModManager.appendSlash(patchDescIni.getParent());
 			patchDescription = patchini.get("PatchInfo", "patchdesc");
 			patchName = patchini.get("PatchInfo", "patchname");
-			ModManager.debugLogger.writeMessage("------------------Reading Patch" + patchName + "------------------");
+			ModManager.debugLogger.writeMessage("-------PATCH--------------Reading Patch " + patchName + "------------------");
+			File patchFile = new File(patchFolderPath + "patch.jsf");
+			if (!patchFile.exists()) {
+				ModManager.debugLogger.writeError("Patch.jsf is missing, patch is invalid");
+				ModManager.debugLogger.writeMessage("-------PATCH--------------End of " + patchName + "------------------");
+				isValid = false;
+				return;
+			}
+
 			ModManager.debugLogger.writeMessage("Patch Folder: " + patchFolderPath);
 			ModManager.debugLogger.writeMessage("Patch Name: " + patchName);
 			ModManager.debugLogger.writeMessage("Patch Description: " + patchDescription);
@@ -62,10 +68,19 @@ public class Patch {
 			patchVersion = 1;
 			try {
 				patchCMMVer = Float.parseFloat(patchini.get("ModManager", "cmmver"));
+				patchCMMVer = (double) Math.round(patchCMMVer * 10) / 10; //tenth rounding;
 				ModManager.debugLogger.writeMessage("Patch Targets Mod Manager: " + patchCMMVer);
-				patchVersion = Float.parseFloat(patchini.get("PatchInfo", "patchver"));
-				patchVersion = (double) Math.round(patchVersion * 10) / 10; //tenth rounding
-				ModManager.debugLogger.writeMessage("Patch Version: " + patchVersion);
+				patchAuthor = patchini.get("PatchInfo", "patchdev");
+				ModManager.debugLogger.writeMessage("Patch Developer (if any) " + patchAuthor);
+				String strPatchVersion = patchini.get("PatchInfo", "patchver");
+				if (strPatchVersion != null) {
+					patchVersion = Float.parseFloat(strPatchVersion);
+					patchVersion = (double) Math.round(patchVersion * 10) / 10; //tenth rounding
+					ModManager.debugLogger.writeMessage("Patch Version: " + patchVersion);
+				} else {
+					patchVersion = 1.0;
+					ModManager.debugLogger.writeMessage("Patch Version: Not specified, defaulting to 1.0");
+				}
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeMessage("Didn't read a target version (cmmver) in the descriptor file. Targetting 3.2.");
 				patchCMMVer = 3.2f;
@@ -103,7 +118,7 @@ public class Patch {
 			ModManager.debugLogger.writeException(e);
 			isValid = false;
 		}
-		ModManager.debugLogger.writeMessage("--------------------------END OF " + patchName + "--------------------------");
+		ModManager.debugLogger.writeMessage("-------PATCH--------------END OF " + patchName + "--------------------------");
 	}
 
 	/**
@@ -175,7 +190,7 @@ public class Patch {
 				//copy sourcefile to mod dir
 				File libraryFile = new File(modSourceFile);
 				if (libraryFile.length() != targetSize) {
-					ModManager.debugLogger.writeError("File that is going to be patched does not match patch descriptor size! Unable to apply patch");
+					ModManager.debugLogger.writeError("File that is going to be patched does not match patch descriptor size ("+libraryFile.length()+" vs one can be applied to: "+targetSize+")! Unable to apply patch");
 					return false;
 				}
 				//File modFile = new File(ModManager.appendSlash(mod.getModPath())+Mod.getStandardFolderName(targetModule)+File.separator+FilenameUtils.getName(targetPath));
@@ -191,11 +206,30 @@ public class Patch {
 						targetJob = job;
 						String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
-						System.out.println(relativepath);
-						File modFilePath = new File(ModManager.appendSlash(mod.getModPath()) + relativepath + filename);
-						FileUtils.copyFile(new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER)), modFilePath);
 
+						//ADD PATCH FILE TO JOB
+						File modFilePath = new File(ModManager.appendSlash(mod.getModPath()) + relativepath + filename);
+						if (!modFilePath.exists()) {
+							FileUtils.copyFile(new File(modSourceFile), modFilePath);
+						} else {
+							ModManager.debugLogger.writeError("Toc file to already is part of job: " + targetModule);
+						}
 						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath);
+
+						//CHECK IF JOB HAS TOC - SOME MIGHT NOT, FOR SOME WEIRD REASON
+						//copy toc
+						File tocFile = new File(mod.getModPath() + relativepath + "PCConsoleTOC.bin");
+						if (!tocFile.exists()) {
+							FileUtils.copyFile(new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER)), tocFile);
+						} else {
+							ModManager.debugLogger.writeError("Toc file to already is part of job: " + targetModule);
+						}
+						//add toc to jobs
+						String tocTask = mod.getModTaskPath(ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)), targetModule);
+						if (tocTask == null) {
+							//add toc replacejob
+							job.addFileReplace(tocFile.getAbsolutePath(), targetPath);
+						}
 						break;
 					}
 				}
@@ -235,14 +269,19 @@ public class Patch {
 				//reload mod in staging with new job added
 				ModManager.debugLogger.writeMessage("Reloading updated mod with new moddesc.ini file");
 				mod = new Mod(mod.modDescFile.getAbsolutePath());
-				new AutoTocWindow(mod);
 				modSourceFile = mod.getModTaskPath(targetPath, targetModule);
 			}
+			if (modSourceFile == null) {
+				ModManager.debugLogger.writeError("Source file should have been copied to mod directory. ModDesc.ini is missing this task in its job list.");
+				return false;
+			}
 			//rename file (so patch doesn't continuously recalculate itself)
-			File stagingFile = new File(ModManager.getTempDir()+"patch_staging"); //this file is used as base, and then patch puts file back in original place
+			File stagingFile = new File(ModManager.getTempDir() + "patch_staging"); //this file is used as base, and then patch puts file back in original place
+			ModManager.debugLogger.writeMessage("Staging source file: " + modSourceFile + " => " + stagingFile.getAbsolutePath());
+
 			stagingFile.delete();
 			FileUtils.moveFile(new File(modSourceFile), stagingFile);
-			
+
 			//apply patch
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getToolsDir() + "jptch.exe");
@@ -251,7 +290,7 @@ public class Patch {
 			commandBuilder.add(modSourceFile);
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {
-				sb.append("\""+arg + "\" ");
+				sb.append("\"" + arg + "\" ");
 			}
 
 			ModManager.debugLogger.writeMessage("Executing JPATCH patch command: " + sb.toString());
@@ -263,7 +302,7 @@ public class Patch {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(patchProcess.getInputStream()));
 			String line;
 			while ((line = reader.readLine()) != null)
-			    System.out.println("tasklist: " + line);
+				System.out.println("tasklist: " + line);
 			patchProcess.waitFor();
 			stagingFile.delete();
 			ModManager.debugLogger.writeMessage("File has been patched.");
@@ -348,5 +387,14 @@ public class Patch {
 
 	public void setPatchCMMVer(double patchCMMVer) {
 		this.patchCMMVer = patchCMMVer;
+	}
+
+	public String getPatchAuthor() {
+		return patchAuthor;
+	}
+
+	@Override
+	public int compareTo(Patch otherPatch) {
+		return getPatchName().compareTo(otherPatch.getPatchName());
 	}
 }

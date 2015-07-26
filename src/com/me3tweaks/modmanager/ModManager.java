@@ -891,20 +891,23 @@ public class ModManager {
 	}
 
 	public static String getPatchSource(String targetPath, String targetModule) {
-		ModManager.debugLogger.writeMessage("Looking for patch source: ");
+		String internalModule = ME3TweaksUtils.headerNameToInternalName(targetModule);
+		ModManager.debugLogger.writeMessage("Looking for patch source: "+targetPath+" in module "+targetModule);
 		File sourceDestination = new File(getPatchesDir()+"source/"+ME3TweaksUtils.headerNameToInternalName(targetModule)+File.separator+targetPath);
 		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		if (sourceDestination.exists()) {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
+		} else {
+			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: "+sourceDestination.getAbsolutePath()+"), fetching from original location.");
 		}
 		if (targetModule.equals(ModType.BASEGAME)){
 			//we must use PCCEditor2 to decompress the file using the --decompress-pcc command line arg
-			File sourceSource = new File(bioGameDir+targetPath);
+			File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent())+targetPath); //we have biogame dir, but targetpaths are relative to ME3 dir 
 			//run ME3EXPLORER --decompress-pcc
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("--decompress-pcc");
+			commandBuilder.add("-decompresspcc");
 			commandBuilder.add(sourceSource.getAbsolutePath());
 			commandBuilder.add(sourceDestination.getAbsolutePath());
 			StringBuilder sb = new StringBuilder();
@@ -912,7 +915,7 @@ public class ModManager {
 				sb.append("\""+arg + "\" ");
 			}
 
-			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER PccEd2 Decompress command: " + sb.toString());
+			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER Decompressor command (into library): " + sb.toString());
 
 			ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
 			//patchProcessBuilder.redirectErrorStream(true);
@@ -931,15 +934,7 @@ public class ModManager {
 			} catch (InterruptedException e) {
 				ModManager.debugLogger.writeException(e);
 			}
-
-			try {
-				ModManager.debugLogger.writeMessage("Copying patch source file to library: "+sourceSource.getAbsolutePath()+" to "+sourceDestination.getAbsolutePath());
-				FileUtils.copyFile(sourceSource, sourceDestination);
-				return sourceDestination.getAbsolutePath();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				ModManager.debugLogger.writeErrorWithException("Failed to copy patch source for basegame file:", e);
-			}
+			return sourceDestination.getAbsolutePath();
 		//END OF BASEGAME======================================================
 		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
 			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
@@ -956,7 +951,7 @@ public class ModManager {
 						
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("--extract-dlc-pcc");
+			commandBuilder.add("-dlcextract");
 			commandBuilder.add(sfarPath);
 			commandBuilder.add(targetPath);
 			commandBuilder.add(sourceDestination.getAbsolutePath());
@@ -964,7 +959,7 @@ public class ModManager {
 			for (String arg : commandBuilder) {
 				sb.append("\""+arg + "\" ");
 			}
-
+			sourceDestination.getParentFile().mkdirs();
 			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());
 
 			ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
@@ -1019,7 +1014,7 @@ public class ModManager {
 				}
 			}
 		}
-
+		Collections.sort(validPatches);
 		return validPatches;
 	}
 }

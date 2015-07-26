@@ -260,7 +260,7 @@ public class ME3TweaksUtils {
 		case "PATCH2":
 			return "PATCH2";
 		case "BASEGAME":
-			return "Coalesced.bin";
+			return "BASEGAME";
 		case "TESTPATCH":
 			return "TESTPATCH";
 		case "FROM_ASHES":

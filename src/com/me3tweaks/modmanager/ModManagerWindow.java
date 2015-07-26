@@ -162,10 +162,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 		}
-		new UpdateCheckThread().execute();
+		new NetworkThread().execute();
 	}
 
-	class UpdateCheckThread extends SwingWorker<Void, Object> {
+	class NetworkThread extends SwingWorker<Void, Object> {
 
 		@Override
 		public Void doInBackground() {
@@ -177,7 +177,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			checkForUpdates();
 			checkForModUpdates();
+			checkForME3ExplorerUpdates();
 			return null;
+		}
+
+		private void checkForME3ExplorerUpdates() {
+			// TODO Auto-generated method stub
+			
 		}
 
 		private void checkForModUpdates() {

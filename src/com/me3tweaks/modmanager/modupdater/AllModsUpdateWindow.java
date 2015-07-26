@@ -242,6 +242,7 @@ public class AllModsUpdateWindow extends JDialog {
 					ini.put("Settings", "lastautocheck", System.currentTimeMillis());
 					ModManager.debugLogger.writeMessage("Updating last-autocheck date in ini");
 					ini.store();
+					ModManager.LAST_AUTOUPDATE_CHECK = System.currentTimeMillis();
 				} catch (InvalidFileFormatException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
