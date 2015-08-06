@@ -17,86 +17,43 @@ public class PowerVariable {
 	}
 
 	public static enum DLCPackage {
-		BASEGAME("$basegameBioGameElements"), MP1("$mp1BioGameElements"), MP2("$mp12BioGameElements"), MP3("$mp3BioGameElements"), 
-		MP4("$mp4BioGameElements"), MP5("$mp5BioGameElements"), PATCH1("$patch1BioGameElements"), PATCH2("$patch2BioGameElements"), 
-		TESTPATCH("$testpatchBioGameElements"), HEN_PR("$fromashesBioGameElements"), END("$extendedcutBiogameElements"), EXP1("$leviathanBioGameElements"), 
-		EXP2("$omegaGameElements"), EXP3("$citadelBioGameElements"), EXP3B("$citadelbaseBioGameElements"), APP01("$appearanceBioGameElements"), 
-		GUN01("$firefightBioGameElements"), GUN02("$groundsideBioGameElements");
-	    
+		BASEGAME("$basegameBioGameElements"), MP1("$mp1BioGameElements"), MP2("$mp12BioGameElements"), MP3("$mp3BioGameElements"), MP4(
+				"$mp4BioGameElements"), MP5("$mp5BioGameElements"), PATCH1("$patch1BioGameElements"), PATCH2("$patch2BioGameElements"), TESTPATCH(
+						"$testpatchBioGameElements"), HEN_PR("$fromashesBioGameElements"), END("$extendedcutBiogameElements"), EXP1(
+								"$leviathanBioGameElements"), EXP2("$omegaGameElements"), EXP3("$citadelBioGameElements"), EXP3B(
+										"$citadelbaseBioGameElements"), APP01("$appearanceBioGameElements"), GUN01("$firefightBioGameElements"), GUN02(
+												"$groundsideBioGameElements");
+
 		private final String text;
 
-	    /**
-	     * @param text
-	     */
-	    private DLCPackage(final String text) {
-	        this.text = text;
-	    }
+		/**
+		 * @param text
+		 */
+		private DLCPackage(final String text) {
+			this.text = text;
+		}
 
-	    @Override
-	    public String toString() {
-	        return name();
-	    }
+		@Override
+		public String toString() {
+			return name();
+		}
 
-	    public String getPHPVar(){
-	    	return text;
-	    }
+		public String getPHPVar() {
+			return text;
+		}
 	}
 
 	public static enum ValidationRule {
 		GREATER_THAN_X, GREATER_THAN_OR_EQUAL_TO_X, GREATER_THAN_0, GREATER_THAN_OR_EQUAL_TO_0, ANY, LESS_THAN_X, LESS_THAN_OR_EQUAL_TO_X, LESS_THAN_0, LESS_THAN_OR_EQUAL_TO_0,
 	}
 
-	public static String ENTRY_TEMPLATE = "\t\t\t\t\t<div class=\"modmaker_entry\">\n"
-			+ "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
+	public static String ENTRY_TEMPLATE = "\t\t\t\t\t<div class=\"modmaker_entry\">\n" + "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
 			+ "\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">VARNAME</span>\n"
 			+ "\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: PREFIX<\\?=\\$defaultsmod->powers->mod_powers_TABLENAME_VARNAME;?>POSTFIX</span>\n"
 			+ "\t\t\t\t\t\t</div>\n"
 			+ "\t\t\t\t\t\t<input id=\"VARNAME\" class=\"short_input\" type=\"text\" name=\"VARNAME\" placeholder=\"VARNAME\" value=\"<?=\\$mod->powers->mod_powers_TABLENAME_VARNAME;?>\">\n"
 			+ "\t\t\t\t\t</div>";
-	public static String CONTAINER_TEMPLATE = "\t\t\t\t<!-- CONTAINERNAME -->\n" + "\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"
-			+ "\t\t\t\t\t<img class=\"guide purple_card\" src=\"/images/common/no_image.png\">\n"
-			+ "\t\t\t\t\t<h2 class=\"modmaker_attribute_title\">CONTAINERNAME</h2>\n"
-			+ "\t\t\t\t\t<p>These properties need to be moved to their proper boxes.</p>\n" + "INPUTS_PLACEHOLDER" + "\t\t\t\t</div>\n";
-	public static String DETONATION_CONTAINER_TEMPLATE = "\t\t\t\t<!-- DETONATIONVARNAME PARAMETERS  -->\n"
-			+ "\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"
-			+ "\t\t\t\t\t<img class=\"guide hard\" src=\"/images/modmaker/powers/TABLENAME/explosion.jpg\">\n"
-			+ "\t\t\t\t\t<h2 class=\"modmaker_attribute_title\">Detonation Parameters</h2>\n"
-			+ "\t\t\t\t\t<p>Detonation paramaters determine what gets hit when TABLENAME detonate.</p>\n"
-			+ "\t\t\t\t\t<div class=\"modmaker_entry\">\n"
-			+ "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
-			+ "\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Blocked By Objects</span>\n"
-			+ "\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: BLOCKED_BY_OBJECTS</span>\n"
-			+ "\t\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_blockedbyobjects\" type=\"checkbox\" name=\"DETONATIONVARNAME_blockedbyobjects\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_blockedbyobjects) ? \"checked\" : \"\"?>>\n"
-			+ "\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t<div class=\"modmaker_entry\">\n"
-			+ "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
-			+ "\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Distance Sorted</span>\n"
-			+ "\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: DISTANCE_SORTED</span>\n"
-			+ "\t\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_distancesorted\" type=\"checkbox\" name=\"DETONATIONVARNAME_distancesorted\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_distancesorted) ? \"checked\" : \"\"?>>\n"
-			+ "\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t<div class=\"modmaker_entry\">\n"
-			+ "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
-			+ "\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Impacts Dead Characters</span>\n"
-			+ "\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: IMPACTS_DEAD_CHARS</span>\n"
-			+ "\t\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_impactdeadpawns\" type=\"checkbox\" name=\"DETONATIONVARNAME_impactdeadpawns\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_impactdeadpawns) ? \"checked\" : \"\"?>>\n"
-			+ "\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t<div class=\"modmaker_entry\">\n"
-			+ "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
-			+ "\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Impacts Friendlies</span>\n"
-			+ "\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: IMPACTS_FRIENDS</span>\n"
-			+ "\t\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_impactfriends\" type=\"checkbox\" name=\"DETONATIONVARNAME_impactfriends\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_impactfriends) ? \"checked\" : \"\"?>>\n"
-			+ "\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t<div class=\"modmaker_entry\">\n"
-			+ "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
-			+ "\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">Impacts Placeables</span>\n"
-			+ "\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: IMPACTS_PLACEABLES</span>\n"
-			+ "\t\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t\t<input id=\"DETONATIONVARNAME_impactplaceables\" type=\"checkbox\" name=\"DETONATIONVARNAME_impactplaceables\" <?=($mod->powers->mod_powers_TABLENAME_DETONATIONVARNAME_impactplaceables) ? \"checked\" : \"\"?>>\n"
-			+ "\t\t\t\t\t</div>\n" + "CONEANGLE" + "\t\t\t\t</div>";
+
 	private String tableName;
 	private DataType dataType;
 	private String varName;
@@ -109,6 +66,7 @@ public class PowerVariable {
 	private String sectionName;
 	private String baseSectionName;
 	private boolean balanced = false;
+	private boolean newCoalVar = false;
 
 	private ArrayList<VariableRow> variableRows = new ArrayList<VariableRow>();
 	private String humanVarName;
@@ -153,29 +111,29 @@ public class PowerVariable {
 
 		String data = element.getTextContent();
 		if (data.toLowerCase().equals("true") || data.toLowerCase().equals("false")) {
-			//its a boolean.
+			// its a boolean.
 			dataType = DataType.BOOLEAN;
 			value = data;
 			VariableRow r = new VariableRow();
-			r.configure(this);
 			variableRows.add(r);
 		} else if (DetonationParameters.isDetonationParameters(data)) {
-			//detonation parameters
+			// detonation parameters
 			dataType = DataType.DETONATIONPARAMETERS;
 			dp = new DetonationParameters(tableName, data);
+			// don't configure
 		} else if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
-			//BRU
+			// BRU
 			dataType = DataType.BASERANKUPGRADE;
 			bru = new BaseRankUpgrade(tableName, data);
 
-			VariableRow r = new VariableRow();
-			r.configure(dlcPackage, sqlVarName, 0);
+			VariableRow r = new VariableRow(-1);
+			// r.configure(this, 0);
 			variableRows.add(r);
 
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
-				int rank = entry.getKey() + 1; //human readable rank
-				VariableRow brur = new VariableRow();
-				brur.configure(dlcPackage, sqlVarName + "_rankbonus_" + (rank - 1), rank);
+				int rank = entry.getKey() + 1; // human readable rank
+				VariableRow brur = new VariableRow(rank - 1);
+				// brur.configure(this, rank);
 				variableRows.add(brur);
 			}
 		} else {
@@ -184,7 +142,6 @@ public class PowerVariable {
 				dataType = DataType.INTEGER;
 				value = data;
 				VariableRow r = new VariableRow();
-				r.configure(this);
 				variableRows.add(r);
 			} catch (NumberFormatException e) {
 
@@ -194,7 +151,6 @@ public class PowerVariable {
 				dataType = DataType.FLOAT;
 				value = data;
 				VariableRow r = new VariableRow();
-				r.configure(this);
 				variableRows.add(r);
 			} catch (NumberFormatException e) {
 
@@ -202,6 +158,27 @@ public class PowerVariable {
 
 			if (bru == null && value == null && dp == null) {
 				JOptionPane.showMessageDialog(null, "A variable failed to parse into one of the four data types: " + sqlVarName);
+			}
+		}
+	}
+
+	protected void configureRows() {
+		for (VariableRow r : variableRows) {
+			if (r.configured == false) {
+				switch (dataType) {
+				case FLOAT:
+				case INTEGER:
+					r.configure(this);
+				case DETONATIONPARAMETERS:
+					// does not need configuring
+					break;
+				case BASERANKUPGRADE:
+					// should already be configured
+					r.configure(this);
+					break;
+				case BOOLEAN:
+					break;
+				}
 			}
 		}
 	}
@@ -238,7 +215,7 @@ public class PowerVariable {
 	}
 
 	public static DLCPackage BestGuessPackage(int type, String sectionName) {
-		//look for MPs
+		// look for MPs
 		if (sectionName.contains("mp1")) {
 			return DLCPackage.MP1;
 		}
@@ -254,9 +231,9 @@ public class PowerVariable {
 		if (sectionName.contains("mp5")) {
 			return DLCPackage.MP5;
 		}
-		//SPs EXP_003, etc
+		// SPs EXP_003, etc
 
-		//Base, but check for type, as it might be Patch2.
+		// Base, but check for type, as it might be Patch2.
 		if (type != 2) {
 			return DLCPackage.PATCH2;
 		}
@@ -320,7 +297,7 @@ public class PowerVariable {
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				double bonus = entry.getValue();
 				int rank = entry.getKey();
-				//double upgrade = entry.getValue();
+				// double upgrade = entry.getValue();
 				sb.append("\t");
 				sb.append(bonus);
 				sb.append(", /*");
@@ -374,11 +351,11 @@ public class PowerVariable {
 	public String convertToSQLTable() {
 
 		if (dataType == DataType.BOOLEAN) {
-			//its a boolean.
+			// its a boolean.
 			return "\t" + varName + " BOOLEAN NOT NULL,\n";
 		}
 		if (dp != null) {
-			//add detonation params
+			// add detonation params
 			StringBuilder sb = new StringBuilder();
 			sb.append("\t");
 			sb.append(sqlVarName);
@@ -414,7 +391,7 @@ public class PowerVariable {
 			}
 			sb.append(" NOT NULL,\n");
 			if (bru.formula != null) {
-				//put in formula
+				// put in formula
 				sb.append("\t");
 				sb.append(sqlVarName);
 				sb.append("_formula VARCHAR(");
@@ -423,7 +400,7 @@ public class PowerVariable {
 			}
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				int rank = entry.getKey();
-				//double upgrade = entry.getValue();
+				// double upgrade = entry.getValue();
 				sb.append("\t");
 				sb.append(sqlVarName);
 				sb.append("_rankbonus_");
@@ -460,7 +437,7 @@ public class PowerVariable {
 			sb.append(sectionName);
 			sb.append("\", \"");
 			sb.append(varName);
-			//createDetonationParameters
+			// createDetonationParameters
 			sb.append("\", $this->createDetonationParameters(");
 
 			sb.append("$this->mod->powers->mod_powers_");
@@ -513,7 +490,8 @@ public class PowerVariable {
 			sb.append(", $this->createProperty(\"");
 			sb.append(sectionName);
 			sb.append("\", \"");
-			sb.append(varName); //keep this, as its the proper one to publish to.
+			sb.append(varName); // keep this, as its the proper one to publish
+								// to.
 			sb.append("\", \"(BaseValue=\".$this->mod->powers->mod_powers_");
 			sb.append(baseTableName);
 			sb.append("_");
@@ -522,14 +500,14 @@ public class PowerVariable {
 			if (bru.isDouble) {
 				sb.append("f");
 			}
-			//add formula
+			// add formula
 			if (bru.formula != null) {
 				sb.append(",Formula=");
 				sb.append(bru.formula);
 			}
 
-			//add ranks
-			//,RankBonuses[0]=0,RankBonuses[1]=0.25f,RankBonuses[2]=0.25f,RankBonuses[3]=0
+			// add ranks
+			// ,RankBonuses[0]=0,RankBonuses[1]=0.25f,RankBonuses[2]=0.25f,RankBonuses[3]=0
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				int rank = entry.getKey();
 				sb.append(",RankBonuses[");
@@ -613,7 +591,7 @@ public class PowerVariable {
 	public String convertToPHPValidation() {
 		if (dp != null) {
 			StringBuilder sb = new StringBuilder();
-			//add detonation params
+			// add detonation params
 			for (DetonationParams param : DetonationParams.values()) {
 				String dparam = param.toString();
 				sb.append("\t\t//");
@@ -636,7 +614,7 @@ public class PowerVariable {
 				sb.append("\t\t}\n\n");
 			}
 
-			//CONEANGLE
+			// CONEANGLE
 			if (dp.coneAngle >= 0) {
 				sb.append("\t\t//");
 				sb.append(sqlVarName);
@@ -668,7 +646,7 @@ public class PowerVariable {
 		}
 		if (bru != null) {
 			StringBuilder sb = new StringBuilder();
-			//BASE VALUE
+			// BASE VALUE
 			sb.append("\t\t//");
 			sb.append(sqlVarName);
 			sb.append("\n");
@@ -692,7 +670,7 @@ public class PowerVariable {
 
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				int rank = entry.getKey();
-				//RANKBONUSES
+				// RANKBONUSES
 				sb.append("\t\t//");
 				sb.append(sqlVarName);
 				sb.append("\n");
@@ -724,7 +702,7 @@ public class PowerVariable {
 			}
 			return sb.toString();
 		}
-		//ints, dubs
+		// ints, dubs
 		try {
 			Integer.parseInt(value);
 			StringBuilder sb = new StringBuilder();
@@ -792,7 +770,7 @@ public class PowerVariable {
 	public String convertToJSValidation() {
 		if (dp != null) {
 			StringBuilder sb = new StringBuilder();
-			//DP is checkboxes
+			// DP is checkboxes
 			if (dp.coneAngle >= 0) {
 				sb.append("\t\t\t");
 				sb.append(sqlVarName);
@@ -806,7 +784,7 @@ public class PowerVariable {
 		}
 		if (bru != null) {
 			StringBuilder sb = new StringBuilder();
-			//BASE VALUE
+			// BASE VALUE
 			sb.append("\t\t\t");
 			sb.append(sqlVarName);
 			sb.append(": {\n");
@@ -816,7 +794,7 @@ public class PowerVariable {
 
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				int rank = entry.getKey();
-				//RANKBONUSES
+				// RANKBONUSES
 				sb.append("\t\t\t");
 				sb.append(sqlVarName);
 				sb.append("_rankbonus_");
@@ -828,7 +806,7 @@ public class PowerVariable {
 			}
 			return sb.toString();
 		}
-		//ints, dubs
+		// ints, dubs
 		try {
 			int ints = Integer.parseInt(value);
 			StringBuilder sb = new StringBuilder();
@@ -958,7 +936,7 @@ public class PowerVariable {
 
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				int rank = entry.getKey();
-				//double upgrade = entry.getValue();
+				// double upgrade = entry.getValue();
 
 				sb.append("\t$stmt->bindValue(\":");
 				sb.append(sqlVarName);
@@ -1001,19 +979,19 @@ public class PowerVariable {
 		} catch (NumberFormatException e) {
 
 		}
-		
-		System.err.println("Failed to parse value for forking: "+sqlVarName);
+
+		System.err.println("Failed to parse value for forking: " + sqlVarName);
 		return "";
 	}
 
 	public String getTableName() {
 		return tableName;
 	}
-	
-	public String convertToModVar(){
+
+	public String convertToModVar() {
 		StringBuilder sb = new StringBuilder();
 		if (dp != null) {
-			//add detonation params
+			// add detonation params
 
 			sb.append("\tpublic $mod_powers_");
 			sb.append(baseTableName);
@@ -1061,7 +1039,7 @@ public class PowerVariable {
 			sb.append(sqlVarName);
 			sb.append(" = null;\n");
 
-			//TODO: FORMULA
+			// TODO: FORMULA
 			if (bru.formula != null) {
 				sb.append("\tpublic $mod_powers_");
 				sb.append(baseTableName);
@@ -1072,7 +1050,7 @@ public class PowerVariable {
 			}
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				int rank = entry.getKey();
-				//double upgrade = entry.getValue();
+				// double upgrade = entry.getValue();
 				sb.append("\tpublic $mod_powers_");
 				sb.append(baseTableName);
 				sb.append("_");
@@ -1110,11 +1088,11 @@ public class PowerVariable {
 		System.out.println("Not generating variable for property: " + sqlVarName);
 		return "";
 	}
-	
-	public String convertToModLoad(){
+
+	public String convertToModLoad() {
 		StringBuilder sb = new StringBuilder();
 		if (dp != null) {
-			//add detonation params
+			// add detonation params
 			sb.append("\t\t$this->mod_powers_");
 			sb.append(baseTableName);
 			sb.append("_");
@@ -1187,7 +1165,7 @@ public class PowerVariable {
 			sb.append(sqlVarName);
 			sb.append("'];\n");
 
-			//formula
+			// formula
 			if (bru.formula != null) {
 				sb.append("\t\t$this->mod_powers_");
 				sb.append(baseTableName);
@@ -1201,7 +1179,7 @@ public class PowerVariable {
 			}
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				int rank = entry.getKey();
-				//double upgrade = entry.getValue();
+				// double upgrade = entry.getValue();
 
 				sb.append("\t\t$this->mod_powers_");
 				sb.append(baseTableName);
@@ -1244,10 +1222,9 @@ public class PowerVariable {
 		} catch (NumberFormatException e) {
 
 		}
-		System.err.println("Unknown property data type: "+sqlVarName+" when generating mod load");
+		System.err.println("Unknown property data type: " + sqlVarName + " when generating mod load");
 		return "";
 	}
-	
 
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
@@ -1359,16 +1336,18 @@ public class PowerVariable {
 
 	public void addContainerOption(ContainerRow cr) {
 		if (dp == null) {
-			//dp has its own containers, always
+			// dp has its own containers, always
 			for (VariableRow vr : variableRows) {
-				vr.getContainerComboBox().addItem(cr);
+				if (vr.getContainerComboBox() != null) {
+					vr.getContainerComboBox().addItem(cr);
+				}
 			}
 		}
 	}
 
 	public void removeContainerOption(ContainerRow cr) {
 		if (dp == null) {
-			//dp has its own containers, always
+			// dp has its own containers, always
 			for (VariableRow vr : variableRows) {
 				vr.getContainerComboBox().removeItem(cr);
 			}
