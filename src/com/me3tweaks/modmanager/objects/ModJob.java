@@ -58,15 +58,15 @@ public class ModJob {
 	}
 
 	/**
-	 * Adds a matching set of files to add
-	 * @param newFile Source file that will be injected
+	 * Adds a matching set of files to mod. This is known as adding a task
+	 * @param newFile Source file that will be injected (full file path)
 	 * @param fileToReplace File path in DLC or basegame that will be updated
-	 * @return
+	 * @return True if task was added OK, false if the source file does not exist
 	 */
 	public boolean addFileReplace(String newFile, String fileToReplace) {
 		File file = new File(newFile);
 		if (!file.exists()){
-			ModManager.debugLogger.writeMessage("Source file doesn't exist: "+newFile);
+			ModManager.debugLogger.writeError("Source file doesn't exist: "+newFile);
 			return false;
 		}
 		if (getModType() == BASEGAME) {
