@@ -11,7 +11,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -48,6 +50,9 @@ import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerVariable.DLC
 
 @SuppressWarnings("serial")
 public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
+	protected static final int MP_VAR_ONLY = 2;
+	protected static final int SP_VAR_ONLY = 1;
+	protected static final int BOTH_SPMP_VAR = 0;
 	private static boolean isRunningAsMain = false;
 	JTextArea input1, input2, input3, input4, inputBalance, inputDescription;
 	JTextField inputHTAccessURL;
@@ -62,14 +67,14 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 
 	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 	Document doc;
-	private ArrayList<PowerVariable> loadedVariables;
-	private ArrayList<PowerVariable> balancedPowers;
-	private ArrayList<ContainerRow> loadedContainers;
+	protected static ArrayList<PowerVariable> loadedVariables;
+	protected static ArrayList<PowerVariable> balancedPowers;
+	protected static ArrayList<ContainerRow> loadedContainers;
 	private JPanel rowsPanel;
 	private JTabbedPane editor = new JTabbedPane();
 	private JPanel containersPanel;
 	private JButton addContainer, finalizeButton;
-	private ArrayList<PowerVariable> loadedMPVariables;
+	protected static ArrayList<PowerVariable> loadedMPVariables;
 	private String basePath, mpPath;
 
 	public static void main(String[] args) throws IOException {
@@ -340,7 +345,6 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		pack();
 	}
 
@@ -532,11 +536,13 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			} // end xml loading
 
 			for (PowerVariable var : loadedVariables) {
+				var.configureRows();
 				for (VariableRow row : var.getVariableRows()) {
 					rowsPanel.add(row);
 				}
 			}
 			for (PowerVariable var : loadedMPVariables) {
+				var.configureRows();
 				for (VariableRow row : var.getVariableRows()) {
 					rowsPanel.add(row);
 				}
@@ -586,13 +592,44 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 	 * ITS A BIG ONE
 	 */
 	private void finalizeChanges() {
+		generateHTML();
+		
 		generateSQLTable();
 		generateSQLInsert();
 		generateFork();
 		generateVars();
 		generateLoad();
-		
+		generatePHPValidation();
+		generateJSValidation();
 		generatePublish();
+	}
+
+	private void generateHTML() {
+		//Build hashmap of contatiner -> list<powers>
+		HashMap<ContainerRow, ArrayList<VariableRow>> containerList = new HashMap<ContainerRow,ArrayList<VariableRow>>();
+		for (ContainerRow cr : loadedContainers) {
+			containerList.put(cr, new ArrayList<VariableRow>());
+		}
+		
+		for (Map.Entry<ContainerRow, ArrayList<VariableRow>> container : containerList.entrySet()) {
+		    ContainerRow key = container.getKey();
+		    ArrayList<VariableRow> items = container.getValue();
+		    for (PowerVariable pv : loadedVariables) {
+				for (VariableRow vr : pv.getVariableRows()){
+					if (vr.getContainerComboBox().getSelectedItem() == key) {
+						items.add(vr);
+					}
+				}
+			}
+		}
+		
+		//Build HTML
+		StringBuilder sb = new StringBuilder();
+		
+		for (Map.Entry<ContainerRow, ArrayList<VariableRow>> container : containerList.entrySet()) {
+
+		}
+		
 	}
 
 	private void generateSQLTable() {
@@ -864,5 +901,22 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	protected static int getVarApplicationAreas(PowerVariable var) {
+		//Check for var in MP
+		if (loadedMPVariables.contains(var)) {
+			return MP_VAR_ONLY;
+		}
+		//not in MP
+		if (loadedVariables.contains(var)) {
+			for (PowerVariable pv : loadedMPVariables){
+				//check MP names for a match on varname
+				if (pv.getVarName().equals(var.getVarName())){
+					return SP_VAR_ONLY;
+				}
+			}
+		}
+		return BOTH_SPMP_VAR;
 	}
 }
