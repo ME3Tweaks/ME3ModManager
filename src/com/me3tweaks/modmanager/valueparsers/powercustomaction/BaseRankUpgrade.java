@@ -1,5 +1,6 @@
 package com.me3tweaks.modmanager.valueparsers.powercustomaction;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -75,37 +76,6 @@ public class BaseRankUpgrade {
 			return true;
 		}
 		return false;
-	}
-	
-	public String createVars(int tabs){
-		StringBuilder sb = new StringBuilder();
-		/*if (blockedByObjects);
-		{
-			for (int i = 0; i < tabs; i++){ 
-				sb.append("\t");
-			}
-			sb.append("public $mod_powers_");
-			sb.append(tableName);
-			sb.append("_detonationparameters_");
-			sb.append("\n");
-		}
-		for (int i = 0; i < tabs; i++){ 
-			sb.append("\t");
-		}
-		
-		for (int i = 0; i < tabs; i++){ 
-			sb.append("\t");
-		}
-		
-		for (int i = 0; i < tabs; i++){ 
-			sb.append("\t");
-		}
-		
-		for (int i = 0; i < tabs; i++){ 
-			sb.append("\t");
-		}*/
-		
-		return sb.toString();
 	}
 }
 
