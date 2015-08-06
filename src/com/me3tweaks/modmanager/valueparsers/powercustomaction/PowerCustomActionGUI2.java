@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -45,6 +46,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.me3tweaks.modmanager.cellrenderers.HintTextAreaUI;
 import com.me3tweaks.modmanager.cellrenderers.HintTextFieldUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerVariable.DLCPackage;
 
@@ -105,39 +107,39 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		GridBagConstraints c = new GridBagConstraints();
 
 		input1 = new JTextArea(4, 10);
-		input1.setUI(new HintTextFieldUI("Lowest Priority Section", true));
+		input1.setUI(new HintTextAreaUI("Lowest Priority Section", true));
 		package1 = new JComboBox<DLCPackage>();
 		package1.setModel(packageModel1);
 
 		input2 = new JTextArea(4, 10);
-		input2.setUI(new HintTextFieldUI("Mid Priority Section", true));
+		input2.setUI(new HintTextAreaUI("Mid Priority Section", true));
 		input2.setMinimumSize(new Dimension(100, 100));
 		package2 = new JComboBox<DLCPackage>();
 		package2.setModel(packageModel2);
 		isMP2 = new JCheckBox("BG MP Section");
-		isMP2.setToolTipText(
-				"<html>Checking this box indicates this section applies only to the MP variant of the original basegame power.<br>Variables will have _mp appended to the SQL names.</html>");
+		isMP2.setToolTipText("<html>Checking this box indicates this section applies only to the MP variant of the original basegame power.<br>Variables will have _mp appended to the SQL names.</html>");
 
 		input3 = new JTextArea(4, 10);
-		input3.setUI(new HintTextFieldUI("Mid-High Priority Section", true));
+		input3.setUI(new HintTextAreaUI("Mid-High Priority Section", true));
 		package3 = new JComboBox<DLCPackage>();
 		package3.setModel(packageModel3);
 		isMP3 = new JCheckBox("BG MP Section");
-		isMP3.setToolTipText(
-				"<html>Checking this box indicates this section applies only to the MP variant of the original basegame power.<br>Variables will have _mp appended to the SQL names.</html>");
+		isMP3.setToolTipText("<html>Checking this box indicates this section applies only to the MP variant of the original basegame power.<br>Variables will have _mp appended to the SQL names.</html>");
 
 		input4 = new JTextArea(4, 10);
-		input4.setUI(new HintTextFieldUI("High Priority Section", true));
+		input4.setUI(new HintTextAreaUI("High Priority Section", true));
 		package4 = new JComboBox<DLCPackage>();
 		package4.setModel(packageModel4);
 		isMP4 = new JCheckBox("BG MP Section");
-		isMP4.setToolTipText(
-				"<html>Checking this box indicates this section applies only to the MP variant of the original basegame power.<br>Variables will have _mp appended to the SQL names.</html>");
+		isMP4.setToolTipText("<html>Checking this box indicates this section applies only to the MP variant of the original basegame power.<br>Variables will have _mp appended to the SQL names.</html>");
 
 		inputBalance = new JTextArea(4, 10);
-		inputBalance.setUI(new HintTextFieldUI("Balance Changes (Highest Priority) Section", true));
+		inputBalance.setUI(new HintTextAreaUI("Balance Changes (Highest Priority) Section", true));
 
 		input1.setLineWrap(true);
+		input1.setColumns(10);
+		input1.setWrapStyleWord(false); //default
+
 		input2.setLineWrap(true);
 		input3.setLineWrap(true);
 		input4.setLineWrap(true);
@@ -309,10 +311,18 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		finalizeButton.setToolTipText("Generates output for inputing into ModMaker based on the items you have input into the editor");
 		finalizeButton.addActionListener(this);
 		miscPanel.add(finalizeButton);
+		JScrollPane inputPane = new JScrollPane(sourceInputsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JScrollPane varPane = new JScrollPane(rowsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JScrollPane containersPane = new JScrollPane(containersPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		inputPane.getVerticalScrollBar().setUnitIncrement(16);
+		containersPane.getVerticalScrollBar().setUnitIncrement(16);
+		varPane.getVerticalScrollBar().setUnitIncrement(16);
 
-		editor.add("Input Data", new JScrollPane(sourceInputsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
-		editor.addTab("Variables", new JScrollPane(rowsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
-		editor.addTab("Containers", new JScrollPane(containersPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
+		editor.add("Input Data", inputPane);
+		editor.addTab("Variables", varPane);
+		editor.addTab("Containers", containersPane);
 		editor.addTab("Misc", miscPanel);
 
 		editor.setEnabledAt(1, false);
@@ -333,14 +343,13 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			in2 = FileUtils.readFileToString(new File("mp.xml"));
 			in3 = FileUtils.readFileToString(new File("p2.xml"));
 			inBal = FileUtils.readFileToString(new File("bal.xml"));
-
 			input1.setText(in1);
 			input2.setText(in2);
 			input3.setText(in3);
 			isMP2.setSelected(true);
 			isMP3.setSelected(true);
 			package3.setSelectedItem(PowerVariable.DLCPackage.PATCH2);
-			inputBalance.setText(inBal);
+			//inputBalance.setText(inBal);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -389,6 +398,9 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		containersPanel.add(cr);
 
 		for (PowerVariable pv : loadedVariables) {
+			pv.addContainerOption(cr);
+		}
+		for (PowerVariable pv : loadedMPVariables) {
 			pv.addContainerOption(cr);
 		}
 		pack();
@@ -465,15 +477,15 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 				if (inputHTAccessURL.getText() != null && inputHTAccessURL.getText().equals("")) {
 					inputHTAccessURL.setText(tableName);
 				}
-				System.out.println(sectionName);
 				if (dlcPackage != null) {
 					if (isMPOnly) {
 						if (mpPath == null) {
 							mpPath = sectionName;
 						} else {
 							if (!mpPath.equals(sectionName)) {
-								JOptionPane.showMessageDialog(null, "Two or more sections are marked as MP only, but their section names don't match.",
-										"Section name mismatch", JOptionPane.ERROR_MESSAGE);
+								JOptionPane.showMessageDialog(null,
+										"Two or more sections are marked as MP only, but their section names don't match.", "Section name mismatch",
+										JOptionPane.ERROR_MESSAGE);
 								return;
 							}
 						}
@@ -482,7 +494,8 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 							basePath = sectionName;
 						} else {
 							if (!basePath.equals(sectionName)) {
-								JOptionPane.showMessageDialog(null, "Two or more sections are not marked as MP only, but their section names don't match.",
+								JOptionPane.showMessageDialog(null,
+										"Two or more sections are not marked as MP only, but their section names don't match.",
 										"Section name mismatch", JOptionPane.ERROR_MESSAGE);
 								return;
 							}
@@ -515,12 +528,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 						if (isMPOnly) {
 							loadedMPVariables.remove(var);
 						} else {
-							loadedVariables.remove(var); // remove ones that
-															// have been
-															// balanced or
-															// updated - matches
-															// sectionname and
-															// varname
+							loadedVariables.remove(var); // remove updated or balanced
 						}
 						if (dlcPackage != null) {
 							if (isMPOnly) {
@@ -593,7 +601,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 	 */
 	private void finalizeChanges() {
 		generateHTML();
-		
+
 		generateSQLTable();
 		generateSQLInsert();
 		generateFork();
@@ -605,31 +613,86 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 	}
 
 	private void generateHTML() {
+		//get balance list
+		StringBuilder balanceList = new StringBuilder();
+		for (PowerVariable var : balancedPowers) {
+			balanceList.append(var.convertToBalance());
+		}
+
 		//Build hashmap of contatiner -> list<powers>
-		HashMap<ContainerRow, ArrayList<VariableRow>> containerList = new HashMap<ContainerRow,ArrayList<VariableRow>>();
+		HashMap<ContainerRow, ArrayList<VariableRow>> containerList = new HashMap<ContainerRow, ArrayList<VariableRow>>();
 		for (ContainerRow cr : loadedContainers) {
 			containerList.put(cr, new ArrayList<VariableRow>());
 		}
-		
+
 		for (Map.Entry<ContainerRow, ArrayList<VariableRow>> container : containerList.entrySet()) {
-		    ContainerRow key = container.getKey();
-		    ArrayList<VariableRow> items = container.getValue();
-		    for (PowerVariable pv : loadedVariables) {
-				for (VariableRow vr : pv.getVariableRows()){
+			ContainerRow key = container.getKey();
+			ArrayList<VariableRow> items = container.getValue();
+			for (PowerVariable pv : loadedVariables) {
+				for (VariableRow vr : pv.getVariableRows()) {
 					if (vr.getContainerComboBox().getSelectedItem() == key) {
 						items.add(vr);
 					}
 				}
 			}
 		}
-		
+
+		ArrayList<String> containerHTMLs = new ArrayList<String>();
+		//generate detparams first
+		for (PowerVariable var : loadedVariables) {
+			if (var.getDataType() == PowerVariable.DataType.DETONATIONPARAMETERS) {
+				containerHTMLs.add(var.convertToPHPEntryBox());
+			}
+		}
+		for (PowerVariable var : loadedMPVariables) {
+			if (var.getDataType() == PowerVariable.DataType.DETONATIONPARAMETERS) {
+				containerHTMLs.add(var.convertToPHPEntryBox());
+			}
+		}
+
+		//generate standard containers
+		for (Map.Entry<ContainerRow, ArrayList<VariableRow>> container : containerList.entrySet()) {
+			ContainerRow cr = container.getKey();
+			ArrayList<VariableRow> children = container.getValue();
+
+			StringBuilder innerText = new StringBuilder();
+			for (VariableRow vr : children) {
+				String entry = VariableRow.ENTRY_TEMPLATE;
+				entry = entry.replaceAll("HINTTEXT", vr.getHint().getText());
+				entry = entry.replaceAll("PREFIX", vr.getPrefix().getText());
+				entry = entry.replaceAll("POSTFIX", vr.getPostfix().getText());
+				entry = entry.replaceAll("VARNAME", vr.getSqlVarName());
+				entry = entry.replaceAll("HUMANNAME", vr.getHumanName());
+				entry = entry.replaceAll("TABLENAME", vr.getOwningVar().get().getBaseTableName());
+				entry = entry.replaceAll("HINTTEXT", vr.getHint().getText());
+				innerText.append(entry);
+			}
+			String containerBlock = ContainerRow.CONTAINER_TEMPLATE;
+			containerBlock = containerBlock.replaceAll("CONTAINERNAME", cr.getContainerTitle().getText());
+			containerBlock = containerBlock.replaceAll("CONTAINERDESCRIPTION", cr.getContainerText().getText());
+			containerBlock = containerBlock.replaceAll("BALANCECHANGES_PLACEHOLDER", balanceList.toString());
+			containerBlock = containerBlock.replaceAll("INPUTS_PLACEHOLDER", innerText.toString());
+			containerHTMLs.add(containerBlock);
+		}
+
 		//Build HTML
 		StringBuilder sb = new StringBuilder();
-		
-		for (Map.Entry<ContainerRow, ArrayList<VariableRow>> container : containerList.entrySet()) {
-
+		for (String block : containerHTMLs) {
+			sb.append(block);
 		}
-		
+		try {
+			String pageTemplate = FileUtils.readFileToString(new File("PCA-Generator/template.php"));
+			pageTemplate = pageTemplate.replaceAll("LOADNAME", getLoadName(getTableName(basePath)));
+			pageTemplate = pageTemplate.replaceAll("VARNAME", getTableName(basePath));
+			pageTemplate = pageTemplate.replaceAll("HUMANNAME", inputHumanName.getText());
+			pageTemplate = pageTemplate.replaceAll("PAGEDESCRIPTION", inputDescription.getText());
+			pageTemplate = pageTemplate.replaceAll("CONTAINERS_PLACEHOLDER", Matcher.quoteReplacement(sb.toString()));
+			//page built
+			FileUtils.writeStringToFile(new File("PCA-Generator/" + getTableName(basePath) + ".php"), pageTemplate);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void generateSQLTable() {
@@ -847,11 +910,102 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 	}
 
 	private void generatePHPValidation() {
+		String tableName = getTableName(basePath);
+		StringBuilder sb = new StringBuilder();
+		sb.append("\tcase \"");
+		sb.append(tableName);
+		sb.append("\":\n");
+		sb.append("\t\t$status = array();\n");
+		sb.append("\t\t$updateinfo = array();\n");
 
+		ArrayList<PowerVariable> varList = new ArrayList<PowerVariable>();
+		for (PowerVariable pv : loadedVariables) {
+			varList.add(pv);
+		}
+		for (PowerVariable pv : loadedMPVariables) {
+			varList.add(pv);
+		}
+		
+		for (PowerVariable pv : varList) {
+			sb.append(pv.convertToPHPValidation());
+		}
+		
+		//append final
+		sb.append("\t\t$mod->loadPowerFunctions();\n");
+		sb.append("\t\t$result = $mod->powers->updatePower('");
+		sb.append(tableName);
+		sb.append("', $updateinfo);\n");
+
+		sb.append("\t\tif (is_null($result) and count($status)<=0) {\n");
+		sb.append("\t\t\t$_SESSION['powers_update'] = \"");
+		sb.append(tableName);
+		sb.append(" updated.\";\n");
+
+		sb.append("\t\t\theader('Location: /modmaker/edit/'.$id.'/powers');\n");
+		;
+		sb.append("\t\t\tdie();\n");
+		sb.append("\t\t} else {\n");
+		sb.append("\t\t\tarray_push($status, $result);\n");
+		sb.append("\t\t\t$_SESSION['");
+		sb.append(tableName);
+		sb.append("_status'] = $status;\n");
+		sb.append("\t\t\theader('Location: /modmaker/edit/'.$id.'/powers/");
+		sb.append(inputHTAccessURL.getText());
+		sb.append("');\n");
+		sb.append("\t\t\tdie();\n");
+		sb.append("\t\t}\n");
+		sb.append("\t\tbreak;\n\n");
+		try {
+			FileUtils.writeStringToFile(new File("PCA-Generator/powers-validation.php"), sb.toString());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void generateJSValidation() {
-
+		StringBuilder sb = new StringBuilder();
+		sb.append("$(document).ready(function(){\n");
+		sb.append("\t$('#form input[type=\"text\"]').tooltipster({\n");
+		sb.append("\t\ttrigger: 'custom', // default is 'hover' which is no good here\n");
+		sb.append("\t\tonlyOne: false,    // allow multiple tips to be open at a time\n");
+		sb.append("\t\tposition: 'top',\n");
+		sb.append("\t\tanimation: 'grow'\n");
+		sb.append("\t});\n");
+		sb.append("\t//form validation rules\n");
+		sb.append("\t$(\"#form\").validate({\n");
+		sb.append("\t\terrorPlacement: function (error, element) {\n");
+		sb.append("\t\t\t$(element).tooltipster('update', $(error).text());\n");
+		sb.append("\t\t\t$(element).tooltipster('show');\n");
+		sb.append("\t\t},\n");
+		sb.append("\t\tsuccess: function (label, element) {\n");
+		sb.append("\t\t\t$(element).tooltipster('hide');\n");
+		sb.append("\t\t},\n");
+		sb.append("\t\trules: {\n");
+		
+		//build rules
+		ArrayList<PowerVariable> varList = new ArrayList<PowerVariable>();
+		for (PowerVariable pv : loadedVariables) {
+			varList.add(pv);
+		}
+		for (PowerVariable pv : loadedMPVariables) {
+			varList.add(pv);
+		}
+		
+		for (PowerVariable pv : varList) {
+			sb.append(pv.convertToJSValidation());
+		}
+		
+		sb.append("\t\t}\n");
+		sb.append("\t});\n");
+		sb.append("});\n");
+		
+		try {
+			FileUtils.writeStringToFile(new File("PCA-Generator/"+getTableName(basePath)+".js"), sb.toString());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void generatePublish() {
@@ -888,7 +1042,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 					varsToPublish.add(pv);
 				}
 			}
-			
+
 			for (PowerVariable pv : varsToPublish) {
 				//publishing code
 				sb.append(pv.convertToPublisherLine());
@@ -902,7 +1056,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			e.printStackTrace();
 		}
 	}
-	
+
 	protected static int getVarApplicationAreas(PowerVariable var) {
 		//Check for var in MP
 		if (loadedMPVariables.contains(var)) {
@@ -910,9 +1064,15 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		}
 		//not in MP
 		if (loadedVariables.contains(var)) {
-			for (PowerVariable pv : loadedMPVariables){
+			for (PowerVariable pv : loadedMPVariables) {
 				//check MP names for a match on varname
-				if (pv.getVarName().equals(var.getVarName())){
+				if (pv.getVarName().equals(var.getVarName())) {
+					return SP_VAR_ONLY;
+				}
+			}
+			for (PowerVariable pv : balancedPowers) {
+				//check MP names for a match on varname
+				if (pv.getVarName().equals(var.getVarName())) {
 					return SP_VAR_ONLY;
 				}
 			}

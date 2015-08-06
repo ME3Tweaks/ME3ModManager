@@ -13,7 +13,7 @@ public class ContainerRow extends JPanel {
 	public static String CONTAINER_TEMPLATE = "\t\t\t\t<!-- CONTAINERNAME -->\n" + "\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"
 			+ "\t\t\t\t\t<img class=\"guide purple_card\" src=\"/images/common/no_image.png\">\n"
 			+ "\t\t\t\t\t<h2 class=\"modmaker_attribute_title\">CONTAINERNAME</h2>\n"
-			+ "\t\t\t\t\t<p>These properties need to be moved to their proper boxes.</p>\n" + "INPUTS_PLACEHOLDER" + "\t\t\t\t</div>\n";
+			+ "\t\t\t\t\t<p>CONTAINERDESCRIPTION</p>\n" + "INPUTS_PLACEHOLDER" + "\t\t\t\t</div>\n";
 	public static String DETONATION_CONTAINER_TEMPLATE = "\t\t\t\t<!-- DETONATIONVARNAME PARAMETERS  -->\n"
 			+ "\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"
 			+ "\t\t\t\t\t<img class=\"guide hard\" src=\"/images/modmaker/powers/TABLENAME/explosion.jpg\">\n"
@@ -86,5 +86,15 @@ public class ContainerRow extends JPanel {
 	public JButton getDeleteContainerButton() {
 		return deleteContainerButton;
 	}
+
+	public JTextField getContainerTitle() {
+		return containerTitle;
+	}
+
+	public JTextField getContainerText() {
+		return containerText;
+	}
+	
+	
 
 }

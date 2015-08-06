@@ -19,10 +19,9 @@ public class PowerVariable {
 	public static enum DLCPackage {
 		BASEGAME("$basegameBioGameElements"), MP1("$mp1BioGameElements"), MP2("$mp12BioGameElements"), MP3("$mp3BioGameElements"), MP4(
 				"$mp4BioGameElements"), MP5("$mp5BioGameElements"), PATCH1("$patch1BioGameElements"), PATCH2("$patch2BioGameElements"), TESTPATCH(
-						"$testpatchBioGameElements"), HEN_PR("$fromashesBioGameElements"), END("$extendedcutBiogameElements"), EXP1(
-								"$leviathanBioGameElements"), EXP2("$omegaGameElements"), EXP3("$citadelBioGameElements"), EXP3B(
-										"$citadelbaseBioGameElements"), APP01("$appearanceBioGameElements"), GUN01("$firefightBioGameElements"), GUN02(
-												"$groundsideBioGameElements");
+				"$testpatchBioGameElements"), HEN_PR("$fromashesBioGameElements"), END("$extendedcutBiogameElements"), EXP1(
+				"$leviathanBioGameElements"), EXP2("$omegaGameElements"), EXP3("$citadelBioGameElements"), EXP3B("$citadelbaseBioGameElements"), APP01(
+				"$appearanceBioGameElements"), GUN01("$firefightBioGameElements"), GUN02("$groundsideBioGameElements");
 
 		private final String text;
 
@@ -46,13 +45,6 @@ public class PowerVariable {
 	public static enum ValidationRule {
 		GREATER_THAN_X, GREATER_THAN_OR_EQUAL_TO_X, GREATER_THAN_0, GREATER_THAN_OR_EQUAL_TO_0, ANY, LESS_THAN_X, LESS_THAN_OR_EQUAL_TO_X, LESS_THAN_0, LESS_THAN_OR_EQUAL_TO_0,
 	}
-
-	public static String ENTRY_TEMPLATE = "\t\t\t\t\t<div class=\"modmaker_entry\">\n" + "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
-			+ "\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">VARNAME</span>\n"
-			+ "\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: PREFIX<\\?=\\$defaultsmod->powers->mod_powers_TABLENAME_VARNAME;?>POSTFIX</span>\n"
-			+ "\t\t\t\t\t\t</div>\n"
-			+ "\t\t\t\t\t\t<input id=\"VARNAME\" class=\"short_input\" type=\"text\" name=\"VARNAME\" placeholder=\"VARNAME\" value=\"<?=\\$mod->powers->mod_powers_TABLENAME_VARNAME;?>\">\n"
-			+ "\t\t\t\t\t</div>";
 
 	private String tableName;
 	private DataType dataType;
@@ -126,7 +118,7 @@ public class PowerVariable {
 			dataType = DataType.BASERANKUPGRADE;
 			bru = new BaseRankUpgrade(tableName, data);
 
-			VariableRow r = new VariableRow(-1);
+			VariableRow r = new VariableRow(VariableRow.LOCKED_BASE_RANK);
 			// r.configure(this, 0);
 			variableRows.add(r);
 
@@ -384,10 +376,11 @@ public class PowerVariable {
 			sb.append("\t");
 			sb.append(sqlVarName);
 			sb.append(" ");
-			if (bru.isDouble) {
-				sb.append("FLOAT");
-			} else {
-				sb.append("INT");
+			for (VariableRow vr : variableRows) {
+				if (vr.getSqlVarName().equals(sqlVarName)) {
+					sb.append(vr.getDataTypeComboBox().getSelectedItem());
+					break;
+				}
 			}
 			sb.append(" NOT NULL,\n");
 			if (bru.formula != null) {
@@ -405,25 +398,30 @@ public class PowerVariable {
 				sb.append(sqlVarName);
 				sb.append("_rankbonus_");
 				sb.append(rank);
-				sb.append(" FLOAT NOT NULL, \n");
+
+				for (VariableRow vr : variableRows) {
+					if (vr.getSqlVarName().equals(sqlVarName + "_rankbonus_" + rank)) {
+						sb.append(" ");
+						sb.append(vr.getDataTypeComboBox().getSelectedItem());
+						break;
+					}
+				}
+				sb.append(" NOT NULL, \n");
 			}
 			return sb.toString();
 		}
-		try {
-			Integer.parseInt(value);
-			return "\t" + varName + " INT NOT NULL,\n";
-		} catch (NumberFormatException e) {
+
+		//int/dubs
+		StringBuilder sb = new StringBuilder();
+		for (VariableRow vr : variableRows) {
+			sb.append("\t");
+			sb.append(sqlVarName);
+			sb.append(" ");
+			sb.append(vr.getDataTypeComboBox().getSelectedItem());
+			sb.append(" NOT NULL, \n");
 
 		}
-
-		try {
-			Double.parseDouble(value);
-			return "\t" + varName + " FLOAT NOT NULL,\n";
-		} catch (NumberFormatException e) {
-
-		}
-		return "Unknown data type (TABLE) for power variable: " + varName;
-
+		return "";
 	}
 
 	public String convertToPublisherLine() {
@@ -576,21 +574,79 @@ public class PowerVariable {
 	}
 
 	public String convertToPHPEntryBox() {
-		String inputBox = ENTRY_TEMPLATE;
-		inputBox = inputBox.replaceAll("VARNAME", sqlVarName);
-		inputBox = inputBox.replaceAll("TABLENAME", tableName);
-		if (defaultPrefix != null) {
-			inputBox = inputBox.replaceAll("PREFIX", defaultPrefix);
+		StringBuilder sb = new StringBuilder();
+		if (dp != null) {
+			String detblock = ContainerRow.DETONATION_CONTAINER_TEMPLATE;
+			detblock = detblock.replaceAll("DETONATIONVARNAME", sqlVarName);
+			detblock = detblock.replaceAll("TABLENAME", baseTableName);
+			//add detonation params
+			for (DetonationParams param : DetonationParams.values()) {
+				String dparam = param.toString();
+				switch (dparam) {
+				case "_blockedbyobjects":
+					detblock = detblock.replaceAll("BLOCKED_BY_OBJECTS", (dp.blockedByObjects) ? "True" : "False");
+					break;
+				case "_distancesorted":
+					detblock = detblock.replaceAll("DISTANCE_SORTED", (dp.distancedSorted) ? "True" : "False");
+					break;
+				case "_impactdeadpawns":
+					detblock = detblock.replaceAll("IMPACTS_DEAD_CHARS", (dp.impactDeadPawns) ? "True" : "False");
+					break;
+				case "_impactfriends":
+					detblock = detblock.replaceAll("IMPACTS_FRIENDS", (dp.impactFriends) ? "True" : "False");
+					break;
+				case "_impactplaceables":
+					detblock = detblock.replaceAll("IMPACTS_PLACEABLES", (dp.impactPlaceables) ? "True" : "False");
+					break;
+				default:
+					System.err.println("UNKNOWN DETONATION PARAM: " + dparam);
+				}
+			}
+			if (dp.coneAngle >= 0) {
+				String inputTmp = VariableRow.ENTRY_TEMPLATE;
+				inputTmp = inputTmp.replaceAll("VARNAME", sqlVarName + "_coneangle").replaceAll("TABLENAME", baseTableName);
+				inputTmp = inputTmp + "\n";
+				detblock = detblock.replaceAll("CONEANGLE", inputTmp);
+			} else {
+				detblock = detblock.replaceAll("CONEANGLE", "");
+			}
+			return detblock;
 		}
-		if (defaultPostfix != null) {
-			inputBox = inputBox.replaceAll("POSTFIX", defaultPostfix);
+		if (bru != null) {
+			//BASE VALUE
+			sb.append(VariableRow.ENTRY_TEMPLATE.replaceAll("VARNAME", sqlVarName).replaceAll("TABLENAME", baseTableName));
+			//dont need to do formula
+			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+				int rank = entry.getKey();
+				//RANKBONUSES
+				sb.append(VariableRow.ENTRY_TEMPLATE.replaceAll("VARNAME", sqlVarName + "_rankbonus_" + rank).replaceAll("TABLENAME", baseTableName));
+			}
+			return sb.toString();
 		}
-		return inputBox;
+
+		//ints, dubs
+		try {
+			int ints = Integer.parseInt(value);
+			sb.append(VariableRow.ENTRY_TEMPLATE.replaceAll("VARNAME", sqlVarName).replaceAll("TABLENAME", baseTableName));
+			return sb.toString();
+		} catch (NumberFormatException e) {
+
+		}
+
+		try {
+			double dubs = Double.parseDouble(value);
+			sb.append(VariableRow.ENTRY_TEMPLATE.replaceAll("VARNAME", sqlVarName).replaceAll("TABLENAME", baseTableName));
+			return sb.toString();
+		} catch (NumberFormatException e) {
+
+		}
+		System.err.println("Not generating input for: " + sqlVarName);
+		return "";
 	}
 
 	public String convertToPHPValidation() {
+		StringBuilder sb = new StringBuilder();
 		if (dp != null) {
-			StringBuilder sb = new StringBuilder();
 			// add detonation params
 			for (DetonationParams param : DetonationParams.values()) {
 				String dparam = param.toString();
@@ -644,122 +700,90 @@ public class PowerVariable {
 			}
 			return sb.toString();
 		}
-		if (bru != null) {
-			StringBuilder sb = new StringBuilder();
-			// BASE VALUE
-			sb.append("\t\t//");
-			sb.append(sqlVarName);
-			sb.append("\n");
 
-			sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['");
-			sb.append(sqlVarName);
-			sb.append("']);\n");
-
-			sb.append("\t\tif (is_null($shouldadd)){\n");
-			sb.append("\t\t\t$updateinfo['");
-			sb.append(sqlVarName);
-			sb.append("'] = $_POST['");
-			sb.append(sqlVarName);
-			sb.append("'];\n");
-
-			sb.append("\t\t} else {\n");
-			sb.append("\t\t\tarray_push($status, \"");
-			sb.append(sqlVarName);
-			sb.append(" \".$shouldadd);\n");
-			sb.append("\t\t}\n\n");
-
-			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
-				int rank = entry.getKey();
-				// RANKBONUSES
-				sb.append("\t\t//");
-				sb.append(sqlVarName);
-				sb.append("\n");
-
-				sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['");
-				sb.append(sqlVarName);
-				sb.append("_rankbonus_");
-				sb.append(rank);
-				sb.append("']);\n");
-
-				sb.append("\t\tif (is_null($shouldadd)){\n");
-				sb.append("\t\t\t$updateinfo['");
-				sb.append(sqlVarName);
-				sb.append("_rankbonus_");
-				sb.append(rank);
-				sb.append("'] = $_POST['");
-				sb.append(sqlVarName);
-				sb.append("_rankbonus_");
-				sb.append(rank);
-				sb.append("'];\n");
-
-				sb.append("\t\t} else {\n");
-				sb.append("\t\t\tarray_push($status, \"");
-				sb.append(sqlVarName);
-				sb.append("_rankbonus_");
-				sb.append(rank);
-				sb.append(" \".$shouldadd);\n");
-				sb.append("\t\t}\n\n");
-			}
-			return sb.toString();
+		for (VariableRow vr : variableRows) {
+			sb.append(vr.convertToPHPValidation());
 		}
-		// ints, dubs
-		try {
-			Integer.parseInt(value);
-			StringBuilder sb = new StringBuilder();
-			sb.append("\t\t//");
-			sb.append(sqlVarName);
-			sb.append("\n");
-
-			sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_int($_POST['");
-			sb.append(sqlVarName);
-			sb.append("']);\n");
-
-			sb.append("\t\tif (is_null($shouldadd)){\n");
-			sb.append("\t\t\t$updateinfo['");
-			sb.append(sqlVarName);
-
-			sb.append("'] = $_POST['");
-			sb.append(sqlVarName);
-			sb.append("'];\n");
-
-			sb.append("\t\t} else {\n");
-			sb.append("\t\t\tarray_push($status, \"");
-			sb.append(sqlVarName);
-			sb.append(" \".$shouldadd);\n");
-			sb.append("\t\t}\n\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
-
-		}
-
-		try {
-			Double.parseDouble(value);
-			StringBuilder sb = new StringBuilder();
-			sb.append("\t\t//");
-			sb.append(sqlVarName);
-			sb.append("\n");
-
-			sb.append("\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['");
-			sb.append(sqlVarName);
-			sb.append("']);\n");
-
-			sb.append("\t\tif (is_null($shouldadd)){\n");
-			sb.append("\t\t\t$updateinfo['");
-			sb.append(sqlVarName);
-			sb.append("'] = $_POST['");
-			sb.append(sqlVarName);
-			sb.append("'];\n");
-
-			sb.append("\t\t} else {\n");
-			sb.append("\t\t\tarray_push($status, \"");
-			sb.append(sqlVarName);
-			sb.append(" \".$shouldadd);\n");
-			sb.append("\t\t}\n\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
-
-		}
-		return "UNKNOWN PHP VALIDATION PROP VAR TYPE: " + varName;
+		return sb.toString();
+		/*
+		 * if (bru != null) { StringBuilder sb = new StringBuilder(); for
+		 * (VariableRow vr : variableRows) {
+		 * sb.append(vr.convertToPHPValidation()); } // BASE VALUE
+		 * sb.append("\t\t//"); sb.append(sqlVarName); sb.append("\n");
+		 * 
+		 * sb.append(
+		 * "\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['"
+		 * ); sb.append(sqlVarName); sb.append("']);\n");
+		 * 
+		 * sb.append("\t\tif (is_null($shouldadd)){\n");
+		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName);
+		 * sb.append("'] = $_POST['"); sb.append(sqlVarName);
+		 * sb.append("'];\n");
+		 * 
+		 * sb.append("\t\t} else {\n");
+		 * sb.append("\t\t\tarray_push($status, \""); sb.append(sqlVarName);
+		 * sb.append(" \".$shouldadd);\n"); sb.append("\t\t}\n\n");
+		 * 
+		 * for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+		 * int rank = entry.getKey(); // RANKBONUSES sb.append("\t\t//");
+		 * sb.append(sqlVarName); sb.append("\n");
+		 * 
+		 * sb.append(
+		 * "\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['"
+		 * ); sb.append(sqlVarName); sb.append("_rankbonus_"); sb.append(rank);
+		 * sb.append("']);\n");
+		 * 
+		 * sb.append("\t\tif (is_null($shouldadd)){\n");
+		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName);
+		 * sb.append("_rankbonus_"); sb.append(rank);
+		 * sb.append("'] = $_POST['"); sb.append(sqlVarName);
+		 * sb.append("_rankbonus_"); sb.append(rank); sb.append("'];\n");
+		 * 
+		 * sb.append("\t\t} else {\n");
+		 * sb.append("\t\t\tarray_push($status, \""); sb.append(sqlVarName);
+		 * sb.append("_rankbonus_"); sb.append(rank);
+		 * sb.append(" \".$shouldadd);\n"); sb.append("\t\t}\n\n"); } return
+		 * sb.toString(); } // ints, dubs try { Integer.parseInt(value);
+		 * StringBuilder sb = new StringBuilder(); sb.append("\t\t//");
+		 * sb.append(sqlVarName); sb.append("\n");
+		 * 
+		 * sb.append(
+		 * "\t\t$shouldadd = validate_greater_than_or_equal_to_zero_int($_POST['"
+		 * ); sb.append(sqlVarName); sb.append("']);\n");
+		 * 
+		 * sb.append("\t\tif (is_null($shouldadd)){\n");
+		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName);
+		 * 
+		 * sb.append("'] = $_POST['"); sb.append(sqlVarName);
+		 * sb.append("'];\n");
+		 * 
+		 * sb.append("\t\t} else {\n");
+		 * sb.append("\t\t\tarray_push($status, \""); sb.append(sqlVarName);
+		 * sb.append(" \".$shouldadd);\n"); sb.append("\t\t}\n\n"); return
+		 * sb.toString(); } catch (NumberFormatException e) {
+		 * 
+		 * }
+		 * 
+		 * try { Double.parseDouble(value); StringBuilder sb = new
+		 * StringBuilder(); sb.append("\t\t//"); sb.append(sqlVarName);
+		 * sb.append("\n");
+		 * 
+		 * sb.append(
+		 * "\t\t$shouldadd = validate_greater_than_or_equal_to_zero_float($_POST['"
+		 * ); sb.append(sqlVarName); sb.append("']);\n");
+		 * 
+		 * sb.append("\t\tif (is_null($shouldadd)){\n");
+		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName);
+		 * sb.append("'] = $_POST['"); sb.append(sqlVarName);
+		 * sb.append("'];\n");
+		 * 
+		 * sb.append("\t\t} else {\n");
+		 * sb.append("\t\t\tarray_push($status, \""); sb.append(sqlVarName);
+		 * sb.append(" \".$shouldadd);\n"); sb.append("\t\t}\n\n"); return
+		 * sb.toString(); } catch (NumberFormatException e) {
+		 * 
+		 * }
+		 */
 	}
 
 	/**
@@ -782,61 +806,11 @@ public class PowerVariable {
 			}
 			return sb.toString();
 		}
-		if (bru != null) {
-			StringBuilder sb = new StringBuilder();
-			// BASE VALUE
-			sb.append("\t\t\t");
-			sb.append(sqlVarName);
-			sb.append(": {\n");
-			sb.append("\t\t\t\trequired: true,\n");
-			sb.append("\t\t\t\tmin: 0\n");
-			sb.append("\t\t\t},\n");
-
-			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
-				int rank = entry.getKey();
-				// RANKBONUSES
-				sb.append("\t\t\t");
-				sb.append(sqlVarName);
-				sb.append("_rankbonus_");
-				sb.append(rank);
-				sb.append(": {\n");
-				sb.append("\t\t\t\trequired: true,\n");
-				sb.append("\t\t\t\tmin: 0\n");
-				sb.append("\t\t\t},\n");
-			}
-			return sb.toString();
+		StringBuilder sb = new StringBuilder();
+		for (VariableRow vr : variableRows) {
+			sb.append(vr.convertToJSValidation());
 		}
-		// ints, dubs
-		try {
-			int ints = Integer.parseInt(value);
-			StringBuilder sb = new StringBuilder();
-			sb.append("\t\t\t");
-			sb.append(sqlVarName);
-			sb.append(": {\n");
-			sb.append("\t\t\t\trequired: true,\n");
-			sb.append("\t\t\t\tdigits: true,\n");
-			sb.append("\t\t\t\tmin: 0\n");
-			sb.append("\t\t\t},\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
-
-		}
-
-		try {
-			Double.parseDouble(value);
-			StringBuilder sb = new StringBuilder();
-			sb.append("\t\t\t");
-			sb.append(sqlVarName);
-			sb.append(": {\n");
-			sb.append("\t\t\t\trequired: true,\n");
-			sb.append("\t\t\t\tmin: 0\n");
-			sb.append("\t\t\t},\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
-
-		}
-
-		return "JS VALIDATION: UNKNOWN PROP VAR TYPE: " + sqlVarName;
+		return sb.toString();
 	}
 
 	/**
@@ -1356,6 +1330,24 @@ public class PowerVariable {
 
 	public ArrayList<VariableRow> getVariableRows() {
 		return variableRows;
+	}
+
+	public String getBaseTableName() {
+		return baseTableName;
+	}
+
+	public String convertToBalance() {
+		if (bru != null) {
+			String retStr = "";
+			retStr += "\t\t\t\t\t<li>" + sqlVarName + "</li>\n";
+			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+				int rank = entry.getKey();
+				retStr += "\t\t\t\t\t<li>" + sqlVarName + "_rankbonus_" + rank + "</li>\n";
+			}
+			return retStr;
+		} else {
+			return "\t\t\t\t\t<li>" + sqlVarName + "</li>\n";
+		}
 	}
 
 }
