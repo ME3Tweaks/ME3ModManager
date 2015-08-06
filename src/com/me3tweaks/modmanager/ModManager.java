@@ -42,10 +42,10 @@ import com.me3tweaks.modmanager.objects.Patch;
 
 public class ModManager {
 
-	public static final String VERSION = "3.2";
+	public static final String VERSION = "4.0 Beta 1";
 	public static long BUILD_NUMBER = 40L;
 
-	public static final String BUILD_DATE = "7/22/2015";
+	public static final String BUILD_DATE = "7/26/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
@@ -54,6 +54,7 @@ public class ModManager {
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static long LAST_AUTOUPDATE_CHECK;
+	public static int MIN_REQUIRED_ME3EXPLORER_REV = 706; //my custom build version
 
 	public static void main(String[] args) {
 		System.out.println("Starting mod manager");
@@ -247,11 +248,11 @@ public class ModManager {
 
 		//move update folder
 		ModManager.debugLogger.writeMessage("Checking if using old update dir");
-		File updatedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "tools/");
-		if (updatedir.exists()) {
+		File toolsdir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "update/");
+		if (toolsdir.exists()) {
 			ModManager.debugLogger.writeMessage("Moving update to data/");
 			try {
-				FileUtils.moveDirectory(updatedir, new File(ModManager.getToolsDir()));
+				FileUtils.moveDirectory(toolsdir, new File(ModManager.getToolsDir()));
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY!");
 				ModManager.debugLogger.writeException(e);
@@ -708,7 +709,7 @@ public class ModManager {
 	}
 
 	public static String getPatchesDir() {
-		File file = new File(getDataDir() + "patchlibrary/");
+		File file = new File(getDataDir() + "mixinlibrary/");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
@@ -891,28 +892,31 @@ public class ModManager {
 	}
 
 	public static String getPatchSource(String targetPath, String targetModule) {
-		ModManager.debugLogger.writeMessage("Looking for patch source: ");
+		String internalModule = ME3TweaksUtils.headerNameToInternalName(targetModule);
+		ModManager.debugLogger.writeMessage("Looking for patch source: "+targetPath+" in module "+targetModule);
 		File sourceDestination = new File(getPatchesDir()+"source/"+ME3TweaksUtils.headerNameToInternalName(targetModule)+File.separator+targetPath);
 		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		if (sourceDestination.exists()) {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
+		} else {
+			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: "+sourceDestination.getAbsolutePath()+"), fetching from original location.");
 		}
 		if (targetModule.equals(ModType.BASEGAME)){
 			//we must use PCCEditor2 to decompress the file using the --decompress-pcc command line arg
-			File sourceSource = new File(bioGameDir+targetPath);
+			File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent())+targetPath); //we have biogame dir, but targetpaths are relative to ME3 dir 
 			//run ME3EXPLORER --decompress-pcc
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("--decompress-pcc");
+			commandBuilder.add("-decompresspcc");
 			commandBuilder.add(sourceSource.getAbsolutePath());
 			commandBuilder.add(sourceDestination.getAbsolutePath());
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {
 				sb.append("\""+arg + "\" ");
 			}
-
-			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER PccEd2 Decompress command: " + sb.toString());
+			sourceDestination.getParentFile().mkdirs();
+			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER Decompressor command (into library): " + sb.toString());
 
 			ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
 			//patchProcessBuilder.redirectErrorStream(true);
@@ -931,15 +935,7 @@ public class ModManager {
 			} catch (InterruptedException e) {
 				ModManager.debugLogger.writeException(e);
 			}
-
-			try {
-				ModManager.debugLogger.writeMessage("Copying patch source file to library: "+sourceSource.getAbsolutePath()+" to "+sourceDestination.getAbsolutePath());
-				FileUtils.copyFile(sourceSource, sourceDestination);
-				return sourceDestination.getAbsolutePath();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				ModManager.debugLogger.writeErrorWithException("Failed to copy patch source for basegame file:", e);
-			}
+			return sourceDestination.getAbsolutePath();
 		//END OF BASEGAME======================================================
 		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
 			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
@@ -956,15 +952,19 @@ public class ModManager {
 						
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("--extract-dlc-pcc");
+			commandBuilder.add("-dlcextract");
 			commandBuilder.add(sfarPath);
 			commandBuilder.add(targetPath);
 			commandBuilder.add(sourceDestination.getAbsolutePath());
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {
-				sb.append("\""+arg + "\" ");
+				if (arg.contains(" ")) {
+					sb.append("\""+arg + "\" ");
+				} else {
+					sb.append(arg + " ");
+				}
 			}
-
+			sourceDestination.getParentFile().mkdirs();
 			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());
 
 			ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
@@ -1019,7 +1019,7 @@ public class ModManager {
 				}
 			}
 		}
-
+		Collections.sort(validPatches);
 		return validPatches;
 	}
 }

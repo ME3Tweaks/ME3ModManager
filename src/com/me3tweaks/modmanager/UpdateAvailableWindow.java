@@ -300,7 +300,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			nextUpdateButton.setEnabled(false);
 			File updateDir = new File("update");
 			updateDir.mkdirs();
-			DownloadTask task = new DownloadTask("update");
+			DownloadTask task = new DownloadTask(ModManager.getTempDir());
 			task.addPropertyChangeListener(this);
 			task.execute();
 		} else 
@@ -327,7 +327,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	
 	public void runUpdateScript() {
 		// TODO Auto-generated method stub
-		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getToolsDir()+"updater.cmd" };
+		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getTempDir()+"updater.cmd" };
 		try {
 			Runtime.getRuntime().exec(command);
 		} catch (IOException e) {
@@ -344,14 +344,14 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	 */
 	private boolean buildUpdateScript(){
 		StringBuilder sb = new StringBuilder();
-		sb.append("::Update script for Mod Manager 3.1 (Build "+build+")");
+		sb.append("::Update script for Mod Manager 4 (Build "+build+")");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("@echo off");
 		sb.append("\r\n");
 		sb.append("echo Current directory: %CD%");
 		sb.append("\r\n");
-		sb.append("pushd data\\update");
+		sb.append("pushd data\\temp");
 		sb.append("\r\n");
 		sb.append("::Wait for 2 seconds so the JVM fully exits.");
 		sb.append("\r\n");
@@ -362,6 +362,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("::Extract update");
 		sb.append("\r\n");
+		sb.append(ModManager.getToolsDir());
 		sb.append("7za.exe -y x ME3CMM.7z -o"+ModManager.getToolsDir()+"NewVersion");
 		sb.append("\r\n");
 		sb.append("\r\n");
