@@ -1,0 +1,23 @@
+    <Section name="sfxgamecontent.sfxpowercustomaction_pull">
+      <Property name="cooldowntime" type="2">(BaseValue=4,RankBonuses[0]=0.0f,RankBonuses[1]=0.25f,RankBonuses[2]=0.0f,Formula=DivideByBonusSum)</Property>
+      <Property name="damage" type="2">(BaseValue=50.0f)</Property>
+      <Property name="effectduration" type="2">(BaseValue=4.0f,RankBonuses[0]=0,RankBonuses[1]=0.0f,RankBonuses[2]=0.4f)</Property>
+      <Property name="evolve_dotdamagepersec" type="2">(BaseValue=20)</Property>
+      <Property name="evolve_durationbonus" type="2">0.5f</Property>
+      <Property name="evolve_extradamage" type="2">0.25f</Property>
+      <Property name="evolve_radiusbonus" type="2">200f</Property>
+      <Property name="evolve_rechargebonus" type="2">0.60f</Property>
+      <Property name="force" type="2">(BaseValue=200.0f)</Property>
+      <Property name="henchmancooldowntime" type="2">(BaseValue=8,RankBonuses[0]=0.0f,RankBonuses[1]=0.25f,RankBonuses[2]=0.0f,Formula=DivideByBonusSum)</Property>
+      <Property name="impactradius" type="2">(BaseValue=0,Formula=BonusIsHardValue)</Property>
+      <Property name="maximumimpacttargets" type="2">(BaseValue=2)</Property>
+      <Property name="maximumrange" type="2">(BaseValue=6000.0f)</Property>
+      <Property name="minimumvelocity" type="2">130.0f</Property>
+      <Property name="minimumvelocityforcemult" type="2">0.1f</Property>
+      <Property name="physicstodamagemultiplier" type="2">0.15f</Property>
+      <Property name="projectilespeed" type="2">(BaseValue=3000.0f)</Property>
+      <Property name="secondprojectiledelay" type="2">0.1f</Property>
+      <Property name="secondprojectilemaxrange" type="2">800</Property>
+      <Property name="secondprojectilespeedpercent" type="2">0.8f</Property>
+      <Property name="vfxintensity" type="2">(BaseValue=1.0f)</Property>
+    </Section>
