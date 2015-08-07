@@ -296,6 +296,8 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		inputDescription.setMaximumSize(new Dimension(100000, 60));
 		inputDescription.setUI(new HintTextFieldUI("Below-title description", true));
 		inputDescription.setBorder(new TitledBorder(new EtchedBorder(), "Power Description"));
+		inputDescription.setWrapStyleWord(true);
+		inputDescription.setLineWrap(true);
 		miscPanel.add(inputDescription);
 		miscPanel.add(Box.createRigidArea(new Dimension(10, 10)));
 
