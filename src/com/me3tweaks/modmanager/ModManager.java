@@ -893,18 +893,20 @@ public class ModManager {
 
 	public static String getPatchSource(String targetPath, String targetModule) {
 		String internalModule = ME3TweaksUtils.headerNameToInternalName(targetModule);
-		ModManager.debugLogger.writeMessage("Looking for patch source: "+targetPath+" in module "+targetModule);
-		File sourceDestination = new File(getPatchesDir()+"source/"+ME3TweaksUtils.headerNameToInternalName(targetModule)+File.separator+targetPath);
+		ModManager.debugLogger.writeMessage("Looking for patch source: " + targetPath + " in module " + targetModule);
+		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator
+				+ targetPath);
 		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		if (sourceDestination.exists()) {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
 		} else {
-			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: "+sourceDestination.getAbsolutePath()+"), fetching from original location.");
+			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath()
+					+ "), fetching from original location.");
 		}
-		if (targetModule.equals(ModType.BASEGAME)){
+		if (targetModule.equals(ModType.BASEGAME)) {
 			//we must use PCCEditor2 to decompress the file using the --decompress-pcc command line arg
-			File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent())+targetPath); //we have biogame dir, but targetpaths are relative to ME3 dir 
+			File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath); //we have biogame dir, but targetpaths are relative to ME3 dir 
 			//run ME3EXPLORER --decompress-pcc
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
@@ -913,7 +915,7 @@ public class ModManager {
 			commandBuilder.add(sourceDestination.getAbsolutePath());
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {
-				sb.append("\""+arg + "\" ");
+				sb.append("\"" + arg + "\" ");
 			}
 			sourceDestination.getParentFile().mkdirs();
 			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER Decompressor command (into library): " + sb.toString());
@@ -927,7 +929,7 @@ public class ModManager {
 				BufferedReader reader = new BufferedReader(new InputStreamReader(decompressProcess.getInputStream()));
 				String line;
 				while ((line = reader.readLine()) != null)
-				    System.out.println(line);
+					System.out.println(line);
 				int result = decompressProcess.waitFor();
 				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
 			} catch (IOException e) {
@@ -936,7 +938,7 @@ public class ModManager {
 				ModManager.debugLogger.writeException(e);
 			}
 			return sourceDestination.getAbsolutePath();
-		//END OF BASEGAME======================================================
+			//END OF BASEGAME======================================================
 		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
 			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
 			return null;
@@ -947,9 +949,9 @@ public class ModManager {
 			if (targetModule.equals(ModType.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + 
-					ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
-						
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())
+					+ ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
 			commandBuilder.add("-dlcextract");
@@ -959,7 +961,7 @@ public class ModManager {
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {
 				if (arg.contains(" ")) {
-					sb.append("\""+arg + "\" ");
+					sb.append("\"" + arg + "\" ");
 				} else {
 					sb.append(arg + " ");
 				}
@@ -976,7 +978,7 @@ public class ModManager {
 				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
 				String line;
 				while ((line = reader.readLine()) != null)
-				    System.out.println(line);
+					System.out.println(line);
 				int result = extractionProcess.waitFor();
 				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
 				return sourceDestination.getAbsolutePath();
@@ -1021,5 +1023,46 @@ public class ModManager {
 		}
 		Collections.sort(validPatches);
 		return validPatches;
+	}
+
+	public static boolean hasKnownDLCBypass(String biogameDir) {
+		try {
+			String wvdlcBink32MD5 = "5a826dd66ad28f0099909d84b3b51ea4"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
+			String wvdlcBink32MD5_2 = "05540bee10d5e3985608c81e8b6c481a"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
+
+			File bgdir = new File(biogameDir);
+			File gamedir = bgdir.getParentFile();
+			ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
+			File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
+			try {
+				String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
+				if (binkhash.equals(wvdlcBink32MD5) || binkhash.equals(wvdlcBink32MD5_2)) {
+					ModManager.debugLogger.writeMessage("Binkw32 DLC bypass installed");
+					return true;
+				} else {
+					// Check for LauncherWV.
+					File Launcher_WV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
+					File LauncherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\LauncherWV.exe");
+					if (Launcher_WV.exists() || LauncherWV.exists()) {
+						//does exist
+						ModManager.debugLogger.writeMessage("Launcher WV DLC bypass installed");
+						return true;
+					} else {
+						//No DLC Bypass installed
+						ModManager.debugLogger.writeMessage("Binkw32.dll bypass hash failed, hash is: " + binkhash);
+						ModManager.debugLogger.writeMessage("LauncherWV was not found in Win32 as Launcher_WV or LauncherWV.");
+						ModManager.debugLogger.writeMessage("Advertising the DLC bypass install.");
+						return false; //we will install binkw32.
+					}
+				}
+			} catch (Exception e) {
+				ModManager.debugLogger.writeMessage("Exception attempting to verify binkw32.dll");
+				ModManager.debugLogger.writeException(e);
+				return false;
+			}
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Exception checking for known DLC bypass:", e);
+			return false;
+		}
 	}
 }
