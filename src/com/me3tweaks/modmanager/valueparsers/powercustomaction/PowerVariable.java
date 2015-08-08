@@ -274,7 +274,7 @@ public class PowerVariable {
 				sb.append(bru.intBaseValue);
 			}
 			sb.append(", /*BASEVALUE of ");
-			sb.append(varName);
+			sb.append(sqlVarName);
 			sb.append("*/\n");
 
 			if (bru.formula != null) {
@@ -419,9 +419,9 @@ public class PowerVariable {
 			sb.append(" ");
 			sb.append(vr.getDataTypeComboBox().getSelectedItem());
 			sb.append(" NOT NULL, \n");
-
+			
 		}
-		return "";
+		return sb.toString();
 	}
 
 	public String convertToPublisherLine() {
