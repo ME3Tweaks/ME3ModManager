@@ -637,6 +637,13 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 					}
 				}
 			}
+			for (PowerVariable pv : loadedMPVariables) {
+				for (VariableRow vr : pv.getVariableRows()) {
+					if (vr.getContainerComboBox().getSelectedItem() == key) {
+						items.add(vr);
+					}
+				}
+			}
 		}
 
 		ArrayList<String> containerHTMLs = new ArrayList<String>();
