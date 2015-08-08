@@ -947,7 +947,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 
 		sb.append("\t\tif (is_null($result) and count($status)<=0) {\n");
 		sb.append("\t\t\t$_SESSION['powers_update'] = \"");
-		sb.append(tableName);
+		sb.append(inputHumanName.getText());
 		sb.append(" updated.\";\n");
 
 		sb.append("\t\t\theader('Location: /modmaker/edit/'.$id.'/powers');\n");
