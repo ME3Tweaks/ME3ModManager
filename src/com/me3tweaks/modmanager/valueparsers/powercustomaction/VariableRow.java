@@ -48,7 +48,6 @@ public class VariableRow extends JPanel {
 	}
 
 	public VariableRow(int i) {
-		System.out.println("Row locked to rank " + i);
 		this.lockedRank = i;
 	}
 

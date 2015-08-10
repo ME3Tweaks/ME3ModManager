@@ -57,8 +57,6 @@ public class PowerVariable {
 	private DetonationParameters dp;
 	private String sectionName;
 	private String baseSectionName;
-	private boolean balanced = false;
-	private boolean newCoalVar = false;
 
 	private ArrayList<VariableRow> variableRows = new ArrayList<VariableRow>();
 	private String humanVarName;
@@ -66,7 +64,26 @@ public class PowerVariable {
 	private String defaultPostfix;
 	private String inputHint;
 	private String baseTableName;
+	private boolean isNewVariable = false;
 
+	public PowerVariable(DLCPackage dlcPackage, DetonationParameters dp, String baseSectionName) {
+		this.sectionName = baseSectionName;
+		this.baseSectionName = baseSectionName;
+		this.baseTableName = GetTableName(baseSectionName);
+		this.tableName = GetTableName(sectionName);
+		if (dlcPackage == PowerVariable.DLCPackage.BASEGAME) {
+			this.type = 2;
+		} else {
+			this.type = 3;
+		}
+		this.dataType = DataType.DETONATIONPARAMETERS;
+		this.dlcPackage = dlcPackage;
+		this.dp = dp;
+		this.varName = "detonationparameters";
+		this.sqlVarName = "detonationparameters";
+		this.isNewVariable  = true;
+	}
+	
 	/**
 	 * Constructs a object representing the variable
 	 * 
@@ -95,10 +112,6 @@ public class PowerVariable {
 
 		if (isMPOnly) {
 			sqlVarName += "_mp";
-		}
-
-		if (dlcPackage == null) {
-			balanced = true;
 		}
 
 		String data = element.getTextContent();
@@ -477,6 +490,9 @@ public class PowerVariable {
 			}
 			sb.append("),");
 			sb.append(type);
+			if (isNewVariable) {
+				sb.append(", \"addition\"");
+			}
 			sb.append("));\n");
 			return sb.toString();
 		}
@@ -819,7 +835,72 @@ public class PowerVariable {
 	 * @return
 	 */
 	public String convertToForkStage1() {
-		return ":" + sqlVarName;
+		StringBuilder sb = new StringBuilder();
+		if (dp != null) {
+			sb.append(":");
+			sb.append(sqlVarName);
+			sb.append("_blockedbyobjects, ");
+			sb.append(":");
+			sb.append(sqlVarName);
+			sb.append("_distancesorted, ");
+			sb.append(":");
+			sb.append(sqlVarName);
+			sb.append("_impactdeadpawns, ");
+			sb.append(":");
+			sb.append(sqlVarName);
+			sb.append("_impactfriends, ");
+			sb.append(":");
+			sb.append(sqlVarName);
+			sb.append("_impactplaceables, ");
+			if (dp.coneAngle >= 0) {
+				sb.append(":");
+				sb.append(sqlVarName);
+				sb.append("_coneangle, ");
+			}
+			return sb.toString();
+		}
+		if (bru != null) {
+			sb.append(":");
+			sb.append(sqlVarName);
+			sb.append(", ");
+			if (bru.formula != null) {
+				sb.append(":");
+				sb.append(sqlVarName);
+				sb.append("_formula");
+				sb.append(", ");
+			}
+			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
+			    int rank = entry.getKey();
+			    //double upgrade = entry.getValue();
+			    sb.append(":");
+				sb.append(sqlVarName);
+				sb.append("_rankbonus_");
+				sb.append(rank);
+				sb.append(", ");
+			}
+			return sb.toString();
+		}
+		try {
+			int ints = Integer.parseInt(value);
+			sb.append(":");
+			sb.append(sqlVarName);
+			sb.append(", ");
+			return sb.toString();
+		} catch (NumberFormatException e) {
+			
+		}
+		
+		try {
+			double dubs = Double.parseDouble(value);
+			sb.append(":");
+			sb.append(sqlVarName);
+			sb.append(", ");
+			return sb.toString();
+		} catch (NumberFormatException e) {
+			
+		}
+		System.err.println("not generating fork code for value: "+sqlVarName);
+		return sb.toString();
 	}
 
 	/**

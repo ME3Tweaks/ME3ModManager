@@ -1,10 +1,3 @@
-    <Section name="sfxgamempcontent.sfxpowercustomactionmp_pull">
-      <Property name="damage" type="0">(BaseValue=100.f)</Property>
-      <Property name="effectduration" type="0">(BaseValue=4.0f,RankBonuses[2]=0.5f)</Property>
-      <Property name="evolve_combobonus" type="0">0.75f</Property>
-      <Property name="evolve_dotdamagepersec" type="0">(BaseValue=75.f)</Property>
-      <Property name="evolve_durationbonus" type="0">1.f</Property>
-      <Property name="evolve_extradamage" type="0">0.3f</Property>
-      <Property name="evolve_radiusbonus" type="0">250.f</Property>
-      <Property name="evolve_rechargebonus" type="0">1.5f</Property>
+    <Section name="sfxgamempcontent.sfxpowercustomactionmp_carnage">
+      <Property name="damage" type="0">(BaseValue=350.0f,RankBonuses[2]=0.2f)</Property>
     </Section>
