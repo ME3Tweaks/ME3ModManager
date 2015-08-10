@@ -61,7 +61,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 	JTextField inputHumanName;
 	JComboBox<PowerVariable.DLCPackage> package1, package2, package3, package4;
 	JCheckBox isMP2, isMP3, isMP4;
-	JButton load, generate;
+	JButton load, generate, addDetonationParams;
 	DefaultComboBoxModel<DLCPackage> packageModel1 = new DefaultComboBoxModel<DLCPackage>(PowerVariable.DLCPackage.values());
 	DefaultComboBoxModel<DLCPackage> packageModel2 = new DefaultComboBoxModel<DLCPackage>(PowerVariable.DLCPackage.values());
 	DefaultComboBoxModel<DLCPackage> packageModel3 = new DefaultComboBoxModel<DLCPackage>(PowerVariable.DLCPackage.values());
@@ -279,8 +279,12 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		containersPanel.setLayout(new BoxLayout(containersPanel, BoxLayout.PAGE_AXIS));
 		containersPanel.setBorder(new TitledBorder(new EtchedBorder(), "Variable Containers"));
 		addContainer = new JButton("Add a new container");
+		addDetonationParams = new JButton("Add detonation parameters");
+		addDetonationParams.addActionListener(this);
+		addDetonationParams.setEnabled(false);
 		addContainer.addActionListener(this);
 		containersPanel.add(addContainer);
+		containersPanel.add(addDetonationParams);
 
 		// MISC
 		JPanel miscPanel = new JPanel();
@@ -351,7 +355,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			isMP2.setSelected(true);
 			isMP3.setSelected(true);
 			package3.setSelectedItem(PowerVariable.DLCPackage.PATCH2);
-			//inputBalance.setText(inBal);
+			inputBalance.setText(inBal);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -382,6 +386,14 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			addNewContainer();
 		} else if (e.getSource() == finalizeButton) {
 			finalizeChanges();
+		} else if (e.getSource() == addDetonationParams) {
+			PowerVariable pv = getAddonDetonationParameters();
+			pv.configureRows();
+			loadedVariables.add(pv);
+			for (VariableRow row : pv.getVariableRows()) {
+				rowsPanel.add(row);
+			}
+			addDetonationParams.setEnabled(false);
 		}
 	}
 
@@ -441,11 +453,13 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			inputs.add(input4);
 		}
 		if (inputBalance.getText() != null && !inputBalance.getText().equals("")) {
+			System.out.println("Balance changes are present");
 			inputs.add(inputBalance);
 		}
 		// input 1->2->3->4->balance.
 		try {
 			for (JTextArea input : inputs) {
+				System.out.println("Processing inputs");
 				// get DLC Package this input belongs to
 				DLCPackage dlcPackage;
 				boolean isMPOnly = false;
@@ -462,7 +476,9 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 					isMPOnly = isMP3.isSelected();
 				} else {
 					// balance
+					System.out.println("Processing balance");
 					dlcPackage = null;
+					isMPOnly = true; //assumptions...
 				}
 
 				String input_text = getInput(input);
@@ -540,22 +556,35 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 							}
 						} else {
 							balancedPowers.add(var);
+							loadedMPVariables.remove(var);
+							loadedVariables.remove(var);
 						}
 					}
 				}
 			} // end xml loading
 
+			boolean canAddDetonationParams = true;
 			for (PowerVariable var : loadedVariables) {
 				var.configureRows();
+				if (var.getDataType() == PowerVariable.DataType.DETONATIONPARAMETERS){
+					canAddDetonationParams = false;
+				}
 				for (VariableRow row : var.getVariableRows()) {
 					rowsPanel.add(row);
 				}
 			}
 			for (PowerVariable var : loadedMPVariables) {
 				var.configureRows();
+				if (var.getDataType() == PowerVariable.DataType.DETONATIONPARAMETERS){
+					canAddDetonationParams = false;
+				}
 				for (VariableRow row : var.getVariableRows()) {
 					rowsPanel.add(row);
 				}
+			}
+			
+			if (canAddDetonationParams) {
+				addDetonationParams.setEnabled(true);
 			}
 
 			// editor.setEnabledAt(1, true); //vars
@@ -592,18 +621,11 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		return tableName.replaceAll("_", "");
 	}
 
-	private JPanel createRow(PowerVariable var) {
-		JPanel panel = new JPanel();
-		// JLabel varLabel = new JLabel(power.)
-		return panel;
-	}
-
 	/**
 	 * ITS A BIG ONE
 	 */
 	private void finalizeChanges() {
 		generateHTML();
-
 		generateSQLTable();
 		generateSQLInsert();
 		generateFork();
@@ -679,7 +701,6 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			String containerBlock = ContainerRow.CONTAINER_TEMPLATE;
 			containerBlock = containerBlock.replaceAll("CONTAINERNAME", cr.getContainerTitle().getText());
 			containerBlock = containerBlock.replaceAll("CONTAINERDESCRIPTION", cr.getContainerText().getText());
-			containerBlock = containerBlock.replaceAll("BALANCECHANGES_PLACEHOLDER", balanceList.toString());
 			containerBlock = containerBlock.replaceAll("INPUTS_PLACEHOLDER", innerText.toString());
 			containerHTMLs.add(containerBlock);
 		}
@@ -695,6 +716,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			pageTemplate = pageTemplate.replaceAll("VARNAME", getTableName(basePath));
 			pageTemplate = pageTemplate.replaceAll("HUMANNAME", inputHumanName.getText());
 			pageTemplate = pageTemplate.replaceAll("PAGEDESCRIPTION", inputDescription.getText());
+			pageTemplate = pageTemplate.replaceAll("BALANCECHANGES_PLACEHOLDER", balanceList.toString());
 			pageTemplate = pageTemplate.replaceAll("CONTAINERS_PLACEHOLDER", Matcher.quoteReplacement(sb.toString()));
 			//page built
 			FileUtils.writeStringToFile(new File("PCA-Generator/" + getTableName(basePath) + ".php"), pageTemplate);
@@ -793,11 +815,9 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		// build values list
 		for (PowerVariable pv : loadedVariables) {
 			sb.append(pv.convertToForkStage1());
-			sb.append(",");
 		}
 		for (PowerVariable pv : loadedMPVariables) {
 			sb.append(pv.convertToForkStage1());
-			sb.append(",");
 		}
 
 		sb.append("false, :modified_genesis)\");\n");
@@ -1087,5 +1107,20 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			}
 		}
 		return BOTH_SPMP_VAR;
+	}
+	
+	protected PowerVariable getAddonDetonationParameters(){
+		DLCPackage dlcPackage = (DLCPackage) package1.getSelectedItem();
+		
+		DetonationParameters dp = new DetonationParameters();
+		dp.blockedByObjects = true;
+		dp.distancedSorted = true;
+		dp.impactDeadPawns = false;
+		dp.impactFriends = false;
+		dp.impactPlaceables = true;
+		PowerVariable pv = new PowerVariable(dlcPackage, dp, basePath);
+		
+		return pv;
+		
 	}
 }
