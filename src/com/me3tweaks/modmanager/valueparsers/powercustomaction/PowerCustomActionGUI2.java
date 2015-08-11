@@ -437,6 +437,8 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 		loadedMPVariables = new ArrayList<PowerVariable>();
 		loadedContainers = new ArrayList<ContainerRow>();
 		balancedPowers = new ArrayList<PowerVariable>();
+		mpPath = null;
+		basePath = null;
 
 		rowsPanel.removeAll();
 		ArrayList<JTextArea> inputs = new ArrayList<JTextArea>();
