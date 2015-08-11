@@ -121,11 +121,13 @@ public class PowerVariable {
 			value = data;
 			VariableRow r = new VariableRow();
 			variableRows.add(r);
+			return;
 		} else if (DetonationParameters.isDetonationParameters(data)) {
 			// detonation parameters
 			dataType = DataType.DETONATIONPARAMETERS;
 			dp = new DetonationParameters(tableName, data);
 			// don't configure
+			return;
 		} else if (BaseRankUpgrade.isRankBonusUpgrade(data)) {
 			// BRU
 			dataType = DataType.BASERANKUPGRADE;
@@ -141,6 +143,7 @@ public class PowerVariable {
 				// brur.configure(this, rank);
 				variableRows.add(brur);
 			}
+			return;
 		} else {
 			try {
 				Integer.parseInt(data);
@@ -148,15 +151,18 @@ public class PowerVariable {
 				value = data;
 				VariableRow r = new VariableRow();
 				variableRows.add(r);
+				return;
 			} catch (NumberFormatException e) {
 
 			}
+			
 			try {
 				Double.parseDouble(data);
 				dataType = DataType.FLOAT;
 				value = data;
 				VariableRow r = new VariableRow();
 				variableRows.add(r);
+				return;
 			} catch (NumberFormatException e) {
 
 			}
@@ -174,6 +180,7 @@ public class PowerVariable {
 				case FLOAT:
 				case INTEGER:
 					r.configure(this);
+					break;
 				case DETONATIONPARAMETERS:
 					// does not need configuring
 					break;
