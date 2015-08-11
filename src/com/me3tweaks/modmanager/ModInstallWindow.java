@@ -41,7 +41,7 @@ import com.me3tweaks.modmanager.objects.ModType;
  */
 public class ModInstallWindow extends JDialog {
 	JLabel infoLabel;
-	String BioGameDir;
+	String bioGameDir;
 	final int levelCount = 7;
 	JTextArea consoleArea;
 	String consoleQueue[];
@@ -50,10 +50,10 @@ public class ModInstallWindow extends JDialog {
 
 	ModManagerWindow callingWindow;
 
-	public ModInstallWindow(ModManagerWindow callingWindow, ModJob[] jobs, String BioGameDir, Mod mod) {
+	public ModInstallWindow(ModManagerWindow callingWindow, ModJob[] jobs, String bioGameDir, Mod mod) {
 		// callingWindow.setEnabled(false);
 		this.callingWindow = callingWindow;
-		this.BioGameDir = BioGameDir;
+		this.bioGameDir = bioGameDir;
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("Applying Mod");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -112,7 +112,14 @@ public class ModInstallWindow extends JDialog {
 		@Override
 		public Boolean doInBackground() {
 			ModManager.debugLogger.writeMessage("Starting the background thread for PatchWindow");
-
+			ModManager.debugLogger.writeMessage("Checking for DLC Bypass");
+			if (!ModManager.hasKnownDLCBypass(bioGameDir)){
+				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing LauncherWV.exe...");
+				if (!ModManager.installLauncherWV(bioGameDir)){
+					ModManager.debugLogger.writeError("LauncherWV failed to install");
+				}
+			}
+			
 			for (ModJob job : jobs) {
 				ModManager.debugLogger.writeMessage("Starting mod job");
 				boolean result = false;
@@ -142,7 +149,7 @@ public class ModInstallWindow extends JDialog {
 
 		private boolean processBasegameJob(ModJob job) {
 			publish("Processing basegame files...");
-			File bgdir = new File(ModManager.appendSlash(BioGameDir));
+			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
 			// Make backup folder if it doesn't exist
 			String backupfolderpath = me3dir.toString() + "cmmbackup\\";
@@ -169,7 +176,7 @@ public class ModInstallWindow extends JDialog {
 					// backup the file
 					if (bghDB == null) {
 						publish(ModType.BASEGAME + ": Loading repair database");
-						bghDB = new BasegameHashDB(null, new File(BioGameDir).getParent(), false);
+						bghDB = new BasegameHashDB(null, new File(bioGameDir).getParent(), false);
 					}
 					Path backuppath = Paths.get(backupfile.toString());
 					backupfile.getParentFile().mkdirs();
@@ -288,7 +295,7 @@ public class ModInstallWindow extends JDialog {
 			if (job.TESTPATCH) {
 				sfarName = "Patch_001.sfar";
 			}
-			commandBuilder.add(ModManager.appendSlash(BioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
+			commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles();
 			ModManager.debugLogger.writeMessage("Number of files to replace: " + filesToReplace.length);
@@ -328,7 +335,7 @@ public class ModInstallWindow extends JDialog {
 		}
 
 		private boolean processCustomDLCJob(ModJob job) {
-			File dlcdir = new File(ModManager.appendSlash(BioGameDir) + "DLC" + File.separator);
+			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
 			
 			for (int i = 0; i < job.getFilesToReplace().length; i++) {
 				String fileDestination = dlcdir + job.getFilesToReplace()[i];
@@ -355,10 +362,11 @@ public class ModInstallWindow extends JDialog {
 			// System.out.println("Restoring next DLC");
 			for (String update : updates) {
 				try {
-					ModManager.debugLogger.writeMessage(update);
+					
 					Integer.parseInt(update); // see if we got a number. if we
 												// did that means we should
 												// update the bar
+					ModManager.debugLogger.writeMessage("Job finished: "+update);
 					if (numjobs != 0) {
 						progressBar.setValue((int) (((float) completed / numjobs) * 100));
 					}
@@ -376,7 +384,7 @@ public class ModInstallWindow extends JDialog {
 				// failed something
 				StringBuilder sb = new StringBuilder();
 				sb.append("Failed to process mod installation.\nSome parts of the install may have succeeded.\nTurn on debugging via Help>About and check the log file.");
-				callingWindow.labelStatus.setText(" Failed to install at least 1 part of mod");
+				callingWindow.labelStatus.setText("Failed to install at least 1 part of mod");
 				JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
 				ModManager.debugLogger.writeMessage(mod.getModName() + " failed to fully install.");
 			} else {

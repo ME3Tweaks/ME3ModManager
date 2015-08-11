@@ -13,6 +13,10 @@ public class DetonationParameters {
 	double coneAngle = -1;
 	int hitDirectionOffset = -1;
 	
+	public DetonationParameters(){
+		
+	}
+	
 	/**
 	 * Creates a new Detonation Parameters object. If this throws an exception it is not a valid detonationobjects value.
 	 * @param valueToParse

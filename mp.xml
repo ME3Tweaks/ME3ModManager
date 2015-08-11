@@ -1,0 +1,4 @@
+    <Section name="sfxgamempcontent.sfxpowercustomactionmp_carnage">
+      <Property name="impactradius" type="2">(BaseValue=100.0f)</Property>
+      <Property name="maximumimpacttargets" type="2">(BaseValue=2)</Property>
+    </Section>

@@ -69,6 +69,7 @@ import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI;
+import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI2;
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
@@ -88,9 +89,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupBasegame;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
-	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
-			restoreRevertCoal;
-	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlConsumableParser, sqlGearParser;
+	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC,
+			restoreRevertSPBaseDLC, restoreRevertCoal;
+	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser, sqlGearParser;
 	JMenuItem helpPost, helpForums, helpAbout;
 	JList<Mod> modList;
 	JProgressBar progressBar;
@@ -707,6 +708,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		sqlDifficultyParser = new JMenuItem("Biodifficulty Parser");
 		sqlAIWeaponParser = new JMenuItem("BioAI Parser");
 		sqlPowerCustomActionParser = new JMenuItem("CustomAction Parser");
+		sqlPowerCustomActionParser2 = new JMenuItem("CustomAction Editor");
 		sqlConsumableParser = new JMenuItem("Consumable Parser");
 		sqlGearParser = new JMenuItem("Gear Parser");
 
@@ -714,6 +716,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		sqlDifficultyParser.addActionListener(this);
 		sqlAIWeaponParser.addActionListener(this);
 		sqlPowerCustomActionParser.addActionListener(this);
+		sqlPowerCustomActionParser2.addActionListener(this);
 		sqlConsumableParser.addActionListener(this);
 		sqlGearParser.addActionListener(this);
 
@@ -721,6 +724,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		sqlMenu.add(sqlDifficultyParser);
 		sqlMenu.add(sqlAIWeaponParser);
 		sqlMenu.add(sqlPowerCustomActionParser);
+		sqlMenu.add(sqlPowerCustomActionParser2);
 		sqlMenu.add(sqlConsumableParser);
 		sqlMenu.add(sqlGearParser);
 		if (ModManager.IS_DEBUG) {
@@ -1016,6 +1020,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (e.getSource() == sqlPowerCustomActionParser) {
 			new PowerCustomActionGUI();
+		} else if (e.getSource() == sqlPowerCustomActionParser2) {
+			new PowerCustomActionGUI2();
 		} else if (e.getSource() == sqlConsumableParser) {
 			new ConsumableGUI();
 		} else if (e.getSource() == sqlGearParser) {
