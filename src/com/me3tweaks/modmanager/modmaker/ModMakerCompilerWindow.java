@@ -2,7 +2,6 @@ package com.me3tweaks.modmanager.modmaker;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -59,8 +58,10 @@ import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
 import com.me3tweaks.modmanager.valueparsers.enemytype.EnemyType;
+import com.me3tweaks.modmanager.valueparsers.id.ID;
 import com.me3tweaks.modmanager.valueparsers.possessionwaves.Difficulty;
 import com.me3tweaks.modmanager.valueparsers.sharedassignment.SharedDifficulty;
+import com.me3tweaks.modmanager.valueparsers.waveclass.WaveClass;
 import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 
 @SuppressWarnings("serial")
@@ -251,7 +252,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 
 			//Check the name
-			File moddir = new File(ModManager.getModsDir()+modName);
+			File moddir = new File(ModManager.getModsDir() + modName);
 			if (moddir.isDirectory()) {
 				try {
 					ModManager.debugLogger.writeMessage("Removing existing mod directory, will recreate when complete");
@@ -1068,11 +1069,17 @@ public class ModMakerCompilerWindow extends JDialog {
 														} else {
 															//CHECK FOR COLLECTOR PLAT WAVE 5.
 															String cplatwave5 = "(Difficulty=DO_Level3,Enemies=( (EnemyType=\"WAVE_COL_Scion\"), (EnemyType=\"WAVE_COL_Praetorian\", MinCount=1, MaxCount=1), (EnemyType=\"WAVE_CER_Phoenix\", MinCount=2, MaxCount=2), (EnemyType=\"WAVE_CER_Phantom\", MinCount=3, MaxCount=3) ))";
-															/*if (path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies")
-																	&& importing.difficulty.equals("DO_Level3")) {
-																System.out.println("BREAK");
-
-															}*/
+															/*
+															 * if (path.equals(
+															 * "sfxwave_horde_collector5 sfxwave_horde_collector&enemies"
+															 * ) && importing.
+															 * difficulty.equals
+															 * ("DO_Level3")) {
+															 * System.out.
+															 * println("BREAK");
+															 * 
+															 * }
+															 */
 															//System.out.println(itemToModify.getTextContent());
 															if (itemToModify.getTextContent().equals(cplatwave5)
 																	&& path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies")
@@ -1082,7 +1089,7 @@ public class ModMakerCompilerWindow extends JDialog {
 															}
 														}
 													}
-													break;
+														break;
 													case "possessionwaves": {
 														//Match on Difficulty/DoLevel
 														//Match on Difficulty
@@ -1105,11 +1112,27 @@ public class ModMakerCompilerWindow extends JDialog {
 														}
 													}
 														break;
-													case "enemytype": 
-													case "wavecost":{ //wavecost is old name for enemytype (modmaker 1.6)
+													case "enemytype":
+													case "wavecost": { //wavecost is old name for enemytype (modmaker 1.6)
 														EnemyType existing = new EnemyType(itemToModify.getTextContent());
 														EnemyType importing = new EnemyType(newValue);
-														if (existing.matchIdentifier(importing)){
+														if (existing.matchIdentifiers(importing)) {
+															match = true;
+														}
+													}
+														break;
+													case "waveclass": {
+														WaveClass existing = new WaveClass(itemToModify.getTextContent());
+														WaveClass importing = new WaveClass(newValue);
+														if (existing.matchIdentifiers(importing)) {
+															match = true;
+														}
+													}
+														break;
+													case "id": {
+														ID existing = new ID(itemToModify.getTextContent());
+														ID importing = new ID(newValue);
+														if (existing.matchIdentifiers(importing)) {
 															match = true;
 														}
 													}
@@ -1582,7 +1605,8 @@ public class ModMakerCompilerWindow extends JDialog {
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles", replacesb.toString());
 				} else {
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "newfiles", reqcoal + ";PCConsoleTOC.bin");
-					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal) + ";" + ME3TweaksUtils.coalFileNameToDLCTOCDir(reqcoal));
+					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles",
+							coalFileNameToDLCDir(reqcoal) + ";" + ME3TweaksUtils.coalFileNameToDLCTOCDir(reqcoal));
 				}
 
 				File compCoalSourceDir = new File(ModManager.getCompilingDir() + "coalesceds\\" + fileNameWithOutExt);
