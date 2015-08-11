@@ -44,7 +44,7 @@ public class AutoTocWindow extends JDialog {
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		performTOC();

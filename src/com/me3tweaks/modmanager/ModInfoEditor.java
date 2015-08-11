@@ -45,7 +45,7 @@ public class ModInfoEditor extends JDialog implements ActionListener {
 		this.setPreferredSize(new Dimension(380, 365));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		
 		JPanel contentPanel = new JPanel(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5,5,5,5));

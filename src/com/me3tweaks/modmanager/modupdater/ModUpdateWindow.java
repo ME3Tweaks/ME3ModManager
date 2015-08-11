@@ -109,7 +109,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		this.setPreferredSize(new Dimension(300, 90));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		this.pack();
 
 		JPanel panel = new JPanel(new BorderLayout());

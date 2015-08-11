@@ -57,7 +57,7 @@ public class PatchLibaryWindow extends JDialog implements ListSelectionListener,
 		this.setTitle("Mix-In Library");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(600, 480));
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 
 
 		JPanel contentPanel = new JPanel(new GridBagLayout());

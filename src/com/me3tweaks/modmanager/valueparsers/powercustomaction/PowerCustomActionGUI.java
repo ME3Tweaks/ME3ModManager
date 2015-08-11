@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -25,11 +27,14 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+
+import com.me3tweaks.modmanager.ModManager;
 
 @SuppressWarnings("serial")
 public class PowerCustomActionGUI extends JFrame implements ActionListener {
@@ -2025,6 +2030,18 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 						String wrap = wrapper.replaceAll("INPUTS_PLACEHOLDER", sb.toString());
 						for (String det : detonationBlocks) {
 							wrap = wrap+det;
+						}
+						File template = new File(ModManager.getToolsDir()+"powerstemplate.php");
+						if (template.exists()){
+							String powerstemplate = FileUtils.readFileToString(template);
+							String tableName = getTableName(sectionElement.getAttribute("name"));
+							String loadName = getLoadName(tableName);
+							powerstemplate = powerstemplate.replaceAll("LOADNAME", Character.toUpperCase(loadName.charAt(0)) + loadName.toLowerCase().substring(1));
+							powerstemplate = powerstemplate.replaceAll("VARNAME", loadName);
+							//String safewrap = StringEscapeUtils.escapeJava(wrap);
+							//System.out.println(safewrap);
+							powerstemplate = powerstemplate.replace("AUTOGEN", wrap);
+							wrap = powerstemplate;
 						}
 						FileUtils.writeStringToFile(new File("htmlphp/"+tableSuffix+".php"), wrap);
 						inputs = new ArrayList<String>();

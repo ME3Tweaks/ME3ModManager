@@ -123,7 +123,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		    }
 		});
 		setTitle("Basegame Repair Database");
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		pack();
 		this.setLocationRelativeTo(callingWindow);
 	}

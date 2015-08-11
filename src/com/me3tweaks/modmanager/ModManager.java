@@ -1,5 +1,7 @@
 package com.me3tweaks.modmanager;
 
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
@@ -47,7 +49,7 @@ public class ModManager {
 
 	public static final String BUILD_DATE = "7/26/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.6; //max modmaker version
@@ -55,6 +57,7 @@ public class ModManager {
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static long LAST_AUTOUPDATE_CHECK;
 	public static int MIN_REQUIRED_ME3EXPLORER_REV = 706; //my custom build version
+	public static ArrayList<Image> ICONS;
 
 	public static void main(String[] args) {
 		System.out.println("Starting mod manager");
@@ -66,6 +69,11 @@ public class ModManager {
 		} catch (Exception e) {
 			System.err.println("Couldn't set the UI interface style");
 		}
+		
+		ICONS = new ArrayList<Image>();
+		ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon32.png")));
+		ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
+
 		ToolTipManager.sharedInstance().setDismissDelay(15000);
 
 		//Set and get debugging mode from wini
