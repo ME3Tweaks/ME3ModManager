@@ -404,7 +404,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.setTitle("ModMaker Compiler");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(420, 200));
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 
 		JPanel modMakerPanel = new JPanel();
 		modMakerPanel.setLayout(new BoxLayout(modMakerPanel, BoxLayout.PAGE_AXIS));

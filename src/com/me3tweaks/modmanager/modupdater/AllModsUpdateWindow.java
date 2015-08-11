@@ -66,7 +66,7 @@ public class AllModsUpdateWindow extends JDialog {
 		this.setPreferredSize(new Dimension(320, 70));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 

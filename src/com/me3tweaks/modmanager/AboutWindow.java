@@ -37,7 +37,7 @@ public class AboutWindow extends JDialog {
 		this.setPreferredSize(new Dimension(380, 365));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		
 		
 		JPanel aboutPanel = new JPanel(new BorderLayout());

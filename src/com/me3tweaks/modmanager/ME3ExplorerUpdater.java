@@ -49,7 +49,7 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 		DownloadTask task = new DownloadTask(ModManager.getTempDir());

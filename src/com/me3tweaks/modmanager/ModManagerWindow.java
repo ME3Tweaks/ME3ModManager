@@ -159,7 +159,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void initializeWindow() {
 		this.setTitle("Mass Effect 3 Coalesced Mod Manager");
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		setupWindow(this);
 
 		Dimension minSize = new Dimension(560, 520);

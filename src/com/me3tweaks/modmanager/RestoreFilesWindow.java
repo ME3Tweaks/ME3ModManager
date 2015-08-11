@@ -56,7 +56,7 @@ public class RestoreFilesWindow extends JDialog {
 		this.setResizable(false);
 		consoleQueue = new String[levelCount];
 		setupWindow();
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 		addToQueue("Restoring original game files if necessary.");

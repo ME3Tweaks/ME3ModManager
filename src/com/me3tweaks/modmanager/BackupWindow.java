@@ -74,7 +74,7 @@ public class BackupWindow extends JDialog {
 
 		setupWindow();
 
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 		//Set the backup flag to true
@@ -120,7 +120,7 @@ public class BackupWindow extends JDialog {
 
 				setupWindowAutomated(dlcName);
 
-				this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+				this.setIconImages(ModManager.ICONS);
 				this.pack();
 				this.setLocationRelativeTo(callingWindow);
 				//Set the backup flag to true

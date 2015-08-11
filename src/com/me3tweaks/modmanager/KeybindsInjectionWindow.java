@@ -55,7 +55,7 @@ public class KeybindsInjectionWindow extends JDialog {
 		this.setPreferredSize(new Dimension(380, 90));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		
 		JPanel bindingsPanel = new JPanel();
 		bindingsPanel.setLayout(new BoxLayout(bindingsPanel, BoxLayout.PAGE_AXIS));

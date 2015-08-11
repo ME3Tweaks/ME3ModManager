@@ -62,7 +62,7 @@ public class ModInstallWindow extends JDialog {
 
 		setupWindow();
 
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 		new InjectionCommander(jobs, mod).execute();
