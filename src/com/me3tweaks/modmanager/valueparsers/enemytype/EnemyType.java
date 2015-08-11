@@ -23,7 +23,7 @@ public class EnemyType {
 		return enemyname;
 	}
 	
-	public boolean matchIdentifier(EnemyType other) {
+	public boolean matchIdentifiers(EnemyType other) {
 		return enemyname.equals(other.enemyname);
 	}
 }
