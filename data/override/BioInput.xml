@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- mike was here-->
+﻿<?xml version="1.0" encoding="utf-8"?>
 <CoalesceAsset id="BioInput" name="bioinput.ini" source="..\..\biogame\config\bioinput.ini">
   <Sections>
     <Section name="engine.console">
@@ -74,7 +73,13 @@
         <Value type="2">(Command="CaptureMode",Desc="Toggles display state of all on-screen warnings/messages")</Value>
       </Property>
       <Property name="maxscrollbacksize" type="2">1024</Property>
-      <Property name="typekey" type="2">Tab</Property>
+      <Property name="typekey" type="2">Nine</Property>
+    </Section>
+    <Section name="engine.debugcameracontroller">
+      <Property name="bshowselectedinfo" type="2">true</Property>
+      <Property name="primarykey" type="2">LeftMouseButton</Property>
+      <Property name="secondarykey" type="2">RightMouseButton</Property>
+      <Property name="unselectkey" type="2">Escape</Property>
     </Section>
     <Section name="engine.debugcamerainput">
       <Property name="bindings">
@@ -309,6 +314,37 @@
       </Property>
       <Property name="radarmapdisplaytime" type="2">1.0</Property>
     </Section>
+    <Section name="sfxgame.sfxgamemodecinematic">
+      <Property name="bindings">
+        <Value type="2">( Name="SpaceBar", Command="Shared_CineSkip" )</Value>
+        <Value type="2">( Name="Escape", Command="Shared_CineSkip" )</Value>
+      </Property>
+    </Section>
+    <Section name="sfxgame.sfxgamemodecommand">
+      <Property name="bindings">
+        <Value type="2">( Name="MouseX", Command="PC_LookX" )</Value>
+        <Value type="2">( Name="MouseY", Command="PC_LookY" )</Value>
+        <Value type="2">( Name="Escape", Command="Shared_Menu" )</Value>
+        <Value type="2">( Name="RightMouseButton", Command="PC_CommandToggleCam" )</Value>
+        <Value type="2">( Name="LeftShift", Command="PC_ExitCommandMenu" )</Value>
+      </Property>
+    </Section>
+    <Section name="sfxgame.sfxgamemodecommand_00000409">
+      <Property name="localizedbindings">
+        <Value type="2">( Name="Q", Command="Shared_SquadMove1" )</Value>
+        <Value type="2">( Name="E", Command="Shared_SquadMove2" )</Value>
+        <Value type="2">( Name="C", Command="Shared_SquadFollow" )</Value>
+        <Value type="2">( Name="Z", Command="Shared_SquadAttack" )</Value>
+      </Property>
+    </Section>
+    <Section name="sfxgame.sfxgamemodecommand_0000040c">
+      <Property name="localizedbindings">
+        <Value type="2">( Name="A", Command="Shared_SquadMove1" )</Value>
+        <Value type="2">( Name="E", Command="Shared_SquadMove2" )</Value>
+        <Value type="2">( Name="C", Command="Shared_SquadFollow" )</Value>
+        <Value type="2">( Name="W", Command="Shared_SquadAttack" )</Value>
+      </Property>
+    </Section>
     <Section name="sfxgame.sfxgamemodeconversation">
       <Property name="bindings">
         <Value type="2">( Name="LeftMouseButton",Command="Shared_ConvSelect | Shared_ConvIntRenegade")</Value>
@@ -335,7 +371,10 @@
         <Value type="2">( Name="Six", Command="PC_HotKey6" )</Value>
         <Value type="2">( Name="Seven", Command="PC_HotKey7" )</Value>
         <Value type="2">( Name="Eight", Command="PC_HotKey8" )</Value>
-        <Value type="2">( Name="F5", Command="Shared_QuickSave" )</Value>
+        <Value type="2">( Name="NumPadZero", Command="PlayersOnly" )</Value>
+        <Value type="2">( Name="NumPadOne", Command="ToggleFlyCam" )</Value>
+        <Value type="2">( Name="NumPadTwo", Command="ShowHUD" )</Value>
+        <Value type="2">( Name="NumPadThree", Command="Shot" )</Value>
         <Value type="2">( Name="F9", Command="PC_QuickLoad" )</Value>
         <Value type="2">( Name="LeftShift", Command="PC_EnterCommandMenu" )</Value>
         <Value type="2">( Name="MiddleMouseButton", Command="Shared_CoverTurn" )</Value>
@@ -442,6 +481,10 @@
         <Value type="2">( Name="D", Command="PC_StrafeRight" )</Value>
         <Value type="2">( Name="W", Command="PC_MoveForward" )</Value>
         <Value type="2">( Name="S", Command="PC_MoveBackward" )</Value>
+        <Value type="2">( Name="NumPadZero", Command="PlayersOnly" )</Value>
+        <Value type="2">( Name="NumPadOne", Command="ToggleFlyCam" )</Value>
+        <Value type="2">( Name="NumPadTwo", Command="ShowHUD" )</Value>
+        <Value type="2">( Name="NumPadThree", Command="Shot" )</Value>
       </Property>
     </Section>
     <Section name="sfxgame.sfxgamemodegalaxy">

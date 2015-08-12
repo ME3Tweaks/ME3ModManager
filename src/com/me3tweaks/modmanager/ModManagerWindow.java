@@ -400,6 +400,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	private boolean checkForKeybindsOverride() {
 		File bioinputxml = new File(ModManager.getOverrideDir() + "bioinput.xml");
+		System.out.println(bioinputxml.getAbsolutePath());
 		return bioinputxml.exists();
 	}
 
@@ -559,10 +560,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsInstallCustomKeybinds = new JMenuItem("Install custom keybinds into this mod");
 		modutilsInstallCustomKeybinds.addActionListener(this);
 		//check if BioInput.xml exists.
-		if (checkForKeybindsOverride()) {
+		if (!checkForKeybindsOverride()) {
+			ModManager.debugLogger.writeMessage("No keybinds file in the override directory (bioinput.xml)");
 			modutilsInstallCustomKeybinds.setEnabled(false);
 			modutilsInstallCustomKeybinds.setToolTipText("<html>To enable installing custom keybinds put a<br>BioInput.xml file in the data/override/ directory.</html>");
 		} else {
+			ModManager.debugLogger.writeMessage("Found keybinds file in the override directory (bioinput.xml)");
 			modutilsInstallCustomKeybinds.setToolTipText("<html>Replace BioInput.xml in the BASEGAME Coalesced file</html>");
 		}
 

@@ -17,11 +17,11 @@ public class PowerVariable {
 	}
 
 	public static enum DLCPackage {
-		BASEGAME("$basegameBioGameElements"), MP1("$mp1BioGameElements"), MP2("$mp12BioGameElements"), MP3("$mp3BioGameElements"), MP4(
-				"$mp4BioGameElements"), MP5("$mp5BioGameElements"), PATCH1("$patch1BioGameElements"), PATCH2("$patch2BioGameElements"), TESTPATCH(
-				"$testpatchBioGameElements"), HEN_PR("$fromashesBioGameElements"), END("$extendedcutBiogameElements"), EXP1(
-				"$leviathanBioGameElements"), EXP2("$omegaGameElements"), EXP3("$citadelBioGameElements"), EXP3B("$citadelbaseBioGameElements"), APP01(
-				"$appearanceBioGameElements"), GUN01("$firefightBioGameElements"), GUN02("$groundsideBioGameElements");
+		BASEGAME("$basegameBioGameElements"), MP1("$mp1BioGameElements"), MP2("$mp12BioGameElements"), MP3("$mp3BioGameElements"), MP4("$mp4BioGameElements"), MP5(
+				"$mp5BioGameElements"), PATCH1("$patch1BioGameElements"), PATCH2("$patch2BioGameElements"), TESTPATCH("$testpatchBioGameElements"), HEN_PR(
+						"$fromashesBioGameElements"), END("$extendedcutBiogameElements"), EXP1("$leviathanBioGameElements"), EXP2("$omegaGameElements"), EXP3(
+								"$citadelBioGameElements"), EXP3B("$citadelbaseBioGameElements"), APP01("$appearanceBioGameElements"), GUN01("$firefightBioGameElements"), GUN02(
+										"$groundsideBioGameElements");
 
 		private final String text;
 
@@ -81,9 +81,9 @@ public class PowerVariable {
 		this.dp = dp;
 		this.varName = "detonationparameters";
 		this.sqlVarName = "detonationparameters";
-		this.isNewVariable  = true;
+		this.isNewVariable = true;
 	}
-	
+
 	/**
 	 * Constructs a object representing the variable
 	 * 
@@ -155,7 +155,7 @@ public class PowerVariable {
 			} catch (NumberFormatException e) {
 
 			}
-			
+
 			try {
 				Double.parseDouble(data);
 				dataType = DataType.FLOAT;
@@ -439,7 +439,7 @@ public class PowerVariable {
 			sb.append(" ");
 			sb.append(vr.getDataTypeComboBox().getSelectedItem());
 			sb.append(" NOT NULL, \n");
-			
+
 		}
 		return sb.toString();
 	}
@@ -548,48 +548,50 @@ public class PowerVariable {
 			return sb.toString();
 		}
 
-		try {
-			Integer.parseInt(value);
-			StringBuilder sb = new StringBuilder();
-			sb.append("\t");
-			sb.append("array_push(");
-			sb.append(dlcPackage.getPHPVar());
-			sb.append(", $this->createProperty(\"");
-			sb.append(sectionName);
-			sb.append("\", \"");
-			sb.append(varName);
-			sb.append("\", $this->mod->powers->mod_powers_");
-			sb.append(baseTableName);
-			sb.append("_");
-			sb.append(sqlVarName);
-			sb.append(", ");
-			sb.append(type);
-			sb.append("));\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
+		if (value != null) {
+			try {
+				Integer.parseInt(value);
+				StringBuilder sb = new StringBuilder();
+				sb.append("\t");
+				sb.append("array_push(");
+				sb.append(dlcPackage.getPHPVar());
+				sb.append(", $this->createProperty(\"");
+				sb.append(sectionName);
+				sb.append("\", \"");
+				sb.append(varName);
+				sb.append("\", $this->mod->powers->mod_powers_");
+				sb.append(baseTableName);
+				sb.append("_");
+				sb.append(sqlVarName);
+				sb.append(", ");
+				sb.append(type);
+				sb.append("));\n");
+				return sb.toString();
+			} catch (NumberFormatException e) {
 
-		}
+			}
 
-		try {
-			Double.parseDouble(value);
-			StringBuilder sb = new StringBuilder();
-			sb.append("\t");
-			sb.append("array_push(");
-			sb.append(dlcPackage.getPHPVar());
-			sb.append(", $this->createProperty(\"");
-			sb.append(sectionName);
-			sb.append("\", \"");
-			sb.append(varName);
-			sb.append("\", $this->mod->powers->mod_powers_");
-			sb.append(baseTableName);
-			sb.append("_");
-			sb.append(sqlVarName);
-			sb.append(".\"f\", ");
-			sb.append(type);
-			sb.append("));\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
+			try {
+				Double.parseDouble(value);
+				StringBuilder sb = new StringBuilder();
+				sb.append("\t");
+				sb.append("array_push(");
+				sb.append(dlcPackage.getPHPVar());
+				sb.append(", $this->createProperty(\"");
+				sb.append(sectionName);
+				sb.append("\", \"");
+				sb.append(varName);
+				sb.append("\", $this->mod->powers->mod_powers_");
+				sb.append(baseTableName);
+				sb.append("_");
+				sb.append(sqlVarName);
+				sb.append(".\"f\", ");
+				sb.append(type);
+				sb.append("));\n");
+				return sb.toString();
+			} catch (NumberFormatException e) {
 
+			}
 		}
 		System.err.println("Not publishing property: " + varName);
 
@@ -739,13 +741,12 @@ public class PowerVariable {
 		 * ); sb.append(sqlVarName); sb.append("']);\n");
 		 * 
 		 * sb.append("\t\tif (is_null($shouldadd)){\n");
-		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName);
-		 * sb.append("'] = $_POST['"); sb.append(sqlVarName);
-		 * sb.append("'];\n");
+		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName); sb.append(
+		 * "'] = $_POST['"); sb.append(sqlVarName); sb.append("'];\n");
 		 * 
-		 * sb.append("\t\t} else {\n");
-		 * sb.append("\t\t\tarray_push($status, \""); sb.append(sqlVarName);
-		 * sb.append(" \".$shouldadd);\n"); sb.append("\t\t}\n\n");
+		 * sb.append("\t\t} else {\n"); sb.append("\t\t\tarray_push($status, \""
+		 * ); sb.append(sqlVarName); sb.append(" \".$shouldadd);\n");
+		 * sb.append("\t\t}\n\n");
 		 * 
 		 * for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 		 * int rank = entry.getKey(); // RANKBONUSES sb.append("\t\t//");
@@ -758,13 +759,12 @@ public class PowerVariable {
 		 * 
 		 * sb.append("\t\tif (is_null($shouldadd)){\n");
 		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName);
-		 * sb.append("_rankbonus_"); sb.append(rank);
-		 * sb.append("'] = $_POST['"); sb.append(sqlVarName);
-		 * sb.append("_rankbonus_"); sb.append(rank); sb.append("'];\n");
+		 * sb.append("_rankbonus_"); sb.append(rank); sb.append("'] = $_POST['"
+		 * ); sb.append(sqlVarName); sb.append("_rankbonus_"); sb.append(rank);
+		 * sb.append("'];\n");
 		 * 
-		 * sb.append("\t\t} else {\n");
-		 * sb.append("\t\t\tarray_push($status, \""); sb.append(sqlVarName);
-		 * sb.append("_rankbonus_"); sb.append(rank);
+		 * sb.append("\t\t} else {\n"); sb.append("\t\t\tarray_push($status, \""
+		 * ); sb.append(sqlVarName); sb.append("_rankbonus_"); sb.append(rank);
 		 * sb.append(" \".$shouldadd);\n"); sb.append("\t\t}\n\n"); } return
 		 * sb.toString(); } // ints, dubs try { Integer.parseInt(value);
 		 * StringBuilder sb = new StringBuilder(); sb.append("\t\t//");
@@ -780,10 +780,10 @@ public class PowerVariable {
 		 * sb.append("'] = $_POST['"); sb.append(sqlVarName);
 		 * sb.append("'];\n");
 		 * 
-		 * sb.append("\t\t} else {\n");
-		 * sb.append("\t\t\tarray_push($status, \""); sb.append(sqlVarName);
-		 * sb.append(" \".$shouldadd);\n"); sb.append("\t\t}\n\n"); return
-		 * sb.toString(); } catch (NumberFormatException e) {
+		 * sb.append("\t\t} else {\n"); sb.append("\t\t\tarray_push($status, \""
+		 * ); sb.append(sqlVarName); sb.append(" \".$shouldadd);\n");
+		 * sb.append("\t\t}\n\n"); return sb.toString(); } catch
+		 * (NumberFormatException e) {
 		 * 
 		 * }
 		 * 
@@ -796,14 +796,13 @@ public class PowerVariable {
 		 * ); sb.append(sqlVarName); sb.append("']);\n");
 		 * 
 		 * sb.append("\t\tif (is_null($shouldadd)){\n");
-		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName);
-		 * sb.append("'] = $_POST['"); sb.append(sqlVarName);
-		 * sb.append("'];\n");
+		 * sb.append("\t\t\t$updateinfo['"); sb.append(sqlVarName); sb.append(
+		 * "'] = $_POST['"); sb.append(sqlVarName); sb.append("'];\n");
 		 * 
-		 * sb.append("\t\t} else {\n");
-		 * sb.append("\t\t\tarray_push($status, \""); sb.append(sqlVarName);
-		 * sb.append(" \".$shouldadd);\n"); sb.append("\t\t}\n\n"); return
-		 * sb.toString(); } catch (NumberFormatException e) {
+		 * sb.append("\t\t} else {\n"); sb.append("\t\t\tarray_push($status, \""
+		 * ); sb.append(sqlVarName); sb.append(" \".$shouldadd);\n");
+		 * sb.append("\t\t}\n\n"); return sb.toString(); } catch
+		 * (NumberFormatException e) {
 		 * 
 		 * }
 		 */
@@ -877,9 +876,9 @@ public class PowerVariable {
 				sb.append(", ");
 			}
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
-			    int rank = entry.getKey();
-			    //double upgrade = entry.getValue();
-			    sb.append(":");
+				int rank = entry.getKey();
+				//double upgrade = entry.getValue();
+				sb.append(":");
 				sb.append(sqlVarName);
 				sb.append("_rankbonus_");
 				sb.append(rank);
@@ -887,26 +886,28 @@ public class PowerVariable {
 			}
 			return sb.toString();
 		}
-		try {
-			int ints = Integer.parseInt(value);
-			sb.append(":");
-			sb.append(sqlVarName);
-			sb.append(", ");
-			return sb.toString();
-		} catch (NumberFormatException e) {
-			
+		if (value != null) {
+			try {
+				int ints = Integer.parseInt(value);
+				sb.append(":");
+				sb.append(sqlVarName);
+				sb.append(", ");
+				return sb.toString();
+			} catch (NumberFormatException e) {
+
+			}
+
+			try {
+				double dubs = Double.parseDouble(value);
+				sb.append(":");
+				sb.append(sqlVarName);
+				sb.append(", ");
+				return sb.toString();
+			} catch (NumberFormatException e) {
+
+			}
 		}
-		
-		try {
-			double dubs = Double.parseDouble(value);
-			sb.append(":");
-			sb.append(sqlVarName);
-			sb.append(", ");
-			return sb.toString();
-		} catch (NumberFormatException e) {
-			
-		}
-		System.err.println("not generating fork code for value: "+sqlVarName);
+		System.err.println("not generating fork code for value: " + sqlVarName);
 		return sb.toString();
 	}
 
@@ -1014,34 +1015,36 @@ public class PowerVariable {
 			}
 			return sb.toString();
 		}
-		try {
-			int ints = Integer.parseInt(value);
-			sb.append("\t$stmt->bindValue(\":");
-			sb.append(sqlVarName);
-			sb.append("\", $");
-			sb.append(baseTableName);
-			sb.append("row['");
-			sb.append(sqlVarName);
-			sb.append("']);\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
 
+		if (value != null) {
+			try {
+				int ints = Integer.parseInt(value);
+				sb.append("\t$stmt->bindValue(\":");
+				sb.append(sqlVarName);
+				sb.append("\", $");
+				sb.append(baseTableName);
+				sb.append("row['");
+				sb.append(sqlVarName);
+				sb.append("']);\n");
+				return sb.toString();
+			} catch (NumberFormatException e) {
+
+			}
+
+			try {
+				double dubs = Double.parseDouble(value);
+				sb.append("\t$stmt->bindValue(\":");
+				sb.append(sqlVarName);
+				sb.append("\", $");
+				sb.append(baseTableName);
+				sb.append("row['");
+				sb.append(sqlVarName);
+				sb.append("']);\n");
+				return sb.toString();
+			} catch (NumberFormatException e) {
+
+			}
 		}
-
-		try {
-			double dubs = Double.parseDouble(value);
-			sb.append("\t$stmt->bindValue(\":");
-			sb.append(sqlVarName);
-			sb.append("\", $");
-			sb.append(baseTableName);
-			sb.append("row['");
-			sb.append(sqlVarName);
-			sb.append("']);\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
-
-		}
-
 		System.err.println("Failed to parse value for forking: " + sqlVarName);
 		return "";
 	}
@@ -1124,28 +1127,30 @@ public class PowerVariable {
 			return sb.toString();
 
 		}
-		try {
-			int ints = Integer.parseInt(value);
-			sb.append("\tpublic $mod_powers_");
-			sb.append(baseTableName);
-			sb.append("_");
-			sb.append(sqlVarName);
-			sb.append(" = null;\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
+		if (value != null) {
+			try {
+				int ints = Integer.parseInt(value);
+				sb.append("\tpublic $mod_powers_");
+				sb.append(baseTableName);
+				sb.append("_");
+				sb.append(sqlVarName);
+				sb.append(" = null;\n");
+				return sb.toString();
+			} catch (NumberFormatException e) {
 
-		}
+			}
 
-		try {
-			double dubs = Double.parseDouble(value);
-			sb.append("\tpublic $mod_powers_");
-			sb.append(baseTableName);
-			sb.append("_");
-			sb.append(sqlVarName);
-			sb.append(" = null;\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
+			try {
+				double dubs = Double.parseDouble(value);
+				sb.append("\tpublic $mod_powers_");
+				sb.append(baseTableName);
+				sb.append("_");
+				sb.append(sqlVarName);
+				sb.append(" = null;\n");
+				return sb.toString();
+			} catch (NumberFormatException e) {
 
+			}
 		}
 		System.out.println("Not generating variable for property: " + sqlVarName);
 		return "";
@@ -1257,32 +1262,35 @@ public class PowerVariable {
 			}
 			return sb.toString();
 		}
-		try {
-			int ints = Integer.parseInt(value);
-			sb.append("\t\t$this->mod_powers_");
-			sb.append(baseTableName);
-			sb.append("_");
-			sb.append(sqlVarName);
-			sb.append(" = $row['");
-			sb.append(sqlVarName);
-			sb.append("'];\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
 
-		}
+		if (value != null) {
+			try {
+				int ints = Integer.parseInt(value);
+				sb.append("\t\t$this->mod_powers_");
+				sb.append(baseTableName);
+				sb.append("_");
+				sb.append(sqlVarName);
+				sb.append(" = $row['");
+				sb.append(sqlVarName);
+				sb.append("'];\n");
+				return sb.toString();
+			} catch (NumberFormatException e) {
 
-		try {
-			double dubs = Double.parseDouble(value);
-			sb.append("\t\t$this->mod_powers_");
-			sb.append(baseTableName);
-			sb.append("_");
-			sb.append(sqlVarName);
-			sb.append(" = $row['");
-			sb.append(sqlVarName);
-			sb.append("'];\n");
-			return sb.toString();
-		} catch (NumberFormatException e) {
+			}
 
+			try {
+				double dubs = Double.parseDouble(value);
+				sb.append("\t\t$this->mod_powers_");
+				sb.append(baseTableName);
+				sb.append("_");
+				sb.append(sqlVarName);
+				sb.append(" = $row['");
+				sb.append(sqlVarName);
+				sb.append("'];\n");
+				return sb.toString();
+			} catch (NumberFormatException e) {
+
+			}
 		}
 		System.err.println("Unknown property data type: " + sqlVarName + " when generating mod load");
 		return "";
