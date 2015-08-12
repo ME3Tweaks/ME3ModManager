@@ -1001,7 +1001,7 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 		return null;*/
-		return getModTaskPath(ModType.BASEGAME, "/BIOGame/CookedPCConsole/Coalesced.bin");
+		return getModTaskPath("\\BIOGame\\CookedPCConsole\\Coalesced.bin",ModType.BASEGAME);
 	}
 	
 	/**
