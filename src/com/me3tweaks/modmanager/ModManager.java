@@ -44,19 +44,19 @@ import com.me3tweaks.modmanager.objects.Patch;
 
 public class ModManager {
 
-	public static final String VERSION = "4.0 Beta 1";
-	public static long BUILD_NUMBER = 40L;
+	public static final String VERSION = "4.0 Beta 2";
+	public static long BUILD_NUMBER = 41L;
 
-	public static final String BUILD_DATE = "7/26/2015";
+	public static final String BUILD_DATE = "8/13/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
-	public static double MODMAKER_VERSION_SUPPORT = 1.6; //max modmaker version
+	public static double MODMAKER_VERSION_SUPPORT = 1.7; //max modmaker version
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static long LAST_AUTOUPDATE_CHECK;
-	public static int MIN_REQUIRED_ME3EXPLORER_REV = 706; //my custom build version
+	public static int MIN_REQUIRED_ME3EXPLORER_REV = 717; //my custom build version
 	public static ArrayList<Image> ICONS;
 
 	public static void main(String[] args) {
