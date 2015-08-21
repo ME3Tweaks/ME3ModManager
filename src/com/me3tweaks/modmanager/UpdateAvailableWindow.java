@@ -13,6 +13,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -36,12 +38,12 @@ import org.json.simple.JSONObject;
 
 @SuppressWarnings("serial")
 public class UpdateAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
-	String downloadLink, updateScriptLink;
+	String downloadLink, updateScriptLink,manualLink;
 	boolean error = false;
 	String version;
 	long build;
 	JLabel introLabel, versionsLabel, changelogLabel, sizeLabel;
-	JButton updateButton, notNowButton, nextUpdateButton;
+	JButton updateButton, notNowButton, nextUpdateButton, manualDownloadButton;
 	JSONObject updateInfo;
 	JProgressBar downloadProgress;
 
@@ -50,6 +52,11 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		build = (long) updateInfo.get("latest_build_number");
 		version = (String) updateInfo.get("latest_version_hr");
 		downloadLink = (String) updateInfo.get("download_link");
+		manualLink = (String) updateInfo.get("manual_link");
+		if (manualLink == null) {
+			manualLink = downloadLink;
+		}
+
 		this.setTitle("Update Available");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		long width = (long) updateInfo.get("dialog_width"); //dialog size is determined by the latest build information. This is because it might have a long changelog.
@@ -100,8 +107,10 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		updateButton.addActionListener(this);
 		notNowButton = new JButton("Not now");
 		notNowButton.addActionListener(this);
-		nextUpdateButton = new JButton("Remind me on the next update");
+		nextUpdateButton = new JButton("Skip this build");
 		nextUpdateButton.addActionListener(this);
+		manualDownloadButton = new JButton("Manual Download");
+		manualDownloadButton.addActionListener(this);
 		
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
@@ -121,6 +130,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		actionPanel.add(updateButton, BorderLayout.WEST);
 		actionPanel.add(nextUpdateButton, BorderLayout.EAST);
 		actionPanel.add(downloadProgress, BorderLayout.SOUTH);
+		actionPanel.add(manualDownloadButton, BorderLayout.CENTER);
 		//updatePanel.add(actionPanel);
 		//updatePanel.add(sizeLabel);
 
@@ -339,6 +349,13 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 				System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
 			}
 			dispose();
+		} else if (e.getSource() == manualDownloadButton) {
+			try {
+				ModManager.openWebpage(new URI(manualLink));
+			} catch (URISyntaxException e1) {
+				ModManager.debugLogger.writeException(e1);
+			}
+			dispose();
 		}
 		
 	}
@@ -375,33 +392,33 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("PING 1.1.1.1 -n 1 -w 2000 >NUL");
 		sb.append("\r\n");
-		sb.append("mkdir NewVersion");
+		sb.append("mkdir "+ModManager.getTempDir()+"NewVersion");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Extract update");
 		sb.append("\r\n");
 		sb.append(ModManager.getToolsDir());
-		sb.append("7za.exe -y x ME3CMM.7z -o"+ModManager.getToolsDir()+"NewVersion");
+		sb.append("7za.exe -y x "+ModManager.getTempDir()+"ME3CMM.7z -o"+ModManager.getTempDir()+"NewVersion");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Check for build-in update script");
 		sb.append("\r\n");
-		sb.append("if exist NewVersion\\update.cmd (");
+		sb.append("if exist "+ModManager.getTempDir()+"NewVersion\\update.cmd (");
 		sb.append("\r\n");
-		sb.append("CALL NewVersion\\update.cmd");
+		sb.append("CALL "+ModManager.getTempDir()+"NewVersion\\update.cmd");
 		sb.append("\r\n");
 		sb.append(")");
 		sb.append("\r\n");
 		sb.append("::Update the files");
 		sb.append("\r\n");
-		sb.append("xcopy /Y /S NewVersion "+System.getProperty("user.dir"));
+		sb.append("xcopy /Y /S "+ModManager.getTempDir()+"NewVersion "+System.getProperty("user.dir"));
 		sb.append("\r\n");
 		
 		sb.append("::Cleanup");
 		sb.append("\r\n");
-		sb.append("del /Q ME3CMM.7z");
+		sb.append("del /Q "+ModManager.getTempDir()+"ME3CMM.7z");
 		sb.append("\r\n");
-		sb.append("rmdir /S /Q NewVersion");
+		sb.append("rmdir /S /Q "+ModManager.getTempDir()+"NewVersion");
 		sb.append("\r\n");
 		sb.append("::Run Mod Manager");
 		sb.append("\r\n");

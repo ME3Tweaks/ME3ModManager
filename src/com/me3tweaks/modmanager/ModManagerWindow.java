@@ -294,7 +294,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (ModManager.IS_DEBUG) {
 				update_check_link = "http://webdev-c9-mgamerz.c9.io/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 			} else {
-				update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
+				update_check_link = "https://me3tweaks.com/modmanager/updatecheck-testing?currentversion=" + ModManager.BUILD_NUMBER;
 			}
 			System.out.println(update_check_link);
 			String serverJSON = null;
