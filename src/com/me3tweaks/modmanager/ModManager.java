@@ -1,5 +1,6 @@
 package com.me3tweaks.modmanager;
 
+import java.awt.Desktop;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.BufferedReader;
@@ -11,6 +12,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,7 +22,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -48,8 +52,7 @@ public class ModManager {
 
 	public static final String VERSION = "4.0 Beta 3";
 	public static long BUILD_NUMBER = 41L;
-
-	public static final String BUILD_DATE = "8/20/2015";
+	public static final String BUILD_DATE = "8/21/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static String settingsFilename = "me3cmm.ini";
@@ -1080,12 +1083,34 @@ public class ModManager {
 	
 	private static String getSystemInfo(){
 		StringBuilder sb = new StringBuilder();
-		Properties properties = System.getProperties();
-        Set<Object> keys = properties.keySet();
-        for(Object key : keys){
-            sb.append(key);
-            sb.append("\n");
-        }
+		ModManager.debugLogger.writeMessage("----Java System Properties----");       
+		System.getProperties().list(System.out);
+
+		ModManager.debugLogger.writeMessage("----System Environment Variables----");
+		Map<String, String> env = System.getenv();
+		Set<String> keys = env.keySet();
+		for (String key : keys) {
+			ModManager.debugLogger.writeMessage(key + "=" + env.get(key));
+		}
 		return sb.toString();
+	}
+	
+	public static void openWebpage(URI uri) {
+	    Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+	    if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+	        try {
+	            desktop.browse(uri);
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+	}
+
+	public static void openWebpage(URL url) {
+	    try {
+	        openWebpage(url.toURI());
+	    } catch (URISyntaxException e) {
+	        e.printStackTrace();
+	    }
 	}
 }
