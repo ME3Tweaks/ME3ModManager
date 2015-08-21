@@ -173,6 +173,11 @@ public class PowerVariable {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return "PowerVariable [sqlVarName=" + sqlVarName + ", sectionName=" + sectionName + "]";
+	}
+
 	protected void configureRows() {
 		for (VariableRow r : variableRows) {
 			if (r.configured == false) {

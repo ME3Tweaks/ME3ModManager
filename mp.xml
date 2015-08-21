@@ -1,4 +1,3 @@
-        <Section name="sfxgamempcontent.sfxpowercustomactionmp_pull">
-      <Property name="evolve_combobonus" type="2">0.5f</Property>
-      <Property name="evolve_durationbonus2" type="2">0.5f</Property>
+        <Section name="sfxgamempcontent.sfxpowercustomactionmp_bioticcharge">
+      <Property name="maximumragdolltargets" type="2">(BaseValue=1)</Property>
     </Section>
