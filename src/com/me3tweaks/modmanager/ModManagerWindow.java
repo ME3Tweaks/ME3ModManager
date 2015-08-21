@@ -321,6 +321,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
 					//hash mismatch
 					hashMismatch = true;
+					ModManager.debugLogger.writeMessage("Local hash ("+currentHash+") does not match server hash ("+buildHash+")");
 				} else {
 					ModManager.debugLogger.writeMessage("Local hash matches server hash: "+buildHash);
 				}
@@ -359,11 +360,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					try {
 						build_check = Integer.parseInt(showIfHigherThan);
 						if (latest_build > build_check) {
-							System.out.println("Update params: " + latest_build + " > " + build_check);
 							// update is newer than one stored in ini, show the
 							// dialog.
+							ModManager.debugLogger.writeMessage("Advertising build "+latest_build);
 							showUpdate = true;
 						} else {
+							ModManager.debugLogger.writeMessage("User isn't seeing updates until build "+build_check);
 							// don't show it.
 							showUpdate = false;
 						}
@@ -372,7 +374,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				}
 			} catch (InvalidFileFormatException e) {
-				ModManager.debugLogger.writeMessage("Invalid INI! Did the user modify it by hand?");
+				ModManager.debugLogger.writeErrorWithException("Invalid INI! Did the user modify it by hand?",e);
 				e.printStackTrace();
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
