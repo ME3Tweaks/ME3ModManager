@@ -128,7 +128,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			this.setVisible(true);
 		}
 	}
-
+	
 	/**
 	 * This method scans all mod files and sees if any ones have imported
 	 * patches that need to be applied
@@ -262,7 +262,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK) + " since the last update check.");
 					publish("Auto Updater: Checking for mod updates");
 					checkAllModsForUpdates(false);
-					publish("Checked for updates to mods on ME3Tweaks");
 				}
 			}
 		}
@@ -287,7 +286,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private Void checkForUpdates() {
-		labelStatus.setText("Checking for updates...");
+		labelStatus.setText("Checking for Mod Manager updates");
 		ModManager.debugLogger.writeMessage("Checking for update...");
 		// Check for update
 		try {
@@ -297,6 +296,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 			}
+			System.out.println(update_check_link);
 			String serverJSON = null;
 			try {
 				serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
@@ -314,7 +314,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			JSONParser parser = new JSONParser();
 			JSONObject latest_object = (JSONObject) parser.parse(serverJSON);
-
 			String buildHash = (String) latest_object.get("build_md5");
 			boolean hashMismatch = false;
 			try {
@@ -322,6 +321,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
 					//hash mismatch
 					hashMismatch = true;
+				} else {
+					ModManager.debugLogger.writeMessage("Local hash matches server hash: "+buildHash);
 				}
 			} catch (Exception e1) {
 				ModManager.debugLogger.writeErrorWithException("Unable to hash ME3CMM.exe:", e1);
@@ -340,7 +341,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				//build is same as server version
 				labelStatus.setVisible(true);
 				ModManager.debugLogger.writeMessage("No updates, at latest version.");
-				labelStatus.setText("No Mod Manager updates available");
+				labelStatus.setText("Mod Manager is up to date");
 				return null;
 			}
 

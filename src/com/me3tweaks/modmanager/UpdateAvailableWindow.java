@@ -68,9 +68,29 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("An update to Mod Manager is available from ME3Tweaks.");
+		introLabel = new JLabel();
 		String latest_version_hr = (String) updateInfo.get("latest_version_hr");
 		long latest_build_number = (long) updateInfo.get("latest_build_number");
+		
+		//calculate local hash
+		String buildHash = (String) updateInfo.get("build_md5");
+		boolean hashMismatch = false;
+		try {
+			String currentHash = MD5Checksum.getMD5Checksum("ME3CMM.exe");
+			if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
+				//hash mismatch
+				hashMismatch = true;
+			}
+		} catch (Exception e) {
+			//ModManager.debugLogger.writeErrorWithException("Unable to hash ME3CMM.exe:", e1);
+		}
+		
+		if (hashMismatch && latest_build_number == ModManager.BUILD_NUMBER) {
+			introLabel.setText("A minor update for Mod Manager is available.");
+		} else {
+			introLabel.setText("An update for Mod Manager is available from ME3Tweaks.");
+		}
+
 
 		versionsLabel = new JLabel("<html>Local Version: "+ModManager.VERSION+" (Build "+ModManager.BUILD_NUMBER+")<br>"
 				+ "Latest Version: "+latest_version_hr+" (Build "+latest_build_number+")</html>");
@@ -298,8 +318,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		if (e.getSource() == updateButton){
 			updateButton.setEnabled(false);
 			nextUpdateButton.setEnabled(false);
-			File updateDir = new File("update");
-			updateDir.mkdirs();
 			DownloadTask task = new DownloadTask(ModManager.getTempDir());
 			task.addPropertyChangeListener(this);
 			task.execute();
@@ -396,7 +414,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		} else {
 			sb.append("ME3CMM.exe --update-from ");
 		}
-		sb.append("ME3CMM.exe --update-from ");
 		sb.append(ModManager.BUILD_NUMBER);
 		sb.append("\r\n");
 		sb.append("call :deleteSelf&exit /b");
@@ -410,7 +427,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		//sb.append("pause");
 		//sb.append("exit");
 		try {
-			String updatePath = new File(ModManager.getToolsDir()+"updater.cmd").getAbsolutePath();
+			String updatePath = new File(ModManager.getTempDir()+"updater.cmd").getAbsolutePath();
 			Files.write( Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
