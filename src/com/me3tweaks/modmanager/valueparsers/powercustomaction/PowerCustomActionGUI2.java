@@ -557,9 +557,15 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 								loadedVariables.add(var);
 							}
 						} else {
+							String bal = "Balanced var: "+var;
 							balancedPowers.add(var);
-							loadedMPVariables.remove(var);
-							loadedVariables.remove(var);
+							if(loadedMPVariables.remove(var)){
+								bal += ", removed from MP vars";
+							}
+							if (loadedVariables.remove(var)){
+								bal += ", removed from vars";
+							}
+							System.out.println(bal);
 						}
 					}
 				}
@@ -655,6 +661,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			ContainerRow key = container.getKey();
 			ArrayList<VariableRow> items = container.getValue();
 			for (PowerVariable pv : loadedVariables) {
+				System.out.println("VAR: "+pv);
 				for (VariableRow vr : pv.getVariableRows()) {
 					if (vr.getContainerComboBox().getSelectedItem() == key) {
 						items.add(vr);
@@ -662,6 +669,7 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 				}
 			}
 			for (PowerVariable pv : loadedMPVariables) {
+				System.out.println("MP VAR: "+pv);
 				for (VariableRow vr : pv.getVariableRows()) {
 					if (vr.getContainerComboBox().getSelectedItem() == key) {
 						items.add(vr);

@@ -1415,7 +1415,7 @@ public class ModMakerCompilerWindow extends JDialog {
 									String tlkIndexedFrag = ModManager.appendSlash(tlkdir.getAbsolutePath().toString()) + "BIOGame_" + tlkType + "\\" + "BIOGame_" + tlkType + index
 											+ ".xml"; //tankmaster's compiler splits it into files.
 									DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-									Document tlkXMLFile = dBuilder.parse(tlkIndexedFrag);
+									Document tlkXMLFile = dBuilder.parse("file:///"+tlkIndexedFrag);
 									tlkXMLFile.getDocumentElement().normalize();
 									ModManager.debugLogger.writeMessage("Loaded TLK " + tlkXMLFile.getDocumentURI() + " into memory.");
 									NodeList stringsInTLK = tlkXMLFile.getElementsByTagName("String");
