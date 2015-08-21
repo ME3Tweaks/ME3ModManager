@@ -49,7 +49,7 @@ public class ModManager {
 
 	public static final String BUILD_DATE = "8/13/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
 	public static double MODMAKER_VERSION_SUPPORT = 1.7; //max modmaker version
