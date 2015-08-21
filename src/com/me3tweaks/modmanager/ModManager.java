@@ -18,6 +18,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JOptionPane;
@@ -189,6 +191,8 @@ public class ModManager {
 			}
 		}
 		ModManager.debugLogger.writeMessage("ME3CMM is running from: " + System.getProperty("user.dir"));
+		ModManager.debugLogger.writeMessage("System information:");
+		ModManager.debugLogger.writeMessage(getSystemInfo());
 		doFileSystemUpdate();
 		ModManager.debugLogger.writeMessage("========End of startup=========");
 		new ModManagerWindow(isUpdate);
@@ -1072,5 +1076,16 @@ public class ModManager {
 			ModManager.debugLogger.writeErrorWithException("Exception checking for known DLC bypass:", e);
 			return false;
 		}
+	}
+	
+	private static String getSystemInfo(){
+		StringBuilder sb = new StringBuilder();
+		Properties properties = System.getProperties();
+        Set<Object> keys = properties.keySet();
+        for(Object key : keys){
+            sb.append(key);
+            sb.append("\n");
+        }
+		return sb.toString();
 	}
 }

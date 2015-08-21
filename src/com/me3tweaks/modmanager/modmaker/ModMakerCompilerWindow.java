@@ -635,6 +635,23 @@ public class ModMakerCompilerWindow extends JDialog {
 		protected void done() {
 			// Coals decompiled
 			stepsCompleted++;
+			try {
+				get(); // this line can throw InterruptedException or ExecutionException
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeMessage("Error occured in DecompilerWorker():");
+				ModManager.debugLogger.writeException(e);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while decompiling coalesced files:\n"+e.getMessage()+"\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				error = true;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return;
+			}
+			if (error) {
+				dispose();
+				return;
+			}
+			
 			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted)) + 0.5));
 			ModManager.debugLogger.writeMessage("COALS: DECOMPILED...");
 			new MergeWorker(progress).execute();
@@ -690,6 +707,22 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		protected void done() {
 			// Coals recompiled
+			try {
+				get(); // this line can throw InterruptedException or ExecutionException
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeMessage("Error occured in CompilerWorker():");
+				ModManager.debugLogger.writeException(e);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to recompile modified coalesced xml files into a coalesced.bin file:\n"+e.getMessage()+"\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				error = true;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return;
+			}
+			if (error) {
+				dispose();
+				return;
+			}
 			stepsCompleted += 2;
 			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))));
 			ModManager.debugLogger.writeMessage("COALS: RECOMPILED...");
@@ -746,11 +779,17 @@ public class ModMakerCompilerWindow extends JDialog {
 			try {
 				get(); // this line can throw InterruptedException or ExecutionException
 			} catch (ExecutionException e) {
-				ModManager.debugLogger.writeMessage("Error occured in CoalDownloadWorker():");
+				ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
 				ModManager.debugLogger.writeException(e);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to download pristine Coalesced files from ME3Tweaks:\n"+e.getMessage()+"\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				return;
+			}
+			if (error) {
+				dispose();
 				return;
 			}
 			ModManager.debugLogger.writeMessage("Required coalesceds downloaded");
@@ -805,7 +844,8 @@ public class ModMakerCompilerWindow extends JDialog {
 							//we now have a file ID such as biogame.
 							//We need to load that XML file now.
 							String iniFileName = fileNode.getNodeName() + ".xml";
-							Document iniFile = dbFactory.newDocumentBuilder().parse(ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
+							ModManager.debugLogger.writeMessage("Loading Coalesced XML fragment into memory: "+ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
+							Document iniFile = dbFactory.newDocumentBuilder().parse("file:///"+ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
 							iniFile.getDocumentElement().normalize();
 							ModManager.debugLogger.writeMessage("Loaded " + iniFile.getDocumentURI() + " into memory.");
 							//ModManager.printDocument(iniFile, System.out);
@@ -1239,12 +1279,15 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
 				ModManager.debugLogger.writeException(e);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to merge mod delta into coalesced files:\n"+e.getMessage()+"\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				return;
 			}
 			if (error) {
+				dispose();
 				return;
 			}
 			ModManager.debugLogger.writeMessage("Finished merging coals.");
@@ -1473,8 +1516,26 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		protected void done() {
+			try {
+				get(); // this line can throw InterruptedException or ExecutionException
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
+				ModManager.debugLogger.writeException(e);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to decompile the TLK (translations) file:\n"+e.getMessage()+"\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				error = true;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return;
+			}
+			if (error) {
+				dispose();
+				return;
+			}
+			
 			// tlks decompiled.
 			if (error) {
+				dispose();
 				return;
 			}
 			ModManager.debugLogger.writeMessage("Finished decompiling TLK files.");
@@ -1804,7 +1865,24 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		protected void done() {
-			// Coals downloaded
+			// TOCs downloaded
+			try {
+				get(); // this line can throw InterruptedException or ExecutionException
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeMessage("Error occured in TOCDownloadWorker():");
+				ModManager.debugLogger.writeException(e);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to download the TOC files for the mod:\n"+e.getMessage()+"\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				error = true;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return;
+			}
+			if (error) {
+				dispose();
+				return;
+			}
+			
 			ModManager.debugLogger.writeMessage("TOCs downloaded");
 			stepsCompleted++;
 			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))));
