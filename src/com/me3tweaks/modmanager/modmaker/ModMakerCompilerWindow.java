@@ -283,6 +283,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			File coalDir = new File(ModManager.getCompilingDir() + "coalesceds");
 			coalDir.mkdirs(); // creates if it doens't exist. otherwise nothing.
 			ArrayList<String> coals = new ArrayList<String>(requiredCoals);  //copy
+
 			currentOperationLabel.setText("Downloading Coalesced files...");
 			currentStepProgress.setIndeterminate(false);
 			// Check and download
