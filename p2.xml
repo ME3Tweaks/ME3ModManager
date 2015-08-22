@@ -1,6 +1,0 @@
-        <Section name="sfxgamecontent.sfxpowercustomaction_bioticcharge">      
-      <Property name="damage_krogan" type="0">(BaseValue=500.0f,RankBonuses[2]=0.3f)</Property>
-      <Property name="evolve_timedmeleedamagebonus_krogan" type="0">0.40f</Property>
-      <Property name="evolve_timedmeleedamageduration_krogan" type="0">5.f</Property>
-      <Property name="force_krogan" type="0">(BaseValue=750.f,RankBonuses[2]=0.3f)</Property>
-    </Section>

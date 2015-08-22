@@ -12,3 +12,4 @@ update/
 me3cmm_last_run_log.txt
 latest_version
 PCA-Generator/
+*.xml
