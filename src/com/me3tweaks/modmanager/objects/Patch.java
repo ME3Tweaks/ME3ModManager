@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager.objects;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -31,6 +32,7 @@ public class Patch implements Comparable<Patch>{
 	long targetSize;
 	double patchVersion, patchCMMVer;
 	private String patchAuthor;
+	private int me3tweaksid;
 
 	public Patch(String descriptorPath) {
 		ModManager.debugLogger.writeMessage("Loading patch: " + descriptorPath);
@@ -51,11 +53,11 @@ public class Patch implements Comparable<Patch>{
 			patchFolderPath = ModManager.appendSlash(patchDescIni.getParent());
 			patchDescription = patchini.get("PatchInfo", "patchdesc");
 			patchName = patchini.get("PatchInfo", "patchname");
-			ModManager.debugLogger.writeMessage("-------PATCH--------------Reading Patch " + patchName + "------------------");
+			ModManager.debugLogger.writeMessage("⌜------PATCH--------------Reading Patch " + patchName + "-----------------⌝");
 			File patchFile = new File(patchFolderPath + "patch.jsf");
 			if (!patchFile.exists()) {
 				ModManager.debugLogger.writeError("Patch.jsf is missing, patch is invalid");
-				ModManager.debugLogger.writeMessage("-------PATCH--------------End of " + patchName + "------------------");
+				ModManager.debugLogger.writeMessage("⌞------PATCH--------------End of " + patchName + "-----------------⌟");
 				isValid = false;
 				return;
 			}
@@ -118,7 +120,7 @@ public class Patch implements Comparable<Patch>{
 			ModManager.debugLogger.writeException(e);
 			isValid = false;
 		}
-		ModManager.debugLogger.writeMessage("-------PATCH--------------END OF " + patchName + "--------------------------");
+		ModManager.debugLogger.writeMessage("⌞------PATCH--------------END OF " + patchName + "-------------------------⌟");
 	}
 
 	/**
@@ -394,5 +396,32 @@ public class Patch implements Comparable<Patch>{
 	@Override
 	public int compareTo(Patch otherPatch) {
 		return getPatchName().compareTo(otherPatch.getPatchName());
+	}
+	
+	public static String generatePatchDesc(ME3TweaksPatchPackage pack) {
+		Wini ini = new Wini();
+
+		// put modmanager, PATCHINFO
+		ini.put("ModManager", "cmmver", pack.getTargetversion());
+		ini.put("PatchInfo", "patchname", pack.getPatchname());
+		ini.put("PatchInfo", "patchdesc", pack.getPatchdesc());
+		ini.put("PatchInfo", "patchdev", pack.getPatchdev());
+		ini.put("PatchInfo", "patchver", pack.getPatchver());
+		ini.put("PatchInfo", "targetmodule", pack.getTargetmodule());
+		ini.put("PatchInfo", "targetfile", pack.getTargetfile());
+		ini.put("PatchInfo", "targetsize", pack.getTargetsize());
+		ini.put("PatchInfo", "finalizer", pack.isFinalizer());
+		ini.put("PatchInfo", "me3tweaksid", pack.getMe3tweaksid());
+
+		
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
+			ini.store(os);
+			return new String(os.toByteArray(), "ASCII");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "";
 	}
 }

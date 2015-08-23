@@ -1013,7 +1013,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == toolsCheckallmodsforupdate) {
 			checkAllModsForUpdates(true);
 		} else if (e.getSource() == toolsPatchLibary) {
-			new PatchLibaryWindow();
+			new PatchLibraryWindow();
 		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
 			ModManager.debugLogger.writeMessage(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
 		} else if (e.getSource() == sqlDifficultyParser) {
