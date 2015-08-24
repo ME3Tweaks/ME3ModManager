@@ -424,4 +424,28 @@ public class Patch implements Comparable<Patch>{
 		}
 		return "";
 	}
+	
+	public String convertToME3TweaksSQLInsert(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("INSERT INTO mixinlibrary VALUES (\n\tnull,\n");
+		sb.append("\t\""+patchName+"\",\n");
+		sb.append("\t\""+patchDescription+"\",\n");
+		sb.append("\t\""+((patchAuthor == null) ? "FemShep" : patchAuthor)+"\",\n");
+		sb.append("\t"+patchVersion+",\n");
+		if (patchCMMVer < 4.0) {
+			patchCMMVer = 4.0;
+		}
+		sb.append("\t"+patchCMMVer+",\n");
+		sb.append("\t\""+targetModule+"\",\n");
+		sb.append("\t\""+targetPath+"\",\n");
+		sb.append("\t"+targetSize+",\n");
+		sb.append("\tfalse, /*FINALIZER*/\n");
+
+		String serverfolder = patchName.toLowerCase().replaceAll(" - ", "-").replaceAll(" ", "-");
+		sb.append("\t\"http://me3tweaks.com/mixins/library/"+serverfolder+"/patch.jsf\",\n");
+		sb.append("\t\""+patchName+"\",\n");
+		sb.append("\tnull\n");
+		sb.append(");");
+		return sb.toString();
+	}
 }

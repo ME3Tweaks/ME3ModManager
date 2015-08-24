@@ -84,6 +84,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		patchList.setCellRenderer(new PatchCellRenderer());
 		for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
 			patchModel.addElement(patch);
+			System.out.println(patch.convertToME3TweaksSQLInsert());
 		}
 		lrSplitPane.setLeftComponent(new JScrollPane(patchList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
@@ -168,33 +169,39 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			if (patchList.getSelectedIndex() == -1) {
 				patchDesc.setText("Select one or more mix-ins (ctrl+click) on the left to see their descriptions.");
 				buttonApplyPatch.setEnabled(false);
+			} else {
+				updateDescription();
 			}
 		} else {
-			String description = "";
-			List<Patch> selectedPatches = patchList.getSelectedValuesList();
-			boolean isFirst = true;
-			for (Patch patch : selectedPatches) {
-				if (isFirst) {
-					isFirst = false;
-				} else {
-					description += "---------------------------------\n";
-				}
-				description += patch.getPatchName();
-				description += "\n\n";
-				description += patch.getPatchDescription();
-				description += "\n\n";
-				description += "Modifies: " + patch.getTargetModule() + " => " + patch.getTargetPath();
-				description += "\n";
-				if (patch.getPatchAuthor() != null) {
-					description += "Created by " + patch.getPatchAuthor() + "\n";
-				}
-			}
-			patchDesc.setText(description);
-			if (modComboBox.getSelectedIndex() > 0) {
-				buttonApplyPatch.setEnabled(true);
+			updateDescription();
+		}
+	}
+	
+	private void updateDescription(){
+		String description = "";
+		List<Patch> selectedPatches = patchList.getSelectedValuesList();
+		boolean isFirst = true;
+		for (Patch patch : selectedPatches) {
+			if (isFirst) {
+				isFirst = false;
 			} else {
-				buttonApplyPatch.setEnabled(false);
+				description += "---------------------------------\n";
 			}
+			description += patch.getPatchName();
+			description += "\n\n";
+			description += patch.getPatchDescription();
+			description += "\n\n";
+			description += "Modifies: " + patch.getTargetModule() + " => " + patch.getTargetPath();
+			description += "\n";
+			if (patch.getPatchAuthor() != null) {
+				description += "Created by " + patch.getPatchAuthor() + "\n";
+			}
+		}
+		patchDesc.setText(description);
+		if (modComboBox.getSelectedIndex() > 0) {
+			buttonApplyPatch.setEnabled(true);
+		} else {
+			buttonApplyPatch.setEnabled(false);
 		}
 	}
 
@@ -241,7 +248,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		@Override
 		protected Void doInBackground() throws Exception {
 			// Download XML from server
-			ModManager.debugLogger.writeMessage("================DOWNLOADING MOD INFORMATION==============");
+			ModManager.debugLogger.writeMessage("================DOWNLOADING MIXIN LIBRARY INFORMATION==============");
 			String link;
 			if (ModManager.IS_DEBUG) {
 				link = "http://webdev-mgamerz.c9.io/modmanager/mixinlibrary/libraryinfo";
@@ -285,14 +292,18 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					boolean needsDownloaded = true;
 
 					for (int i = 0; i < patchModel.size(); i++) {
+						System.out.println("GETTING INFO FOR PATCH "+(i+1)+" OF "+patchModel.size());
 						Patch localpatch = patchModel.getElementAt(i);
+
 						if (!localpatch.getPatchName().equals(serverpack.getPatchname())){
 							continue;
 						}
+
 						//same name
 						if (!localpatch.getTargetModule().equals(serverpack.getTargetmodule())){
 							continue;
 						}
+
 						//same module
 						if (!localpatch.getTargetPath().equals(serverpack.getTargetfile())){
 							continue;
@@ -300,14 +311,15 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						//same target
 						
 						//same name, same module, same target, likely the same - just check if version is newer.
-						if (localpatch.getPatchVersion() >= serverpack.getPatchver()){
+						
+						if (localpatch.getPatchVersion() < serverpack.getPatchver()){
 							continue;
 						}
-						
+
 						//patch does not need downloaded.
 						needsDownloaded = false;
 						ModManager.debugLogger.writeMessage("Local MixIn "+localpatch.getPatchName()+" is up to date.");
-
+						break;
 					}
 					if (needsDownloaded) {
 						ModManager.debugLogger.writeMessage("Server MixIn "+serverpack.getPatchname()+" is not present locally (or out of date), adding to download queue");
