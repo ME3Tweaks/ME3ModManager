@@ -53,11 +53,11 @@ public class Patch implements Comparable<Patch>{
 			patchFolderPath = ModManager.appendSlash(patchDescIni.getParent());
 			patchDescription = patchini.get("PatchInfo", "patchdesc");
 			patchName = patchini.get("PatchInfo", "patchname");
-			ModManager.debugLogger.writeMessage("⌜------PATCH--------------Reading Patch " + patchName + "-----------------⌝");
+			ModManager.debugLogger.writeMessage("------PATCH--------------Reading Patch " + patchName + "-----------------");
 			File patchFile = new File(patchFolderPath + "patch.jsf");
 			if (!patchFile.exists()) {
 				ModManager.debugLogger.writeError("Patch.jsf is missing, patch is invalid");
-				ModManager.debugLogger.writeMessage("⌞------PATCH--------------End of " + patchName + "-----------------⌟");
+				ModManager.debugLogger.writeMessage("------PATCH--------------End of " + patchName + "-----------------");
 				isValid = false;
 				return;
 			}
@@ -120,7 +120,7 @@ public class Patch implements Comparable<Patch>{
 			ModManager.debugLogger.writeException(e);
 			isValid = false;
 		}
-		ModManager.debugLogger.writeMessage("⌞------PATCH--------------END OF " + patchName + "-------------------------⌟");
+		ModManager.debugLogger.writeMessage("------PATCH--------------END OF " + patchName + "-------------------------");
 	}
 
 	/**
@@ -437,7 +437,9 @@ public class Patch implements Comparable<Patch>{
 		}
 		sb.append("\t"+patchCMMVer+",\n");
 		sb.append("\t\""+targetModule+"\",\n");
-		sb.append("\t\""+targetPath+"\",\n");
+		String sqlPath = targetPath.replaceAll("\\\\", "\\\\\\\\");
+		sb.append("\t\""+sqlPath+"\",\n");
+		
 		sb.append("\t"+targetSize+",\n");
 		sb.append("\tfalse, /*FINALIZER*/\n");
 
