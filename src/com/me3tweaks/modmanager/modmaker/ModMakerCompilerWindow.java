@@ -54,6 +54,7 @@ import org.xml.sax.SAXException;
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
@@ -80,6 +81,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;
 	private Mod mod;
+	private ArrayList<Integer> requiredMixinIds = new ArrayList<Integer>();
 
 	/**
 	 * Starts a modmaker session for a user-selected download
@@ -164,7 +166,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (errors.getLength() > 0) {
 					//error occured.
 					dispose();
-					publish(new ThreadCommand("ERROR", "<html>No mod with id " + code + " was found on ME3Tweaks.</html>"));
+					publish(new ThreadCommand("ModMaker Error", "<html>No mod with id " + code + " was found on ME3Tweaks.</html>"));
 					running = false;
 					return;
 				}
@@ -250,7 +252,20 @@ public class ModMakerCompilerWindow extends JDialog {
 				error = true;
 				return;
 			}
-
+			
+			//Get required mixins
+			NodeList mixinNodeList = doc.getElementsByTagName("MixinData");
+			Element mixinsElement = (Element) mixinNodeList.item(0);
+			NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
+			for (int j = 0; j < mixinsNodeList.getLength(); j++) {
+				Node mixinNode = mixinsNodeList.item(j);
+				if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
+					requiredMixinIds.add(Integer.parseInt(mixinNode.getTextContent()));
+					ModManager.debugLogger.writeMessage("Mod recommends mixin with id "+mixinNode.getTextContent());
+				}
+			}
+			
+			
 			//Check the name
 			File moddir = new File(ModManager.getModsDir() + modName);
 			if (moddir.isDirectory()) {
@@ -1679,6 +1694,12 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		if (!error) {
+			//PROCESS MIXINS
+			if (requiredMixinIds.size() > 0) {
+				ModManager.debugLogger.writeMessage("Mod delta recommends MixIns, running PatchLibraryWindow()");
+				new PatchLibraryWindow(requiredMixinIds, newMod);
+			}
+			
 			ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
 			new AutoTocWindow(newMod);
 			stepsCompleted++;

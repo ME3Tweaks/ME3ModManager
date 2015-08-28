@@ -58,7 +58,7 @@ public class PatchApplicationWindow extends JDialog {
 
 	private void setupWindow() {
 		failedPatches = new ArrayList<Patch>();
-		this.setTitle("Mix-in Installer");
+		this.setTitle("MixIn Installer");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(320, 70));
 		this.setResizable(false);
@@ -72,7 +72,7 @@ public class PatchApplicationWindow extends JDialog {
 		}
 		JPanel panel = new JPanel(new BorderLayout());
 
-		operationLabel = new JLabel("Applying mix-ins to " + mod.getModName());
+		operationLabel = new JLabel("Applying mixins to " + mod.getModName());
 		statusLabel = new JLabel("Applying: ");
 
 		panel.add(operationLabel, BorderLayout.NORTH);
@@ -87,7 +87,7 @@ public class PatchApplicationWindow extends JDialog {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(WindowEvent e) {
-				System.out.println("Exit Mix-in Application");
+				System.out.println("Exit Mixin Application");
 				if (pat != null) {
 					pat.cancel(false);
 				}

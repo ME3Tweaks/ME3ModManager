@@ -147,7 +147,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 		if (reload) {
-			String dispStr = "The following mods had included mix-ins and have been built for use:\n";
+			String dispStr = "The following mods had included mixins and have been built for use:\n";
 			for (String str : modsBuild) {
 				dispStr += " - " + str + "\n";
 			}
@@ -607,8 +607,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMergeMod = new JMenuItem("Merge mods...");
 		toolsMergeMod.setToolTipText("Allows you to merge CMM3+ mods together and resolve conflicts between mods");
 
-		toolsPatchLibary = new JMenuItem("Mix-In Library");
-		toolsPatchLibary.setToolTipText("Add premade mix-ins to mods using patches in your patch library");
+		toolsPatchLibary = new JMenuItem("MixIn Library");
+		toolsPatchLibary.setToolTipText("Add premade mixins to mods using patches in your patch library");
 
 		toolsOpenME3Dir = new JMenuItem("Open BIOGame directory");
 		toolsOpenME3Dir.setToolTipText("Opens a Windows Explorer window in the BIOGame Directory");
