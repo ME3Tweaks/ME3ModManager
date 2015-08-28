@@ -103,11 +103,41 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	}
 
 	private void advertiseInstalls(ArrayList<Integer> mixinIds, Mod mod) {
-		//Build patch array
-		
-		//Build prompt text
-		
-		//Apply
+		//Build patch array, build prompt text
+		String str = "This mod wants to apply the following MixIns from ME3Tweaks:\n";
+		ArrayList<Patch> patches = new ArrayList<Patch>();
+		for (int mixinid : mixinIds) {
+			for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
+				if (mixinid == patch.getMe3tweaksid()) {
+					str += " - "+patch.getPatchName();
+					patches.add(patch);
+					break;
+				}
+			}
+		}
+		//show prompt
+		ModManager.debugLogger.writeMessage("Prompting user for install of mixins");
+
+		int response = JOptionPane.showConfirmDialog(null, str, "Recommended MixIns", JOptionPane.YES_NO_OPTION);
+		if (response == JOptionPane.YES_OPTION) {
+			ModManager.debugLogger.writeMessage("User has accepted mixins");
+
+			//Apply
+			ModManager.debugLogger.writeMessage("Applying patches in automated mode");
+			if (!mod.isValidMod()) {
+				return; // this shouldn't be reachable anyways
+			}
+			PatchApplicationWindow paw = new PatchApplicationWindow(this, patches, mod);
+			ArrayList<Patch> failedpatches = paw.getFailedPatches();
+			if (failedpatches.size() > 0) {
+				String rstr = "The following MixIns failed to apply:\n";
+				for (Patch p : failedpatches) {
+					rstr += " - " + p.getPatchName() + "\n";
+				}
+				rstr += "Check the debugging log to see why.";
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, rstr, "MixIns Error", JOptionPane.ERROR_MESSAGE);
+			}			
+		}
 	}
 
 	private void setupWindow() {
@@ -259,15 +289,6 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				return; // this shouldn't be reachable anyways
 			}
 			PatchApplicationWindow paw = new PatchApplicationWindow(this, new ArrayList<Patch>(selectedPatches), mod);
-			/*
-			 * for (Patch patch : selectedPatches) {
-			 * ModManager.debugLogger.writeMessage("Applying patch " +
-			 * patch.getPatchName() + " to " + mod.getModName()); if
-			 * (!patch.applyPatch(mod)) { patchFailed = true;
-			 * JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-			 * "Patch failed to apply: " + patch.getPatchName(),
-			 * "Patch not applied", JOptionPane.ERROR_MESSAGE); } }
-			 */
 			new AutoTocWindow(mod);
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() <= 0) {

@@ -54,6 +54,7 @@ import org.xml.sax.SAXException;
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
@@ -1694,10 +1695,10 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		if (!error) {
 			//PROCESS MIXINS
-			
-			
-			
-			
+			if (requiredMixinIds.size() > 0) {
+				ModManager.debugLogger.writeMessage("Mod delta recommends MixIns, running PatchLibraryWindow()");
+				new PatchLibraryWindow(requiredMixinIds, newMod);
+			}
 			
 			ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
 			new AutoTocWindow(newMod);
