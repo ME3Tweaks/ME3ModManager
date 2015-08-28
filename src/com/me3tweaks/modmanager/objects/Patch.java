@@ -53,11 +53,19 @@ public class Patch implements Comparable<Patch>{
 			patchFolderPath = ModManager.appendSlash(patchDescIni.getParent());
 			patchDescription = patchini.get("PatchInfo", "patchdesc");
 			patchName = patchini.get("PatchInfo", "patchname");
-			ModManager.debugLogger.writeMessage("⌜------PATCH--------------Reading Patch " + patchName + "-----------------⌝");
+			try {
+				String idstr = patchini.get("PatchInfo", "me3tweaksid");
+				me3tweaksid = Integer.parseInt(idstr);
+				ModManager.debugLogger.writeMessage("Patch ID on ME3Tweaks: "+me3tweaksid);
+			} catch (NumberFormatException e){
+				ModManager.debugLogger.writeError("me3tweaksid is not an integer, setting to 0");
+			}
+
+			ModManager.debugLogger.writeMessage("------PATCH--------------Reading Patch " + patchName + "-----------------");
 			File patchFile = new File(patchFolderPath + "patch.jsf");
 			if (!patchFile.exists()) {
 				ModManager.debugLogger.writeError("Patch.jsf is missing, patch is invalid");
-				ModManager.debugLogger.writeMessage("⌞------PATCH--------------End of " + patchName + "-----------------⌟");
+				ModManager.debugLogger.writeMessage("------PATCH--------------End of " + patchName + "-----------------");
 				isValid = false;
 				return;
 			}
@@ -412,7 +420,6 @@ public class Patch implements Comparable<Patch>{
 		ini.put("PatchInfo", "targetsize", pack.getTargetsize());
 		ini.put("PatchInfo", "finalizer", pack.isFinalizer());
 		ini.put("PatchInfo", "me3tweaksid", pack.getMe3tweaksid());
-
 		
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
@@ -437,7 +444,7 @@ public class Patch implements Comparable<Patch>{
 		}
 		sb.append("\t"+patchCMMVer+",\n");
 		sb.append("\t\""+targetModule+"\",\n");
-		sb.append("\t\""+targetPath+"\",\n");
+		sb.append("\t\""+targetPath.replaceAll("\\\\", "\\\\\\\\")+"\",\n");
 		sb.append("\t"+targetSize+",\n");
 		sb.append("\tfalse, /*FINALIZER*/\n");
 
@@ -447,5 +454,9 @@ public class Patch implements Comparable<Patch>{
 		sb.append("\tnull\n");
 		sb.append(");");
 		return sb.toString();
+	}
+
+	public int getMe3tweaksid() {
+		return me3tweaksid;
 	}
 }

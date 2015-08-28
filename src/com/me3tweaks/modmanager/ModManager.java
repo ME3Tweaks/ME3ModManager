@@ -51,13 +51,13 @@ import com.me3tweaks.modmanager.objects.Patch;
 public class ModManager {
 
 	public static final String VERSION = "4.0 Beta 3";
-	public static long BUILD_NUMBER = 41L;
-	public static final String BUILD_DATE = "8/21/2015";
+	public static long BUILD_NUMBER = 43L;
+	public static final String BUILD_DATE = "8/25/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
-	public static double MODMAKER_VERSION_SUPPORT = 1.7; //max modmaker version
+	public static double MODMAKER_VERSION_SUPPORT = 1.8; //max modmaker version
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static long LAST_AUTOUPDATE_CHECK;
