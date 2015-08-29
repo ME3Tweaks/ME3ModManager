@@ -473,7 +473,6 @@ public class Patch implements Comparable<Patch> {
 		String sqlPath = targetPath.replaceAll("\\\\", "\\\\\\\\");
 		sb.append("\t\"" + sqlPath + "\",\n");
 
-		sb.append("\t\"" + targetPath.replaceAll("\\\\", "\\\\\\\\") + "\",\n");
 		sb.append("\t" + targetSize + ",\n");
 		sb.append("\tfalse, /*FINALIZER*/\n");
 
@@ -486,7 +485,7 @@ public class Patch implements Comparable<Patch> {
 		File dirHeader = copyTo.getParentFile();
 		dirHeader.mkdirs();
 		try {
-			FileUtils.copyFile(new File(patchPath), copyTo);
+			FileUtils.copyFile(new File(patchFolderPath + "patch.jsf"), copyTo);
 			System.out.println("Copied to "+copyTo.getAbsolutePath());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

@@ -45,6 +45,7 @@ import com.me3tweaks.modmanager.cellrenderers.PatchCellRenderer;
 import com.me3tweaks.modmanager.objects.ME3TweaksPatchPackage;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.Patch;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 
 /**
  * Patch Window shows the list of patches in the patch library and things you
@@ -332,7 +333,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		}
 	}
 
-	class ME3TweaksLibraryUpdater extends SwingWorker<Void, Patch> {
+	class ME3TweaksLibraryUpdater extends SwingWorker<Void, ThreadCommand> {
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 		Document doc;
 		boolean modmakerMode;
@@ -387,11 +388,18 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 
 				// find local packs that need updated, or are missing
 				ArrayList<ME3TweaksPatchPackage> packsToDownload = new ArrayList<ME3TweaksPatchPackage>();
+				ArrayList<Patch> patchesToDelete = new ArrayList<Patch>(); //will remove in like 2 builds or so so users don't have duplicates
+
 				for (ME3TweaksPatchPackage serverpack : serverpacks) {
 					boolean needsDownloaded = true;
 
 					for (int i = 0; i < patches.size(); i++) {
 						Patch localpatch = patches.get(i);
+						if (localpatch.getMe3tweaksid() <= 0){
+							patchesToDelete.add(localpatch);
+							continue;
+						}
+						
 						if (localpatch.getMe3tweaksid() != serverpack.getMe3tweaksid()) {
 							continue;
 						}
@@ -427,6 +435,13 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						packsToDownload.add(serverpack);
 					}
 				}
+				
+				//delete old packs from build 40/41/42
+				for (Patch localPatch : patchesToDelete) {
+					File patchFolder = new File(localPatch.getPatchFolderPath());
+					FileUtils.deleteQuietly(patchFolder);
+					publish(new ThreadCommand("REMOVE_PATCH", null, localPatch));
+				}
 
 				// download new packs
 				for (ME3TweaksPatchPackage pack : packsToDownload) {
@@ -445,7 +460,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					FileUtils.writeStringToFile(new File(targetFolderStr + "patchdesc.ini"), patchDesc);
 
 					Patch p = new Patch(targetFolderStr + "patchdesc.ini");
-					publish(p);
+					publish(new ThreadCommand("ADD_PATCH", null, p));
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -453,10 +468,17 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			return null;
 		}
 
-		public void process(List<Patch> chunks) {
-			for (Patch p : chunks) {
+		public void process(List<ThreadCommand> chunks) {
+			
+			for (ThreadCommand tc : chunks) {
 				if (!modmakerMode) {
-					patchModel.addElement(p);
+					Patch p = (Patch) tc.getData();
+					if (tc.getCommand().equals("ADD_PATCH")) {
+						patchModel.addElement(p);
+					}
+					if (tc.getCommand().equals("REMOVE_PATCH")){
+						patchModel.removeElement(p);
+					}
 				}
 			}
 		}
