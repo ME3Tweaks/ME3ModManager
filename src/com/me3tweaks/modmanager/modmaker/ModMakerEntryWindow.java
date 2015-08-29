@@ -52,7 +52,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	private static final String ITALIAN = "Italian";
 	private static final String GERMAN = "German";
 	private static final int DIALOG_WIDTH = 400;
-	private static final int DIALOG_HEIGHT = 200;
+	private static final int DIALOG_HEIGHT = 245;
 	JLabel infoLabel;
 	JButton downloadButton;
 	JTextField codeField;
@@ -87,7 +87,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		JPanel infoPane = new JPanel();
 		infoPane.setLayout(new BoxLayout(infoPane, BoxLayout.LINE_AXIS));
 		infoLabel = new JLabel(
-				"<html>ME3Tweaks ModMaker allows you to easily create Mass Effect 3 mods in a simple to use interface.<br>Enter a download code to download and compile a mod.</html>");
+				"<html>ME3Tweaks ModMaker allows you to easily create Mass Effect 3 mods in a simple to use interface.<br>Enter a download code to download and compile a mod.<br>Please note that you should have a vanilla game when applying MixIns as some files may be pulled from the game's folders during application.</html>");
 		infoPane.add(Box.createHorizontalGlue());
 		infoPane.add(infoLabel);
 		infoPane.add(Box.createHorizontalGlue());
