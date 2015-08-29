@@ -12,7 +12,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
-import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
@@ -24,7 +23,12 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
  * @author mgamerz
  *
  */
-public class Patch implements Comparable<Patch>{
+public class Patch implements Comparable<Patch> {
+	public static final int APPLY_SUCCESS = 0;
+	public static final int APPLY_FAILED_OTHERERROR = -1;
+	public static final int APPLY_FAILED_MODDESC_NOT_UPDATED = 1;
+	public static final int APPLY_FAILED_SOURCE_FILE_WRONG_SIZE = 2;
+	public static final int APPLY_FAILED_NO_SOURCE_FILE = 3;
 	String targetPath, targetModule;
 	boolean isValid = false;
 
@@ -56,8 +60,8 @@ public class Patch implements Comparable<Patch>{
 			try {
 				String idstr = patchini.get("PatchInfo", "me3tweaksid");
 				me3tweaksid = Integer.parseInt(idstr);
-				ModManager.debugLogger.writeMessage("Patch ID on ME3Tweaks: "+me3tweaksid);
-			} catch (NumberFormatException e){
+				ModManager.debugLogger.writeMessage("Patch ID on ME3Tweaks: " + me3tweaksid);
+			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeError("me3tweaksid is not an integer, setting to 0");
 			}
 
@@ -157,7 +161,24 @@ public class Patch implements Comparable<Patch>{
 			return null;
 		}
 		ModManager.debugLogger.writeMessage("Reloading imported patch");
-		return new Patch(destinationDir+File.separator+"patchdesc.ini");
+		return new Patch(destinationDir + File.separator + "patchdesc.ini");
+	}
+
+	/**
+	 * Gets the source file that would be used if this patch was applied to the specified mod
+	 * @param mod
+	 * @return null if no source (error), path otherwise
+	 */
+	public String getSourceFilePath(Mod mod) {
+		String modSourceFile = mod.getModTaskPath(targetPath, targetModule);
+		if (modSourceFile == null) {
+			ModManager.debugLogger.writeMessage(mod.getModName() + " does not appear to modify " + targetPath + " in module " + targetModule + ", performing file fetch");
+			//we need to check if its in the patch library's source folder
+			modSourceFile = ModManager.getPatchSource(targetPath, targetModule);
+			return modSourceFile;
+		} else {
+			return modSourceFile;
+		}
 	}
 
 	/**
@@ -165,9 +186,9 @@ public class Patch implements Comparable<Patch>{
 	 * 
 	 * @param mod
 	 *            Mod to apply with
-	 * @return True if successful, false otherwise
+	 * @return APPLY_SUCCESS if successful, otherwise other constants if failed.
 	 */
-	public boolean applyPatch(Mod mod) {
+	public int applyPatch(Mod mod) {
 		//We must check if the mod we are applying to already has this file. If it does we will apply to that mod.
 		//If it does not we will add new task for it.
 		//If the files are not the right size we will not apply.
@@ -193,18 +214,19 @@ public class Patch implements Comparable<Patch>{
 				if (modSourceFile == null) {
 					//couldn't copy or extract file, have nothing we can patch
 					ModManager.debugLogger.writeMessage(mod.getModName() + "'s patch " + getPatchName() + " was not able to acquire a source file to patch.");
-					return false;
+					return APPLY_FAILED_NO_SOURCE_FILE;
 				}
 
 				//copy sourcefile to mod dir
 				File libraryFile = new File(modSourceFile);
 				if (libraryFile.length() != targetSize) {
-					ModManager.debugLogger.writeError("File that is going to be patched does not match patch descriptor size ("+libraryFile.length()+" vs one can be applied to: "+targetSize+")! Unable to apply patch");
-					return false;
+					ModManager.debugLogger.writeError("File that is going to be patched does not match patch descriptor size (" + libraryFile.length()
+							+ " vs one can be applied to: " + targetSize + ")! Unable to apply patch");
+					return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
 				}
-				
-				File modFile = new File(ModManager.appendSlash(mod.getModPath())+Mod.getStandardFolderName(targetModule)+File.separator+FilenameUtils.getName(targetPath));
-				ModManager.debugLogger.writeMessage("Copying libary file to mod package: " + libraryFile.getAbsolutePath()+ " => "+modFile.getAbsolutePath());
+
+				File modFile = new File(ModManager.appendSlash(mod.getModPath()) + Mod.getStandardFolderName(targetModule) + File.separator + FilenameUtils.getName(targetPath));
+				ModManager.debugLogger.writeMessage("Copying libary file to mod package: " + libraryFile.getAbsolutePath() + " => " + modFile.getAbsolutePath());
 				FileUtils.copyFile(libraryFile, modFile);
 
 				//we need to add a task for this, lookup if job exists already
@@ -220,7 +242,7 @@ public class Patch implements Comparable<Patch>{
 
 						//ADD PATCH FILE TO JOB
 						File modFilePath = new File(ModManager.appendSlash(mod.getModPath()) + relativepath + filename);
-						ModManager.debugLogger.writeMessage("Adding new mod task => " + targetModule+": add "+modFilePath.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("Adding new mod task => " + targetModule + ": add " + modFilePath.getAbsolutePath());
 						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath);
 
 						//CHECK IF JOB HAS TOC - SOME MIGHT NOT, FOR SOME WEIRD REASON
@@ -261,8 +283,10 @@ public class Patch implements Comparable<Patch>{
 					job.addFileReplace(tocDest.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)));
 
 					ModManager.debugLogger.writeMessage("Adding " + filename + " to new job");
-/*					File modFile = new File(modulefolder + File.separator + filename);
-					FileUtils.copyFile(libraryFile, modFile);*/
+					/*
+					 * File modFile = new File(modulefolder + File.separator +
+					 * filename); FileUtils.copyFile(libraryFile, modFile);
+					 */
 					job.addFileReplace(modFile.getAbsolutePath(), targetPath);
 					mod.addTask(targetModule, job);
 					mod.modCMMVer = newCmmVer;
@@ -279,8 +303,9 @@ public class Patch implements Comparable<Patch>{
 				modSourceFile = mod.getModTaskPath(targetPath, targetModule);
 			}
 			if (modSourceFile == null) {
-				ModManager.debugLogger.writeError("Source file should have been copied to mod directory already. ModDesc.ini however is missing a newfiles/replacefiles task in the job.");
-				return false;
+				ModManager.debugLogger
+						.writeError("Source file should have been copied to mod directory already. ModDesc.ini however is missing a newfiles/replacefiles task in the job.");
+				return APPLY_FAILED_MODDESC_NOT_UPDATED;
 			}
 			//rename file (so patch doesn't continuously recalculate itself)
 			File stagingFile = new File(ModManager.getTempDir() + "patch_staging"); //this file is used as base, and then patch puts file back in original place
@@ -314,14 +339,14 @@ public class Patch implements Comparable<Patch>{
 			System.out.println("BREAK");
 			stagingFile.delete();
 			ModManager.debugLogger.writeMessage("File has been patched.");
-			return true;
+			return APPLY_SUCCESS;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeErrorWithException("IOException applying mod:", e);
-			return false;
+			return APPLY_FAILED_OTHERERROR;
 		} catch (InterruptedException e) {
 			ModManager.debugLogger.writeErrorWithException("Patching process was interrupted:", e);
-			return false;
+			return APPLY_FAILED_OTHERERROR;
 		}
 	}
 
@@ -405,7 +430,7 @@ public class Patch implements Comparable<Patch>{
 	public int compareTo(Patch otherPatch) {
 		return getPatchName().compareTo(otherPatch.getPatchName());
 	}
-	
+
 	public static String generatePatchDesc(ME3TweaksPatchPackage pack) {
 		Wini ini = new Wini();
 
@@ -420,7 +445,7 @@ public class Patch implements Comparable<Patch>{
 		ini.put("PatchInfo", "targetsize", pack.getTargetsize());
 		ini.put("PatchInfo", "finalizer", pack.isFinalizer());
 		ini.put("PatchInfo", "me3tweaksid", pack.getMe3tweaksid());
-		
+
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			ini.store(os);
@@ -431,29 +456,29 @@ public class Patch implements Comparable<Patch>{
 		}
 		return "";
 	}
-	
-	public String convertToME3TweaksSQLInsert(){
+
+	public String convertToME3TweaksSQLInsert() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("INSERT INTO mixinlibrary VALUES (\n\tnull,\n");
-		sb.append("\t\""+patchName+"\",\n");
-		sb.append("\t\""+patchDescription+"\",\n");
-		sb.append("\t\""+((patchAuthor == null) ? "FemShep" : patchAuthor)+"\",\n");
-		sb.append("\t"+patchVersion+",\n");
+		sb.append("\t\"" + patchName + "\",\n");
+		sb.append("\t\"" + patchDescription + "\",\n");
+		sb.append("\t\"" + ((patchAuthor == null) ? "FemShep" : patchAuthor) + "\",\n");
+		sb.append("\t" + patchVersion + ",\n");
 		if (patchCMMVer < 4.0) {
 			patchCMMVer = 4.0;
 		}
-		sb.append("\t"+patchCMMVer+",\n");
-		sb.append("\t\""+targetModule+"\",\n");
+		sb.append("\t" + patchCMMVer + ",\n");
+		sb.append("\t\"" + targetModule + "\",\n");
 		String sqlPath = targetPath.replaceAll("\\\\", "\\\\\\\\");
-		sb.append("\t\""+sqlPath+"\",\n");
-		
-		sb.append("\t\""+targetPath.replaceAll("\\\\", "\\\\\\\\")+"\",\n");
-		sb.append("\t"+targetSize+",\n");
+		sb.append("\t\"" + sqlPath + "\",\n");
+
+		sb.append("\t\"" + targetPath.replaceAll("\\\\", "\\\\\\\\") + "\",\n");
+		sb.append("\t" + targetSize + ",\n");
 		sb.append("\tfalse, /*FINALIZER*/\n");
 
 		String serverfolder = patchName.toLowerCase().replaceAll(" - ", "-").replaceAll(" ", "-");
-		sb.append("\t\"http://me3tweaks.com/mixins/library/"+serverfolder+"/patch.jsf\",\n");
-		sb.append("\t\""+patchName+"\",\n");
+		sb.append("\t\"http://me3tweaks.com/mixins/library/" + serverfolder + "/patch.jsf\",\n");
+		sb.append("\t\"" + patchName + "\",\n");
 		sb.append("\tnull\n");
 		sb.append(");");
 		return sb.toString();

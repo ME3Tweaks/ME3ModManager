@@ -254,14 +254,16 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 			
 			//Get required mixins
-			NodeList mixinNodeList = doc.getElementsByTagName("MixinData");
-			Element mixinsElement = (Element) mixinNodeList.item(0);
-			NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
-			for (int j = 0; j < mixinsNodeList.getLength(); j++) {
-				Node mixinNode = mixinsNodeList.item(j);
-				if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
-					requiredMixinIds.add(Integer.parseInt(mixinNode.getTextContent()));
-					ModManager.debugLogger.writeMessage("Mod recommends mixin with id "+mixinNode.getTextContent());
+			NodeList mixinNodeList = doc.getElementsByTagName("MixInData");
+			if (mixinNodeList.getLength() > 0) {
+				Element mixinsElement = (Element) mixinNodeList.item(0);
+				NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
+				for (int j = 0; j < mixinsNodeList.getLength(); j++) {
+					Node mixinNode = mixinsNodeList.item(j);
+					if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
+						requiredMixinIds.add(Integer.parseInt(mixinNode.getTextContent()));
+						ModManager.debugLogger.writeMessage("Mod recommends mixin with id "+mixinNode.getTextContent());
+					}
 				}
 			}
 			
@@ -309,7 +311,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	private void setupWindow() {
 		this.setTitle("ModMaker Compiler");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(420, 200));
+		this.setPreferredSize(new Dimension(420, 167));
 		this.setIconImages(ModManager.ICONS);
 
 		JPanel modMakerPanel = new JPanel();
@@ -337,9 +339,9 @@ public class ModMakerCompilerWindow extends JDialog {
 		currentStepProgress.setIndeterminate(false);
 		currentStepProgress.setEnabled(false);
 
-		JPanel overallPanel = new JPanel();
+		JPanel overallPanel = new JPanel(new BorderLayout());
 		overallPanel.setBorder(overallBorder);
-		overallPanel.add(overallProgress);
+		overallPanel.add(overallProgress,BorderLayout.CENTER);
 
 		modMakerPanel.add(overallPanel);
 		modMakerPanel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -1696,24 +1698,30 @@ public class ModMakerCompilerWindow extends JDialog {
 		if (!error) {
 			//PROCESS MIXINS
 			if (requiredMixinIds.size() > 0) {
+				currentOperationLabel.setText("Preparing MixIns");
 				ModManager.debugLogger.writeMessage("Mod delta recommends MixIns, running PatchLibraryWindow()");
-				new PatchLibraryWindow(requiredMixinIds, newMod);
+				new PatchLibraryWindow(this,requiredMixinIds, newMod);
 			}
-			
-			ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
-			new AutoTocWindow(newMod);
-			stepsCompleted++;
-			ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);
-			ModManager.debugLogger.writeMessage("===========END OF MODMAKER========");
-			//Mod Created!
-			dispose();
-			if (mod == null) {
-				//updater supresses this window
-				JOptionPane.showMessageDialog(this, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
-				new ModManagerWindow(false);
-			}
+			finishModMaker(newMod);
 		} else {
 			dispose();
+		}
+	}
+	
+	public void finishModMaker(Mod newMod){
+		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
+		overallProgress.setValue(95);
+		new AutoTocWindow(newMod);
+		overallProgress.setValue(100);
+		stepsCompleted++;
+		ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);
+		ModManager.debugLogger.writeMessage("===========END OF MODMAKER========");
+		//Mod Created!
+		dispose();
+		if (mod == null) {
+			//updater supresses this window
+			JOptionPane.showMessageDialog(this, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
+			new ModManagerWindow(false);
 		}
 	}
 
