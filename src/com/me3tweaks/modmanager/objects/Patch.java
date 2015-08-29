@@ -25,7 +25,7 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
  *
  */
 public class Patch implements Comparable<Patch>{
-	String targetPath, targetModule;
+	String targetPath, targetModule, patchPath;
 	boolean isValid = false;
 
 	String patchName, patchDescription, patchFolderPath;
@@ -37,6 +37,7 @@ public class Patch implements Comparable<Patch>{
 	public Patch(String descriptorPath) {
 		ModManager.debugLogger.writeMessage("Loading patch: " + descriptorPath);
 		readPatch(descriptorPath);
+		patchPath = descriptorPath;
 	}
 
 	private void readPatch(String path) {
@@ -453,6 +454,16 @@ public class Patch implements Comparable<Patch>{
 		sb.append("\t\""+patchName+"\",\n");
 		sb.append("\tnull\n");
 		sb.append(");");
+		File copyTo = new File("server/"+serverfolder+"/patch.jsf");
+		File dirHeader = copyTo.getParentFile();
+		dirHeader.mkdirs();
+		try {
+			FileUtils.copyFile(new File(patchPath), copyTo);
+			System.out.println("Copied to "+copyTo.getAbsolutePath());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return sb.toString();
 	}
 

@@ -158,7 +158,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		patchList.setCellRenderer(new PatchCellRenderer());
 		for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
 			patchModel.addElement(patch);
-			// System.out.println(patch.convertToME3TweaksSQLInsert());
+			System.out.println(patch.convertToME3TweaksSQLInsert());
 		}
 		lrSplitPane.setLeftComponent(new JScrollPane(patchList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
@@ -310,6 +310,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 		Document doc;
 		boolean modmakerMode;
+		boolean atLeast1New = false;
 
 		public ME3TweaksLibraryUpdater(boolean isInModMakerMode) {
 			this.modmakerMode = isInModMakerMode;
@@ -401,6 +402,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 
 				// download new packs
 				for (ME3TweaksPatchPackage pack : packsToDownload) {
+					atLeast1New = true;
 					ModManager.debugLogger.writeMessage("Downloading MixIn patch: " + pack.getPatchurl());
 
 					// clear old directories, make new ones
@@ -432,10 +434,12 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		}
 		
 		public void done(){
+			if (atLeast1New) {
+				ModManager.debugLogger.writeMessage("Patch Library updated from ME3Tweaks, reloading patch list");
+				ModManagerWindow.ACTIVE_WINDOW.setPatchList(ModManager.getPatchesFromDirectory());
+			}
 			if (modmakerMode){
 				//reload patch list
-				ModManagerWindow.ACTIVE_WINDOW.setPatchList(ModManager.getPatchesFromDirectory());
-
 				//check requirements are met
 				ArrayList<Integer> missingIds = new ArrayList<Integer>();
 				for (int requiredID : automated_requiredMixinIds) {
