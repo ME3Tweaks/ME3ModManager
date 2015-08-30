@@ -13,3 +13,11 @@ me3cmm_last_run_log.txt
 latest_version
 PCA-Generator/
 *.xml
+data/databases
+data/mixinlibrary
+data/modmaker
+mods/
+server/
+patches/
+derby.log
+data/Coalesced.original
