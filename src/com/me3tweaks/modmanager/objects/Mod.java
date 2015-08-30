@@ -659,6 +659,9 @@ public class Mod implements Comparable<Mod> {
 			if (modmakerCode > 0) {
 				ini.put("ModInfo", "modid", Integer.toString(modmakerCode));
 			}
+			if (compiledAgainstModmakerVersion > 0) {
+				ini.put("ModInfo", "compiledagainst", Double.toString(compiledAgainstModmakerVersion));
+			}
 
 			for (ModJob job : jobs) {
 				boolean isFirst = true;

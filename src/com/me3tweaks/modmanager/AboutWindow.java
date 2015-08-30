@@ -46,7 +46,7 @@ public class AboutWindow extends JDialog {
 						+ ModManager.VERSION + " Build "+ModManager.BUILD_NUMBER
 						+ "- "+ModManager.BUILD_DATE+"<br>Developed by FemShep"
 								+ "<br>"
-								+ "Source code available at http://sourceforge.net/projects/me3cmm/"
+								+ "Source code available at http://github.com/mgamerz/me3modmanager"
 								+ "<br>"
 								+ "<br>Uses ini4j: http://ini4j.sourceforge.net"
 								+ "<br>Uses json-simple: https://code.google.com/p/json-simple/"

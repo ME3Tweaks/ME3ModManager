@@ -211,7 +211,6 @@ public class AllModsUpdateWindow extends JDialog {
 						operationLabel.setText("Updating mods from ME3Tweaks.com");
 						break;
 					default:
-						System.out.println("GOT STRING (DEFAULT): "+command);
 						statusLabel.setText("Checking "+command);
 						break;
 					}
@@ -220,7 +219,6 @@ public class AllModsUpdateWindow extends JDialog {
 				if (obj instanceof Integer) {
 					//its a progress update
 					Integer i = (Integer) obj;
-					System.out.println("GOT INTEGER: "+i);
 					statusLabel.setText(i + " mod" + (i == 1 ? "" : "s") + " out of date");
 				}
 			}
@@ -267,7 +265,7 @@ public class AllModsUpdateWindow extends JDialog {
 				if (AllModsUpdateWindow.this.showUI) {
 					JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.", "Mods up to date", JOptionPane.INFORMATION_MESSAGE);
 				} else {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Auto updater: Mods are up to date");
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Auto Updater: Mods are up to date");
 				}
 				return;
 			}

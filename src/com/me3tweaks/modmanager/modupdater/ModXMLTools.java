@@ -179,7 +179,8 @@ public class ModXMLTools {
 			double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
 			String serverModName = modElem.getAttribute("name");
 			if (mod.getVersion() >= serverModVer) {
-				ModManager.debugLogger.writeMessage("Mod up to date");
+				
+				ModManager.debugLogger.writeMessage("Mod up to date. Local version: "+mod.getVersion()+" Server Version: "+serverModVer);
 				continue; // not an update
 			} else {
 				ModManager.debugLogger.writeMessage("ModMaker Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
