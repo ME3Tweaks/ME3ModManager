@@ -185,7 +185,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		patchList.setCellRenderer(new PatchCellRenderer());
 		for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
 			patchModel.addElement(patch);
-			System.out.println(patch.convertToME3TweaksSQLInsert());
+			//System.out.println(patch.convertToME3TweaksSQLInsert());
 		}
 		lrSplitPane.setLeftComponent(new JScrollPane(patchList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
