@@ -65,15 +65,60 @@ public class ModInstallWindow extends JDialog {
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
-		new InjectionCommander(jobs, mod).execute();
-		this.setVisible(true);
+		boolean installMod = validateRequiredModulesAreAvailable(callingWindow, jobs);
+		if (installMod) {
+			new InjectionCommander(jobs, mod).execute();
+			this.setVisible(true);
+		} else {
+			dispose();
+		}
+	}
+
+	/**
+	 * Checks that the modjobs required modules are available and prompts if they aren't
+	 * @return true if all are available or user ignored missing
+	 */
+	private boolean validateRequiredModulesAreAvailable(ModManagerWindow callingWindow, ModJob[] jobs) {
+		ArrayList<String> missingModules = new ArrayList<String>();
+		for (ModJob job : jobs) {
+			if (job.getJobType() == ModJob.DLC){
+				//check that sfar is available
+				String sfarName = "Default.sfar";
+				if (job.TESTPATCH) {
+					sfarName = "Patch_001.sfar";
+				}
+				String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
+				File sfar = new File(sfarPath);
+				if (!sfar.exists()) {
+					missingModules.add(job.getJobName());
+				}
+			}
+		}
+		if (missingModules.size() <= 0) {
+			ModManager.debugLogger.writeMessage("Mod has all required DLCs available");
+			return true;
+		}
+		
+		//module is missing
+		StringBuilder sb = new StringBuilder();
+		sb.append("This mod has tasks for the following missing DLC:\n");
+		for (String str : missingModules) {
+			ModManager.debugLogger.writeMessage("Mod requires missing DLC Module: " + str);
+			sb.append(" - ");
+			sb.append(str);
+			sb.append("\n");
+		}
+		sb.append("You can install this mod and it will skip these DLC.\nHowever, problems may occur in game. Install the mod anyways?");
+		int result = JOptionPane.showConfirmDialog(callingWindow, sb.toString(), "Missing DLC", JOptionPane.WARNING_MESSAGE);
+		ModManager.debugLogger.writeMessage(result == JOptionPane.YES_OPTION ? "User continuing install even with missing DLC modules" : "User canceled Mod Install");
+		return result == JOptionPane.YES_OPTION;
 	}
 
 	private void setupWindow() {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		// TODO Auto-generated method stub
-		infoLabel = new JLabel("<html>Applying mod to game...<br>This may take a few minutes.</html>");
+		infoLabel = new JLabel("<html>Applying mod to Mass Effect 3...<br>This may take a few minutes.</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
@@ -123,7 +168,7 @@ public class ModInstallWindow extends JDialog {
 			for (ModJob job : jobs) {
 				ModManager.debugLogger.writeMessage("Starting mod job");
 				boolean result = false;
-				switch (job.getModType()) {
+				switch (job.getJobType()) {
 				case ModJob.DLC:
 					result = processDLCJob(job);
 					break;
@@ -294,6 +339,13 @@ public class ModInstallWindow extends JDialog {
 			String sfarName = "Default.sfar";
 			if (job.TESTPATCH) {
 				sfarName = "Patch_001.sfar";
+			}
+			File sfarFile = new File(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
+			if (!sfarFile.exists()) {
+				//missing module
+				ModManager.debugLogger.writeMessage("Missing DLC Module, skipping: " + sfarFile.getAbsolutePath());
+				publish("DLC is missing: "+job.getDLCFilePath());
+				return true;
 			}
 			commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
 			String[] filesToReplace = job.getFilesToReplace();

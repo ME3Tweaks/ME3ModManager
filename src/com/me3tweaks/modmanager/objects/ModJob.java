@@ -19,7 +19,7 @@ public class ModJob {
 	public static final int DLC = 0;
 	public static final int CUSTOMDLC = 2;
 	public boolean TESTPATCH = false; //testpatch flag for patch window
-	private int modType;
+	private int jobType;
 	String DLCFilePath;
 	private String jobName;
 	ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
@@ -32,7 +32,7 @@ public class ModJob {
 	 * @param DLCFilePath Path to the DLC Sfar file.
 	 */
 	public ModJob(String DLCFilePath, String jobName){
-		setModType(DLC);
+		setJobType(DLC);
 		this.setJobName(jobName);
 		this.DLCFilePath = DLCFilePath;
 		newFiles = new ArrayList<String>();
@@ -43,14 +43,14 @@ public class ModJob {
 	 * @param DLCFilePath Path to the DLC Sfar file.
 	 */
 	public ModJob(){
-		setModType(BASEGAME);
+		setJobType(BASEGAME);
 		setJobName(ModType.BASEGAME);
 		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
 	}
 
 	public String getDLCFilePath() {
-		return (getModType() == BASEGAME) ? "Basegame" : DLCFilePath;
+		return (getJobType() == BASEGAME) ? "Basegame" : DLCFilePath;
 	}
 
 	public String[] getNewFiles() {
@@ -69,7 +69,7 @@ public class ModJob {
 			ModManager.debugLogger.writeError("Source file doesn't exist: "+newFile);
 			return false;
 		}
-		if (getModType() == BASEGAME) {
+		if (getJobType() == BASEGAME) {
 			//check first char is \
 			if (fileToReplace.charAt(0) != '\\'){
 				fileToReplace = "\\"+fileToReplace;
@@ -99,7 +99,7 @@ public class ModJob {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((DLCFilePath == null) ? 0 : DLCFilePath.hashCode());
-		result = prime * result + getModType();
+		result = prime * result + getJobType();
 		return result;
 	}	
 	
@@ -117,7 +117,7 @@ public class ModJob {
 				return false;
 		} else if (!DLCFilePath.equals(other.DLCFilePath))
 			return false;
-		if (getModType() != other.getModType())
+		if (getJobType() != other.getJobType())
 			return false;
 		return true;
 	}
@@ -135,12 +135,12 @@ public class ModJob {
 		return false;
 	}
 
-	public int getModType() {
-		return modType;
+	public int getJobType() {
+		return jobType;
 	}
 
-	public void setModType(int modType) {
-		this.modType = modType;
+	public void setJobType(int jobType) {
+		this.jobType = jobType;
 	}
 
 	public String getJobName() {

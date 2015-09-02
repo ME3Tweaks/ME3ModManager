@@ -1125,7 +1125,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			Mod mod = modModel.get(modList.getSelectedIndex());
 			ModManager.debugLogger.writeMessage("Deleting custom content for mod: " + mod.getModName());
 			for (ModJob job : mod.jobs) {
-				if (job.getModType() != ModJob.CUSTOMDLC) {
+				if (job.getJobType() != ModJob.CUSTOMDLC) {
 					continue; // skip
 				}
 
@@ -1379,7 +1379,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void checkBackedUp(Mod mod) {
 		ModJob[] jobs = mod.getJobs();
 		for (ModJob job : jobs) {
-			if (job.getModType() == ModJob.BASEGAME || job.getModType() == ModJob.CUSTOMDLC) {
+			if (job.getJobType() == ModJob.BASEGAME || job.getJobType() == ModJob.CUSTOMDLC) {
 				continue; // we can't really check for a .bak of Coalesced.
 			}
 			// Default.sfar
