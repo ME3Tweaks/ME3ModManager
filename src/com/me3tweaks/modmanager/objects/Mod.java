@@ -205,7 +205,7 @@ public class Mod implements Comparable<Mod> {
 
 				ModJob newJob = new ModJob();
 				newJob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
-				newJob.setModType(ModJob.CUSTOMDLC);
+				newJob.setJobType(ModJob.CUSTOMDLC);
 				newJob.sourceFolders = new ArrayList<String>();
 				newJob.setDestFolders(new ArrayList<String>());
 
@@ -666,7 +666,7 @@ public class Mod implements Comparable<Mod> {
 			for (ModJob job : jobs) {
 				boolean isFirst = true;
 
-				if (job.getModType() == ModJob.CUSTOMDLC) {
+				if (job.getJobType() == ModJob.CUSTOMDLC) {
 					StringBuilder sfsb = new StringBuilder();
 					StringBuilder dfsb = new StringBuilder();
 
@@ -833,7 +833,7 @@ public class Mod implements Comparable<Mod> {
 		File modFolder = new File(ModManager.getModsDir()+modName);
 		modFolder.mkdirs();
 		for (ModJob job : jobs) {
-			if (job.getModType() == ModJob.CUSTOMDLC) {
+			if (job.getJobType() == ModJob.CUSTOMDLC) {
 				for (String sourceFolder : job.sourceFolders) {
 					try {
 						File srcFolder = new File(ModManager.appendSlash(modDescFile.getParentFile().getAbsolutePath()) + sourceFolder);
@@ -902,7 +902,7 @@ public class Mod implements Comparable<Mod> {
 			return false;
 		}
 		for (ModJob job : jobs) {
-			if (job.getModType() == ModJob.CUSTOMDLC) {
+			if (job.getJobType() == ModJob.CUSTOMDLC) {
 				return true;
 			}
 		}

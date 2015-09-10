@@ -115,7 +115,7 @@ public class KeybindsInjectionWindow extends JDialog {
 				ModJob basegamejob = null;
 				//check if it has basegame modjob
 				for (ModJob job : mod.jobs) {
-					if (job.getModType() == ModJob.BASEGAME){
+					if (job.getJobType() == ModJob.BASEGAME){
 						basegamejob = job;
 						String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
