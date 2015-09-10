@@ -2,7 +2,6 @@ package com.me3tweaks.modmanager.basegamedb;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -56,7 +55,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		ModManager.debugLogger = new DebugLogger();
 		ModManager.debugLogger.initialize();
 		ModManager.logging = true;
-		new BasegameHashDB(null, "I:/Origin Games/Mass Effect 3/", true);
+		new BasegameHashDB(null, "I:/Origin Games/Mass Effect 3/", true); //debug only
 	}
 	
 	public BasegameHashDB(JFrame callingWindow, String basePath, boolean showGUI){
@@ -70,6 +69,16 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		} else {
 			loadDatabase();
 		}
+	}
+	
+	public void shutdownDB(){
+		if (dbConnection != null) {
+    		try {
+				dbConnection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+    	}
 	}
 	
 	private void setupWindow() {
@@ -109,14 +118,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		this.addWindowListener(new java.awt.event.WindowAdapter() {
 		    @Override
 		    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-	        	if (dbConnection != null) {
-	        		try {
-						dbConnection.close();
-					} catch (SQLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-	        	}
+	        	shutdownDB();
 	        	if (isRunningAsMain) {
 	        		System.exit(0);
 	        	}
@@ -145,7 +147,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
             }
 
         } catch (SQLException ex) {
-        	System.out.println("exception.");
+    		ModManager.debugLogger.writeMessage("SQL error while loading BG Database");
 			ModManager.debugLogger.writeException(ex);
         }
 		ModManager.debugLogger.writeMessage("Basegame database failed to load.");

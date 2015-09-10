@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -99,6 +100,7 @@ public class ModInstallWindow extends JDialog {
 		Mod mod;
 		ModJob[] jobs;
 		ArrayList<String> failedJobs;
+		private BasegameHashDB bghDB;
 
 		protected InjectionCommander(ModJob[] jobs, Mod mod) {
 			this.mod = mod;
@@ -111,15 +113,26 @@ public class ModInstallWindow extends JDialog {
 
 		@Override
 		public Boolean doInBackground() {
-			ModManager.debugLogger.writeMessage("Starting the background thread for PatchWindow");
+			ModManager.debugLogger.writeMessage("Starting the background thread for ModInstallWindow");
 			ModManager.debugLogger.writeMessage("Checking for DLC Bypass");
-			if (!ModManager.hasKnownDLCBypass(bioGameDir)){
+			if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
 				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing LauncherWV.exe...");
-				if (!ModManager.installLauncherWV(bioGameDir)){
+				if (!ModManager.installLauncherWV(bioGameDir)) {
 					ModManager.debugLogger.writeError("LauncherWV failed to install");
 				}
 			}
-			
+
+			// check basegame precheck
+			for (ModJob job : jobs) {
+				if (job.getModType() == ModJob.BASEGAME) {
+					boolean shouldContinue = precheckBasegameDB(job);
+					if (!shouldContinue) {
+						return false;
+					}
+					break;
+				}
+			}
+
 			for (ModJob job : jobs) {
 				ModManager.debugLogger.writeMessage("Starting mod job");
 				boolean result = false;
@@ -147,6 +160,39 @@ public class ModInstallWindow extends JDialog {
 			return true;
 		}
 
+		private boolean precheckBasegameDB(ModJob job) {
+			publish("Checking all files in basegame job are in the Basegame DB already before installing mod.");
+			File bgdir = new File(ModManager.appendSlash(bioGameDir));
+			String me3dir = ModManager.appendSlash(bgdir.getParent());
+			String[] filesToReplace = job.getFilesToReplace();
+			int numFilesToReplace = filesToReplace.length;
+			for (int i = 0; i < numFilesToReplace; i++) {
+				String fileToReplace = filesToReplace[i];
+
+				File basegamefile = new File(me3dir + fileToReplace);
+
+				if (bghDB == null) {
+					publish(ModType.BASEGAME + ": Loading repair database");
+					bghDB = new BasegameHashDB(null, me3dir, false);
+				}
+
+				String relative = ResourceUtils.getRelativePath(basegamefile.getAbsolutePath(), me3dir, File.separator);
+				RepairFileInfo rfi = bghDB.getFileInfo(relative);
+				if (rfi == null) {
+					// file is missing. Basegame DB likely hasn't been made
+					int reply = JOptionPane.showConfirmDialog(null,
+							"<html>One or more of the files this mod is installing is not in the basegame database.<br>In order to restore basegame files this database needs to be created or updated.<br>Open the database window?</html>",
+							"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+					if (reply == JOptionPane.CANCEL_OPTION) {
+						return false;
+					} else {
+						return true;
+					}
+				}
+			}
+			return true;
+		}
+
 		private boolean processBasegameJob(ModJob job) {
 			publish("Processing basegame files...");
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
@@ -157,7 +203,6 @@ public class ModInstallWindow extends JDialog {
 			cmmbackupfolder.mkdirs();
 			ModManager.debugLogger.writeMessage("Basegame backup directory should have been created if it does not exist already.");
 			// Prep replacement job
-			BasegameHashDB bghDB = null; // don't load if not necessary.
 			String[] filesToReplace = job.getFilesToReplace();
 			String[] newFiles = job.getNewFiles();
 			int numFilesToReplace = filesToReplace.length;
@@ -176,7 +221,7 @@ public class ModInstallWindow extends JDialog {
 					// backup the file
 					if (bghDB == null) {
 						publish(ModType.BASEGAME + ": Loading repair database");
-						bghDB = new BasegameHashDB(null, new File(bioGameDir).getParent(), false);
+						bghDB = new BasegameHashDB(null, me3dir, false);
 					}
 					Path backuppath = Paths.get(backupfile.toString());
 					backupfile.getParentFile().mkdirs();
@@ -209,8 +254,8 @@ public class ModInstallWindow extends JDialog {
 						if (basegamefile.length() != rfi.filesize) {
 							// MISMATCH!
 							int reply = JOptionPane.showOptionDialog(null,
-									"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>" + basegamefile.length()
-											+ " bytes (installed) vs " + rfi.filesize + " bytes (database)<br><br>"
+									"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
+											+ basegamefile.length() + " bytes (installed) vs " + rfi.filesize + " bytes (database)<br><br>"
 											+ "This file could be corrupted or modified since the database was created.<br>"
 											+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when you restore.<br></html>",
 									"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
@@ -336,7 +381,7 @@ public class ModInstallWindow extends JDialog {
 
 		private boolean processCustomDLCJob(ModJob job) {
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
-			
+
 			for (int i = 0; i < job.getFilesToReplace().length; i++) {
 				String fileDestination = dlcdir + job.getFilesToReplace()[i];
 				String fileSource = job.getNewFiles()[i];
@@ -362,11 +407,11 @@ public class ModInstallWindow extends JDialog {
 			// System.out.println("Restoring next DLC");
 			for (String update : updates) {
 				try {
-					
+
 					Integer.parseInt(update); // see if we got a number. if we
 												// did that means we should
 												// update the bar
-					ModManager.debugLogger.writeMessage("Job finished: "+update);
+					ModManager.debugLogger.writeMessage("Job finished: " + update);
 					if (numjobs != 0) {
 						progressBar.setValue((int) (((float) completed / numjobs) * 100));
 					}
@@ -380,16 +425,38 @@ public class ModInstallWindow extends JDialog {
 
 		@Override
 		protected void done() {
-			if (numjobs != completed) {
-				// failed something
-				StringBuilder sb = new StringBuilder();
-				sb.append("Failed to process mod installation.\nSome parts of the install may have succeeded.\nTurn on debugging via Help>About and check the log file.");
-				callingWindow.labelStatus.setText("Failed to install at least 1 part of mod");
-				JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
-				ModManager.debugLogger.writeMessage(mod.getModName() + " failed to fully install.");
+			boolean success = false;
+			try {
+				success = get();
+			} catch (InterruptedException e) {
+				ModManager.debugLogger.writeException(e);
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeException(e);
+			}
+
+			if (success) {
+				if (numjobs != completed) {
+					// failed something
+					StringBuilder sb = new StringBuilder();
+					sb.append(
+							"Failed to process mod installation.\nSome parts of the install may have succeeded.\nTurn on debugging via Help>About and check the log file.");
+					callingWindow.labelStatus.setText("Failed to install at least 1 part of mod");
+					JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+					ModManager.debugLogger.writeMessage(mod.getModName() + " failed to fully install.");
+				} else {
+					// we're good
+					callingWindow.labelStatus.setText(" " + mod.getModName() + " installed");
+				}
 			} else {
-				// we're good
-				callingWindow.labelStatus.setText(" " + mod.getModName() + " installed");
+				ModManager.debugLogger.writeMessage("Installation canceled by user because basegame database update is required.");
+				bghDB.shutdownDB();
+				bghDB = null;
+				System.gc();//force shutdown the old DB
+				File bgdir = new File(ModManager.appendSlash(bioGameDir));
+				String me3dir = ModManager.appendSlash(bgdir.getParent());
+				BasegameHashDB bghDB = new BasegameHashDB(ModManagerWindow.ACTIVE_WINDOW, me3dir, true);
+				dispose();
+				bghDB.setVisible(true);
 			}
 			finishPatch();
 			return;
