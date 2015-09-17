@@ -8,6 +8,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.StringReader;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -19,14 +20,23 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 public class DifficultyGUI extends JFrame implements ActionListener {
-    JTextArea input, output;
-    boolean closeOnExit = false;
+	JTextArea input, output;
+	boolean closeOnExit = false;
 	JTextField enemy;
 	JButton submit, generateInsert, generateTable, generateFork, generateLoad, generateVariables, generateUpdate, copy;
 	JComboBox<String> difficultylist;
-	String[] difficulties = { "Bronze", "Silver", "Gold", "Platinum" };
+	String[] difficulties = { "Narrative", "Casual", "Normal", "Hardcore", "Insanity", "Bronze", "Silver", "Gold", "Platinum" };
+	private DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 
 	public static void main(String[] args) throws IOException {
 		new DifficultyGUI();
@@ -34,8 +44,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 
 	public DifficultyGUI() {
 		this.setTitle("ME3CMM Biodifficulty Parser Tool");
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(
-				getClass().getResource("/resource/icon32.png")));
+		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
 		this.setMinimumSize(new Dimension(490, 500));
 		this.setPreferredSize(new Dimension(490, 500));
 		setupWindow();
@@ -47,8 +56,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		JLabel instructionsLabel = new JLabel(
 				"<html>ME3CMM Biodifficulty Parser<br>Enter the Biodifficulty text below and press parse to view easily readable information.</html>");
 		wavelistGUI.add(instructionsLabel, BorderLayout.NORTH);
-		instructionsLabel
-				.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		instructionsLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		JPanel inputPanel = new JPanel(new BorderLayout());
 		input = new JTextArea(6, 45);
@@ -57,14 +65,12 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		input.setWrapStyleWord(false);
 		//inputscroll
 		JScrollPane inputScrollPane = new JScrollPane(input);
-		inputScrollPane.setVerticalScrollBarPolicy(
-		                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		inputScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		inputScrollPane.setPreferredSize(new Dimension(250, 250));
 
 		submit = new JButton("Parse");
 		submit.addActionListener(this);
 
-		
 		// sql stuff
 		JPanel SQLPanel = new JPanel(new BorderLayout());
 		difficultylist = new JComboBox<String>(difficulties);
@@ -75,7 +81,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		SQLPanel.add(difficultylist, BorderLayout.NORTH);
 		SQLPanel.add(generateTable, BorderLayout.CENTER);
 		SQLPanel.add(generateInsert, BorderLayout.SOUTH);
-		
+
 		//PHP stuff
 		JPanel PHPPanel = new JPanel(new BorderLayout());
 		generateFork = new JButton("Generate Fork");
@@ -90,13 +96,13 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		PHPPanel.add(generateFork, BorderLayout.NORTH);
 		PHPPanel.add(generateLoad, BorderLayout.CENTER);
 		PHPPanel.add(generateUpdate, BorderLayout.SOUTH);
-		
+
 		//PHP Panel 2 (rightside)
 		JPanel PHPPanel2 = new JPanel(new BorderLayout());
 		generateVariables = new JButton("Generate Vars");
 		generateVariables.addActionListener(this);
 		PHPPanel2.add(generateVariables, BorderLayout.NORTH);
-		
+
 		JPanel modmakerPanel = new JPanel(new BorderLayout());
 		modmakerPanel.add(SQLPanel, BorderLayout.WEST);
 		modmakerPanel.add(PHPPanel, BorderLayout.CENTER);
@@ -115,19 +121,16 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		output.setWrapStyleWord(false);
 		//outputscroll
 		JScrollPane outputScrollPane = new JScrollPane(output);
-		inputScrollPane.setVerticalScrollBarPolicy(
-		                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		inputScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		outputScrollPane.setPreferredSize(new Dimension(250, 250));
-		
-		
+
 		copy = new JButton("Copy");
 		copy.addActionListener(this);
 		outputPanel.add(outputLabel, BorderLayout.NORTH);
 		outputPanel.add(outputScrollPane, BorderLayout.CENTER);
 		outputPanel.add(copy, BorderLayout.SOUTH);
 
-		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-				inputPanel, outputPanel);
+		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inputPanel, outputPanel);
 		splitPane.setDividerLocation(150 + splitPane.getInsets().top);
 
 		wavelistGUI.add(splitPane, BorderLayout.CENTER);
@@ -137,8 +140,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 
 	public static void diffString(String str1, String str2) {
 		if (str1.length() != str2.length()) {
-			System.out.println("Strings are not the same length: "
-					+ str1.length() + " vs " + str2.length());
+			System.out.println("Strings are not the same length: " + str1.length() + " vs " + str2.length());
 
 			return;
 		}
@@ -146,8 +148,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 			if (str1.charAt(i) == str2.charAt(i)) {
 				continue;
 			} else {
-				System.out.println("Difference at index " + i + ", str1: "
-						+ str1.charAt(i) + ", str2: " + str2.charAt(i));
+				System.out.println("Difference at index " + i + ", str1: " + str1.charAt(i) + ", str2: " + str2.charAt(i));
 			}
 		}
 	}
@@ -155,7 +156,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 	/**
 	 * Generates fork code for ModMaker's PHP page
 	 */
-	public void generateForkPHP(){
+	public void generateForkPHP() {
 		// get name of enemy
 		// Parse the enemy
 		String input_text = input.getText();
@@ -164,15 +165,15 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 			cat = new Category(input_text);
 		} catch (Exception ex) {
 			output.setText(ex.toString());
-			return ;
+			return;
 		}
 		StringBuilder sb = new StringBuilder();
 		//ENEMYNAME
 		sb.append("//");
 		sb.append(cat.categoryname.toUpperCase());
-		sb.append("\n"); 
+		sb.append("\n");
 		//echo "<br>Beginning Centurion fork.";
-		sb.append("echo \"<br>Beginning ");
+		sb.append("//echo \"<br>Beginning ");
 		sb.append(cat.categoryname);
 		sb.append(" fork.\";\n");
 		//$stmt = $dbh->prepare("SELECT * FROM modmaker_enemies_centurion WHERE mod_id=:fork_parent");
@@ -202,10 +203,9 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		sb.append("_difficulty = $");
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append("row['difficulty'];\n");
-		
-		
+
 		//Generate NAMEs_STAT = NAMErow['STAT'];
-		for (Stat stat : cat.stats){
+		for (Stat stat : cat.stats) {
 			sb.append("\t$");
 			sb.append(cat.categoryname.toLowerCase());
 			sb.append("_");
@@ -222,13 +222,13 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		sb.append("_modified_genesis = $");
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append("row['modified_genesis'];\n");
-		
+
 		//$stmt = $dbh->prepare("INSERT INTO modmaker_enemies_centurion VALUES(:mod_id, :difficulty, :minhealth, :maxhealth, :minshields, :maxshields, :minsmokefrequency, :maxsmokefrequency, :grenadeinterval,:maxenemyshieldrecharge, :aishieldregendelay, :aishieldregenpct,  false, :modified_genesis)");
 
 		sb.append("\t$stmt = $dbh->prepare(\"INSERT INTO modmaker_enemies_");
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append(" VALUES(:mod_id, :difficulty,");
-		for (Stat stat : cat.stats){
+		for (Stat stat : cat.stats) {
 			sb.append(" :");
 			sb.append(stat.statname.toLowerCase());
 			sb.append(",");
@@ -239,9 +239,9 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		sb.append("\t$stmt->bindValue(\":difficulty\", $");
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append("_difficulty);\n");
-		
+
 		//$stmt->bindValue(":STAT", $NAME_STAT);
-		for (Stat stat : cat.stats){
+		for (Stat stat : cat.stats) {
 			sb.append("\t$stmt->bindValue(\":");
 			sb.append(stat.statname.toLowerCase());
 			sb.append("\", $");
@@ -254,7 +254,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		sb.append("\t$stmt->bindValue(\":modified_genesis\", $");
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append("_modified_genesis);\n");
-		
+
 		//if (!$stmt->execute()) {
 		sb.append("\tif (!$stmt->execute()) {\n");
 		//echo "NAME FORK FAIL."
@@ -263,17 +263,11 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		sb.append(" FORK FAIL: \".print_r($stmt->errorInfo());\n");
 		sb.append("\t\treturn ERROR_SQL_GENERIC;\n");
 		// } else {
-		sb.append("\t} else {\n");
-		//echo "<br>Finished NAME fork
-		sb.append("\t\techo \"<br>Finished ");
-		sb.append(cat.categoryname);
-		sb.append(" fork.\";\n");
-		//closing brackets
 		sb.append("\t}\n");
 		sb.append("}");
 		output.setText(sb.toString());
 	}
-	
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == submit) {
@@ -288,68 +282,237 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		} else if (e.getSource() == generateInsert) {
 			generateSQL();
 		} else if (e.getSource() == generateTable) {
-			generateTable();	
-		} else if (e.getSource() == generateFork){
+			generateTable2();
+		} else if (e.getSource() == generateFork) {
 			generateForkPHP();
-		} else if (e.getSource() == generateLoad){
+		} else if (e.getSource() == generateLoad) {
 			generateLoadPHP();
-		} else if (e.getSource() == generateVariables){
+		} else if (e.getSource() == generateVariables) {
 			generateVariablesPHP();
 		} else if (e.getSource() == copy) {
 			String myString = output.getText();
-			StringSelection stringSelection = new StringSelection (myString);
-			Clipboard clpbrd = Toolkit.getDefaultToolkit ().getSystemClipboard ();
-			clpbrd.setContents (stringSelection, null);
+			StringSelection stringSelection = new StringSelection(myString);
+			Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
+			clpbrd.setContents(stringSelection, null);
 		}
 	}
 
+	private String spLevelToHumanName(String section) {
+		switch (section) {
+		case "level1difficultydata":
+			return "narrative";
+		case "level2difficultydata":
+			return "casual";
+		case "level3difficultydata":
+			return "normal";
+		case "level4difficultydata":
+			return "hardcore";
+		case "level5difficultydata":
+			return "insanity";
+		case "level6difficultydata":
+			return "debug";
+		}
+		return ";;"; //will cause SQL error
+	}
+
+	private void generateTable2() {
+		// get name of enemy
+		// Parse the enemy
+		String input_text = input.getText();
+		StringBuilder sb = new StringBuilder();
+		try { //Load document
+			String wrappedText = "<biodiff>"+input_text+"</biodiff>";
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(wrappedText));
+			Document doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			NodeList properties = doc.getElementsByTagName("Property");
+			for (int i = 0; i < properties.getLength(); i++) {
+				Node scannednode = properties.item(i);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element difficultyElem = (Element) scannednode;
+					//iterate over values
+					NodeList valueList = difficultyElem.getChildNodes();
+					for (int k = 0; k < valueList.getLength(); k++) {
+						Node valueNode = valueList.item(k);
+						if (valueNode.getNodeType() == Node.ELEMENT_NODE) {
+							Element valueElement = (Element) valueNode;
+							Category cat;
+							try {
+								cat = new Category(valueElement.getTextContent());
+							} catch (Exception ex) {
+								ex.printStackTrace();
+								output.setText(ex.toString());
+								return;
+							}
+							sb.append("/*-------");
+							sb.append(cat.categoryname);
+							sb.append("-------*/\n");
+							sb.append("DROP TABLE IF EXISTS modmaker_enemies_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append(";\n");
+
+							//CREATE TABLE STATEMENT
+							sb.append("CREATE TABLE modmaker_enemies_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("(\n");
+							sb.append("\tmod_id INT NOT NULL, /*mod this enemy belongs to*/\n");
+							sb.append("\tdifficulty VARCHAR(9) NOT NULL, /*difficulty this applies to*/\n");
+							for (Stat stat : cat.stats) {
+								sb.append("\t");
+								sb.append(stat.statname.toLowerCase());
+								sb.append(" FLOAT NOT NULL,\n");
+							}
+
+							sb.append("\tmodified boolean NOT NULL,\n");
+							sb.append("\tmodified_genesis boolean NOT NULL,\n");
+							sb.append("\tFOREIGN KEY (mod_id) REFERENCES modmaker_mods(mod_id) ON DELETE CASCADE,\n"); //end of SQL statement
+							sb.append("\tPRIMARY KEY(mod_id, difficulty)\n");
+							sb.append(");\n");
+						}
+					}
+				}
+			}
+
+			output.setText(sb.toString());
+		} catch (Exception e) {
+			//not xml
+			sb = new StringBuilder();
+			Category cat;
+			try {
+				cat = new Category(input_text);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				output.setText(ex.toString());
+				return;
+			}
+			sb.append("/*-------");
+			sb.append(cat.categoryname);
+			sb.append("-------*/\n");
+			sb.append("DROP TABLE IF EXISTS modmaker_enemies_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append(";\n");
+
+			//CREATE TABLE STATEMENT
+			sb.append("CREATE TABLE modmaker_enemies_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append("(\n");
+			sb.append("\tmod_id INT NOT NULL, /*mod this enemy belongs to*/\n");
+			sb.append("\tdifficulty VARCHAR(9), /*difficulty this applies to*/\n");
+			for (Stat stat : cat.stats) {
+				sb.append("\t");
+				sb.append(stat.statname.toLowerCase());
+				sb.append(" FLOAT NOT NULL,\n");
+			}
+
+			sb.append("\tmodified boolean NOT NULL,\n");
+			sb.append("\tmodified_genesis boolean NOT NULL,\n");
+			sb.append("\tFOREIGN KEY (mod_id) REFERENCES modmaker_mods(mod_id) ON DELETE CASCADE,\n"); //end of SQL statement
+			sb.append("\tPRIMARY KEY(mod_id, difficulty)\n");
+			sb.append(");");
+			output.setText(sb.toString());
+		}
+	}
+	
 	private void generateSQL() {
 		// get name of enemy
 		// Parse the enemy
 		String input_text = input.getText();
-		Category cat;
-		try {
-			cat = new Category(input_text);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			output.setText(ex.toString());
-			return;
-		}
-		//get difficulty
-		String difficulty = (String) difficultylist.getSelectedItem();
-		difficulty = difficulty.toLowerCase();
-		
 		StringBuilder sb = new StringBuilder();
-		sb.append("/*");
-		sb.append(difficulty);
-		sb.append(" ");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append("*/\n");
-		
+		try { //Load document
+			String wrappedText = "<biodiff>"+input_text+"</biodiff>";
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(wrappedText));
+			Document doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			NodeList properties = doc.getElementsByTagName("Property");
+			for (int i = 0; i < properties.getLength(); i++) {
+				Node scannednode = properties.item(i);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element difficultyElem = (Element) scannednode;
+					String difficulty = spLevelToHumanName(scannednode.getAttributes().getNamedItem("name").getTextContent());
+					//iterate over values
+					NodeList valueList = difficultyElem.getChildNodes();
+					for (int k = 0; k < valueList.getLength(); k++) {
+						Node valueNode = valueList.item(k);
+						if (valueNode.getNodeType() == Node.ELEMENT_NODE) {
+							Element valueElement = (Element) valueNode;
+							Category cat;
+							try {
+								cat = new Category(valueElement.getTextContent());
+							} catch (Exception ex) {
+								ex.printStackTrace();
+								output.setText(ex.toString());
+								return;
+							}
+							sb.append("/*");
+							sb.append(difficulty);
+							sb.append(" ");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("*/\n");
+							/*sb.append("DELETE FROM modmaker_enemies_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append(" WHERE difficulty = 'narrative' or difficulty = 'casual' or difficulty = 'normal' or difficulty = 'hardcore' or difficulty = 'insanity' or difficulty='narrativ';\n");*/
+							sb.append("INSERT INTO modmaker_enemies_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append(" VALUES(\n");
+							sb.append("\t1, /*GENESIS MOD ID*/\n");
+							sb.append("\t\"");
+							sb.append(difficulty);
+							sb.append("\", /*difficulty*/\n");
+							for (Stat stat : cat.stats) {
+								sb.append("\t");
+								sb.append(stat.statrange.floaty);
+								sb.append(", /*");
+								sb.append(stat.statname.toLowerCase());
+								sb.append("*/\n");
+							}
+							sb.append("\tfalse, /*modified*/\n");
+							sb.append("\tfalse /*genesis modified*/\n");
+							sb.append(");"); //end of SQL statement
+						}
+					}
+				}
+			}
 
-		
-
-		sb.append("INSERT INTO modmaker_enemies_");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append(" VALUES(\n");
-		sb.append("\t1, /*GENESIS MOD ID*/\n");
-		sb.append("\t\"");
-		sb.append(difficulty);
-		sb.append("\", /*difficulty*/\n");
-		for (Stat stat : cat.stats){
-			sb.append("\t");
-			sb.append(stat.statrange.floaty);
-			sb.append(", /*");
-			sb.append(stat.statname.toLowerCase());
+			output.setText(sb.toString());
+		} catch (Exception e) {
+			//not xml
+			sb = new StringBuilder();
+			Category cat;
+			try {
+				cat = new Category(input_text);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				output.setText(ex.toString());
+				return;
+			}
+			sb.append("/*");
+			sb.append(((String)difficultylist.getSelectedItem()).toLowerCase());
+			sb.append(" ");
+			sb.append(cat.categoryname.toLowerCase());
 			sb.append("*/\n");
+			sb.append("INSERT INTO modmaker_enemies_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append(" VALUES(\n");
+			sb.append("\t1, /*GENESIS MOD ID*/\n");
+			sb.append("\t\"");
+			sb.append(((String)difficultylist.getSelectedItem()).toLowerCase());
+			sb.append("\", /*difficulty*/\n");
+			for (Stat stat : cat.stats) {
+				sb.append("\t");
+				sb.append(stat.statrange.floaty);
+				sb.append(", /*");
+				sb.append(stat.statname.toLowerCase());
+				sb.append("*/\n");
+			}
+			sb.append("\tfalse, /*modified*/\n");
+			sb.append("\tfalse /*genesis modified*/\n");
+			sb.append(");"); //end of SQL statement
+			output.setText(sb.toString());
 		}
-		sb.append("\tfalse, /*modified*/\n");
-		sb.append("\tfalse /*genesis modified*/\n");
-		sb.append(");"); //end of SQL statement
-		
-		output.setText(sb.toString());
 	}
-	
+
 	private void generateTable() {
 		// get name of enemy
 		// Parse the enemy
@@ -359,9 +522,10 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 			cat = new Category(input_text);
 		} catch (Exception ex) {
 			output.setText(ex.toString());
+			ex.printStackTrace();
 			return;
 		}
-		
+
 		StringBuilder sb = new StringBuilder();
 		sb.append("/*-------");
 		sb.append(cat.categoryname);
@@ -369,29 +533,29 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		sb.append("DROP TABLE IF EXISTS modmaker_enemies_");
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append(";\n");
-		
+
 		//CREATE TABLE STATEMENT
 		sb.append("CREATE TABLE modmaker_enemies_");
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append("(\n");
 		sb.append("\tmod_id INT NOT NULL, /*mod this enemy belongs to*/\n");
-		sb.append("\tdifficulty VARCHAR(8), /*difficulty this applies to*/\n");
-		for (Stat stat : cat.stats){
+		sb.append("\tdifficulty VARCHAR(9), /*difficulty this applies to*/\n");
+		for (Stat stat : cat.stats) {
 			sb.append("\t");
 			sb.append(stat.statname.toLowerCase());
 			sb.append(" FLOAT NOT NULL,\n");
 		}
-		
+
 		sb.append("\tmodified boolean NOT NULL,\n");
 		sb.append("\tmodified_genesis boolean NOT NULL,\n");
 		sb.append("\tFOREIGN KEY (mod_id) REFERENCES modmaker_mods(mod_id) ON DELETE CASCADE,\n"); //end of SQL statement
 		sb.append("\tPRIMARY KEY(mod_id, difficulty)\n");
 		sb.append(");");
-		
+
 		output.setText(sb.toString());
 	}
-	
-	private void generateVariablesPHP(){
+
+	private void generateVariablesPHP() {
 		// get name of enemy
 		// Parse the enemy
 		String input_text = input.getText();
@@ -400,28 +564,30 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 			cat = new Category(input_text);
 		} catch (Exception ex) {
 			output.setText(ex.toString());
+			ex.printStackTrace();
 			return;
 		}
-		
-		 //centurion
-		/*public $mod_centurion_health_min; //array ny name (difficulties)
-	    public $mod_centurion_health_max; //array by name(difficulties)
-	    public $mod_centurion_shields_min = null;
-	    public $mod_centurion_shields_max = null;
-	    public $mod_centurion_maxenemyshieldrecharge = null;
-	    public $mod_centurion_aishieldregendelay = null;
-	    public $mod_centurion_aishieldregenpct= null;
-	    public $mod_centurion_smokefrequency_min = null;
-	    public $mod_centurion_smokefrequency_max = null;
-	    public $mod_centurion_grenadeinterval = null;
-	    public $mod_centurion_modified = false; 
-	    public $mod_centurion_modified_genesis = false; */
-		
+
+		//centurion
+		/*
+		 * public $mod_centurion_health_min; //array ny name (difficulties)
+		 * public $mod_centurion_health_max; //array by name(difficulties)
+		 * public $mod_centurion_shields_min = null; public
+		 * $mod_centurion_shields_max = null; public
+		 * $mod_centurion_maxenemyshieldrecharge = null; public
+		 * $mod_centurion_aishieldregendelay = null; public
+		 * $mod_centurion_aishieldregenpct= null; public
+		 * $mod_centurion_smokefrequency_min = null; public
+		 * $mod_centurion_smokefrequency_max = null; public
+		 * $mod_centurion_grenadeinterval = null; public $mod_centurion_modified
+		 * = false; public $mod_centurion_modified_genesis = false;
+		 */
+
 		StringBuilder sb = new StringBuilder();
 		sb.append("\t//");
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append("\n");
-		for (Stat stat : cat.stats){
+		for (Stat stat : cat.stats) {
 			sb.append("\tpublic $mod_");
 			sb.append(cat.categoryname.toLowerCase());
 			sb.append("_");
@@ -438,84 +604,83 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		sb.append(cat.categoryname.toLowerCase());
 		sb.append("_");
 		sb.append("modified_genesis = null;\n");
-		
+
 		output.setText(sb.toString());
 	}
 
 	private void generateLoadPHP() {
 
 		// get name of enemy
-				// Parse the enemy
-				String input_text = input.getText();
-				Category cat;
-				try {
-					cat = new Category(input_text);
-				} catch (Exception ex) {
-					output.setText(ex.toString());
-					return;
-				}
-				
-				StringBuilder sb = new StringBuilder();
-				//NAME
-				sb.append("\t//");
-				sb.append(cat.categoryname.toUpperCase());
-				sb.append("\n");
-				
-				//public function loadNAME(){
-				sb.append("\tpublic function load");
-				sb.append(Character.toUpperCase(cat.categoryname.charAt(0)) + cat.categoryname.toLowerCase().substring(1)); //have only first letter capitalized.
-				sb.append("(){\n");
-				//doubletab from here on
-				for (Stat stat:cat.stats) {
-					sb.append("\t\t$this->mod_");
-					sb.append(cat.categoryname.toLowerCase());
-					sb.append("_");
-					sb.append(stat.statname.toLowerCase());
-					sb.append(" = array();\n");
-				}
-				sb.append("\t\t$this->mod_");
-				sb.append(cat.categoryname.toLowerCase());
-				sb.append("_modified = array();\n");
-				//modified genesis
-				sb.append("\t\t$this->mod_");
-				sb.append(cat.categoryname.toLowerCase());
-				sb.append("_modified_genesis = array();\n");
-				//$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');
-				sb.append("\t\t$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');\n");
-				
-				//load values from DB
-				sb.append("\t\t//Load values from DB\n");
-				
-				//select * from modmaker_enemies_NAME where mod_id=:mod
-				sb.append("\t\t$sql = \"SELECT * FROM modmaker_enemies_");
-				sb.append(cat.categoryname.toLowerCase());
-				sb.append(" WHERE mod_id=:mod_id\";\n");
-				
-				sb.append("\t\t$stmt = $dbh->prepare($sql);\n");
-				sb.append("\t\t$stmt->bindValue(\":mod_id\", $this->mod_id);\n");
-				sb.append("\t\t$stmt->execute();\n");
-				sb.append("\t\twhile ($row = $stmt->fetch()){\n");
-				//triple tab, stat assignemnt
-				for (Stat stat:cat.stats) {
-					sb.append("\t\t\t$this->mod_");
-					sb.append(cat.categoryname.toLowerCase());
-					sb.append("_");
-					sb.append(stat.statname.toLowerCase());
-					sb.append("[$row['difficulty']] = $row['");
-					sb.append(stat.statname.toLowerCase());
-					sb.append("'];\n");
-				}
-				//modified, genesis
-				sb.append("\t\t\t$this->mod_");
-				sb.append(cat.categoryname.toLowerCase());
-				sb.append("_modified[$row['difficulty']] = $row['modified'];\n");
-				sb.append("\t\t\t$this->mod_");
-				sb.append(cat.categoryname.toLowerCase());
-				sb.append("_modified_genesis[$row['difficulty']] = $row['modified_genesis'];\n");
-		        sb.append("\t\t}\n");
-		        sb.append("\t}\n");
-		        
-				
-				output.setText(sb.toString());
+		// Parse the enemy
+		String input_text = input.getText();
+		Category cat;
+		try {
+			cat = new Category(input_text);
+		} catch (Exception ex) {
+			output.setText(ex.toString());
+			return;
+		}
+
+		StringBuilder sb = new StringBuilder();
+		//NAME
+		sb.append("\t//");
+		sb.append(cat.categoryname.toUpperCase());
+		sb.append("\n");
+
+		//public function loadNAME(){
+		sb.append("\tpublic function load");
+		sb.append(Character.toUpperCase(cat.categoryname.charAt(0)) + cat.categoryname.toLowerCase().substring(1)); //have only first letter capitalized.
+		sb.append("(){\n");
+		//doubletab from here on
+		for (Stat stat : cat.stats) {
+			sb.append("\t\t$this->mod_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append("_");
+			sb.append(stat.statname.toLowerCase());
+			sb.append(" = array();\n");
+		}
+		sb.append("\t\t$this->mod_");
+		sb.append(cat.categoryname.toLowerCase());
+		sb.append("_modified = array();\n");
+		//modified genesis
+		sb.append("\t\t$this->mod_");
+		sb.append(cat.categoryname.toLowerCase());
+		sb.append("_modified_genesis = array();\n");
+		//$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');
+		sb.append("\t\t$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');\n");
+
+		//load values from DB
+		sb.append("\t\t//Load values from DB\n");
+
+		//select * from modmaker_enemies_NAME where mod_id=:mod
+		sb.append("\t\t$sql = \"SELECT * FROM modmaker_enemies_");
+		sb.append(cat.categoryname.toLowerCase());
+		sb.append(" WHERE mod_id=:mod_id\";\n");
+
+		sb.append("\t\t$stmt = $dbh->prepare($sql);\n");
+		sb.append("\t\t$stmt->bindValue(\":mod_id\", $this->mod_id);\n");
+		sb.append("\t\t$stmt->execute();\n");
+		sb.append("\t\twhile ($row = $stmt->fetch()){\n");
+		//triple tab, stat assignemnt
+		for (Stat stat : cat.stats) {
+			sb.append("\t\t\t$this->mod_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append("_");
+			sb.append(stat.statname.toLowerCase());
+			sb.append("[$row['difficulty']] = $row['");
+			sb.append(stat.statname.toLowerCase());
+			sb.append("'];\n");
+		}
+		//modified, genesis
+		sb.append("\t\t\t$this->mod_");
+		sb.append(cat.categoryname.toLowerCase());
+		sb.append("_modified[$row['difficulty']] = $row['modified'];\n");
+		sb.append("\t\t\t$this->mod_");
+		sb.append(cat.categoryname.toLowerCase());
+		sb.append("_modified_genesis[$row['difficulty']] = $row['modified_genesis'];\n");
+		sb.append("\t\t}\n");
+		sb.append("\t}\n");
+
+		output.setText(sb.toString());
 	}
 }

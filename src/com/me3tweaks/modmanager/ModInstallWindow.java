@@ -169,7 +169,7 @@ public class ModInstallWindow extends JDialog {
 
 			// check basegame precheck
 			for (ModJob job : jobs) {
-				if (job.getModType() == ModJob.BASEGAME) {
+				if (job.getJobType() == ModJob.BASEGAME) {
 					boolean shouldContinue = precheckBasegameDB(job);
 					if (!shouldContinue) {
 						return false;
