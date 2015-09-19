@@ -1443,11 +1443,11 @@ public class PowerVariable {
 			retStr += "\t\t\t\t\t<li>" + sqlVarName + "</li>\n";
 			for (Map.Entry<Integer, Double> entry : bru.rankBonuses.entrySet()) {
 				int rank = entry.getKey();
-				retStr += "\t\t\t\t\t<li>" + sqlVarName + "_rankbonus_" + rank + "</li>\n";
+				retStr += "\t\t\t\t\t<li>" + sqlVarName + "_rankbonus_" + rank + ": "+entry.getValue()+"</li>\n";
 			}
 			return retStr;
 		} else {
-			return "\t\t\t\t\t<li>" + sqlVarName + "</li>\n";
+			return "\t\t\t\t\t<li>" + sqlVarName + ": "+value+"</li>\n";
 		}
 	}
 
