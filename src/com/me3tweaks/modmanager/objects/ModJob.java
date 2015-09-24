@@ -21,7 +21,7 @@ public class ModJob {
 	public boolean TESTPATCH = false; //testpatch flag for patch window
 	private int jobType;
 	String DLCFilePath;
-	private String jobName;
+	private String jobName, requirementText;
 	ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
 	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
 	
@@ -31,10 +31,11 @@ public class ModJob {
 	/** Holds many parameters that are required to inject files into a DLC Sfar file.
 	 * @param DLCFilePath Path to the DLC Sfar file.
 	 */
-	public ModJob(String DLCFilePath, String jobName){
+	public ModJob(String DLCFilePath, String jobName,String requirementText){
 		setJobType(DLC);
 		this.setJobName(jobName);
 		this.DLCFilePath = DLCFilePath;
+		this.requirementText = requirementText;
 		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
 	}
@@ -47,6 +48,14 @@ public class ModJob {
 		setJobName(ModType.BASEGAME);
 		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+	}
+
+	public String getRequirementText() {
+		return requirementText;
+	}
+
+	public void setRequirementText(String requirementText) {
+		this.requirementText = requirementText;
 	}
 
 	public String getDLCFilePath() {

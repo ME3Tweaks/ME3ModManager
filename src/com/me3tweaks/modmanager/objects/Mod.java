@@ -127,6 +127,9 @@ public class Mod implements Comparable<Mod> {
 
 				String newFileIni = modini.get(modHeader, "newfiles");
 				String oldFileIni = modini.get(modHeader, "replacefiles");
+				String addFileIni = modini.get(modHeader, "addfiles");
+				String addFileTargetIni = modini.get(modHeader, "addfilestargets");
+
 				// ModManager.debugLogger.writeMessage("New files: "+newFileIni);
 				// ModManager.debugLogger.writeMessage("Old Files: "+oldFileIni);
 				if (newFileIni == null || oldFileIni == null || newFileIni.equals("") || oldFileIni.equals("")) {
@@ -141,6 +144,16 @@ public class Mod implements Comparable<Mod> {
 					ModManager.debugLogger.writeMessage("Number of files to update/replace do not match, mod being marked as invalid.");
 					return;
 				}
+				
+				StringTokenizer addStrok = new StringTokenizer(addFileIni, ";");
+				StringTokenizer addTargetStrok = new StringTokenizer(addFileTargetIni, ";");
+				if (addStrok.countTokens() != addTargetStrok.countTokens()) {
+					// Same number of tokens aren't the same
+					ModManager.debugLogger.writeMessage("Number of files to add and number of target files do not match, mod being marked as invalid.");
+					return;
+				}
+				
+				String requirementText = modini.get(modHeader, "jobdescription");
 
 				// Check to make sure the filenames are the same, and if they
 				// are, then the mod is going to be valid.
@@ -151,7 +164,7 @@ public class Mod implements Comparable<Mod> {
 					newJob = new ModJob();
 				} else {
 					// DLC Job
-					newJob = new ModJob(ModType.getDLCPath(modHeader), modHeader);
+					newJob = new ModJob(ModType.getDLCPath(modHeader), modHeader,requirementText);
 					if (modCMMVer >= 3 && modHeader.equals(ModType.TESTPATCH)) {
 						newJob.TESTPATCH = true;
 					}

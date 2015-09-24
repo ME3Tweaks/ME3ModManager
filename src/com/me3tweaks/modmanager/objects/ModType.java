@@ -25,6 +25,8 @@ public class ModType {
 	public static final String GUN02 = "GROUNDSIDE";
 	public static final String CUSTOMDLC = "CUSTOMDLC";
 	public static final String BINI = "LIVEBALANCE";
+	public static final String DH1 = "GENESIS2";
+
 	
 	
 	/* DONT DELETE
@@ -48,7 +50,7 @@ public class ModType {
 	protected static final String GUN02 = "FIREFIGHT";*/
 
 	public static String[] getHeaderNameArray(){
-		return new String[]{BASEGAME,MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,TESTPATCH,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
+		return new String[]{BASEGAME,MP1,MP2,MP3,MP4,MP5,PATCH1,PATCH2,TESTPATCH,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02,DH1};
 	}
 	
 	/** Returns the subdirectory from biogame (no leading or trailing slashes) that corresponds to a DLC folder where the .sfar file should exist.
@@ -95,6 +97,8 @@ public class ModType {
 			return "DLC\\DLC_CON_GUN01\\CookedPCConsole";
 		case GUN02:
 			return "DLC\\DLC_CON_GUN02\\CookedPCConsole";
+		case DH1:
+			return "DLC\\DLC_CON_DH1\\CookedPCConsole";
 		}
 		
 		return subPath;
@@ -123,6 +127,7 @@ public class ModType {
 		dlcMap.put(APP01,"d27098a14da986f4562bda557ed778cc");
 		dlcMap.put(GUN01,"d05977324e5ef172e8d0f10ec664ab9f");
 		dlcMap.put(GUN02,"6d7fa053fac1696c6b64ea20669db5c0");
+		dlcMap.put(DH1,"0");
 		return dlcMap;
 	}
 	
@@ -148,15 +153,16 @@ public class ModType {
 		dlcMap.put(APP01,53878606L);
 		dlcMap.put(GUN01,18708500L);
 		dlcMap.put(GUN02,17134896L);
+		dlcMap.put(DH1,0L);
 		return dlcMap;
 	}
 
 	public static String[] getSPHeaderNameArray() {
-		return new String[]{PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
+		return new String[]{PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02,DH1};
 	}
 	
 	public static String[] getSPBaseHeaderNameArray() {
-		return new String[]{BASEGAME, PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02};
+		return new String[]{BASEGAME, PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02,DH1};
 	}
 	
 	public static String[] getMPHeaderNameArray(){

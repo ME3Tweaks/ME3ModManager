@@ -71,6 +71,7 @@ public class ModInstallWindow extends JDialog {
 			new InjectionCommander(jobs, mod).execute();
 			this.setVisible(true);
 		} else {
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod install cancelled");
 			dispose();
 		}
 	}
@@ -80,7 +81,7 @@ public class ModInstallWindow extends JDialog {
 	 * @return true if all are available or user ignored missing
 	 */
 	private boolean validateRequiredModulesAreAvailable(ModManagerWindow callingWindow, ModJob[] jobs) {
-		ArrayList<String> missingModules = new ArrayList<String>();
+		ArrayList<ModJob> missingModules = new ArrayList<ModJob>();
 		for (ModJob job : jobs) {
 			if (job.getJobType() == ModJob.DLC){
 				//check that sfar is available
@@ -91,7 +92,7 @@ public class ModInstallWindow extends JDialog {
 				String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
 				File sfar = new File(sfarPath);
 				if (!sfar.exists()) {
-					missingModules.add(job.getJobName());
+					missingModules.add(job);
 				}
 			}
 		}
@@ -102,14 +103,19 @@ public class ModInstallWindow extends JDialog {
 		
 		//module is missing
 		StringBuilder sb = new StringBuilder();
-		sb.append("This mod has tasks for the following missing DLC:\n");
-		for (String str : missingModules) {
-			ModManager.debugLogger.writeMessage("Mod requires missing DLC Module: " + str);
+		sb.append("This mod has tasks for the following missing DLC.\nIf the mod descriptor details the job description, they will be listed below.");
+		for (ModJob job : missingModules) {
+			ModManager.debugLogger.writeMessage("Mod requires missing DLC Module: " + job.getJobName());
 			sb.append(" - ");
-			sb.append(str);
+			sb.append(job.getJobName());
 			sb.append("\n");
+			if (job.getRequirementText() != null) {
+				sb.append("   - ");
+				sb.append(job.getRequirementText());
+				sb.append("\n");
+			}
 		}
-		sb.append("You can install this mod and it will skip these DLC.\nHowever, problems may occur in game. Install the mod anyways?");
+		sb.append("\nContinue with the mod install?");
 		int result = JOptionPane.showConfirmDialog(callingWindow, sb.toString(), "Missing DLC", JOptionPane.WARNING_MESSAGE);
 		ModManager.debugLogger.writeMessage(result == JOptionPane.YES_OPTION ? "User continuing install even with missing DLC modules" : "User canceled Mod Install");
 		return result == JOptionPane.YES_OPTION;
@@ -146,6 +152,7 @@ public class ModInstallWindow extends JDialog {
 		ModJob[] jobs;
 		ArrayList<String> failedJobs;
 		private BasegameHashDB bghDB;
+		private boolean installCancelled = false;
 
 		protected InjectionCommander(ModJob[] jobs, Mod mod) {
 			this.mod = mod;
@@ -179,6 +186,9 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			for (ModJob job : jobs) {
+				if (installCancelled) {
+					return false;
+				}
 				ModManager.debugLogger.writeMessage("Starting mod job");
 				boolean result = false;
 				switch (job.getJobType()) {
@@ -284,6 +294,7 @@ public class ModInstallWindow extends JDialog {
 								new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
 						switch (reply) {
 						case JOptionPane.CANCEL_OPTION:
+							installCancelled = true;
 							return false;
 						case JOptionPane.NO_OPTION:
 							justInstall = true;

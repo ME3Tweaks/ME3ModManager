@@ -273,7 +273,7 @@ public class Patch implements Comparable<Patch> {
 					if (targetModule.equals(ModType.BASEGAME)) {
 						job = new ModJob();
 					} else {
-						job = new ModJob(ModType.getDLCPath(targetModule), targetModule);
+						job = new ModJob(ModType.getDLCPath(targetModule), targetModule,null);
 					}
 					File modulefolder = new File(ModManager.appendSlash(mod.getModPath() + standardFolder));
 					modulefolder.mkdirs();

@@ -321,7 +321,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		String input_text = input.getText();
 		StringBuilder sb = new StringBuilder();
 		try { //Load document
-			String wrappedText = "<biodiff>"+input_text+"</biodiff>";
+			String wrappedText = "<biodiff>" + input_text + "</biodiff>";
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(wrappedText));
 			Document doc = dBuilder.parse(is);
@@ -413,14 +413,14 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 			output.setText(sb.toString());
 		}
 	}
-	
+
 	private void generateSQL() {
 		// get name of enemy
 		// Parse the enemy
 		String input_text = input.getText();
 		StringBuilder sb = new StringBuilder();
 		try { //Load document
-			String wrappedText = "<biodiff>"+input_text+"</biodiff>";
+			String wrappedText = "<biodiff>" + input_text + "</biodiff>";
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(wrappedText));
 			Document doc = dBuilder.parse(is);
@@ -450,9 +450,13 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 							sb.append(" ");
 							sb.append(cat.categoryname.toLowerCase());
 							sb.append("*/\n");
-							/*sb.append("DELETE FROM modmaker_enemies_");
-							sb.append(cat.categoryname.toLowerCase());
-							sb.append(" WHERE difficulty = 'narrative' or difficulty = 'casual' or difficulty = 'normal' or difficulty = 'hardcore' or difficulty = 'insanity' or difficulty='narrativ';\n");*/
+							/*
+							 * sb.append("DELETE FROM modmaker_enemies_");
+							 * sb.append(cat.categoryname.toLowerCase());
+							 * sb.append(
+							 * " WHERE difficulty = 'narrative' or difficulty = 'casual' or difficulty = 'normal' or difficulty = 'hardcore' or difficulty = 'insanity' or difficulty='narrativ';\n"
+							 * );
+							 */
 							sb.append("INSERT INTO modmaker_enemies_");
 							sb.append(cat.categoryname.toLowerCase());
 							sb.append(" VALUES(\n");
@@ -488,7 +492,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 				return;
 			}
 			sb.append("/*");
-			sb.append(((String)difficultylist.getSelectedItem()).toLowerCase());
+			sb.append(((String) difficultylist.getSelectedItem()).toLowerCase());
 			sb.append(" ");
 			sb.append(cat.categoryname.toLowerCase());
 			sb.append("*/\n");
@@ -497,7 +501,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 			sb.append(" VALUES(\n");
 			sb.append("\t1, /*GENESIS MOD ID*/\n");
 			sb.append("\t\"");
-			sb.append(((String)difficultylist.getSelectedItem()).toLowerCase());
+			sb.append(((String) difficultylist.getSelectedItem()).toLowerCase());
 			sb.append("\", /*difficulty*/\n");
 			for (Stat stat : cat.stats) {
 				sb.append("\t");
@@ -556,131 +560,272 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 	}
 
 	private void generateVariablesPHP() {
-		// get name of enemy
-		// Parse the enemy
 		String input_text = input.getText();
-		Category cat;
-		try {
-			cat = new Category(input_text);
-		} catch (Exception ex) {
-			output.setText(ex.toString());
-			ex.printStackTrace();
-			return;
-		}
-
-		//centurion
-		/*
-		 * public $mod_centurion_health_min; //array ny name (difficulties)
-		 * public $mod_centurion_health_max; //array by name(difficulties)
-		 * public $mod_centurion_shields_min = null; public
-		 * $mod_centurion_shields_max = null; public
-		 * $mod_centurion_maxenemyshieldrecharge = null; public
-		 * $mod_centurion_aishieldregendelay = null; public
-		 * $mod_centurion_aishieldregenpct= null; public
-		 * $mod_centurion_smokefrequency_min = null; public
-		 * $mod_centurion_smokefrequency_max = null; public
-		 * $mod_centurion_grenadeinterval = null; public $mod_centurion_modified
-		 * = false; public $mod_centurion_modified_genesis = false;
-		 */
-
 		StringBuilder sb = new StringBuilder();
-		sb.append("\t//");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append("\n");
-		for (Stat stat : cat.stats) {
+		try { //Load document
+			String wrappedText = "<biodiff>" + input_text + "</biodiff>";
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(wrappedText));
+			Document doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			NodeList properties = doc.getElementsByTagName("Property");
+			for (int i = 0; i < properties.getLength(); i++) {
+				Node scannednode = properties.item(i);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element difficultyElem = (Element) scannednode;
+					//iterate over values
+					NodeList valueList = difficultyElem.getChildNodes();
+					for (int k = 0; k < valueList.getLength(); k++) {
+						Node valueNode = valueList.item(k);
+						if (valueNode.getNodeType() == Node.ELEMENT_NODE) {
+							Element valueElement = (Element) valueNode;
+							Category cat;
+							try {
+								cat = new Category(valueElement.getTextContent());
+							} catch (Exception ex) {
+								ex.printStackTrace();
+								output.setText(ex.toString());
+								return;
+							}
+							sb.append("\t//");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("\n");
+							for (Stat stat : cat.stats) {
+								sb.append("\tpublic $mod_");
+								sb.append(cat.categoryname.toLowerCase());
+								sb.append("_");
+								sb.append(stat.statname.toLowerCase());
+								sb.append(" = null;\n");
+							}
+							// modified
+							sb.append("\tpublic $mod_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("_");
+							sb.append("modified = null;\n");
+							//modified_genesis
+							sb.append("\tpublic $mod_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("_");
+							sb.append("modified_genesis = null;\n");
+						}
+					}
+				}
+			}
+			output.setText(sb.toString());
+		} catch (Exception e) {
+			// get name of enemy
+			// Parse the enemy
+			Category cat;
+			try {
+				cat = new Category(input_text);
+			} catch (Exception ex) {
+				output.setText(ex.toString());
+				ex.printStackTrace();
+				return;
+			}
+
+			//centurion
+			/*
+			 * public $mod_centurion_health_min; //array ny name (difficulties)
+			 * public $mod_centurion_health_max; //array by name(difficulties)
+			 * public $mod_centurion_shields_min = null; public
+			 * $mod_centurion_shields_max = null; public
+			 * $mod_centurion_maxenemyshieldrecharge = null; public
+			 * $mod_centurion_aishieldregendelay = null; public
+			 * $mod_centurion_aishieldregenpct= null; public
+			 * $mod_centurion_smokefrequency_min = null; public
+			 * $mod_centurion_smokefrequency_max = null; public
+			 * $mod_centurion_grenadeinterval = null; public
+			 * $mod_centurion_modified = false; public
+			 * $mod_centurion_modified_genesis = false;
+			 */
+
+			sb = new StringBuilder();
+			sb.append("\t//");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append("\n");
+			for (Stat stat : cat.stats) {
+				sb.append("\tpublic $mod_");
+				sb.append(cat.categoryname.toLowerCase());
+				sb.append("_");
+				sb.append(stat.statname.toLowerCase());
+				sb.append(" = null;\n");
+			}
+			// modified
 			sb.append("\tpublic $mod_");
 			sb.append(cat.categoryname.toLowerCase());
 			sb.append("_");
-			sb.append(stat.statname.toLowerCase());
-			sb.append(" = null;\n");
-		}
-		// modified
-		sb.append("\tpublic $mod_");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append("_");
-		sb.append("modified = null;\n");
-		//modified_genesis
-		sb.append("\tpublic $mod_");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append("_");
-		sb.append("modified_genesis = null;\n");
+			sb.append("modified = null;\n");
+			//modified_genesis
+			sb.append("\tpublic $mod_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append("_");
+			sb.append("modified_genesis = null;\n");
 
-		output.setText(sb.toString());
+			output.setText(sb.toString());
+		}
 	}
 
 	private void generateLoadPHP() {
-
-		// get name of enemy
-		// Parse the enemy
 		String input_text = input.getText();
-		Category cat;
-		try {
-			cat = new Category(input_text);
-		} catch (Exception ex) {
-			output.setText(ex.toString());
-			return;
-		}
-
 		StringBuilder sb = new StringBuilder();
-		//NAME
-		sb.append("\t//");
-		sb.append(cat.categoryname.toUpperCase());
-		sb.append("\n");
+		try { //Load document
+			String wrappedText = "<biodiff>" + input_text + "</biodiff>";
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(wrappedText));
+			Document doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+			NodeList properties = doc.getElementsByTagName("Property");
+			for (int i = 0; i < properties.getLength(); i++) {
+				Node scannednode = properties.item(i);
+				if (scannednode.getNodeType() == Node.ELEMENT_NODE) {
+					Element difficultyElem = (Element) scannednode;
+					//iterate over values
+					NodeList valueList = difficultyElem.getChildNodes();
+					for (int k = 0; k < valueList.getLength(); k++) {
+						Node valueNode = valueList.item(k);
+						if (valueNode.getNodeType() == Node.ELEMENT_NODE) {
+							Element valueElement = (Element) valueNode;
+							Category cat;
+							try {
+								cat = new Category(valueElement.getTextContent());
+							} catch (Exception ex) {
+								ex.printStackTrace();
+								output.setText(ex.toString());
+								return;
+							}
+							sb.append("\t//");
+							sb.append(cat.categoryname.toUpperCase());
+							sb.append("\n");
 
-		//public function loadNAME(){
-		sb.append("\tpublic function load");
-		sb.append(Character.toUpperCase(cat.categoryname.charAt(0)) + cat.categoryname.toLowerCase().substring(1)); //have only first letter capitalized.
-		sb.append("(){\n");
-		//doubletab from here on
-		for (Stat stat : cat.stats) {
+							//public function loadNAME(){
+							sb.append("\tpublic function load");
+							sb.append(Character.toUpperCase(cat.categoryname.charAt(0)) + cat.categoryname.toLowerCase().substring(1)); //have only first letter capitalized.
+							sb.append("(){\n");
+							//doubletab from here on
+							for (Stat stat : cat.stats) {
+								sb.append("\t\t$this->mod_");
+								sb.append(cat.categoryname.toLowerCase());
+								sb.append("_");
+								sb.append(stat.statname.toLowerCase());
+								sb.append(" = array();\n");
+							}
+							sb.append("\t\t$this->mod_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("_modified = array();\n");
+							//modified genesis
+							sb.append("\t\t$this->mod_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("_modified_genesis = array();\n");
+							//$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');
+							sb.append("\t\t$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');\n");
+
+							//load values from DB
+							sb.append("\t\t//Load values from DB\n");
+
+							//select * from modmaker_enemies_NAME where mod_id=:mod
+							sb.append("\t\t$sql = \"SELECT * FROM modmaker_enemies_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append(" WHERE mod_id=:mod_id\";\n");
+
+							sb.append("\t\t$stmt = $dbh->prepare($sql);\n");
+							sb.append("\t\t$stmt->bindValue(\":mod_id\", $this->mod_id);\n");
+							sb.append("\t\t$stmt->execute();\n");
+							sb.append("\t\twhile ($row = $stmt->fetch()){\n");
+							//triple tab, stat assignemnt
+							for (Stat stat : cat.stats) {
+								sb.append("\t\t\t$this->mod_");
+								sb.append(cat.categoryname.toLowerCase());
+								sb.append("_");
+								sb.append(stat.statname.toLowerCase());
+								sb.append("[$row['difficulty']] = $row['");
+								sb.append(stat.statname.toLowerCase());
+								sb.append("'];\n");
+							}
+							//modified, genesis
+							sb.append("\t\t\t$this->mod_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("_modified[$row['difficulty']] = $row['modified'];\n");
+							sb.append("\t\t\t$this->mod_");
+							sb.append(cat.categoryname.toLowerCase());
+							sb.append("_modified_genesis[$row['difficulty']] = $row['modified_genesis'];\n");
+							sb.append("\t\t}\n");
+							sb.append("\t}\n");
+						}
+					}
+				}
+			}
+			output.setText(sb.toString());
+		} catch (Exception e) {
+			Category cat;
+			try {
+				cat = new Category(input_text);
+			} catch (Exception ex) {
+				output.setText(ex.toString());
+				return;
+			}
+
+			sb = new StringBuilder();
+			//NAME
+			sb.append("\t//");
+			sb.append(cat.categoryname.toUpperCase());
+			sb.append("\n");
+
+			//public function loadNAME(){
+			sb.append("\tpublic function load");
+			sb.append(Character.toUpperCase(cat.categoryname.charAt(0)) + cat.categoryname.toLowerCase().substring(1)); //have only first letter capitalized.
+			sb.append("(){\n");
+			//doubletab from here on
+			for (Stat stat : cat.stats) {
+				sb.append("\t\t$this->mod_");
+				sb.append(cat.categoryname.toLowerCase());
+				sb.append("_");
+				sb.append(stat.statname.toLowerCase());
+				sb.append(" = array();\n");
+			}
 			sb.append("\t\t$this->mod_");
 			sb.append(cat.categoryname.toLowerCase());
-			sb.append("_");
-			sb.append(stat.statname.toLowerCase());
-			sb.append(" = array();\n");
-		}
-		sb.append("\t\t$this->mod_");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append("_modified = array();\n");
-		//modified genesis
-		sb.append("\t\t$this->mod_");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append("_modified_genesis = array();\n");
-		//$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');
-		sb.append("\t\t$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');\n");
+			sb.append("_modified = array();\n");
+			//modified genesis
+			sb.append("\t\t$this->mod_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append("_modified_genesis = array();\n");
+			//$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');
+			sb.append("\t\t$dbh = new PDO('mysql:host=0.0.0.0;port=3306;dbname=me3tweaks', 'mgamerz');\n");
 
-		//load values from DB
-		sb.append("\t\t//Load values from DB\n");
+			//load values from DB
+			sb.append("\t\t//Load values from DB\n");
 
-		//select * from modmaker_enemies_NAME where mod_id=:mod
-		sb.append("\t\t$sql = \"SELECT * FROM modmaker_enemies_");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append(" WHERE mod_id=:mod_id\";\n");
+			//select * from modmaker_enemies_NAME where mod_id=:mod
+			sb.append("\t\t$sql = \"SELECT * FROM modmaker_enemies_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append(" WHERE mod_id=:mod_id\";\n");
 
-		sb.append("\t\t$stmt = $dbh->prepare($sql);\n");
-		sb.append("\t\t$stmt->bindValue(\":mod_id\", $this->mod_id);\n");
-		sb.append("\t\t$stmt->execute();\n");
-		sb.append("\t\twhile ($row = $stmt->fetch()){\n");
-		//triple tab, stat assignemnt
-		for (Stat stat : cat.stats) {
+			sb.append("\t\t$stmt = $dbh->prepare($sql);\n");
+			sb.append("\t\t$stmt->bindValue(\":mod_id\", $this->mod_id);\n");
+			sb.append("\t\t$stmt->execute();\n");
+			sb.append("\t\twhile ($row = $stmt->fetch()){\n");
+			//triple tab, stat assignemnt
+			for (Stat stat : cat.stats) {
+				sb.append("\t\t\t$this->mod_");
+				sb.append(cat.categoryname.toLowerCase());
+				sb.append("_");
+				sb.append(stat.statname.toLowerCase());
+				sb.append("[$row['difficulty']] = $row['");
+				sb.append(stat.statname.toLowerCase());
+				sb.append("'];\n");
+			}
+			//modified, genesis
 			sb.append("\t\t\t$this->mod_");
 			sb.append(cat.categoryname.toLowerCase());
-			sb.append("_");
-			sb.append(stat.statname.toLowerCase());
-			sb.append("[$row['difficulty']] = $row['");
-			sb.append(stat.statname.toLowerCase());
-			sb.append("'];\n");
-		}
-		//modified, genesis
-		sb.append("\t\t\t$this->mod_");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append("_modified[$row['difficulty']] = $row['modified'];\n");
-		sb.append("\t\t\t$this->mod_");
-		sb.append(cat.categoryname.toLowerCase());
-		sb.append("_modified_genesis[$row['difficulty']] = $row['modified_genesis'];\n");
-		sb.append("\t\t}\n");
-		sb.append("\t}\n");
+			sb.append("_modified[$row['difficulty']] = $row['modified'];\n");
+			sb.append("\t\t\t$this->mod_");
+			sb.append(cat.categoryname.toLowerCase());
+			sb.append("_modified_genesis[$row['difficulty']] = $row['modified_genesis'];\n");
+			sb.append("\t\t}\n");
+			sb.append("\t}\n");
 
-		output.setText(sb.toString());
+			output.setText(sb.toString());
+		}
 	}
 }
