@@ -1385,14 +1385,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				continue; // we can't really check for a .bak of Coalesced.
 			}
 			// Default.sfar
+			File mainFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Default.sfar");
+			boolean defaultsfarMainFileExists = mainFile.exists();
 			File backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Default.sfar.bak");
 			System.out.println("Checking for backup file: " + backFile.getAbsolutePath());
 			if (!backFile.exists()) {
 				// Patch_001.sfar
+				mainFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Patch_001.sfar");
+				boolean patch001farMainFileExists = mainFile.exists();
 				backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Patch_001.sfar.bak");
-				System.out.println("Checking for backup file: " + backFile.getAbsolutePath());
+				System.out.println("Checking for TESTPATCH file: " + backFile.getAbsolutePath());
 
-				if (!backFile.exists()) {
+				if ((defaultsfarMainFileExists || patch001farMainFileExists) && !backFile.exists()) {
 					String YesNo[] = { "Yes", "No" }; // Yes/no buttons
 					int showDLCBackup = JOptionPane.showOptionDialog(null, "<html>" + job.getJobName() + " DLC has not been backed up.<br>Back it up now?</hmtl>", "Backup DLC",
 							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
@@ -1401,34 +1405,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				}
 			}
-			// Patch001.sfar
 		}
-
-		/*
-		 * Wini ini; boolean answer = true; try { File settings = new
-		 * File(ModManager.settingsFilename); if (!settings.exists()) {
-		 * ModManager.debugLogger.writeMessage(
-		 * "Creating settings file, it did not previously exist.");
-		 * settings.createNewFile(); } ini = new Wini(settings); String
-		 * backupFlag = ini.get("Settings", "dlc_backed_up"); if (backupFlag ==
-		 * null || !backupFlag.equals("1")) { // backup flag not set, lets ask
-		 * user if (ModManager.logging) { ModManager.debugLogger .writeMessage(
-		 * "Did not read the backup flag from settings or flag was not set to 1"
-		 * ); } String YesNo[] = { "Yes", "No" }; // Yes/no buttons int
-		 * showDLCBackup = JOptionPane .showOptionDialog( null,
-		 * "This instance of Mod Manager hasn't backed up your DLC's yet [this dialog is bugged].\nIf you have previously backed up using Mod Manager, you can ignore this message.\nYou really should back up your DLC so restoring them is faster than using Origin's repair game service.\n\n\nOpen the backup manager window?"
-		 * , "Backup DLC before mod installation?", JOptionPane.YES_NO_OPTION,
-		 * JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]); //
-		 * System.out.println("User chose: "+showDLCBackup); if (showDLCBackup
-		 * == 0) { backupDLC(fieldBiogameDir.getText()); } } // shown only once.
-		 * Backup complete, set to settings file // ini.put("Settings",
-		 * "dlc_backup_flag", "1"); //ini.store(); } catch
-		 * (InvalidFileFormatException e) {
-		 * ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
-		 * } catch (IOException e) { System.err .println(
-		 * "Settings file encountered an I/O error while attempting to write it. Settings not saved."
-		 * ); } return answer;
-		 */
 	}
 
 	/**

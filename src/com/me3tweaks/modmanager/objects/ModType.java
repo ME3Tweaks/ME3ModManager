@@ -158,11 +158,11 @@ public class ModType {
 	}
 
 	public static String[] getSPHeaderNameArray() {
-		return new String[]{PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02,DH1};
+		return new String[]{HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02,DH1};
 	}
 	
 	public static String[] getSPBaseHeaderNameArray() {
-		return new String[]{BASEGAME, PATCH1,PATCH2,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02,DH1};
+		return new String[]{BASEGAME,HEN_PR,END,EXP1,EXP2,EXP3,EXP3B,APP01,GUN01,GUN02,DH1};
 	}
 	
 	public static String[] getMPHeaderNameArray(){

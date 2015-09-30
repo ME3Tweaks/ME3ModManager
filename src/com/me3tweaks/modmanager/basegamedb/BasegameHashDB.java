@@ -105,10 +105,10 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		consoleArea = new JTextArea();
 		consoleArea.setLineWrap(true);
 		consoleArea.setWrapStyleWord(true);
-		consoleArea.setText("The basegame repair database keeps track of your preferred configuration of files, so when restoring you get a certain set of files restored, such as texture swaps or a specific Coalesced file.\n"
-				+ "\nUpdate the database only when your game is in the state you want to always restore to. For example, vanilla. It will take several minutes to create or update the database. When files are installed through a BASEGAME mod descriptor, files that are backed up and restored are checked against this database for authenticity.\n"
-				+ "\nFiles that fail this check when restoring indicates that the currently backed up file does not match your default configuration, and will prompt you before it is restored."
-				+ "\n\nNote that this database only covers the basegame files and not files in DLC.");
+		consoleArea.setText("The game repair database keeps track of your preferred game configuration, so when restoring files you will be returned to the snapshotted state.\n"
+				+ "\nCreate or update the game repair DB to make a snapshot of all file hashes and filesizes so that when you install a new mod, the file that is backed up is known to be the one you want.\n"
+				+ "\nWhen restoring files, the game database checks the backed up files match the ones in the snapshot, and will show you a message if they don't."
+				+ "\n\nThe game repair database only works with unpacked DLC files and basegame files, not .sfar files.");
 		consoleArea.setEditable(false);
 		
 		rootPanel.add(consoleArea,BorderLayout.CENTER);
@@ -124,7 +124,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 	        	}
 		    }
 		});
-		setTitle("Basegame Repair Database");
+		setTitle("Game Repair Database");
 		this.setIconImages(ModManager.ICONS);
 		pack();
 		this.setLocationRelativeTo(callingWindow);
@@ -133,7 +133,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 	
 	
 	public boolean loadDatabase(){
-		ModManager.debugLogger.writeMessage("Loading basegame database.");
+		ModManager.debugLogger.writeMessage("Loading game repair database.");
 		try {
             // connect method #1 - embedded driver
 			File databases = new File(ModManager.getDatabaseDir());
@@ -141,7 +141,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
             String repairInfoURL = "jdbc:derby:data/databases/repairinfo;create=true";
             dbConnection = DriverManager.getConnection(repairInfoURL);
             if (dbConnection != null) {
-            	ModManager.debugLogger.writeMessage("Loaded basegame database.");
+            	ModManager.debugLogger.writeMessage("Loaded game repair database.");
             	databaseLoaded = true;
                 return true;
             }
@@ -150,7 +150,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
     		ModManager.debugLogger.writeMessage("SQL error while loading BG Database");
 			ModManager.debugLogger.writeException(ex);
         }
-		ModManager.debugLogger.writeMessage("Basegame database failed to load.");
+		ModManager.debugLogger.writeMessage("GAme repair database failed to load.");
 		databaseLoaded = false;
 		return false;
 	}
@@ -193,7 +193,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		}
 
 		protected Void doInBackground() throws Exception {
-			ModManager.debugLogger.writeMessage("Starting background thread for basegame hash db");
+			ModManager.debugLogger.writeMessage("Starting background thread for game repair hash db");
 			PreparedStatement insertStatement, selectStatement,updateStatement = null;
 			DatabaseMetaData dbmd = dbConnection.getMetaData();
 			ResultSet rs = dbmd.getTables(null, null, "BASEGAMEFILES", null);
@@ -216,9 +216,9 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 			}
 			
 			int filesProcessed = 0;
-			String insertString = "INSERT INTO basegamefiles (filepath, hash, filesize) VALUES (?,?,?)";
-			String selectString = "SELECT * FROM BASEGAMEFILES WHERE filepath = ?";
-			String updateString = "UPDATE basegamefiles SET hash=?, filesize=? WHERE filepath=?";
+			String insertString = "INSERT INTO basegamefiles (filepath, hash, filesize) VALUES (UPPER(?),?,?)";
+			String selectString = "SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(?)";
+			String updateString = "UPDATE basegamefiles SET hash=?, filesize=? WHERE filepath=UPPER(?)";
 			insertStatement = dbConnection.prepareStatement(insertString);
 			selectStatement = dbConnection.prepareStatement(selectString);
 			updateStatement = dbConnection.prepareStatement(updateString);
@@ -265,7 +265,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 				filesProcessed++;
 				this.publish(filesProcessed);
 			}
-			ModManager.debugLogger.writeMessage("Shutting down basegame db thread");
+			ModManager.debugLogger.writeMessage("Shutting down game repair db thread");
 			return null;
 		}
 
@@ -325,9 +325,10 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 	public RepairFileInfo getFileInfo(String relativePath) {
 		if (databaseLoaded) {
 			try {
-				String selectString = "SELECT * FROM BASEGAMEFILES WHERE filepath = ?";
+				String selectString = "SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(?)";
 				PreparedStatement stmt;
 				stmt = dbConnection.prepareStatement(selectString);
+				ModManager.debugLogger.writeMessage("Querying database: SELECT * FROM BASEGAMEFILES WHERE filepath = "+relativePath);
 				stmt.setString(1, relativePath);
 				stmt.execute();
 				ResultSet srs = stmt.getResultSet();

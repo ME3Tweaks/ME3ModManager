@@ -69,8 +69,7 @@ public class BackupWindow extends JDialog {
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("Backup DLCs");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(260, 363));
-		this.setResizable(false);
+		this.setPreferredSize(new Dimension(260, 452));
 
 		setupWindow();
 
@@ -130,7 +129,7 @@ public class BackupWindow extends JDialog {
 	private void setupWindow() {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("Select DLCs to backup.\nThis will create backup .sfar files for you.\nThis backup tool only backs up original DLC files, not modified ones.");
+		infoLabel = new JLabel("<html>Select DLCs to backup.\nThis will create backup .sfar files for you.\nThis backup tool only backs up original DLC files, not modified ones.</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 
 		progressBar = new JProgressBar(0, 100);

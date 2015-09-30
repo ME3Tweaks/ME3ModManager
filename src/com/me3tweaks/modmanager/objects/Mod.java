@@ -100,8 +100,7 @@ public class Mod implements Comparable<Mod> {
 			addTask(ModType.COAL, null);
 
 			validMod = true;
-			ModManager.debugLogger
-					.writeMessage(modName + " valid, marked as legacy mod. Added coalesced swap job, marked valid, finish reading mod.");
+			ModManager.debugLogger.writeMessage(modName + " valid, marked as legacy mod. Added coalesced swap job, marked valid, finish reading mod.");
 			ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 			return;
 		}
@@ -162,15 +161,17 @@ public class Mod implements Comparable<Mod> {
 						addTargetStrok = new StringTokenizer(addFileTargetIni, ";");
 						if (addStrok.countTokens() != addTargetStrok.countTokens()) {
 							// Same number of tokens aren't the same
-							ModManager.debugLogger
-									.writeMessage("Number of files to add and number of target files do not match, mod being marked as invalid.");
+							ModManager.debugLogger.writeMessage("Number of files to add and number of target files do not match, mod being marked as invalid.");
 							return;
 						}
 					}
 
 					//remove files doesn't need a token match, but create the tokenizer for later
-					removeStrok =  new StringTokenizer(removeFileTargetIni, ";");
+					if (removeFileTargetIni != null && !removeFileTargetIni.equals("")) {
+						removeStrok = new StringTokenizer(removeFileTargetIni, ";");
+					}
 					requirementText = modini.get(modHeader, "jobdescription");
+					ModManager.debugLogger.writeMessage(modHeader+" job description: "+requirementText);
 				}
 
 				// Check to make sure the filenames are the same, and if they
@@ -193,8 +194,7 @@ public class Mod implements Comparable<Mod> {
 					// ModManager.debugLogger.writeMessage("Validating tokens: "+newFile+" vs
 					// "+oldFile);
 					if (!newFile.equals(getSfarFilename(oldFile))) {
-						ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs "
-								+ getSfarFilename(oldFile));
+						ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs " + getSfarFilename(oldFile));
 						return; // The names of the files don't match
 					}
 
@@ -206,12 +206,11 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 				if (addStrok != null) {
-					while (addStrok.hasMoreTokens()){
+					while (addStrok.hasMoreTokens()) {
 						String addFile = addStrok.nextToken();
 						String targetFile = addTargetStrok.nextToken();
 						if (!addFile.equals(getSfarFilename(targetFile))) {
-							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs "
-									+ getSfarFilename(targetFile));
+							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs " + getSfarFilename(targetFile));
 							return; // The names of the files don't match
 						}
 
@@ -224,7 +223,7 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 				if (removeStrok != null) {
-					while (removeStrok.hasMoreTokens()){
+					while (removeStrok.hasMoreTokens()) {
 						String removeFilePath = removeStrok.nextToken();
 						//add remove file to job
 						if (!newJob.addRemoveFileTask(removeFilePath)) {
@@ -259,8 +258,7 @@ public class Mod implements Comparable<Mod> {
 				StringTokenizer destStrok = new StringTokenizer(sourceFolderIni, ";");
 				if (srcStrok.countTokens() != destStrok.countTokens()) {
 					// Same number of tokens aren't the same
-					ModManager.debugLogger
-							.writeMessage("Number of source and destination directories for custom DLC job do not match, mod being marked as invalid.");
+					ModManager.debugLogger.writeMessage("Number of source and destination directories for custom DLC job do not match, mod being marked as invalid.");
 					return;
 				}
 
@@ -276,8 +274,7 @@ public class Mod implements Comparable<Mod> {
 
 					File sf = new File(modFolderPath + sourceFolder);
 					if (!sf.exists()) {
-						ModManager.debugLogger.writeError("Custom DLC Source folder does not exist: " + sf.getAbsolutePath()
-								+ ", mod marked as invalid");
+						ModManager.debugLogger.writeError("Custom DLC Source folder does not exist: " + sf.getAbsolutePath() + ", mod marked as invalid");
 						return;
 					}
 					List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
@@ -321,8 +318,7 @@ public class Mod implements Comparable<Mod> {
 					addTask(ModType.COAL, null);
 				}
 			} catch (NumberFormatException e) {
-				ModManager.debugLogger
-						.writeMessage("Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal");
+				ModManager.debugLogger.writeMessage("Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal");
 			}
 		}
 		// Check for coalesced in the new mod manager version [2.0 only]
@@ -458,7 +454,8 @@ public class Mod implements Comparable<Mod> {
 	/**
 	 * Gets the filepath's internal filename
 	 * 
-	 * @param sfarFilePath path in sfar (or unpacked DLC)
+	 * @param sfarFilePath
+	 *            path in sfar (or unpacked DLC)
 	 * @return filename of passed in string
 	 */
 	private String getSfarFilename(String sfarFilePath) {
@@ -862,8 +859,7 @@ public class Mod implements Comparable<Mod> {
 			for (int i = 0; i < otherNewFiles.length; i++) {
 				String otherfile = otherNewFiles[i];
 				ModManager.debugLogger.writeMessage("CURRENT JOB: " + myCorrespendingJob.getJobName());
-				if (ignoreFiles != null && ignoreFiles.get(otherjob.getJobName()) != null
-						&& ignoreFiles.get(otherjob.getJobName()).contains(otherReplacePaths.get(i))) {
+				if (ignoreFiles != null && ignoreFiles.get(otherjob.getJobName()) != null && ignoreFiles.get(otherjob.getJobName()).contains(otherReplacePaths.get(i))) {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherReplacePaths.get(i));
 					continue;
 				} else {
@@ -904,8 +900,7 @@ public class Mod implements Comparable<Mod> {
 					try {
 						File srcFolder = new File(ModManager.appendSlash(modDescFile.getParentFile().getAbsolutePath()) + sourceFolder);
 						File destFolder = new File(modFolder + File.separator + sourceFolder); //source folder is a string
-						ModManager.debugLogger.writeMessage("Copying custom DLC folder: " + srcFolder.getAbsolutePath() + " to "
-								+ destFolder.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("Copying custom DLC folder: " + srcFolder.getAbsolutePath() + " to " + destFolder.getAbsolutePath());
 						FileUtils.copyDirectory(srcFolder, destFolder);
 					} catch (IOException e) {
 						ModManager.debugLogger.writeMessage("IOException while merging mods (custom DLC).");
@@ -923,8 +918,7 @@ public class Mod implements Comparable<Mod> {
 				String baseName = FilenameUtils.getName(mergefile);
 				try {
 					File destinationFile = new File(moduleDir + File.separator + baseName);
-					ModManager.debugLogger.writeMessage("Copying to new mod folder: " + file.getAbsolutePath() + " to "
-							+ destinationFile.getAbsolutePath());
+					ModManager.debugLogger.writeMessage("Copying to new mod folder: " + file.getAbsolutePath() + " to " + destinationFile.getAbsolutePath());
 					FileUtils.copyFile(file, destinationFile);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeMessage("IOException while merging mods.");
@@ -1062,9 +1056,9 @@ public class Mod implements Comparable<Mod> {
 	public String getBasegameCoalesced() {
 		/*
 		 * if (modsCoal()){ return ModManager.appendSlash(modPath) +
-		 * "Coalesced.bin"; } for (ModJob job : jobs) {
-		 * System.out.println("GETBASECOAL SCANNING: "+job.getJobName()); for
-		 * (int i = 0; i < job.filesToReplace.size(); i++){ String file =
+		 * "Coalesced.bin"; } for (ModJob job : jobs) { System.out.println(
+		 * "GETBASECOAL SCANNING: "+job.getJobName()); for (int i = 0; i <
+		 * job.filesToReplace.size(); i++){ String file =
 		 * job.filesToReplace.get(i); file = file.replaceAll("\\\\", "/");
 		 * //make sure all are the same (since the yall work) if
 		 * (file.toLowerCase().equals("".toLowerCase())){ return

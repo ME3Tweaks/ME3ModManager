@@ -30,7 +30,7 @@ public class ModJob {
 	/** Holds many parameters that are required to inject files into a DLC Sfar file.
 	 * @param DLCFilePath Path to the DLC Sfar file.
 	 */
-	public ModJob(String DLCFilePath, String jobName,String requirementText){
+	public ModJob(String DLCFilePath, String jobName, String requirementText){
 		setJobType(DLC);
 		this.setJobName(jobName);
 		this.DLCFilePath = DLCFilePath;
@@ -74,6 +74,9 @@ public class ModJob {
 		setJobName(ModType.BASEGAME);
 		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+		addFiles = new ArrayList<String>();
+		addFilesTargets = new ArrayList<String>();
+		removeFiles = new ArrayList<String>();
 	}
 
 	public String getRequirementText() {

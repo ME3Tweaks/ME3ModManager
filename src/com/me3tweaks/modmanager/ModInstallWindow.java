@@ -128,19 +128,19 @@ public class ModInstallWindow extends JDialog {
 
 		//module is missing
 		StringBuilder sb = new StringBuilder();
-		sb.append("This mod has tasks for the following missing DLC.\nIf the mod descriptor details the job description, they will be listed below.");
+		sb.append("This mod has tasks for the following missing DLC.\nIf the mod descriptor details the job description, they will be listed below.\n");
 		for (ModJob job : missingModules) {
 			ModManager.debugLogger.writeMessage("Mod requires missing DLC Module: " + job.getJobName());
 			sb.append(" - ");
 			sb.append(job.getJobName());
 			sb.append("\n");
-			if (job.getRequirementText() != null) {
+			if (job.getRequirementText()!=null && !job.getRequirementText().equals("")) {
 				sb.append("   - ");
 				sb.append(job.getRequirementText());
 				sb.append("\n");
 			}
 		}
-		sb.append("\nContinue with the mod install?");
+		sb.append("\nThese jobs will be skipped. Continue with the mod install?");
 		int result = JOptionPane.showConfirmDialog(callingWindow, sb.toString(), "Missing DLC", JOptionPane.WARNING_MESSAGE);
 		ModManager.debugLogger.writeMessage(result == JOptionPane.YES_OPTION ? "User continuing install even with missing DLC modules"
 				: "User canceled Mod Install");
@@ -199,16 +199,18 @@ public class ModInstallWindow extends JDialog {
 				}
 			}
 
-			if (!precheckGameDB(jobs)) {
+			if (precheckGameDB(jobs)) {
+				ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod");
 				return false;
-
+			} else {
+				ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
 			}
 
+			ModManager.debugLogger.writeMessage("Processing jobs in mod queue.");
 			for (ModJob job : jobs) {
 				if (installCancelled) {
 					return false;
 				}
-				ModManager.debugLogger.writeMessage("Starting mod job");
 				boolean result = false;
 				switch (job.getJobType()) {
 				case ModJob.DLC:
@@ -224,7 +226,6 @@ public class ModInstallWindow extends JDialog {
 				if (result) {
 					completed++;
 					ModManager.debugLogger.writeMessage("Successfully finished mod job");
-
 				} else {
 					ModManager.debugLogger.writeMessage("Mod job failed: " + job.getDLCFilePath());
 					failedJobs.add(job.getDLCFilePath());
@@ -234,6 +235,11 @@ public class ModInstallWindow extends JDialog {
 			return true;
 		}
 
+		/**
+		 * Checks the game DB for files in all jobs to see if any need to be added.
+		 * @param jobs Jobs to check
+		 * @return true if user clicks YES to open DB window, false if they don't (or all is Ok)
+		 */
 		private boolean precheckGameDB(ModJob[] jobs) {
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
@@ -257,13 +263,14 @@ public class ModInstallWindow extends JDialog {
 						String relative = ResourceUtils.getRelativePath(basegamefile.getAbsolutePath(), me3dir, File.separator);
 						RepairFileInfo rfi = bghDB.getFileInfo(relative);
 						if (rfi == null) {
+							ModManager.debugLogger.writeMessage("File not in GameDB, showing prompt: "+relative);
 							// file is missing. Basegame DB likely hasn't been made
 							int reply = JOptionPane
 									.showConfirmDialog(
 											null,
-											"<html>One or more of the files this mod is installing is not in the basegame database.<br>In order to restore basegame files this database needs to be created or updated.<br>Open the database window?</html>",
+											"<html>"+relative+" is not in the game repair database.<br>In order to restore basegame files and unpacked DLC files this database needs to be created or updated.<br>Open the database window?</html>",
 											"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-							if (reply == JOptionPane.CANCEL_OPTION) {
+							if (reply == JOptionPane.NO_OPTION) {
 								return false;
 							} else {
 								return true;
@@ -318,7 +325,7 @@ public class ModInstallWindow extends JDialog {
 											null,
 											"<html>One or more of the files this mod is installing is not in the game repair database.<br>In order to restore game files this database needs to be created or updated.<br>Open the database window?</html>",
 											"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-							if (reply == JOptionPane.CANCEL_OPTION) {
+							if (reply == JOptionPane.NO_OPTION) {
 								return false;
 							} else {
 								return true;
@@ -327,10 +334,11 @@ public class ModInstallWindow extends JDialog {
 					}
 				}
 			}
-			return true;
+			return false;
 		}
 
 		private boolean processBasegameJob(ModJob job) {
+			ModManager.debugLogger.writeMessage("===Processing a basegame job===");
 			publish("Processing basegame files...");
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
@@ -348,8 +356,8 @@ public class ModInstallWindow extends JDialog {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles[i];
 
-				boolean userCanceled = checkBackupAndHash(me3dir, fileToReplace, job);
-				if (userCanceled) {
+				boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
+				if (!shouldContinue) {
 					installCancelled = true;
 					return false;
 				}
@@ -405,6 +413,8 @@ public class ModInstallWindow extends JDialog {
 		 * @return true if successful, false otherwise
 		 */
 		private boolean processDLCJob(ModJob job) {
+			ModManager.debugLogger.writeMessage("===Processing a dlc job===");
+
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
 
@@ -527,6 +537,13 @@ public class ModInstallWindow extends JDialog {
 			return true;
 		}
 
+		/**
+		 * Checks for a backup file and the hash of the original one in the DB to make sure they match if no backup is found.
+		 * @param me3dir ME3 DIR to use as a base
+		 * @param fileToReplace file that will be replaced, as a relative path
+		 * @param job job (for outputting name)
+		 * @return true if file is backed up (and hashed OK), false if it is not backed up/error/hashfail
+		 */
 		private boolean checkBackupAndHash(String me3dir, String fileToReplace, ModJob job) {
 			String backupfolderpath = me3dir.toString() + "cmmbackup\\";
 			File cmmbackupfolder = new File(backupfolderpath);
@@ -652,6 +669,7 @@ public class ModInstallWindow extends JDialog {
 					}
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("ERROR BACKING UP FILE:", e);
+					return false;
 				}
 			}
 			return true;
@@ -835,6 +853,8 @@ public class ModInstallWindow extends JDialog {
 		 * @return true if successful, false otherwise.
 		 */
 		private boolean processCustomDLCJob(ModJob job) {
+			ModManager.debugLogger.writeMessage("===Processing a customdlc job===");
+
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
 
 			for (int i = 0; i < job.getFilesToReplace().size(); i++) {
