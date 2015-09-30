@@ -50,18 +50,19 @@ import com.me3tweaks.modmanager.objects.Patch;
 
 public class ModManager {
 
-	public static final String VERSION = "4.0 Beta 4";
-	public static long BUILD_NUMBER = 44L;
-	public static final String BUILD_DATE = "8/29/2015";
+	public static final String VERSION = "4.1 Beta 1";
+	public static long BUILD_NUMBER = 45L; //can't be final as you can force override this
+	public static final double MODDESC_VERSION_SUPPORT = 4.1;
+	public static final String BUILD_DATE = "9/29/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
-	public static String settingsFilename = "me3cmm.ini";
+	public static final String settingsFilename = "me3cmm.ini";
 	public static boolean logging = false;
-	public static double MODMAKER_VERSION_SUPPORT = 1.8; //max modmaker version
+	public static final double MODMAKER_VERSION_SUPPORT = 1.8; //max modmaker version
 	public static boolean AUTO_UPDATE_MODS = false;
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static long LAST_AUTOUPDATE_CHECK;
-	public static int MIN_REQUIRED_ME3EXPLORER_REV = 717; //my custom build version
+	public static int MIN_REQUIRED_ME3EXPLORER_REV = 720; //my custom build version
 	public static ArrayList<Image> ICONS;
 
 	public static void main(String[] args) {
@@ -702,6 +703,7 @@ public class ModManager {
 			JOptionPane.showMessageDialog(null,
 					"Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.",
 					"ME3Explorer Error", JOptionPane.ERROR_MESSAGE);
+			return "";
 		}
 		return appendSlash(me3expdir.getAbsolutePath());
 	}
@@ -1044,17 +1046,25 @@ public class ModManager {
 		try {
 			String wvdlcBink32MD5 = "5a826dd66ad28f0099909d84b3b51ea4"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
 			String wvdlcBink32MD5_2 = "05540bee10d5e3985608c81e8b6c481a"; //Binkw32.dll that bypasses DLC check (WV) - from Private Server SVN
-
+			String originalBink32MD5 = "";
+			
 			File bgdir = new File(biogameDir);
 			File gamedir = bgdir.getParentFile();
 			ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
 			File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
+			File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 			try {
 				String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
-				if (binkhash.equals(wvdlcBink32MD5) || binkhash.equals(wvdlcBink32MD5_2)) {
-					ModManager.debugLogger.writeMessage("Binkw32 DLC bypass installed");
+				if (!binkhash.equals(wvdlcBink32MD5) || bink23.exists()) {
+					ModManager.debugLogger.writeMessage("Binkw32 DLC bypass probably installed (hash is wrong and bink23 exists)");
 					return true;
 				} else {
+				
+				//OLD CODE
+				//if (binkhash.equals(wvdlcBink32MD5) || binkhash.equals(wvdlcBink32MD5_2)) {
+				//	ModManager.debugLogger.writeMessage("Binkw32 DLC bypass installed");
+				//	return true;
+				//} else {
 					// Check for LauncherWV.
 					File Launcher_WV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
 					File LauncherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\LauncherWV.exe");
@@ -1064,10 +1074,10 @@ public class ModManager {
 						return true;
 					} else {
 						//No DLC Bypass installed
-						ModManager.debugLogger.writeMessage("Binkw32.dll bypass hash failed, hash is: " + binkhash);
+						ModManager.debugLogger.writeMessage("Binkw32.dll's hash indicates it is the original, binkw32 bypass not installed.");
 						ModManager.debugLogger.writeMessage("LauncherWV was not found in Win32 as Launcher_WV or LauncherWV.");
-						ModManager.debugLogger.writeMessage("Advertising the DLC bypass install.");
-						return false; //we will install binkw32.
+						ModManager.debugLogger.writeMessage("DLC bypass is not installed.");
+						return false; //we will install launcherwv
 					}
 				}
 			} catch (Exception e) {

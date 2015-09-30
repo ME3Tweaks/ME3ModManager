@@ -25,8 +25,7 @@ public class ModJob {
 	ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
 	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
 	
-	public ArrayList<String> newFiles;
-	ArrayList<String> filesToReplace;
+	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFiles;
 	
 	/** Holds many parameters that are required to inject files into a DLC Sfar file.
 	 * @param DLCFilePath Path to the DLC Sfar file.
@@ -38,8 +37,35 @@ public class ModJob {
 		this.requirementText = requirementText;
 		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+		addFiles = new ArrayList<String>();
+		addFilesTargets = new ArrayList<String>();
+		removeFiles = new ArrayList<String>();
 	}
 	
+	public ArrayList<String> getFilesToAdd() {
+		return addFiles;
+	}
+
+	public void setAddFiles(ArrayList<String> addFiles) {
+		this.addFiles = addFiles;
+	}
+
+	public ArrayList<String> getFilesToAddTargets() {
+		return addFilesTargets;
+	}
+
+	public void setAddFilesTargets(ArrayList<String> addFilesTargets) {
+		this.addFilesTargets = addFilesTargets;
+	}
+
+	public ArrayList<String> getFilesToRemove() {
+		return removeFiles;
+	}
+
+	public void setRemoveFiles(ArrayList<String> removeFiles) {
+		this.removeFiles = removeFiles;
+	}
+
 	/** Creates a basegame modjob. It doesn't need a path since it can be derived without the need for one.
 	 * @param DLCFilePath Path to the DLC Sfar file.
 	 */
@@ -99,9 +125,13 @@ public class ModJob {
 	 * Gets the array of files that will be replaced
 	 * @return
 	 */
-	public String[] getFilesToReplace() {
-		return filesToReplace.toArray(new String[filesToReplace.size()]);
+	public ArrayList<String> getFilesToReplace() {
+		return filesToReplace;
 	}
+	
+	/*public String[] getFilesToReplace() {
+		return filesToReplace.toArray(new String[filesToReplace.size()]);
+	}*/
 
 	@Override
 	public int hashCode() {
@@ -166,5 +196,55 @@ public class ModJob {
 
 	public void setDestFolders(ArrayList<String> destFolders) {
 		this.destFolders = destFolders;
+	}
+
+	/**
+	 * Adds a source file/target path pair to this job to add a new file to the basegame or DLC (packed or unpacked) when this job is processed
+	 * @param sourceFile new file to add
+	 * @param targetPath path to place in DLC
+	 * @return true if added, false otherwise
+	 */
+	public boolean addNewFileTask(String sourceFile, String targetPath) {
+		File file = new File(sourceFile);
+		if (!file.exists()){
+			ModManager.debugLogger.writeError("Source file doesn't exist: "+sourceFile);
+			return false;
+		}
+		if (getJobType() == BASEGAME) {
+			//check first char is \
+			if (targetPath.charAt(0) != '\\'){
+				targetPath = "\\"+targetPath;
+			}
+		} else {
+			//its dlc
+			if (targetPath.charAt(0) != '/'){
+				targetPath = "/"+targetPath;
+			}
+		}
+		
+		addFiles.add(sourceFile);
+		addFilesTargets.add(targetPath);
+		return true;
+	}
+	
+	/**
+	 * Adds a target path to be removed when this job is processed.
+	 * @param targetPath file to remove relative to this job
+	 * @return true if added, false otherwise
+	 */
+	public boolean addRemoveFileTask(String targetPath) {
+		if (getJobType() == BASEGAME) {
+			//check first char is \
+			if (targetPath.charAt(0) != '\\'){
+				targetPath = "\\"+targetPath;
+			}
+		} else {
+			//its dlc
+			if (targetPath.charAt(0) != '/'){
+				targetPath = "/"+targetPath;
+			}
+		}
+		removeFiles.add(targetPath);
+		return true;
 	}
 }
