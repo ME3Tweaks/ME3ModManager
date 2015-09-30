@@ -889,7 +889,7 @@ public class Mod implements Comparable<Mod> {
 
 	@Override
 	public int compareTo(Mod other) {
-		return getModName().compareTo(other.getModName());
+		return getModName().toLowerCase().compareTo(other.getModName().toLowerCase());
 	}
 
 	/**

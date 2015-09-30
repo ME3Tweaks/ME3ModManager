@@ -485,13 +485,13 @@ public class Patch implements Comparable<Patch> {
 		File dirHeader = copyTo.getParentFile();
 		dirHeader.mkdirs();
 		if (ModManager.IS_DEBUG){
-			try {
+			/*try {
 				FileUtils.copyFile(new File(patchFolderPath + "patch.jsf"), copyTo);
 				System.out.println("Copied to "+copyTo.getAbsolutePath());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
+			}*/
 		}
 		return sb.toString();
 	}

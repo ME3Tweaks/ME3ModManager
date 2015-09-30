@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -457,6 +458,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modModel = new DefaultListModel<Mod>();
 		modList.setModel(modModel);
 		ArrayList<Mod> modList = ModManager.getModsFromDirectory();
+		Collections.sort(modList);
 		for (Mod mod : modList) {
 			modModel.addElement(mod);
 		}

@@ -283,6 +283,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		List<Patch> selectedPatches = patchList.getSelectedValuesList();
 		boolean isFirst = true;
 		for (Patch patch : selectedPatches) {
+			System.out.println(patch.convertToME3TweaksSQLInsert());
 			if (isFirst) {
 				isFirst = false;
 			} else {
