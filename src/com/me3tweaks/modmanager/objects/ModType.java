@@ -127,7 +127,7 @@ public class ModType {
 		dlcMap.put(APP01,"d27098a14da986f4562bda557ed778cc");
 		dlcMap.put(GUN01,"d05977324e5ef172e8d0f10ec664ab9f");
 		dlcMap.put(GUN02,"6d7fa053fac1696c6b64ea20669db5c0");
-		dlcMap.put(DH1,"0");
+		dlcMap.put(DH1,"ea34559050385d928e45db218caa4007");
 		return dlcMap;
 	}
 	
@@ -153,7 +153,7 @@ public class ModType {
 		dlcMap.put(APP01,53878606L);
 		dlcMap.put(GUN01,18708500L);
 		dlcMap.put(GUN02,17134896L);
-		dlcMap.put(DH1,0L);
+		dlcMap.put(DH1,284862077L);
 		return dlcMap;
 	}
 
