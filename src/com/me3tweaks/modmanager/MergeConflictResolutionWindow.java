@@ -254,10 +254,10 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 									for (String conflictFile : conflictingFilesInModule) {
 										int updateIndex = -1;
 										//for every conflict file...
-										for (int x = 0; x < job.getFilesToReplace().length; x++) {
+										for (int x = 0; x < job.getFilesToReplace().size(); x++) {
 											//get index so we can update the newFiles that correspodn to it.
-											if (job.getFilesToReplace()[x].equals(conflictFile)) {
-												System.out.println("FOUND MOD 1 CONFLICT FILE INDEX: "+job.getFilesToReplace()[x]+" "+x);
+											if (job.getFilesToReplace().get(x).equals(conflictFile)) {
+												System.out.println("FOUND MOD 1 CONFLICT FILE INDEX: "+job.getFilesToReplace().get(x)+" "+x);
 												updateIndex = x;
 												break;
 											}
@@ -268,9 +268,9 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 										String conflictFilePath = null;
 										for (ModJob mod2job : mod2.jobs) { //find job in mod2
 											if (mod2job.getJobName().equals(key)) {
-												for (int x = 0; x < mod2job.getFilesToReplace().length; x++) {
-													if (mod2job.getFilesToReplace()[x].equals(conflictFile)) {
-														System.out.println("FOUND MOD2 FILE INDEX: "+job.getFilesToReplace()[x]+" "+x);
+												for (int x = 0; x < mod2job.getFilesToReplace().size(); x++) {
+													if (mod2job.getFilesToReplace().get(x).equals(conflictFile)) {
+														System.out.println("FOUND MOD2 FILE INDEX: "+job.getFilesToReplace().get(x)+" "+x);
 														conflictFilePath = mod2job.getNewFiles()[x];
 														break;
 													}

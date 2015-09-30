@@ -15,6 +15,7 @@ public class Category {
 		workingStr = value.substring(charIndex+1);
 		charIndex = workingStr.indexOf('\"'); // second " which is the end of the name. clip this to get what we want.
 		categoryname = workingStr.substring(0, charIndex);
+		System.out.println("Processing: "+categoryname);
 		workingStr = workingStr.substring(charIndex);
 		charIndex = workingStr.indexOf('(');
 		workingStr = workingStr.substring(charIndex+1); //start of stats array (removing the leading ( because of CategoryData = ( ).
@@ -30,20 +31,27 @@ public class Category {
 			if (workingStr.charAt(charIndex) == '(') {
 				openBraces++;
 				charIndex++;
+				System.out.println("open brace, charindex: "+charIndex);
 				continue;
 			}
 			if (workingStr.charAt(charIndex) == ')') {
 				openBraces--;
+				System.out.println("close brace, ones left open: "+openBraces);
 				charIndex++;
-				if (openBraces <= 0) {
-					//we finished one
+				if (openBraces == 0) {
+					//we finished one item
 					stats.add(new Stat(workingStr.substring(0, charIndex)));
 					if (charIndex < workingStr.length()){
 						workingStr = workingStr.substring(charIndex+1);
+						System.out.println("Remaining workingStr: "+workingStr);
 					} else {
-						break; //we finished
+						System.out.println("End of string");
+						break;
 					}
 					charIndex = 0;
+				} else if (openBraces < 0) {
+					System.out.println("Category Finished");
+					break;
 				}
 				continue;
 			}

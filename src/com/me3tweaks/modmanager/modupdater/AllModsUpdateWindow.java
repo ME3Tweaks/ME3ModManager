@@ -230,8 +230,14 @@ public class AllModsUpdateWindow extends JDialog {
 		 */
 		@Override
 		protected void done() {
+			ModManager.debugLogger.writeMessage("Auto-Updater thread: performing done()");
+			try {
+				get();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeException(e);
+				ModManager.debugLogger.writeMessage("Auto-Updater thread likely ended pre-maturely due to an exception.");
+			}
 			if (!showUI) {
-				ModManager.debugLogger.writeMessage("Auto-Updater thread: performing done()");
 				//autoupdate, update last check date
 				Wini ini;
 				try {
