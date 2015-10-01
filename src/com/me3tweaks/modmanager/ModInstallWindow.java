@@ -177,7 +177,7 @@ public class ModInstallWindow extends JDialog {
 		ModJob[] jobs;
 		ArrayList<String> failedJobs;
 		private BasegameHashDB bghDB;
-		private boolean installCancelled = false;
+		private boolean installCancelled = false, openDBWindow = false;;
 
 		protected InjectionCommander(ModJob[] jobs, Mod mod) {
 			this.mod = mod;
@@ -201,6 +201,7 @@ public class ModInstallWindow extends JDialog {
 
 			if (precheckGameDB(jobs)) {
 				ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod");
+				openDBWindow = true;
 				return false;
 			} else {
 				ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
@@ -949,6 +950,7 @@ public class ModInstallWindow extends JDialog {
 					File bgdir = new File(ModManager.appendSlash(bioGameDir));
 					String me3dir = ModManager.appendSlash(bgdir.getParent());
 					BasegameHashDB bghDB = new BasegameHashDB(ModManagerWindow.ACTIVE_WINDOW, me3dir, true);
+					callingWindow.labelStatus.setText("Mod install cancelled.");
 					dispose();
 					bghDB.setVisible(true);
 				} else {

@@ -74,7 +74,7 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 		
 		JPanel conflictPanel = new JPanel();
 		conflictPanel.setLayout(new BoxLayout(conflictPanel, BoxLayout.PAGE_AXIS));
-		conflictFiles = mod1.getConflictsWithMod(mod2);
+		conflictFiles = mod1.getReplaceConflictsWithMod(mod2);
 		Iterator<Map.Entry<String, ArrayList<String>>>  it = conflictFiles.entrySet().iterator();
 	    while (it.hasNext()) {
 	        Map.Entry<String, ArrayList<String>> pairs = (Map.Entry<String, ArrayList<String>> )it.next();

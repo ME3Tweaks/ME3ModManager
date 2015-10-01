@@ -128,11 +128,15 @@ public class RestoreFilesWindow extends JDialog {
 				case RestoreMode.UNPACKED:
 					numjobs = 1;
 					publish("Restoring unpacked DLC files");
-					return processRestoreBasegame(false, true);
+					return processRestoreBasegame(true, false);
 				case RestoreMode.UNPACKEDBASEGAME:
 					numjobs = 1;
 					publish("Restoring basegame and unpacked DLC files");
 					return processRestoreBasegame(false, false);
+				case RestoreMode.ALLDLC:
+					numjobs = ModType.getHeaderNameArray().length;
+					publish("Restoring all DLC SFARs");
+					return  restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray());
 				case RestoreMode.SP:
 					numjobs = ModType.getSPHeaderNameArray().length;
 					publish("Restoring SP SFARs");
@@ -208,6 +212,8 @@ public class RestoreFilesWindow extends JDialog {
 		 */
 		private boolean processRestoreBasegame(boolean skipBasegame, boolean skipDLC) {
 			//load Basegame DB
+			ModManager.debugLogger.writeMessage("Processing a basegame/unpacked DLC job. Skip basegame: "+skipBasegame+", Skip DLC: "+skipDLC);
+
 			BasegameHashDB bghDB = new BasegameHashDB(null, new File(BioGameDir).getParent(), false);
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
 			String backupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\";
@@ -224,6 +230,8 @@ public class RestoreFilesWindow extends JDialog {
 						//DLC only
 						continue;
 					}
+					ModManager.debugLogger.writeMessage("Restoring file: "+backup.getAbsolutePath()+", starts with DLC path? "+ backup.getAbsolutePath().startsWith(dlcbackupfolder)+ " path is "+dlcbackupfolder);
+					String taskTitle = backup.getAbsolutePath().startsWith(dlcbackupfolder) ? "UNPACKED DLC" : "BASEGAME";
 					//verify it.
 					String relative = ResourceUtils.getRelativePath(backup.getAbsolutePath(), backupfolder, File.separator);
 					RepairFileInfo rfi = bghDB.getFileInfo(relative);
@@ -301,7 +309,7 @@ public class RestoreFilesWindow extends JDialog {
 					//String relative = new File(backupfolder).toURI().relativize(backup.toURI()).getPath();
 					ModManager.debugLogger.writeMessage("Restoring " + relative);
 					try {
-						publish(ModType.BASEGAME + ": Restoring " + backup.getName());
+						publish(taskTitle + ": Restoring " + backup.getName());
 						Files.copy(Paths.get(backup.toString()), Paths.get(ModManager.appendSlash(me3dir) + relative),
 								StandardCopyOption.REPLACE_EXISTING);
 					} catch (IOException e) {
@@ -483,6 +491,7 @@ public class RestoreFilesWindow extends JDialog {
 			switch (restoreMode) {
 				case RestoreMode.ALL:
 				case RestoreMode.BASEGAME:
+				case RestoreMode.ALLDLC:
 				case RestoreMode.UNPACKED:
 				case RestoreMode.UNPACKEDBASEGAME:
 				case RestoreMode.SP:
