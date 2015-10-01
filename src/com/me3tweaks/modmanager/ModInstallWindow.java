@@ -134,7 +134,7 @@ public class ModInstallWindow extends JDialog {
 			sb.append(" - ");
 			sb.append(job.getJobName());
 			sb.append("\n");
-			if (job.getRequirementText()!=null && !job.getRequirementText().equals("")) {
+			if (job.getRequirementText() != null && !job.getRequirementText().equals("")) {
 				sb.append("   - ");
 				sb.append(job.getRequirementText());
 				sb.append("\n");
@@ -236,9 +236,13 @@ public class ModInstallWindow extends JDialog {
 		}
 
 		/**
-		 * Checks the game DB for files in all jobs to see if any need to be added.
-		 * @param jobs Jobs to check
-		 * @return true if user clicks YES to open DB window, false if they don't (or all is Ok)
+		 * Checks the game DB for files in all jobs to see if any need to be
+		 * added.
+		 * 
+		 * @param jobs
+		 *            Jobs to check
+		 * @return true if user clicks YES to open DB window, false if they
+		 *         don't (or all is Ok)
 		 */
 		private boolean precheckGameDB(ModJob[] jobs) {
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
@@ -263,12 +267,14 @@ public class ModInstallWindow extends JDialog {
 						String relative = ResourceUtils.getRelativePath(basegamefile.getAbsolutePath(), me3dir, File.separator);
 						RepairFileInfo rfi = bghDB.getFileInfo(relative);
 						if (rfi == null) {
-							ModManager.debugLogger.writeMessage("File not in GameDB, showing prompt: "+relative);
+							ModManager.debugLogger.writeMessage("File not in GameDB, showing prompt: " + relative);
 							// file is missing. Basegame DB likely hasn't been made
 							int reply = JOptionPane
 									.showConfirmDialog(
 											null,
-											"<html>"+relative+" is not in the game repair database.<br>In order to restore basegame files and unpacked DLC files this database needs to be created or updated.<br>Open the database window?</html>",
+											"<html>"
+													+ relative
+													+ " is not in the game repair database.<br>In order to restore basegame files and unpacked DLC files this database needs to be created or updated.<br>Open the database window?</html>",
 											"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 							if (reply == JOptionPane.NO_OPTION) {
 								return false;
@@ -428,15 +434,15 @@ public class ModInstallWindow extends JDialog {
 				}
 			}
 
-			//Check for files to remove not being present
-			for (int i = 0; i < job.getFilesToRemove().size(); i++) {
+			//We don't need to check for files to remove, as if it this is an unpacked DLC we can just skip the file. If it is missing in the DLC then there would be nothing we can do.
+/*			for (int i = 0; i < job.getFilesToRemove().size(); i++) {
 				String fileToRemove = job.getFilesToRemove().get(i);
 				File unpackeddlcfile = new File(me3dir + fileToRemove);
 				if (!unpackeddlcfile.exists()) {
 					ModManager.debugLogger.writeMessage("Game DB: unpacked DLC file not present. DLC job will use SFAR method: " + job.getJobName());
 					return processSFARDLCJob(job);
 				}
-			}
+			}*/
 
 			//UNPACKED DLC METHOD
 			return updateUnpackedDLC(job);
@@ -466,8 +472,8 @@ public class ModInstallWindow extends JDialog {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles[i];
 
-				boolean userCanceled = checkBackupAndHash(me3dir, fileToReplace, job);
-				if (userCanceled) {
+				boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
+				if (!shouldContinue) {
 					installCancelled = true;
 					return false;
 				}
@@ -515,8 +521,8 @@ public class ModInstallWindow extends JDialog {
 			ArrayList<String> filesToRemove = job.getFilesToRemove();
 			ModManager.debugLogger.writeMessage("Number of files to remove: " + filesToRemove.size());
 			for (String fileToRemove : filesToRemove) {
-				boolean userCanceled = checkBackupAndHash(me3dir, fileToRemove, job);
-				if (userCanceled) {
+				boolean shouldContinue = checkBackupAndHash(me3dir, fileToRemove, job);
+				if (!shouldContinue) {
 					installCancelled = true;
 					return false;
 				}
@@ -524,25 +530,36 @@ public class ModInstallWindow extends JDialog {
 				// install file.
 				File unpacked = new File(me3dir + fileToRemove);
 				Path originalpath = Paths.get(unpacked.toString());
-				try {
-					ModManager.debugLogger.writeMessage("Removing file: " + unpacked);
-					publish(job.getJobName() + ": Removing " + FilenameUtils.getName(unpacked.getAbsolutePath()));
-					Files.delete(originalpath);
-					ModManager.debugLogger.writeMessage("Deleted mod file: " + unpacked);
-				} catch (IOException e) {
-					ModManager.debugLogger.writeException(e);
-					return false;
+				if (unpacked.exists()) {
+					try {
+						ModManager.debugLogger.writeMessage("Removing file: " + unpacked);
+						publish(job.getJobName() + ": Removing " + FilenameUtils.getName(unpacked.getAbsolutePath()));
+						Files.delete(originalpath);
+						ModManager.debugLogger.writeMessage("Deleted mod file: " + unpacked);
+					} catch (IOException e) {
+						ModManager.debugLogger.writeException(e);
+						return false;
+					}
+				} else {
+					ModManager.debugLogger.writeMessage(unpacked+" was to be removed but does not exist, skipping");
+					publish(job.getJobName() + ": "+FilenameUtils.getName(unpacked.getAbsolutePath())+" not present for removal, skipping");
 				}
 			}
 			return true;
 		}
 
 		/**
-		 * Checks for a backup file and the hash of the original one in the DB to make sure they match if no backup is found.
-		 * @param me3dir ME3 DIR to use as a base
-		 * @param fileToReplace file that will be replaced, as a relative path
-		 * @param job job (for outputting name)
-		 * @return true if file is backed up (and hashed OK), false if it is not backed up/error/hashfail
+		 * Checks for a backup file and the hash of the original one in the DB
+		 * to make sure they match if no backup is found.
+		 * 
+		 * @param me3dir
+		 *            ME3 DIR to use as a base
+		 * @param fileToReplace
+		 *            file that will be replaced, as a relative path
+		 * @param job
+		 *            job (for outputting name)
+		 * @return true if file is backed up (and hashed OK), false if it is not
+		 *         backed up/error/hashfail
 		 */
 		private boolean checkBackupAndHash(String me3dir, String fileToReplace, ModJob job) {
 			String backupfolderpath = me3dir.toString() + "cmmbackup\\";
@@ -745,7 +762,7 @@ public class ModInstallWindow extends JDialog {
 			if (job.getFilesToAdd().size() > 0) {
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcaddfile");
+				commandBuilder.add("-dlcaddfiles");
 				String sfarName = "Default.sfar";
 				if (job.TESTPATCH) {
 					sfarName = "Patch_001.sfar";
@@ -764,8 +781,8 @@ public class ModInstallWindow extends JDialog {
 
 				publish("Adding " + filesToAdd.size() + " files to " + job.getJobName());
 				for (int i = 0; i < filesToAdd.size(); i++) {
-					commandBuilder.add(filesToAdd.get(i));
 					commandBuilder.add(filesToAddTargets.get(i));
+					commandBuilder.add(filesToAdd.get(i));
 				}
 
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
@@ -779,7 +796,6 @@ public class ModInstallWindow extends JDialog {
 				try {
 					ProcessBuilder pb = new ProcessBuilder(command);
 					ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
-					// p = Runtime.getRuntime().exec(command);
 					p = pb.start();
 					ModManager.debugLogger.writeMessage("Executed command, waiting...");
 					returncode = p.waitFor();
@@ -797,7 +813,7 @@ public class ModInstallWindow extends JDialog {
 			if (job.getFilesToRemove().size() > 0) {
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcremovefile");
+				commandBuilder.add("-dlcremovefiles");
 				String sfarName = "Default.sfar";
 				if (job.TESTPATCH) {
 					sfarName = "Patch_001.sfar";
@@ -810,10 +826,10 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
-				ArrayList<String> filesToRemove = job.getFilesToAdd();
+				ArrayList<String> filesToRemove = job.getFilesToRemove();
 				ModManager.debugLogger.writeMessage("Number of files to remove: " + filesToRemove.size());
 
-				publish("Removing " + filesToRemove.size() + " files from " + job.getJobName());
+				publish("Removing " + filesToRemove.size() + " files from " + job.getJobName() + ", this may take some time...");
 				for (int i = 0; i < filesToRemove.size(); i++) {
 					commandBuilder.add(filesToRemove.get(i));
 				}
@@ -828,7 +844,6 @@ public class ModInstallWindow extends JDialog {
 				int returncode = 1;
 				try {
 					ProcessBuilder pb = new ProcessBuilder(command);
-					ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
 					// p = Runtime.getRuntime().exec(command);
 					p = pb.start();
 					ModManager.debugLogger.writeMessage("Executed command, waiting...");
@@ -839,7 +854,7 @@ public class ModInstallWindow extends JDialog {
 					return false;
 				}
 
-				ModManager.debugLogger.writeMessage("processDLCJob RETURN VAL: " + (p != null && returncode == 0));
+				ModManager.debugLogger.writeMessage("The process has exited.");
 				result = (p != null && returncode == 0) && result;
 			}
 			return result;
@@ -947,7 +962,7 @@ public class ModInstallWindow extends JDialog {
 
 	protected void finishInstall() {
 		ModManager.debugLogger.writeMessage("Finished installing mod.");
-		dispose();
+		//dispose();
 	}
 
 	public void addToQueue(String newLine) {

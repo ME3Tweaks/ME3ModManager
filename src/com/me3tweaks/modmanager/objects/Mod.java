@@ -100,7 +100,7 @@ public class Mod implements Comparable<Mod> {
 			addTask(ModType.COAL, null);
 
 			validMod = true;
-			ModManager.debugLogger.writeMessage(modName + " valid, marked as legacy mod. Added coalesced swap job, marked valid, finish reading mod.");
+			ModManager.debugLogger.writeMessage(modName + " marked as legacy mod. Added coalesced swap job, marked valid, finish reading mod.");
 			ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 			return;
 		}
@@ -133,7 +133,7 @@ public class Mod implements Comparable<Mod> {
 				String addFileIni = modini.get(modHeader, "addfiles");
 				String addFileTargetIni = modini.get(modHeader, "addfilestargets");
 				//REMOVE FILES (Mod Manager 4.1+)
-				String removeFileTargetIni = modini.get(modHeader, "removefiletargets");
+				String removeFileTargetIni = modini.get(modHeader, "removefilestargets");
 				String requirementText = null;
 
 				if (newFileIni == null || oldFileIni == null || newFileIni.equals("") || oldFileIni.equals("")) {
@@ -147,6 +147,7 @@ public class Mod implements Comparable<Mod> {
 				if (newStrok.countTokens() != oldStrok.countTokens()) {
 					// Same number of tokens aren't the same
 					ModManager.debugLogger.writeMessage("Number of files to update/replace do not match, mod being marked as invalid.");
+					ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 					return;
 				}
 
@@ -162,6 +163,7 @@ public class Mod implements Comparable<Mod> {
 						if (addStrok.countTokens() != addTargetStrok.countTokens()) {
 							// Same number of tokens aren't the same
 							ModManager.debugLogger.writeMessage("Number of files to add and number of target files do not match, mod being marked as invalid.");
+							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 							return;
 						}
 					}
@@ -202,6 +204,8 @@ public class Mod implements Comparable<Mod> {
 					// false it means a file doesn't exist somewhere
 					if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile))) {
 						ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
+						ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+
 						return;
 					}
 				}
@@ -211,6 +215,7 @@ public class Mod implements Comparable<Mod> {
 						String targetFile = addTargetStrok.nextToken();
 						if (!addFile.equals(getSfarFilename(targetFile))) {
 							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs " + getSfarFilename(targetFile));
+							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 							return; // The names of the files don't match
 						}
 
@@ -218,6 +223,7 @@ public class Mod implements Comparable<Mod> {
 						// false it means a file doesn't exist somewhere
 						if (!(newJob.addNewFileTask(modFolderPath + ModManager.appendSlash(iniModDir) + addFile, targetFile))) {
 							ModManager.debugLogger.writeError("[ADDFILE]Failed to add task for file addition (File likely does not exist), marking as invalid.");
+							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 							return;
 						}
 					}
@@ -228,6 +234,7 @@ public class Mod implements Comparable<Mod> {
 						//add remove file to job
 						if (!newJob.addRemoveFileTask(removeFilePath)) {
 							ModManager.debugLogger.writeError("[REMOVE]Failed to add task for file removal.");
+							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 							return;
 						}
 					}

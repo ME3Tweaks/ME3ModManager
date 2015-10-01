@@ -108,7 +108,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		consoleArea.setText("The game repair database keeps track of your preferred game configuration, so when restoring files you will be returned to the snapshotted state.\n"
 				+ "\nCreate or update the game repair DB to make a snapshot of all file hashes and filesizes so that when you install a new mod, the file that is backed up is known to be the one you want.\n"
 				+ "\nWhen restoring files, the game database checks the backed up files match the ones in the snapshot, and will show you a message if they don't."
-				+ "\n\nThe game repair database only works with unpacked DLC files and basegame files, not .sfar files.");
+				+ "\n\nThe game repair database only works with unpacked DLC files and basegame files, not .sfar files. Modifications done outside of Mod Manager are unsupported, such as using Texplorer.");
 		consoleArea.setEditable(false);
 		
 		rootPanel.add(consoleArea,BorderLayout.CENTER);
