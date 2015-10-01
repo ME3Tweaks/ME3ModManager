@@ -23,7 +23,6 @@ import org.ini4j.Wini;
 @SuppressWarnings("serial")
 public class AboutWindow extends JDialog {
 	JLabel infoLabel;
-	JCheckBox loggingMode;
 
 	public AboutWindow(JFrame callingWindow) {
 		setupWindow();
@@ -32,7 +31,7 @@ public class AboutWindow extends JDialog {
 	}
 
 	private void setupWindow() {
-		this.setTitle("About Coalesced Mod Manager");
+		this.setTitle("About Mod Manager");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(380, 365));
 		this.setResizable(false);
@@ -60,33 +59,6 @@ public class AboutWindow extends JDialog {
 								+ "<br>FemShep is not liable for any end-user actions done with this software.</html>");
 		aboutPanel.add(infoLabel, BorderLayout.NORTH);
 
-		loggingMode = new JCheckBox("Mod debugging mode");
-		loggingMode.setSelected(ModManager.logging);
-		loggingMode.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Wini ini;
-				try {
-					File settings = new File(ModManager.settingsFilename);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
-
-					if (loggingMode.isSelected()) {
-						ini.put("Settings", "logging_mode", "1");
-						JOptionPane.showMessageDialog(null, "A log file will be generated in the ME3CMM.exe directory with the filename 'me3cmm_last_run_log.txt'.\nUse this to debug Mod Manager.\nClose ME3CMM before opening your log file.\nYou must restart Mod Manager for logging to take effect.\nNote: Logs will continue to be made every time the program is run.", "Logging Mode", JOptionPane.INFORMATION_MESSAGE);
-					} else {
-						ini.put("Settings", "logging_mode", "0");
-						ModManager.logging = false;
-					}
-					ini.store();
-				} catch (InvalidFileFormatException error) {
-					error.printStackTrace();
-				} catch (IOException error) {
-					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");	
-				}
-			}
-		});
-		aboutPanel.add(loggingMode, BorderLayout.SOUTH);
 		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 		this.getContentPane().add(aboutPanel);
 		this.pack();

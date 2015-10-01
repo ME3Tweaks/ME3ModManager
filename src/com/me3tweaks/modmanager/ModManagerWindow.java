@@ -86,7 +86,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
-	JMenuItem actionModMaker, actionVisitMe, actionOpenME3Exp, actionReload, actionExit;
+	JMenuItem actionModMaker, actionVisitMe, actionOptions, actionOpenME3Exp, actionReload, actionExit;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupBasegame;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
@@ -548,6 +548,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionModMaker.setToolTipText("Opens ME3Tweaks ModMaker");
 		actionVisitMe = new JMenuItem("Open ME3Tweaks.com");
 		actionVisitMe.setToolTipText("Opens ME3Tweaks.com");
+		actionOptions = new JMenuItem("Options");
+		actionOptions.setToolTipText("Configure Mod Manager Options");
 		actionOpenME3Exp = new JMenuItem("Run ME3Explorer");
 		actionOpenME3Exp.setToolTipText("Runs the bundled ME3Explorer program");
 		actionReload = new JMenuItem("Reload Mods");
@@ -557,6 +559,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
+		actionMenu.add(actionOptions);
 		actionMenu.addSeparator();
 		actionMenu.add(actionOpenME3Exp);
 		actionMenu.add(actionReload);
@@ -564,6 +567,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
+		actionOptions.addActionListener(this);
 		actionOpenME3Exp.addActionListener(this);
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
@@ -1069,6 +1073,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} catch (IOException ex) {
 				ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
 			}
+		} else if (e.getSource() == actionOptions) {
+			new OptionsWindow(this);
 		} else if (e.getSource() == toolsMergeMod) {
 			new MergeModWindow(this);
 		} else if (e.getSource() == toolsOpenME3Dir) {

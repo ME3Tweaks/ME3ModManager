@@ -64,6 +64,8 @@ public class ModManager {
 	public static long LAST_AUTOUPDATE_CHECK;
 	public static int MIN_REQUIRED_ME3EXPLORER_REV = 720; //my custom build version
 	public static ArrayList<Image> ICONS;
+	public static boolean AUTO_INJECT_KEYBINDS = false;
+	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
 
 	public static void main(String[] args) {
 		System.out.println("Starting mod manager");
@@ -93,6 +95,7 @@ public class ModManager {
 			Wini settingsini;
 			try {
 				settingsini = new Wini(new File(ModManager.settingsFilename));
+				{
 				String logStr = settingsini.get("Settings", "logging_mode");
 				int logInt = 0;
 				if (logStr != null && !logStr.equals("")) {
@@ -110,6 +113,43 @@ public class ModManager {
 						}
 					} catch (NumberFormatException e) {
 						System.out.println("Number format exception reading the log mode - log mode disabled");
+					}
+				}}
+				//Autoinject keybinds
+				String keybindsStr = settingsini.get("Settings", "autoinjectkeybinds");
+				int keybindsInt = 0;
+				if (keybindsStr != null && !keybindsStr.equals("")) {
+					try {
+						keybindsInt = Integer.parseInt(keybindsStr);
+						if (keybindsInt > 0) {
+							//logging is on
+							debugLogger.writeMessage("Auto-Inject Keybinds are enabled");
+							AUTO_INJECT_KEYBINDS = true;
+						} else {
+							debugLogger.writeMessage("Auto-Inject Keybinds is disabled");
+							AUTO_INJECT_KEYBINDS = false;
+						}
+					} catch (NumberFormatException e) {
+						System.out.println("Number format exception reading the keybinds injection mode - autoinject mode disabled");
+						AUTO_INJECT_KEYBINDS = false;
+					}
+				}
+				//Auto Update Check
+				String updateStr = settingsini.get("Settings", "autoinjectupdate");
+				int updateInt = 0;
+				if (updateStr != null && !updateStr.equals("")) {
+					try {
+						updateInt = Integer.parseInt(updateStr);
+						if (updateInt > 0) {
+							//logging is on
+							debugLogger.writeMessage("Auto check for mod manager updates is enabled");
+							AUTO_UPDATE_MOD_MANAGER = true;
+						} else {
+							debugLogger.writeMessage("Auto check for mod manager updates is disabled");
+							AUTO_UPDATE_MOD_MANAGER = false;
+						}
+					} catch (NumberFormatException e) {
+						System.out.println("Number format exception reading the update check flag, defaulting to enabled");
 					}
 				}
 				String superDebugStr = settingsini.get("Settings", "superdebug");

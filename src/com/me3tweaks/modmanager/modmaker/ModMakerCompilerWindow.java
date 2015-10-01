@@ -52,6 +52,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.AutoTocWindow;
+import com.me3tweaks.modmanager.KeybindsInjectionWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.PatchLibraryWindow;
@@ -686,7 +687,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			try {
 				get(); // this line can throw InterruptedException or ExecutionException
 			} catch (ExecutionException e) {
-				ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
+				ModManager.debugLogger.writeMessage("Error occured in CoalDownloadWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to download pristine Coalesced files from ME3Tweaks:\n"+e.getMessage()+"\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
@@ -1426,7 +1427,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			try {
 				get(); // this line can throw InterruptedException or ExecutionException
 			} catch (ExecutionException e) {
-				ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
+				ModManager.debugLogger.writeError("Error occured in TLKWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to decompile the TLK (translations) file:\n"+e.getMessage()+"\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
@@ -1715,6 +1716,9 @@ public class ModMakerCompilerWindow extends JDialog {
 		overallProgress.setValue(100);
 		stepsCompleted++;
 		ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);
+		if (ModManager.AUTO_INJECT_KEYBINDS && hasKeybindsOverride()){
+			new KeybindsInjectionWindow(ModManagerWindow.ACTIVE_WINDOW, newMod);
+		}
 		ModManager.debugLogger.writeMessage("===========END OF MODMAKER========");
 		//Mod Created!
 		dispose();
@@ -1723,6 +1727,12 @@ public class ModMakerCompilerWindow extends JDialog {
 			JOptionPane.showMessageDialog(this, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
 			new ModManagerWindow(false);
 		}
+	}
+	
+	private boolean hasKeybindsOverride() {
+		File bioinputxml = new File(ModManager.getOverrideDir() + "bioinput.xml");
+		System.out.println(bioinputxml.getAbsolutePath());
+		return bioinputxml.exists();
 	}
 
 	class TOCDownloadWorker extends SwingWorker<Void, Integer> {
