@@ -177,7 +177,7 @@ public class ModInstallWindow extends JDialog {
 		ModJob[] jobs;
 		ArrayList<String> failedJobs;
 		private BasegameHashDB bghDB;
-		private boolean installCancelled = false, openDBWindow = false;;
+		private boolean installCancelled = false;
 
 		protected InjectionCommander(ModJob[] jobs, Mod mod) {
 			this.mod = mod;
@@ -191,7 +191,7 @@ public class ModInstallWindow extends JDialog {
 		@Override
 		public Boolean doInBackground() {
 			ModManager.debugLogger.writeMessage("Starting the background thread for ModInstallWindow");
-			ModManager.debugLogger.writeMessage("Checking for DLC Bypass");
+			ModManager.debugLogger.writeMessage("Checking for DLC Bypass.");
 			if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
 				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing LauncherWV.exe...");
 				if (!ModManager.installLauncherWV(bioGameDir)) {
@@ -201,7 +201,6 @@ public class ModInstallWindow extends JDialog {
 
 			if (precheckGameDB(jobs)) {
 				ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod");
-				openDBWindow = true;
 				return false;
 			} else {
 				ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
@@ -420,7 +419,7 @@ public class ModInstallWindow extends JDialog {
 		 * @return true if successful, false otherwise
 		 */
 		private boolean processDLCJob(ModJob job) {
-			ModManager.debugLogger.writeMessage("===Processing a dlc job===");
+			ModManager.debugLogger.writeMessage("===Processing a dlc job: "+job.getJobName()+"===");
 
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
@@ -903,7 +902,7 @@ public class ModInstallWindow extends JDialog {
 					Integer.parseInt(update); // see if we got a number. if we
 												// did that means we should
 												// update the bar
-					ModManager.debugLogger.writeMessage("Job finished: " + update);
+					ModManager.debugLogger.writeMessage("Job completed with code "+update);
 					if (numjobs != 0) {
 						progressBar.setValue((int) (((float) completed / numjobs) * 100));
 					}

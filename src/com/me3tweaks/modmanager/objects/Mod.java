@@ -626,6 +626,7 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	public boolean canMergeWith(Mod other) {
+		ModManager.debugLogger.writeMessage("Checking if mods can cleanly merge. Will report only first failure");
 		for (ModJob job : jobs) {
 			ModJob otherCorrespondingJob = null;
 			for (ModJob otherjob : other.jobs) {
@@ -638,6 +639,8 @@ public class Mod implements Comparable<Mod> {
 				continue;
 			}
 			// scanned for matching job. Found it. Iterate over files...
+			
+			//Compare my replace files to others replace/remove 
 			for (String file : job.getFilesToReplace()) {
 				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
 					continue;
@@ -648,7 +651,25 @@ public class Mod implements Comparable<Mod> {
 						return false;
 					}
 				}
+				for (String otherfile : otherCorrespondingJob.getFilesToRemove()) {
+					if (file.equals(otherfile)) {
+						ModManager.debugLogger.writeMessage("Merge conflicts with file to update " + file);
+						return false;
+					}
+				}
 			}
+			
+			//Compare my replace files to others replace/remove 
+			for (String file : job.getFilesToRemove()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToReplace()) {
+					if (file.equals(otherfile)) {
+						ModManager.debugLogger.writeMessage("Merge would add a task to remove a file requiring replace: " + file);
+						return false;
+					}
+				}
+			}
+			
+			//compare files to add
 			for (String file : job.getFilesToAdd()) {
 				for (String otherfile : otherCorrespondingJob.getFilesToAdd()) {
 					if (file.equals(otherfile)) {
@@ -657,6 +678,9 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 			}
+			
+			//don't care about files to remove. I think...
+			
 		}
 		return true;
 	}
@@ -720,26 +744,26 @@ public class Mod implements Comparable<Mod> {
 	public HashMap<String, ArrayList<String>> getAddConflictsWithMod(Mod other) {
 		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
 		for (ModJob job : jobs) {
+			System.out.println("ADDCONF: JOB PASS:" +job.getJobName());
 			ModJob otherCorrespondingJob = null;
 			for (ModJob otherjob : other.jobs) {
 				if (otherjob.equals(job)) {
+					System.out.println("ADDCONF: FOUND SAME JOB: " +job.getJobName());
 					otherCorrespondingJob = otherjob;
 					break;
 				}
 			}
 			if (otherCorrespondingJob == null) {
+				System.out.println("ADDCONF: NO CORR JOB");
 				continue;
 			}
 			// scanned for matching job. Found it. Iterate over files...
-			for (String file : job.getFilesToAdd()) {
-				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
-					continue;
-				}
-				for (String otherfile : otherCorrespondingJob.getFilesToAdd()) {
+			for (String file : job.getFilesToAddTargets()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToAddTargets()) {
 					if (file.equals(otherfile)) {
 						if (conflicts.containsKey(job.getJobName())) {
 							conflicts.get(job.getJobName()).add(file);
-							ModManager.debugLogger.writeMessage("ADDING TO CONFLICT LIST: " + file);
+							ModManager.debugLogger.writeMessage("ADDING TO ADD CONFLICT LIST: " + file);
 						} else {
 							ArrayList<String> conflictFiles = new ArrayList<String>();
 							conflictFiles.add(file);
@@ -750,8 +774,10 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 		if (conflicts.size() <= 0) {
+			System.out.println("ADDCONF: CONF SIZE 0");
 			return null;
 		}
+		System.out.println("ADDCONF: RET NOT NULL");
 		return conflicts;
 	}
 
@@ -1271,5 +1297,111 @@ public class Mod implements Comparable<Mod> {
 
 	private void setValidMod(boolean validMod) {
 		this.validMod = validMod;
+	}
+
+	public HashMap<String, ArrayList<String>> getAddRemoveConflictsWithMod(Mod other) {
+		System.out.println("GARCWM");
+		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
+		for (ModJob job : jobs) {
+			ModJob otherCorrespondingJob = null;
+			for (ModJob otherjob : other.jobs) {
+				if (otherjob.equals(job)) {
+					otherCorrespondingJob = otherjob;
+					break;
+				}
+			}
+			if (otherCorrespondingJob == null) {
+				continue;
+			}
+			System.out.println("GARCWM: CORR JOB FOUND");
+
+			// scanned for matching job. Found it. Iterate over files...
+			for (String file : job.getFilesToAddTargets()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToRemove()) {
+					if (file.equals(otherfile)) {
+						if (conflicts.containsKey(job.getJobName())) {
+							conflicts.get(job.getJobName()).add(file);
+							ModManager.debugLogger.writeMessage("ADDING TO ADDREMOVE CONFLICT LIST: " + file);
+						} else {
+							ArrayList<String> conflictFiles = new ArrayList<String>();
+							conflictFiles.add(file);
+							conflicts.put(job.getJobName(), conflictFiles);
+							ModManager.debugLogger.writeMessage("ADDING TO ADDREMOVE CONFLICT LIST: " + file);
+						}
+					}
+				}
+			}
+			
+			//versa
+			for (String file : job.getFilesToRemove()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToAddTargets()) {
+					if (file.equals(otherfile)) {
+						if (conflicts.containsKey(job.getJobName())) {
+							conflicts.get(job.getJobName()).add(file);
+							ModManager.debugLogger.writeMessage("ADDING TO ADDREMOVE CONFLICT LIST: " + file);
+						} else {
+							ArrayList<String> conflictFiles = new ArrayList<String>();
+							conflictFiles.add(file);
+							conflicts.put(job.getJobName(), conflictFiles);
+						}
+					}
+				}
+			}
+		}
+		if (conflicts.size() <= 0) {
+			return null;
+		}
+		return conflicts;
+	}
+	
+	public HashMap<String, ArrayList<String>> getReplaceRemoveConflictsWithMod(Mod other) {
+		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
+		for (ModJob job : jobs) {
+			ModJob otherCorrespondingJob = null;
+			for (ModJob otherjob : other.jobs) {
+				if (otherjob.equals(job)) {
+					otherCorrespondingJob = otherjob;
+					break;
+				}
+			}
+			if (otherCorrespondingJob == null) {
+				continue;
+			}
+			// scanned for matching job. Found it. Iterate over files...
+			for (String file : job.getFilesToReplace()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToRemove()) {
+					if (file.equals(otherfile)) {
+						if (conflicts.containsKey(job.getJobName())) {
+							conflicts.get(job.getJobName()).add(file);
+							ModManager.debugLogger.writeMessage("ADDING TO REPLACEREMOVE CONFLICT LIST: " + file);
+						} else {
+							ArrayList<String> conflictFiles = new ArrayList<String>();
+							conflictFiles.add(file);
+							conflicts.put(job.getJobName(), conflictFiles);
+						}
+					}
+				}
+			}
+			
+			//versa
+			for (String file : job.getFilesToRemove()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToReplace()) {
+					if (file.equals(otherfile)) {
+						if (conflicts.containsKey(job.getJobName())) {
+							conflicts.get(job.getJobName()).add(file);
+							ModManager.debugLogger.writeMessage("ADDING TO REPLACEREMOVE CONFLICT LIST: " + file);
+						} else {
+							ArrayList<String> conflictFiles = new ArrayList<String>();
+							conflictFiles.add(file);
+							conflicts.put(job.getJobName(), conflictFiles);
+						}
+					}
+				}
+			}
+		}
+		if (conflicts.size() <= 0) {
+			return null;
+		}
+		return conflicts;
 	}
 }
