@@ -238,7 +238,7 @@ public class Patch implements Comparable<Patch> {
 					if (job.getJobName().equals(targetModule)) {
 						ModManager.debugLogger.writeMessage("Checking existing job: " + targetModule);
 						targetJob = job;
-						String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
+						String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
 
 						//ADD PATCH FILE TO JOB

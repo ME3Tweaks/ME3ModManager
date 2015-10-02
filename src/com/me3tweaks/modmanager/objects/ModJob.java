@@ -2,7 +2,6 @@ package com.me3tweaks.modmanager.objects;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -25,7 +24,7 @@ public class ModJob {
 	ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
 	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
 	
-	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFiles;
+	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFilesTargets;
 	
 	/** Holds many parameters that are required to inject files into a DLC Sfar file.
 	 * @param DLCFilePath Path to the DLC Sfar file.
@@ -39,14 +38,14 @@ public class ModJob {
 		filesToReplace = new ArrayList<String>();
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
-		removeFiles = new ArrayList<String>();
+		removeFilesTargets = new ArrayList<String>();
 	}
 	
 	public ArrayList<String> getFilesToAdd() {
 		return addFiles;
 	}
 
-	public void setAddFiles(ArrayList<String> addFiles) {
+	public void setFilesToAdd(ArrayList<String> addFiles) {
 		this.addFiles = addFiles;
 	}
 
@@ -58,12 +57,12 @@ public class ModJob {
 		this.addFilesTargets = addFilesTargets;
 	}
 
-	public ArrayList<String> getFilesToRemove() {
-		return removeFiles;
+	public ArrayList<String> getFilesToRemoveTargets() {
+		return removeFilesTargets;
 	}
 
-	public void setRemoveFiles(ArrayList<String> removeFiles) {
-		this.removeFiles = removeFiles;
+	public void setRemoveFilesTargets(ArrayList<String> removeFilesTargets) {
+		this.removeFilesTargets = removeFilesTargets;
 	}
 
 	/** Creates a basegame modjob. It doesn't need a path since it can be derived without the need for one.
@@ -76,7 +75,7 @@ public class ModJob {
 		filesToReplace = new ArrayList<String>();
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
-		removeFiles = new ArrayList<String>();
+		removeFilesTargets = new ArrayList<String>();
 	}
 
 	public String getRequirementText() {
@@ -91,8 +90,8 @@ public class ModJob {
 		return (getJobType() == BASEGAME) ? "Basegame" : DLCFilePath;
 	}
 
-	public String[] getNewFiles() {
-		return newFiles.toArray(new String[newFiles.size()]);
+	public ArrayList<String> getFilesToReplace() {
+		return newFiles;
 	}
 
 	/**
@@ -128,7 +127,7 @@ public class ModJob {
 	 * Gets the array of files that will be replaced
 	 * @return
 	 */
-	public ArrayList<String> getFilesToReplace() {
+	public ArrayList<String> getFilesToReplaceTargets() {
 		return filesToReplace;
 	}
 	
@@ -247,7 +246,7 @@ public class ModJob {
 				targetPath = "/"+targetPath;
 			}
 		}
-		removeFiles.add(targetPath);
+		removeFilesTargets.add(targetPath);
 		return true;
 	}
 }

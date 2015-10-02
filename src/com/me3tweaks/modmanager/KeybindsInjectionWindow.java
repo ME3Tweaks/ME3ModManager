@@ -117,7 +117,7 @@ public class KeybindsInjectionWindow extends JDialog {
 				for (ModJob job : mod.jobs) {
 					if (job.getJobType() == ModJob.BASEGAME){
 						basegamejob = job;
-						String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
+						String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
 						System.out.println(relativepath);
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME,ME3TweaksUtils.HEADER)), new File(ModManager.appendSlash(mod.getModPath())+relativepath+"Coalesced.bin"));

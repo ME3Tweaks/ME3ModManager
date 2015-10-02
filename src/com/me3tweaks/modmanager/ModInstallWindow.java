@@ -257,7 +257,7 @@ public class ModInstallWindow extends JDialog {
 				publish("Checking GDB: " + job.getJobName());
 				if (job.getJobType() == ModJob.BASEGAME) {
 					//BGDB files are required
-					ArrayList<String> filesToReplace = job.getFilesToReplace();
+					ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
 					int numFilesToReplace = filesToReplace.size();
 					for (int i = 0; i < numFilesToReplace; i++) {
 						String fileToReplace = filesToReplace.get(i);
@@ -285,8 +285,8 @@ public class ModInstallWindow extends JDialog {
 					}
 				} else {
 					//DLC files are not required... unless all are present
-					ArrayList<String> filesToReplace = job.getFilesToReplace();
-					ArrayList<String> filesToRemove = job.getFilesToRemove();
+					ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
+					ArrayList<String> filesToRemove = job.getFilesToRemoveTargets();
 					int numFilesToReplace = filesToReplace.size();
 					boolean fileIsMissing = false;
 					//Check for files to replace not being present for backup
@@ -354,13 +354,13 @@ public class ModInstallWindow extends JDialog {
 			cmmbackupfolder.mkdirs();
 			ModManager.debugLogger.writeMessage("Basegame backup directory should have been created if it does not exist already.");
 			// Prep replacement job
-			ArrayList<String> filesToReplace = job.getFilesToReplace();
-			String[] newFiles = job.getNewFiles();
+			ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
+			ArrayList<String> newFiles = job.getFilesToReplace();
 			int numFilesToReplace = filesToReplace.size();
 			ModManager.debugLogger.writeMessage("Number of files to replace in the basegame: " + numFilesToReplace);
 			for (int i = 0; i < numFilesToReplace; i++) {
 				String fileToReplace = filesToReplace.get(i);
-				String newFile = newFiles[i];
+				String newFile = newFiles.get(i);
 
 				boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
 				if (!shouldContinue) {
@@ -384,7 +384,7 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			//REMOVAL TASKS
-			ArrayList<String> filesToRemove = job.getFilesToRemove();
+			ArrayList<String> filesToRemove = job.getFilesToRemoveTargets();
 			ModManager.debugLogger.writeMessage("Number of files to remove: " + filesToRemove.size());
 			for (String fileToRemove : filesToRemove) {
 				boolean userCanceled = checkBackupAndHash(me3dir, fileToRemove, job);
@@ -464,13 +464,13 @@ public class ModInstallWindow extends JDialog {
 			// Make backup folder if it doesn't exist
 
 			//REPLACEMENT TASKS
-			ArrayList<String> filesToReplace = job.getFilesToReplace();
-			String[] newFiles = job.getNewFiles();
+			ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
+			ArrayList<String> newFiles = job.getFilesToReplace();
 			int numFilesToReplace = filesToReplace.size();
 			ModManager.debugLogger.writeMessage("Number of files to replace in the DLC: " + numFilesToReplace);
 			for (int i = 0; i < numFilesToReplace; i++) {
 				String fileToReplace = filesToReplace.get(i);
-				String newFile = newFiles[i];
+				String newFile = newFiles.get(i);
 
 				boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
 				if (!shouldContinue) {
@@ -518,7 +518,7 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			//REMOVAL TASKS
-			ArrayList<String> filesToRemove = job.getFilesToRemove();
+			ArrayList<String> filesToRemove = job.getFilesToRemoveTargets();
 			ModManager.debugLogger.writeMessage("Number of files to remove: " + filesToRemove.size());
 			for (String fileToRemove : filesToRemove) {
 				boolean shouldContinue = checkBackupAndHash(me3dir, fileToRemove, job);
@@ -703,7 +703,7 @@ public class ModInstallWindow extends JDialog {
 			boolean result = true;
 
 			//REPLACE JOB
-			if (job.getFilesToReplace().size() > 0) {
+			if (job.getFilesToReplaceTargets().size() > 0) {
 
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
@@ -720,14 +720,14 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
-				ArrayList<String> filesToReplace = job.getFilesToReplace();
-				String[] newFiles = job.getNewFiles();
+				ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
+				ArrayList<String> newFiles = job.getFilesToReplace();
 				ModManager.debugLogger.writeMessage("Number of files to replace: " + filesToReplace.size());
 
 				publish("Updating " + filesToReplace.size() + " files in " + job.getJobName());
 				for (int i = 0; i < filesToReplace.size(); i++) {
 					commandBuilder.add(filesToReplace.get(i));
-					commandBuilder.add(newFiles[i]);
+					commandBuilder.add(newFiles.get(i));
 					// System.out.println("adding file to command");
 				}
 
@@ -810,7 +810,7 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			//REMOVE FILE TASK
-			if (job.getFilesToRemove().size() > 0) {
+			if (job.getFilesToRemoveTargets().size() > 0) {
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
 				commandBuilder.add("-dlcremovefiles");
@@ -826,7 +826,7 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
-				ArrayList<String> filesToRemove = job.getFilesToRemove();
+				ArrayList<String> filesToRemove = job.getFilesToRemoveTargets();
 				ModManager.debugLogger.writeMessage("Number of files to remove: " + filesToRemove.size());
 
 				publish("Removing " + filesToRemove.size() + " files from " + job.getJobName() + ", this may take some time...");
@@ -872,9 +872,9 @@ public class ModInstallWindow extends JDialog {
 
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
 
-			for (int i = 0; i < job.getFilesToReplace().size(); i++) {
-				String fileDestination = dlcdir + job.getFilesToReplace().get(i);
-				String fileSource = job.getNewFiles()[i];
+			for (int i = 0; i < job.getFilesToReplaceTargets().size(); i++) {
+				String fileDestination = dlcdir + job.getFilesToReplaceTargets().get(i);
+				String fileSource = job.getFilesToReplace().get(i);
 				// install file.
 				try {
 					ModManager.debugLogger.writeMessage("Processing CustomDLC Job.");

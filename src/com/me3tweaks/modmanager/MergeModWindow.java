@@ -191,15 +191,15 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 				sb.append("<html>");
 				sb.append(job.getJobName());
 				sb.append("<br>");
-				for (String file : job.getFilesToReplace()) {
+				for (String file : job.getFilesToReplaceTargets()) {
 					sb.append((" - REPLACE:  "+file+""));
 					sb.append("<br>");
 				}
-				for (String file : job.getFilesToAdd()) {
+				for (String file : job.getFilesToAddTargets()) {
 					sb.append((" - ADD:  "+file));
 					sb.append("<br>");
 				}
-				for (String file : job.getFilesToRemove()) {
+				for (String file : job.getFilesToRemoveTargets()) {
 					sb.append((" - REMOVE:  "+file));
 					sb.append("<br>");
 				}

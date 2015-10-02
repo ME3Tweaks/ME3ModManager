@@ -81,7 +81,7 @@ public class ModXMLTools {
 		rootElement.setAttribute("manifesttype", "full");
 
 		for (ModJob job : mod.getJobs()) {
-			for (String srcFile : job.getNewFiles()) {
+			for (String srcFile : job.getFilesToReplace()) {
 				Element fileElement = modDoc.createElement("sourcefile");
 				try {
 					fileElement.setAttribute("hash", MD5Checksum.getMD5Checksum(srcFile));
@@ -265,7 +265,7 @@ public class ModXMLTools {
 			if (isFullManifest) {
 				System.out.println("Checking for files that are no longer necessary");
 				for (ModJob job : mod.getJobs()) {
-					for (String srcFile : job.getNewFiles()) {
+					for (String srcFile : job.getFilesToReplace()) {
 						String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
 						boolean existsOnServer = false;
 						for (ManifestModFile mf : serverFiles) {

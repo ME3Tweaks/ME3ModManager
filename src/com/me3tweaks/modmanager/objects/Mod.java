@@ -156,13 +156,22 @@ public class Mod implements Comparable<Mod> {
 				StringTokenizer addTargetStrok = null;
 				StringTokenizer removeStrok = null;
 				if (modCMMVer >= 4.1) {
+					//check for add/remove pairs
+					if ((addFileIni != null && addFileTargetIni == null) || (addFileIni == null && addFileTargetIni != null)) {
+						ModManager.debugLogger
+								.writeError("addfiles/addtargetfiles is missing, but one is present, but both are required. Mod marked as invalid");
+						ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+						return;
+					}
+
 					//Parse add files
 					if (addFileIni != null && addFileTargetIni != null && !addFileIni.equals("") && !addFileTargetIni.equals("")) {
 						addStrok = new StringTokenizer(addFileIni, ";");
 						addTargetStrok = new StringTokenizer(addFileTargetIni, ";");
 						if (addStrok.countTokens() != addTargetStrok.countTokens()) {
 							// Same number of tokens aren't the same
-							ModManager.debugLogger.writeMessage("Number of files to add and number of target files do not match, mod being marked as invalid.");
+							ModManager.debugLogger
+									.writeError("Number of files to add and number of target files do not match, mod being marked as invalid.");
 							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 							return;
 						}
@@ -196,7 +205,8 @@ public class Mod implements Comparable<Mod> {
 					// ModManager.debugLogger.writeMessage("Validating tokens: "+newFile+" vs
 					// "+oldFile);
 					if (!newFile.equals(getSfarFilename(oldFile))) {
-						ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs " + getSfarFilename(oldFile));
+						ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs "
+								+ getSfarFilename(oldFile));
 						return; // The names of the files don't match
 					}
 
@@ -214,7 +224,8 @@ public class Mod implements Comparable<Mod> {
 						String addFile = addStrok.nextToken();
 						String targetFile = addTargetStrok.nextToken();
 						if (!addFile.equals(getSfarFilename(targetFile))) {
-							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs " + getSfarFilename(targetFile));
+							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs "
+									+ getSfarFilename(targetFile));
 							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 							return; // The names of the files don't match
 						}
@@ -222,7 +233,8 @@ public class Mod implements Comparable<Mod> {
 						// Add the file swap to task job - if this method returns
 						// false it means a file doesn't exist somewhere
 						if (!(newJob.addNewFileTask(modFolderPath + ModManager.appendSlash(iniModDir) + addFile, targetFile))) {
-							ModManager.debugLogger.writeError("[ADDFILE]Failed to add task for file addition (File likely does not exist), marking as invalid.");
+							ModManager.debugLogger
+									.writeError("[ADDFILE]Failed to add task for file addition (File likely does not exist), marking as invalid.");
 							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
 							return;
 						}
@@ -265,7 +277,8 @@ public class Mod implements Comparable<Mod> {
 				StringTokenizer destStrok = new StringTokenizer(sourceFolderIni, ";");
 				if (srcStrok.countTokens() != destStrok.countTokens()) {
 					// Same number of tokens aren't the same
-					ModManager.debugLogger.writeMessage("Number of source and destination directories for custom DLC job do not match, mod being marked as invalid.");
+					ModManager.debugLogger
+							.writeMessage("Number of source and destination directories for custom DLC job do not match, mod being marked as invalid.");
 					return;
 				}
 
@@ -281,7 +294,8 @@ public class Mod implements Comparable<Mod> {
 
 					File sf = new File(modFolderPath + sourceFolder);
 					if (!sf.exists()) {
-						ModManager.debugLogger.writeError("Custom DLC Source folder does not exist: " + sf.getAbsolutePath() + ", mod marked as invalid");
+						ModManager.debugLogger.writeError("Custom DLC Source folder does not exist: " + sf.getAbsolutePath()
+								+ ", mod marked as invalid");
 						return;
 					}
 					List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
@@ -325,7 +339,8 @@ public class Mod implements Comparable<Mod> {
 					addTask(ModType.COAL, null);
 				}
 			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeMessage("Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal");
+				ModManager.debugLogger
+						.writeMessage("Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal");
 			}
 		}
 		// Check for coalesced in the new mod manager version [2.0 only]
@@ -639,36 +654,36 @@ public class Mod implements Comparable<Mod> {
 				continue;
 			}
 			// scanned for matching job. Found it. Iterate over files...
-			
+
 			//Compare my replace files to others replace/remove 
-			for (String file : job.getFilesToReplace()) {
+			for (String file : job.getFilesToReplaceTargets()) {
 				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
 					continue;
 				}
-				for (String otherfile : otherCorrespondingJob.getFilesToReplace()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
 					if (file.equals(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge conflicts with file to update " + file);
 						return false;
 					}
 				}
-				for (String otherfile : otherCorrespondingJob.getFilesToRemove()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
 					if (file.equals(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge conflicts with file to update " + file);
 						return false;
 					}
 				}
 			}
-			
+
 			//Compare my replace files to others replace/remove 
-			for (String file : job.getFilesToRemove()) {
-				for (String otherfile : otherCorrespondingJob.getFilesToReplace()) {
+			for (String file : job.getFilesToRemoveTargets()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
 					if (file.equals(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge would add a task to remove a file requiring replace: " + file);
 						return false;
 					}
 				}
 			}
-			
+
 			//compare files to add
 			for (String file : job.getFilesToAdd()) {
 				for (String otherfile : otherCorrespondingJob.getFilesToAdd()) {
@@ -678,9 +693,27 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 			}
-			
+
+			//Compare my add files to others remove
+			for (String file : job.getFilesToAddTargets()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
+					if (file.equals(otherfile)) {
+						ModManager.debugLogger.writeMessage("Merge conflicts with file to add/remove " + file);
+						return false;
+					}
+				}
+			}
+			for (String file : job.getFilesToRemoveTargets()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToAddTargets()) {
+					if (file.equals(otherfile)) {
+						ModManager.debugLogger.writeMessage("Merge conflicts with file to add/remove " + file);
+						return false;
+					}
+				}
+			}
+
 			//don't care about files to remove. I think...
-			
+
 		}
 		return true;
 	}
@@ -708,11 +741,11 @@ public class Mod implements Comparable<Mod> {
 				continue;
 			}
 			// scanned for matching job. Found it. Iterate over files...
-			for (String file : job.getFilesToReplace()) {
+			for (String file : job.getFilesToReplaceTargets()) {
 				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
 					continue;
 				}
-				for (String otherfile : otherCorrespondingJob.getFilesToReplace()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
 					if (file.equals(otherfile)) {
 						if (conflicts.containsKey(job.getJobName())) {
 							conflicts.get(job.getJobName()).add(file);
@@ -744,11 +777,11 @@ public class Mod implements Comparable<Mod> {
 	public HashMap<String, ArrayList<String>> getAddConflictsWithMod(Mod other) {
 		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
 		for (ModJob job : jobs) {
-			System.out.println("ADDCONF: JOB PASS:" +job.getJobName());
+			System.out.println("ADDCONF: JOB PASS:" + job.getJobName());
 			ModJob otherCorrespondingJob = null;
 			for (ModJob otherjob : other.jobs) {
 				if (otherjob.equals(job)) {
-					System.out.println("ADDCONF: FOUND SAME JOB: " +job.getJobName());
+					System.out.println("ADDCONF: FOUND SAME JOB: " + job.getJobName());
 					otherCorrespondingJob = otherjob;
 					break;
 				}
@@ -804,8 +837,8 @@ public class Mod implements Comparable<Mod> {
 				continue;
 			}
 			// scanned for matching job. Found it. Iterate over files...
-			for (String file : job.getFilesToRemove()) {
-				for (String otherfile : otherCorrespondingJob.getFilesToRemove()) {
+			for (String file : job.getFilesToRemoveTargets()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
 					if (file.equals(otherfile)) {
 						if (conflicts.containsKey(job.getJobName())) {
 							conflicts.get(job.getJobName()).add(file);
@@ -867,6 +900,9 @@ public class Mod implements Comparable<Mod> {
 
 			for (ModJob job : jobs) {
 				boolean isFirst = true;
+				if (job.getRequirementText() != null && !job.getRequirementText().equals("")) {
+					ini.put(job.getJobName(), "jobdescription", job.getRequirementText());
+				}
 
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
 					StringBuilder sfsb = new StringBuilder();
@@ -900,7 +936,8 @@ public class Mod implements Comparable<Mod> {
 				ini.put(job.getJobName(), "moddir", getStandardFolderName(job.getJobName()));
 				StringBuilder nfsb = new StringBuilder();
 				//new files list
-				for (String file : job.newFiles) {
+				isFirst = true;
+				for (String file : job.getFilesToReplace()) {
 					if (isFirst) {
 						isFirst = false;
 					} else {
@@ -912,7 +949,8 @@ public class Mod implements Comparable<Mod> {
 				//replace files list
 				isFirst = true;
 				StringBuilder rfsb = new StringBuilder();
-				for (String file : job.filesToReplace) {
+				for (String file : job.getFilesToReplaceTargets()) {
+					System.out.println("appending: " + file);
 					if (isFirst) {
 						isFirst = false;
 					} else {
@@ -921,9 +959,58 @@ public class Mod implements Comparable<Mod> {
 					rfsb.append(file);
 				}
 
+				//add files list
+				isFirst = true;
+				StringBuilder afsb = new StringBuilder();
+				for (String file : job.getFilesToAdd()) {
+					if (isFirst) {
+						isFirst = false;
+					} else {
+						afsb.append(";");
+					}
+					afsb.append(FilenameUtils.getName(file));
+				}
+
+				//addfilestargets files list
+				isFirst = true;
+				StringBuilder aftsb = new StringBuilder();
+				for (String file : job.getFilesToAddTargets()) {
+					if (isFirst) {
+						isFirst = false;
+					} else {
+						aftsb.append(";");
+					}
+					aftsb.append(file);
+				}
+
+				//removefiles list
+				isFirst = true;
+				StringBuilder rftsb = new StringBuilder();
+				for (String file : job.getFilesToRemoveTargets()) {
+					if (isFirst) {
+						isFirst = false;
+					} else {
+						rftsb.append(";");
+					}
+					rftsb.append(file);
+				}
+
 				//DLC, basegame
 				ini.put(job.getJobName(), "newfiles", nfsb.toString());
 				ini.put(job.getJobName(), "replacefiles", rfsb.toString());
+
+				if (job.getFilesToAdd().size() > 0) {
+					ini.put(job.getJobName(), "addfiles", afsb.toString());
+				}
+
+				if (job.getFilesToAddTargets().size() > 0) {
+					ini.put(job.getJobName(), "addfilestargets", aftsb.toString());
+				}
+
+				if (job.getFilesToRemoveTargets().size() > 0) {
+					ini.put(job.getJobName(), "removefilestargets", rftsb.toString());
+				}
+
 			}
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			ini.store(os);
@@ -1000,10 +1087,10 @@ public class Mod implements Comparable<Mod> {
 			}
 			//MERGE REPLACE FILES
 
-			String[] otherNewFiles = otherjob.getNewFiles();
-			ArrayList<String> otherReplacePaths = otherjob.getFilesToReplace();
-			for (int i = 0; i < otherNewFiles.length; i++) {
-				String otherfile = otherNewFiles[i];
+			ArrayList<String> otherNewFiles = otherjob.getFilesToReplace();
+			ArrayList<String> otherReplacePaths = otherjob.getFilesToReplaceTargets();
+			for (int i = 0; i < otherNewFiles.size(); i++) {
+				String otherfile = otherNewFiles.get(i);
 				ModManager.debugLogger.writeMessage("CURRENT JOB: " + myCorrespendingJob.getJobName());
 				if (ignoreReplaceFiles != null && ignoreReplaceFiles.get(otherjob.getJobName()) != null
 						&& ignoreReplaceFiles.get(otherjob.getJobName()).contains(otherReplacePaths.get(i))) {
@@ -1064,11 +1151,9 @@ public class Mod implements Comparable<Mod> {
 			modCMMVer = other.modCMMVer;
 		}
 
-		modmakerCode = 0;
+		modmakerCode = 0; //disable modmaker updates
 		return this;
 	}
-
-	// public boolean addConflictFile(String jobName, )
 
 	/**
 	 * Creates a new mod package in a folder with the same name as this mod.
@@ -1084,7 +1169,8 @@ public class Mod implements Comparable<Mod> {
 					try {
 						File srcFolder = new File(ModManager.appendSlash(modDescFile.getParentFile().getAbsolutePath()) + sourceFolder);
 						File destFolder = new File(modFolder + File.separator + sourceFolder); //source folder is a string
-						ModManager.debugLogger.writeMessage("Copying custom DLC folder: " + srcFolder.getAbsolutePath() + " to " + destFolder.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("Copying custom DLC folder: " + srcFolder.getAbsolutePath() + " to "
+								+ destFolder.getAbsolutePath());
 						FileUtils.copyDirectory(srcFolder, destFolder);
 					} catch (IOException e) {
 						ModManager.debugLogger.writeMessage("IOException while merging mods (custom DLC).");
@@ -1097,12 +1183,29 @@ public class Mod implements Comparable<Mod> {
 			File moduleDir = new File(modFolder + File.separator + getStandardFolderName(job.getJobName()));
 			moduleDir.mkdirs();
 			// scanned for matching job. Found it. Iterate over files...
-			for (String mergefile : job.getNewFiles()) {
+			//Copy files to replace
+			for (String mergefile : job.getFilesToReplace()) {
 				File file = new File(mergefile);
 				String baseName = FilenameUtils.getName(mergefile);
 				try {
 					File destinationFile = new File(moduleDir + File.separator + baseName);
-					ModManager.debugLogger.writeMessage("Copying to new mod folder: " + file.getAbsolutePath() + " to " + destinationFile.getAbsolutePath());
+					ModManager.debugLogger.writeMessage("Copying to new mod folder: " + file.getAbsolutePath() + " to "
+							+ destinationFile.getAbsolutePath());
+					FileUtils.copyFile(file, destinationFile);
+				} catch (IOException e) {
+					ModManager.debugLogger.writeMessage("IOException while merging mods.");
+					ModManager.debugLogger.writeException(e);
+				}
+				ModManager.debugLogger.writeMessage(job.getJobName() + ": " + file);
+			}
+			//copy files to add
+			for (String mergefile : job.getFilesToAdd()) {
+				File file = new File(mergefile);
+				String baseName = FilenameUtils.getName(mergefile);
+				try {
+					File destinationFile = new File(moduleDir + File.separator + baseName);
+					ModManager.debugLogger.writeMessage("Copying to new mod folder: " + file.getAbsolutePath() + " to "
+							+ destinationFile.getAbsolutePath());
 					FileUtils.copyFile(file, destinationFile);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeMessage("IOException while merging mods.");
@@ -1300,7 +1403,6 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	public HashMap<String, ArrayList<String>> getAddRemoveConflictsWithMod(Mod other) {
-		System.out.println("GARCWM");
 		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
 		for (ModJob job : jobs) {
 			ModJob otherCorrespondingJob = null;
@@ -1313,11 +1415,10 @@ public class Mod implements Comparable<Mod> {
 			if (otherCorrespondingJob == null) {
 				continue;
 			}
-			System.out.println("GARCWM: CORR JOB FOUND");
 
 			// scanned for matching job. Found it. Iterate over files...
 			for (String file : job.getFilesToAddTargets()) {
-				for (String otherfile : otherCorrespondingJob.getFilesToRemove()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
 					if (file.equals(otherfile)) {
 						if (conflicts.containsKey(job.getJobName())) {
 							conflicts.get(job.getJobName()).add(file);
@@ -1331,9 +1432,9 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 			}
-			
+
 			//versa
-			for (String file : job.getFilesToRemove()) {
+			for (String file : job.getFilesToRemoveTargets()) {
 				for (String otherfile : otherCorrespondingJob.getFilesToAddTargets()) {
 					if (file.equals(otherfile)) {
 						if (conflicts.containsKey(job.getJobName())) {
@@ -1353,7 +1454,7 @@ public class Mod implements Comparable<Mod> {
 		}
 		return conflicts;
 	}
-	
+
 	public HashMap<String, ArrayList<String>> getReplaceRemoveConflictsWithMod(Mod other) {
 		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
 		for (ModJob job : jobs) {
@@ -1368,8 +1469,8 @@ public class Mod implements Comparable<Mod> {
 				continue;
 			}
 			// scanned for matching job. Found it. Iterate over files...
-			for (String file : job.getFilesToReplace()) {
-				for (String otherfile : otherCorrespondingJob.getFilesToRemove()) {
+			for (String file : job.getFilesToReplaceTargets()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
 					if (file.equals(otherfile)) {
 						if (conflicts.containsKey(job.getJobName())) {
 							conflicts.get(job.getJobName()).add(file);
@@ -1382,10 +1483,10 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 			}
-			
+
 			//versa
-			for (String file : job.getFilesToRemove()) {
-				for (String otherfile : otherCorrespondingJob.getFilesToReplace()) {
+			for (String file : job.getFilesToRemoveTargets()) {
+				for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
 					if (file.equals(otherfile)) {
 						if (conflicts.containsKey(job.getJobName())) {
 							conflicts.get(job.getJobName()).add(file);
@@ -1403,5 +1504,42 @@ public class Mod implements Comparable<Mod> {
 			return null;
 		}
 		return conflicts;
+	}
+
+	/**
+	 * Finds a source file using the specified target file
+	 * 
+	 * @param targetFile
+	 *            target to find match
+	 * @param useReplace
+	 *            search replacements. Otherwise search adds
+	 * @return null if not found (should not occur!) or the string source path
+	 */
+	public String findTargetSourceFileFromJob(boolean useReplace, ModJob job, String targetFile) {
+		ArrayList<String> sourceList = useReplace ? job.getFilesToReplace() : job.getFilesToAdd();
+		ArrayList<String> targetList = useReplace ? job.getFilesToReplaceTargets() : job.getFilesToAddTargets();
+
+		for (int i = 0; i < sourceList.size(); i++) {
+			if (targetList.get(i).equals(targetFile)) {
+				return sourceList.get(i);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Gets a modjob from this mod by the name
+	 * 
+	 * @param moduleName
+	 *            module job to return
+	 * @return null if not found, job otherwise
+	 */
+	public ModJob getJobByModuleName(String moduleName) {
+		for (ModJob job : jobs) {
+			if (job.getJobName().equals(moduleName)) {
+				return job;
+			}
+		}
+		return null;
 	}
 }
