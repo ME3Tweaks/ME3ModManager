@@ -51,7 +51,7 @@ import com.me3tweaks.modmanager.objects.Patch;
 public class ModManager {
 
 	public static final String VERSION = "4.1 Beta 1";
-	public static long BUILD_NUMBER = 44L;
+	public static long BUILD_NUMBER = 44L; //so it will upgrade when full is out.
 	public static final String BUILD_DATE = "10/3/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
