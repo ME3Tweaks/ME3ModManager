@@ -59,8 +59,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 
 		this.setTitle("Update Available");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		long width = (long) updateInfo.get("dialog_width"); //dialog size is determined by the latest build information. This is because it might have a long changelog.
-		long height = (long) updateInfo.get("dialog_height");
 		//this.setPreferredSize(new Dimension((int)width, (int)height));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
