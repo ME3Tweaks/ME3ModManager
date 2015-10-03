@@ -125,9 +125,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		this.isUpdate = isUpdate;
 		ModManager.debugLogger.writeMessage("Starting Mod Manager UI (ModManagerWindow)");
-		initializeWindow();
-		ACTIVE_WINDOW = this;
-		boolean reload = processPendingPatches();
+		boolean reload = false;
+		try {
+			initializeWindow();
+			ACTIVE_WINDOW = this;
+			reload = processPendingPatches();
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("UNKNOWN CRITICAL STARTUP EXCEPTION FOR MOD MANAGER WINDOW:", e);
+			ModManager.debugLogger.writeError("Mod Manager has crashed!");
+			JOptionPane.showMessageDialog(null, "<html><div style=\"width:330px;\">Mod Manager's interface (post-startup) encountered a critical unknown error and was unable to start:<br>"
+					+e.getMessage()+"<br>"
+					+ "<br>This has been logged to the me3cmm_last_run_log.txt file if you didn't explicitly turn logging off.<br>Please report this to femshep.</div></html>","Critical Interface Error",JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		if (reload) {
 			new ModManagerWindow(false);
 		} else {
