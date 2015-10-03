@@ -58,6 +58,7 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 	 * @param BioGameDir
 	 */
 	public MergeModWindow(ModManagerWindow callingWindow) {
+		ModManager.debugLogger.writeMessage("===Opening MergeModWindow===");
 		// callingWindow.setEnabled(false);
 		this.callingWindow = callingWindow;
 		listDescriptors = new HashMap<String, Mod>();
@@ -79,7 +80,7 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 
 		// Title Panel
 		JPanel titlePanel = new JPanel(new BorderLayout());
-		titlePanel.add(new JLabel("Select mods to merge. Only mods using targetting Mod Manager 3.0 and above can be merged.", SwingConstants.CENTER), BorderLayout.NORTH);
+		titlePanel.add(new JLabel("Select mods to merge. Only mods targetting Mod Manager 3.0 and above can be merged.", SwingConstants.CENTER), BorderLayout.NORTH);
 		
 		// ModsLists
 		JPanel modsListPanel = new JPanel(new BorderLayout());
@@ -223,7 +224,6 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 		if (e.getSource() == mergeButton) {
 			Mod mod1 = mods.get(leftMods.getSelectedIndex());
 			Mod mod2 = mods.get(rightMods.getSelectedIndex());
-			System.out.println("merge window: merge clicked");
 			if (mod1.canMergeWith(mod2)) {
 				String s = (String) JOptionPane.showInputDialog(this, "Enter a new name for this mod. The new mod's files will be placed in this folder.","Merged Mod Name", JOptionPane.PLAIN_MESSAGE, null, null, null);
 				if (s!=null && !s.equals("")) {

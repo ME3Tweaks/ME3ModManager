@@ -44,7 +44,6 @@ public class BackupWindow extends JDialog {
 	String consoleQueue[];
 	boolean windowOpen = true;
 	HashMap<String, JCheckBox> checkboxMap;
-	ArrayList<String> failedBackups;
 	String currentText;
 	String BioGameDir;
 	JPanel checkBoxPanel;
@@ -64,12 +63,11 @@ public class BackupWindow extends JDialog {
 		this.callingWindow = callingWindow;
 		this.BioGameDir = BioGameDir;
 		checkboxMap = new HashMap<String, JCheckBox>();
-		failedBackups = new ArrayList<String>();
 
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("Backup DLCs");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(260, 452));
+		//this.setPreferredSize(new Dimension(260, 452));
 
 		setupWindow();
 
@@ -79,7 +77,7 @@ public class BackupWindow extends JDialog {
 		//Set the backup flag to true
 		Wini ini;
 		try {
-			File settings = new File(ModManager.settingsFilename);
+			File settings = new File(ModManager.SETTINGS_FILENAME);
 			if (!settings.exists()) {
 				ModManager.debugLogger.writeMessage("Created new settings file, didn't previously exist.");
 				settings.createNewFile();
@@ -91,7 +89,7 @@ public class BackupWindow extends JDialog {
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 			e.printStackTrace();
 		} catch (IOException e) {
-			System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+			ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.",e);
 		}
 		this.setVisible(true);
 	}
@@ -109,7 +107,6 @@ public class BackupWindow extends JDialog {
 		this.callingWindow = callingWindow;
 		this.BioGameDir = bioGameDir;
 		checkboxMap = new HashMap<String, JCheckBox>();
-		failedBackups = new ArrayList<String>();
 
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("DLC Backup");
@@ -129,7 +126,7 @@ public class BackupWindow extends JDialog {
 	private void setupWindow() {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html>Select DLCs to backup.\nThis will create backup .sfar files for you.\nThis backup tool only backs up original DLC files, not modified ones.</html>");
+		infoLabel = new JLabel("<html>Select DLCs to backup.<br>This will create backup .sfar files for you.<br>This backup tool only backs up original DLC files, not modified ones.</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 
 		progressBar = new JProgressBar(0, 100);
@@ -149,7 +146,7 @@ public class BackupWindow extends JDialog {
 		checkBoxPanelRight.setLayout(new BoxLayout(checkBoxPanelRight, BoxLayout.Y_AXIS));
 
 		// dlcList = new CheckBoxList();
-		String[] headerArray = ModType.getHeaderNameArray();
+		String[] headerArray = ModType.getDLCHeaderNameArray();
 
 		int i = 0;
 		// Add and enable/disable DLC checkboxes and add to hashmap
@@ -168,7 +165,9 @@ public class BackupWindow extends JDialog {
 					checkBoxPanelRight.add(checkbox);
 				}
 				i++;
+				checkbox.setToolTipText("DLC not installed");
 				checkboxMap.put(dlcName, checkbox);
+				ModManager.debugLogger.writeMessage("DLC does not appear installed: "+dlcName);
 				continue;
 			}
 
@@ -177,8 +176,8 @@ public class BackupWindow extends JDialog {
 			File testpathSfar = new File(dlcPath + "\\Patch_001.sfar");
 			ModManager.debugLogger.writeMessage("Looking for Default.sfar, Patch_001.sfar in " + filepath);
 			if (mainSfar.exists() || testpathSfar.exists()) {
+				ModManager.debugLogger.writeMessage("Found a .sfar");
 				// File exists.
-
 				checkbox.setEnabled(true);
 				if (i < 8) {
 					checkBoxPanelLeft.add(checkbox);
@@ -186,6 +185,13 @@ public class BackupWindow extends JDialog {
 					checkBoxPanelRight.add(checkbox);
 				}
 				i++;
+				//check for backups
+				File mainSfarbackup = new File(dlcPath + "\\Default.sfar.bak");
+				File testpathSfarbackup = new File(dlcPath + "\\Patch_001.sfar.bak");
+				if (!mainSfarbackup.exists() && !testpathSfarbackup.exists()) {
+					ModManager.debugLogger.writeMessage("No .bak files found in folder, checking box");
+					checkbox.setSelected(true);
+				}
 				checkboxMap.put(dlcName, checkbox);
 				continue;
 			} else {
@@ -270,6 +276,8 @@ public class BackupWindow extends JDialog {
 		String bioGameDir;
 		String[] jobs;
 		boolean closeOnComplete;
+		ArrayList<String> failedBackups;
+
 
 		protected backupDLCJob(String bioGameDir, String[] jobs, boolean closeOnComplete) {
 			if (backupButton != null) {
@@ -280,8 +288,9 @@ public class BackupWindow extends JDialog {
 			this.jobs = jobs;
 			this.bioGameDir = bioGameDir;
 			numjobs = jobs.length;
+			failedBackups = new ArrayList<String>();
 
-			ModManager.debugLogger.writeMessage("Starting the backupDLCJob utility. Number of jobs to do: " + numjobs);
+			ModManager.debugLogger.writeMessage("Starting the backup DLC thread. Number of jobs to do: " + numjobs);
 		}
 
 		@Override
@@ -326,19 +335,22 @@ public class BackupWindow extends JDialog {
 			if (mainSfar.exists()) {
 				try {
 					//We should hash it and compare it against the known original
+					publish("Verifying "+dlcName+"...");
 					if (!(MD5Checksum.getMD5Checksum(mainSfar.toString()).equals(sfarHashes.get(dlcName)))) {
 						//It's not the original
 						addFailure(dlcName, "DLC has been modified");
 						return false;
 					}
+					publish("Backing up "+dlcName+"...");
 					Files.copy(mainSfar.toPath(), backupSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
 				} catch (IOException e) {
-					addFailure(dlcName, "I/O Exception occured");
-					e.printStackTrace();
+					addFailure(dlcName, "I/O Exception occured: "+e.getMessage());
+					ModManager.debugLogger.writeErrorWithException("IO Exception in backup procedures!", e);
 					return false;
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					addFailure(dlcName, "Unknown error occured: "+e.getMessage());
+					ModManager.debugLogger.writeErrorWithException("Unknown error in backup procedures!", e);
 					return false;
 				}
 				return true;
@@ -346,18 +358,21 @@ public class BackupWindow extends JDialog {
 			if (testpatchSfar.exists()) {
 				try {
 					//We should hash it and compare it against the known original
+					publish("Verifying "+dlcName+"...");
 					if (!(MD5Checksum.getMD5Checksum(testpatchSfar.toString()).equals(sfarHashes.get(dlcName)))) {
 						//It's not the original
 						addFailure(dlcName, "DLC has been modified");
 						return false;
 					}
+					publish("Backing up "+dlcName+"...");
 					Files.copy(testpatchSfar.toPath(), backupTestpatchSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
 				} catch (IOException e) {
-					addFailure(dlcName, "I/O Exception occured");
-					e.printStackTrace();
+					addFailure(dlcName, "I/O Exception occured: "+e.getMessage());
+					ModManager.debugLogger.writeErrorWithException("IO Exception in backup procedures!", e);
 					return false;
 				} catch (Exception e) {
-					e.printStackTrace();
+					addFailure(dlcName, "Unknown error occured: "+e.getMessage());
+					ModManager.debugLogger.writeErrorWithException("Unknown error in backup procedures!", e);
 					return false;
 				}
 				return true;
@@ -377,7 +392,7 @@ public class BackupWindow extends JDialog {
 					}
 				} catch (NumberFormatException e) {
 					// this is not a progress update, it's a string update
-
+					infoLabel.setText(update);
 				}
 			}
 
@@ -390,7 +405,24 @@ public class BackupWindow extends JDialog {
 			if (closeOnComplete) {
 				dispose();
 			}
-			return;
+		}
+		
+		public void addFailure(String dlcName, String reason) {
+			failedBackups.add(dlcName + ": " + reason);
+		}
+		
+		/**
+		 * Shows a JDialog if a backup job failed. If there are no failures, it
+		 * won't show anything.
+		 */
+		public void showFailedBackups() {
+			if (failedBackups.size() > 0) {
+				String header = "The following DLCs failed to backup:\n\n";
+				for (String failed : failedBackups) {
+					header += failed + "\n";
+				}
+				JOptionPane.showMessageDialog(null, header, "DLC backup errors", JOptionPane.ERROR_MESSAGE);
+			}
 		}
 	}
 
@@ -400,25 +432,7 @@ public class BackupWindow extends JDialog {
 		callingWindow.labelStatus.setVisible(true);
 		if (backupButton != null) {
 			backupButton.setEnabled(true);
-			infoLabel.setText("Select DLCs to backup.");
-		}
-	}
-
-	public void addFailure(String dlcName, String reason) {
-		failedBackups.add(dlcName + ": " + reason);
-	}
-
-	/**
-	 * Shows a JDialog if a backup job failed. If there are no failures, it
-	 * won't show anything.
-	 */
-	public void showFailedBackups() {
-		if (failedBackups.size() > 0) {
-			String header = "The following DLCs failed to backup:\n\n";
-			for (String failed : failedBackups) {
-				header += failed + "\n";
-			}
-			JOptionPane.showMessageDialog(null, header, "DLC backup errors", JOptionPane.ERROR_MESSAGE);
+			infoLabel.setText("Backups completed.");
 		}
 	}
 }

@@ -156,8 +156,7 @@ public class ModType {
 		dlcMap.put(GUN01, "d05977324e5ef172e8d0f10ec664ab9f");
 		dlcMap.put(GUN02, "6d7fa053fac1696c6b64ea20669db5c0");
 		dlcMap.put(DH1, "ea34559050385d928e45db218caa4007");
-		dlcMap.put(COLLECTORSEDITION, "");
-
+		dlcMap.put(COLLECTORSEDITION, "60d2058c6f4f6f1691e347ebda78b3bb");
 		return dlcMap;
 	}
 
@@ -187,20 +186,20 @@ public class ModType {
 		dlcMap.put(GUN01, 18708500L);
 		dlcMap.put(GUN02, 17134896L);
 		dlcMap.put(DH1, 284862077L);
-		dlcMap.put(COLLECTORSEDITION, 0L);
+		dlcMap.put(COLLECTORSEDITION, 56321927L);
 		return dlcMap;
 	}
 
 	public static String[] getSPHeaderNameArray() {
-		return new String[] { HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1,COLLECTORSEDITION };
+		return new String[] { COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1 };
 	}
 
 	public static String[] getSPBaseHeaderNameArray() {
-		return new String[] { BASEGAME, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1,COLLECTORSEDITION };
+		return new String[] { BASEGAME, COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1};
 	}
 	
 	public static String[] getDLCHeaderNameArray() {
-		return new String[] { HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1,COLLECTORSEDITION, MP1, MP2, MP3, MP4, MP5, PATCH1, PATCH2, TESTPATCH };
+		return new String[] {MP1, MP2, MP3, MP4, MP5, PATCH1, PATCH2, TESTPATCH, COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1 };
 	}
 
 	public static String[] getMPHeaderNameArray() {

@@ -14,6 +14,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -24,6 +25,7 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoInjectKeybindsModMaker;
 	private JCheckBox autoUpdateModManager;
 	private JCheckBox autoUpdateMods;
+	private JCheckBox autoApplyMixins;
 
 	public OptionsWindow(JFrame callingWindow) {
 		setupWindow();
@@ -34,8 +36,8 @@ public class OptionsWindow extends JDialog {
 	private void setupWindow() {
 		this.setTitle("Mod Manager Options");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(380, 365));
-		this.setResizable(false);
+		//this.setPreferredSize(new Dimension(380, 365));
+		//this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImages(ModManager.ICONS);
 		
@@ -50,14 +52,14 @@ public class OptionsWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini;
 				try {
-					File settings = new File(ModManager.settingsFilename);
+					File settings = new File(ModManager.SETTINGS_FILENAME);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
 
 					if (loggingMode.isSelected()) {
 						ini.put("Settings", "logging_mode", "1");
-						JOptionPane.showMessageDialog(null, "A log file will be generated in the ME3CMM.exe directory with the filename 'me3cmm_last_run_log.txt'.\nUse this to debug Mod Manager.\nClose ME3CMM before opening your log file.\nYou must restart Mod Manager for logging to take effect.\nNote: Logs will continue to be made every time the program is run.", "Logging Mode", JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane.showMessageDialog(null, "<html>Logs will be written to a file named "+DebugLogger.LOGGING_FILENAME+", next to the ME3CMM.exe file.<br>This log will help you debug mods that fail to show up in the list and can be used by FemShep to fix problems.<br>Mod Manager must be fully restarted for logging to start.</html>", "Logging Mode", JOptionPane.INFORMATION_MESSAGE);
 					} else {
 						ini.put("Settings", "logging_mode", "0");
 						ModManager.logging = false;
@@ -71,14 +73,14 @@ public class OptionsWindow extends JDialog {
 			}
 		});
 		
-		autoInjectKeybindsModMaker = new JCheckBox("Auto-inject keybinds into ModMaker mods");
+		autoInjectKeybindsModMaker = new JCheckBox("Auto-inject custom keybinds into ModMaker mods");
 		autoInjectKeybindsModMaker.setToolTipText("<html>If you use a custom keybinds file (BioInput.xml) and place it in the data/override directory,<br>at the end of compiling ModMaker mods Mod Manager will auto-inject them for you.</html>");
 		autoInjectKeybindsModMaker.setSelected(ModManager.AUTO_INJECT_KEYBINDS);
 		autoInjectKeybindsModMaker.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini;
 				try {
-					File settings = new File(ModManager.settingsFilename);
+					File settings = new File(ModManager.SETTINGS_FILENAME);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
@@ -104,7 +106,7 @@ public class OptionsWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini;
 				try {
-					File settings = new File(ModManager.settingsFilename);
+					File settings = new File(ModManager.SETTINGS_FILENAME);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
@@ -130,7 +132,7 @@ public class OptionsWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini;
 				try {
-					File settings = new File(ModManager.settingsFilename);
+					File settings = new File(ModManager.SETTINGS_FILENAME);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
@@ -147,9 +149,32 @@ public class OptionsWindow extends JDialog {
 			}
 		});
 		
+		autoApplyMixins = new JCheckBox("<html>Automatically apply recommended MixIns to ModMaker mods</html>");
+		autoApplyMixins.setToolTipText("<html>Automatically accepts recommended MixIns when compiling a ModMaker mod</html>");
+		autoApplyMixins.setSelected(ModManager.AUTO_APPLY_MODMAKER_MIXINS);
+		autoApplyMixins.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Wini ini;
+				try {
+					File settings = new File(ModManager.SETTINGS_FILENAME);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					ini.put("Settings", "autoinstallmixins", autoApplyMixins.isSelected() ? "true" : "false");
+					ini.store();
+					ModManager.AUTO_APPLY_MODMAKER_MIXINS = autoApplyMixins.isSelected();
+				} catch (InvalidFileFormatException x) {
+					x.printStackTrace();
+				} catch (IOException x) {
+					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", x);
+				}
+			}
+		});
 		
-		aboutPanel.add(loggingMode);
+		aboutPanel.add(autoApplyMixins);
 		aboutPanel.add(autoInjectKeybindsModMaker);
+		aboutPanel.add(new JSeparator(JSeparator.HORIZONTAL));
+		aboutPanel.add(loggingMode);
 		aboutPanel.add(autoUpdateModManager);
 		aboutPanel.add(autoUpdateMods);
 		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));

@@ -336,7 +336,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			//write to ini that we don't want update
 			Wini ini;
 			try {
-				File settings = new File(ModManager.settingsFilename);
+				File settings = new File(ModManager.SETTINGS_FILENAME);
 				if (!settings.exists())
 					settings.createNewFile();
 				ini = new Wini(settings);
@@ -346,7 +346,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			} catch (InvalidFileFormatException ex) {
 				ex.printStackTrace();
 			} catch (IOException ex) {
-				System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.",ex);
 			}
 			dispose();
 		} else if (e.getSource() == manualDownloadButton) {
@@ -357,7 +357,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			}
 			dispose();
 		}
-		
 	}
 	
 	public void runUpdateScript() {
@@ -379,7 +378,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	 */
 	private boolean buildUpdateScript(){
 		StringBuilder sb = new StringBuilder();
-		sb.append("::Update script for Mod Manager 4 (Build "+build+")");
+		sb.append("::Update script for Mod Manager 4.1 (Build "+build+")");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("@echo off");

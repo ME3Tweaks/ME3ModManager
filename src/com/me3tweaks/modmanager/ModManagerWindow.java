@@ -5,6 +5,8 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -65,7 +67,6 @@ import com.me3tweaks.modmanager.modupdater.UpdatePackage;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.Patch;
-import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
@@ -87,20 +88,20 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionOptions, actionOpenME3Exp, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC, modutilsCheckforupdate;
+	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsAutoTOCUpgrade, modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupBasegame;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC,
 			restoreRevertSPBaseDLC, restoreRevertCoal;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
 			sqlConsumableParser, sqlGearParser;
-	JMenuItem helpPost, helpForums, helpAbout;
+	JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
 	JSplitPane splitPane;
 	public JLabel labelStatus;
-	final String selectAModDescription = "Select a mod on the left to view its description and apply it.";
+	final String selectAModDescription = "Select a mod on the left to view its description.";
 	DefaultListModel<Mod> modModel;
 	private ArrayList<Patch> patchList;
 	// static HashMap<String, Mod> listDescriptors;
@@ -123,7 +124,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ACTIVE_WINDOW = null;
 		}
 		this.isUpdate = isUpdate;
-		ModManager.debugLogger.writeMessage("Starting ModManagerWindow init");
+		ModManager.debugLogger.writeMessage("Starting Mod Manager UI (ModManagerWindow)");
 		initializeWindow();
 		ACTIVE_WINDOW = this;
 		boolean reload = processPendingPatches();
@@ -163,7 +164,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void initializeWindow() {
-		this.setTitle("Mass Effect 3 Coalesced Mod Manager");
+		this.setTitle("Mass Effect 3 Mod Manager");
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		this.setIconImages(ModManager.ICONS);
 		setupWindow(this);
@@ -183,12 +184,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			int result = JOptionPane
 					.showConfirmDialog(
 							this,
-							"Mod Manager can automatically keep your mods up to date with ME3Tweaks checking once every three days.\nWould you like to turn this feature on?",
-							"Mod Auto-Update", JOptionPane.YES_NO_CANCEL_OPTION);
+							"Mod Manager can automatically keep your mods up to date\nwith ME3Tweaks checking once every three days.\nWould you like to turn this feature on?",
+							"Mod Auto Updates", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (result != JOptionPane.CANCEL_OPTION) {
 				Wini ini;
 				try {
-					File settings = new File(ModManager.settingsFilename);
+					File settings = new File(ModManager.SETTINGS_FILENAME);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
@@ -198,7 +199,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} catch (InvalidFileFormatException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
-					System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 				}
 			}
 		}
@@ -235,16 +237,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
 			}
-			checkForUpdates();
+			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
+				checkForUpdates();
+			}
 			checkForME3ExplorerUpdates();
-			checkForModUpdates();
+			if (ModManager.AUTO_UPDATE_MODS) {
+				checkForModUpdates();
+			}
 			return null;
 		}
 
 		private void checkForME3ExplorerUpdates() {
 			String me3explorer = ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe";
 			File f = new File(me3explorer);
-			System.out.println(f.getAbsolutePath());
 			if (!f.exists()) {
 				ModManager.debugLogger.writeMessage("ME3Explorer is missing. Downloading from ME3TWeaks.");
 				new ME3ExplorerUpdater(ModManagerWindow.this);
@@ -264,14 +269,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		private void checkForModUpdates() {
 			// TODO Auto-generated method stub
 			long threeDaysMs = 259200000L;
-			if (ModManager.AUTO_UPDATE_MODS) {
-				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > threeDaysMs) {
-					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
-							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
-							+ " since the last update check.");
-					publish("Auto Updater: Checking for mod updates");
-					checkAllModsForUpdates(false);
-				}
+			if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > threeDaysMs) {
+				ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
+						+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
+						+ " since the last update check.");
+				publish("Auto Updater: Checking for mod updates");
+				checkAllModsForUpdates(false);
+				publish("Auto Updater: Checked mods for updates");
 			}
 		}
 
@@ -303,9 +307,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (ModManager.IS_DEBUG) {
 				update_check_link = "http://webdev-c9-mgamerz.c9.io/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 			} else {
-				update_check_link = "https://me3tweaks.com/modmanager/updatecheck-testing?currentversion=" + ModManager.BUILD_NUMBER;
+				update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 			}
-			System.out.println(update_check_link);
 			String serverJSON = null;
 			try {
 				serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
@@ -313,11 +316,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeError("Error checking for updates:");
 				ModManager.debugLogger.writeException(e);
 				labelStatus.setText("Error checking for update (check logs)");
+				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
 				return null;
 			}
 			if (serverJSON == null) {
 				ModManager.debugLogger.writeError("No response from server");
 				labelStatus.setText("Updater: No response from server");
+				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
 				return null;
 			}
 
@@ -344,6 +349,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				labelStatus.setVisible(true);
 				ModManager.debugLogger.writeMessage("No updates, at latest version. (or could not contact update server.)");
 				labelStatus.setText("No Mod Manager updates available");
+				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
 				return null;
 			}
 
@@ -352,6 +358,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				labelStatus.setVisible(true);
 				ModManager.debugLogger.writeMessage("No updates, at latest version.");
 				labelStatus.setText("Mod Manager is up to date");
+				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
 				return null;
 			}
 
@@ -362,7 +369,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			// make sure the user hasn't declined this one.
 			Wini settingsini;
 			try {
-				settingsini = new Wini(new File(ModManager.settingsFilename));
+				settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 				String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
 				long build_check = ModManager.BUILD_NUMBER;
 				if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
@@ -396,14 +403,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				labelStatus.setVisible(true);
 				labelStatus.setText("Update available");
 				new UpdateAvailableWindow(latest_object, this);
+				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
 			} else {
 				labelStatus.setVisible(true);
 				labelStatus.setText("No updates available");
 			}
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("Error parsing server response:", e);
 		}
+		ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
 		return null;
 	}
 
@@ -429,7 +438,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// Title Panel
 		JPanel titlePanel = new JPanel(new BorderLayout());
-		titlePanel.add(new JLabel("Mass Effect 3 Coalesced Mod Manager " + ModManager.VERSION, SwingConstants.LEFT), BorderLayout.WEST);
+		titlePanel.add(new JLabel("Mass Effect 3 Mod Manager " + ModManager.VERSION, SwingConstants.LEFT), BorderLayout.WEST);
 
 		// BioGameDir Panel
 		JPanel cookedDirPanel = new JPanel(new BorderLayout());
@@ -516,11 +525,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		buttonApplyMod = new JButton("Apply Mod");
 		buttonApplyMod.addActionListener(this);
 		buttonApplyMod.setEnabled(false);
-		buttonApplyMod.setToolTipText("Applies this mod to the game");
+		buttonApplyMod.setToolTipText("Select a mod on the left");
 
 		buttonStartGame = new JButton("Start Game");
 		buttonStartGame.addActionListener(this);
-		buttonStartGame.setToolTipText("Starts the game. If LauncherWV DLC bypass is installed, it will that to launch the game instead");
+		buttonStartGame
+				.setToolTipText("<html>Starts the game.<br>If LauncherWV DLC bypass is installed, it will launch instead to patch out the DLC verifiction test.<br>The game will then start.</html>");
 
 		buttonPanel.add(buttonApplyMod);
 		buttonPanel.add(buttonStartGame);
@@ -598,6 +608,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
 		modutilsAutoTOC.addActionListener(this);
 		modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes");
+		modutilsAutoTOCUpgrade = new JMenuItem("Upgrade mod to use unpacked DLC");
+		modutilsAutoTOCUpgrade.addActionListener(this);
+		modutilsAutoTOCUpgrade.setToolTipText("Automatically update all TOC files this mod has to use file sizes of your unpacked DLC");
+		
 		modutilsUninstallCustomDLC = new JMenuItem("Uninstall this mod's custom DLC");
 		modutilsUninstallCustomDLC.addActionListener(this);
 
@@ -612,6 +626,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.add(modutilsInstallCustomKeybinds);
 		modMenu.add(modutilsInfoEditor);
 		modMenu.add(modutilsAutoTOC);
+		//modMenu.add(modutilsAutoTOCUpgrade);
 		modMenu.add(modutilsUninstallCustomDLC);
 		modMenu.add(modutilsCheckforupdate);
 		modMenu.setEnabled(false);
@@ -622,7 +637,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsModMaker = new JMenuItem("Enter ME3Tweaks ModMaker code");
 		toolsModMaker.setToolTipText("Allows you to download and compile mods with ease");
 
-		toolsMergeMod = new JMenuItem("Merge mods...");
+		toolsMergeMod = new JMenuItem("Mod Merging Utility");
 		toolsMergeMod.setToolTipText("Allows you to merge CMM3+ mods together and resolve conflicts between mods");
 
 		toolsPatchLibary = new JMenuItem("MixIn Library");
@@ -642,7 +657,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsCheckallmodsforupdate = new JMenuItem("Check eligible mods for updates");
 		toolsCheckallmodsforupdate
-				.setToolTipText("Checks this mod version against the one on ME3Tweaks and prompts to download an update if one is available");
+				.setToolTipText("Checks eligible mods for updates on ME3Tweaks and prompts to download an update if one is available");
 
 		toolsModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
@@ -783,19 +798,31 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// Help
 		helpMenu = new JMenu("Help");
-		helpPost = new JMenuItem("View Instructions");
+		helpPost = new JMenuItem("View FAQ");
 		helpPost.setToolTipText("Opens the Mod Manager FAQ");
 		helpForums = new JMenuItem("Forums");
 		helpForums.setToolTipText("Opens the ME3Tweaks forum on ME3Explorer Forums");
-		helpAbout = new JMenuItem("About...");
-		helpAbout.setToolTipText("<html>Opens the Mod Manager About page.<br>Contains the mod debugging switch</html>");
+		helpAbout = new JMenuItem("About Mod Manager");
+		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
+
+		helpGetLog = new JMenuItem("Copy log to clipboard");
+		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
+
+		helpEmailFemShep = new JMenuItem("Contact FemShep");
+		helpEmailFemShep.setToolTipText("<html>Contact FemShep via email</html>");
 
 		helpForums.addActionListener(this);
 		helpPost.addActionListener(this);
 		helpAbout.addActionListener(this);
+		helpGetLog.addActionListener(this);
+		helpEmailFemShep.addActionListener(this);
 
 		helpMenu.add(helpPost);
 		helpMenu.add(helpForums);
+		helpMenu.addSeparator();
+		helpMenu.add(helpGetLog);
+		helpMenu.add(helpEmailFemShep);
+		helpMenu.addSeparator();
 		helpMenu.add(helpAbout);
 		menuBar.add(helpMenu);
 
@@ -1045,8 +1072,44 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// TODO Auto-generated catch block
 				ex.printStackTrace();
 			}
-		}
-		if (e.getSource() == helpAbout) {
+		} else if (e.getSource() == helpGetLog) {
+			if (!ModManager.logging) {
+				JOptionPane.showMessageDialog(this, "You must enable logging via the File>Options menu before logs are generated.");
+			} else {
+				String log = ModManager.debugLogger.getLog();
+				Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
+				clpbrd.setContents(new StringSelection(log), null);
+				labelStatus.setText("Log copied to clipboard");
+			}
+		} else if (e.getSource() == helpEmailFemShep) {
+			JOptionPane
+					.showMessageDialog(
+							this,
+							"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>"
+									+ "Please email me if you have crashes or bugs. Feature requests should be posted to the forums.<br>"
+									+ "If you have a crash or a bug I will need the debugging log.<br><br>How to create a debugging log:<br>"
+									+ "1. Close Mod Manager with debugging enabled, restart it, and reproduce your issue.<br>"
+									+ "2. Immediately after the issue occurs, go to Help>Copy log to clipboard.<br>"
+									+ "3. Paste your log into a text file (.txt). I will not open other extensions. Use notepad.<br>"
+									+ "4. In your email, give me a description of the problem and the steps you took to produce it. I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
+									+ "5. Attach your log to the email and send it.<br><br>"
+									+ "Please do not do any other operations as it makes the logs harder to read.<br>"
+									+ "If you submit a crash/bug report without a debugging log there is very little I can do to help you.<br>"
+									+ "Please note that I only speak English.<br><br>" + "You can email me at femshep@me3tweaks.com.</div></html>",
+							"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
+		} else if (e.getSource() == helpForums) {
+			URI theURI;
+			try {
+				theURI = new URI("http://me3explorer.freeforums.org/me3tweaks-f33.html");
+				java.awt.Desktop.getDesktop().browse(theURI);
+			} catch (URISyntaxException ex) {
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			} catch (IOException ex) {
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			}
+		} else if (e.getSource() == helpAbout) {
 			new AboutWindow(this);
 		} else if (e.getSource() == buttonApplyMod) {
 			applyMod();
@@ -1058,7 +1121,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (e.getSource() == actionOpenME3Exp) {
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true)) + "ME3Explorer.exe");
+			String me3expdir = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true));
+			commandBuilder.add(me3expdir + "ME3Explorer.exe");
 			// System.out.println("Building command");
 			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 			// Debug stuff
@@ -1066,9 +1130,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			for (String arg : command) {
 				sb.append(arg + " ");
 			}
-			ModManager.debugLogger.writeMessage("Executing me3explorer command: " + sb.toString());
+			ModManager.debugLogger.writeMessage("Executing ME3Explorer via command: " + sb.toString());
 			try {
 				ProcessBuilder pb = new ProcessBuilder(command);
+				pb.directory(new File(me3expdir)); // this is where you set the root folder for the executable to run with
 				pb.start();
 			} catch (IOException ex) {
 				ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
@@ -1080,7 +1145,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == toolsOpenME3Dir) {
 			openME3Dir();
 		} else if (e.getSource() == modutilsAutoTOC) {
-			autoTOC();
+			autoTOC(AutoTocWindow.LOCALMOD_MODE);
+		} else if (e.getSource() == modutilsAutoTOCUpgrade) {
+			autoTOC(AutoTocWindow.UPGRADE_UNPACKED_MODE);
 		} else if (e.getSource() == modutilsInfoEditor) {
 			showInfoEditor();
 		} else if (e.getSource() == modutilsUninstallCustomDLC) {
@@ -1142,7 +1209,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (mod.isME3TweaksUpdatable()) {
 				updatableMods.add(mod);
 			} else {
-				ModManager.debugLogger.writeMessage(mod.getModName() + " is not me3tweaks updatable");
+				ModManager.debugLogger.writeMessage(mod.getModName() + " is not ME3Tweaks updatable");
 			}
 		}
 
@@ -1155,6 +1222,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								null,
 								"No mods are eligible for the Mod Manager update service.\nEligible mods include ModMaker mods and ones hosted on ME3Tweaks.com.",
 								"No updatable mods", JOptionPane.WARNING_MESSAGE);
+			}
+			Wini ini;
+			try {
+				File settings = new File(ModManager.SETTINGS_FILENAME);
+				if (!settings.exists())
+					settings.createNewFile();
+				ini = new Wini(settings);
+				ini.put("Settings", "lastautocheck", System.currentTimeMillis());
+				ModManager.debugLogger.writeMessage("Updating last-autocheck date in ini");
+				ini.store();
+				ModManager.LAST_AUTOUPDATE_CHECK = System.currentTimeMillis();
+			} catch (InvalidFileFormatException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException(
+						"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 			}
 		}
 	}
@@ -1293,7 +1376,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (saveDir == 0) {
 				Wini ini;
 				try {
-					File settings = new File(ModManager.settingsFilename);
+					File settings = new File(ModManager.SETTINGS_FILENAME);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
@@ -1303,7 +1386,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} catch (InvalidFileFormatException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
-					System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 				}
 				labelStatus.setText("Saved BioGame directory to me3cmm.ini");
 				labelStatus.setVisible(true);
@@ -1334,7 +1418,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
 		String os = System.getProperty("os.name");
 		try {
-			settingsini = new Wini(new File(ModManager.settingsFilename));
+			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 			setDir = settingsini.get("Settings", "biogame_dir");
 			if (setDir == null || setDir.equals("")) {
 				// Try to detect it via the registry
@@ -1361,7 +1445,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						// its correct
 						Wini ini;
 						try {
-							File settings = new File(ModManager.settingsFilename);
+							File settings = new File(ModManager.SETTINGS_FILENAME);
 							if (!settings.exists())
 								settings.createNewFile();
 							ini = new Wini(settings);
@@ -1523,6 +1607,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (listChange.getValueIsAdjusting() == false) {
 			if (modList.getSelectedIndex() == -1) {
 				buttonApplyMod.setEnabled(false);
+				buttonApplyMod.setToolTipText("Select a mod on the left");
 				fieldDescription.setText(selectAModDescription);
 				modMenu.setEnabled(false);
 				modMenu.setToolTipText("Select a mod to enable this menu");
@@ -1534,6 +1619,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				fieldDescription.setText(selectedMod.getModDisplayDescription());
 				fieldDescription.setCaretPosition(0);
 				buttonApplyMod.setEnabled(checkIfNone(modList.getSelectedValue().toString()));
+				buttonApplyMod
+						.setToolTipText("<html>Apply this mod to the game.<br>If another mod is already installed, restore your game first!<br>You can merge Mod Manager mods in the Tools menu.</html>");
 				modutilsHeader.setText(modModel.get(modList.getSelectedIndex()).getModName());
 				modMenu.setEnabled(true);
 				if (selectedMod.isME3TweaksUpdatable()) {
@@ -1656,8 +1743,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			labelStatus.setText("Invalid BioGame Directory");
 			labelStatus.setVisible(true);
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid. Files cannot be restored.\nFix the directory and try again.", "Invalid BioGame Directory",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid. Files cannot be restored.\nFix the directory and try again.",
+					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 	}
@@ -1769,7 +1856,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		new ModMakerCompilerWindow(code, languages);
 	}
 
-	private void autoTOC() {
+	private void autoTOC(int mode) {
 		// update the PCConsoleTOC's of a specific mod.
 		int selectedIndex = modList.getSelectedIndex();
 		if (selectedIndex < 0) {
@@ -1777,7 +1864,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		// System.out.println("SELECTED VALUE: " + selectedValue);
 		Mod mod = modModel.getElementAt(selectedIndex);
-		new AutoTocWindow(mod);
+		new AutoTocWindow(mod, mode);
 	}
 
 	private boolean installBypass() {

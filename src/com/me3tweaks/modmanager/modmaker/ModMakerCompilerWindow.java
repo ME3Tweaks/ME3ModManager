@@ -1712,7 +1712,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	public void finishModMaker(Mod newMod){
 		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
 		overallProgress.setValue(95);
-		new AutoTocWindow(newMod);
+		new AutoTocWindow(newMod,AutoTocWindow.LOCALMOD_MODE);
 		overallProgress.setValue(100);
 		stepsCompleted++;
 		ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);

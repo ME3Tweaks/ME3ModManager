@@ -436,7 +436,7 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 
-		if (modCMMVer > 3.2) {
+		if (modCMMVer > ModManager.MODDESC_VERSION_SUPPORT) {
 			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version");
 		}
 		setModDisplayDescription(modCMMVer < 3.0);
@@ -1065,10 +1065,14 @@ public class Mod implements Comparable<Mod> {
 	 * @return
 	 */
 	public Mod mergeWith(Mod other, String newName) {
+		ModManager.debugLogger.writeMessage("Merging mods: " + getModName() + " <= " + other.getModName());
 		this.modName = newName;
 		HashMap<String, ArrayList<String>> ignoreReplaceFiles = getReplaceConflictsWithMod(other);
 		HashMap<String, ArrayList<String>> ignoreAddFiles = getAddConflictsWithMod(other);
-		HashMap<String, ArrayList<String>> ignoreRemoveFiles = getRemoveConflictsWithMod(other);
+		HashMap<String, ArrayList<String>> ignoreReplaceRemoveFiles = getReplaceRemoveConflictsWithMod(other);
+		HashMap<String, ArrayList<String>> ignoreAddRemoveFiles = getAddRemoveConflictsWithMod(other);
+
+		//HashMap<String, ArrayList<String>> ignoreRemoveFiles = getRemoveConflictsWithMod(other);
 
 		for (ModJob otherjob : other.jobs) {
 			ModJob myCorrespendingJob = null;
@@ -1085,13 +1089,33 @@ public class Mod implements Comparable<Mod> {
 				jobs.add(otherjob);
 				continue;
 			}
-			//MERGE REPLACE FILES
 
+			//MERGE REPLACE FILES
 			ArrayList<String> otherNewFiles = otherjob.getFilesToReplace();
 			ArrayList<String> otherReplacePaths = otherjob.getFilesToReplaceTargets();
 			for (int i = 0; i < otherNewFiles.size(); i++) {
 				String otherfile = otherNewFiles.get(i);
-				ModManager.debugLogger.writeMessage("CURRENT JOB: " + myCorrespendingJob.getJobName());
+				ModManager.debugLogger.writeMessage("Merging job: " + myCorrespendingJob.getJobName());
+
+				//Check for bigger other TOC (means it likely has extra files)
+				if (FilenameUtils.getName(otherfile).equals("PCConsoleTOC.bin")) {
+					for (int z = 0; z < myCorrespendingJob.getFilesToReplace().size(); z++) {
+						String myJobFile = myCorrespendingJob.getFilesToReplace().get(z);
+						System.out.println("My job files: " + myJobFile);
+						if (FilenameUtils.getName(myJobFile).equals("PCConsoleTOC.bin")) {
+							//comparing 2 of the same TOC files
+							File myToc = new File(myJobFile);
+							File otherToc = new File(otherfile);
+							if (otherToc.length() > myToc.length()) {
+								//other has more files. we sould use it instead
+								ModManager.debugLogger.writeMessage("Other job has bigger TOC, using that one instead. Likely adds a file");
+								myCorrespendingJob.getFilesToReplace().set(z, otherfile);
+								break;
+							}
+						}
+					}
+				}
+
 				if (ignoreReplaceFiles != null && ignoreReplaceFiles.get(otherjob.getJobName()) != null
 						&& ignoreReplaceFiles.get(otherjob.getJobName()).contains(otherReplacePaths.get(i))) {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherReplacePaths.get(i));
@@ -1108,18 +1132,26 @@ public class Mod implements Comparable<Mod> {
 					myCorrespendingJob.addFileReplace(otherfile, otherReplacePaths.get(i));
 				}
 			}
-			//MERGE ADD FILES
 
+			//MERGE ADD FILES
 			ArrayList<String> otherAddFiles = otherjob.getFilesToAdd();
 			ArrayList<String> otherAddFilesTargets = otherjob.getFilesToAddTargets();
 			for (int i = 0; i < otherAddFiles.size(); i++) {
 				String otherfile = otherAddFiles.get(i);
 				ModManager.debugLogger.writeMessage("CURRENT JOB: " + myCorrespendingJob.getJobName());
+				//skip add/add conflict
 				if (ignoreAddFiles != null && ignoreAddFiles.get(otherjob.getJobName()) != null
 						&& ignoreAddFiles.get(otherjob.getJobName()).contains(otherAddFilesTargets.get(i))) {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherAddFilesTargets.get(i));
 					continue;
-				} else {
+				} 
+				//skip add/remove conflict
+				if (ignoreAddRemoveFiles != null && ignoreAddRemoveFiles.get(otherjob.getJobName()) != null
+						&& ignoreAddRemoveFiles.get(otherjob.getJobName()).contains(otherAddFilesTargets.get(i))) {
+					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherAddFilesTargets.get(i));
+					continue;
+				} 
+				else {
 					if (FilenameUtils.getName(otherfile).equals("PCConsoleTOC.bin")) {
 						ModManager.debugLogger.writeMessage("CHECKING IF SHOULD ADD TOC, EXIST IN THIS JOB ALREADY: " + myCorrespendingJob.hasTOC());
 						// check if its there already
@@ -1133,11 +1165,20 @@ public class Mod implements Comparable<Mod> {
 			}
 
 			//MERGE REMOVE FILES
-			ArrayList<String> otherRemoveFiles = otherjob.getFilesToAdd();
+			ArrayList<String> otherRemoveFiles = otherjob.getFilesToRemoveTargets();
 			for (int i = 0; i < otherRemoveFiles.size(); i++) {
 				ModManager.debugLogger.writeMessage("CURRENT JOB: " + myCorrespendingJob.getJobName());
-				if (ignoreRemoveFiles != null && ignoreRemoveFiles.get(otherjob.getJobName()) != null
-						&& ignoreRemoveFiles.get(otherjob.getJobName()).contains(otherRemoveFiles.get(i))) {
+				
+				//ignore replace/remove conflict
+				if (ignoreReplaceRemoveFiles != null && ignoreReplaceRemoveFiles.get(otherjob.getJobName()) != null
+						&& ignoreReplaceRemoveFiles.get(otherjob.getJobName()).contains(otherRemoveFiles.get(i))) {
+					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherRemoveFiles.get(i));
+					continue;
+				}
+				
+				//ignore add/remove conflict
+				if (ignoreAddRemoveFiles != null && ignoreAddRemoveFiles.get(otherjob.getJobName()) != null
+						&& ignoreAddRemoveFiles.get(otherjob.getJobName()).contains(otherRemoveFiles.get(i))) {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherRemoveFiles.get(i));
 					continue;
 				} else {
@@ -1224,7 +1265,7 @@ public class Mod implements Comparable<Mod> {
 			e.printStackTrace();
 		}
 		Mod newMod = new Mod(modFolder + File.separator + "moddesc.ini");
-		new AutoTocWindow(newMod);
+		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE);
 		return newMod;
 	}
 
@@ -1402,6 +1443,11 @@ public class Mod implements Comparable<Mod> {
 		this.validMod = validMod;
 	}
 
+	/**
+	 * Checks for conflicts with the other mod pertaining to add/replace. 
+	 * @param other
+	 * @return Hashmap of job names mapping to a list of targets that conflict
+	 */
 	public HashMap<String, ArrayList<String>> getAddRemoveConflictsWithMod(Mod other) {
 		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
 		for (ModJob job : jobs) {
@@ -1455,6 +1501,11 @@ public class Mod implements Comparable<Mod> {
 		return conflicts;
 	}
 
+	/**
+	 * Checks for conflicts with the other mod pertaining to remove/replace. 
+	 * @param other
+	 * @return Hashmap of job names mapping to a list of targets that conflict
+	 */
 	public HashMap<String, ArrayList<String>> getReplaceRemoveConflictsWithMod(Mod other) {
 		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
 		for (ModJob job : jobs) {

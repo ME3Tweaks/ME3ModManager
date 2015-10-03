@@ -63,7 +63,7 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("This version of Mod Manager requires an update to ME3Explorer.");
+		introLabel = new JLabel("This version of Mod Manager requires ME3Explorer r"+ModManager.MIN_REQUIRED_ME3EXPLORER_REV+" or higher.");
 		statusLabel = new JLabel("Downloading...");
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
