@@ -74,23 +74,6 @@ public class BackupWindow extends JDialog {
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
-		//Set the backup flag to true
-		Wini ini;
-		try {
-			File settings = new File(ModManager.SETTINGS_FILENAME);
-			if (!settings.exists()) {
-				ModManager.debugLogger.writeMessage("Created new settings file, didn't previously exist.");
-				settings.createNewFile();
-			}
-			ini = new Wini(settings);
-			ini.put("Settings", "dlc_backed_up", "1");
-			ini.store();
-		} catch (InvalidFileFormatException e) {
-			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
-			e.printStackTrace();
-		} catch (IOException e) {
-			ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.",e);
-		}
 		this.setVisible(true);
 	}
 

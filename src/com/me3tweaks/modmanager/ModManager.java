@@ -51,8 +51,8 @@ import com.me3tweaks.modmanager.objects.Patch;
 public class ModManager {
 
 	public static final String VERSION = "4.1 Beta 1";
-	public static long BUILD_NUMBER = 45L;
-	public static final String BUILD_DATE = "9/29/2015";
+	public static long BUILD_NUMBER = 44L;
+	public static final String BUILD_DATE = "10/3/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -130,27 +130,8 @@ public class ModManager {
 									+ ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
 						}
 					}
-					//Autoinject keybinds
-					String keybindsStr = settingsini.get("Settings", "autoinjectkeybinds");
-					int keybindsInt = 0;
-					if (keybindsStr != null && !keybindsStr.equals("")) {
-						try {
-							keybindsInt = Integer.parseInt(keybindsStr);
-							if (keybindsInt > 0) {
-								//logging is on
-								debugLogger.writeMessage("Auto-Inject Keybinds are enabled");
-								AUTO_INJECT_KEYBINDS = true;
-							} else {
-								debugLogger.writeMessage("Auto-Inject Keybinds is disabled");
-								AUTO_INJECT_KEYBINDS = false;
-							}
-						} catch (NumberFormatException e) {
-							debugLogger.writeError("Number format exception reading the keybinds injection mode - autoinject mode disabled");
-							AUTO_INJECT_KEYBINDS = false;
-						}
-					}
 					//Auto Update Check
-					String updateStr = settingsini.get("Settings", "autoinjectupdate");
+					String updateStr = settingsini.get("Settings", "checkforupdates");
 					int updateInt = 0;
 					if (updateStr != null && !updateStr.equals("")) {
 						try {
@@ -181,7 +162,7 @@ public class ModManager {
 						BUILD_NUMBER = Long.parseLong(forcedVersion);
 					}
 					String autoupdate = settingsini.get("Settings", "autoupdatemods");
-					if (autoupdate != null && autoupdate.equals("true")) {
+					if (autoupdate != null && autoupdate.toLowerCase().equals("true")) {
 						debugLogger.writeMessage("Enabling mod auto-updates");
 						AUTO_UPDATE_MODS = true;
 					}
@@ -191,6 +172,45 @@ public class ModManager {
 						if (askedbefore != null) {
 							debugLogger.writeMessage("User answered auto updates before");
 							ASKED_FOR_AUTO_UPDATE = true;
+						}
+					}
+					
+					//Autoinject keybinds
+					String keybindsStr = settingsini.get("Settings", "autoinjectkeybinds");
+					int keybindsInt = 0;
+					if (keybindsStr != null && !keybindsStr.equals("")) {
+						try {
+							keybindsInt = Integer.parseInt(keybindsStr);
+							if (keybindsInt > 0) {
+								//logging is on
+								debugLogger.writeMessage("Auto-Inject Keybinds are enabled");
+								AUTO_INJECT_KEYBINDS = true;
+							} else {
+								debugLogger.writeMessage("Auto-Inject Keybinds is disabled");
+								AUTO_INJECT_KEYBINDS = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the keybinds injection mode - autoinject mode disabled");
+							AUTO_INJECT_KEYBINDS = false;
+						}
+					}
+					//Autoinject modmaker mixins
+					String autoinstallmixinsStr = settingsini.get("Settings", "autoinstallmixins");
+					int autoinstallmixinsInt = 0;
+					if (autoinstallmixinsStr != null && !autoinstallmixinsStr.equals("")) {
+						try {
+							autoinstallmixinsInt = Integer.parseInt(autoinstallmixinsStr);
+							if (autoinstallmixinsInt > 0) {
+								//logging is on
+								debugLogger.writeMessage("Auto-Install of Modmaker Mixins is enabled");
+								AUTO_APPLY_MODMAKER_MIXINS = true;
+							} else {
+								debugLogger.writeMessage("Auto-Install of Modmaker Mixins is disabled");
+								AUTO_APPLY_MODMAKER_MIXINS = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the auto install of modmaker mixins mode - autoinstall mode disabled");
+							AUTO_APPLY_MODMAKER_MIXINS = false;
 						}
 					}
 
@@ -352,14 +372,15 @@ public class ModManager {
 
 		//move update folder
 		ModManager.debugLogger.writeMessage("Checking if using old update dir");
-		File toolsdir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "update/");
-		if (toolsdir.exists()) {
+		File oldupdatedir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "update/");
+		if (oldupdatedir.exists()) {
 			ModManager.debugLogger.writeMessage("Moving update to data/");
 			try {
-				FileUtils.moveDirectory(toolsdir, new File(ModManager.getToolsDir()));
+				FileUtils.moveDirectory(oldupdatedir, new File(ModManager.getToolsDir()));
 			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY!");
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY! Deleting the update/ folder instead (will auto download the new 7za)");
 				ModManager.debugLogger.writeException(e);
+				FileUtils.deleteQuietly(oldupdatedir);
 			}
 		}
 
@@ -996,6 +1017,12 @@ public class ModManager {
 		}
 	}
 
+	/**
+	 * Tries to find a resource for a target path inside of a target module. Returns path to the found item or null if none could be found.
+	 * @param targetPath
+	 * @param targetModule
+	 * @return
+	 */
 	public static String getPatchSource(String targetPath, String targetModule) {
 		String internalModule = ME3TweaksUtils.headerNameToInternalName(targetModule);
 		ModManager.debugLogger.writeMessage("Looking for patch source: " + targetPath + " in module " + targetModule);
@@ -1049,6 +1076,21 @@ public class ModManager {
 			return null;
 		} else {
 			//DLC===============================================================
+			//Check if its unpacked
+			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
+			File unpackedFile = new File(gamedir+targetPath);
+			if (unpackedFile.exists()){
+				try {
+					FileUtils.copyFile(unpackedFile, sourceDestination);
+					ModManager.debugLogger.writeMessage("Copied unpacked file into patch library");
+					return sourceDestination.getAbsolutePath();
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Unable to copy unpacked file into patch source library:", e);
+					return null;
+				}
+			}
+			
+			//use the sfar
 			//get .sfar path
 			String sfarName = "Default.sfar";
 			if (targetModule.equals(ModType.TESTPATCH)) {

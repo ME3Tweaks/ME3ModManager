@@ -61,7 +61,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		long width = (long) updateInfo.get("dialog_width"); //dialog size is determined by the latest build information. This is because it might have a long changelog.
 		long height = (long) updateInfo.get("dialog_height");
-		this.setPreferredSize(new Dimension((int)width, (int)height));
+		//this.setPreferredSize(new Dimension((int)width, (int)height));
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
@@ -102,8 +102,8 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		versionsLabel = new JLabel("<html>Local Version: "+ModManager.VERSION+" (Build "+ModManager.BUILD_NUMBER+")<br>"
 				+ "Latest Version: "+latest_version_hr+" (Build "+latest_build_number+")</html>");
 		String release_notes = (String) updateInfo.get("release_notes");
-		changelogLabel = new JLabel(release_notes);
-		updateButton = new JButton("Download Update");
+		changelogLabel = new JLabel("<html><div style=\"width:270px;\">"+release_notes+"</div></html>");
+		updateButton = new JButton("Install Update");
 		updateButton.addActionListener(this);
 		notNowButton = new JButton("Not now");
 		notNowButton.addActionListener(this);
@@ -327,6 +327,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == updateButton){
 			updateButton.setEnabled(false);
+			manualDownloadButton.setEnabled(false);
 			nextUpdateButton.setEnabled(false);
 			DownloadTask task = new DownloadTask(ModManager.getTempDir());
 			task.addPropertyChangeListener(this);

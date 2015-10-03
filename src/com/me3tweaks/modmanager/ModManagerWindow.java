@@ -89,10 +89,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenu actionMenu, modMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionOptions, actionOpenME3Exp, actionReload, actionExit;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsAutoTOCUpgrade, modutilsUninstallCustomDLC, modutilsCheckforupdate;
-	JMenuItem backupBackupDLC, backupBasegame;
+	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
-	JMenuItem restoreRevertEverything, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC,
-			restoreRevertCoal;
+	JMenuItem restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC, restoreRevertMPBaseDLC,
+			restoreRevertSPBaseDLC, restoreRevertCoal;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser, sqlGearParser;
 	JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
 	JList<Mod> modList;
@@ -109,6 +109,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem restoreRevertUnpacked;
 	private JMenuItem restoreRevertBasegameUnpacked;
 	private JMenuItem restoredeleteAllCustomDLC;
+	private JMenuItem backupBasegameUnpacked;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -324,17 +325,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			JSONObject latest_object = (JSONObject) parser.parse(serverJSON);
 			String buildHash = (String) latest_object.get("build_md5");
 			boolean hashMismatch = false;
-			try {
-				String currentHash = MD5Checksum.getMD5Checksum("ME3CMM.exe");
-				if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
-					//hash mismatch
-					hashMismatch = true;
-					ModManager.debugLogger.writeMessage("Local hash (" + currentHash + ") does not match server hash (" + buildHash + ")");
-				} else {
-					ModManager.debugLogger.writeMessage("Local hash matches server hash: " + buildHash);
+			if (new File("ME3CMM.exe").exists()) {
+				try {
+					String currentHash = MD5Checksum.getMD5Checksum("ME3CMM.exe");
+					if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
+						//hash mismatch
+						hashMismatch = true;
+						ModManager.debugLogger.writeMessage("Local hash (" + currentHash + ") does not match server hash (" + buildHash + ")");
+					} else {
+						ModManager.debugLogger.writeMessage("Local hash matches server hash: " + buildHash);
+					}
+				} catch (Exception e1) {
+					ModManager.debugLogger.writeErrorWithException("Unable to hash ME3CMM.exe:", e1);
 				}
-			} catch (Exception e1) {
-				ModManager.debugLogger.writeErrorWithException("Unable to hash ME3CMM.exe:", e1);
+			} else {
+				ModManager.debugLogger.writeMessage("Skipping hash check for updates. Likely running in IDE or some other wizardry");
 			}
 
 			long latest_build = (long) latest_object.get("latest_build_number");
@@ -676,14 +681,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		backupBackupDLC = new JMenuItem("Backup DLCs");
 		backupBackupDLC.setToolTipText("Backs up your DLC to .bak files. When installing a mod it will ask if a .bak files does not exist if you want to backup");
 
-		backupBasegame = new JMenuItem("Update game repair database");
-		backupBasegame.setToolTipText("Creates a database of checksums for basegame and unpacked DLC files for restoring");
+		backupBasegameUnpacked = new JMenuItem("Backup basegame/unpacked files");
+		backupBasegameUnpacked.setToolTipText("An Unpacked and basegame file will be automatically backed up when Mod Manager replaces or removes that file");
+
+		backupCreateGDB = new JMenuItem("Update game repair database");
+		backupCreateGDB.setToolTipText("Creates/updates a database of checksums for basegame and unpacked DLC files for verifying restoring and backing up");
 
 		backupBackupDLC.addActionListener(this);
-		backupBasegame.addActionListener(this);
+		backupBasegameUnpacked.addActionListener(this);
+		backupCreateGDB.addActionListener(this);
 
 		backupMenu.add(backupBackupDLC);
-		backupMenu.add(backupBasegame);
+		backupMenu.add(backupBasegameUnpacked);
+		backupMenu.add(backupCreateGDB);
 		menuBar.add(backupMenu);
 
 		// RESTORE
@@ -691,6 +701,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertEverything = new JMenuItem("Restore everything");
 		restoreRevertEverything
 				.setToolTipText("<html>Restores all basegame files, unpacked DLC files, and restores all SFAR files.<br>This will delete any non standard DLC folders.</html>");
+
+		restoreDeleteUnpacked = new JMenuItem("Delete all unpacked DLC files");
+		restoreDeleteUnpacked
+				.setToolTipText("<html>Deletes unpacked DLC files, leaving PCConsoleTOC,<br>.sfar and .bak files in the DLC folders.<br>Does not modify Custom DLC.</html>");
+
 		restoreRevertBasegame = new JMenuItem("Restore basegame files");
 		restoreRevertBasegame.setToolTipText("<html>Restores all basegame files that have been modified by installing mods</html>");
 
@@ -725,6 +740,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertCoal.setToolTipText("<html>Restores the basegame coalesced file</html>");
 
 		restoreRevertEverything.addActionListener(this);
+		restoreDeleteUnpacked.addActionListener(this);
 		restoredeleteAllCustomDLC.addActionListener(this);
 		restoreRevertBasegame.addActionListener(this);
 		restoreRevertUnpacked.addActionListener(this);
@@ -737,6 +753,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertCoal.addActionListener(this);
 
 		restoreMenu.add(restoreRevertEverything);
+		restoreMenu.add(restoreDeleteUnpacked);
 		restoreMenu.addSeparator();
 		restoreMenu.add(restoredeleteAllCustomDLC);
 		restoreMenu.addSeparator();
@@ -886,10 +903,32 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else
 
 		if (e.getSource() == backupBackupDLC) {
-			backupDLC(fieldBiogameDir.getText());
+			if (validateBIOGameDir()) {
+				backupDLC(fieldBiogameDir.getText());
+			} else {
+				labelStatus.setText("Backing up DLC requires valid BIOGame directory");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
+			}
 		} else
 
-		if (e.getSource() == backupBasegame) {
+		if (e.getSource() == backupBasegameUnpacked) {
+			if (validateBIOGameDir()) {
+				String me3dir = (new File(fieldBiogameDir.getText())).getParent();
+				String backupLocation = ModManager.appendSlash(me3dir) + "cmmbackup";
+				JOptionPane.showMessageDialog(this,
+						"<html><div style=\"width:330px;\">Basegame and unpacked DLC files are automatically backed up by Mod Manager when a Mod Manager mod replaces or removes that file while being applied.<br>"
+								+ "The game repair database verifies the file being backed up matches the metadata in the database so it can restore back to that version later. When restoring, the backed up file is checked again to make sure it wasn't modified. Otherwise you may restore files of different sizes and the game will crash.<br>"
+								+ "This is why modifications outside of Mod Manager are not backed up and are not supported. If you want to use modifications outside of Mod Manager, update the basegame database (and delete your Mod Manager backups) after you make your changes outside of Mod Manager. Make sure your game is in a working state before you do this or you will restore to a broken snapshot.<br><br>" + "The backup files created by Mod Manager are placed in the following folder:<br>" + backupLocation + "<br><br>MixIns do not support modified files except for those modified by other non-finalizing MixIns.</div></html>",
+						"Backup of basegame/unpacked files", JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
+			}
+		} else if (e.getSource() == backupCreateGDB) {
 			if (validateBIOGameDir()) {
 				createBasegameDB(fieldBiogameDir.getText());
 			} else {
@@ -978,6 +1017,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (validateBIOGameDir()) {
 				restoreCoalesced(fieldBiogameDir.getText());
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.ALL);
+			} else {
+				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
+		} else if (e.getSource() == restoreDeleteUnpacked) {
+			if (validateBIOGameDir()) {
+				if (JOptionPane.showConfirmDialog(this,
+						"This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
+						"Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+					restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.REMOVEUNPACKEDITEMS);
+				}
 			} else {
 				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
@@ -1125,7 +1175,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == modutilsCheckforupdate) {
 			checkForModUpdate();
 		} else if (e.getSource() == modutilsInstallCustomKeybinds) {
-			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()));
+			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()), false);
 		} else if (e.getSource() == toolsCheckallmodsforupdate) {
 			checkAllModsForUpdates(true);
 		} else if (e.getSource() == toolsPatchLibary) {
@@ -1408,7 +1458,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} catch (InvalidFileFormatException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			ModManager.debugLogger.writeErrorWithException("I/O Exception attemping to get ME3 install directory. Could be a settings file not writing: ",e);
+			ModManager.debugLogger.writeErrorWithException("I/O Exception attemping to get ME3 install directory. Could be a settings file not writing: ", e);
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Exception occured!", e);
 			return "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame";

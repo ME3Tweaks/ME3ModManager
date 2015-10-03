@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.TocBatchDescriptor;
 
 @SuppressWarnings("serial")
 public class AutoTocWindow extends JDialog {
@@ -140,9 +142,84 @@ public class AutoTocWindow extends JDialog {
 				}
 
 				if (hasTOC) { //toc this job
-					//get path to PCConsoleTOC
+					//batches
+					ArrayList<TocBatchDescriptor> batchJobs = new ArrayList<TocBatchDescriptor>();
+					int numJobsInCurrentBatch = 0;
+					String modulePath = null;
+					boolean moreThan1batch = false;
+					//add first job
+					TocBatchDescriptor tbd = new TocBatchDescriptor();
+					batchJobs.add(tbd);
+					
+					//break into batches
 					for (String newFile : job.newFiles) {
+						String filename = FilenameUtils.getName(newFile);
+						if (filename.equals("PCConsoleTOC.bin")) {
+							continue; //this doens't need updated.
+						}
+						modulePath = FilenameUtils.getFullPath(newFile);
+						tbd.addNameSizePair(filename, (new File(newFile)).length());
+						numJobsInCurrentBatch++;
+						if (numJobsInCurrentBatch > maxBatchSize){
+							batchJobs.add(tbd);
+							tbd = new TocBatchDescriptor();
+							numJobsInCurrentBatch = 0;
+							moreThan1batch = true;
+						}
+					}
+					
+					if (moreThan1batch && numJobsInCurrentBatch > 0) {
+						batchJobs.add(tbd); //enter last batch task
+					}
+					
+					//TOC to update
+					String tocPath = modulePath + "PCConsoleTOC.bin";
+					
+					//feed jobs into me3explorer for processing
+					for (TocBatchDescriptor batchJob : batchJobs) {
+						ArrayList<String> commandBuilder = new ArrayList<String>();
+						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+						commandBuilder.add(me3explorer);
+						commandBuilder.add("-toceditorupdate");
+						commandBuilder.add(tocPath);
+						for (AbstractMap.SimpleEntry<String, Long> tocEntryMap : batchJob.getNameSizePairs()) {
+							commandBuilder.add(tocEntryMap.getKey()); //internal filename (if in DLC)
+							commandBuilder.add(Long.toString(tocEntryMap.getValue()));
+						}
+						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+						
+						//for logging
+						StringBuilder sb = new StringBuilder();
+						for (String arg : command) {
+							sb.append(arg + " ");
+						}
+						ModManager.debugLogger.writeMessage("Performing a batch TOC update with command: " + sb.toString());
 
+						Process p = null;
+						int returncode = 1;
+						try {
+							ProcessBuilder pb = new ProcessBuilder(command);
+							p = pb.start();
+							returncode = p.waitFor();
+						} catch (IOException e) {
+							e.printStackTrace();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+						if (returncode != 0) {
+							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code: " + returncode);
+							//failedTOC.add(filepath);
+						} else {
+							completed+=batchJob.getNameSizePairs().size();
+							publish(Integer.toString(completed));
+						}
+						
+					}
+					/*
+					
+					//old way
+					for (String newFile : job.newFiles) {
+						int num = 0;
 						String filename = FilenameUtils.getName(newFile);
 						if (filename.equals("PCConsoleTOC.bin")) {
 							continue; //this doens't need updated.
@@ -158,31 +235,7 @@ public class AutoTocWindow extends JDialog {
 
 						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 						//Debug stuff
-						StringBuilder sb = new StringBuilder();
-						for (String arg : command) {
-							sb.append(arg + " ");
-						}
-
-						Process p = null;
-						int returncode = 1;
-						ModManager.debugLogger.writeMessage("Executing process for TOC Update: " + sb.toString());
-						try {
-							ProcessBuilder pb = new ProcessBuilder(command);
-							p = pb.start();
-							returncode = p.waitFor();
-						} catch (IOException e) {
-							e.printStackTrace();
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						if (returncode != 0) {
-							System.out.println("SOMETHINGS WRONG.");
-							//failedTOC.add(filepath);
-						} else {
-							completed++;
-							publish(Integer.toString(completed));
-						}
-					}
+*/						
 				}
 			}
 			return true;

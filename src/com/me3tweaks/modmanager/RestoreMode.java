@@ -11,4 +11,5 @@ public class RestoreMode {
 	public final static int UNPACKED = 7;
 	public static final int REMOVECUSTOMDLC = 8;
 	public static final int ALLDLC = 9;
+	public static final int REMOVEUNPACKEDITEMS = 10;
 }

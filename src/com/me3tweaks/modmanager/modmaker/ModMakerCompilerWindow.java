@@ -1712,13 +1712,13 @@ public class ModMakerCompilerWindow extends JDialog {
 	public void finishModMaker(Mod newMod){
 		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
 		overallProgress.setValue(95);
+		if (ModManager.AUTO_INJECT_KEYBINDS && hasKeybindsOverride()){
+			new KeybindsInjectionWindow(ModManagerWindow.ACTIVE_WINDOW, newMod,true);
+		}
 		new AutoTocWindow(newMod,AutoTocWindow.LOCALMOD_MODE);
 		overallProgress.setValue(100);
 		stepsCompleted++;
 		ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);
-		if (ModManager.AUTO_INJECT_KEYBINDS && hasKeybindsOverride()){
-			new KeybindsInjectionWindow(ModManagerWindow.ACTIVE_WINDOW, newMod);
-		}
 		ModManager.debugLogger.writeMessage("===========END OF MODMAKER========");
 		//Mod Created!
 		dispose();

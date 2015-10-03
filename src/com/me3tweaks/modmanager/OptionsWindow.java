@@ -160,7 +160,7 @@ public class OptionsWindow extends JDialog {
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
-					ini.put("Settings", "autoinstallmixins", autoApplyMixins.isSelected() ? "true" : "false");
+					ini.put("Settings", "autoinstallmixins", autoApplyMixins.isSelected() ? "1" : "0");
 					ini.store();
 					ModManager.AUTO_APPLY_MODMAKER_MIXINS = autoApplyMixins.isSelected();
 				} catch (InvalidFileFormatException x) {

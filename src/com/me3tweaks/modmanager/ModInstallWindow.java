@@ -433,6 +433,23 @@ public class ModInstallWindow extends JDialog {
 					return processSFARDLCJob(job);
 				}
 			}
+			
+			//Check that the default.sfar file is not smaller than the normal size (typically means unpacked)
+			String sfarName = "Default.sfar";
+			if (job.TESTPATCH) {
+				sfarName = "Patch_001.sfar";
+			}
+			long knownsfarsize = ModType.getSizesMap().get(job.getJobName());
+			String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
+			File sfarFile = new File(sfarPath);
+			if (sfarFile.exists()) {
+				if (sfarFile.length() >= knownsfarsize) {
+					ModManager.debugLogger.writeMessage("SFAR is same or larger in bytes than the known original. Likely is the vanilla one, or has been modified, but not unpacked. Using the SFAR method: "+job.getJobName());
+					return processSFARDLCJob(job);
+				}
+			} else {
+				ModManager.debugLogger.writeError("SFAR doesn't exist for unpacked DLC... interesting... "+sfarPath);
+			}
 
 			//We don't need to check for files to remove, as if it this is an unpacked DLC we can just skip the file. If it is missing in the DLC then there would be nothing we can do.
 /*			for (int i = 0; i < job.getFilesToRemove().size(); i++) {
@@ -963,7 +980,7 @@ public class ModInstallWindow extends JDialog {
 
 	protected void finishInstall() {
 		ModManager.debugLogger.writeMessage("Finished installing mod.");
-		//dispose();
+		dispose();
 	}
 
 	public void addToQueue(String newLine) {

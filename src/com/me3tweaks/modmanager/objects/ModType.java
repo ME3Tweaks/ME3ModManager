@@ -50,6 +50,10 @@ public class ModType {
 				GUN02, DH1, COLLECTORSEDITION };
 	}
 
+	/**
+	 * Gets the list of standard folders in the DLC folder. Includes the __metadata directory.
+	 * @return
+	 */
 	public static ArrayList<String> getStandardDLCFolders() {
 		ArrayList<String> foldernames = new ArrayList<String>();
 		foldernames.add("DLC_CON_MP1");
@@ -71,6 +75,7 @@ public class ModType {
 		foldernames.add("DLC_CON_DH1");
 		foldernames.add("DLC_CON_DH1");
 		foldernames.add("DLC_OnlinePassHidCE");
+		foldernames.add("__metadata"); //don't delete
 		return foldernames;
 	}
 
@@ -79,7 +84,7 @@ public class ModType {
 	 * that corresponds to a DLC folder where the .sfar file should exist.
 	 * 
 	 * @param modType
-	 *            Name of the DLC, as a ModType constant.
+	 *            Name of the DLC, as a ModType constant. Also known as a header
 	 * @return String containing the subpath, or null if it doen't exist.
 	 */
 	public static String getDLCPath(String modType) {
