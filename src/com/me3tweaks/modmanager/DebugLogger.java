@@ -3,6 +3,9 @@ package com.me3tweaks.modmanager;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -41,10 +44,16 @@ public class DebugLogger {
 			logFile.createNewFile();
 			//we now have write permissions
 			fw = new FileWriter(logFile);
+			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			Date date = new Date();
+			fw.write("Logger init, time: "+dateFormat.format(date));
+			fw.write(System.getProperty("line.separator"));
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				public void run() {
 					try {
-						writeMessage("Logger shutting down.");
+						DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+						Date date = new Date();
+						writeMessage("Logger shutting down. Time: "+dateFormat.format(date));
 						fw.close();
 					} catch (IOException e) {
 						// TODO Auto-generated catch block

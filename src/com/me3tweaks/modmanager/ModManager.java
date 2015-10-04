@@ -308,6 +308,7 @@ public class ModManager {
 			}
 		}
 		new ModManagerWindow(isUpdate);
+		ModManager.debugLogger.writeMessage("Mod Manager is now closing.");
 	}
 
 	/**

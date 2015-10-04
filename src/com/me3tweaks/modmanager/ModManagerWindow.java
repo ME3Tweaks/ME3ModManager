@@ -133,15 +133,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("UNKNOWN CRITICAL STARTUP EXCEPTION FOR MOD MANAGER WINDOW:", e);
 			ModManager.debugLogger.writeError("Mod Manager has crashed!");
-			JOptionPane.showMessageDialog(null, "<html><div style=\"width:330px;\">Mod Manager's interface (post-startup) encountered a critical unknown error and was unable to start:<br>"
-					+e.getMessage()+"<br>"
-					+ "<br>This has been logged to the me3cmm_last_run_log.txt file if you didn't explicitly turn logging off.<br>Please report this to femshep.</div></html>","Critical Interface Error",JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null,
+					"<html><div style=\"width:330px;\">Mod Manager's interface (post-startup) encountered a critical unknown error and was unable to start:<br>" + e.getMessage()
+							+ "<br>"
+							+ "<br>This has been logged to the me3cmm_last_run_log.txt file if you didn't explicitly turn logging off.<br>Please report this to femshep.</div></html>",
+					"Critical Interface Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		if (reload) {
 			new ModManagerWindow(false);
 		} else {
-			this.setVisible(true);
+			ModManager.debugLogger.writeMessage("Mod Manager GUI: Now setting visible.");
+			try {
+				this.setVisible(true);
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
+				ModManager.debugLogger.writeError("Mod Manager hit exception!");
+				JOptionPane.showMessageDialog(null,
+						"<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error<br>" + e.getMessage() + "<br>"
+								+ "<br>This has been logged to the me3cmm_last_run_log.txt file if you didn't explicitly turn logging off.<br>The application will attempt to ignore this error.</div></html>",
+						"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
+			}
 		}
 	}
 
@@ -157,6 +169,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.getElementAt(i);
 			if (mod.getRequiredPatches().size() > 0) {
+				ModManager.debugLogger.writeMessage("Mod being built with included MixIns:");
 				reload = true;
 				new PatchApplicationWindow(this, mod.getRequiredPatches(), mod);
 				modsBuild.add(mod.getModName());
@@ -177,7 +190,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.setTitle("Mass Effect 3 Mod Manager");
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		this.setIconImages(ModManager.ICONS);
-		setupWindow(this);
+		setupWindow();
 
 		Dimension minSize = new Dimension(560, 520);
 		this.setPreferredSize(minSize);
@@ -212,6 +225,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 		new NetworkThread().execute();
+		ModManager.debugLogger.writeMessage("Mod Manager GUI: Initialize() has completed.");
 	}
 
 	/**
@@ -430,13 +444,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	private boolean checkForKeybindsOverride() {
 		File bioinputxml = new File(ModManager.getOverrideDir() + "bioinput.xml");
-		System.out.println(bioinputxml.getAbsolutePath());
 		return bioinputxml.exists();
 	}
 
-	private JFrame setupWindow(JFrame frame) {
+	private void setupWindow() {
 		// Menubar
 		menuBar = makeMenu();
+		ModManager.debugLogger.writeMessage("Menu system has initialized.");
 		// Main Panel
 		JPanel contentPanel = new JPanel(new BorderLayout());
 
@@ -483,14 +497,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		modModel = new DefaultListModel<Mod>();
 		modList.setModel(modModel);
+		ModManager.debugLogger.writeMessage("Loading mods.");
 		ArrayList<Mod> modList = ModManager.getModsFromDirectory();
 		Collections.sort(modList);
 		for (Mod mod : modList) {
 			modModel.addElement(mod);
 		}
+		ModManager.debugLogger.writeMessage("Mods have loaded.");
 
 		//load patches
+		ModManager.debugLogger.writeMessage("Loading mixins");
+
 		setPatchList(ModManager.getPatchesFromDirectory());
+		ModManager.debugLogger.writeMessage("Mixins have loaded.");
 
 		// DescriptionField
 		JPanel descriptionPanel = new JPanel(new BorderLayout());
@@ -553,7 +572,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
 		this.add(contentPanel);
 		verifyBackupCoalesced();
-		return this;
+		ModManager.debugLogger.writeMessage("Mod Manager GUI: SetupWindow() has completed.");
+
 	}
 
 	private JMenuBar makeMenu() {
@@ -930,7 +950,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				JOptionPane.showMessageDialog(this,
 						"<html><div style=\"width:330px;\">Basegame and unpacked DLC files are automatically backed up by Mod Manager when a Mod Manager mod replaces or removes that file while being applied.<br>"
 								+ "The game repair database verifies the file being backed up matches the metadata in the database so it can restore back to that version later. When restoring, the backed up file is checked again to make sure it wasn't modified. Otherwise you may restore files of different sizes and the game will crash.<br>"
-								+ "This is why modifications outside of Mod Manager are not backed up and are not supported. If you want to use modifications outside of Mod Manager, update the basegame database (and delete your Mod Manager backups) after you make your changes outside of Mod Manager. Make sure your game is in a working state before you do this or you will restore to a broken snapshot.<br><br>" + "The backup files created by Mod Manager are placed in the following folder:<br>" + backupLocation + "<br><br>MixIns do not support modified files except for those modified by other non-finalizing MixIns.</div></html>",
+								+ "This is why modifications outside of Mod Manager are not backed up and are not supported. If you want to use modifications outside of Mod Manager, update the basegame database (and delete your Mod Manager backups) after you make your changes outside of Mod Manager. Make sure your game is in a working state before you do this or you will restore to a broken snapshot.<br><br>"
+								+ "The backup files created by Mod Manager are placed in the following folder:<br>" + backupLocation
+								+ "<br><br>MixIns do not support modified files except for those modified by other non-finalizing MixIns.</div></html>",
 						"Backup of basegame/unpacked files", JOptionPane.INFORMATION_MESSAGE);
 			} else {
 				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
