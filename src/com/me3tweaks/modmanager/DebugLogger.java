@@ -95,7 +95,7 @@ public class DebugLogger {
 		}
 	}
 
-	public synchronized void writeException(Exception e) {
+	public synchronized void writeException(Throwable e) {
 		if (ModManager.logging) {
 			try {
 				System.err.println("[L-E]: " + ExceptionUtils.getStackTrace(e));
@@ -145,7 +145,7 @@ public class DebugLogger {
 		}
 	}
 
-	public void writeErrorWithException(String error, Exception e) {
+	public void writeErrorWithException(String error, Throwable e) {
 		writeError(error);
 		writeException(e);
 	}

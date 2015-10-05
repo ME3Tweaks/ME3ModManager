@@ -227,10 +227,10 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 	            }
 	 
 	            // output for debugging purpose only
-	            System.out.println("Content-Type = " + contentType);
+/*	            System.out.println("Content-Type = " + contentType);
 	            System.out.println("Content-Disposition = " + disposition);
 	            System.out.println("Content-Length = " + contentLength);
-	            System.out.println("fileName = " + fileName);
+	            System.out.println("fileName = " + fileName);*/
 	 
 	            // opens input stream from the HTTP connection
 	            inputStream = httpConn.getInputStream();

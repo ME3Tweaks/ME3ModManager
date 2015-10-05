@@ -21,8 +21,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -93,7 +95,7 @@ public class ModManager {
 			if (!settings.exists()) {
 				settings.createNewFile();
 			}
-			
+
 			//Set and get debugging mode from wini
 			if (ModManager.IS_DEBUG) {
 				debugLogger.initialize();
@@ -115,8 +117,7 @@ public class ModManager {
 									debugLogger.initialize();
 									logging = true;
 									debugLogger.writeMessage("Starting logger. Logger was able to start up with no issues.");
-									debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + "; Build "
-											+ ModManager.BUILD_NUMBER + "; Build Date " + BUILD_DATE);
+									debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build Date " + BUILD_DATE);
 								} else {
 									debugLogger.writeMessage("Logging mode disabled");
 								}
@@ -126,8 +127,8 @@ public class ModManager {
 						} else {
 							debugLogger.initialize();
 							logging = true;
-							debugLogger.writeMessage("Logging variable not set, defaulting to true. Starting logger. Mod Manager version "
-									+ ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
+							debugLogger.writeMessage("Logging variable not set, defaulting to true. Starting logger. Mod Manager version " + ModManager.VERSION + "; Build "
+									+ ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
 						}
 					}
 					//Auto Update Check
@@ -174,7 +175,7 @@ public class ModManager {
 							ASKED_FOR_AUTO_UPDATE = true;
 						}
 					}
-					
+
 					//Autoinject keybinds
 					String keybindsStr = settingsini.get("Settings", "autoinjectkeybinds");
 					int keybindsInt = 0;
@@ -238,8 +239,7 @@ public class ModManager {
 					long oldbuild = Long.parseLong(args[1]);
 					if (oldbuild >= ModManager.BUILD_NUMBER) {
 						//SOMETHING WAS WRONG!
-						JOptionPane.showMessageDialog(null, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed",
-								JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(null, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed", JOptionPane.ERROR_MESSAGE);
 						ModManager.debugLogger.writeMessage("UPDATE FAILED!");
 					} else {
 						//update ok
@@ -271,7 +271,7 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage(getSystemInfo());
 			doFileSystemUpdate();
 			ModManager.debugLogger.writeMessage("========End of startup=========");
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			Wini ini;
 			try {
 				File settings = new File(ModManager.SETTINGS_FILENAME);
@@ -294,21 +294,25 @@ public class ModManager {
 			}
 			debugLogger.writeMessage("Mod Manager version" + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
 			if (emergencyMode) {
-				JOptionPane.showMessageDialog(null, "<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
-						+ "Logging mode was attempted to be turned on, but failed. Logging for this session has been enabled.<br>"
-						+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
-						+ "Something is very wrong and Mod Manager will likely not function properly.</html>", "Critical Startup Error",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null,
+						"<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
+								+ "Logging mode was attempted to be turned on, but failed. Logging for this session has been enabled.<br>"
+								+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
+								+ "Something is very wrong and Mod Manager will likely not function properly.</html>",
+						"Critical Startup Error", JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null, "<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() 
-						+ "<br>"
-						+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
-						+ "Logging mode has been automatically turned on.</html>", "Startup Error",
-						JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(null,
+						"<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
+								+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>" + "Logging mode has been automatically turned on.</html>",
+						"Startup Error", JOptionPane.WARNING_MESSAGE);
 			}
 		}
-		new ModManagerWindow(isUpdate);
-		ModManager.debugLogger.writeMessage("Mod Manager is now closing.");
+		try {
+			new ModManagerWindow(isUpdate);
+		} catch (Throwable e) {
+			ModManager.debugLogger.writeErrorWithException("Uncaught throwable during runtime:", e);
+			JOptionPane.showMessageDialog(null, "Mod Manager had an uncaught exception during runtime:\n"+e.getMessage()+"\nThis error has been logged if logging was on.\nPlease report this to FemShep.");
+		}
 	}
 
 	/**
@@ -457,7 +461,7 @@ public class ModManager {
 			//Got a list of subdirs. Now loop them to find all moddesc.ini files
 			for (int i = 0; i < subdirs.length; i++) {
 				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini");
-				System.out.println("Searching for file: " + searchSubDirDesc);
+				//System.out.println("Searching for file: " + searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
 					Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
 					if (validatingMod.isValidMod()) {
@@ -511,15 +515,11 @@ public class ModManager {
 
 				if (!coalDirHash.equals(patch3CoalescedHash)) {
 					String[] YesNo = { "Yes", "No" };
-					int keepInstalling = JOptionPane
-							.showOptionDialog(
-									null,
-									"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
-											+ coalDirHash
-											+ "\nPatch 3 Coalesced.bin's hash: "
-											+ patch3CoalescedHash
-											+ "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? ",
-									"Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
+					int keepInstalling = JOptionPane.showOptionDialog(null,
+							"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
+									+ coalDirHash + "\nPatch 3 Coalesced.bin's hash: " + patch3CoalescedHash
+									+ "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? ",
+							"Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
 					if (keepInstalling == 0)
 						return true;
 					return false;
@@ -546,8 +546,7 @@ public class ModManager {
 
 						p.waitFor();
 					} catch (IOException e) {
-						ModManager.debugLogger
-								.writeMessage("Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install.");
+						ModManager.debugLogger.writeMessage("Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install.");
 						ModManager.debugLogger.writeMessage(e.getMessage());
 						return false;
 					} catch (InterruptedException e) {
@@ -588,8 +587,7 @@ public class ModManager {
 
 			int readBytes;
 			byte[] buffer = new byte[4096];
-			jarFolder = new File(ModManager.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath()
-					.replace('\\', '/');
+			jarFolder = new File(ModManager.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath().replace('\\', '/');
 			//resStreamOut = new FileOutputStream(jarFolder + resourceName);
 			resStreamOut = new FileOutputStream(exportPath);
 			while ((readBytes = stream.read(buffer)) > 0) {
@@ -609,8 +607,7 @@ public class ModManager {
 		ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
 		File bgdir = new File(biogamedir);
 		if (!bgdir.exists()) {
-			JOptionPane.showMessageDialog(null,
-					"The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.",
+			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.",
 					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
@@ -629,8 +626,8 @@ public class ModManager {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
-			JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of the ME3CMM.exe.\nPlease report this to femshep.",
-					"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of the ME3CMM.exe.\nPlease report this to femshep.", "Launcher_WV.exe error",
+					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -810,9 +807,8 @@ public class ModManager {
 	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
 		File me3expdir = new File(getDataDir() + "ME3Explorer/");
 		if (!me3expdir.exists() && showDialog) {
-			JOptionPane.showMessageDialog(null,
-					"Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.",
-					"ME3Explorer Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.", "ME3Explorer Error",
+					JOptionPane.ERROR_MESSAGE);
 			return "";
 		}
 		return appendSlash(me3expdir.getAbsolutePath());
@@ -984,8 +980,7 @@ public class ModManager {
 			if (hash.equals(tocHashes.get(key))) {
 				return true;
 			} else {
-				ModManager.debugLogger.writeError(key + " TOC in pristine directory has failed hash check: " + hash + " vs known good value: "
-						+ tocHashes.get(key));
+				ModManager.debugLogger.writeError(key + " TOC in pristine directory has failed hash check: " + hash + " vs known good value: " + tocHashes.get(key));
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -1019,7 +1014,9 @@ public class ModManager {
 	}
 
 	/**
-	 * Tries to find a resource for a target path inside of a target module. Returns path to the found item or null if none could be found.
+	 * Tries to find a resource for a target path inside of a target module.
+	 * Returns path to the found item or null if none could be found.
+	 * 
 	 * @param targetPath
 	 * @param targetModule
 	 * @return
@@ -1027,15 +1024,13 @@ public class ModManager {
 	public static String getPatchSource(String targetPath, String targetModule) {
 		String internalModule = ME3TweaksUtils.headerNameToInternalName(targetModule);
 		ModManager.debugLogger.writeMessage("Looking for patch source: " + targetPath + " in module " + targetModule);
-		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator
-				+ targetPath);
+		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator + targetPath);
 		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		if (sourceDestination.exists()) {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
 		} else {
-			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath()
-					+ "), fetching from original location.");
+			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath() + "), fetching from original location.");
 		}
 		if (targetModule.equals(ModType.BASEGAME)) {
 			//we must use PCCEditor2 to decompress the file using the --decompress-pcc command line arg
@@ -1079,8 +1074,8 @@ public class ModManager {
 			//DLC===============================================================
 			//Check if its unpacked
 			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
-			File unpackedFile = new File(gamedir+targetPath);
-			if (unpackedFile.exists()){
+			File unpackedFile = new File(gamedir + targetPath);
+			if (unpackedFile.exists()) {
 				try {
 					FileUtils.copyFile(unpackedFile, sourceDestination);
 					ModManager.debugLogger.writeMessage("Copied unpacked file into patch library");
@@ -1090,15 +1085,15 @@ public class ModManager {
 					return null;
 				}
 			}
-			
+
 			//use the sfar
 			//get .sfar path
 			String sfarName = "Default.sfar";
 			if (targetModule.equals(ModType.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())
-					+ ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + ModManager.appendSlash(ModType.getDLCPath(targetModule))
+					+ sfarName;
 
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
@@ -1160,7 +1155,7 @@ public class ModManager {
 			//Got a list of subdirs. Now loop them to find all moddesc.ini files
 			for (int i = 0; i < subdirs.length; i++) {
 				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "patchdesc.ini");
-				System.out.println("Searching for file: " + searchSubDirDesc);
+				//System.out.println("Searching for file: " + searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
 					Patch validatingPatch = new Patch(searchSubDirDesc.getAbsolutePath());
 					if (validatingPatch.isValid()) {
@@ -1225,7 +1220,13 @@ public class ModManager {
 	private static String getSystemInfo() {
 		StringBuilder sb = new StringBuilder();
 		ModManager.debugLogger.writeMessage("----Java System Properties----");
-		System.getProperties().list(System.out);
+		Properties props = System.getProperties();
+		Enumeration e = props.propertyNames();
+
+		while (e.hasMoreElements()) {
+			String key = (String) e.nextElement();
+			ModManager.debugLogger.writeMessage(key + " = " + props.getProperty(key));
+		}
 
 		ModManager.debugLogger.writeMessage("----System Environment Variables----");
 		Map<String, String> env = System.getenv();

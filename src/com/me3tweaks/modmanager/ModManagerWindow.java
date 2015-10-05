@@ -465,7 +465,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JPanel cookedDirPanel = new JPanel(new BorderLayout());
 		TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory");
 		fieldBiogameDir = new JTextField();
-		fieldBiogameDir.setText(getLocationText(fieldBiogameDir));
+		fieldBiogameDir.setText(getInitialBiogameDirText());
 		buttonBioGameDir = new JButton("Browse...");
 		buttonBioGameDir.setToolTipText(
 				"<html>Browse and set the BIOGame directory.<br>This is located in the installation directory for Mass Effect 3.<br>Typically this is in the Origin Games folder.</html>");
@@ -480,6 +480,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		northPanel.add(titlePanel, BorderLayout.NORTH);
 		northPanel.add(cookedDirPanel, BorderLayout.CENTER);
 
+		ModManager.debugLogger.writeMessage("Setting up modlist UI");
 		// ModsList
 		JPanel modsListPanel = new JPanel(new BorderLayout());
 		// JLabel availableModsLabel = new JLabel("  Available Mods:");
@@ -882,10 +883,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					ModManager.debugLogger.writeErrorWithException("I/O Exception while verifying backup coalesced.", e);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					ModManager.debugLogger.writeErrorWithException("General Exception while verifying backup coalesced.", e);
 				}
 			} else {
 				ModManager.debugLogger.writeMessage("Coalesced.bin was not found - unable to back up automatically");
@@ -1325,7 +1326,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			Desktop.getDesktop().open(new File(fieldBiogameDir.getText()));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening ME3Dir.", e);
 		}
 	}
 
@@ -1455,19 +1456,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
-	private String getLocationText(JTextField locationSet) {
+	private String getInitialBiogameDirText() {
+		ModManager.debugLogger.writeMessage("Getting location of Mass Effect 3 directory.");
 		Wini settingsini;
 		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
 		String os = System.getProperty("os.name");
+		ModManager.debugLogger.writeMessage("Entering getInitialBiogameDirText() try block");
+
 		try {
 			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 			setDir = settingsini.get("Settings", "biogame_dir");
+			ModManager.debugLogger.writeMessage("setDir = "+setDir);
 			if ((setDir == null || setDir.equals("")) && os.contains("Windows")) {
 				String installDir = null;
 				String _32bitpath = "SOFTWARE\\BioWare\\Mass Effect 3";
 				String _64bitpath = "SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
+				ModManager.debugLogger.writeMessage("OS contains windows and setDir is null or blank. trying 64bit registry key");
 				try {
 					installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _64bitpath, "Install Dir");
+					ModManager.debugLogger.writeMessage("found installdir via 64bit reg key");
 				} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
 					ModManager.debugLogger.writeMessage("Exception looking at 64 registry key: " + _64bitpath);
 				}
@@ -1476,6 +1483,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					//try 32bit key
 					try {
 						installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _32bitpath, "Install Dir");
+						ModManager.debugLogger.writeMessage("OS contains windows and setDir is null or blank. trying 32bit registry key");
 					} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
 						ModManager.debugLogger.writeMessage("Exception looking at 32bit registry key: " + _32bitpath);
 					}
@@ -1488,14 +1496,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 		} catch (InvalidFileFormatException e) {
-			e.printStackTrace();
+			ModManager.debugLogger.writeError("Invalid file format exception writing to settings ini.");
 		} catch (IOException e) {
 			ModManager.debugLogger.writeErrorWithException("I/O Exception attemping to get ME3 install directory. Could be a settings file not writing: ", e);
-		} catch (Exception e) {
-			ModManager.debugLogger.writeErrorWithException("Exception occured!", e);
+		} catch (Throwable e) {
+			ModManager.debugLogger.writeErrorWithException("Error occured while attempting to get/set the biogame directory! Could be the JNA crash.", e);
 			return "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame";
 		}
-
+		ModManager.debugLogger.writeMessage("Directory set to: " + setDir);
 		return setDir;
 	}
 
@@ -1719,10 +1727,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					return false;
 				}
 			} catch (Exception e) {
-				ModManager.debugLogger.writeException(e);
+				ModManager.debugLogger.writeErrorWithException("Coalesced.bin was unable to be restored due to an error:",e);
 				labelStatus.setText("Coalesced.bin not restored");
 				labelStatus.setVisible(true);
-				e.printStackTrace();
 				return false;
 			}
 		} else {
@@ -1802,8 +1809,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			this.setExtendedState(JFrame.ICONIFIED);
 			Runtime.getRuntime().exec(command);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("I/O Exception while launching ME3 or LauncherWV.", e);
+
 		}
 		ModManager.debugLogger.writeMessage("Path: " + executable.getAbsolutePath() + " - Exists? " + executable.exists());
 	}
@@ -1850,7 +1857,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				return true;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("Exception while attempting to find DLC bypass (Binkw32).", e);
 			ModManager.debugLogger.writeMessage("Bink bypass was not found.");
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 		}
