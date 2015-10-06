@@ -39,7 +39,6 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 	//String downloadLink, updateScriptLink;
 	boolean error = false;
 	String version;
-	long build;
 	JLabel introLabel, statusLabel;
 	JProgressBar downloadProgress;
 
@@ -64,7 +63,7 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
 		introLabel = new JLabel("This version of Mod Manager requires ME3Explorer r"+ModManager.MIN_REQUIRED_ME3EXPLORER_REV+" or higher.");
-		statusLabel = new JLabel("Downloading...");
+		statusLabel = new JLabel("Downloading new version...");
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
 		downloadProgress.setIndeterminate(false);
@@ -108,7 +107,7 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 	     
 	    public DownloadTask(String saveDirectory) {
 	        this.saveDirectory = saveDirectory;
-	        statusLabel.setText("Downloading...");
+	        statusLabel.setText("Downloading update from ME3Tweaks...");
 	    }
 	     
 	    /**
@@ -286,12 +285,12 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 	 */
 	private boolean buildUpdateScript(){
 		StringBuilder sb = new StringBuilder();
-		sb.append("::Update script for Mod Manager ME3Explorer (Build "+build+")");
+		sb.append("::Update script for Mod Manager ME3Explorer (Mod Manager Build "+ModManager.BUILD_NUMBER+")");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("@echo off");
 		sb.append("\r\n");
-		sb.append("echo Current directory: %CD%");
+		sb.append("echo ME3Explorer Update Script, via Mod Manager Build "+ModManager.BUILD_NUMBER);
 		sb.append("\r\n");
 		sb.append("pushd data\\temp");
 		sb.append("\r\n");
@@ -302,6 +301,36 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		sb.append("\r\n");
 		sb.append(ModManager.getToolsDir());
 		sb.append("7za.exe -y x ME3Explorer.7z -o"+ModManager.getTempDir()+"ME3EXPNewVersion");
+		sb.append("\r\n");
+		sb.append("set ME3EXP=%errorlevel%");
+		sb.append("\r\n");
+		sb.append("if %ME3EXP% EQU 0 (");
+		sb.append("\r\n");
+		sb.append("    color 0A");
+		sb.append("\r\n");
+		sb.append("    echo ME3Explorer extracted successfully.");
+		sb.append("\r\n");
+		sb.append(")");
+		sb.append("\r\n");
+
+		sb.append("if %ME3EXP% EQU 1 (");
+		sb.append("\r\n");
+		sb.append("    color 06");
+		sb.append("\r\n");
+		sb.append("    echo ME3Explorer extracted with warnings.");
+		sb.append("\r\n");
+		sb.append(")");
+		sb.append("\r\n");
+
+		sb.append("if %ME3EXP% GEQ 2 (");
+		sb.append("\r\n");
+		sb.append("    color 0C");
+		sb.append("\r\n");
+		sb.append("    echo ME3Explorer did not extract succesfully. Please report this to FemShep.");
+		sb.append("\r\n");
+		sb.append("    pause");
+		sb.append("\r\n");
+		sb.append(")");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Check for build-in update script");
@@ -317,7 +346,7 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		sb.append("rmdir /S /Q ");
 		sb.append(ModManager.getME3ExplorerEXEDirectory(false));
 		sb.append("\r\n");
-		sb.append("xcopy /Y /S ME3EXPNewVersion "+ModManager.getME3ExplorerEXEDirectory(false));
+		sb.append("xcopy /Q /Y /S ME3EXPNewVersion "+ModManager.getME3ExplorerEXEDirectory(false));
 		sb.append("\r\n");
 		sb.append("::Cleanup");
 		sb.append("\r\n");
@@ -325,11 +354,12 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		sb.append("\r\n");
 		sb.append("rmdir /S /Q ME3EXPNewVersion");
 		sb.append("\r\n");
+		sb.append("pause");
+		sb.append("\r\n");
 		sb.append("call :deleteSelf&exit /b");
 		sb.append("\r\n");
 		sb.append(":deleteSelf");
 		sb.append("\r\n");
-		//sb.append("pause");
 		sb.append("start /b \"\" cmd /c del \"%~f0\"&exit /b");
 		
 		

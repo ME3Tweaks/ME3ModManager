@@ -54,7 +54,7 @@ public class ModManager {
 
 	public static final String VERSION = "4.1 Beta 1";
 	public static long BUILD_NUMBER = 44L; //so it will upgrade when full is out.
-	public static final String BUILD_DATE = "10/3/2015";
+	public static final String BUILD_DATE = "10/5/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -70,6 +70,7 @@ public class ModManager {
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
+	public static boolean AUTO_UPDATE_ME3EXPLORER = true;
 
 	public static void main(String[] args) {
 		debugLogger = new DebugLogger();
@@ -175,7 +176,28 @@ public class ModManager {
 							ASKED_FOR_AUTO_UPDATE = true;
 						}
 					}
-
+					
+					
+					//Autodownload ME3Explorer updates
+					String autoupdateme3explorerStr = settingsini.get("Settings", "autodownloadme3explorer");
+					int autoupdateme3explorerInt = 0;
+					if (autoupdateme3explorerStr != null && !autoupdateme3explorerStr.equals("")) {
+						try {
+							autoupdateme3explorerInt = Integer.parseInt(autoupdateme3explorerStr);
+							if (autoupdateme3explorerInt > 0) {
+								//logging is on
+								debugLogger.writeMessage("ME3Explorer updates are auto enabled");
+								AUTO_UPDATE_ME3EXPLORER = true;
+							} else {
+								debugLogger.writeError("ME3Explorer updates are disabled - errors related to ME3EXplorer out of date ARE NOT SUPPORTED!");
+								AUTO_UPDATE_ME3EXPLORER = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the me3explorer update preference - turning on by default");
+							AUTO_UPDATE_ME3EXPLORER = true;
+						}
+					}
+					
 					//Autoinject keybinds
 					String keybindsStr = settingsini.get("Settings", "autoinjectkeybinds");
 					int keybindsInt = 0;

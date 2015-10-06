@@ -1710,11 +1710,13 @@ public class ModMakerCompilerWindow extends JDialog {
 	}
 	
 	public void finishModMaker(Mod newMod){
-		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
 		overallProgress.setValue(95);
 		if (ModManager.AUTO_INJECT_KEYBINDS && hasKeybindsOverride()){
+			ModManager.debugLogger.writeMessage("Mod Manager has preference to auto install keybinds and keybinds override file is present.");
 			new KeybindsInjectionWindow(ModManagerWindow.ACTIVE_WINDOW, newMod,true);
+			overallProgress.setValue(98);
 		}
+		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
 		new AutoTocWindow(newMod,AutoTocWindow.LOCALMOD_MODE);
 		overallProgress.setValue(100);
 		stepsCompleted++;
@@ -1731,7 +1733,6 @@ public class ModMakerCompilerWindow extends JDialog {
 	
 	private boolean hasKeybindsOverride() {
 		File bioinputxml = new File(ModManager.getOverrideDir() + "bioinput.xml");
-		System.out.println(bioinputxml.getAbsolutePath());
 		return bioinputxml.exists();
 	}
 

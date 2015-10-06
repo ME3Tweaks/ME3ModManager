@@ -26,6 +26,7 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoUpdateModManager;
 	private JCheckBox autoUpdateMods;
 	private JCheckBox autoApplyMixins;
+	private JCheckBox autoUpdateME3Explorer;
 
 	public OptionsWindow(JFrame callingWindow) {
 		setupWindow();
@@ -90,6 +91,32 @@ public class OptionsWindow extends JDialog {
 						ini.put("Settings", "autoinjectkeybinds", "0");
 					}
 					ModManager.AUTO_INJECT_KEYBINDS = autoInjectKeybindsModMaker.isSelected();
+					ini.store();
+				} catch (InvalidFileFormatException error) {
+					error.printStackTrace();
+				} catch (IOException error) {
+					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");	
+				}
+			}
+		});
+		
+		autoUpdateME3Explorer = new JCheckBox("Auto-download required ME3Explorer updates");
+		autoUpdateME3Explorer.setToolTipText("<html>Mod Manager requires specific versions of ME3Explorer and will not work without them</html>");
+		autoUpdateME3Explorer.setSelected(ModManager.AUTO_UPDATE_ME3EXPLORER);
+		autoUpdateME3Explorer.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Wini ini;
+				try {
+					File settings = new File(ModManager.SETTINGS_FILENAME);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					if (autoUpdateME3Explorer.isSelected()) {
+						ini.put("Settings", "autodownloadme3explorer", "1");
+					} else {
+						ini.put("Settings", "autodownloadme3explorer", "0");
+					}
+					ModManager.AUTO_UPDATE_ME3EXPLORER = autoUpdateME3Explorer.isSelected();
 					ini.store();
 				} catch (InvalidFileFormatException error) {
 					error.printStackTrace();
@@ -177,6 +204,7 @@ public class OptionsWindow extends JDialog {
 		aboutPanel.add(loggingMode);
 		aboutPanel.add(autoUpdateModManager);
 		aboutPanel.add(autoUpdateMods);
+		aboutPanel.add(autoUpdateME3Explorer);
 		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 		this.getContentPane().add(aboutPanel);
 		this.pack();
