@@ -167,140 +167,148 @@ public class ModXMLTools {
 
 	private static UpdatePackage checkForModMakerUpdate(Mod mod, Document doc) {
 		// got document, now parse metainfo
-		NodeList modList = doc.getElementsByTagName("modmakermod");
-		if (modList.getLength() < 1) {
-			ModManager.debugLogger.writeError("XML response has no <modmakermod> tags, error from server");
-			return null;
-		}
-
-		// for all mods in serverlist
-		for (int i = 0; i < modList.getLength(); i++) {
-			Element modElem = (Element) modList.item(i);
-			double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
-			String serverModName = modElem.getAttribute("name");
-			if (mod.getVersion() >= serverModVer) {
-				
-				ModManager.debugLogger.writeMessage("Mod up to date. Local version: "+mod.getVersion()+" Server Version: "+serverModVer);
-				continue; // not an update
-			} else {
-				ModManager.debugLogger.writeMessage("ModMaker Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
-				return new UpdatePackage(mod, serverModName, serverModVer);
+		if (doc != null) {
+			NodeList modList = doc.getElementsByTagName("modmakermod");
+			if (modList.getLength() < 1) {
+				ModManager.debugLogger.writeError("XML response has no <modmakermod> tags, error from server");
+				return null;
 			}
+
+			// for all mods in serverlist
+			for (int i = 0; i < modList.getLength(); i++) {
+				Element modElem = (Element) modList.item(i);
+				double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
+				String serverModName = modElem.getAttribute("name");
+				if (mod.getVersion() >= serverModVer) {
+
+					ModManager.debugLogger.writeMessage("Mod up to date. Local version: " + mod.getVersion() + " Server Version: " + serverModVer);
+					continue; // not an update
+				} else {
+					ModManager.debugLogger.writeMessage("ModMaker Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
+					return new UpdatePackage(mod, serverModName, serverModVer);
+				}
+			}
+		} else {
+			ModManager.debugLogger.writeMessage("XML document from server was null.");
 		}
 		return null;
 	}
 
 	private static UpdatePackage checkForClassicUpdate(Mod mod, Document doc) {
 		// got document, now parse metainfo
-		NodeList modList = doc.getElementsByTagName("mod");
-		if (modList.getLength() < 1) {
-			ModManager.debugLogger.writeError("XML response has no <mod> tags, error from server");
-			ModManager.debugLogger.writeMessage(ModMakerCompilerWindow.docToString(doc));
-			return null;
-		}
-
-		// for all mods in serverlist
-		for (int i = 0; i < modList.getLength(); i++) {
-			Element modElem = (Element) modList.item(i);
-			double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
-			String serverFolder = modElem.getAttribute("folder");
-			String manifesttype = modElem.getAttribute("manifesttype");
-			boolean isFullManifest = manifesttype.equals("full");
-			System.out.println("Manifest type: " + manifesttype);
-			System.out.println("Server folder: " + serverFolder);
-			if (mod.getVersion() >= serverModVer) {
-				ModManager.debugLogger.writeMessage("Mod up to date");
-				continue; // not an update
-			}
-			ModManager.debugLogger.writeMessage("Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
-			// build manifest of files
-			ArrayList<ManifestModFile> serverFiles = new ArrayList<ManifestModFile>();
-			NodeList serverFileList = modElem.getElementsByTagName("sourcefile");
-			for (int j = 0; j < serverFileList.getLength(); j++) {
-				Element fileElem = (Element) serverFileList.item(j);
-				ManifestModFile metafile = new ManifestModFile(fileElem.getTextContent(), fileElem.getAttribute("hash"), Long.parseLong(fileElem.getAttribute("size")));
-				serverFiles.add(metafile);
+		if (doc != null) {
+			NodeList modList = doc.getElementsByTagName("mod");
+			if (modList.getLength() < 1) {
+				ModManager.debugLogger.writeError("XML response has no <mod> tags, error from server");
+				ModManager.debugLogger.writeMessage(ModMakerCompilerWindow.docToString(doc));
+				return null;
 			}
 
-			ModManager.debugLogger.writeMessage("Number of files in manifest: " + serverFiles.size());
-
-			// get list of new files
-			ArrayList<ManifestModFile> newFiles = new ArrayList<ManifestModFile>();
-			String modpath = ModManager.appendSlash(mod.getModPath());
-
-			for (ManifestModFile mf : serverFiles) {
-				File localFile = new File(modpath + mf.getRelativePath());
-
-				// check existence
-				if (!localFile.exists()) {
-					newFiles.add(mf);
-					ModManager.debugLogger.writeMessage(mf.getRelativePath() + " does not exist, adding to update list");
-					continue;
+			// for all mods in serverlist
+			for (int i = 0; i < modList.getLength(); i++) {
+				Element modElem = (Element) modList.item(i);
+				double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
+				String serverFolder = modElem.getAttribute("folder");
+				String manifesttype = modElem.getAttribute("manifesttype");
+				boolean isFullManifest = manifesttype.equals("full");
+				System.out.println("Manifest type: " + manifesttype);
+				System.out.println("Server folder: " + serverFolder);
+				if (mod.getVersion() >= serverModVer) {
+					ModManager.debugLogger.writeMessage("Mod up to date");
+					continue; // not an update
+				}
+				ModManager.debugLogger.writeMessage("Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
+				// build manifest of files
+				ArrayList<ManifestModFile> serverFiles = new ArrayList<ManifestModFile>();
+				NodeList serverFileList = modElem.getElementsByTagName("sourcefile");
+				for (int j = 0; j < serverFileList.getLength(); j++) {
+					Element fileElem = (Element) serverFileList.item(j);
+					ManifestModFile metafile = new ManifestModFile(fileElem.getTextContent(), fileElem.getAttribute("hash"), Long.parseLong(fileElem.getAttribute("size")));
+					serverFiles.add(metafile);
 				}
 
-				// check size
-				if (localFile.length() != mf.getFilesize()) {
-					newFiles.add(mf);
-					ModManager.debugLogger
-							.writeMessage(mf.getRelativePath() + " size has changed (local: " + localFile.length() + " | server: " + mf.getFilesize() + "), adding to update list");
-					continue;
-				}
+				ModManager.debugLogger.writeMessage("Number of files in manifest: " + serverFiles.size());
 
-				// check hash
-				try {
-					if (!MD5Checksum.getMD5Checksum(localFile.getAbsolutePath()).equals(mf.getHash())) {
+				// get list of new files
+				ArrayList<ManifestModFile> newFiles = new ArrayList<ManifestModFile>();
+				String modpath = ModManager.appendSlash(mod.getModPath());
+
+				for (ManifestModFile mf : serverFiles) {
+					File localFile = new File(modpath + mf.getRelativePath());
+
+					// check existence
+					if (!localFile.exists()) {
 						newFiles.add(mf);
-						ModManager.debugLogger.writeMessage(mf.getRelativePath() + " hash is different, adding to update list");
+						ModManager.debugLogger.writeMessage(mf.getRelativePath() + " does not exist, adding to update list");
 						continue;
 					}
-				} catch (Exception e) {
-					ModManager.debugLogger.writeError("Exception generating MD5.");
-					ModManager.debugLogger.writeException(e);
-				}
-				ModManager.debugLogger.writeMessage(mf.getRelativePath() + " is up to date");
-			}
 
-			// check for files that DON'T exist on the server
-			ArrayList<String> filesToRemove = new ArrayList<String>();
-			if (isFullManifest) {
-				System.out.println("Checking for files that are no longer necessary");
-				for (ModJob job : mod.getJobs()) {
-					for (String srcFile : job.getFilesToReplace()) {
-						String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
+					// check size
+					if (localFile.length() != mf.getFilesize()) {
+						newFiles.add(mf);
+						ModManager.debugLogger.writeMessage(
+								mf.getRelativePath() + " size has changed (local: " + localFile.length() + " | server: " + mf.getFilesize() + "), adding to update list");
+						continue;
+					}
+
+					// check hash
+					try {
+						if (!MD5Checksum.getMD5Checksum(localFile.getAbsolutePath()).equals(mf.getHash())) {
+							newFiles.add(mf);
+							ModManager.debugLogger.writeMessage(mf.getRelativePath() + " hash is different, adding to update list");
+							continue;
+						}
+					} catch (Exception e) {
+						ModManager.debugLogger.writeError("Exception generating MD5.");
+						ModManager.debugLogger.writeException(e);
+					}
+					ModManager.debugLogger.writeMessage(mf.getRelativePath() + " is up to date");
+				}
+
+				// check for files that DON'T exist on the server
+				ArrayList<String> filesToRemove = new ArrayList<String>();
+				if (isFullManifest) {
+					System.out.println("Checking for files that are no longer necessary");
+					for (ModJob job : mod.getJobs()) {
+						for (String srcFile : job.getFilesToReplace()) {
+							String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
+							boolean existsOnServer = false;
+							for (ManifestModFile mf : serverFiles) {
+								if (mf.getRelativePath().toLowerCase().equals(relativePath)) {
+									existsOnServer = true;
+									continue;
+								}
+							}
+							if (!existsOnServer) {
+								// file needs to be removed
+								ModManager.debugLogger.writeMessage(relativePath + " is not in updated version of mod on server, marking for removal");
+								filesToRemove.add(srcFile);
+							}
+						}
+					}
+
+					// Check legacy Coalesced.bin
+					if (mod.getCMMVer() < 3.0 && mod.modsCoal()) {
 						boolean existsOnServer = false;
 						for (ManifestModFile mf : serverFiles) {
-							if (mf.getRelativePath().toLowerCase().equals(relativePath)) {
+							if (mf.getRelativePath().toLowerCase().equals("Coalesced.bin")) {
 								existsOnServer = true;
 								continue;
 							}
 						}
 						if (!existsOnServer) {
 							// file needs to be removed
-							ModManager.debugLogger.writeMessage(relativePath + " is not in updated version of mod on server, marking for removal");
-							filesToRemove.add(srcFile);
+							ModManager.debugLogger.writeMessage("Coalesced.bin is not in updated version of mod on server, marking for removal");
+							filesToRemove.add(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
 						}
 					}
 				}
 
-				// Check legacy Coalesced.bin
-				if (mod.getCMMVer() < 3.0 && mod.modsCoal()) {
-					boolean existsOnServer = false;
-					for (ManifestModFile mf : serverFiles) {
-						if (mf.getRelativePath().toLowerCase().equals("Coalesced.bin")) {
-							existsOnServer = true;
-							continue;
-						}
-					}
-					if (!existsOnServer) {
-						// file needs to be removed
-						ModManager.debugLogger.writeMessage("Coalesced.bin is not in updated version of mod on server, marking for removal");
-						filesToRemove.add(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
-					}
-				}
+				ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: " + filesToRemove.size());
+				return new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
 			}
-
-			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: " + filesToRemove.size());
-			return new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
+		} else {
+			ModManager.debugLogger.writeMessage("XML Document from server was null.");
 		}
 		return null;
 	}// end classic update
