@@ -49,7 +49,7 @@ public class AboutWindow extends JDialog {
 								+ "<br>Uses ini4j: http://ini4j.sourceforge.net"
 								+ "<br>Uses json-simple: https://code.google.com/p/json-simple/"
 								+ "<br>Uses Apache Commons-io: http://commons.apache.org/proper/commons-io/"
-								+ "<br>Uses JNA: https://github.com/twall/jnaJNA"
+								+ "<br>Uses JNA: https://github.com/java-native-access/jna"
 								+ "<br>Uses ME3Explorer: http://github.com/me3explorer/me3explorer"
 								+ "<br>Uses LauncherWV: http://github.com/me3explorer/launcherwv"
 								+ "<br>ModMaker uses TLK and Coalesce tools from TankMaster."

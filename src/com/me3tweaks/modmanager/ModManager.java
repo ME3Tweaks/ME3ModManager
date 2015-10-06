@@ -53,10 +53,10 @@ import com.me3tweaks.modmanager.objects.Patch;
 public class ModManager {
 
 	public static final String VERSION = "4.1 Beta 1";
-	public static long BUILD_NUMBER = 44L; //so it will upgrade when full is out.
-	public static final String BUILD_DATE = "10/5/2015";
+	public static long BUILD_NUMBER = 45L; //so it will upgrade when full is out.
+	public static final String BUILD_DATE = "10/6/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 1.8; //max modmaker version
