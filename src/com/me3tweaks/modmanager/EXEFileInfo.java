@@ -48,7 +48,7 @@ package com.me3tweaks.modmanager;
 			int v2 = (lplpBufStructure.dwFileVersionMS).intValue() & 0xffff;
 			int v3 = (lplpBufStructure.dwFileVersionLS).intValue() >> 16;
 			int v4 = (lplpBufStructure.dwFileVersionLS).intValue() & 0xffff;
-			System.out.println("Version: " + v1 + "." + v2 + "." + v3 + "." + v4);
+			ModManager.debugLogger.writeMessage(path+" Version: " + v1 + "." + v2 + "." + v3 + "." + v4);
 			return new int[] { v1, v2, v3, v4 };
 		}
 	}

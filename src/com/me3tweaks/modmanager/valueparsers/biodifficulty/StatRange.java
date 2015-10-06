@@ -7,14 +7,17 @@ public class StatRange {
 	int intx, inty;
 
 	public StatRange(String xstat, String ystat) {
-		if (xstat.contains("f")|| ystat.contains("f")){
+		try {
+			Integer.parseInt(xstat);
+			if (!xstat.contains("f") && !ystat.contains("f")){
+				this.intx = Integer.parseInt(xstat);
+				this.inty = Integer.parseInt(ystat);
+				isfloat = false;
+			}
+		} catch (NumberFormatException e) {
 			this.floatx = Double.parseDouble(xstat.substring(0, xstat.length()-1));
 			this.floaty = Double.parseDouble(ystat.substring(0, ystat.length()-1));
 			isfloat = true;
-		} else {
-			this.intx = Integer.parseInt(xstat);
-			this.inty = Integer.parseInt(ystat);
-			isfloat = false;
 		}
 	}
 	

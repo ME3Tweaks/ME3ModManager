@@ -238,7 +238,7 @@ public class Patch implements Comparable<Patch> {
 					if (job.getJobName().equals(targetModule)) {
 						ModManager.debugLogger.writeMessage("Checking existing job: " + targetModule);
 						targetJob = job;
-						String jobFolder = ModManager.appendSlash(new File(job.getNewFiles()[0]).getParentFile().getAbsolutePath());
+						String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
 
 						//ADD PATCH FILE TO JOB
@@ -273,7 +273,7 @@ public class Patch implements Comparable<Patch> {
 					if (targetModule.equals(ModType.BASEGAME)) {
 						job = new ModJob();
 					} else {
-						job = new ModJob(ModType.getDLCPath(targetModule), targetModule);
+						job = new ModJob(ModType.getDLCPath(targetModule), targetModule,null);
 					}
 					File modulefolder = new File(ModManager.appendSlash(mod.getModPath() + standardFolder));
 					modulefolder.mkdirs();
@@ -485,13 +485,13 @@ public class Patch implements Comparable<Patch> {
 		File dirHeader = copyTo.getParentFile();
 		dirHeader.mkdirs();
 		if (ModManager.IS_DEBUG){
-			try {
+			/*try {
 				FileUtils.copyFile(new File(patchFolderPath + "patch.jsf"), copyTo);
 				System.out.println("Copied to "+copyTo.getAbsolutePath());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
+			}*/
 		}
 		return sb.toString();
 	}

@@ -230,12 +230,18 @@ public class AllModsUpdateWindow extends JDialog {
 		 */
 		@Override
 		protected void done() {
+			ModManager.debugLogger.writeMessage("Auto-Updater thread: performing done()");
+			try {
+				get();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeException(e);
+				ModManager.debugLogger.writeMessage("Auto-Updater thread likely ended pre-maturely due to an exception.");
+			}
 			if (!showUI) {
-				ModManager.debugLogger.writeMessage("Auto-Updater thread: performing done()");
 				//autoupdate, update last check date
 				Wini ini;
 				try {
-					File settings = new File(ModManager.settingsFilename);
+					File settings = new File(ModManager.SETTINGS_FILENAME);
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
@@ -246,7 +252,7 @@ public class AllModsUpdateWindow extends JDialog {
 				} catch (InvalidFileFormatException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
-					System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.",e);
 				}
 			}
 

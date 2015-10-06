@@ -188,7 +188,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		//set combobox from settings
 		Wini settingsini;
 		try {
-			settingsini = new Wini(new File(ModManager.settingsFilename));
+			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 			String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
 			if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
 				//language setting exists
@@ -329,7 +329,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		String defaultLang = ALL_LANG;
 		Wini settingsini;
 		try {
-			settingsini = new Wini(new File(ModManager.settingsFilename));
+			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 			String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
 			if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
 				//language setting exists
@@ -354,7 +354,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		if (shouldContinue) {
 			Wini ini;
 			try {
-				File settings = new File(ModManager.settingsFilename);
+				File settings = new File(ModManager.SETTINGS_FILENAME);
 				if (!settings.exists())
 					settings.createNewFile();
 				ini = new Wini(settings);
@@ -363,7 +363,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			} catch (InvalidFileFormatException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
-				System.err.println("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.",e);
 			}
 			callingWindow.startModMaker(codeField.getText().toString(), languages);
 		}

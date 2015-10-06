@@ -69,7 +69,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		ModManager.debugLogger.writeMessage("Loading patch library interface");
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(),false).execute();
+		new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(), false).execute();
 		setVisible(true);
 	}
 
@@ -99,9 +99,9 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				break;
 			}
 		}
-		
-		if (hasMissingMixIn){
-			new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(),true).execute();
+
+		if (hasMissingMixIn) {
+			new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(), true).execute();
 			setupAutomatedWindow(callingDialog);
 			setVisible(true);
 		} else {
@@ -109,8 +109,8 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			dispose();
 		}
 	}
-	
-	private void setupAutomatedWindow(JDialog callingDialog){
+
+	private void setupAutomatedWindow(JDialog callingDialog) {
 		this.setTitle("MixIn Library");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(250, 70));
@@ -135,7 +135,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		for (int mixinid : mixinIds) {
 			for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
 				if (mixinid == patch.getMe3tweaksid()) {
-					str += "\n - "+patch.getPatchName();
+					str += "\n - " + patch.getPatchName();
 					patches.add(patch);
 					break;
 				}
@@ -145,10 +145,16 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		//show prompt
 		ModManager.debugLogger.writeMessage("Prompting user for install of mixins");
 
-		int response = JOptionPane.showConfirmDialog(null, str, "Recommended MixIns", JOptionPane.YES_NO_OPTION);
+		int response = JOptionPane.NO_OPTION;
+		if (!ModManager.AUTO_APPLY_MODMAKER_MIXINS) {
+			response = JOptionPane.showConfirmDialog(null, str, "Recommended MixIns", JOptionPane.YES_NO_OPTION);
+			
+		} else {
+			response = JOptionPane.YES_OPTION;
+			ModManager.debugLogger.writeMessage("User has auto install mixins option set.");
+		}
 		if (response == JOptionPane.YES_OPTION) {
 			ModManager.debugLogger.writeMessage("User has accepted mixins");
-
 			//Apply
 			ModManager.debugLogger.writeMessage("Applying patches in automated mode");
 			if (!mod.isValidMod()) {
@@ -163,7 +169,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				}
 				rstr += "Check the debugging log to see why.";
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, rstr, "MixIns Error", JOptionPane.ERROR_MESSAGE);
-			}			
+			}
 		}
 	}
 
@@ -283,6 +289,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		List<Patch> selectedPatches = patchList.getSelectedValuesList();
 		boolean isFirst = true;
 		for (Patch patch : selectedPatches) {
+			System.out.println(patch.convertToME3TweaksSQLInsert());
 			if (isFirst) {
 				isFirst = false;
 			} else {
@@ -316,7 +323,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				return; // this shouldn't be reachable anyways
 			}
 			PatchApplicationWindow paw = new PatchApplicationWindow(this, new ArrayList<Patch>(selectedPatches), mod);
-			new AutoTocWindow(mod);
+			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE);
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() <= 0) {
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mixins were applied.", "MixIns applied", JOptionPane.INFORMATION_MESSAGE);
@@ -395,11 +402,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 
 					for (int i = 0; i < patches.size(); i++) {
 						Patch localpatch = patches.get(i);
-						if (localpatch.getMe3tweaksid() <= 0){
+						if (localpatch.getMe3tweaksid() <= 0) {
 							patchesToDelete.add(localpatch);
 							continue;
 						}
-						
+
 						if (localpatch.getMe3tweaksid() != serverpack.getMe3tweaksid()) {
 							continue;
 						}
@@ -430,12 +437,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						break;
 					}
 					if (needsDownloaded) {
-						ModManager.debugLogger.writeMessage(
-								"Server MixIn " + serverpack.getPatchname() + " is not present locally (or out of date), adding to download queue");
+						ModManager.debugLogger.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally (or out of date), adding to download queue");
 						packsToDownload.add(serverpack);
 					}
 				}
-				
+
 				//delete old packs from build 40/41/42
 				for (Patch localPatch : patchesToDelete) {
 					File patchFolder = new File(localPatch.getPatchFolderPath());
@@ -469,27 +475,27 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		}
 
 		public void process(List<ThreadCommand> chunks) {
-			
+
 			for (ThreadCommand tc : chunks) {
 				if (!modmakerMode) {
 					Patch p = (Patch) tc.getData();
 					if (tc.getCommand().equals("ADD_PATCH")) {
 						patchModel.addElement(p);
 					}
-					if (tc.getCommand().equals("REMOVE_PATCH")){
+					if (tc.getCommand().equals("REMOVE_PATCH")) {
 						patchModel.removeElement(p);
 					}
 				}
 			}
 		}
-		
-		public void done(){
+
+		public void done() {
 			if (atLeast1New) {
 				ModManager.debugLogger.writeMessage("Patch Library updated from ME3Tweaks, reloading patch list");
 				ModManagerWindow.ACTIVE_WINDOW.setPatchList(ModManager.getPatchesFromDirectory());
 			}
 			//downloaded = true;
-			if (modmakerMode){
+			if (modmakerMode) {
 				//reload patch list
 				//check requirements are met
 				ArrayList<Integer> missingIds = new ArrayList<Integer>();
@@ -505,11 +511,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						missingIds.add(requiredID);
 					}
 				}
-				
-				if (missingIds.size() > 0){
+
+				if (missingIds.size() > 0) {
 					String errorStr = "This mod requests the additional MixIn IDs that don't exist on ME3Tweaks:\n";
-					for (int miss : missingIds){
-						errorStr += miss +" ";
+					for (int miss : missingIds) {
+						errorStr += miss + " ";
 						automated_requiredMixinIds.remove(new Integer(miss));
 					}
 					errorStr += "\nThese MixIns can't be added to this mod.";
