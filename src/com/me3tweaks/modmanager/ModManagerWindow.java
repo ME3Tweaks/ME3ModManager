@@ -585,6 +585,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JPanel buttonPanel = new JPanel(new FlowLayout());
 
 		buttonApplyMod = new JButton("Apply Mod");
+		updateApplyButton();
 		buttonApplyMod.addActionListener(this);
 		buttonApplyMod.setEnabled(false);
 		buttonApplyMod.setToolTipText("Select a mod on the left");
@@ -611,6 +612,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		verifyBackupCoalesced();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: SetupWindow() has completed.");
 
+	}
+
+	private void updateApplyButton() {
+		if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
+			buttonApplyMod.setText("Apply Mod");
+		} else {
+			buttonApplyMod.setText(".NET Missing");
+		}
 	}
 
 	private JMenuBar makeMenu() {
@@ -968,8 +977,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == toolsModMaker) {
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
-				new ModMakerEntryWindow(this, fieldBiogameDir.getText());
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
+					updateApplyButton();
+					new ModMakerEntryWindow(this, fieldBiogameDir.getText());
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
+				}
 			} else {
 				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
 				labelStatus.setVisible(true);
@@ -1245,8 +1262,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new AboutWindow(this);
 		} else if (e.getSource() == buttonApplyMod) {
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Applying selected mod.");
-				applyMod();
+				ModManager.debugLogger.writeMessage("Applying selected mod: Biogame Dir is valid.");
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					updateApplyButton();
+					ModManager.debugLogger.writeMessage(".NET is installed");
+					applyMod();
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Applying selected mod: .NET is not installed");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to install mods.");
+				}
 			} else {
 				labelStatus.setText("Installing a mod requires valid BIOGame path");
 				labelStatus.setVisible(true);
@@ -1262,39 +1288,68 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Starting the game requires a valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nMod Manager does not know where to launch the game executable.\nFix the BIOGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BIOGame directory is not valid.\nMod Manager does not know where to launch the game executable.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else
 
 		if (e.getSource() == actionOpenME3Exp) {
-			ArrayList<String> commandBuilder = new ArrayList<String>();
-			String me3expdir = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true));
-			commandBuilder.add(me3expdir + "ME3Explorer.exe");
-			// System.out.println("Building command");
-			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-			// Debug stuff
-			StringBuilder sb = new StringBuilder();
-			for (String arg : command) {
-				sb.append(arg + " ");
-			}
-			ModManager.debugLogger.writeMessage("Executing ME3Explorer via command: " + sb.toString());
-			try {
-				ProcessBuilder pb = new ProcessBuilder(command);
-				pb.directory(new File(me3expdir)); // this is where you set the root folder for the executable to run with
-				pb.start();
-			} catch (IOException ex) {
-				ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				updateApplyButton();
+				ModManager.debugLogger.writeMessage(".NET is installed");
+				ArrayList<String> commandBuilder = new ArrayList<String>();
+				String me3expdir = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true));
+				commandBuilder.add(me3expdir + "ME3Explorer.exe");
+				// System.out.println("Building command");
+				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+				// Debug stuff
+				StringBuilder sb = new StringBuilder();
+				for (String arg : command) {
+					sb.append(arg + " ");
+				}
+				ModManager.debugLogger.writeMessage("Executing ME3Explorer (via action menu) via command: " + sb.toString());
+				try {
+					ProcessBuilder pb = new ProcessBuilder(command);
+					pb.directory(new File(me3expdir)); // this is where you set the root folder for the executable to run with
+					pb.start();
+				} catch (IOException ex) {
+					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+				}
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
+				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5 or higher in order to run.");
 			}
 		} else if (e.getSource() == actionOptions) {
 			new OptionsWindow(this);
 		} else if (e.getSource() == toolsMergeMod) {
-			ModManager.debugLogger.writeMessage("Opening Mod Merging utility");
-			new MergeModWindow(this);
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Opening Mod Merging utility");
+				updateApplyButton();
+				new MergeModWindow(this);
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Merge Tool: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods.");
+			}
 		} else if (e.getSource() == toolsOpenME3Dir) {
 			openME3Dir();
 		} else if (e.getSource() == modutilsAutoTOC) {
-			autoTOC(AutoTocWindow.LOCALMOD_MODE);
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Running AutoTOC.");
+				updateApplyButton();
+				autoTOC(AutoTocWindow.LOCALMOD_MODE);
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use the AutoTOC feature.");
+			}
 		} else if (e.getSource() == modutilsAutoTOCUpgrade) {
 			autoTOC(AutoTocWindow.UPGRADE_UNPACKED_MODE);
 		} else if (e.getSource() == modutilsInfoEditor) {
@@ -1311,8 +1366,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			checkAllModsForUpdates(true);
 		} else if (e.getSource() == toolsPatchLibary) {
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Opening patch library window.");
-				new PatchLibraryWindow();
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Opening patch library window.");
+					updateApplyButton();
+					new PatchLibraryWindow();
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use MixIns.");
+				}
 			} else {
 				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
 				labelStatus.setVisible(true);
@@ -1645,7 +1708,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			return "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame";
 		}
 		ModManager.debugLogger.writeMessage("Directory that was fetched: " + setDir);
-		return (setDir !=null && !setDir.equals("")) ?  setDir : defaultDir;
+		return (setDir != null && !setDir.equals("")) ? setDir : defaultDir;
 	}
 
 	/**

@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.prefs.Preferences;
 
 import javax.swing.JOptionPane;
 import javax.swing.ToolTipManager;
@@ -57,7 +59,7 @@ public class ModManager {
 	public static final String VERSION = "4.1 Beta 1";
 	public static long BUILD_NUMBER = 45L; // so it will upgrade when full is
 											// out.
-	public static final String BUILD_DATE = "10/6/2015";
+	public static final String BUILD_DATE = "10/7/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -79,6 +81,7 @@ public class ModManager {
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
 	public static boolean AUTO_UPDATE_ME3EXPLORER = true;
+	public static boolean NET_FRAMEWORK_IS_INSTALLED = false;
 
 	public static void main(String[] args) {
 		debugLogger = new DebugLogger();
@@ -303,7 +306,7 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage(getSystemInfo());
 			doFileSystemUpdate();
 			if (!validateNETFrameworkIsInstalled()) {
-				new NetFrameworkMissingWindow();
+				new NetFrameworkMissingWindow("Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly.");
 			}
 			ModManager.debugLogger.writeMessage("========End of startup=========");
 		} catch (Throwable e) {
@@ -683,7 +686,7 @@ public class ModManager {
 		File gamedir = bgdir.getParentFile();
 
 		File launcherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
-		ModManager.debugLogger.writeMessage("Set binary win32 folder to game folder to: " + launcherWV.getAbsolutePath());
+		ModManager.debugLogger.writeMessage("Using binary win32 folder: " + launcherWV.getAbsolutePath());
 
 		// File bink32_orig = new
 		// File(gamedir.toString()+"\\Binaries\\Win32\\binkw32_orig.dll");
@@ -694,9 +697,14 @@ public class ModManager {
 			ModManager.ExportResource("/Launcher_WV.exe", launcherWV.toString());
 		} catch (Exception e1) {
 			e1.printStackTrace();
+			if (isAdmin()) {
+				JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nPlease report this to FemShep.",
+						"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
+			} else {
+				JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+						"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
+			}
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
-			JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of the ME3CMM.exe.\nPlease report this to femshep.",
-					"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -733,7 +741,13 @@ public class ModManager {
 			ModManager.ExportResource("/binkw32.dll", bink32.toString());
 		} catch (Exception e1) {
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
-			e1.printStackTrace();
+			if (isAdmin()) {
+				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32.dll out of ME3CMM.exe.\nPlease report this to FemShep.",
+						"binkw32.dll error", JOptionPane.ERROR_MESSAGE);
+			} else {
+				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32.dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+						"binkw32.dll error", JOptionPane.ERROR_MESSAGE);
+			}
 			return false;
 		}
 
@@ -762,9 +776,9 @@ public class ModManager {
 			try {
 				Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
 				bink32_orig.delete();
+				return true;
 			} catch (IOException ex) {
 				ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
-				ex.printStackTrace();
 				return false;
 			}
 		}
@@ -1378,26 +1392,49 @@ public class ModManager {
 		if (os.contains("Windows")) {
 			int releaseNum = 0;
 			String netFrameWork4Key = "SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full";
-			ModManager.debugLogger.writeMessage("OS contains windows and setDir is null or blank. trying 64bit registry key");
+			ModManager.debugLogger.writeMessage("Checking for .NET Framework 4.5 or higher registry key");
 			try {
 				releaseNum = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, netFrameWork4Key, "Release");
 				ModManager.debugLogger.writeMessage(".NET Framework release detected: "+releaseNum);
 				if (releaseNum >= MIN_REQUIRED_NET_FRAMEWORK_RELNUM) {
-					ModManager.debugLogger.writeMessage("This version satisfies the current requirements");
+					ModManager.debugLogger.writeMessage("This version ("+releaseNum+") satisfies the current requirements ("+MIN_REQUIRED_NET_FRAMEWORK_RELNUM+")");
+					NET_FRAMEWORK_IS_INSTALLED = true;
 					return true;
 				} else {
-					ModManager.debugLogger.writeError("This version does NOT satisfy the current requirements");
+					ModManager.debugLogger.writeError("This version ("+releaseNum+") DOES NOT satisfy the current requirements ("+MIN_REQUIRED_NET_FRAMEWORK_RELNUM+")");
+					NET_FRAMEWORK_IS_INSTALLED = false;
 					return false;
 				}
 			} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
 				ModManager.debugLogger.writeError(".NET Framework 4.5 registry key was not found: " + netFrameWork4Key);
+				NET_FRAMEWORK_IS_INSTALLED = false;
 				return false;
 			} catch (Throwable e) {
 				ModManager.debugLogger.writeErrorWithException(".NET Framework 4.5 detection exception:",e);
+				NET_FRAMEWORK_IS_INSTALLED = false;
 				return false;
 			}
 		}
-		ModManager.debugLogger.writeError("This is not a windows OS. So obviously there is no registry");
+		ModManager.debugLogger.writeError("This is not a windows OS. So obviously there is no registry. .NET is not installed");
+		NET_FRAMEWORK_IS_INSTALLED = false;
 		return false;
+	}
+	
+	public static boolean isAdmin(){
+	    Preferences prefs = Preferences.systemRoot();
+	    PrintStream systemErr = System.err;
+	    synchronized(systemErr){    // better synchroize to avoid problems with other threads that access System.err
+	    	System.setErr(new PrintStream(new OutputStream() { @Override public void write(int i) throws IOException { } }));
+	        try{
+	            prefs.put("me3cmm", "test"); // SecurityException on Windows
+	            prefs.remove("me3cmm");
+	            prefs.flush(); // BackingStoreException on Linux
+	            return true;
+	        }catch(Exception e){
+	            return false;
+	        }finally{
+	            System.setErr(systemErr);
+	        }
+	    }
 	}
 }

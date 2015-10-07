@@ -762,16 +762,19 @@ public class ModInstallWindow extends JDialog {
 					ProcessBuilder pb = new ProcessBuilder(command);
 					ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
 					// p = Runtime.getRuntime().exec(command);
+					long timeStart = System.currentTimeMillis();
 					p = pb.start();
 					ModManager.debugLogger.writeMessage("Executed command, waiting...");
 					returncode = p.waitFor();
+					long timeEnd = System.currentTimeMillis();
+					ModManager.debugLogger.writeMessage("Process has finished. Took "+(timeEnd-timeStart)+" ms.");
 				} catch (IOException | InterruptedException e) {
 					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 					e.printStackTrace();
 					return false;
 				}
 
-				ModManager.debugLogger.writeMessage("processDLCJob RETURN VAL: " + (p != null && returncode == 0));
+				ModManager.debugLogger.writeMessage("Job completed successfully: " + (p != null && returncode == 0));
 				result = (p != null && returncode == 0) && result;
 			}
 
@@ -813,9 +816,12 @@ public class ModInstallWindow extends JDialog {
 				try {
 					ProcessBuilder pb = new ProcessBuilder(command);
 					ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
+					long timeStart = System.currentTimeMillis();
 					p = pb.start();
 					ModManager.debugLogger.writeMessage("Executed command, waiting...");
 					returncode = p.waitFor();
+					long timeEnd = System.currentTimeMillis();
+					ModManager.debugLogger.writeMessage("Process has finished. Took "+(timeEnd-timeStart)+" ms.");
 				} catch (IOException | InterruptedException e) {
 					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 					e.printStackTrace();
@@ -862,9 +868,12 @@ public class ModInstallWindow extends JDialog {
 				try {
 					ProcessBuilder pb = new ProcessBuilder(command);
 					// p = Runtime.getRuntime().exec(command);
+					long timeStart = System.currentTimeMillis();
 					p = pb.start();
 					ModManager.debugLogger.writeMessage("Executed command, waiting...");
 					returncode = p.waitFor();
+					long timeEnd = System.currentTimeMillis();
+					ModManager.debugLogger.writeMessage("Process has finished. Took "+(timeEnd-timeStart)+" ms.");
 				} catch (IOException | InterruptedException e) {
 					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 					e.printStackTrace();

@@ -21,24 +21,23 @@ public class NetFrameworkMissingWindow extends JDialog {
 	JButton downloadButton;
 	private static final String netPage = "https://www.microsoft.com/en-us/download/details.aspx?id=48130";
 
-	public NetFrameworkMissingWindow() {
+	public NetFrameworkMissingWindow(String text) {
 		this.setTitle(".NET Framework 4.5 not installed");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		setupWindow();
+		setupWindow(text);
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
 
-	private void setupWindow() {
+	private void setupWindow(String text) {
 		JPanel updatePanel = new JPanel();
 		updatePanel.setBorder(new EmptyBorder(5,5,5,5));
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("<html><div style=\"width:330px;\">Mod Manager requires .NET Framework 4.5 or higher. It does not appear to be installed.<br>"
-				+ "You can download and install it from here:</div></html>");
+		introLabel = new JLabel("<html><div style=\"width:200px;\">"+text+"<br><br></div></html>");
 		downloadButton = new JButton("Download .NET 4.6 from Microsoft");
 		downloadButton.addActionListener(new ActionListener() {
 			
