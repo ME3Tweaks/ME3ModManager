@@ -77,6 +77,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 720; // my custom build
 	// version
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
+	public static boolean RUN_AUTOTOC_AFTER_MOD_INSTALL = false;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
@@ -261,6 +262,7 @@ public class ModManager {
 						}
 					}
 
+					//update skip
 					String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
 					if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
 						try {
@@ -269,6 +271,26 @@ public class ModManager {
 							ModManager.debugLogger
 									.writeError("Number format exception reading the build number to skip to in settings. Defaulting to 0.");
 							SKIP_UPDATES_UNTIL_BUILD = 0;
+						}
+					}
+					
+					// AutoTOC game files after install
+					String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
+					int autotocPostInstallInt = 0;
+					if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
+						try {
+							autotocPostInstallInt = Integer.parseInt(autotocPostInstallStr);
+							if (autotocPostInstallInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("AutoTOC post install is enabled");
+								RUN_AUTOTOC_AFTER_MOD_INSTALL = true;
+							} else {
+								debugLogger.writeMessage("AutoTOC post install is disabled");
+								RUN_AUTOTOC_AFTER_MOD_INSTALL = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
+							RUN_AUTOTOC_AFTER_MOD_INSTALL = false;
 						}
 					}
 

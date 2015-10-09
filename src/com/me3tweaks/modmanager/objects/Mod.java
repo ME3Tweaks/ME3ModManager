@@ -57,6 +57,13 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	/**
+	 * Empty constructor. This should not be used unless you really know what you're doing. (manually adding jobs etc)
+	 */
+	public Mod() {
+		jobs = new ArrayList<ModJob>();
+	}
+
+	/**
 	 * Returns the legacy modcoal variable. This being true indicates a
 	 * Coalesced.bin file in the mod root should be installed in legacy mode.
 	 * 

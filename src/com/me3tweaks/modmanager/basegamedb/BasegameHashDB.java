@@ -88,16 +88,18 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		infoLabel = new JLabel("<html>Loading repair database...</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 		
-		startMap = new JButton("Update DB");
+		startMap = new JButton("Update database");
 		startMap.addActionListener(this);
 		startMap.setEnabled(false);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
 		progressBar.setIndeterminate(false);
-		
+		JPanel borderPanel = new JPanel(new BorderLayout()); //hack for border
+		borderPanel.add(progressBar, BorderLayout.CENTER);
+		borderPanel.setBorder(new EmptyBorder(0, 0, 0, 5));
 		JPanel progressPanel = new JPanel(new BorderLayout());
 		progressPanel.add(startMap, BorderLayout.EAST);
-		progressPanel.add(progressBar, BorderLayout.CENTER);
+		progressPanel.add(borderPanel, BorderLayout.CENTER);
 		northPanel.add(progressPanel, BorderLayout.CENTER);
 		northPanel.setBorder(new EmptyBorder(5,5,5,5));
 		rootPanel.add(northPanel, BorderLayout.NORTH);
@@ -108,13 +110,13 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 		consoleArea.setText("The game repair database keeps track of your preferred game configuration, so when restoring files you will be returned to the snapshotted state.\n"
 				+ "\nCreate or update the game repair DB to make a snapshot of all file hashes and filesizes so that when you install a new mod, the file that is backed up is known to be the one you want.\n"
 				+ "\nWhen restoring files, the game database checks the backed up files match the ones in the snapshot, and will show you a message if they don't."
-				+ "\n\nThe game repair database only works with unpacked DLC files and basegame files, not .sfar files. Modifications done outside of Mod Manager are unsupported, such as using Texplorer.");
+				+ "\n\nThe game repair database only works with unpacked DLC files and basegame files, not .sfar files. Modifications done outside of Mod Manager are unsupported by FemShep, so I won't help you fix problems with non Mod Manager mods.\n"
+				+ "If you choose to use non Mod Manager mods, make sure you check the post-install AutoTOC option in the options menu.");
 		consoleArea.setEditable(false);
 		
 		rootPanel.add(consoleArea,BorderLayout.CENTER);
 		getContentPane().add(rootPanel);
-		this.setPreferredSize(new Dimension(405,370));
-		
+		this.setPreferredSize(new Dimension(425,390));
 		this.addWindowListener(new java.awt.event.WindowAdapter() {
 		    @Override
 		    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
@@ -150,7 +152,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
     		ModManager.debugLogger.writeMessage("SQL error while loading BG Database");
 			ModManager.debugLogger.writeException(ex);
         }
-		ModManager.debugLogger.writeMessage("GAme repair database failed to load.");
+		ModManager.debugLogger.writeMessage("Game repair database failed to load.");
 		databaseLoaded = false;
 		return false;
 	}
@@ -166,6 +168,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 			filesToHash.add(file);
 		}
 		startMap.setEnabled(false);
+		startMap.setText("Updating...");
 		ModManager.debugLogger.writeMessage("Starting repairinfo thread.");
 		hmw = new HashmapWorker(filesToHash,progressBar);
 		hmw.execute();
@@ -274,7 +277,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 			if (showGUI) {
 				if (numFiles > numCompleted.get(0)) {
 					String fileName = ResourceUtils.getRelativePath(filesToHash.get(numCompleted.get(0)).getAbsolutePath(), basePath, File.separator);
-					infoLabel.setText("<html>Cataloging file information for:<br>"
+					infoLabel.setText("<html>Updated file information for:<br>"
 							+ fileName+"</html>");
 				}
 				progress.setValue((int) (100 / (numFiles / (float)numCompleted.get(0))));
@@ -287,6 +290,7 @@ public class BasegameHashDB extends JFrame implements ActionListener{
 				progress.setValue(100);
 				infoLabel.setText("<html>The repair database has been updated.</html>");
 				startMap.setEnabled(true);
+				startMap.setText("Database updated");
 			}
 			ModManager.debugLogger.writeMessage("Hashmap created.");
 		}

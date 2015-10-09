@@ -167,7 +167,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (errors.getLength() > 0) {
 					//error occured.
 					dispose();
-					publish(new ThreadCommand("ModMaker Error", "<html>No mod with id " + code + " was found on ME3Tweaks.</html>"));
+					publish(new ThreadCommand("ERROR", "<html>No mod with code " + code + " was found on ME3Tweaks ModMaker.</html>"));
 					running = false;
 					return;
 				}
