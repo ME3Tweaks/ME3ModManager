@@ -56,7 +56,7 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1 Beta 1";
+	public static final String VERSION = "4.1 Beta 2";
 	public static long BUILD_NUMBER = 45L; // so it will upgrade when full is
 											// out.
 	public static final String BUILD_DATE = "10/8/2015";
@@ -77,7 +77,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 720; // my custom build
 	// version
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
-	public static boolean RUN_AUTOTOC_AFTER_MOD_INSTALL = false;
+	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
@@ -273,7 +273,7 @@ public class ModManager {
 							SKIP_UPDATES_UNTIL_BUILD = 0;
 						}
 					}
-					
+
 					// AutoTOC game files after install
 					String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
 					int autotocPostInstallInt = 0;
@@ -283,19 +283,19 @@ public class ModManager {
 							if (autotocPostInstallInt > 0) {
 								// logging is on
 								debugLogger.writeMessage("AutoTOC post install is enabled");
-								RUN_AUTOTOC_AFTER_MOD_INSTALL = true;
+								USE_GAME_TOCFILES_INSTEAD = true;
 							} else {
 								debugLogger.writeMessage("AutoTOC post install is disabled");
-								RUN_AUTOTOC_AFTER_MOD_INSTALL = false;
+								USE_GAME_TOCFILES_INSTEAD = false;
 							}
 						} catch (NumberFormatException e) {
 							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
-							RUN_AUTOTOC_AFTER_MOD_INSTALL = false;
+							USE_GAME_TOCFILES_INSTEAD = false;
 						}
 					}
 
 				} catch (InvalidFileFormatException e) {
-					ModManager.debugLogger.writeErrorWithException("Invalid file format exception. Settings in this file will be ignored",e);
+					ModManager.debugLogger.writeErrorWithException("Invalid file format exception. Settings in this file will be ignored", e);
 				} catch (IOException e) {
 					System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 				}
@@ -1163,17 +1163,8 @@ public class ModManager {
 		if (targetModule.equals(ModType.BASEGAME)) {
 			// we must use PCCEditor2 to decompress the file using the
 			// --decompress-pcc command line arg
-			File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath); // we
-																													// have
-																													// biogame
-																													// dir,
-																													// but
-																													// targetpaths
-																													// are
-																													// relative
-																													// to
-																													// ME3
-																													// dir
+			//get source directory via relative path chaining
+			File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath);
 			// run ME3EXPLORER --decompress-pcc
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
@@ -1265,6 +1256,157 @@ public class ModManager {
 				int result = extractionProcess.waitFor();
 				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
 				return sourceDestination.getAbsolutePath();
+			} catch (IOException e) {
+				ModManager.debugLogger.writeException(e);
+			} catch (InterruptedException e) {
+				ModManager.debugLogger.writeException(e);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Copies a file from the game to the specified location. Decompresses a basegame PCC if one is specified.
+	 * @param targetPath Path inside of module
+	 * @param targetModule Module to pull file from
+	 * @param copyToLocation Location to put copy of file
+	 * @return null if could not get file, otherwise copyToLocation.
+	 */
+	public static String getGameFile(String targetPath, String targetModule, String copyToLocation) {
+		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		File destFile = new File(copyToLocation);
+		FileUtils.deleteQuietly(destFile);
+		new File(destFile.getParent()).mkdirs();
+		
+		if (targetModule.equals(ModType.BASEGAME)) {
+			if (targetPath.endsWith(".pcc")) {
+				// we must use PCCEditor2 to decompress the file using the
+				// --decompress-pcc command line arg, and specify where it will be decompressed to
+				//get source directory via relative path chaining
+				File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath);
+				// run ME3EXPLORER --decompress-pcc
+				ArrayList<String> commandBuilder = new ArrayList<String>();
+				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
+				commandBuilder.add("-decompresspcc");
+				commandBuilder.add(sourceSource.getAbsolutePath());
+				commandBuilder.add(copyToLocation);
+				StringBuilder sb = new StringBuilder();
+				for (String arg : commandBuilder) {
+					sb.append("\"" + arg + "\" ");
+				}
+				ModManager.debugLogger.writeMessage("Executing ME3EXPLORER Decompressor command (into library): " + sb.toString());
+
+				ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
+				// patchProcessBuilder.redirectErrorStream(true);
+				// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+				Process decompressProcess;
+				try {
+					decompressProcess = decompressProcessBuilder.start();
+					BufferedReader reader = new BufferedReader(new InputStreamReader(decompressProcess.getInputStream()));
+					String line;
+					while ((line = reader.readLine()) != null)
+						System.out.println(line);
+					int result = decompressProcess.waitFor();
+					ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
+				} catch (IOException e) {
+					ModManager.debugLogger.writeException(e);
+				} catch (InterruptedException e) {
+					ModManager.debugLogger.writeException(e);
+				}
+				return copyToLocation;
+			} else {
+				//not a pcc file.
+				String gamedir = ModManager.appendSlash(new File(bioGameDir).getParent());
+				String fileToGetPath = gamedir+targetPath;
+				File fileToGet = new File(fileToGetPath);
+				ModManager.debugLogger.writeMessage("Getting game file: "+fileToGet+", exists? "+fileToGet.exists());
+				if (fileToGet.exists()) {
+					try {
+						ModManager.debugLogger.writeMessage("Copying to destination: "+copyToLocation);
+						FileUtils.copyFile(fileToGet, destFile);
+						ModManager.debugLogger.writeMessage("Copied to destination.");
+					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("Unable to get game file from basegame:", e);
+						return null;
+					}
+				} else {
+					ModManager.debugLogger.writeError("File to get from basegame does not exist.");
+					return null;
+				}
+			}
+			// END OF
+			// BASEGAME======================================================
+		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
+			return null;
+		} else {
+			// DLC===============================================================
+			// Check if its unpacked
+			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
+			File unpackedFile = new File(gamedir + targetPath);
+			if (unpackedFile.exists()) {
+				//check if PCConsoleTOC, as we probably want the one in the SFAR (or this one, provided DLC is unpacked)
+				if (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin")){
+					//check hash of it. might be one for SFAR
+					HashMap<String, String> tocHashMap = ME3TweaksUtils.getTOCHashesMap();
+					try {
+						String inPlaceTocMD5 = MD5Checksum.getMD5Checksum(unpackedFile.getAbsolutePath());
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					//if (inPlaceToc)
+				}
+				try {
+					new File(destFile.getParent()).mkdirs();
+					ModManager.debugLogger.writeMessage("Copying unpacked file to destination: "+copyToLocation);
+					FileUtils.copyFile(unpackedFile, destFile);
+					ModManager.debugLogger.writeMessage("Copied unpacked file to destination");
+					return copyToLocation;
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Unable to copy unpacked file to destination:", e);
+					return null;
+				}
+			}
+
+			// use the sfar
+			// get .sfar path
+			String sfarName = "Default.sfar";
+			if (targetModule.equals(ModType.TESTPATCH)) {
+				sfarName = "Patch_001.sfar";
+			}
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())
+					+ ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+
+			ArrayList<String> commandBuilder = new ArrayList<String>();
+			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
+			commandBuilder.add("-dlcextract");
+			commandBuilder.add(sfarPath);
+			commandBuilder.add(targetPath);
+			commandBuilder.add(copyToLocation);
+			StringBuilder sb = new StringBuilder();
+			for (String arg : commandBuilder) {
+				if (arg.contains(" ")) {
+					sb.append("\"" + arg + "\" ");
+				} else {
+					sb.append(arg + " ");
+				}
+			}
+			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());
+
+			ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
+			// patchProcessBuilder.redirectErrorStream(true);
+			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+			Process extractionProcess;
+			try {
+				extractionProcess = extractionProcessBuilder.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
+				String line;
+				while ((line = reader.readLine()) != null)
+					System.out.println(line);
+				int result = extractionProcess.waitFor();
+				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
+				return copyToLocation;
 			} catch (IOException e) {
 				ModManager.debugLogger.writeException(e);
 			} catch (InterruptedException e) {

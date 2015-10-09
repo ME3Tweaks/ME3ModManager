@@ -46,8 +46,8 @@ public class OptionsWindow extends JDialog {
 		optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.PAGE_AXIS));
 
 		loggingMode = new JCheckBox("Write debugging log to file");
-		loggingMode.setToolTipText(
-				"<html>Turning this on will write a session log to me3cmm_last_run_log.txt next to ME3CMM.exe.<br>This log can be used by FemShep to help diagnose issues with Mod Manager.<br>It will also tell you why mods aren't loading and other things.</html>");
+		loggingMode
+				.setToolTipText("<html>Turning this on will write a session log to me3cmm_last_run_log.txt next to ME3CMM.exe.<br>This log can be used by FemShep to help diagnose issues with Mod Manager.<br>It will also tell you why mods aren't loading and other things.</html>");
 		loggingMode.setSelected(ModManager.logging);
 		loggingMode.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -60,10 +60,13 @@ public class OptionsWindow extends JDialog {
 
 					if (loggingMode.isSelected()) {
 						ini.put("Settings", "logging_mode", "1");
-						JOptionPane.showMessageDialog(null,
-								"<html>Logs will be written to a file named " + DebugLogger.LOGGING_FILENAME
-										+ ", next to the ME3CMM.exe file.<br>This log will help you debug mods that fail to show up in the list and can be used by FemShep to fix problems.<br>Mod Manager must be fully restarted for logging to start.</html>",
-								"Logging Mode", JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane
+								.showMessageDialog(
+										null,
+										"<html>Logs will be written to a file named "
+												+ DebugLogger.LOGGING_FILENAME
+												+ ", next to the ME3CMM.exe file.<br>This log will help you debug mods that fail to show up in the list and can be used by FemShep to fix problems.<br>Mod Manager must be fully restarted for logging to start.</html>",
+										"Logging Mode", JOptionPane.INFORMATION_MESSAGE);
 					} else {
 						ini.put("Settings", "logging_mode", "0");
 						ModManager.logging = false;
@@ -78,8 +81,8 @@ public class OptionsWindow extends JDialog {
 		});
 
 		autoInjectKeybindsModMaker = new JCheckBox("Auto-inject custom keybinds into ModMaker mods");
-		autoInjectKeybindsModMaker.setToolTipText(
-				"<html>If you use a custom keybinds file (BioInput.xml) and place it in the data/override directory,<br>at the end of compiling ModMaker mods Mod Manager will auto-inject them for you.</html>");
+		autoInjectKeybindsModMaker
+				.setToolTipText("<html>If you use a custom keybinds file (BioInput.xml) and place it in the data/override directory,<br>at the end of compiling ModMaker mods Mod Manager will auto-inject them for you.</html>");
 		autoInjectKeybindsModMaker.setSelected(ModManager.AUTO_INJECT_KEYBINDS);
 		autoInjectKeybindsModMaker.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -175,7 +178,8 @@ public class OptionsWindow extends JDialog {
 				} catch (InvalidFileFormatException x) {
 					x.printStackTrace();
 				} catch (IOException x) {
-					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", x);
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", x);
 				}
 			}
 		});
@@ -197,7 +201,8 @@ public class OptionsWindow extends JDialog {
 				} catch (InvalidFileFormatException x) {
 					x.printStackTrace();
 				} catch (IOException x) {
-					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", x);
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", x);
 				}
 			}
 		});
@@ -216,7 +221,8 @@ public class OptionsWindow extends JDialog {
 						ini = new Wini(settings);
 						if (skipUpdate.isSelected()) {
 							ModManager.debugLogger
-									.writeMessage("OPTIONS: User is skipping (has already skipped to see this checkbox) the next update, build " + (ModManager.BUILD_NUMBER + 1));
+									.writeMessage("OPTIONS: User is skipping (has already skipped to see this checkbox) the next update, build "
+											+ (ModManager.BUILD_NUMBER + 1));
 							ini.put("Settings", "nextupdatedialogbuild", ModManager.BUILD_NUMBER + 1);
 							ModManager.SKIP_UPDATES_UNTIL_BUILD = ModManager.BUILD_NUMBER + 1;
 						} else {
@@ -228,16 +234,18 @@ public class OptionsWindow extends JDialog {
 					} catch (InvalidFileFormatException ex) {
 						ex.printStackTrace();
 					} catch (IOException ex) {
-						ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
+						ModManager.debugLogger.writeErrorWithException(
+								"Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
 					}
 				}
 			});
 		}
 
-		autoTocUnpackedOnInstall = new JCheckBox("Run AutoTOC on modified modules after install");
-		autoTocUnpackedOnInstall.setToolTipText(
-				"<html>After mod install, run AutoTOC on the game's modified modules.<br>If you use mods other than Mod Manager mods, you will need to use this option or the game will crash.<br>This does not work with SFAR injection mods, DLC must be unpacked.<br>Mixing mods outside of Mod Manager is not supported by FemShep. This option is provided as a convenience to ME3Explorer users.</html>");
-		autoTocUnpackedOnInstall.setSelected(ModManager.RUN_AUTOTOC_AFTER_MOD_INSTALL);
+		autoTocUnpackedOnInstall = new JCheckBox(
+				"<html><div style=\"width: 300px\">Update and use game's PCConsoleTOC files instead of mod's when installing*</div></html>");
+		autoTocUnpackedOnInstall
+				.setToolTipText("<html>Prior to installing a mod, Mod Manager will update the installed PCConsoleTOC files for the new mod's files and skip using the one's included in the mod.<br>Mixing mods outside of Mod Manager is not supported by FemShep. This option is provided as a convenience to ME3Explorer users.</html>");
+		autoTocUnpackedOnInstall.setSelected(ModManager.USE_GAME_TOCFILES_INSTEAD);
 		autoTocUnpackedOnInstall.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini;
@@ -248,22 +256,26 @@ public class OptionsWindow extends JDialog {
 					ini = new Wini(settings);
 					ModManager.debugLogger.writeMessage("User changing run autotoc post install to " + autoTocUnpackedOnInstall.isSelected());
 					ini.put("Settings", "runautotocpostinstall", autoTocUnpackedOnInstall.isSelected() ? "1" : "0");
-					ModManager.RUN_AUTOTOC_AFTER_MOD_INSTALL = autoTocUnpackedOnInstall.isSelected();
-					if (ModManager.RUN_AUTOTOC_AFTER_MOD_INSTALL) {
-						JOptionPane.showMessageDialog(OptionsWindow.this,
-								"<html><div style=\"width: 300px\">Turning this on makes AutoTOC run after a mod installs. Modules (basegame and DLC) that are modified have their PCConsoleTOC files updated to reflect the newly inserted files, while keeping the original entries. This only applies if a DLC is unpacked.<br>"
-										+ "This will allow you to mix Mod Manager mods with non Mod Manager mods to some degree.<br><br>"
-										+ "Mixing mods this way is not officially supported and this option is simply a convenience for ME3Explorer users.<br><br>"
-										+ "Additionally you cannot mix mods that modify TESTPATCH (Patch_001.sfar) in this manner, as the DLC cannot be unpacked. You must use Mod Manager's Mod Merging utility.<br><br>"
-										+ "This is an advanced, experimental feature. You should only turn this on if you know what you are doing.</div></html>",
-								"Partially unsupported", JOptionPane.WARNING_MESSAGE);
+					ModManager.USE_GAME_TOCFILES_INSTEAD = autoTocUnpackedOnInstall.isSelected();
+					if (ModManager.USE_GAME_TOCFILES_INSTEAD) {
+						JOptionPane
+								.showMessageDialog(
+										OptionsWindow.this,
+										"<html><div style=\"width: 300px\">Turning this on makes AutoTOC run before a mod installs, updating the installed PCConsoleTOC files with the correct sizes of the new files the mod is installing.<br>"
+												+ "Using this will make mods take longer to install.<br>"
+												+ "This will allow you to mix Mod Manager mods with non Mod Manager mods to some degree.<br><br>"
+												+ "Mixing mods this way is not officially supported and this option is simply a convenience for ME3Explorer users.<br><br>"
+												+ "If you use only Mod Manager mods, you should use the Mod Merging Utility, as it is supported and mods will install faster.<br><br>"
+												+ "This is an advanced, experimental feature. You should only turn this on if you know what you are doing.</div></html>",
+										"Partially unsupported", JOptionPane.WARNING_MESSAGE);
 
 					}
 					ini.store();
 				} catch (InvalidFileFormatException ex) {
 					ex.printStackTrace();
 				} catch (IOException ex) {
-					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
 				}
 			}
 		});

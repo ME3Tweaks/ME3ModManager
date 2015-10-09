@@ -16,6 +16,7 @@ import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
 
 public class Mod implements Comparable<Mod> {
@@ -1272,7 +1273,7 @@ public class Mod implements Comparable<Mod> {
 			e.printStackTrace();
 		}
 		Mod newMod = new Mod(modFolder + File.separator + "moddesc.ini");
-		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE);
+		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		return newMod;
 	}
 

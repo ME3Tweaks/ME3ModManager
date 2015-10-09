@@ -237,7 +237,7 @@ public class BackupWindow extends JDialog {
 	}
 
 	private String[] getJobs() {
-		String[] dlcNames = ModType.getHeaderNameArray();
+		String[] dlcNames = ModType.getDLCHeaderNameArray();
 		ArrayList<String> jobs = new ArrayList<String>();
 		for (String dlcName : dlcNames) {
 			JCheckBox checkbox = checkboxMap.get(dlcName);

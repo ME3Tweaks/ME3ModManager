@@ -66,7 +66,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	private boolean downloaded;
 
 	public PatchLibraryWindow() {
-		ModManager.debugLogger.writeMessage("Loading patch library interface");
+		ModManager.debugLogger.writeMessage("Loading mixin library interface");
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(), false).execute();
@@ -78,13 +78,13 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	 * checked for being in the local library. If they aren't in the library, it
 	 * attempts to download them from me3tweaks.com's library.
 	 * 
-	 * @param mixinIds
+	 * @param mixinIds me3tweaks patch ids
 	 */
 	public PatchLibraryWindow(JDialog callingDialog, ArrayList<Integer> mixinIds, Mod mod) {
 		setModalityType(ModalityType.APPLICATION_MODAL);
 		this.automated_requiredMixinIds = mixinIds;
 		this.automated_mod = mod;
-		ModManager.debugLogger.writeMessage("Loading patch library in automated mode");
+		ModManager.debugLogger.writeMessage("Loading mixin library in automated mode");
 		boolean hasMissingMixIn = false;
 		for (int requiredID : mixinIds) {
 			boolean foundId = false;
@@ -141,7 +141,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				}
 			}
 		}
-		str += "\n\nApply these MixIns to the mod?";
+		str += "\n\nApply these MixIns to the mod?\n\nYou can automatically accept MixIns through the Options panel.";
 		//show prompt
 		ModManager.debugLogger.writeMessage("Prompting user for install of mixins");
 
@@ -323,7 +323,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				return; // this shouldn't be reachable anyways
 			}
 			PatchApplicationWindow paw = new PatchApplicationWindow(this, new ArrayList<Patch>(selectedPatches), mod);
-			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE);
+			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() <= 0) {
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mixins were applied.", "MixIns applied", JOptionPane.INFORMATION_MESSAGE);
