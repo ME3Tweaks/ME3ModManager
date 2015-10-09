@@ -59,7 +59,7 @@ public class ModManager {
 	public static final String VERSION = "4.1 Beta 1";
 	public static long BUILD_NUMBER = 45L; // so it will upgrade when full is
 											// out.
-	public static final String BUILD_DATE = "10/7/2015";
+	public static final String BUILD_DATE = "10/8/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -75,13 +75,14 @@ public class ModManager {
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 720; // my custom build
-															// version
+	// version
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
 	public static boolean AUTO_UPDATE_ME3EXPLORER = true;
 	public static boolean NET_FRAMEWORK_IS_INSTALLED = false;
+	public static long SKIP_UPDATES_UNTIL_BUILD = 0;
 
 	public static void main(String[] args) {
 		debugLogger = new DebugLogger();
@@ -129,8 +130,8 @@ public class ModManager {
 									debugLogger.initialize();
 									logging = true;
 									debugLogger.writeMessage("Starting logger. Logger was able to start up with no issues.");
-									debugLogger.writeMessage(
-											"Mod Manager version " + ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build Date " + BUILD_DATE);
+									debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER
+											+ "; Build Date " + BUILD_DATE);
 								} else {
 									debugLogger.writeMessage("Logging mode disabled");
 								}
@@ -140,8 +141,8 @@ public class ModManager {
 						} else {
 							debugLogger.initialize();
 							logging = true;
-							debugLogger.writeMessage("Logging variable not set, defaulting to true. Starting logger. Mod Manager version " + ModManager.VERSION
-									+ "; Build " + ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
+							debugLogger.writeMessage("Logging variable not set, defaulting to true. Starting logger. Mod Manager version "
+									+ ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
 						}
 					}
 					// Auto Update Check
@@ -200,7 +201,8 @@ public class ModManager {
 								debugLogger.writeMessage("ME3Explorer updates are auto enabled");
 								AUTO_UPDATE_ME3EXPLORER = true;
 							} else {
-								debugLogger.writeError("ME3Explorer updates are disabled - errors related to ME3EXplorer out of date ARE NOT SUPPORTED!");
+								debugLogger
+										.writeError("ME3Explorer updates are disabled - errors related to ME3EXplorer out of date ARE NOT SUPPORTED!");
 								AUTO_UPDATE_ME3EXPLORER = false;
 							}
 						} catch (NumberFormatException e) {
@@ -243,7 +245,8 @@ public class ModManager {
 								AUTO_APPLY_MODMAKER_MIXINS = false;
 							}
 						} catch (NumberFormatException e) {
-							debugLogger.writeError("Number format exception reading the auto install of modmaker mixins mode - autoinstall mode disabled");
+							debugLogger
+									.writeError("Number format exception reading the auto install of modmaker mixins mode - autoinstall mode disabled");
 							AUTO_APPLY_MODMAKER_MIXINS = false;
 						}
 					}
@@ -258,9 +261,19 @@ public class ModManager {
 						}
 					}
 
+					String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
+					if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
+						try {
+							SKIP_UPDATES_UNTIL_BUILD = Integer.parseInt(showIfHigherThan);
+						} catch (NumberFormatException e) {
+							ModManager.debugLogger
+									.writeError("Number format exception reading the build number to skip to in settings. Defaulting to 0.");
+							SKIP_UPDATES_UNTIL_BUILD = 0;
+						}
+					}
+
 				} catch (InvalidFileFormatException e) {
-					System.out.println("Invalid file format exception. Settings in this file will be ignored");
-					e.printStackTrace();
+					ModManager.debugLogger.writeErrorWithException("Invalid file format exception. Settings in this file will be ignored",e);
 				} catch (IOException e) {
 					System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 				}
@@ -326,24 +339,22 @@ public class ModManager {
 			debugLogger.initialize();
 			logging = true;
 			if (emergencyMode) {
-				debugLogger.writeMessage("Logger starting in emergency mode. Startup failed as well as logging settings, but logger was able to initialize.");
+				debugLogger
+						.writeMessage("Logger starting in emergency mode. Startup failed as well as logging settings, but logger was able to initialize.");
 			} else {
 				debugLogger.writeMessage("Logger starting in limited mode. Startup failed but logger was able to initialize.");
 			}
 			debugLogger.writeMessage("Mod Manager version" + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
 			if (emergencyMode) {
-				JOptionPane.showMessageDialog(null,
-						"<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
-								+ "Logging mode was attempted to be turned on, but failed. Logging for this session has been enabled.<br>"
-								+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
-								+ "Something is very wrong and Mod Manager will likely not function properly.</html>",
-						"Critical Startup Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
+						+ "Logging mode was attempted to be turned on, but failed. Logging for this session has been enabled.<br>"
+						+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
+						+ "Something is very wrong and Mod Manager will likely not function properly.</html>", "Critical Startup Error",
+						JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null,
-						"<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
-								+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
-								+ "Logging mode has been automatically turned on.</html>",
-						"Startup Error", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(null, "<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
+						+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
+						+ "Logging mode has been automatically turned on.</html>", "Startup Error", JOptionPane.WARNING_MESSAGE);
 			}
 		}
 		try {
@@ -563,11 +574,15 @@ public class ModManager {
 
 				if (!coalDirHash.equals(patch3CoalescedHash)) {
 					String[] YesNo = { "Yes", "No" };
-					int keepInstalling = JOptionPane.showOptionDialog(null,
-							"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
-									+ coalDirHash + "\nPatch 3 Coalesced.bin's hash: " + patch3CoalescedHash
-									+ "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? ",
-							"Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
+					int keepInstalling = JOptionPane
+							.showOptionDialog(
+									null,
+									"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
+											+ coalDirHash
+											+ "\nPatch 3 Coalesced.bin's hash: "
+											+ patch3CoalescedHash
+											+ "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? ",
+									"Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
 					if (keepInstalling == 0)
 						return true;
 					return false;
@@ -656,8 +671,8 @@ public class ModManager {
 
 			int readBytes;
 			byte[] buffer = new byte[4096];
-			jarFolder = new File(ModManager.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath().replace('\\',
-					'/');
+			jarFolder = new File(ModManager.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().getPath()
+					.replace('\\', '/');
 			// resStreamOut = new FileOutputStream(jarFolder + resourceName);
 			resStreamOut = new FileOutputStream(exportPath);
 			while ((readBytes = stream.read(buffer)) > 0) {
@@ -701,7 +716,8 @@ public class ModManager {
 				JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nPlease report this to FemShep.",
 						"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+				JOptionPane.showMessageDialog(null,
+						"An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
 						"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
 			}
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
@@ -745,7 +761,8 @@ public class ModManager {
 				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32.dll out of ME3CMM.exe.\nPlease report this to FemShep.",
 						"binkw32.dll error", JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32.dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+				JOptionPane.showMessageDialog(null,
+						"An error occured extracting binkw32.dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
 						"binkw32.dll error", JOptionPane.ERROR_MESSAGE);
 			}
 			return false;
@@ -892,7 +909,8 @@ public class ModManager {
 	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
 		File me3expdir = new File(getDataDir() + "ME3Explorer/");
 		if (!me3expdir.exists() && showDialog) {
-			JOptionPane.showMessageDialog(null, "Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.",
+			JOptionPane.showMessageDialog(null,
+					"Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.",
 					"ME3Explorer Error", JOptionPane.ERROR_MESSAGE);
 			return "";
 		}
@@ -1065,8 +1083,8 @@ public class ModManager {
 			if (hash.equals(tocHashes.get(key))) {
 				return true;
 			} else {
-				ModManager.debugLogger
-						.writeError(key + " TOC in pristine directory has failed hash check: " + hash + " vs known good value: " + tocHashes.get(key));
+				ModManager.debugLogger.writeError(key + " TOC in pristine directory has failed hash check: " + hash + " vs known good value: "
+						+ tocHashes.get(key));
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -1110,14 +1128,15 @@ public class ModManager {
 	public static String getPatchSource(String targetPath, String targetModule) {
 		String internalModule = ME3TweaksUtils.headerNameToInternalName(targetModule);
 		ModManager.debugLogger.writeMessage("Looking for patch source: " + targetPath + " in module " + targetModule);
-		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator + targetPath);
+		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator
+				+ targetPath);
 		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		if (sourceDestination.exists()) {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
 		} else {
-			ModManager.debugLogger.writeMessage(
-					"Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath() + "), fetching from original location.");
+			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath()
+					+ "), fetching from original location.");
 		}
 		if (targetModule.equals(ModType.BASEGAME)) {
 			// we must use PCCEditor2 to decompress the file using the
@@ -1384,7 +1403,9 @@ public class ModManager {
 	}
 
 	/**
-	 * Attemps to read what version of .NET framework is installed and if the release version meets the minimum ME3Explorer requirements
+	 * Attemps to read what version of .NET framework is installed and if the
+	 * release version meets the minimum ME3Explorer requirements
+	 * 
 	 * @return true if satisfied, false otherwise
 	 */
 	public static boolean validateNETFrameworkIsInstalled() {
@@ -1395,13 +1416,15 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage("Checking for .NET Framework 4.5 or higher registry key");
 			try {
 				releaseNum = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, netFrameWork4Key, "Release");
-				ModManager.debugLogger.writeMessage(".NET Framework release detected: "+releaseNum);
+				ModManager.debugLogger.writeMessage(".NET Framework release detected: " + releaseNum);
 				if (releaseNum >= MIN_REQUIRED_NET_FRAMEWORK_RELNUM) {
-					ModManager.debugLogger.writeMessage("This version ("+releaseNum+") satisfies the current requirements ("+MIN_REQUIRED_NET_FRAMEWORK_RELNUM+")");
+					ModManager.debugLogger.writeMessage("This version (" + releaseNum + ") satisfies the current requirements ("
+							+ MIN_REQUIRED_NET_FRAMEWORK_RELNUM + ")");
 					NET_FRAMEWORK_IS_INSTALLED = true;
 					return true;
 				} else {
-					ModManager.debugLogger.writeError("This version ("+releaseNum+") DOES NOT satisfy the current requirements ("+MIN_REQUIRED_NET_FRAMEWORK_RELNUM+")");
+					ModManager.debugLogger.writeError("This version (" + releaseNum + ") DOES NOT satisfy the current requirements ("
+							+ MIN_REQUIRED_NET_FRAMEWORK_RELNUM + ")");
 					NET_FRAMEWORK_IS_INSTALLED = false;
 					return false;
 				}
@@ -1410,7 +1433,7 @@ public class ModManager {
 				NET_FRAMEWORK_IS_INSTALLED = false;
 				return false;
 			} catch (Throwable e) {
-				ModManager.debugLogger.writeErrorWithException(".NET Framework 4.5 detection exception:",e);
+				ModManager.debugLogger.writeErrorWithException(".NET Framework 4.5 detection exception:", e);
 				NET_FRAMEWORK_IS_INSTALLED = false;
 				return false;
 			}
@@ -1419,22 +1442,26 @@ public class ModManager {
 		NET_FRAMEWORK_IS_INSTALLED = false;
 		return false;
 	}
-	
-	public static boolean isAdmin(){
-	    Preferences prefs = Preferences.systemRoot();
-	    PrintStream systemErr = System.err;
-	    synchronized(systemErr){    // better synchroize to avoid problems with other threads that access System.err
-	    	System.setErr(new PrintStream(new OutputStream() { @Override public void write(int i) throws IOException { } }));
-	        try{
-	            prefs.put("me3cmm", "test"); // SecurityException on Windows
-	            prefs.remove("me3cmm");
-	            prefs.flush(); // BackingStoreException on Linux
-	            return true;
-	        }catch(Exception e){
-	            return false;
-	        }finally{
-	            System.setErr(systemErr);
-	        }
-	    }
+
+	public static boolean isAdmin() {
+		Preferences prefs = Preferences.systemRoot();
+		PrintStream systemErr = System.err;
+		synchronized (systemErr) { // better synchroize to avoid problems with other threads that access System.err
+			System.setErr(new PrintStream(new OutputStream() {
+				@Override
+				public void write(int i) throws IOException {
+				}
+			}));
+			try {
+				prefs.put("me3cmm", "test"); // SecurityException on Windows
+				prefs.remove("me3cmm");
+				prefs.flush(); // BackingStoreException on Linux
+				return true;
+			} catch (Exception e) {
+				return false;
+			} finally {
+				System.setErr(systemErr);
+			}
+		}
 	}
 }
