@@ -59,7 +59,7 @@ public class ModManager {
 	public static final String VERSION = "4.1 Beta 2";
 	public static long BUILD_NUMBER = 45L; // so it will upgrade when full is
 											// out.
-	public static final String BUILD_DATE = "10/8/2015";
+	public static final String BUILD_DATE = "10/13/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -1347,14 +1347,7 @@ public class ModManager {
 			if (unpackedFile.exists()) {
 				//check if PCConsoleTOC, as we probably want the one in the SFAR (or this one, provided DLC is unpacked)
 				if (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin")){
-					//check hash of it. might be one for SFAR
-					HashMap<String, String> tocHashMap = ME3TweaksUtils.getTOCHashesMap();
-					try {
-						String inPlaceTocMD5 = MD5Checksum.getMD5Checksum(unpackedFile.getAbsolutePath());
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+
 					//if (inPlaceToc)
 				}
 				try {

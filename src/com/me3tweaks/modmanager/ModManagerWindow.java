@@ -93,7 +93,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
-			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal;
+			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
 			sqlConsumableParser, sqlGearParser;
 	JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
@@ -871,6 +871,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertBasegameUnpacked
 				.setToolTipText("<html>Restores all basegame and unpacked DLC files that have been modified by installing mods</html>");
 
+		
+		restoreVanillifyDLC = new JMenuItem("Vanillify game DLC");
+		restoreVanillifyDLC.setToolTipText("<html>Removes custom DLC, deletes unpacked files, restores SFARs.</html>");
+
+		
 		restoreRevertAllDLC = new JMenuItem("Restore all DLC SFARs");
 		restoreRevertAllDLC.setToolTipText("<html>Restores all DLC SFAR files.<br>This does not remove custom DLC modules.</html>");
 
@@ -895,6 +900,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoredeleteAllCustomDLC.addActionListener(this);
 		restoreRevertBasegame.addActionListener(this);
 		restoreRevertUnpacked.addActionListener(this);
+		restoreVanillifyDLC.addActionListener(this);
 		restoreRevertBasegameUnpacked.addActionListener(this);
 		restoreRevertAllDLC.addActionListener(this);
 		restoreRevertSPDLC.addActionListener(this);
@@ -912,6 +918,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreMenu.add(restoreRevertUnpacked);
 		restoreMenu.add(restoreRevertBasegameUnpacked);
 		restoreMenu.addSeparator();
+		restoreMenu.add(restoreVanillifyDLC);
 		restoreMenu.add(restoreRevertAllDLC);
 		restoreMenu.add(restoreRevertMPDLC);
 		restoreMenu.add(restoreRevertMPBaseDLC);
