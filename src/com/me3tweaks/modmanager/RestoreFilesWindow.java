@@ -197,6 +197,12 @@ public class RestoreFilesWindow extends JDialog {
 							}
 						}
 					}
+					//find PCConsoleTOC.bin for it
+					File dlcConsoleTOC = new File(ModManager.appendSlash(dlcDirectory.getParent())+"PCConsoleTOC.bin");
+					if (dlcConsoleTOC.exists()) {
+						ModManager.debugLogger.writeMessage("Unpacked file: " + dlcConsoleTOC.getAbsolutePath());
+						filepaths.add(dlcConsoleTOC.getAbsolutePath());
+					}
 				}
 			}
 			return filepaths;
