@@ -212,32 +212,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					+ ModManager.BUILD_NUMBER + ").", "Update Complete", JOptionPane.INFORMATION_MESSAGE);
 		}
 
-		if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
-			//ask user
-			int result = JOptionPane
-					.showConfirmDialog(
-							this,
-							"Mod Manager can automatically keep your mods up to date\nwith ME3Tweaks checking once every three days.\nWould you like to turn this feature on?",
-							"Mod Auto Updates", JOptionPane.YES_NO_CANCEL_OPTION);
-			ModManager.ASKED_FOR_AUTO_UPDATE = true;
-			if (result != JOptionPane.CANCEL_OPTION) {
-				Wini ini;
-				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
-					ini.put("Settings", "autoupdatemods", result == JOptionPane.YES_OPTION ? "true" : "false");
-					ini.put("Settings", "declinedautoupdate", result == JOptionPane.YES_OPTION ? "false" : "true");
-					ini.store();
-				} catch (InvalidFileFormatException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException(
-							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
-				}
-			}
-		}
 		new NetworkThread().execute();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: Initialize() has completed.");
 	}
@@ -251,6 +225,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 *
 	 */
 	class NetworkThread extends SwingWorker<Void, Object> {
+
+		public void NetworkThread() {
+
+		}
 
 		@Override
 		public Void doInBackground() {
@@ -337,7 +315,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				checkForUpdates();
 			}
 			checkForME3ExplorerUpdates();
-			if (ModManager.AUTO_UPDATE_MODS) {
+			if ((ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) || ModManager.AUTO_UPDATE_MODS) {
 				checkForModUpdates();
 			}
 			return null;
@@ -381,24 +359,71 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		private void checkForModUpdates() {
-			// TODO Auto-generated method stub
-			long threeDaysMs = 259200000L;
-			if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > threeDaysMs) {
-				ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
-						+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
-						+ " since the last update check.");
-				publish("Auto Updater: Checking for mod updates");
-				checkAllModsForUpdates(false);
-				publish("Auto Updater: Checked mods for updates");
+			//should not do this on background thread but... yaknow...
+			if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
+				ModManager.debugLogger.writeMessage("Prompting user for auto-updates");
+				publish("NOTIFY_UPDATE_PROMPT");
+			} else {
+				ModManager.debugLogger.writeMessage("User has accepted mod updates or has been asked before");
+			}
+			while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
+				try {
+					Thread.sleep(200); //wait for prompt
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+
+			//Check for updates
+			if (ModManager.AUTO_UPDATE_MODS) {
+				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
+					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
+							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
+							+ " since the last update check.");
+					publish("Checking for updates to mods");
+					checkAllModsForUpdates(false);
+				}
 			}
 		}
 
 		@Override
 		protected void process(List<Object> chunks) {
-			Object latest = chunks.get(chunks.size() - 1);
-			if (latest instanceof String) {
-				String latestUpdate = (String) latest;
-				labelStatus.setText(latestUpdate);
+			for (Object latest : chunks) {
+				if (latest instanceof String) {
+					String update = (String) latest;
+					switch (update) {
+					case "NOTIFY_UPDATE_PROMPT":
+						//ask user
+						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
+								"Mod Manager can automatically keep your mods up to date\nwith ME3Tweaks, checking every "
+										+ ModManager.AUTO_CHECK_INTERVAL_DAYS + " days.\nTurn this feature on?", "Mod Auto Updates",
+								JOptionPane.YES_NO_CANCEL_OPTION);
+						ModManager.ASKED_FOR_AUTO_UPDATE = true;
+						if (result != JOptionPane.CANCEL_OPTION) {
+							Wini ini;
+							try {
+								File settings = new File(ModManager.SETTINGS_FILENAME);
+								if (!settings.exists())
+									settings.createNewFile();
+								ini = new Wini(settings);
+								ini.put("Settings", "autoupdatemods", result == JOptionPane.YES_OPTION ? "true" : "false");
+								ini.put("Settings", "declinedautoupdate", result == JOptionPane.YES_OPTION ? "false" : "true");
+								ini.store();
+								ModManager.AUTO_UPDATE_MODS = (result == JOptionPane.YES_OPTION);
+							} catch (InvalidFileFormatException e) {
+								e.printStackTrace();
+							} catch (IOException e) {
+								ModManager.debugLogger.writeErrorWithException(
+										"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+							}
+						}
+						break;
+					default:
+						labelStatus.setText(update);
+						break;
+					}
+
+				}
 			}
 		}
 
@@ -408,6 +433,92 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				get();
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Exception in the network thread: ", e);
+			}
+		}
+	}
+
+	class SingleModUpdateCheckThread extends SwingWorker<Void, Object> {
+
+		@Override
+		public Void doInBackground() {
+
+			return null;
+		}
+
+		private void checkForModUpdates() {
+			if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
+				ModManager.debugLogger.writeMessage("Prompting user for auto-updates");
+				publish("NOTIFY_UPDATE_PROMPT");
+			} else {
+				ModManager.debugLogger.writeMessage("User has accepted mod updates or has been asked before");
+			}
+			while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
+				try {
+					Thread.sleep(200); //wait for prompt
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+
+			//Check for updates
+			if (ModManager.AUTO_UPDATE_MODS) {
+				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
+					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
+							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
+							+ " since the last update check.");
+					publish("Checking for updates to mods");
+					checkAllModsForUpdates(false);
+				}
+			}
+		}
+
+		@Override
+		protected void process(List<Object> chunks) {
+			for (Object latest : chunks) {
+				if (latest instanceof String) {
+					String update = (String) latest;
+					switch (update) {
+					case "NOTIFY_UPDATE_PROMPT":
+						//ask user
+						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
+								"Mod Manager can automatically keep your mods up to date\nwith ME3Tweaks, checking every "
+										+ ModManager.AUTO_CHECK_INTERVAL_DAYS + " days.\nTurn this feature on?", "Mod Auto Updates",
+								JOptionPane.YES_NO_CANCEL_OPTION);
+						ModManager.ASKED_FOR_AUTO_UPDATE = true;
+						if (result != JOptionPane.CANCEL_OPTION) {
+							Wini ini;
+							try {
+								File settings = new File(ModManager.SETTINGS_FILENAME);
+								if (!settings.exists())
+									settings.createNewFile();
+								ini = new Wini(settings);
+								ini.put("Settings", "autoupdatemods", result == JOptionPane.YES_OPTION ? "true" : "false");
+								ini.put("Settings", "declinedautoupdate", result == JOptionPane.YES_OPTION ? "false" : "true");
+								ini.store();
+								ModManager.AUTO_UPDATE_MODS = (result == JOptionPane.YES_OPTION);
+							} catch (InvalidFileFormatException e) {
+								e.printStackTrace();
+							} catch (IOException e) {
+								ModManager.debugLogger.writeErrorWithException(
+										"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+							}
+						}
+						break;
+					default:
+						labelStatus.setText(update);
+						break;
+					}
+
+				}
+			}
+		}
+
+		@Override
+		protected void done() {
+			try {
+				get();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Exception in the single mod update thread: ", e);
 			}
 		}
 	}
@@ -734,7 +845,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			modutilsInstallCustomKeybinds.setToolTipText("<html>Replace BioInput.xml in the BASEGAME Coalesced file</html>");
 		}
 
-		modutilsUpdateXMLGenerator = new JMenuItem("Generate Mod XML");
+		modutilsUpdateXMLGenerator = new JMenuItem("Generate Server Manifest XML");
 		modutilsUpdateXMLGenerator.addActionListener(this);
 		modutilsInfoEditor = new JMenuItem("Edit name/description");
 		modutilsInfoEditor.addActionListener(this);
@@ -1166,6 +1277,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
+		} else if (e.getSource() == restoreVanillifyDLC) {
+			if (validateBIOGameDir()) {
+				if (JOptionPane
+						.showConfirmDialog(
+								this,
+								"This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
+								"Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+
+					restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.VANILLIFYDLC);
+				}
+			} else {
+				labelStatus.setText("Cannot restore files without valid BIOGame directory");
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == restoreRevertSPDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.SP);
@@ -1528,7 +1655,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void checkAllModsForUpdates(boolean isManualCheck) {
-		//ArrayList<Mod> updateDescs = new ArrayList<Mod>();
+		//Fix for moonshine mod v1
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.getElementAt(i);
 			if ("MoonShine".equals(mod.getAuthor())) {
@@ -1946,18 +2073,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// Update mod description
 				fieldDescription.setText(selectedMod.getModDisplayDescription());
 				fieldDescription.setCaretPosition(0);
-				buttonApplyMod.setEnabled(checkIfNone(modList.getSelectedValue().toString()));
+				buttonApplyMod.setEnabled(true);
 				buttonApplyMod
 						.setToolTipText("<html>Apply this mod to the game.<br>If another mod is already installed, restore your game first!<br>You can merge Mod Manager mods in the Tools menu.</html>");
 				modutilsHeader.setText(modModel.get(modList.getSelectedIndex()).getModName());
 				modMenu.setEnabled(true);
 				if (selectedMod.isME3TweaksUpdatable()) {
 					modutilsCheckforupdate.setEnabled(true);
-					modutilsCheckforupdate.setText("Update mod from ME3Tweaks");
-					modutilsCheckforupdate.setToolTipText("Checks for updates on ME3Tweaks.com and upgrades this mod");
+					modutilsCheckforupdate.setText("Check for updates");
+					modutilsCheckforupdate.setToolTipText("Checks for updates to this mod from ME3Tweaks");
 				} else {
 					modutilsCheckforupdate.setEnabled(false);
-					modutilsCheckforupdate.setText("Mod not eligible for ME3Tweaks updating");
+					modutilsCheckforupdate.setText("Mod not eligible for updates");
 					modutilsCheckforupdate
 							.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 					modutilsUninstallCustomDLC.setToolTipText("Deletes this mod's custom DLC modules");
@@ -1973,21 +2100,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 		}
-	}
-
-	/**
-	 * Checks if the mod in the list is "No Mods Available" to see if the Apply
-	 * Button should be disabled.
-	 * 
-	 * @param modName
-	 *            Name of the mod in the list to be checked
-	 * @return False if it is, otherwise true
-	 */
-	private boolean checkIfNone(String modName) {
-		if (modName.equals("No Mods Available")) {
-			return false;
-		}
-		return true;
 	}
 
 	/**

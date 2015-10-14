@@ -139,7 +139,7 @@ public class RestoreFilesWindow extends JDialog {
 				case RestoreMode.VANILLIFYDLC:
 					numjobs = 2 + ModType.getDLCHeaderNameArray().length;
 					publish("Attempting to return DLC to vanilla state");
-					return removeCustomDLC() && processDeleteUnpackedFiles() && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray());
+					return removeCustomDLC() && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray()) && processDeleteUnpackedFiles();
 				case RestoreMode.ALLDLC:
 					numjobs = ModType.getHeaderNameArray().length;
 					publish("Restoring all DLC SFARs");
@@ -231,13 +231,18 @@ public class RestoreFilesWindow extends JDialog {
 		}
 
 		private boolean restoreSFARsUsingHeaders(String[] dlcHeaders) {
+			int restoresCompleted = 0;
 			for (String header : dlcHeaders) {
 				if (processRestoreJob(ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(header)), header)) {
-					completed++;
+					ModManager.debugLogger.writeMessage("Processed Restore SFAR Job (SUCCESS): "+header);
+					completed++; //for progress bar
+					restoresCompleted++; //for local checking
 					publish(Integer.toString(completed));
+				} else {
+					ModManager.debugLogger.writeError("Processed Restore SFAR Job (UNSUCCESSFUL): "+header);
 				}
 			}
-			return completed == dlcHeaders.length;
+			return restoresCompleted == dlcHeaders.length;
 		}
 
 		/**
@@ -400,8 +405,7 @@ public class RestoreFilesWindow extends JDialog {
 				// Maybe DLC is not installed?
 				ModManager.debugLogger.writeMessage(jobName + ": DLC Path does not exist: " + dlcPath);
 				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping.");
-
-				return false;
+				return true; //not an error
 			}
 
 			// The folder exists.
@@ -507,11 +511,9 @@ public class RestoreFilesWindow extends JDialog {
 					}
 				} catch (Exception e) {
 					// it died somehow
-					e.printStackTrace();
+					ModManager.debugLogger.writeErrorWithException("Failure restoring backup SFAR:", e);
 					return false;
 				}
-			} else {
-				System.out.println("BACKUP DOES NOT EXIST.");
 			}
 
 			return false;
@@ -522,9 +524,10 @@ public class RestoreFilesWindow extends JDialog {
 			// System.out.println("Restoring next DLC");
 			for (String update : updates) {
 				try {
-					Integer.parseInt(update); // see if we got a number. if we did that means we should update the bar
+					int updateVal = Integer.parseInt(update); // see if we got a number. if we did that means we should update the bar
+					ModManager.debugLogger.writeMessage(updateVal +" of "+ numjobs+ " tasks completed");
 					if (numjobs != 0) {
-						progressBar.setValue((int) (((float) completed / numjobs) * 100));
+						progressBar.setValue((int) (((float) updateVal / numjobs) * 100));
 					}
 				} catch (NumberFormatException e) {
 					// this is not a progress update, it's a string update
@@ -537,7 +540,8 @@ public class RestoreFilesWindow extends JDialog {
 		@Override
 		protected void done() {
 			try {
-				get();
+				boolean result = get();
+				ModManager.debugLogger.writeMessage("RESULT OF RESTORATION THREAD:" +result);
 				finishRestore();
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Restore thread had an error.", e);
@@ -568,6 +572,10 @@ public class RestoreFilesWindow extends JDialog {
 				break;
 			case RestoreMode.REMOVEUNPACKEDITEMS:
 				status = "Deleted " + completed + " unpacked files";
+				break;
+			case RestoreMode.VANILLIFYDLC:
+				status = "Vanillified DLC";
+				break;
 			}
 			callingWindow.labelStatus.setText(status);
 			callingWindow.labelStatus.setVisible(true);

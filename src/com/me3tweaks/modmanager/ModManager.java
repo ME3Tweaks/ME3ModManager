@@ -59,7 +59,7 @@ public class ModManager {
 	public static final String VERSION = "4.1 Beta 2";
 	public static long BUILD_NUMBER = 45L; // so it will upgrade when full is
 											// out.
-	public static final String BUILD_DATE = "10/13/2015";
+	public static final String BUILD_DATE = "10/14/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -84,8 +84,11 @@ public class ModManager {
 	public static boolean AUTO_UPDATE_ME3EXPLORER = true;
 	public static boolean NET_FRAMEWORK_IS_INSTALLED = false;
 	public static long SKIP_UPDATES_UNTIL_BUILD = 0;
+	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
+	public static long AUTO_CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(AUTO_CHECK_INTERVAL_DAYS);
 
 	public static void main(String[] args) {
+		
 		debugLogger = new DebugLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
