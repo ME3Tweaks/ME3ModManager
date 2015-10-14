@@ -53,7 +53,6 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		} else {
 			downloadSource = "http://me3tweaks.com/mods/updates/";
 		}
-
 		setupWindow();
 	}
 

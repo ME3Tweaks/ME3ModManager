@@ -226,10 +226,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	class NetworkThread extends SwingWorker<Void, Object> {
 
-		public void NetworkThread() {
-
-		}
-
 		@Override
 		public Void doInBackground() {
 			File f7za = new File(ModManager.getToolsDir() + "7za.exe");
@@ -438,38 +434,23 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	class SingleModUpdateCheckThread extends SwingWorker<Void, Object> {
+		Mod mod;
+
+		public SingleModUpdateCheckThread(Mod mod) {
+			this.mod = mod;
+			labelStatus.setText("Checking for " + mod.getModName() + " updates");
+		}
 
 		@Override
 		public Void doInBackground() {
-
-			return null;
-		}
-
-		private void checkForModUpdates() {
-			if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
-				ModManager.debugLogger.writeMessage("Prompting user for auto-updates");
-				publish("NOTIFY_UPDATE_PROMPT");
+			UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
+			if (upackage != null) {
+				publish("Update available for " + mod.getModName());
+				publish(upackage);
 			} else {
-				ModManager.debugLogger.writeMessage("User has accepted mod updates or has been asked before");
+				publish(mod.getModName() + " is up to date");
 			}
-			while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
-				try {
-					Thread.sleep(200); //wait for prompt
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-
-			//Check for updates
-			if (ModManager.AUTO_UPDATE_MODS) {
-				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
-					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
-							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
-							+ " since the last update check.");
-					publish("Checking for updates to mods");
-					checkAllModsForUpdates(false);
-				}
-			}
+			return null;
 		}
 
 		@Override
@@ -477,38 +458,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			for (Object latest : chunks) {
 				if (latest instanceof String) {
 					String update = (String) latest;
-					switch (update) {
-					case "NOTIFY_UPDATE_PROMPT":
-						//ask user
-						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
-								"Mod Manager can automatically keep your mods up to date\nwith ME3Tweaks, checking every "
-										+ ModManager.AUTO_CHECK_INTERVAL_DAYS + " days.\nTurn this feature on?", "Mod Auto Updates",
-								JOptionPane.YES_NO_CANCEL_OPTION);
-						ModManager.ASKED_FOR_AUTO_UPDATE = true;
-						if (result != JOptionPane.CANCEL_OPTION) {
-							Wini ini;
-							try {
-								File settings = new File(ModManager.SETTINGS_FILENAME);
-								if (!settings.exists())
-									settings.createNewFile();
-								ini = new Wini(settings);
-								ini.put("Settings", "autoupdatemods", result == JOptionPane.YES_OPTION ? "true" : "false");
-								ini.put("Settings", "declinedautoupdate", result == JOptionPane.YES_OPTION ? "false" : "true");
-								ini.store();
-								ModManager.AUTO_UPDATE_MODS = (result == JOptionPane.YES_OPTION);
-							} catch (InvalidFileFormatException e) {
-								e.printStackTrace();
-							} catch (IOException e) {
-								ModManager.debugLogger.writeErrorWithException(
-										"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
-							}
-						}
-						break;
-					default:
-						labelStatus.setText(update);
-						break;
+					labelStatus.setText(update);
+				}
+				if (latest instanceof UpdatePackage) {
+					UpdatePackage upackage = (UpdatePackage) latest;
+					String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
+					updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + "\n";
+					updatetext += "Update this mod?";
+					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
+					if (result == JOptionPane.YES_OPTION) {
+						ModManager.debugLogger.writeMessage("Starting manual single-mod updater");
+						ModUpdateWindow muw = new ModUpdateWindow(upackage);
+						muw.startUpdate(ModManagerWindow.this);
 					}
-
 				}
 			}
 		}
@@ -1580,7 +1542,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == sqlWavelistParser) {
 			new WavelistGUI();
 		} else if (e.getSource() == modutilsCheckforupdate) {
-			checkForModUpdate();
+			new SingleModUpdateCheckThread(modModel.getElementAt(modList.getSelectedIndex())).execute();
 		} else if (e.getSource() == modutilsInstallCustomKeybinds) {
 			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()), false);
 		} else if (e.getSource() == toolsCheckallmodsforupdate) {
@@ -1704,29 +1666,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeErrorWithException(
 						"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 			}
-		}
-	}
-
-	/**
-	 * Downloads from ME3Tweaks a manifest of the latest version of a mod. It
-	 * then checks the version of the local mod against it. If the other one is
-	 * higher a list of files to update and delete are constructed and then a
-	 * user can elect to update
-	 */
-	private void checkForModUpdate() {
-		Mod mod = modModel.get(modList.getSelectedIndex());
-		UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
-		if (upackage != null) {
-			// an update is available
-			int result = JOptionPane.showConfirmDialog(this, "An update to " + mod.getModName() + " is available from ME3Tweaks.\nLocal Version: "
-					+ mod.getVersion() + "\nServer Version: " + upackage.getVersion() + "\nUpgrade this mod?", "Update available",
-					JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.YES_OPTION) {
-				ModUpdateWindow muw = new ModUpdateWindow(upackage);
-				muw.startUpdate(this);
-			}
-		} else {
-			labelStatus.setText(mod.getModName() + " is up to date with ME3Tweaks");
 		}
 	}
 
