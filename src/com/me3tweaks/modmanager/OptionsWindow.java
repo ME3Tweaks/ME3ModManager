@@ -209,7 +209,7 @@ public class OptionsWindow extends JDialog {
 
 		if (ModManager.SKIP_UPDATES_UNTIL_BUILD > ModManager.BUILD_NUMBER) {
 			skipUpdate = new JCheckBox("Only show update if it is build " + ModManager.SKIP_UPDATES_UNTIL_BUILD + " or higher");
-			skipUpdate.setToolTipText("<html>Automatically accepts recommended MixIns when compiling a ModMaker mod</html>");
+			skipUpdate.setToolTipText("<html>Suppresses update prompts until a new version is releases past the current known one</html>");
 			skipUpdate.setSelected(ModManager.SKIP_UPDATES_UNTIL_BUILD > ModManager.BUILD_NUMBER);
 			skipUpdate.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {

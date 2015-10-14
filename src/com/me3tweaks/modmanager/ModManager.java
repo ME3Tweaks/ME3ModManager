@@ -57,7 +57,7 @@ import com.sun.jna.platform.win32.WinReg;
 public class ModManager {
 
 	public static final String VERSION = "4.1 Beta 2";
-	public static long BUILD_NUMBER = 45L; // so it will upgrade when full is
+	public static long BUILD_NUMBER = 44L; // so it will upgrade when full is
 											// out.
 	public static final String BUILD_DATE = "10/14/2015";
 	public static DebugLogger debugLogger;
@@ -1151,7 +1151,6 @@ public class ModManager {
 	 * @return
 	 */
 	public static String getPatchSource(String targetPath, String targetModule) {
-		String internalModule = ME3TweaksUtils.headerNameToInternalName(targetModule);
 		ModManager.debugLogger.writeMessage("Looking for patch source: " + targetPath + " in module " + targetModule);
 		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator
 				+ targetPath);
@@ -1457,29 +1456,7 @@ public class ModManager {
 
 	public static boolean hasKnownDLCBypass(String biogameDir) {
 		try {
-			String wvdlcBink32MD5 = "5a826dd66ad28f0099909d84b3b51ea4"; // Binkw32.dll
-																		// that
-																		// bypasses
-																		// DLC
-																		// check
-																		// (WV)
-																		// -
-																		// from
-																		// Private
-																		// Server
-																		// SVN
-			String wvdlcBink32MD5_2 = "05540bee10d5e3985608c81e8b6c481a"; // Binkw32.dll
-																			// that
-																			// bypasses
-																			// DLC
-																			// check
-																			// (WV)
-																			// -
-																			// from
-																			// Private
-																			// Server
-																			// SVN
-			String originalBink32MD5 = "";
+			String originalBink32MD5 = "128b560ef70e8085c507368da6f26fe6";
 
 			File bgdir = new File(biogameDir);
 			File gamedir = bgdir.getParentFile();
@@ -1488,7 +1465,7 @@ public class ModManager {
 			File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 			try {
 				String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
-				if (!binkhash.equals(wvdlcBink32MD5) || bink23.exists()) {
+				if (!binkhash.equals(originalBink32MD5) && bink23.exists()) {
 					ModManager.debugLogger.writeMessage("Binkw32 DLC bypass probably installed (hash is wrong and bink23 exists)");
 					return true;
 				} else {
