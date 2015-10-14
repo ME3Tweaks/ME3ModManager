@@ -395,17 +395,12 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 
 				// find local packs that need updated, or are missing
 				ArrayList<ME3TweaksPatchPackage> packsToDownload = new ArrayList<ME3TweaksPatchPackage>();
-				ArrayList<Patch> patchesToDelete = new ArrayList<Patch>(); //will remove in like 2 builds or so so users don't have duplicates
 
 				for (ME3TweaksPatchPackage serverpack : serverpacks) {
 					boolean needsDownloaded = true;
 
 					for (int i = 0; i < patches.size(); i++) {
 						Patch localpatch = patches.get(i);
-						if (localpatch.getMe3tweaksid() <= 0) {
-							patchesToDelete.add(localpatch);
-							continue;
-						}
 
 						if (localpatch.getMe3tweaksid() != serverpack.getMe3tweaksid()) {
 							continue;
@@ -440,13 +435,6 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						ModManager.debugLogger.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally (or out of date), adding to download queue");
 						packsToDownload.add(serverpack);
 					}
-				}
-
-				//delete old packs from build 40/41/42
-				for (Patch localPatch : patchesToDelete) {
-					File patchFolder = new File(localPatch.getPatchFolderPath());
-					FileUtils.deleteQuietly(patchFolder);
-					publish(new ThreadCommand("REMOVE_PATCH", null, localPatch));
 				}
 
 				// download new packs

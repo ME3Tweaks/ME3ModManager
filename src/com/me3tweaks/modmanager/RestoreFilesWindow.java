@@ -123,6 +123,7 @@ public class RestoreFilesWindow extends JDialog {
 					return removeCustomDLC() && processRestoreBasegame(false, false) && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray()) && processDeleteUnpackedFiles();
 				case RestoreMode.REMOVECUSTOMDLC:
 					publish("Deleting custom DLCs");
+					numjobs = 1;
 					return removeCustomDLC();
 				case RestoreMode.BASEGAME:
 					numjobs = 1;
