@@ -276,6 +276,12 @@ public class ModInstallWindow extends JDialog {
 				publish("Loading game repair database");
 				bghDB = new BasegameHashDB(null, me3dir, false);
 			}
+			//check if DB exists
+			if (!bghDB.isBasegameTableCreated()) {
+				JOptionPane.showMessageDialog(ModInstallWindow.this, "The game repair database has not been created.\nYou need to do so before installing mods.", "No Game Repair Database", JOptionPane.ERROR_MESSAGE);
+				return true; //open DB window
+			}
+			
 			for (ModJob job : jobs) {
 				publish("Checking GDB: " + job.getJobName());
 				if (job.getJobType() == ModJob.BASEGAME) {
@@ -385,6 +391,7 @@ public class ModInstallWindow extends JDialog {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles.get(i);
 				if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
+					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: "+newFile);
 					newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
 				}
 
@@ -521,6 +528,7 @@ public class ModInstallWindow extends JDialog {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles.get(i);
 				if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
+					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: "+newFile);
 					newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
 				}
 
@@ -728,7 +736,6 @@ public class ModInstallWindow extends JDialog {
 							}
 						}
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
 						ModManager.debugLogger.writeException(e);
 					}
 				}
@@ -787,6 +794,7 @@ public class ModInstallWindow extends JDialog {
 					commandBuilder.add(filesToReplace.get(i));
 					String newFile = newFiles.get(i);
 					if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
+						ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: "+newFile);
 						newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
 					}
 					commandBuilder.add(newFile);

@@ -118,9 +118,9 @@ public class RestoreFilesWindow extends JDialog {
 			if (windowOpen) {
 				switch (restoreMode) {
 				case RestoreMode.ALL:
-					numjobs = ModType.getHeaderNameArray().length + 2;
-					publish("Deleting custom DLC and restoring basegame files and SFARs");
-					return removeCustomDLC() && processRestoreBasegame(false, false) && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray());
+					numjobs = ModType.getHeaderNameArray().length + 1;
+					publish("Deleting custom DLC, restoring basegame/unpacked files,SFARs, unpacked content");
+					return removeCustomDLC() && processRestoreBasegame(false, false) && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray()) && processDeleteUnpackedFiles();
 				case RestoreMode.REMOVECUSTOMDLC:
 					publish("Deleting custom DLCs");
 					return removeCustomDLC();
@@ -136,6 +136,10 @@ public class RestoreFilesWindow extends JDialog {
 					numjobs = 1;
 					publish("Restoring basegame and unpacked DLC files");
 					return processRestoreBasegame(false, false);
+				case RestoreMode.VANILLIFYDLC:
+					numjobs = 2 + ModType.getDLCHeaderNameArray().length;
+					publish("Attempting to return DLC to vanilla state");
+					return removeCustomDLC() && processDeleteUnpackedFiles() && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray());
 				case RestoreMode.ALLDLC:
 					numjobs = ModType.getHeaderNameArray().length;
 					publish("Restoring all DLC SFARs");
@@ -198,6 +202,7 @@ public class RestoreFilesWindow extends JDialog {
 		}
 
 		private boolean processDeleteUnpackedFiles() {
+			completed = 0;
 			ArrayList<String> filestodelete = getUnpackedFilesList();
 			numjobs = filestodelete.size();
 			ModManager.debugLogger.writeMessage("===Deleting " + numjobs + " unpacked files===");
@@ -423,11 +428,9 @@ public class RestoreFilesWindow extends JDialog {
 				boolean sizeMatch = true; //default to true - falls back to hashing in the event something goes wrong.
 				Long filesize = mainSfar.length();
 				if (!filesize.equals(sfarSizes.get(jobName))) {
-					System.out.println("size mismatch: " + filesize + " vs " + sfarSizes.get(jobName));
 					sizeMatch = false;
 					ModManager.debugLogger.writeMessage(jobName + ": size mismatch between known original and existing - marking for restore");
-
-					publish(jobName + ": Mismatch on known original filesize");
+					publish(jobName + ": DLC is modified [size]");
 				}
 
 				if (sizeMatch) {
@@ -444,6 +447,9 @@ public class RestoreFilesWindow extends JDialog {
 
 							publish(jobName + ": DLC is OK");
 							return true;
+						} else {
+							ModManager.debugLogger.writeMessage(jobName + ": hash mismatch between known original and existing - marking for restore");
+							publish(jobName + ": DLC is modified [hash]");
 						}
 					} catch (Exception e) {
 						// it died somehow

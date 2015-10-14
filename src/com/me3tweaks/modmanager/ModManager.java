@@ -74,7 +74,7 @@ public class ModManager {
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
-	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 720; // my custom build
+	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 721; // my custom build
 	// version
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
@@ -1273,6 +1273,7 @@ public class ModManager {
 	 * @return null if could not get file, otherwise copyToLocation.
 	 */
 	public static String getGameFile(String targetPath, String targetModule, String copyToLocation) {
+		ModManager.debugLogger.writeMessage("Getting game file (will use unpacked if possible) from "+targetModule+", with relative path "+targetPath);
 		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		File destFile = new File(copyToLocation);
 		FileUtils.deleteQuietly(destFile);
@@ -1301,17 +1302,22 @@ public class ModManager {
 				// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 				Process decompressProcess;
 				try {
+					ModManager.debugLogger.writeMessage("===ME3EXPLORER PCC REPACKER===");
 					decompressProcess = decompressProcessBuilder.start();
 					BufferedReader reader = new BufferedReader(new InputStreamReader(decompressProcess.getInputStream()));
 					String line;
 					while ((line = reader.readLine()) != null)
-						System.out.println(line);
+						ModManager.debugLogger.writeMessage(line);
 					int result = decompressProcess.waitFor();
+					ModManager.debugLogger.writeMessage("===END OF PCC REPACKER===");
+
 					ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeException(e);
+					return null;
 				} catch (InterruptedException e) {
 					ModManager.debugLogger.writeException(e);
+					return null;
 				}
 				return copyToLocation;
 			} else {
@@ -1325,6 +1331,7 @@ public class ModManager {
 						ModManager.debugLogger.writeMessage("Copying to destination: "+copyToLocation);
 						FileUtils.copyFile(fileToGet, destFile);
 						ModManager.debugLogger.writeMessage("Copied to destination.");
+						return copyToLocation;
 					} catch (IOException e) {
 						ModManager.debugLogger.writeErrorWithException("Unable to get game file from basegame:", e);
 						return null;
@@ -1346,10 +1353,10 @@ public class ModManager {
 			File unpackedFile = new File(gamedir + targetPath);
 			if (unpackedFile.exists()) {
 				//check if PCConsoleTOC, as we probably want the one in the SFAR (or this one, provided DLC is unpacked)
-				if (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin")){
+/*				if (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin")){
 
 					//if (inPlaceToc)
-				}
+				}*/
 				try {
 					new File(destFile.getParent()).mkdirs();
 					ModManager.debugLogger.writeMessage("Copying unpacked file to destination: "+copyToLocation);

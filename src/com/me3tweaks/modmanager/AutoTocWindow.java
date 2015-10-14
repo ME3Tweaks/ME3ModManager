@@ -112,6 +112,10 @@ public class AutoTocWindow extends JDialog {
 		this.getContentPane().add(aboutPanel);
 	}
 	
+	/**
+	 * Returns the hashmap of updated TOC files (JOB HEADER NAME => PATH OF TOC)
+	 * @return null if autotoc did not run in gametoc mode, otherwise list of updated TOC files copied from the game and updated
+	 */
 	public HashMap<String, String> getUpdatedGameTOCs(){
 		return updatedGameTOCs;
 	}
@@ -181,7 +185,7 @@ public class AutoTocWindow extends JDialog {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
 					continue;
 				}
-				ModManager.debugLogger.writeMessage("Processing AutoTOC job on module "+job.getJobName());
+				ModManager.debugLogger.writeMessage("======AutoTOC job on module "+job.getJobName()+"=======");
 				boolean hasTOC = false;
 				if (mode == LOCALMOD_MODE) {
 					//see if has toc file
@@ -198,6 +202,8 @@ public class AutoTocWindow extends JDialog {
 					if (tocPath != null) {
 						updatedGameTOCs.put(job.getJobName(), tocPath);
 						hasTOC = true;
+					} else {
+						ModManager.debugLogger.writeError("Unable to get module's PCConsoleTOC file: "+job.getJobName()+". This update will be skipped.");
 					}
 				}
 				
@@ -292,6 +298,7 @@ public class AutoTocWindow extends JDialog {
 							//failedTOC.add(filepath);
 						} else {
 							completed += batchJob.getNameSizePairs().size();
+							ModManager.debugLogger.writeMessage("Number of completed tasks: "+completed+", num left to do: "+(numtoc - completed));
 							publish(Integer.toString(completed));
 						}
 					}
@@ -326,6 +333,7 @@ public class AutoTocWindow extends JDialog {
 			}
 			
 			if (numtoc != completed) {
+				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: "+numtoc+" total tasks, "+completed+" completed");
 				//failed something
 				for (ModJob job : mod.jobs) {
 					if (job.getJobType() == ModJob.CUSTOMDLC) {
@@ -336,6 +344,7 @@ public class AutoTocWindow extends JDialog {
 				if (ModManagerWindow.ACTIVE_WINDOW != null) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("AutoTOC had an error (check logs)");
 				}
+				dispose();
 
 			} else {
 				for (ModJob job : mod.jobs) {
@@ -353,95 +362,4 @@ public class AutoTocWindow extends JDialog {
 			return;
 		}
 	}
-
-	/*
-	 * class UnpackedUpgradeTOCWorker extends SwingWorker<Boolean, String> { int
-	 * completed = 0; int numtoc = 0; String me3explorer; ArrayList<String>
-	 * failedTOC; Mod mod;
-	 * 
-	 * protected UnpackedUpgradeTOCWorker(Mod mod) { this.mod = mod; String
-	 * biogameDir = ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText();
-	 * String me3dir = new File(biogameDir).getParent();
-	 * 
-	 * //get number of TOCs to do for (ModJob job : mod.jobs) { String
-	 * relativeUnpackedDirectory = ModType.getDLCPath(job.getJobName()); String
-	 * unpackedDirectory = ModManager.appendSlash(me3dir) +
-	 * relativeUnpackedDirectory; File folder = new File(me3dir + "/BIOGame" +
-	 * unpackedDirectory); File[] listOfFiles = folder.listFiles(); if
-	 * (listOfFiles != null) { for (int i = 0; i < listOfFiles.length; i++) { if
-	 * (listOfFiles[i].isFile() && !listOfFiles[i].getName().endsWith(".sfar")
-	 * && !listOfFiles[i].getName().endsWith(".bak")) { numtoc++; } } } }
-	 * 
-	 * failedTOC = new ArrayList<String>(); progressBar.setValue(0); me3explorer
-	 * = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true)) +
-	 * "ME3Explorer.exe"; ModManager.debugLogger.writeMessage(
-	 * "Starting the AutoTOC utility in upgrade to unpacked DLC mode. Number of toc updates to do: "
-	 * + numtoc); ModManager.debugLogger.writeMessage("Using ME3Explorer from: "
-	 * + me3explorer); }
-	 * 
-	 * @Override public Boolean doInBackground() { if (true) return true; //get
-	 * list of all files to update for the progress bar for (ModJob job :
-	 * mod.jobs) { if (job.getJobType() == ModJob.CUSTOMDLC) { continue; }
-	 * boolean hasTOC = false; for (String file : job.newFiles) { String
-	 * filename = FilenameUtils.getName(file); if
-	 * (filename.equals("PCConsoleTOC.bin")) { hasTOC = true; break; } }
-	 * 
-	 * if (hasTOC) { //toc this job //get path to PCConsoleTOC for (String
-	 * newFile : job.newFiles) {
-	 * 
-	 * String filename = FilenameUtils.getName(newFile); if
-	 * (filename.equals("PCConsoleTOC.bin")) { continue; //this doens't need
-	 * updated. } String modulePath = FilenameUtils.getFullPath(newFile);
-	 * //inside mod, folders like PATCH2 or MP4. Already has a / on the end.
-	 * ArrayList<String> commandBuilder = new ArrayList<String>(); // <exe>
-	 * -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-	 * commandBuilder.add(me3explorer); commandBuilder.add("-toceditorupdate");
-	 * commandBuilder.add(modulePath + "PCConsoleTOC.bin");
-	 * commandBuilder.add(filename); //internal filename (if in DLC)
-	 * commandBuilder.add(Long.toString((new File(newFile)).length()));
-	 * 
-	 * String[] command = commandBuilder.toArray(new
-	 * String[commandBuilder.size()]); //Debug stuff StringBuilder sb = new
-	 * StringBuilder(); for (String arg : command) { sb.append(arg + " "); }
-	 * 
-	 * Process p = null; int returncode = 1;
-	 * ModManager.debugLogger.writeMessage( "Executing process for TOC Update: "
-	 * + sb.toString()); try { ProcessBuilder pb = new ProcessBuilder(command);
-	 * p = pb.start(); returncode = p.waitFor(); } catch (IOException e) {
-	 * e.printStackTrace(); } catch (InterruptedException e) {
-	 * e.printStackTrace(); } if (returncode != 0) { System.out.println(
-	 * "SOMETHINGS WRONG."); //failedTOC.add(filepath); } else { completed++;
-	 * publish(Integer.toString(completed)); } } } } return true; }
-	 * 
-	 * @Override protected void process(List<String> updates) {
-	 * //System.out.println("Restoring next DLC"); for (String update : updates)
-	 * { try { Integer.parseInt(update); // see if we got a number. if we did
-	 * that means we should update the bar if (numtoc != 0) {
-	 * progressBar.setValue((int) (((float) completed / numtoc) * 100)); } }
-	 * catch (NumberFormatException e) { // this is not a progress update, it's
-	 * a string update //addToQueue(update); } }
-	 * 
-	 * }
-	 * 
-	 * @Override protected void done() { if (true) return;
-	 * 
-	 * if (numtoc != completed) { //failed something StringBuilder sb = new
-	 * StringBuilder(); sb.append(
-	 * "Failed to TOC at least one of the files in this mod."); for (ModJob job
-	 * : mod.jobs) { if (job.getJobType() == ModJob.CUSTOMDLC) {
-	 * JOptionPane.showMessageDialog(null,
-	 * "This mod includes custom DLC content. Custom DLC content must be manually TOCed."
-	 * , "AutoTOC Info", JOptionPane.INFORMATION_MESSAGE); } } if
-	 * (ModManagerWindow.ACTIVE_WINDOW != null) {
-	 * ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(
-	 * "Failed to TOC at least 1 file in mod"); }
-	 * 
-	 * } else { for (ModJob job : mod.jobs) { if (job.getJobType() ==
-	 * ModJob.CUSTOMDLC) { JOptionPane.showMessageDialog(null,
-	 * "This mod includes custom DLC content. Custom DLC content must be manually TOCed."
-	 * , "AutoTOC Info", JOptionPane.INFORMATION_MESSAGE); } } //we're good if
-	 * (ModManagerWindow.ACTIVE_WINDOW != null) {
-	 * ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(mod.getModName() +
-	 * " TOC files updated"); } dispose(); } return; } }
-	 */
 }

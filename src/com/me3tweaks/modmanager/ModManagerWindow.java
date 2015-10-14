@@ -871,11 +871,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertBasegameUnpacked
 				.setToolTipText("<html>Restores all basegame and unpacked DLC files that have been modified by installing mods</html>");
 
-		
 		restoreVanillifyDLC = new JMenuItem("Vanillify game DLC");
 		restoreVanillifyDLC.setToolTipText("<html>Removes custom DLC, deletes unpacked files, restores SFARs.</html>");
 
-		
 		restoreRevertAllDLC = new JMenuItem("Restore all DLC SFARs");
 		restoreRevertAllDLC.setToolTipText("<html>Restores all DLC SFAR files.<br>This does not remove custom DLC modules.</html>");
 
@@ -1089,7 +1087,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								this,
 								"<html><div style=\"width:330px;\">Basegame and unpacked DLC files are automatically backed up by Mod Manager when a Mod Manager mod replaces or removes that file while being applied.<br>"
 										+ "The game repair database verifies the file being backed up matches the metadata in the database so it can restore back to that version later. When restoring, the backed up file is checked again to make sure it wasn't modified. Otherwise you may restore files of different sizes and the game will crash.<br>"
-										+ "This is why modifications outside of Mod Manager are not backed up and are not supported. If you want to use modifications outside of Mod Manager, update the basegame database (and delete your Mod Manager backups) after you make your changes outside of Mod Manager. Make sure your game is in a working state before you do this or you will restore to a broken snapshot.<br><br>"
+										+ "This is why modifications outside of Mod Manager are not backed up and are not supported. If you want to use modifications outside of Mod Manager, update the game repair database after you make your changes outside of Mod Manager. Make sure your game is in a working state before you do this or you will restore to a broken snapshot.<br><br>"
 										+ "The backup files created by Mod Manager are placed in the following folder:<br>"
 										+ backupLocation
 										+ "<br><br>MixIns do not support modified files except for those modified by other non-finalizing MixIns.</div></html>",
@@ -1209,13 +1207,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (e.getSource() == restoreRevertEverything) {
 			if (validateBIOGameDir()) {
-				restoreCoalesced(fieldBiogameDir.getText());
-				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.ALL);
-			} else {
-				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null,
-						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				if (validateBIOGameDir()) {
+					if (JOptionPane
+							.showConfirmDialog(
+									this,
+									"This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
+									"Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+
+						restoreCoalesced(fieldBiogameDir.getText());
+						restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.ALL);
+					}
+				} else {
+					labelStatus.setText("Cannot restore files without valid BIOGame directory");
+					JOptionPane
+							.showMessageDialog(
+									null,
+									"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+									"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		} else if (e.getSource() == restoreDeleteUnpacked) {
 			if (validateBIOGameDir()) {
