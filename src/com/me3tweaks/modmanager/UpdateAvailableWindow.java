@@ -136,7 +136,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		updatePanel.add(versionPanel);
 
 		changeLogPanel.add(changelogLabel);
-		changelogLink = "https://github.com/Mgamerz/me3modmanager/pull/4";
 		if (changelogLink != null && !changelogLink.equals("")){
 			changeLogPanel.add(changelogButton);
 		}
