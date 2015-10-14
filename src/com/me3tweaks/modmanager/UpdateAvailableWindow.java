@@ -396,13 +396,14 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	public void runUpdateScript() {
 		String[] command = { "cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getTempDir()+"updater.cmd" };
 		try {
-			Runtime.getRuntime().exec(command);
+			ProcessBuilder pb = new ProcessBuilder(command);
+			pb.start();
+			ModManager.debugLogger.writeMessage("Upgrading to build "+build+", shutting down.");
+			System.exit(0);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("FAILED TO RUN AUTO UPDATER:",e);
+			JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.", "Updating Error", JOptionPane.ERROR_MESSAGE);
 		}
-		ModManager.debugLogger.writeMessage("Upgrading to build "+build+", shutting down.");
-		System.exit(0);
 	}
 
 	/**
