@@ -183,6 +183,7 @@ public class ModInstallWindow extends JDialog {
 
 		protected InjectionCommander(ModJob[] jobs, Mod mod) {
 			ModManager.debugLogger.writeMessage("===============Start of INJECTION COMMANDER==============");
+			ModManager.debugLogger.writeMessage("========Installing " + mod.getModName() + "========");
 
 			this.mod = mod;
 			numjobs = jobs.length;
@@ -201,7 +202,7 @@ public class ModInstallWindow extends JDialog {
 
 		@Override
 		public Boolean doInBackground() {
-			ModManager.debugLogger.writeMessage("Starting the background thread for ModInstallWindow");
+			ModManager.debugLogger.writeMessage("===========INJECTION COMMANDER BACKGROUND THREAD==============");
 			ModManager.debugLogger.writeMessage("Checking for DLC Bypass.");
 			if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
 				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing LauncherWV.exe...");
@@ -224,7 +225,7 @@ public class ModInstallWindow extends JDialog {
 				if (installCancelled) {
 					if (alternativeTOCFiles != null) {
 						for (String tempFile : alternativeTOCFiles.values()) {
-						    FileUtils.deleteQuietly(new File(tempFile));
+							FileUtils.deleteQuietly(new File(tempFile));
 						}
 					}
 					return false;
@@ -252,7 +253,7 @@ public class ModInstallWindow extends JDialog {
 			}
 			if (alternativeTOCFiles != null) {
 				for (String tempFile : alternativeTOCFiles.values()) {
-				    FileUtils.deleteQuietly(new File(tempFile));
+					FileUtils.deleteQuietly(new File(tempFile));
 				}
 			}
 			return true;
@@ -268,6 +269,7 @@ public class ModInstallWindow extends JDialog {
 		 *         don't (or all is Ok)
 		 */
 		private boolean precheckGameDB(ModJob[] jobs) {
+			ModManager.debugLogger.writeMessage("---PRECHECKING GAME DATABASE---");
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
 
@@ -278,10 +280,12 @@ public class ModInstallWindow extends JDialog {
 			}
 			//check if DB exists
 			if (!bghDB.isBasegameTableCreated()) {
-				JOptionPane.showMessageDialog(ModInstallWindow.this, "The game repair database has not been created.\nYou need to do so before installing mods.", "No Game Repair Database", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModInstallWindow.this,
+						"The game repair database has not been created.\nYou need to do so before installing mods.", "No Game Repair Database",
+						JOptionPane.ERROR_MESSAGE);
 				return true; //open DB window
 			}
-			
+
 			for (ModJob job : jobs) {
 				publish("Checking GDB: " + job.getJobName());
 				if (job.getJobType() == ModJob.BASEGAME) {
@@ -380,8 +384,10 @@ public class ModInstallWindow extends JDialog {
 			// Make backup folder if it doesn't exist
 			String backupfolderpath = me3dir.toString() + "cmmbackup\\";
 			File cmmbackupfolder = new File(backupfolderpath);
-			cmmbackupfolder.mkdirs();
-			ModManager.debugLogger.writeMessage("Basegame backup directory should have been created if it does not exist already.");
+			boolean madeDir = cmmbackupfolder.mkdirs();
+			if (madeDir) {
+				ModManager.debugLogger.writeMessage("Created unpacked files backup directory.");
+			}
 			// Prep replacement job
 			ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
 			ArrayList<String> newFiles = job.getFilesToReplace();
@@ -391,7 +397,7 @@ public class ModInstallWindow extends JDialog {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles.get(i);
 				if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
-					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: "+newFile);
+					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
 					newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
 				}
 
@@ -528,7 +534,7 @@ public class ModInstallWindow extends JDialog {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles.get(i);
 				if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
-					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: "+newFile);
+					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
 					newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
 				}
 
@@ -630,8 +636,10 @@ public class ModInstallWindow extends JDialog {
 		private boolean checkBackupAndHash(String me3dir, String fileToReplace, ModJob job) {
 			String backupfolderpath = me3dir.toString() + "cmmbackup\\";
 			File cmmbackupfolder = new File(backupfolderpath);
-			cmmbackupfolder.mkdirs();
-			ModManager.debugLogger.writeMessage("Backup directory should have been created if it does not exist already.");
+			boolean madeDir = cmmbackupfolder.mkdirs();
+			if (madeDir) {
+				ModManager.debugLogger.writeMessage("Created unpacked files backup directory.");
+			}
 
 			// Check for backup
 			File unpacked = new File(me3dir + fileToReplace);
@@ -794,7 +802,7 @@ public class ModInstallWindow extends JDialog {
 					commandBuilder.add(filesToReplace.get(i));
 					String newFile = newFiles.get(i);
 					if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
-						ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: "+newFile);
+						ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
 						newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
 					}
 					commandBuilder.add(newFile);
@@ -980,7 +988,6 @@ public class ModInstallWindow extends JDialog {
 					Integer.parseInt(update); // see if we got a number. if we
 												// did that means we should
 												// update the bar
-					ModManager.debugLogger.writeMessage("Job completed with code " + update);
 					if (numjobs != 0) {
 						progressBar.setValue((int) (((float) completed / numjobs) * 100));
 					}
@@ -1037,11 +1044,11 @@ public class ModInstallWindow extends JDialog {
 			finishInstall();
 			return;
 		}
-	}
 
-	protected void finishInstall() {
-		ModManager.debugLogger.writeMessage("Finished installing mod.");
-		dispose();
+		protected void finishInstall() {
+			ModManager.debugLogger.writeMessage("=========Finished installing " + mod.getModName() + "==========");
+			dispose();
+		}
 	}
 
 	public void addToQueue(String newLine) {
