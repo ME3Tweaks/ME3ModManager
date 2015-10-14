@@ -57,7 +57,7 @@ import com.sun.jna.platform.win32.WinReg;
 public class ModManager {
 
 	public static final String VERSION = "4.1 Beta 2";
-	public static long BUILD_NUMBER = 44L; // so it will upgrade when full is
+	public static long BUILD_NUMBER = 45L; // so it will upgrade when full is
 											// out.
 	public static final String BUILD_DATE = "10/14/2015";
 	public static DebugLogger debugLogger;
