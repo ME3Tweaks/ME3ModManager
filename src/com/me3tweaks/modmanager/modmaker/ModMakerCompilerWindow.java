@@ -167,7 +167,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (errors.getLength() > 0) {
 					//error occured.
 					dispose();
-					publish(new ThreadCommand("ModMaker Error", "<html>No mod with id " + code + " was found on ME3Tweaks.</html>"));
+					publish(new ThreadCommand("ERROR", "<html>No mod with code " + code + " was found on ME3Tweaks ModMaker.</html>"));
 					running = false;
 					return;
 				}
@@ -381,10 +381,10 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * "Default_DLC_CON_GUN01.bin": return "FIREFIGHT"; case
 	 * "Default_DLC_CON_GUN02.bin": return "GROUNDSIDE"; case
 	 * "Default_DLC_CON_END.bin": return "EXTENDED_CUT"; case
-	 * "Default_DLC_CON_Pack001.bin": return "LEVIATHAN"; case
-	 * "Default_DLC_CON_Pack002.bin": return "OMEGA"; case
-	 * "Default_DLC_CON_Pack003.bin": return "CITADEL"; case
-	 * "Default_DLC_CON_Pack003_Base.bin": return "CITADEL_BASE"; default:
+	 * "Default_DLC_EXP_Pack001.bin": return "LEVIATHAN"; case
+	 * "Default_DLC_EXP_Pack002.bin": return "OMEGA"; case
+	 * "Default_DLC_EXP_Pack003.bin": return "CITADEL"; case
+	 * "Default_DLC_EXP_Pack003_Base.bin": return "CITADEL_BASE"; default:
 	 * ModManager.debugLogger.writeMessage("ERROR: Unable to convert " +
 	 * coalName + " to it's filename."); return null; } }
 	 */
@@ -427,14 +427,14 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "/BIOGame/DLC/DLC_CON_GUN02/CookedPCConsole/Default_DLC_CON_GUN02.bin";
 		case "Default_DLC_CON_END.bin":
 			return "/BIOGame/DLC/DLC_CON_END/CookedPCConsole/Default_DLC_CON_END.bin";
-		case "Default_DLC_CON_Pack001.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack001/CookedPCConsole/Default_DLC_CON_Pack001.bin";
-		case "Default_DLC_CON_Pack002.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack002/CookedPCConsole/Default_DLC_CON_Pack002.bin";
-		case "Default_DLC_CON_Pack003.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack003/CookedPCConsole/Default_DLC_CON_Pack003.bin";
-		case "Default_DLC_CON_Pack003_Base.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack003_Base/CookedPCConsole/Default_DLC_CON_Pack003_Base.bin";
+		case "Default_DLC_EXP_Pack001.bin":
+			return "/BIOGame/DLC/DLC_EXP_Pack001/CookedPCConsole/Default_DLC_EXP_Pack001.bin";
+		case "Default_DLC_EXP_Pack002.bin":
+			return "/BIOGame/DLC/DLC_EXP_Pack002/CookedPCConsole/Default_DLC_EXP_Pack002.bin";
+		case "Default_DLC_EXP_Pack003.bin":
+			return "/BIOGame/DLC/DLC_EXP_Pack003/CookedPCConsole/Default_DLC_EXP_Pack003.bin";
+		case "Default_DLC_EXP_Pack003_Base.bin":
+			return "/BIOGame/DLC/DLC_EXP_Pack003_Base/CookedPCConsole/Default_DLC_EXP_Pack003_Base.bin";
 		default:
 			ModManager.debugLogger.writeMessage("ERROR: UNRECOGNIZED COAL FILE: " + coalName);
 			return null;
@@ -1717,7 +1717,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			overallProgress.setValue(98);
 		}
 		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
-		new AutoTocWindow(newMod,AutoTocWindow.LOCALMOD_MODE);
+		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		overallProgress.setValue(100);
 		stepsCompleted++;
 		ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);

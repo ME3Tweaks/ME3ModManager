@@ -93,7 +93,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
 	JMenuItem restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
-			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal;
+			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
 			sqlConsumableParser, sqlGearParser;
 	JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
@@ -112,6 +112,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem restoreRevertBasegameUnpacked;
 	private JMenuItem restoredeleteAllCustomDLC;
 	private JMenuItem backupBasegameUnpacked;
+	private JMenuItem toolsUnpackDLC;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -211,32 +212,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					+ ModManager.BUILD_NUMBER + ").", "Update Complete", JOptionPane.INFORMATION_MESSAGE);
 		}
 
-		if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
-			//ask user
-			int result = JOptionPane
-					.showConfirmDialog(
-							this,
-							"Mod Manager can automatically keep your mods up to date\nwith ME3Tweaks checking once every three days.\nWould you like to turn this feature on?",
-							"Mod Auto Updates", JOptionPane.YES_NO_CANCEL_OPTION);
-			ModManager.ASKED_FOR_AUTO_UPDATE = true;
-			if (result != JOptionPane.CANCEL_OPTION) {
-				Wini ini;
-				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
-					ini.put("Settings", "autoupdatemods", result == JOptionPane.YES_OPTION ? "true" : "false");
-					ini.put("Settings", "declinedautoupdate", result == JOptionPane.YES_OPTION ? "false" : "true");
-					ini.store();
-				} catch (InvalidFileFormatException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException(
-							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
-				}
-			}
-		}
 		new NetworkThread().execute();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: Initialize() has completed.");
 	}
@@ -255,15 +230,75 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		public Void doInBackground() {
 			File f7za = new File(ModManager.getToolsDir() + "7za.exe");
 			if (!f7za.exists()) {
+				publish("Downloading 7za Unzipper");
 				ModManager.debugLogger.writeMessage("7za.exe does not exist at the following path, downloading new copy: " + f7za.getAbsolutePath());
 				String url = "http://me3tweaks.com/modmanager/tools/7za.exe";
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
 					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7za.exe"));
-					publish("Downloaded Update Unzipper into tools directory");
+					publish("Downloaded 7za Unzipper into tools directory");
 					ModManager.debugLogger.writeMessage("Downloaded missing 7za.exe file for updating Mod Manager");
 
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Error downloading 7za into tools folder", e);
+					publish("Error downloading 7za");
+				}
+			} else {
+				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
+			}
+
+			//Tankmaster TLK, Coalesce
+			File tmc = new File(ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe");
+			File tmtlk = new File(ModManager.getTankMasterTLKDir() + "MassEffect3.TlkEditor.exe");
+
+			if (!tmtlk.exists() || !tmc.exists()) {
+				publish("Downloading Tankmaster Tools");
+				ModManager.debugLogger.writeMessage("Tankmaster's TLK/COALESCE tools are missing, downloading new copy: " + tmtlk.getAbsolutePath());
+				String url = "http://me3tweaks.com/modmanager/tools/tankmastertools.7z";
+				try {
+					File updateDir = new File(ModManager.getTempDir());
+					updateDir.mkdirs();
+					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getTempDir() + "tankmastertools.7z"));
+					ModManager.debugLogger.writeMessage("7z downloaded.");
+
+					//run 7za on it
+					ArrayList<String> commandBuilder = new ArrayList<String>();
+					commandBuilder.add(ModManager.getToolsDir() + "7za.exe");
+					commandBuilder.add("-y"); //overwrite
+					commandBuilder.add("x"); //extract
+					commandBuilder.add(ModManager.getTempDir() + "tankmastertools.7z");//7z file
+					commandBuilder.add("-o" + ModManager.getDataDir()); //extraction path
+
+					// System.out.println("Building command");
+					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+					// Debug stuff
+					StringBuilder sb = new StringBuilder();
+					for (String arg : command) {
+						sb.append(arg + " ");
+					}
+					ModManager.debugLogger.writeMessage("Executing 7z extraction command: " + sb.toString());
+					Process p = null;
+					int returncode = 1;
+					try {
+						ProcessBuilder pb = new ProcessBuilder(command);
+						long timeStart = System.currentTimeMillis();
+						p = pb.start();
+						ModManager.debugLogger.writeMessage("Executed command, waiting...");
+						returncode = p.waitFor();
+						long timeEnd = System.currentTimeMillis();
+						ModManager.debugLogger.writeMessage("Process has finished. Took " + (timeEnd - timeStart) + " ms.");
+					} catch (IOException | InterruptedException e) {
+						ModManager.debugLogger.writeException(e);
+					}
+
+					ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (p != null && returncode == 0));
+					if (returncode == 0) {
+						publish("Downloaded Tankmaster Tools into data directory");
+					} else {
+						publish("Unknown error downloading Tankmaster tools");
+					}
+					FileUtils.deleteQuietly(new File(ModManager.getTempDir() + "tankmastertools.7z"));
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Error downloading 7za into tools folder", e);
 					publish("Error downloading 7za for updating");
@@ -271,11 +306,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
 			}
+
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
 				checkForUpdates();
 			}
 			checkForME3ExplorerUpdates();
-			if (ModManager.AUTO_UPDATE_MODS) {
+			if ((ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) || ModManager.AUTO_UPDATE_MODS) {
 				checkForModUpdates();
 			}
 			return null;
@@ -319,24 +355,71 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		private void checkForModUpdates() {
-			// TODO Auto-generated method stub
-			long threeDaysMs = 259200000L;
-			if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > threeDaysMs) {
-				ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
-						+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
-						+ " since the last update check.");
-				publish("Auto Updater: Checking for mod updates");
-				checkAllModsForUpdates(false);
-				publish("Auto Updater: Checked mods for updates");
+			//should not do this on background thread but... yaknow...
+			if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
+				ModManager.debugLogger.writeMessage("Prompting user for auto-updates");
+				publish("NOTIFY_UPDATE_PROMPT");
+			} else {
+				ModManager.debugLogger.writeMessage("User has accepted mod updates or has been asked before");
+			}
+			while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
+				try {
+					Thread.sleep(200); //wait for prompt
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+
+			//Check for updates
+			if (ModManager.AUTO_UPDATE_MODS) {
+				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
+					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
+							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
+							+ " since the last update check.");
+					publish("Checking for updates to mods");
+					checkAllModsForUpdates(false);
+				}
 			}
 		}
 
 		@Override
 		protected void process(List<Object> chunks) {
-			Object latest = chunks.get(chunks.size() - 1);
-			if (latest instanceof String) {
-				String latestUpdate = (String) latest;
-				labelStatus.setText(latestUpdate);
+			for (Object latest : chunks) {
+				if (latest instanceof String) {
+					String update = (String) latest;
+					switch (update) {
+					case "NOTIFY_UPDATE_PROMPT":
+						//ask user
+						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
+								"Mod Manager can automatically keep your mods up to date\nwith ME3Tweaks, checking every "
+										+ ModManager.AUTO_CHECK_INTERVAL_DAYS + " days.\nTurn this feature on?", "Mod Auto Updates",
+								JOptionPane.YES_NO_CANCEL_OPTION);
+						ModManager.ASKED_FOR_AUTO_UPDATE = true;
+						if (result != JOptionPane.CANCEL_OPTION) {
+							Wini ini;
+							try {
+								File settings = new File(ModManager.SETTINGS_FILENAME);
+								if (!settings.exists())
+									settings.createNewFile();
+								ini = new Wini(settings);
+								ini.put("Settings", "autoupdatemods", result == JOptionPane.YES_OPTION ? "true" : "false");
+								ini.put("Settings", "declinedautoupdate", result == JOptionPane.YES_OPTION ? "false" : "true");
+								ini.store();
+								ModManager.AUTO_UPDATE_MODS = (result == JOptionPane.YES_OPTION);
+							} catch (InvalidFileFormatException e) {
+								e.printStackTrace();
+							} catch (IOException e) {
+								ModManager.debugLogger.writeErrorWithException(
+										"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+							}
+						}
+						break;
+					default:
+						labelStatus.setText(update);
+						break;
+					}
+
+				}
 			}
 		}
 
@@ -346,6 +429,58 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				get();
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Exception in the network thread: ", e);
+			}
+		}
+	}
+
+	class SingleModUpdateCheckThread extends SwingWorker<Void, Object> {
+		Mod mod;
+
+		public SingleModUpdateCheckThread(Mod mod) {
+			this.mod = mod;
+			labelStatus.setText("Checking for " + mod.getModName() + " updates");
+		}
+
+		@Override
+		public Void doInBackground() {
+			UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
+			if (upackage != null) {
+				publish("Update available for " + mod.getModName());
+				publish(upackage);
+			} else {
+				publish(mod.getModName() + " is up to date");
+			}
+			return null;
+		}
+
+		@Override
+		protected void process(List<Object> chunks) {
+			for (Object latest : chunks) {
+				if (latest instanceof String) {
+					String update = (String) latest;
+					labelStatus.setText(update);
+				}
+				if (latest instanceof UpdatePackage) {
+					UpdatePackage upackage = (UpdatePackage) latest;
+					String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
+					updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + "\n";
+					updatetext += "Update this mod?";
+					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
+					if (result == JOptionPane.YES_OPTION) {
+						ModManager.debugLogger.writeMessage("Starting manual single-mod updater");
+						ModUpdateWindow muw = new ModUpdateWindow(upackage);
+						muw.startUpdate(ModManagerWindow.this);
+					}
+				}
+			}
+		}
+
+		@Override
+		protected void done() {
+			try {
+				get();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Exception in the single mod update thread: ", e);
 			}
 		}
 	}
@@ -585,6 +720,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JPanel buttonPanel = new JPanel(new FlowLayout());
 
 		buttonApplyMod = new JButton("Apply Mod");
+		updateApplyButton();
 		buttonApplyMod.addActionListener(this);
 		buttonApplyMod.setEnabled(false);
 		buttonApplyMod.setToolTipText("Select a mod on the left");
@@ -611,6 +747,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		verifyBackupCoalesced();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: SetupWindow() has completed.");
 
+	}
+
+	private void updateApplyButton() {
+		if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
+			buttonApplyMod.setText("Apply Mod");
+		} else {
+			buttonApplyMod.setText(".NET Missing");
+		}
 	}
 
 	private JMenuBar makeMenu() {
@@ -663,7 +807,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			modutilsInstallCustomKeybinds.setToolTipText("<html>Replace BioInput.xml in the BASEGAME Coalesced file</html>");
 		}
 
-		modutilsUpdateXMLGenerator = new JMenuItem("Generate Mod XML");
+		modutilsUpdateXMLGenerator = new JMenuItem("Generate Server Manifest XML");
 		modutilsUpdateXMLGenerator.addActionListener(this);
 		modutilsInfoEditor = new JMenuItem("Edit name/description");
 		modutilsInfoEditor.addActionListener(this);
@@ -722,9 +866,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsCheckallmodsforupdate
 				.setToolTipText("Checks eligible mods for updates on ME3Tweaks and prompts to download an update if one is available");
 
+		toolsUnpackDLC = new JMenuItem("Unpack DLC");
+		toolsUnpackDLC.setToolTipText("Opens the Unpack DLC window so you can unpack DLC automatically");
+
 		toolsModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
 		toolsCheckallmodsforupdate.addActionListener(this);
+		toolsUnpackDLC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsPatchLibary.addActionListener(this);
 
@@ -733,10 +881,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsUninstallBinkw32.addActionListener(this);
 
 		toolsMenu.add(toolsModMaker);
+		toolsMenu.add(toolsCheckallmodsforupdate);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsMergeMod);
 		toolsMenu.add(toolsPatchLibary);
-		toolsMenu.add(toolsCheckallmodsforupdate);
+		toolsMenu.add(toolsUnpackDLC);
 		toolsMenu.add(toolsOpenME3Dir);
 		toolsMenu.addSeparator();
 
@@ -795,6 +944,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertBasegameUnpacked
 				.setToolTipText("<html>Restores all basegame and unpacked DLC files that have been modified by installing mods</html>");
 
+		restoreVanillifyDLC = new JMenuItem("Vanillify game DLC");
+		restoreVanillifyDLC.setToolTipText("<html>Removes custom DLC, deletes unpacked files, restores SFARs.</html>");
+
 		restoreRevertAllDLC = new JMenuItem("Restore all DLC SFARs");
 		restoreRevertAllDLC.setToolTipText("<html>Restores all DLC SFAR files.<br>This does not remove custom DLC modules.</html>");
 
@@ -819,6 +971,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoredeleteAllCustomDLC.addActionListener(this);
 		restoreRevertBasegame.addActionListener(this);
 		restoreRevertUnpacked.addActionListener(this);
+		restoreVanillifyDLC.addActionListener(this);
 		restoreRevertBasegameUnpacked.addActionListener(this);
 		restoreRevertAllDLC.addActionListener(this);
 		restoreRevertSPDLC.addActionListener(this);
@@ -836,6 +989,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreMenu.add(restoreRevertUnpacked);
 		restoreMenu.add(restoreRevertBasegameUnpacked);
 		restoreMenu.addSeparator();
+		restoreMenu.add(restoreVanillifyDLC);
 		restoreMenu.add(restoreRevertAllDLC);
 		restoreMenu.add(restoreRevertMPDLC);
 		restoreMenu.add(restoreRevertMPBaseDLC);
@@ -968,8 +1122,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == toolsModMaker) {
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
-				new ModMakerEntryWindow(this, fieldBiogameDir.getText());
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
+					updateApplyButton();
+					new ModMakerEntryWindow(this, fieldBiogameDir.getText());
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
+				}
 			} else {
 				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
 				labelStatus.setVisible(true);
@@ -998,7 +1160,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								this,
 								"<html><div style=\"width:330px;\">Basegame and unpacked DLC files are automatically backed up by Mod Manager when a Mod Manager mod replaces or removes that file while being applied.<br>"
 										+ "The game repair database verifies the file being backed up matches the metadata in the database so it can restore back to that version later. When restoring, the backed up file is checked again to make sure it wasn't modified. Otherwise you may restore files of different sizes and the game will crash.<br>"
-										+ "This is why modifications outside of Mod Manager are not backed up and are not supported. If you want to use modifications outside of Mod Manager, update the basegame database (and delete your Mod Manager backups) after you make your changes outside of Mod Manager. Make sure your game is in a working state before you do this or you will restore to a broken snapshot.<br><br>"
+										+ "This is why modifications outside of Mod Manager are not backed up and are not supported. If you want to use modifications outside of Mod Manager, update the game repair database after you make your changes outside of Mod Manager. Make sure your game is in a working state before you do this or you will restore to a broken snapshot.<br><br>"
 										+ "The backup files created by Mod Manager are placed in the following folder:<br>"
 										+ backupLocation
 										+ "<br><br>MixIns do not support modified files except for those modified by other non-finalizing MixIns.</div></html>",
@@ -1077,6 +1239,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
+		} else if (e.getSource() == restoreVanillifyDLC) {
+			if (validateBIOGameDir()) {
+				if (JOptionPane
+						.showConfirmDialog(
+								this,
+								"This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
+								"Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+
+					restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.VANILLIFYDLC);
+				}
+			} else {
+				labelStatus.setText("Cannot restore files without valid BIOGame directory");
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == restoreRevertSPDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.SP);
@@ -1118,13 +1296,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (e.getSource() == restoreRevertEverything) {
 			if (validateBIOGameDir()) {
-				restoreCoalesced(fieldBiogameDir.getText());
-				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.ALL);
-			} else {
-				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null,
-						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				if (validateBIOGameDir()) {
+					if (JOptionPane
+							.showConfirmDialog(
+									this,
+									"This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
+									"Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+
+						restoreCoalesced(fieldBiogameDir.getText());
+						restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.ALL);
+					}
+				} else {
+					labelStatus.setText("Cannot restore files without valid BIOGame directory");
+					JOptionPane
+							.showMessageDialog(
+									null,
+									"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+									"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		} else if (e.getSource() == restoreDeleteUnpacked) {
 			if (validateBIOGameDir()) {
@@ -1245,8 +1434,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new AboutWindow(this);
 		} else if (e.getSource() == buttonApplyMod) {
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Applying selected mod.");
-				applyMod();
+				ModManager.debugLogger.writeMessage("Applying selected mod: Biogame Dir is valid.");
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					updateApplyButton();
+					ModManager.debugLogger.writeMessage(".NET is installed");
+					applyMod();
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Applying selected mod: .NET is not installed");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to install mods.");
+				}
 			} else {
 				labelStatus.setText("Installing a mod requires valid BIOGame path");
 				labelStatus.setVisible(true);
@@ -1262,39 +1460,79 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Starting the game requires a valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nMod Manager does not know where to launch the game executable.\nFix the BIOGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BIOGame directory is not valid.\nMod Manager does not know where to launch the game executable.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else
 
 		if (e.getSource() == actionOpenME3Exp) {
-			ArrayList<String> commandBuilder = new ArrayList<String>();
-			String me3expdir = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true));
-			commandBuilder.add(me3expdir + "ME3Explorer.exe");
-			// System.out.println("Building command");
-			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-			// Debug stuff
-			StringBuilder sb = new StringBuilder();
-			for (String arg : command) {
-				sb.append(arg + " ");
-			}
-			ModManager.debugLogger.writeMessage("Executing ME3Explorer via command: " + sb.toString());
-			try {
-				ProcessBuilder pb = new ProcessBuilder(command);
-				pb.directory(new File(me3expdir)); // this is where you set the root folder for the executable to run with
-				pb.start();
-			} catch (IOException ex) {
-				ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				updateApplyButton();
+				ModManager.debugLogger.writeMessage(".NET is installed");
+				ArrayList<String> commandBuilder = new ArrayList<String>();
+				String me3expdir = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true));
+				commandBuilder.add(me3expdir + "ME3Explorer.exe");
+				// System.out.println("Building command");
+				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+				// Debug stuff
+				StringBuilder sb = new StringBuilder();
+				for (String arg : command) {
+					sb.append(arg + " ");
+				}
+				ModManager.debugLogger.writeMessage("Executing ME3Explorer (via action menu) via command: " + sb.toString());
+				try {
+					ProcessBuilder pb = new ProcessBuilder(command);
+					pb.directory(new File(me3expdir)); // this is where you set the root folder for the executable to run with
+					pb.start();
+				} catch (IOException ex) {
+					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+				}
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
+				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5 or higher in order to run.");
 			}
 		} else if (e.getSource() == actionOptions) {
 			new OptionsWindow(this);
 		} else if (e.getSource() == toolsMergeMod) {
-			ModManager.debugLogger.writeMessage("Opening Mod Merging utility");
-			new MergeModWindow(this);
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Opening Mod Merging utility");
+				updateApplyButton();
+				new MergeModWindow(this);
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Merge Tool: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods.");
+			}
+		} else if (e.getSource() == toolsUnpackDLC) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Opening Unpack DLC window");
+				updateApplyButton();
+				new UnpackWindow(this, fieldBiogameDir.getText());
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Unpack DLC Tool: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to unpack DLC.");
+			}
 		} else if (e.getSource() == toolsOpenME3Dir) {
 			openME3Dir();
 		} else if (e.getSource() == modutilsAutoTOC) {
-			autoTOC(AutoTocWindow.LOCALMOD_MODE);
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Running AutoTOC.");
+				updateApplyButton();
+				autoTOC(AutoTocWindow.LOCALMOD_MODE);
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use the AutoTOC feature.");
+			}
 		} else if (e.getSource() == modutilsAutoTOCUpgrade) {
 			autoTOC(AutoTocWindow.UPGRADE_UNPACKED_MODE);
 		} else if (e.getSource() == modutilsInfoEditor) {
@@ -1304,15 +1542,23 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == sqlWavelistParser) {
 			new WavelistGUI();
 		} else if (e.getSource() == modutilsCheckforupdate) {
-			checkForModUpdate();
+			new SingleModUpdateCheckThread(modModel.getElementAt(modList.getSelectedIndex())).execute();
 		} else if (e.getSource() == modutilsInstallCustomKeybinds) {
 			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()), false);
 		} else if (e.getSource() == toolsCheckallmodsforupdate) {
 			checkAllModsForUpdates(true);
 		} else if (e.getSource() == toolsPatchLibary) {
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Opening patch library window.");
-				new PatchLibraryWindow();
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Opening patch library window.");
+					updateApplyButton();
+					new PatchLibraryWindow();
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use MixIns.");
+				}
 			} else {
 				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
 				labelStatus.setVisible(true);
@@ -1371,7 +1617,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void checkAllModsForUpdates(boolean isManualCheck) {
-		//ArrayList<Mod> updateDescs = new ArrayList<Mod>();
+		//Fix for moonshine mod v1
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.getElementAt(i);
 			if ("MoonShine".equals(mod.getAuthor())) {
@@ -1420,29 +1666,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeErrorWithException(
 						"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 			}
-		}
-	}
-
-	/**
-	 * Downloads from ME3Tweaks a manifest of the latest version of a mod. It
-	 * then checks the version of the local mod against it. If the other one is
-	 * higher a list of files to update and delete are constructed and then a
-	 * user can elect to update
-	 */
-	private void checkForModUpdate() {
-		Mod mod = modModel.get(modList.getSelectedIndex());
-		UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
-		if (upackage != null) {
-			// an update is available
-			int result = JOptionPane.showConfirmDialog(this, "An update to " + mod.getModName() + " is available from ME3Tweaks.\nLocal Version: "
-					+ mod.getVersion() + "\nServer Version: " + upackage.getVersion() + "\nUpgrade this mod?", "Update available",
-					JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.YES_OPTION) {
-				ModUpdateWindow muw = new ModUpdateWindow(upackage);
-				muw.startUpdate(this);
-			}
-		} else {
-			labelStatus.setText(mod.getModName() + " is up to date with ME3Tweaks");
 		}
 	}
 
@@ -1645,7 +1868,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			return "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame";
 		}
 		ModManager.debugLogger.writeMessage("Directory that was fetched: " + setDir);
-		return (setDir !=null && !setDir.equals("")) ?  setDir : defaultDir;
+		return (setDir != null && !setDir.equals("")) ? setDir : defaultDir;
 	}
 
 	/**
@@ -1789,18 +2012,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// Update mod description
 				fieldDescription.setText(selectedMod.getModDisplayDescription());
 				fieldDescription.setCaretPosition(0);
-				buttonApplyMod.setEnabled(checkIfNone(modList.getSelectedValue().toString()));
+				buttonApplyMod.setEnabled(true);
 				buttonApplyMod
 						.setToolTipText("<html>Apply this mod to the game.<br>If another mod is already installed, restore your game first!<br>You can merge Mod Manager mods in the Tools menu.</html>");
 				modutilsHeader.setText(modModel.get(modList.getSelectedIndex()).getModName());
 				modMenu.setEnabled(true);
 				if (selectedMod.isME3TweaksUpdatable()) {
 					modutilsCheckforupdate.setEnabled(true);
-					modutilsCheckforupdate.setText("Update mod from ME3Tweaks");
-					modutilsCheckforupdate.setToolTipText("Checks for updates on ME3Tweaks.com and upgrades this mod");
+					modutilsCheckforupdate.setText("Check for updates");
+					modutilsCheckforupdate.setToolTipText("Checks for updates to this mod from ME3Tweaks");
 				} else {
 					modutilsCheckforupdate.setEnabled(false);
-					modutilsCheckforupdate.setText("Mod not eligible for ME3Tweaks updating");
+					modutilsCheckforupdate.setText("Mod not eligible for updates");
 					modutilsCheckforupdate
 							.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 					modutilsUninstallCustomDLC.setToolTipText("Deletes this mod's custom DLC modules");
@@ -1816,21 +2039,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 		}
-	}
-
-	/**
-	 * Checks if the mod in the list is "No Mods Available" to see if the Apply
-	 * Button should be disabled.
-	 * 
-	 * @param modName
-	 *            Name of the mod in the list to be checked
-	 * @return False if it is, otherwise true
-	 */
-	private boolean checkIfNone(String modName) {
-		if (modName.equals("No Mods Available")) {
-			return false;
-		}
-		return true;
 	}
 
 	/**
@@ -2034,7 +2242,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		// System.out.println("SELECTED VALUE: " + selectedValue);
 		Mod mod = modModel.getElementAt(selectedIndex);
-		new AutoTocWindow(mod, mode);
+		new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 	}
 
 	private boolean installBypass() {

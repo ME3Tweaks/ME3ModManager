@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -22,6 +23,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -46,7 +48,7 @@ public class ModInstallWindow extends JDialog {
 	String consoleQueue[];
 	String currentText;
 	JProgressBar progressBar;
-
+	HashMap<String, String> alternativeTOCFiles;
 	ModManagerWindow callingWindow;
 
 	public ModInstallWindow(ModManagerWindow callingWindow, ModJob[] jobs, String bioGameDir, Mod mod) {
@@ -180,23 +182,35 @@ public class ModInstallWindow extends JDialog {
 		private boolean installCancelled = false;
 
 		protected InjectionCommander(ModJob[] jobs, Mod mod) {
+			ModManager.debugLogger.writeMessage("===============Start of INJECTION COMMANDER==============");
+			ModManager.debugLogger.writeMessage("========Installing " + mod.getModName() + "========");
+
 			this.mod = mod;
 			numjobs = jobs.length;
 			failedJobs = new ArrayList<String>();
-			ModManager.debugLogger.writeMessage("Starting the InjectionCommander utility. Number of jobs to do: " + numjobs);
+			if (ModManager.USE_GAME_TOCFILES_INSTEAD) {
+				ModManager.debugLogger.writeMessage("Pre-tocing game files before injection thread starts.");
+				AutoTocWindow atw = new AutoTocWindow(mod, AutoTocWindow.INSTALLED_MODE, bioGameDir);
+				alternativeTOCFiles = atw.getUpdatedGameTOCs();
+				ModManager.debugLogger.writeMessage("PreTOC finished.");
+			}
+
+			ModManager.debugLogger.writeMessage("Starting the InjectionCommander thread. Number of jobs to do: " + numjobs);
 			this.jobs = jobs;
 			ModManager.debugLogger.writeMessage("Using ME3Explorer from: " + ModManager.getME3ExplorerEXEDirectory(false));
 		}
 
 		@Override
 		public Boolean doInBackground() {
-			ModManager.debugLogger.writeMessage("Starting the background thread for ModInstallWindow");
+			ModManager.debugLogger.writeMessage("===========INJECTION COMMANDER BACKGROUND THREAD==============");
 			ModManager.debugLogger.writeMessage("Checking for DLC Bypass.");
 			if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
 				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing LauncherWV.exe...");
 				if (!ModManager.installLauncherWV(bioGameDir)) {
 					ModManager.debugLogger.writeError("LauncherWV failed to install");
 				}
+			} else {
+				ModManager.debugLogger.writeMessage("A DLC bypass is installed");
 			}
 
 			if (precheckGameDB(jobs)) {
@@ -209,6 +223,11 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Processing jobs in mod queue.");
 			for (ModJob job : jobs) {
 				if (installCancelled) {
+					if (alternativeTOCFiles != null) {
+						for (String tempFile : alternativeTOCFiles.values()) {
+							FileUtils.deleteQuietly(new File(tempFile));
+						}
+					}
 					return false;
 				}
 				boolean result = false;
@@ -225,12 +244,17 @@ public class ModInstallWindow extends JDialog {
 				}
 				if (result) {
 					completed++;
-					ModManager.debugLogger.writeMessage("Successfully finished mod job");
+					ModManager.debugLogger.writeMessage("Successfully finished mod job.");
 				} else {
 					ModManager.debugLogger.writeMessage("Mod job failed: " + job.getDLCFilePath());
 					failedJobs.add(job.getDLCFilePath());
 				}
 				publish(Integer.toString(completed));
+			}
+			if (alternativeTOCFiles != null) {
+				for (String tempFile : alternativeTOCFiles.values()) {
+					FileUtils.deleteQuietly(new File(tempFile));
+				}
 			}
 			return true;
 		}
@@ -245,6 +269,7 @@ public class ModInstallWindow extends JDialog {
 		 *         don't (or all is Ok)
 		 */
 		private boolean precheckGameDB(ModJob[] jobs) {
+			ModManager.debugLogger.writeMessage("---PRECHECKING GAME DATABASE---");
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
 
@@ -253,6 +278,14 @@ public class ModInstallWindow extends JDialog {
 				publish("Loading game repair database");
 				bghDB = new BasegameHashDB(null, me3dir, false);
 			}
+			//check if DB exists
+			if (!bghDB.isBasegameTableCreated()) {
+				JOptionPane.showMessageDialog(ModInstallWindow.this,
+						"The game repair database has not been created.\nYou need to do so before installing mods.", "No Game Repair Database",
+						JOptionPane.ERROR_MESSAGE);
+				return true; //open DB window
+			}
+
 			for (ModJob job : jobs) {
 				publish("Checking GDB: " + job.getJobName());
 				if (job.getJobType() == ModJob.BASEGAME) {
@@ -351,8 +384,10 @@ public class ModInstallWindow extends JDialog {
 			// Make backup folder if it doesn't exist
 			String backupfolderpath = me3dir.toString() + "cmmbackup\\";
 			File cmmbackupfolder = new File(backupfolderpath);
-			cmmbackupfolder.mkdirs();
-			ModManager.debugLogger.writeMessage("Basegame backup directory should have been created if it does not exist already.");
+			boolean madeDir = cmmbackupfolder.mkdirs();
+			if (madeDir) {
+				ModManager.debugLogger.writeMessage("Created unpacked files backup directory.");
+			}
 			// Prep replacement job
 			ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
 			ArrayList<String> newFiles = job.getFilesToReplace();
@@ -361,6 +396,10 @@ public class ModInstallWindow extends JDialog {
 			for (int i = 0; i < numFilesToReplace; i++) {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles.get(i);
+				if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
+					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
+					newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
+				}
 
 				boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
 				if (!shouldContinue) {
@@ -371,15 +410,19 @@ public class ModInstallWindow extends JDialog {
 				// install file.
 				File unpacked = new File(me3dir + fileToReplace);
 				Path originalpath = Paths.get(unpacked.toString());
-				try {
-					ModManager.debugLogger.writeMessage("Installing mod file: " + newFile);
-					publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
-					Path newfilepath = Paths.get(newFile);
-					Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
-					ModManager.debugLogger.writeMessage("Installed mod file: " + newFile);
-				} catch (IOException e) {
-					ModManager.debugLogger.writeException(e);
-					return false;
+				if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.USE_GAME_TOCFILES_INSTEAD) {
+					try {
+						ModManager.debugLogger.writeMessage("Installing mod file: " + newFile);
+						publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
+						Path newfilepath = Paths.get(newFile);
+						Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
+						ModManager.debugLogger.writeMessage("Installed mod file: " + newFile);
+					} catch (IOException e) {
+						ModManager.debugLogger.writeException(e);
+						return false;
+					}
+				} else {
+					ModManager.debugLogger.writeMessage("Post-Install TOC indicates we should skip installing PCConsoleTOC for this job");
 				}
 			}
 
@@ -406,7 +449,6 @@ public class ModInstallWindow extends JDialog {
 					return false;
 				}
 			}
-
 			return true;
 		}
 
@@ -419,7 +461,7 @@ public class ModInstallWindow extends JDialog {
 		 * @return true if successful, false otherwise
 		 */
 		private boolean processDLCJob(ModJob job) {
-			ModManager.debugLogger.writeMessage("===Processing a dlc job: "+job.getJobName()+"===");
+			ModManager.debugLogger.writeMessage("===Processing a dlc job: " + job.getJobName() + "===");
 
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
@@ -433,7 +475,7 @@ public class ModInstallWindow extends JDialog {
 					return processSFARDLCJob(job);
 				}
 			}
-			
+
 			//Check that the default.sfar file is not smaller than the normal size (typically means unpacked)
 			String sfarName = "Default.sfar";
 			if (job.TESTPATCH) {
@@ -444,22 +486,25 @@ public class ModInstallWindow extends JDialog {
 			File sfarFile = new File(sfarPath);
 			if (sfarFile.exists()) {
 				if (sfarFile.length() >= knownsfarsize) {
-					ModManager.debugLogger.writeMessage("SFAR is same or larger in bytes than the known original. Likely is the vanilla one, or has been modified, but not unpacked. Using the SFAR method: "+job.getJobName());
+					ModManager.debugLogger
+							.writeMessage("SFAR is same or larger in bytes than the known original. Likely is the vanilla one, or has been modified, but not unpacked. Using the SFAR method: "
+									+ job.getJobName());
 					return processSFARDLCJob(job);
 				}
 			} else {
-				ModManager.debugLogger.writeError("SFAR doesn't exist for unpacked DLC... interesting... "+sfarPath);
+				ModManager.debugLogger.writeError("SFAR doesn't exist for unpacked DLC... interesting... " + sfarPath);
 			}
 
 			//We don't need to check for files to remove, as if it this is an unpacked DLC we can just skip the file. If it is missing in the DLC then there would be nothing we can do.
-/*			for (int i = 0; i < job.getFilesToRemove().size(); i++) {
-				String fileToRemove = job.getFilesToRemove().get(i);
-				File unpackeddlcfile = new File(me3dir + fileToRemove);
-				if (!unpackeddlcfile.exists()) {
-					ModManager.debugLogger.writeMessage("Game DB: unpacked DLC file not present. DLC job will use SFAR method: " + job.getJobName());
-					return processSFARDLCJob(job);
-				}
-			}*/
+			/*
+			 * for (int i = 0; i < job.getFilesToRemove().size(); i++) { String
+			 * fileToRemove = job.getFilesToRemove().get(i); File
+			 * unpackeddlcfile = new File(me3dir + fileToRemove); if
+			 * (!unpackeddlcfile.exists()) {
+			 * ModManager.debugLogger.writeMessage(
+			 * "Game DB: unpacked DLC file not present. DLC job will use SFAR method: "
+			 * + job.getJobName()); return processSFARDLCJob(job); } }
+			 */
 
 			//UNPACKED DLC METHOD
 			return updateUnpackedDLC(job);
@@ -488,6 +533,10 @@ public class ModInstallWindow extends JDialog {
 			for (int i = 0; i < numFilesToReplace; i++) {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles.get(i);
+				if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
+					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
+					newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
+				}
 
 				boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
 				if (!shouldContinue) {
@@ -498,15 +547,21 @@ public class ModInstallWindow extends JDialog {
 				// install file.
 				File unpacked = new File(me3dir + fileToReplace);
 				Path originalpath = Paths.get(unpacked.toString());
-				try {
-					ModManager.debugLogger.writeMessage("Installing mod file: " + newFile);
-					publish(job.getJobName() + ": Installing " + FilenameUtils.getName(newFile));
-					Path newfilepath = Paths.get(newFile);
-					Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
-					ModManager.debugLogger.writeMessage("Installed mod file: " + newFile);
-				} catch (IOException e) {
-					ModManager.debugLogger.writeException(e);
-					return false;
+				if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.USE_GAME_TOCFILES_INSTEAD) {
+
+					try {
+						ModManager.debugLogger.writeMessage("Installing mod file: " + newFile);
+						publish(job.getJobName() + ": Installing " + FilenameUtils.getName(newFile));
+						Path newfilepath = Paths.get(newFile);
+						Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
+						ModManager.debugLogger.writeMessage("Installed mod file: " + newFile);
+					} catch (IOException e) {
+						ModManager.debugLogger.writeException(e);
+						return false;
+					}
+				} else {
+					ModManager.debugLogger.writeMessage("Post-Install TOC indicates we should skip installing PCConsoleTOC for this job");
+
 				}
 			}
 
@@ -558,8 +613,8 @@ public class ModInstallWindow extends JDialog {
 						return false;
 					}
 				} else {
-					ModManager.debugLogger.writeMessage(unpacked+" was to be removed but does not exist, skipping");
-					publish(job.getJobName() + ": "+FilenameUtils.getName(unpacked.getAbsolutePath())+" not present for removal, skipping");
+					ModManager.debugLogger.writeMessage(unpacked + " was to be removed but does not exist, skipping");
+					publish(job.getJobName() + ": " + FilenameUtils.getName(unpacked.getAbsolutePath()) + " not present for removal, skipping");
 				}
 			}
 			return true;
@@ -581,8 +636,10 @@ public class ModInstallWindow extends JDialog {
 		private boolean checkBackupAndHash(String me3dir, String fileToReplace, ModJob job) {
 			String backupfolderpath = me3dir.toString() + "cmmbackup\\";
 			File cmmbackupfolder = new File(backupfolderpath);
-			cmmbackupfolder.mkdirs();
-			ModManager.debugLogger.writeMessage("Backup directory should have been created if it does not exist already.");
+			boolean madeDir = cmmbackupfolder.mkdirs();
+			if (madeDir) {
+				ModManager.debugLogger.writeMessage("Created unpacked files backup directory.");
+			}
 
 			// Check for backup
 			File unpacked = new File(me3dir + fileToReplace);
@@ -687,7 +744,6 @@ public class ModInstallWindow extends JDialog {
 							}
 						}
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
 						ModManager.debugLogger.writeException(e);
 					}
 				}
@@ -744,8 +800,12 @@ public class ModInstallWindow extends JDialog {
 				publish("Updating " + filesToReplace.size() + " files in " + job.getJobName());
 				for (int i = 0; i < filesToReplace.size(); i++) {
 					commandBuilder.add(filesToReplace.get(i));
-					commandBuilder.add(newFiles.get(i));
-					// System.out.println("adding file to command");
+					String newFile = newFiles.get(i);
+					if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
+						ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
+						newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
+					}
+					commandBuilder.add(newFile);
 				}
 
 				// System.out.println("Building command");
@@ -762,16 +822,19 @@ public class ModInstallWindow extends JDialog {
 					ProcessBuilder pb = new ProcessBuilder(command);
 					ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
 					// p = Runtime.getRuntime().exec(command);
+					long timeStart = System.currentTimeMillis();
 					p = pb.start();
 					ModManager.debugLogger.writeMessage("Executed command, waiting...");
 					returncode = p.waitFor();
+					long timeEnd = System.currentTimeMillis();
+					ModManager.debugLogger.writeMessage("Process has finished. Took " + (timeEnd - timeStart) + " ms.");
 				} catch (IOException | InterruptedException e) {
 					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 					e.printStackTrace();
 					return false;
 				}
 
-				ModManager.debugLogger.writeMessage("processDLCJob RETURN VAL: " + (p != null && returncode == 0));
+				ModManager.debugLogger.writeMessage("Job completed successfully: " + (p != null && returncode == 0));
 				result = (p != null && returncode == 0) && result;
 			}
 
@@ -813,9 +876,12 @@ public class ModInstallWindow extends JDialog {
 				try {
 					ProcessBuilder pb = new ProcessBuilder(command);
 					ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
+					long timeStart = System.currentTimeMillis();
 					p = pb.start();
 					ModManager.debugLogger.writeMessage("Executed command, waiting...");
 					returncode = p.waitFor();
+					long timeEnd = System.currentTimeMillis();
+					ModManager.debugLogger.writeMessage("Process has finished. Took " + (timeEnd - timeStart) + " ms.");
 				} catch (IOException | InterruptedException e) {
 					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 					e.printStackTrace();
@@ -862,9 +928,12 @@ public class ModInstallWindow extends JDialog {
 				try {
 					ProcessBuilder pb = new ProcessBuilder(command);
 					// p = Runtime.getRuntime().exec(command);
+					long timeStart = System.currentTimeMillis();
 					p = pb.start();
 					ModManager.debugLogger.writeMessage("Executed command, waiting...");
 					returncode = p.waitFor();
+					long timeEnd = System.currentTimeMillis();
+					ModManager.debugLogger.writeMessage("Process has finished. Took " + (timeEnd - timeStart) + " ms.");
 				} catch (IOException | InterruptedException e) {
 					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
 					e.printStackTrace();
@@ -919,7 +988,6 @@ public class ModInstallWindow extends JDialog {
 					Integer.parseInt(update); // see if we got a number. if we
 												// did that means we should
 												// update the bar
-					ModManager.debugLogger.writeMessage("Job completed with code "+update);
 					if (numjobs != 0) {
 						progressBar.setValue((int) (((float) completed / numjobs) * 100));
 					}
@@ -976,11 +1044,11 @@ public class ModInstallWindow extends JDialog {
 			finishInstall();
 			return;
 		}
-	}
 
-	protected void finishInstall() {
-		ModManager.debugLogger.writeMessage("Finished installing mod.");
-		dispose();
+		protected void finishInstall() {
+			ModManager.debugLogger.writeMessage("=========Finished installing " + mod.getModName() + "==========");
+			dispose();
+		}
 	}
 
 	public void addToQueue(String newLine) {

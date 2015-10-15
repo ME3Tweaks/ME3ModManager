@@ -3,6 +3,8 @@ package com.me3tweaks.modmanager.objects;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.me3tweaks.modmanager.ModManager;
+
 public class ModType {
 	//DLC Header names (ModDesc.ini)
 	public static final String COAL = "COALESCED"; //Used with Legacy and 2.0
@@ -81,7 +83,7 @@ public class ModType {
 
 	/**
 	 * Returns the subdirectory from biogame (no leading or trailing slashes)
-	 * that corresponds to a DLC folder where the .sfar file should exist.
+	 * that corresponds to a DLC folder where the .sfar file should exist. This is typically ...CookedPCConsole, or PCConsole if TESTPATCH.
 	 * 
 	 * @param modType
 	 *            Name of the DLC, as a ModType constant. Also known as a header
@@ -133,6 +135,60 @@ public class ModType {
 			return "DLC\\DLC_OnlinePassHidCE\\CookedPCConsole";
 		}
 		return subPath;
+	}
+	
+	/**
+	 * Gets a PCConsoleTOC path, relative to the Mass Effect 3 directory.
+	 * This path will work both in SFARs (as in a path) and unpacked DLC.
+	 * @param header Header to use to lookup
+	 * @return PCConsoleTOC location
+	 */
+	public static String getTOCPathFromHeader(String header) {
+		switch (header) {
+		case "RESURGENCE":
+			return "/BIOGame/DLC/DLC_CON_MP1/PCConsoleTOC.bin";
+		case "REBELLION":
+			return "/BIOGame/DLC/DLC_CON_MP2/PCConsoleTOC.bin";
+		case "EARTH":
+			return "/BIOGame/DLC/DLC_CON_MP3/PCConsoleTOC.bin";
+		case "RETALIATION":
+			return "/BIOGame/DLC/DLC_CON_MP4/PCConsoleTOC.bin";
+		case "RECKONING":
+			return "/BIOGame/DLC/DLC_CON_MP5/PCConsoleTOC.bin";
+		case "PATCH1":
+			return "/BIOGame/DLC/DLC_UPD_Patch01/PCConsoleTOC.bin";
+		case "PATCH2":
+			return "/BIOGame/DLC/DLC_UPD_Patch02/PCConsoleTOC.bin";
+		case "BASEGAME":
+			return "\\BIOGame\\PCConsoleTOC.bin";
+		case "TESTPATCH":
+			return "/BIOGame/DLC/DLC_TestPatch/PCConsoleTOC.bin";
+		case "FROM_ASHES":
+			return "/BIOGame/DLC/DLC_HEN_PR/PCConsoleTOC.bin";
+		case "APPEARANCE":
+			return "/BIOGame/DLC/DLC_CON_APP01/PCConsoleTOC.bin";
+		case "FIREFIGHT":
+			return "/BIOGame/DLC/DLC_CON_GUN01/PCConsoleTOC.bin";
+		case "GROUNDSIDE":
+			return "/BIOGame/DLC/DLC_CON_GUN02/PCConsoleTOC.bin";
+		case "EXTENDED_CUT":
+			return "/BIOGame/DLC/DLC_CON_END/PCConsoleTOC.bin";
+		case "LEVIATHAN":
+			return "/BIOGame/DLC/DLC_EXP_Pack001/PCConsoleTOC.bin";
+		case "OMEGA":
+			return "/BIOGame/DLC/DLC_EXP_Pack002/PCConsoleTOC.bin";
+		case "CITADEL":
+			return "/BIOGame/DLC/DLC_EXP_Pack003/PCConsoleTOC.bin";
+		case "CITADEL_BASE":
+			return "/BIOGame/DLC/DLC_EXP_Pack003_Base/PCConsoleTOC.bin";
+		case "GENESIS2":
+			return "/BIOGame/DLC/DLC_CON_DH1/PCConsoleTOC.bin";
+		case "COLLECTORS_EDITION":
+			return "/BIOGame/DLC/DLC_OnlinePassHidCE/PCConsoleTOC.bin";
+		default:
+			ModManager.debugLogger.writeMessage("Getting TOC path failed, unknown header: " + header);
+			return null;
+		}
 	}
 
 	/**

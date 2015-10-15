@@ -298,9 +298,9 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Extract update");
-		sb.append("\r\n");
+		sb.append("\r\n\"");
 		sb.append(ModManager.getToolsDir());
-		sb.append("7za.exe -y x ME3Explorer.7z -o"+ModManager.getTempDir()+"ME3EXPNewVersion");
+		sb.append("7za.exe\" -y x ME3Explorer.7z -o\""+ModManager.getTempDir()+"ME3EXPNewVersion\"");
 		sb.append("\r\n");
 		sb.append("set ME3EXP=%errorlevel%");
 		sb.append("\r\n");
@@ -346,7 +346,7 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		sb.append("rmdir /S /Q ");
 		sb.append(ModManager.getME3ExplorerEXEDirectory(false));
 		sb.append("\r\n");
-		sb.append("xcopy /Q /Y /S ME3EXPNewVersion "+ModManager.getME3ExplorerEXEDirectory(false));
+		sb.append("xcopy /Q /Y /S ME3EXPNewVersion \""+ModManager.getME3ExplorerEXEDirectory(false)+"\"");
 		sb.append("\r\n");
 		sb.append("::Cleanup");
 		sb.append("\r\n");

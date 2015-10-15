@@ -174,6 +174,8 @@ public class BackupWindow extends JDialog {
 				if (!mainSfarbackup.exists() && !testpathSfarbackup.exists()) {
 					ModManager.debugLogger.writeMessage("No .bak files found in folder, checking box");
 					checkbox.setSelected(true);
+				} else {
+					checkbox.setToolTipText("This DLC has a .sfar.back file in it's folder already");
 				}
 				checkboxMap.put(dlcName, checkbox);
 				continue;
@@ -237,7 +239,7 @@ public class BackupWindow extends JDialog {
 	}
 
 	private String[] getJobs() {
-		String[] dlcNames = ModType.getHeaderNameArray();
+		String[] dlcNames = ModType.getDLCHeaderNameArray();
 		ArrayList<String> jobs = new ArrayList<String>();
 		for (String dlcName : dlcNames) {
 			JCheckBox checkbox = checkboxMap.get(dlcName);

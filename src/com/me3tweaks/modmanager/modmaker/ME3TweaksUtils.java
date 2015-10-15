@@ -178,13 +178,13 @@ public class ME3TweaksUtils {
 			return "GROUNDSIDE";
 		case "Default_DLC_CON_END.bin":
 			return "EXTENDED_CUT";
-		case "Default_DLC_CON_Pack001.bin":
+		case "Default_DLC_EXP_Pack001.bin":
 			return "LEVIATHAN";
-		case "Default_DLC_CON_Pack002.bin":
+		case "Default_DLC_EXP_Pack002.bin":
 			return "OMEGA";
-		case "Default_DLC_CON_Pack003.bin":
+		case "Default_DLC_EXP_Pack003.bin":
 			return "CITADEL";
-		case "Default_DLC_CON_Pack003_Base.bin":
+		case "Default_DLC_EXP_Pack003_Base.bin":
 			return "CITADEL_BASE";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => INTERNAL " + coalName);
@@ -222,13 +222,13 @@ public class ME3TweaksUtils {
 			return "GROUNDSIDE";
 		case "Default_DLC_CON_END.bin":
 			return "EXTENDED_CUT";
-		case "Default_DLC_CON_Pack001.bin":
+		case "Default_DLC_EXP_Pack001.bin":
 			return "LEVIATHAN";
-		case "Default_DLC_CON_Pack002.bin":
+		case "Default_DLC_EXP_Pack002.bin":
 			return "OMEGA";
-		case "Default_DLC_CON_Pack003.bin":
+		case "Default_DLC_EXP_Pack003.bin":
 			return "CITADEL";
-		case "Default_DLC_CON_Pack003_Base.bin":
+		case "Default_DLC_EXP_Pack003_Base.bin":
 			return "CITADEL_BASE";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: FILENAME => HEADER " + coalName);
@@ -318,13 +318,13 @@ public class ME3TweaksUtils {
 		case "EXTENDED_CUT":
 			return "Default_DLC_CON_END.bin";
 		case "LEVIATHAN":
-			return "Default_DLC_CON_Pack001.bin";
+			return "Default_DLC_EXP_Pack001.bin";
 		case "OMEGA":
-			return "Default_DLC_CON_Pack002.bin";
+			return "Default_DLC_EXP_Pack002.bin";
 		case "CITADEL":
-			return "Default_DLC_CON_Pack003.bin";
+			return "Default_DLC_EXP_Pack003.bin";
 		case "CITADEL_BASE":
-			return "Default_DLC_CON_Pack003_Base.bin";
+			return "Default_DLC_EXP_Pack003_Base.bin";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => FILENAME " + header);
 			return null;
@@ -371,13 +371,13 @@ public class ME3TweaksUtils {
 		case "EXTENDED_CUT":
 			return "Default_DLC_CON_END.bin";
 		case "LEVIATHAN":
-			return "Default_DLC_CON_Pack001.bin";
+			return "Default_DLC_EXP_Pack001.bin";
 		case "OMEGA":
-			return "Default_DLC_CON_Pack002.bin";
+			return "Default_DLC_EXP_Pack002.bin";
 		case "CITADEL":
-			return "Default_DLC_CON_Pack003.bin";
+			return "Default_DLC_EXP_Pack003.bin";
 		case "CITADEL_BASE":
-			return "Default_DLC_CON_Pack003_Base.bin";
+			return "Default_DLC_EXP_Pack003_Base.bin";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: NO MATCH INTERNAL => FILENAME: " + internal);
 			return null;
@@ -458,6 +458,8 @@ public class ME3TweaksUtils {
 		coalHashMap.put(ModType.GUN01, "fe9084127be47b8c084dad67c64cd211");
 		coalHashMap.put(ModType.GUN02, "f3231b3855fdf288482a541b147dfca9");
 		coalHashMap.put(ModType.BINI, "1d3e646cdf9da8bcb8207d8fd961f7f5");
+		coalHashMap.put(ModType.COLLECTORSEDITION, "");
+		coalHashMap.put(ModType.DH1, "");
 		return coalHashMap;
 	}
 
@@ -484,6 +486,8 @@ public class ME3TweaksUtils {
 		tocHashMap.put(ModType.APP01, "21c396e4ae50b4d8b3cf55fe2b9c0722");
 		tocHashMap.put(ModType.GUN01, "53f06f917f27af46af25cae77f595d75");
 		tocHashMap.put(ModType.GUN02, "6c26b453dfaf663ebaeeafeac78440c2");
+		tocHashMap.put(ModType.COLLECTORSEDITION, "");
+		tocHashMap.put(ModType.DH1, "");
 		return tocHashMap;
 	}
 	
@@ -525,14 +529,14 @@ public class ME3TweaksUtils {
 			return "/BIOGame/DLC/DLC_CON_GUN02/PCConsoleTOC.bin";
 		case "Default_DLC_CON_END.bin":
 			return "/BIOGame/DLC/DLC_CON_END/PCConsoleTOC.bin";
-		case "Default_DLC_CON_Pack001.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack001/PCConsoleTOC.bin";
-		case "Default_DLC_CON_Pack002.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack002/PCConsoleTOC.bin";
-		case "Default_DLC_CON_Pack003.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack003/PCConsoleTOC.bin";
-		case "Default_DLC_CON_Pack003_Base.bin":
-			return "/BIOGame/DLC/DLC_CON_Pack003_Base/PCConsoleTOC.bin";
+		case "Default_DLC_EXP_Pack001.bin":
+			return "/BIOGame/DLC/DLC_EXP_Pack001/PCConsoleTOC.bin";
+		case "Default_DLC_EXP_Pack002.bin":
+			return "/BIOGame/DLC/DLC_EXP_Pack002/PCConsoleTOC.bin";
+		case "Default_DLC_EXP_Pack003.bin":
+			return "/BIOGame/DLC/DLC_EXP_Pack003/PCConsoleTOC.bin";
+		case "Default_DLC_EXP_Pack003_Base.bin":
+			return "/BIOGame/DLC/DLC_EXP_Pack003_Base/PCConsoleTOC.bin";
 
 		default:
 			ModManager.debugLogger.writeMessage("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: " + coalName);
