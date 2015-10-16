@@ -46,14 +46,14 @@ public class DebugLogger {
 			fw = new FileWriter(logFile);
 			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			Date date = new Date();
-			fw.write("Logger init, time: "+dateFormat.format(date));
+			fw.write("Logger init, time: " + dateFormat.format(date));
 			fw.write(System.getProperty("line.separator"));
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				public void run() {
 					try {
 						DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 						Date date = new Date();
-						writeMessage("Logger shutting down. Time: "+dateFormat.format(date));
+						writeMessage("Logger shutting down. Time: " + dateFormat.format(date));
 						fw.close();
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
@@ -170,4 +170,18 @@ public class DebugLogger {
 			return "Mod Manager logging is not enabled. To enable it, please go to File>Options and turn it on.";
 		}
 	}
+
+	public void writeMessageConditionally(String string, boolean condition) {
+		if (condition) {
+			writeMessage(string);
+		}
+	}
+	
+	public void writeErrorConditionally(String string, boolean condition) {
+		if (condition) {
+			writeError(string);
+		}
+	}
+	
+	
 }

@@ -86,9 +86,10 @@ public class ModManager {
 	public static long SKIP_UPDATES_UNTIL_BUILD = 0;
 	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
 	public static long AUTO_CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(AUTO_CHECK_INTERVAL_DAYS);
+	public static boolean LOG_MOD_INIT = false;
+	public static boolean LOG_PATCH_INIT = false;
 
 	public static void main(String[] args) {
-		
 		debugLogger = new DebugLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
@@ -294,6 +295,26 @@ public class ModManager {
 						} catch (NumberFormatException e) {
 							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
 							USE_GAME_TOCFILES_INSTEAD = false;
+						}
+					}
+					
+					// Log Mod Startup
+					String modstartupStr = settingsini.get("Settings", "logmodinit");
+					int modstartupInt = 0;
+					if (modstartupStr != null && !modstartupStr.equals("")) {
+						try {
+							modstartupInt = Integer.parseInt(modstartupStr);
+							if (modstartupInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("Mod startup logging is enabled");
+								LOG_MOD_INIT = true;
+							} else {
+								debugLogger.writeMessage("Mod startup logging is disabled");
+								LOG_MOD_INIT = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the log mod init - setting to disabled");
+							LOG_MOD_INIT = false;
 						}
 					}
 

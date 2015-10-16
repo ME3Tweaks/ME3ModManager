@@ -1050,6 +1050,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		helpMenu.add(helpPost);
 		helpMenu.add(helpForums);
+		helpMenu.add(HelpMenu.getHowDoIMenu());
 		helpMenu.addSeparator();
 		helpMenu.add(helpGetLog);
 		helpMenu.add(helpEmailFemShep);

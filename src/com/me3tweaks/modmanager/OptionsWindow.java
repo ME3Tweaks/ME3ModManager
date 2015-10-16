@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
@@ -29,6 +30,8 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoUpdateME3Explorer;
 	private JCheckBox skipUpdate;
 	private JCheckBox autoTocUnpackedOnInstall;
+	private AbstractButton logModInit;
+	private JCheckBox logPatchInit;
 
 	public OptionsWindow(JFrame callingWindow) {
 		setupWindow();
@@ -280,17 +283,73 @@ public class OptionsWindow extends JDialog {
 			}
 		});
 
+		logModInit = new JCheckBox(
+				"<html><div style=\"width: 300px\">Log Mod startup</div></html>");
+		logModInit
+				.setToolTipText("<html>Writes mod debugging information generated while parsing mod info to the log file.<br>This is not needed unless debugging a mod.</html>");
+		logModInit.setSelected(ModManager.LOG_MOD_INIT);
+		logModInit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Wini ini;
+				try {
+					File settings = new File(ModManager.SETTINGS_FILENAME);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					ModManager.debugLogger.writeMessage("User changing run log mod init to " + logModInit.isSelected());
+					ini.put("Settings", "logmodinit", logModInit.isSelected() ? "1" : "0");
+					ModManager.LOG_MOD_INIT = logModInit.isSelected();
+					ini.store();
+				} catch (InvalidFileFormatException ex) {
+					ex.printStackTrace();
+				} catch (IOException ex) {
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
+				}
+			}
+		});
+		
+		logPatchInit = new JCheckBox(
+				"<html><div style=\"width: 300px\">Log MixIn startup</div></html>");
+		logPatchInit
+				.setToolTipText("<html>Writes MixIn debugging information generated while parsing MixIn info to the log file.<br>This is not needed unless debugging a MixIn.</html>");
+		logPatchInit.setSelected(ModManager.LOG_PATCH_INIT);
+		logPatchInit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Wini ini;
+				try {
+					File settings = new File(ModManager.SETTINGS_FILENAME);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					ModManager.debugLogger.writeMessage("User changing run log mixin init to " + logPatchInit.isSelected());
+					ini.put("Settings", "logpatchinit", logPatchInit.isSelected() ? "1" : "0");
+					ModManager.LOG_PATCH_INIT = logPatchInit.isSelected();
+					ini.store();
+				} catch (InvalidFileFormatException ex) {
+					ex.printStackTrace();
+				} catch (IOException ex) {
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
+				}
+			}
+		});
+		
 		optionsPanel.add(autoApplyMixins);
 		optionsPanel.add(autoInjectKeybindsModMaker);
 		optionsPanel.add(autoTocUnpackedOnInstall);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
-		optionsPanel.add(loggingMode);
 		optionsPanel.add(autoUpdateModManager);
 		if (skipUpdate != null) {
 			optionsPanel.add(skipUpdate);
 		}
 		optionsPanel.add(autoUpdateMods);
 		optionsPanel.add(autoUpdateME3Explorer);
+		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
+		optionsPanel.add(loggingMode);
+		optionsPanel.add(logModInit);
+		optionsPanel.add(logPatchInit);
+
 		optionsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		this.getContentPane().add(optionsPanel);
 		this.pack();
