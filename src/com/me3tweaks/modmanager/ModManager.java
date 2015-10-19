@@ -49,6 +49,7 @@ import org.w3c.dom.Document;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.sun.jna.platform.win32.Advapi32Util;

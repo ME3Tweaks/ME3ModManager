@@ -57,6 +57,7 @@ import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
 import com.me3tweaks.modmanager.valueparsers.enemytype.EnemyType;
@@ -123,6 +124,23 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		// this.setResizable(false);
 		// this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setupWindow();
+		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		new ModDownloadWorker().execute();
+
+		if (!error) {
+			this.setVisible(true);
+		}
+	}
+	
+	/**
+	 * Applies a mod delta to a mod
+	 * @param mod Mod to apply delta to
+	 * @param delta Delta to apply
+	 */
+	public ModMakerCompilerWindow(Mod mod, ModDelta delta) {
+		this.mod = mod;
+		
 		setupWindow();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		new ModDownloadWorker().execute();

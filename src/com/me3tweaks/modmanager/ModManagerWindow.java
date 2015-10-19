@@ -65,6 +65,7 @@ import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
 import com.me3tweaks.modmanager.modupdater.ModXMLTools;
 import com.me3tweaks.modmanager.modupdater.UpdatePackage;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
@@ -86,9 +87,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
-	JMenu actionMenu, modMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
+	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionOptions, actionOpenME3Exp, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsAutoTOCUpgrade, modutilsUninstallCustomDLC,
+	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsAutoTOCUpgrade, modutilsUninstallCustomDLC,
 			modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
@@ -812,6 +813,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsInfoEditor = new JMenuItem("Edit name/description");
 		modutilsInfoEditor.addActionListener(this);
 		modutilsInfoEditor.setToolTipText("Rename this mod and change the description shown in the descriptions window");
+
+		modDeltaMenu = new JMenu("0 available variants");
+		modDeltaMenu.setToolTipText("<html>This mod has variants that allow quick changes to the mod without shipping a full new version.<br>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
+		modDeltaMenu.setVisible(false);
+		
+		modNoDeltas = new JMenuItem("No included variants");
+		modNoDeltas.setToolTipText("<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
+		modNoDeltas.setEnabled(false);
+
+		
 		modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
 		modutilsAutoTOC.addActionListener(this);
 		modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes");
@@ -833,7 +844,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.add(modutilsInstallCustomKeybinds);
 		modMenu.add(modutilsInfoEditor);
 		modMenu.add(modutilsAutoTOC);
-		//modMenu.add(modutilsAutoTOCUpgrade);
+		modMenu.add(modDeltaMenu);
+		modMenu.add(modNoDeltas);
+
 		modMenu.add(modutilsUninstallCustomDLC);
 		modMenu.add(modutilsCheckforupdate);
 		modMenu.setEnabled(false);
@@ -2037,6 +2050,28 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					modutilsUninstallCustomDLC.setEnabled(false);
 					modutilsUninstallCustomDLC.setText("Mod does not use custom DLC content");
 					modutilsUninstallCustomDLC.setToolTipText("This mod does not install any custom DLC modules");
+				}
+				
+				if (selectedMod.getModDeltas().size() > 0 ){
+					modDeltaMenu.removeAll();
+					modDeltaMenu.setText(selectedMod.getModDeltas().size() + " available variant"+(selectedMod.getModDeltas().size() != 1 ? "s" : ""));
+					modDeltaMenu.setVisible(true);
+					modNoDeltas.setVisible(false);
+					for (ModDelta delta : selectedMod.getModDeltas()) {
+						JMenuItem deltaItem = new JMenuItem(delta.getDeltaName());
+						deltaItem.setToolTipText(delta.getDeltaDescription());
+						deltaItem.addActionListener(new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent e) {
+								ModManager.debugLogger.writeMessage("Applying delta "+delta.getDeltaName()+" to "+selectedMod.getModName());
+								new DeltaWindow(selectedMod, delta);
+							}
+						});
+						modDeltaMenu.add(deltaItem);
+					}
+				} else {
+					modDeltaMenu.setVisible(false);
+					modNoDeltas.setVisible(true);
 				}
 			}
 		}
