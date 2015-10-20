@@ -23,6 +23,8 @@ import com.me3tweaks.modmanager.ResourceUtils;
 public class Mod implements Comparable<Mod> {
 	public static final String DELTAS_FOLDER = "DELTAS";
 	public static final String ORIGINAL_FOLDER = "ORIGINAL";
+	public static final String VARIANT_FOLDER = "VARIANTS";
+
 
 	File modDescFile;
 	boolean validMod = false, modCoal = false;

@@ -89,7 +89,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionOptions, actionOpenME3Exp, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsAutoTOCUpgrade, modutilsUninstallCustomDLC,
+	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC,
 			modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
@@ -114,6 +114,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem restoredeleteAllCustomDLC;
 	private JMenuItem backupBasegameUnpacked;
 	private JMenuItem toolsUnpackDLC;
+	private JMenuItem modDeltaRevert;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -815,20 +816,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsInfoEditor.setToolTipText("Rename this mod and change the description shown in the descriptions window");
 
 		modDeltaMenu = new JMenu("0 available variants");
-		modDeltaMenu.setToolTipText("<html>This mod has variants that allow quick changes to the mod without shipping a full new version.<br>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
+		modDeltaMenu
+				.setToolTipText("<html>This mod has variants that allow quick changes to the mod without shipping a full new version.<br>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
 		modDeltaMenu.setVisible(false);
-		
+
 		modNoDeltas = new JMenuItem("No included variants");
-		modNoDeltas.setToolTipText("<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
+		modNoDeltas
+				.setToolTipText("<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
 		modNoDeltas.setEnabled(false);
 
-		
+		modDeltaRevert = new JMenuItem("Revert to original version");
+		modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");
+		modDeltaRevert.addActionListener(this);
+
 		modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
 		modutilsAutoTOC.addActionListener(this);
 		modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes");
-		modutilsAutoTOCUpgrade = new JMenuItem("Upgrade mod to use unpacked DLC");
-		modutilsAutoTOCUpgrade.addActionListener(this);
-		modutilsAutoTOCUpgrade.setToolTipText("Automatically update all TOC files this mod has to use file sizes of your unpacked DLC");
 
 		modutilsUninstallCustomDLC = new JMenuItem("Uninstall this mod's custom DLC");
 		modutilsUninstallCustomDLC.addActionListener(this);
@@ -1547,8 +1550,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use the AutoTOC feature.");
 			}
-		} else if (e.getSource() == modutilsAutoTOCUpgrade) {
-			autoTOC(AutoTocWindow.UPGRADE_UNPACKED_MODE);
+
 		} else if (e.getSource() == modutilsInfoEditor) {
 			showInfoEditor();
 		} else if (e.getSource() == modutilsUninstallCustomDLC) {
@@ -1575,6 +1577,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			} else {
 				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
+		} else if (e.getSource() == modDeltaRevert) {
+			if (validateBIOGameDir()) {
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Reverting a delta.");
+					new DeltaWindow(modModel.get(modList.getSelectedIndex()));
+				} else {
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
+				}
+			} else {
+				labelStatus.setText("Switching variants requires a valid BIOGame folder");
 				labelStatus.setVisible(true);
 				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
@@ -2051,10 +2069,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					modutilsUninstallCustomDLC.setText("Mod does not use custom DLC content");
 					modutilsUninstallCustomDLC.setToolTipText("This mod does not install any custom DLC modules");
 				}
-				
-				if (selectedMod.getModDeltas().size() > 0 ){
+
+				if (selectedMod.getModDeltas().size() > 0) {
 					modDeltaMenu.removeAll();
-					modDeltaMenu.setText(selectedMod.getModDeltas().size() + " available variant"+(selectedMod.getModDeltas().size() != 1 ? "s" : ""));
+					modDeltaMenu.add(modDeltaRevert);
+					File originalVariantFolder = new File(selectedMod.getModPath() + Mod.VARIANT_FOLDER + File.separator + Mod.ORIGINAL_FOLDER);
+					modDeltaRevert.setEnabled(originalVariantFolder.exists());
+					if (originalVariantFolder.exists()) {
+						modDeltaRevert.setToolTipText("Revert to the original version of this mod");
+					} else {
+						modDeltaRevert.setToolTipText("No variants have been applied yet, so this is the original");
+					}
+
+					modDeltaMenu.addSeparator();
+					modDeltaMenu.setText(selectedMod.getModDeltas().size() + " available variant"
+							+ (selectedMod.getModDeltas().size() != 1 ? "s" : ""));
 					modDeltaMenu.setVisible(true);
 					modNoDeltas.setVisible(false);
 					for (ModDelta delta : selectedMod.getModDeltas()) {
@@ -2063,8 +2092,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						deltaItem.addActionListener(new ActionListener() {
 							@Override
 							public void actionPerformed(ActionEvent e) {
-								ModManager.debugLogger.writeMessage("Applying delta "+delta.getDeltaName()+" to "+selectedMod.getModName());
+								ModManager.debugLogger.writeMessage("Applying delta " + delta.getDeltaName() + " to " + selectedMod.getModName());
 								new DeltaWindow(selectedMod, delta);
+								modDeltaRevert.setEnabled(true);
+								modDeltaRevert.setText("Revert to original version");
+								modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");
 							}
 						});
 						modDeltaMenu.add(deltaItem);

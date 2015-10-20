@@ -1,0 +1,33 @@
+Notes on making a delta
+
+Supported property types
+Property - Contained in a section. Typically lists a single variable.
+ArrayProperty - Contained in a property, as a list. These are unnamed and require an algorithm to match on if you are trying to update a specific item. You may consider running a subtraction on the exact item and then running an addition of your new data if you don't have an algorithm available for matching.
+Section - Sections. They contain a list of properties and are the top level items.
+
+
+Supported Section property operations:
+addition - Adds a new section
+subtraction - Removes a section
+clear - Deletes all children of a section
+
+Supported Property/ArrayProperty property operations:
+assignment - Assigns a property with this exact name to the value.
+subtraction - Removes the property with the exact name from a section.
+
+
+
+Supported ArrayProperty algorithms:
+ArrayProperties are unnamed so there is no way to distinguish two items in the list. For this very same reason, we can override array properties in the balance changes because they only did exact removal and addition, so modified items will fail to the exact removal part and your version will load first.
+
+exactvalue - Matches if the value is the same as the one you are providing, you will use this only for subtraction.
+biodifficulty - Matches on the Category value from biodifficulty.
+wavelist - Matches on the difficulty value (DO_LEVELX)
+possessionwaves - Matches on DoLevel.
+shareddifficulty - Matches on DO_Level as well.
+enemytype - Match on EnemyType
+waveclass - match on waveclass
+id - Match on ID
+
+For all except exact value, you typically will use those to cut down on the amount of data you have to write. For items that don't have an exact algorithm, you will have to run do a subtraction using exactvalue with the data you want to remove, and then add it the new one with addition. This is how balance changes for array properties was done.
+

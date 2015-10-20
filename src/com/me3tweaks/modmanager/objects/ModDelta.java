@@ -46,7 +46,7 @@ public class ModDelta {
 	 * Generates metadata information about mod. Gets name, description, files
 	 * modified etc
 	 * 
-	 * @param file
+	 * @param file path to delta xml.
 	 */
 	private void preprocessDelta(String file) {
 		File deltaFile = new File(file);
@@ -75,7 +75,7 @@ public class ModDelta {
 		} //http://stackoverflow.com/questions/1706493/java-net-malformedurlexception-no-protocol
 		catch (ParserConfigurationException e) {
 			validDelta = false;
-			ModManager.debugLogger.writeErrorWithException("Parser configuration exception...", e);
+			ModManager.debugLogger.writeErrorWithException("Parser configuration exception... why :(", e);
 			return;
 		}
 		doc.getDocumentElement().normalize();
@@ -92,7 +92,12 @@ public class ModDelta {
 			return;
 		}
 		
-		validDelta = true;
+		if (deltaName.toLowerCase().equals("original")) {
+			validDelta = false;
+			ModManager.debugLogger.writeError("A delta cannot use the name \"Original\". This delta is being marked as invalid");
+		} else {
+			validDelta = true;
+		}
 	}
 	
 	public Document getDoc() {
