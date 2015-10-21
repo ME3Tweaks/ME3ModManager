@@ -8,8 +8,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingWorker;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -32,10 +30,10 @@ import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.MD5Checksum;
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
 
 public class ModXMLTools {
@@ -130,6 +128,23 @@ public class ModXMLTools {
 
 			coalElement.setTextContent(ResourceUtils.getRelativePath(coalStr, mod.getModPath(), File.separator));
 			rootElement.appendChild(coalElement);
+		}
+		
+		//add deltas
+		for (ModDelta delta : mod.getModDeltas()) {
+			Element element = modDoc.createElement("sourcefile");
+			File deltafile = new File(delta.getDeltaFilepath());
+
+			try {
+				element.setAttribute("hash", MD5Checksum.getMD5Checksum(delta.getDeltaFilepath()));
+				element.setAttribute("size", Long.toString(deltafile.length()));
+			} catch (DOMException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			element.setTextContent(ResourceUtils.getRelativePath(delta.getDeltaFilepath(), mod.getModPath(), File.separator));
+			rootElement.appendChild(element);
 		}
 
 		modDoc.appendChild(rootElement);

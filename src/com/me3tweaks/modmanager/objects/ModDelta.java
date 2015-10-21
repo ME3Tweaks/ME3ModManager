@@ -39,6 +39,7 @@ public class ModDelta {
 	private Document doc;
 
 	public ModDelta(String file) {
+		this.deltaFilepath = file;
 		preprocessDelta(file);
 	}
 
