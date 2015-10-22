@@ -1,8 +1,16 @@
 package com.me3tweaks.modmanager;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 
 import com.me3tweaks.modmanager.objects.HelpMenuItem;
 
@@ -45,15 +53,20 @@ public class HelpMenu {
 						"Mod Mixing",
 						"Mod Mixing is only supported if you do it through Mod Manager. You can merge mods through the tools menu utility. If you are layering mods (installing a mod over an already modified game) this is not supported, but you can improve compatability by going to Actions > Options and turning on the use game TOC files option."));
 
-		menuItems
-				.add(new HelpMenuItem(
-						"My DLC is corrupt/won't verify",
-						"DLC Verification Issues",
-						"If the title screen shows that your DLC is not verifying you must launch the game via Mod Manager (you may need to run as admin), or install the Binkw32 bypass (via the tools menu). The game by default does not accept modified DLC and will not load anything in the DLC"));
-
 		for (HelpMenuItem item : menuItems) {
 			menu.add(item.createMenuItem());
 		}
+
+		JMenuItem dlcFailure = new JMenuItem("DLC is not authorized/not loading");
+		dlcFailure.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new DLCFailedWindow();
+			}
+		});
+		menu.add(dlcFailure);
+
 		return menu;
 
 	}

@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
@@ -17,6 +18,7 @@ public class HelpMenuItem {
 	private String url;
 	private String popupText;
 	private String popupTitle;
+	private JLabel picture;
 	private int messageType;
 
 	public HelpMenuItem(String menuItemTitle, String popupTitle, String popupText) {
@@ -25,6 +27,13 @@ public class HelpMenuItem {
 		this.popupText = popupText;
 		this.messageType = JOptionPane.INFORMATION_MESSAGE;
 	}
+
+	public HelpMenuItem(String menuItemTitle, String popupTitle, String popupText, JLabel picture) {
+		this.menuItemTitle = menuItemTitle;
+		this.popupTitle = popupTitle;
+		this.popupText = popupText;
+		this.picture = picture;
+		this.messageType = JOptionPane.INFORMATION_MESSAGE;	}
 
 	public JMenuItem createMenuItem() {
 		JMenuItem item = new JMenuItem(menuItemTitle);
