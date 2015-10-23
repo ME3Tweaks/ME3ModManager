@@ -1280,17 +1280,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 						//START OF TLK DECOMPILE=========================================================
 						ArrayList<String> commandBuilder = new ArrayList<String>();
-						/*
-						 * ME3 EXPLORER VERSION commandBuilder.add("");
-						 * commandBuilder.add("-tlkeditor");
-						 * commandBuilder.add("decompile");
-						 * commandBuilder.add(ModManager.appendSlash(
-						 * callingWindow.fieldBiogameDir.getText())+
-						 * "CookedPCConsole\\"+tlkShortNameToFileName(tlkType));
-						 * commandBuilder.add(ModManager.appendSlash(tlkdir.
-						 * getAbsolutePath().toString())+"BIOGame_"+tlkType+
-						 * ".xml");
-						 */
+
 						String compilerPath = ModManager.getTankMasterTLKDir() + "MassEffect3.TlkEditor.exe";
 						commandBuilder.add(compilerPath);
 						commandBuilder
