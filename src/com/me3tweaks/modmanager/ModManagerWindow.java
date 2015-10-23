@@ -87,8 +87,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
-	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
-	JMenuItem actionModMaker, actionVisitMe, actionOptions, actionOpenME3Exp, actionReload, actionExit;
+	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
+	JMenuItem actionModMaker, actionVisitMe, actionOptions, toolME3Explorer, actionReload, actionExit;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC,
 			modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
@@ -115,6 +115,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem backupBasegameUnpacked;
 	private JMenuItem toolsUnpackDLC;
 	private JMenuItem modDeltaRevert;
+	private JMenuItem toolTankmasterCoalFolder;
+	private JMenuItem toolTankmasterCoalUI;
+	private JMenuItem toolTankmasterTLK;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -769,25 +772,42 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionVisitMe.setToolTipText("Opens ME3Tweaks.com");
 		actionOptions = new JMenuItem("Options");
 		actionOptions.setToolTipText("Configure Mod Manager Options");
-		actionOpenME3Exp = new JMenuItem("Run ME3Explorer");
-		actionOpenME3Exp.setToolTipText("Runs the bundled ME3Explorer program");
+
+		toolME3Explorer = new JMenuItem("ME3Explorer");
+		toolME3Explorer.setToolTipText("Runs the bundled ME3Explorer program");
+		toolTankmasterCoalFolder = new JMenuItem("TankMaster Coalesce Folder");
+		toolTankmasterCoalFolder.setToolTipText("Opens Tankmaster Coalesce folder");
+		toolTankmasterCoalUI = new JMenuItem("TankMaster Coalesce Interface");
+		toolTankmasterCoalUI.setToolTipText("Opens interface for Tankmaster's Coalesced compiler");
+		toolTankmasterTLK = new JMenuItem("TankMaster ME2/ME3 TLK Tool");
+		toolTankmasterTLK.setToolTipText("Runs the bundled TLK tool provided by TankMaster");
 		actionReload = new JMenuItem("Reload Mods");
 		actionReload.setToolTipText("Refreshes the list of mods and their descriptions");
 		actionExit = new JMenuItem("Exit");
 		actionExit.setToolTipText("Closes Mod Manager");
 
+		openToolMenu = new JMenu("Open Modding Tool");
+		openToolMenu.add(toolME3Explorer);
+		openToolMenu.add(toolTankmasterCoalFolder);
+		openToolMenu.add(toolTankmasterCoalUI);
+		openToolMenu.add(toolTankmasterTLK);
+
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
 		actionMenu.add(actionOptions);
 		actionMenu.addSeparator();
-		actionMenu.add(actionOpenME3Exp);
+		actionMenu.add(openToolMenu);
 		actionMenu.add(actionReload);
 		actionMenu.add(actionExit);
 
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
 		actionOptions.addActionListener(this);
-		actionOpenME3Exp.addActionListener(this);
+		toolME3Explorer.addActionListener(this);
+		toolTankmasterTLK.addActionListener(this);
+		toolTankmasterCoalFolder.addActionListener(this);
+		toolTankmasterCoalUI.addActionListener(this);
+
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
 		menuBar.add(actionMenu);
@@ -1485,7 +1505,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else
 
-		if (e.getSource() == actionOpenME3Exp) {
+		if (e.getSource() == toolME3Explorer) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
 				ModManager.debugLogger.writeMessage(".NET is installed");
@@ -1507,6 +1527,44 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} catch (IOException ex) {
 					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
 				}
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
+				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5 or higher in order to run.");
+			}
+		} else if (e.getSource() == toolTankmasterCoalFolder) {
+			openDir(ModManager.getTankMasterCompilerDir());
+		} else if (e.getSource() == toolTankmasterTLK) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				updateApplyButton();
+				ArrayList<String> commandBuilder = new ArrayList<String>();
+				String tankmasterTLKDir = ModManager.getTankMasterTLKDir();
+				commandBuilder.add(tankmasterTLKDir + "MassEffect3.TlkEditor.exe");
+				// System.out.println("Building command");
+				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+				// Debug stuff
+				StringBuilder sb = new StringBuilder();
+				for (String arg : command) {
+					sb.append(arg + " ");
+				}
+				ModManager.debugLogger.writeMessage("Executing Tankmaster TLK (via action menu) via command: " + sb.toString());
+				try {
+					ProcessBuilder pb = new ProcessBuilder(command);
+					pb.directory(new File(tankmasterTLKDir)); // this is where you set the root folder for the executable to run with
+					pb.start();
+				} catch (IOException ex) {
+					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+				}
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run TLK: .NET is not installed");
+				new NetFrameworkMissingWindow("Tankmaster's TLK Tool requires .NET 4.5 or higher in order to run.");
+			}
+		} else if (e.getSource() == toolTankmasterCoalUI) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				new CoalescedWindow();
 			} else {
 				updateApplyButton();
 				labelStatus.setText(".NET Framework 4.5 or higher is missing");
@@ -1716,6 +1774,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening ME3Dir.", e);
+		}
+	}
+
+	/**
+	 * Opens a directory in Windows Explorer.
+	 * 
+	 * @param dir
+	 *            Directory to open
+	 */
+	private void openDir(String dir) {
+		try {
+			Desktop.getDesktop().open(new File(dir));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
 		}
 	}
 

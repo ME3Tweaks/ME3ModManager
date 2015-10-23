@@ -1,19 +1,26 @@
 package com.me3tweaks.modmanager;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FilenameUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class TLKTool {
@@ -36,6 +43,10 @@ public class TLKTool {
 	}
 
 	public static void main(String[] args) throws Exception {
+
+		//decompileTLK();
+
+		System.out.println("Scanning XML files");
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 		Document doc;
@@ -53,7 +64,6 @@ public class TLKTool {
 
 		for (String lang : langs) {
 			for (int currentIndex = 0; currentIndex < maxIndex; currentIndex++) {
-				System.out.println("Processing index: " + currentIndex);
 				Document origDoc = dbFactory.newDocumentBuilder().parse(
 						"file:///" + origFolder + File.separator + origPrefix + lang + File.separator + origPrefix + lang + currentIndex + ".xml");
 				origDoc.getDocumentElement().normalize();
@@ -64,7 +74,6 @@ public class TLKTool {
 
 				NodeList origStringNodes = origDoc.getElementsByTagName("String");
 				NodeList xbxStringNodes = xbxDoc.getElementsByTagName("String");
-
 
 				System.out.println("NODES: " + origStringNodes.getLength());
 
@@ -80,10 +89,40 @@ public class TLKTool {
 				}
 			}
 		}
-		
-		for (TLKNode node : differentIds) {
-			System.out.println(node);
+
+		//add changes file
+		XPathFactory factory = XPathFactory.newInstance();
+		XPath xpath = factory.newXPath();
+
+		Document post700 = dbFactory.newDocumentBuilder().parse("file:///G:\\mods\\ControllerSupport\\TLK\\post7000.xml");
+		post700.getDocumentElement().normalize();
+		NodeList postStringNodes = post700.getElementsByTagName("string");
+		for (int i = 0; i < postStringNodes.getLength(); i++) {
+			Element postStringElem = (Element) postStringNodes.item(i);
+			Element dataElem = (Element) xpath.evaluate("data", postStringElem, XPathConstants.NODE);
+			Element idElem = (Element) xpath.evaluate("id", postStringElem, XPathConstants.NODE); // I get null here.
+			differentIds.add(new TLKNode(idElem.getTextContent(), 9, dataElem.getTextContent(), "none"));
 		}
+
+		Document newDoc = dBuilder.newDocument();
+		Element root = newDoc.createElement("Strings");
+		for (TLKNode node : differentIds) {
+			Element changedElement = newDoc.createElement("String");
+			changedElement.setAttribute("id", node.id);
+			changedElement.setTextContent(node.xboxString);
+			root.appendChild(changedElement);
+		}
+
+		newDoc.appendChild(root);
+
+		Transformer tr = TransformerFactory.newInstance().newTransformer();
+		tr.setOutputProperty(OutputKeys.INDENT, "yes");
+		tr.setOutputProperty(OutputKeys.METHOD, "xml");
+		tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+		// send DOM to file
+		tr.transform(new DOMSource(newDoc), new StreamResult(new FileOutputStream("G:\\mods\\ControllerSupport\\TLK\\changes.xml")));
 	}
 
 	private static void decompileTLK() {
@@ -115,6 +154,7 @@ public class TLKTool {
 			Process p = null;
 			int returncode = 1;
 			try {
+				System.out.println("Executing: " + sb.toString());
 				ProcessBuilder pb = new ProcessBuilder(command);
 				pb.redirectErrorStream(true);
 				p = pb.start();
@@ -151,6 +191,7 @@ public class TLKTool {
 			Process p = null;
 			int returncode = 1;
 			try {
+				System.out.println("Executing: " + sb.toString());
 				ProcessBuilder pb = new ProcessBuilder(command);
 				pb.redirectErrorStream(true);
 				p = pb.start();
