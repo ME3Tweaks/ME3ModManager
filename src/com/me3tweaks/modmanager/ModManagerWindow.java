@@ -97,7 +97,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
 			sqlConsumableParser, sqlGearParser;
-	JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
+	//JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
@@ -364,23 +364,28 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
 				ModManager.debugLogger.writeMessage("Prompting user for auto-updates");
 				publish("NOTIFY_UPDATE_PROMPT");
+				while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
+					try {
+						Thread.sleep(200); //wait for prompt
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
 			} else {
 				ModManager.debugLogger.writeMessage("User has accepted mod updates or has been asked before");
 			}
-			while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
-				try {
-					Thread.sleep(200); //wait for prompt
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
+			
 
 			//Check for updates
 			if (ModManager.AUTO_UPDATE_MODS) {
-				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
+				if (true){
+				//if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
 					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
 							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
-							+ " since the last update check.");
+							+ " since the last help/mods update check.");
+					publish("Downloading latest help information");
+					HelpMenu.getOnlineHelp();
+					publish("UPDATE_HELP_MENU");
 					publish("Checking for updates to mods");
 					checkAllModsForUpdates(false);
 				}
@@ -418,6 +423,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 										"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 							}
 						}
+						break;
+					case "UPDATE_HELP_MENU":
+						menuBar.remove(helpMenu);
+						menuBar.add(HelpMenu.constructHelpMenu());
 						break;
 					default:
 						labelStatus.setText(update);
@@ -781,8 +790,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolTankmasterCoalUI.setToolTipText("Opens interface for Tankmaster's Coalesced compiler");
 		toolTankmasterTLK = new JMenuItem("TankMaster ME2/ME3 TLK Tool");
 		toolTankmasterTLK.setToolTipText("Runs the bundled TLK tool provided by TankMaster");
-		actionReload = new JMenuItem("Reload Mods");
-		actionReload.setToolTipText("Refreshes the list of mods and their descriptions");
+		actionReload = new JMenuItem("Reload Mod Manager");
+		actionReload.setToolTipText("Reloads Mod Manager to refresh mods, mixins, and help documentation");
 		actionExit = new JMenuItem("Exit");
 		actionExit.setToolTipText("Closes Mod Manager");
 
@@ -1063,35 +1072,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			menuBar.add(sqlMenu);
 		}
 
-		// Help
-		helpMenu = new JMenu("Help");
-		helpPost = new JMenuItem("View FAQ");
-		helpPost.setToolTipText("Opens the Mod Manager FAQ");
-		helpForums = new JMenuItem("Forums");
-		helpForums.setToolTipText("Opens the ME3Tweaks forum on ME3Explorer Forums");
-		helpAbout = new JMenuItem("About Mod Manager");
-		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
-
-		helpGetLog = new JMenuItem("Copy log to clipboard");
-		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
-
-		helpEmailFemShep = new JMenuItem("Contact FemShep");
-		helpEmailFemShep.setToolTipText("<html>Contact FemShep via email</html>");
-
-		helpForums.addActionListener(this);
-		helpPost.addActionListener(this);
-		helpAbout.addActionListener(this);
-		helpGetLog.addActionListener(this);
-		helpEmailFemShep.addActionListener(this);
-
-		helpMenu.add(helpPost);
-		helpMenu.add(helpForums);
-		helpMenu.add(HelpMenu.getHowDoIMenu());
-		helpMenu.addSeparator();
-		helpMenu.add(helpGetLog);
-		helpMenu.add(helpEmailFemShep);
-		helpMenu.addSeparator();
-		helpMenu.add(helpAbout);
+		helpMenu = HelpMenu.constructHelpMenu();
 		menuBar.add(helpMenu);
 
 		return menuBar;
@@ -1404,71 +1385,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (e.getSource() == actionExit) {
 			ModManager.debugLogger.writeMessage("User selected exit from Actions Menu");
 			System.exit(0);
-		} else
-
-		if (e.getSource() == helpPost) {
-			URI theURI;
-			try {
-				theURI = new URI("http://me3tweaks.com/tools/modmanager/faq");
-				java.awt.Desktop.getDesktop().browse(theURI);
-			} catch (URISyntaxException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			}
-		} else if (e.getSource() == helpForums) {
-			URI theURI;
-			try {
-				theURI = new URI("http://me3explorer.freeforums.org/me3tweaks-f33.html");
-				java.awt.Desktop.getDesktop().browse(theURI);
-			} catch (URISyntaxException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			}
-		} else if (e.getSource() == helpGetLog) {
-			if (!ModManager.logging) {
-				JOptionPane.showMessageDialog(this, "You must enable logging via the File>Options menu before logs are generated.");
-			} else {
-				String log = ModManager.debugLogger.getLog();
-				Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-				clpbrd.setContents(new StringSelection(log), null);
-				labelStatus.setText("Log copied to clipboard");
-			}
-		} else if (e.getSource() == helpEmailFemShep) {
-			JOptionPane
-					.showMessageDialog(
-							this,
-							"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>"
-									+ "Please email me if you have crashes or bugs. Feature requests should be posted to the forums.<br>"
-									+ "If you have a crash or a bug I will need the debugging log.<br><br>How to create a debugging log:<br>"
-									+ "1. Close Mod Manager with debugging enabled, restart it, and reproduce your issue.<br>"
-									+ "2. Immediately after the issue occurs, go to Help>Copy log to clipboard.<br>"
-									+ "3. Paste your log into a text file (.txt). I will not open other extensions. Use notepad.<br>"
-									+ "4. In your email, give me a description of the problem and the steps you took to produce it. I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
-									+ "5. Attach your log to the email and send it.<br><br>"
-									+ "Please do not do any other operations as it makes the logs harder to read.<br>"
-									+ "If you submit a crash/bug report without a debugging log there is very little I can do to help you.<br>"
-									+ "Please note that I only speak English.<br><br>" + "You can email me at femshep@me3tweaks.com.</div></html>",
-							"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
-		} else if (e.getSource() == helpForums) {
-			URI theURI;
-			try {
-				theURI = new URI("http://me3explorer.freeforums.org/me3tweaks-f33.html");
-				java.awt.Desktop.getDesktop().browse(theURI);
-			} catch (URISyntaxException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			}
-		} else if (e.getSource() == helpAbout) {
-			new AboutWindow(this);
 		} else if (e.getSource() == buttonApplyMod) {
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Applying selected mod: Biogame Dir is valid.");

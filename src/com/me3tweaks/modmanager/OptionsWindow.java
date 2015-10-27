@@ -162,8 +162,8 @@ public class OptionsWindow extends JDialog {
 			}
 		});
 
-		autoUpdateMods = new JCheckBox("Keep mods up to date from ME3Tweaks.com");
-		autoUpdateMods.setToolTipText("<html>Checks every "+ModManager.AUTO_CHECK_INTERVAL_DAYS+" days for updates to mods from ME3Tweaks.com</html>");
+		autoUpdateMods = new JCheckBox("Keep mods and help contents up to date from ME3Tweaks.com");
+		autoUpdateMods.setToolTipText("<html>Checks every "+ModManager.AUTO_CHECK_INTERVAL_DAYS+" days for updates to mods and help contents from ME3Tweaks.com</html>");
 		autoUpdateMods.setSelected(ModManager.AUTO_UPDATE_MODS);
 		autoUpdateMods.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

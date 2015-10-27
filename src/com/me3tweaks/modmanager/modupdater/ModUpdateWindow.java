@@ -69,7 +69,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			DownloadTask task = new DownloadTask(upackage);
 			task.addPropertyChangeListener(this);
 			task.execute();
-			setLocationRelativeTo(frame);
+			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			setVisible(true); //EDT will stall until this modal window closes
 			new ModManagerWindow(false);
 		}
@@ -97,7 +97,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			DownloadTask task = new DownloadTask(upackage, amuw);
 			task.addPropertyChangeListener(this);
 			task.execute();
-			setLocationRelativeTo(amuw);
+			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			setVisible(true);
 		}
 	}

@@ -1,4 +1,4 @@
-package com.me3tweaks.modmanager;
+package com.me3tweaks.modmanager.help;
 
 import java.awt.Component;
 import java.awt.Dialog;
@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -18,16 +19,19 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-public class DLCFailedWindow extends JDialog {
+import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
 
-	public DLCFailedWindow() {
-		setupWindow();
+public class ResourceWindowHelpModal extends JDialog {
+
+	public ResourceWindowHelpModal(HelpItemPackage pack) {
+		setupWindow(pack);
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
 
-	public void setupWindow() {
-		this.setTitle("DLC Verification Failure Messages");
+	public void setupWindow(HelpItemPackage pack) {
+		this.setTitle(pack.getModalTitle());
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setResizable(false);
@@ -35,19 +39,21 @@ public class DLCFailedWindow extends JDialog {
 
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
-		JLabel infoLabel = new JLabel(
-				"<html><div style=\"width: 470px\">After installing a mod, if you get a screen similar to the one below at the main menu, the DLC listed (the list may be blank if the developer did not give their DLC a name) will not load. You must start the game from Mod Manager using Start Game (to use LauncherWV) or install a permanent bypass (Install binkw32 from the tools menu) to load modified or custom DLC.</div></html>");
+		JLabel infoLabel = new JLabel("<html>" + pack.getModalMessage() + "</html>");
 		infoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		panel.add(infoLabel);
 
 		BufferedImage wPic;
-		JLabel wIcon = new JLabel("Failed to load image");
+		JLabel wIcon = new JLabel("Additional help item resource located at:\n" + pack.getResource());
 
-		try {
-			wPic = ImageIO.read(this.getClass().getResource("/resource/DLC_AUTH_FAIL.png"));
-			wIcon = new JLabel(new ImageIcon(wPic));
-		} catch (IOException e1) {
-			ModManager.debugLogger.writeError("Failed to load INVALID DLC IMAGE!");
+		if (pack.getResource().toLowerCase().endsWith(".jpg") || pack.getResource().toLowerCase().endsWith(".png")) {
+			try {
+				wPic = ImageIO.read(new File(pack.getResource()));
+				wIcon = new JLabel(new ImageIcon(wPic));
+			} catch (IOException | NullPointerException e1) {
+				wIcon = new JLabel("Failed to load image resource");
+				ModManager.debugLogger.writeErrorWithException("Failed to load IMAGE!", e1);
+			}
 		}
 		wIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
 		panel.add(Box.createRigidArea(new Dimension(10, 10)));
@@ -69,5 +75,17 @@ public class DLCFailedWindow extends JDialog {
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		this.getContentPane().add(panel);
 		this.pack();
+	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		int maxWidth = 550;
+		int maxHeight = 900;
+		Dimension dim = super.getPreferredSize();
+		if (dim.width > maxWidth)
+			dim.width = maxWidth;
+		if (dim.height > maxHeight)
+			dim.height = maxHeight;
+		return dim;
 	}
 }

@@ -61,7 +61,7 @@ public class ModManager {
 	public static long BUILD_NUMBER = 46L;
 	public static final String BUILD_DATE = "10/20/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 1.8; // max modmaker
@@ -512,6 +512,8 @@ public class ModManager {
 				ModManager.debugLogger.writeException(e);
 			}
 		}
+		
+
 
 		// cleanup
 		File mod_info = new File(ModMakerCompilerWindow.DOWNLOADED_XML_FILENAME);
@@ -942,6 +944,12 @@ public class ModManager {
 	public static String getToolsDir() {
 		File file = new File(getDataDir() + "tools/");
 		// file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+	
+	public static String getHelpDir() {
+		File file = new File(getDataDir() + "help/");
+		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
 
@@ -1660,5 +1668,9 @@ public class ModManager {
 			ModManager.debugLogger.writeErrorWithException("Process exception occured:", e);
 			return new ProcessResult(0, e);
 		}
+	}
+
+	public static File getHelpFile() {
+		return new File(getHelpDir()+"localhelp.xml");
 	}
 }
