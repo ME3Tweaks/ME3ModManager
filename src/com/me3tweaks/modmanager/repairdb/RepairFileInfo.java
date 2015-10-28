@@ -1,4 +1,4 @@
-package com.me3tweaks.modmanager.basegamedb;
+package com.me3tweaks.modmanager.repairdb;
 
 public class RepairFileInfo {
 	public long filesize;

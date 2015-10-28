@@ -27,6 +27,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.ui.ConflictResolutionRadioButton;
 
 public class MergeConflictResolutionWindow extends JDialog implements ActionListener {
 	JButton mergeButton, favorLeft, favorRight;

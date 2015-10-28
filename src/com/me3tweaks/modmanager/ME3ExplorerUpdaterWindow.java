@@ -35,14 +35,14 @@ import org.ini4j.Wini;
 import org.json.simple.JSONObject;
 
 @SuppressWarnings("serial")
-public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListener {
+public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeListener {
 	//String downloadLink, updateScriptLink;
 	boolean error = false;
 	String version;
 	JLabel introLabel, statusLabel;
 	JProgressBar downloadProgress;
 
-	public ME3ExplorerUpdater(JFrame callingWindow) {
+	public ME3ExplorerUpdaterWindow(JFrame callingWindow) {
 		this.setTitle("Required ME3Explorer Update");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setResizable(false);
@@ -152,7 +152,7 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 	            	cancel(true);
 	            }
 	        } catch (IOException ex) {
-	            JOptionPane.showMessageDialog(ME3ExplorerUpdater.this, "Error downloading file: " + ex.getMessage(),
+	            JOptionPane.showMessageDialog(ME3ExplorerUpdaterWindow.this, "Error downloading file: " + ex.getMessage(),
 	                    "Error", JOptionPane.ERROR_MESSAGE);           
 	            ex.printStackTrace();
 	            setProgress(0);
@@ -372,7 +372,7 @@ public class ME3ExplorerUpdater extends JDialog implements PropertyChangeListene
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeMessage("Couldn't generate the update script. Must abort.");
-            JOptionPane.showMessageDialog(ME3ExplorerUpdater.this, "Error building update script: " + e.getClass()+"\nCannot continue.",
+            JOptionPane.showMessageDialog(ME3ExplorerUpdaterWindow.this, "Error building update script: " + e.getClass()+"\nCannot continue.",
                     "Updater Error", JOptionPane.ERROR_MESSAGE);           
 			error = true;
 			e.printStackTrace();

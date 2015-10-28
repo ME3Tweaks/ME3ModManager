@@ -13,7 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
-import com.me3tweaks.modmanager.cellrenderers.HintTextFieldUI;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerVariable.DLCPackage;
 
 public class VariableRow extends JPanel {

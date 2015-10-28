@@ -21,8 +21,8 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.me3tweaks.modmanager.cellrenderers.HintTextFieldUI;
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 
 public class CoalescedWindow extends JFrame {
 

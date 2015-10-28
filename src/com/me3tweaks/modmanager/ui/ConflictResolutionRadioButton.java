@@ -1,4 +1,4 @@
-package com.me3tweaks.modmanager;
+package com.me3tweaks.modmanager.ui;
 
 import javax.swing.Action;
 import javax.swing.Icon;

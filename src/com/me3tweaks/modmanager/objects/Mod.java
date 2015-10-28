@@ -18,7 +18,7 @@ import org.ini4j.Wini;
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.ResourceUtils;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class Mod implements Comparable<Mod> {
 	public static final String DELTAS_FOLDER = "DELTAS";

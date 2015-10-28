@@ -40,12 +40,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import com.me3tweaks.modmanager.cellrenderers.ModCellRenderer;
-import com.me3tweaks.modmanager.cellrenderers.PatchCellRenderer;
 import com.me3tweaks.modmanager.objects.ME3TweaksPatchPackage;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.ui.ModCellRenderer;
+import com.me3tweaks.modmanager.ui.PatchCellRenderer;
 
 /**
  * Patch Window shows the list of patches in the patch library and things you

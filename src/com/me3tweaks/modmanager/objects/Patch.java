@@ -13,8 +13,8 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /**
  * Patch class describes a patch file with metadata about the patch. It's

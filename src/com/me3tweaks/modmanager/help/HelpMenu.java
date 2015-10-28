@@ -1,4 +1,4 @@
-package com.me3tweaks.modmanager;
+package com.me3tweaks.modmanager.help;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -39,9 +39,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.me3tweaks.modmanager.help.HelpItemPackage;
-import com.me3tweaks.modmanager.help.ResourceWindowHelpModal;
+import com.me3tweaks.modmanager.AboutWindow;
+import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.HelpMenuItem;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 public class HelpMenu {
 

@@ -52,6 +52,8 @@ import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.utilities.DebugLogger;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 

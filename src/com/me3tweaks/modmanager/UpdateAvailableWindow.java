@@ -35,6 +35,8 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
 
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
+
 @SuppressWarnings("serial")
 public class UpdateAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
 	String downloadLink, updateScriptLink,manualLink, changelogLink;

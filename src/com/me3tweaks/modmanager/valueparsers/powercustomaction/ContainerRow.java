@@ -7,7 +7,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
-import com.me3tweaks.modmanager.cellrenderers.HintTextFieldUI;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 
 public class ContainerRow extends JPanel {
 	public static String CONTAINER_TEMPLATE = "\t\t\t\t<!-- CONTAINERNAME -->\n" + "\t\t\t\t<div class=\"modmaker_attribute_wrapper\">\n"

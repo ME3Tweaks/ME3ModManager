@@ -36,6 +36,7 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 @SuppressWarnings("serial")
 public class BackupWindow extends JDialog {

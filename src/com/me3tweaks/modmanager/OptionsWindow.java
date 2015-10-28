@@ -19,6 +19,8 @@ import javax.swing.JSeparator;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
+import com.me3tweaks.modmanager.utilities.DebugLogger;
+
 @SuppressWarnings("serial")
 public class OptionsWindow extends JDialog {
 	JCheckBox loggingMode;

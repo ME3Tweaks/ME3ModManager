@@ -28,13 +28,13 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.me3tweaks.modmanager.MD5Checksum;
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class ModXMLTools {
 	static DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();

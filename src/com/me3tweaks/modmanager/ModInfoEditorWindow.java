@@ -25,13 +25,13 @@ import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.objects.Mod;
 
-public class ModInfoEditor extends JDialog implements ActionListener {
+public class ModInfoEditorWindow extends JDialog implements ActionListener {
 	private Mod mod;
 	private JTextField modNameField;
 	private JTextArea modDescriptionField;
 	private JButton saveButton;
 	
-	public ModInfoEditor(JFrame frame, Mod mod) {
+	public ModInfoEditorWindow(JFrame frame, Mod mod) {
 		this.mod = mod;
 		setupWindow();
 		this.setLocationRelativeTo(frame);

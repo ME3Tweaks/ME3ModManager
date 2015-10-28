@@ -33,9 +33,9 @@ import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class ModUpdateWindow extends JDialog implements PropertyChangeListener {

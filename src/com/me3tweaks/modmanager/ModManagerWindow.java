@@ -57,7 +57,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
+import com.me3tweaks.modmanager.help.HelpMenu;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
@@ -68,6 +68,10 @@ import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.Patch;
+import com.me3tweaks.modmanager.objects.RestoreMode;
+import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
+import com.me3tweaks.modmanager.utilities.EXEFileInfo;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
@@ -92,7 +96,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC,
 			modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
-	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor;
 	JMenuItem restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
@@ -328,7 +332,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (!f.exists()) {
 				ModManager.debugLogger.writeMessage("ME3Explorer is missing. Downloading from ME3TWeaks.");
 				if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
-					new ME3ExplorerUpdater(ModManagerWindow.this);
+					new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
 				} else {
 					ModManager.debugLogger.writeError("ME3Explorer missing but cannot download due to settings!");
 					JOptionPane
@@ -344,7 +348,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:" + rev + " required"
 							+ ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+");
 					if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
-						new ME3ExplorerUpdater(ModManagerWindow.this);
+						new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
 					} else {
 						ModManager.debugLogger.writeError("ME3Explorer outdated but cannot download due to settings!");
 						JOptionPane
@@ -914,12 +918,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsUnpackDLC = new JMenuItem("Unpack DLC");
 		toolsUnpackDLC.setToolTipText("Opens the Unpack DLC window so you can unpack DLC automatically");
 
+		toolsMountdlcEditor = new JMenuItem("Mount.dlc Editor");
+		toolsMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
+		
+		
 		toolsModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
 		toolsCheckallmodsforupdate.addActionListener(this);
 		toolsUnpackDLC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsPatchLibary.addActionListener(this);
+		toolsMountdlcEditor.addActionListener(this);
 
 		toolsOpenME3Dir.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
@@ -930,6 +939,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsMergeMod);
 		toolsMenu.add(toolsPatchLibary);
+		toolsMenu.add(toolsMountdlcEditor);
 		toolsMenu.add(toolsUnpackDLC);
 		toolsMenu.add(toolsOpenME3Dir);
 		toolsMenu.addSeparator();
@@ -1511,6 +1521,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Unpack DLC Tool: Missing .NET Framework");
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to unpack DLC.");
 			}
+		} else if (e.getSource() == toolsMountdlcEditor) {
+			new MountFileEditorWindow();
 		} else if (e.getSource() == toolsOpenME3Dir) {
 			openME3Dir();
 		} else if (e.getSource() == modutilsAutoTOC) {
@@ -1751,7 +1763,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		// System.out.println("SELECTED VALUE: " + selectedValue);
 		Mod mod = modModel.get(selectedIndex);
-		new ModInfoEditor(this, mod);
+		new ModInfoEditorWindow(this, mod);
 	}
 
 	private void createBasegameDB(String biogameDir) {

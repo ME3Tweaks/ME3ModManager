@@ -1,15 +1,15 @@
-package com.me3tweaks.modmanager.cellrenderers;
+package com.me3tweaks.modmanager.ui;
 
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
-import javax.swing.plaf.basic.BasicTextFieldUI;
+import javax.swing.plaf.basic.BasicTextAreaUI;
 import javax.swing.text.JTextComponent;
 
 
-public class HintTextFieldUI extends BasicTextFieldUI implements FocusListener {
+public class HintTextAreaUI extends BasicTextAreaUI implements FocusListener {
 
     private String hint;
     private boolean hideOnFocus;
@@ -47,15 +47,15 @@ public class HintTextFieldUI extends BasicTextFieldUI implements FocusListener {
         this.hint = hint;
         repaint();
     }
-    public HintTextFieldUI(String hint) {
+    public HintTextAreaUI(String hint) {
         this(hint,false);
     }
 
-    public HintTextFieldUI(String hint, boolean hideOnFocus) {
+    public HintTextAreaUI(String hint, boolean hideOnFocus) {
         this(hint,hideOnFocus, null);
     }
 
-    public HintTextFieldUI(String hint, boolean hideOnFocus, Color color) {
+    public HintTextAreaUI(String hint, boolean hideOnFocus, Color color) {
         this.hint = hint;
         this.hideOnFocus = hideOnFocus;
         this.color = color;
