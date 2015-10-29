@@ -34,7 +34,6 @@ public class ResourceWindowHelpModal extends JDialog {
 		this.setTitle(pack.getModalTitle());
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setResizable(false);
 		this.setIconImages(ModManager.ICONS);
 
 		JPanel panel = new JPanel();
@@ -57,7 +56,6 @@ public class ResourceWindowHelpModal extends JDialog {
 		}
 		wIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
 		panel.add(Box.createRigidArea(new Dimension(10, 10)));
-
 		panel.add(wIcon);
 
 		JButton ok = new JButton("OK");
@@ -75,17 +73,5 @@ public class ResourceWindowHelpModal extends JDialog {
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		this.getContentPane().add(panel);
 		this.pack();
-	}
-
-	@Override
-	public Dimension getPreferredSize() {
-		int maxWidth = 550;
-		int maxHeight = 900;
-		Dimension dim = super.getPreferredSize();
-		if (dim.width > maxWidth)
-			dim.width = maxWidth;
-		if (dim.height > maxHeight)
-			dim.height = maxHeight;
-		return dim;
 	}
 }

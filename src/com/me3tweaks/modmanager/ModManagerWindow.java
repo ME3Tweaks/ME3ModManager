@@ -382,8 +382,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			//Check for updates
 			if (ModManager.AUTO_UPDATE_MODS) {
-				if (true) {
-					//if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
+				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
 					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
 							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
 							+ " since the last help/mods update check.");
@@ -1572,14 +1571,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == modDeltaRevert) {
 			//if (validateBIOGameDir()) {
-				if (ModManager.validateNETFrameworkIsInstalled()) {
-					ModManager.debugLogger.writeMessage("Reverting a delta.");
-					new DeltaWindow(modModel.get(modList.getSelectedIndex()));
-				} else {
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
-					ModManager.debugLogger.writeMessage("Revert Delta: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
-				}
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Reverting a delta.");
+				new DeltaWindow(modModel.get(modList.getSelectedIndex()));
+			} else {
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Revert Delta: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
+			}
 			/*
 			 * } else { labelStatus.setText(
 			 * "Switching variants requires a valid BIOGame folder");
@@ -1587,14 +1586,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			 * "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing."
 			 * , "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			 */
-			}
-		 else if (e.getSource() == modutilsVerifyDeltas) {
+		} else if (e.getSource() == modutilsVerifyDeltas) {
 			if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Verifying deltas");
 					Mod mod = modModel.get(modList.getSelectedIndex());
 					for (ModDelta delta : mod.getModDeltas()) {
-						new DeltaWindow(mod,delta,true,false);
+						new DeltaWindow(mod, delta, true, false);
 					}
 				} else {
 					labelStatus.setText(".NET Framework 4.5 or higher is missing");
@@ -2119,7 +2117,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								ModManager.debugLogger.writeMessage("Applying delta " + delta.getDeltaName() + " to " + selectedMod.getModName());
-								new DeltaWindow(selectedMod, delta, false,false);
+								new DeltaWindow(selectedMod, delta, false, false);
 								modDeltaRevert.setEnabled(true);
 								modDeltaRevert.setText("Revert to original version");
 								modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");
