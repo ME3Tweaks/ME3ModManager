@@ -8,6 +8,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
@@ -85,12 +86,33 @@ public class DeltaWindow extends JDialog {
 	 * @param delta
 	 *            delta to apply
 	 */
-	public DeltaWindow(Mod mod, ModDelta delta) {
+	public DeltaWindow(Mod mod, ModDelta delta, boolean verifyOnly) {
 		this.mod = mod;
 		this.delta = delta;
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Switching to " + delta.getDeltaName() + " variant");
-		new DeltaWorker().execute();
+		if (verifyOnly) {
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Switching to " + delta.getDeltaName() + " variant");
+		} 
+		new DeltaWorker(verifyOnly).execute();
+		if (verifyOnly) {
+			setupWindow();
+			setVisible(true);
+		}
+	}
+
+	private void setupWindow() {
+		this.setTitle("Variant Manager");
+		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		this.setResizable(false);
+		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		this.setIconImages(ModManager.ICONS);
+		JPanel panel = new JPanel(new BorderLayout());
+		JLabel operationLabel = new JLabel("Verifying variants");
+		panel.add(operationLabel, BorderLayout.CENTER);
+		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		getContentPane().add(panel);
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	/**
@@ -114,8 +136,10 @@ public class DeltaWindow extends JDialog {
 	class DeltaWorker extends SwingWorker<Boolean, Integer> {
 		private NodeList coalNodeList;
 		private ArrayList<String> errors;
+		private boolean verifyOnly;
 
-		public DeltaWorker() {
+		public DeltaWorker(boolean verifyOnly) {
+			this.verifyOnly = verifyOnly;
 			errors = new ArrayList<String>();
 			ModManager.debugLogger.writeMessage("============PROCESSING DELTAWORKER()==============");
 		}
@@ -716,7 +740,7 @@ public class DeltaWindow extends JDialog {
 										sb.append(operation);
 										sb.append("<br>");
 										if (isArrayProperty) {
-											sb.append("====ARRAY ATTRIBUTE INFO=======<br>");
+											sb.append("====ARRAY ATTRIBUTE INFO====<br>");
 											sb.append("Array matching algorithm: ");
 											sb.append(arrayType);
 											sb.append("<br>Matching type: ");
@@ -734,6 +758,7 @@ public class DeltaWindow extends JDialog {
 
 										JOptionPane.showMessageDialog(null, sb.toString(), "Delta Error", JOptionPane.ERROR_MESSAGE);
 										ModManager.debugLogger.writeMessage(sb.toString());
+										return false;
 									}
 								}
 							}
@@ -749,6 +774,7 @@ public class DeltaWindow extends JDialog {
 								ModManager.debugLogger.writeMessage("Saving file: " + outputFile.toString());
 								transformer.transform(input, output);
 								ModManager.debugLogger.writeMessage("File saved: " + outputFile.toString());
+								//go to next file
 							} catch (TransformerFactoryConfigurationError | TransformerException e) {
 								ModManager.debugLogger.writeErrorWithException("Error saving modified file!", e);
 								JOptionPane.showMessageDialog(null, "<html>Error occured saving file: " + e.getMessage() + "</html>", "Delta Error",

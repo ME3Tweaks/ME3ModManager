@@ -25,7 +25,6 @@ public class Mod implements Comparable<Mod> {
 	public static final String ORIGINAL_FOLDER = "ORIGINAL";
 	public static final String VARIANT_FOLDER = "VARIANTS";
 
-
 	File modDescFile;
 	boolean validMod = false, modCoal = false;
 	String modName, modDisplayDescription, modDescription, modPath, modifyString;
@@ -382,7 +381,6 @@ public class Mod implements Comparable<Mod> {
 		ModManager.debugLogger.writeMessageConditionally("Number of Mod Jobs:" + jobs.size(), ModManager.LOG_MOD_INIT);
 		if (jobs.size() > 0 || modCoal == true) {
 			ModManager.debugLogger.writeMessageConditionally("Verified source files, mod should be OK to install", ModManager.LOG_MOD_INIT);
-			setModDisplayDescription(false);
 			validMod = true;
 		}
 
@@ -402,7 +400,7 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 
-		// Add MP Changer
+		// Add MP Change
 		if (modini.get("ModInfo", "modmp") != null) {
 			modmp = modini.get("ModInfo", "modmp");
 			ModManager.debugLogger.writeMessageConditionally("Detected multiplayer modification", ModManager.LOG_MOD_INIT);
@@ -424,7 +422,7 @@ public class Mod implements Comparable<Mod> {
 				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
 				ModManager.debugLogger.writeMessageConditionally("Detected modmaker code", ModManager.LOG_MOD_INIT);
 			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer.");
+				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer: " + modini.get("ModInfo", "modid"));
 			}
 		}
 
@@ -469,8 +467,6 @@ public class Mod implements Comparable<Mod> {
 		if (modCMMVer > ModManager.MODDESC_VERSION_SUPPORT) {
 			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version");
 		}
-		setModDisplayDescription(modCMMVer < 3.0);
-
 		//check for patches directory
 		if (modCMMVer >= 2) {
 			File patchesdir = new File(modFolderPath + "patches/");
@@ -517,6 +513,8 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessageConditionally("This mod has " + modDeltas.size() + " deltas.", ModManager.LOG_MOD_INIT);
 			}
 		}
+
+		generateModDisplayDescription(modCMMVer < 3.0);
 
 		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for " + getModName());
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------END OF " + modName + "--------------------------",
@@ -597,7 +595,7 @@ public class Mod implements Comparable<Mod> {
 		this.modDescription = desc;
 	}
 
-	public void setModDisplayDescription(boolean markedLegacy) {
+	public void generateModDisplayDescription(boolean markedLegacy) {
 		modDisplayDescription = "This mod has no description in it's moddesc.ini file or there was an error reading the description of this mod.";
 		if (modDescFile == null) {
 			ModManager.debugLogger.writeMessage("Mod Desc file is null, unable to read description");
@@ -619,8 +617,16 @@ public class Mod implements Comparable<Mod> {
 		}
 		modDisplayDescription = breakFixer(modDisplayDescription);
 
-		// Add 1st newline
-		modDisplayDescription += "\n";
+		modDisplayDescription += "\n=============================\n";
+
+		//Available deltas
+		if (modDeltas.size() > 0) {
+			modDisplayDescription += "Included Variants:\n";
+			for (ModDelta delta : modDeltas) {
+				modDisplayDescription += " - " + delta.getDeltaName();
+				modDisplayDescription += "\n";
+			}
+		}
 
 		// Add modversion
 		if (modVersion != null) {
@@ -1240,6 +1246,12 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 		}
+
+		//MERGE DELTAS
+		for (ModDelta delta : other.getModDeltas()) {
+			modDeltas.add(delta);
+		}
+
 		if (other.modCMMVer > modCMMVer) {
 			//upgrade to highest cmm ver
 			modCMMVer = other.modCMMVer;
@@ -1308,6 +1320,21 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessage(job.getJobName() + ": " + file);
 			}
 		}
+
+		//COPY DELTAS
+		if (modDeltas.size() > 0) {
+			File dir = new File(modFolder + DELTAS_FOLDER);
+			dir.mkdirs();
+			for (ModDelta delta : modDeltas) {
+				try {
+					FileUtils.copyFile(new File(delta.getDeltaFilepath()),
+							new File(dir + File.separator + DELTAS_FOLDER+ File.separator+FilenameUtils.getName(delta.getDeltaFilepath())));
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Unable to copy delta:", e);
+				}
+			}
+		}
+
 		try {
 			ModManager.debugLogger.writeMessage("Creating moddesc.ini...");
 			FileUtils.writeStringToFile(new File(modFolder + File.separator + "moddesc.ini"), createModDescIni(modCMMVer));

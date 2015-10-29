@@ -110,7 +110,13 @@ public class ModJob {
 		if (getJobType() == BASEGAME) {
 			//check first char is \
 			if (fileToReplace.charAt(0) != '\\'){
-				fileToReplace = "\\"+fileToReplace;
+				if (fileToReplace.charAt(0) == '/') {
+					StringBuffer sb = new StringBuffer(fileToReplace);
+					sb.setCharAt(0, '/');
+					fileToReplace = sb.toString();
+				} else {
+					fileToReplace = "\\"+fileToReplace;
+				}
 			}
 		} else {
 			//its dlc

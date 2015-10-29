@@ -96,7 +96,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC,
 			modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
-	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor;
+	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32,
+			toolsMountdlcEditor;
 	JMenuItem restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
@@ -378,12 +379,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				ModManager.debugLogger.writeMessage("User has accepted mod updates or has been asked before");
 			}
-			
 
 			//Check for updates
 			if (ModManager.AUTO_UPDATE_MODS) {
-				if (true){
-				//if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
+				if (true) {
+					//if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
 					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
 							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
 							+ " since the last help/mods update check.");
@@ -920,8 +920,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsMountdlcEditor = new JMenuItem("Mount.dlc Editor");
 		toolsMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
-		
-		
+
 		toolsModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
 		toolsCheckallmodsforupdate.addActionListener(this);
@@ -2094,7 +2093,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								ModManager.debugLogger.writeMessage("Applying delta " + delta.getDeltaName() + " to " + selectedMod.getModName());
-								new DeltaWindow(selectedMod, delta);
+								new DeltaWindow(selectedMod, delta, false);
 								modDeltaRevert.setEnabled(true);
 								modDeltaRevert.setText("Revert to original version");
 								modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");
