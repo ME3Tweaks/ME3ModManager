@@ -1,17 +1,14 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,15 +22,10 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JSeparator;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.ini4j.InvalidFileFormatException;
-import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.objects.ModType;
 
@@ -101,7 +93,7 @@ public class UnpackWindow extends JDialog {
 
 		// dlcList = new CheckBoxList();
 		String[] headerArray = ModType.getDLCHeaderNameArray();
-
+		HashMap<String, Long> dlcSizeArray = ModType.getSizesMap();
 		int i = 0;
 		// Add and enable/disable DLC checkboxes and add to hashmap
 		for (String dlcName : headerArray) {
@@ -130,6 +122,15 @@ public class UnpackWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Looking for Default.sfar in " + filepath);
 			if (mainSfar.exists()) {
 				ModManager.debugLogger.writeMessage("Found a .sfar");
+				long mainSfarSize = mainSfar.length();
+				if (mainSfarSize < dlcSizeArray.get(dlcName)){
+					checkbox.setForeground(Color.BLACK);
+					checkbox.setToolTipText("This DLC appears to already be unpacked (filesize is smaller than original).");
+				} else {
+					checkbox.setForeground(Color.BLUE);
+					checkbox.setToolTipText("This DLC is not unpacked.");
+				}
+				
 				// File exists.
 				checkbox.setEnabled(true);
 				if (i < 8) {
@@ -142,7 +143,7 @@ public class UnpackWindow extends JDialog {
 				continue;
 			} else {
 				if (dlcName.equals(ModType.TESTPATCH)) {
-					checkbox.setToolTipText("TESTPATCH cannot be unpacked");
+					checkbox.setToolTipText("<html>TESTPATCH cannot be unpacked.<br>To unpack for files only you must do it manually through ME3Explorer.</html>");
 				}
 				ModManager.debugLogger.writeMessage(dlcName + " was not found.");
 				checkbox.setEnabled(false);

@@ -250,12 +250,14 @@ public class MountFileEditorWindow extends JDialog {
 				loadMount(lInputField.getText());
 			}
 		});
-		
+
 		butSave.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				saveMount(sInputField.getText());
+				if (validateInputs()) {
+					saveMount(sInputField.getText());
+				}
 			}
 		});
 
@@ -337,7 +339,7 @@ public class MountFileEditorWindow extends JDialog {
 			System.out.println("As unsigned int: " + Integer.parseUnsignedInt(mountPriority, 16));
 			int priorityVal = Integer.reverseBytes(Integer.parseUnsignedInt(mountPriority, 16));
 			priorityVal = priorityVal >> 16;
-			System.out.println("As reversed and shifted: "+priorityVal);
+			System.out.println("As reversed and shifted: " + priorityVal);
 
 			priorityField.setText(Integer.toString(priorityVal));
 
@@ -375,53 +377,50 @@ public class MountFileEditorWindow extends JDialog {
 		String mountPriority = priorityField.getText();
 		String tlkId = tlkIdField.getText();
 		MountFlag flag = flagModel.getElementAt(mountFlagsCombobox.getSelectedIndex());
-		
+
 		String newData = DEFAULT_MOUNT_DATA;
-		
+
 		//MOUNT PRIORITY
-		String preData = newData.substring(0,PRIORITY_OFFSET);
-		String postData = newData.substring(PRIORITY_OFFSET+4);
-		
+		String preData = newData.substring(0, PRIORITY_OFFSET);
+		String postData = newData.substring(PRIORITY_OFFSET + 4);
+
 		int priorityVal = Integer.reverseBytes(Integer.parseUnsignedInt(mountPriority, 16));
 		priorityVal = priorityVal >> 16;
 		String priorityString = Integer.toString(priorityVal);
-		String hexToInput = ResourceUtils.padLeadingZeros(Integer.toHexString(priorityVal),4);
-		System.out.println(mountPriority +" = r0x"+hexToInput);
+		String hexToInput = ResourceUtils.padLeadingZeros(Integer.toHexString(priorityVal), 4);
+		System.out.println(mountPriority + " = r0x" + hexToInput);
 		//newData = 0x
 		/*
-		//PRIORITY (16 BIT (SHORT))
-		String mountPriority = hex.substring(PRIORITY_OFFSET, PRIORITY_OFFSET + 4);
-		System.out.println("MOUNT PRIORITY BYTES: " + mountPriority);
-
-		int priorityVal = Integer.reverseBytes(Integer.parseUnsignedInt(mountPriority, 16));
-		priorityField.setText(Integer.toString(priorityVal));
-
-		//TLK1/TLK2 (32 BIT EACH (INTEGER))
-		String tlkID1 = hex.substring(TLKOFFSET_1, TLKOFFSET_1 + 8);
-		String tlkID2 = hex.substring(TLKOFFSET_2, TLKOFFSET_2 + 8);
-		System.out.println("TLK HEX " + tlkID1);
-		int tlkId1Val = Integer.reverseBytes(Integer.parseUnsignedInt(tlkID1, 16));
-		int tlkId2Val = Integer.reverseBytes(Integer.parseUnsignedInt(tlkID2, 16));
-		if (tlkId1Val != tlkId2Val) {
-			lStatus.setText("DLC Name (TLK ID) Values do not match in this Mount.dlc file.");
-		}
-		tlkIdField.setText(Integer.toString(tlkId1Val));
-
-		//MOUNT FLAG (8-BIT)
-		String mountFlag = hex.substring(MPSPFLAG_OFFSET, MPSPFLAG_OFFSET + 2);
-		byte mountFlagVal = Byte.parseByte(mountFlag, 16);
-		System.out.println("MOUNT FLAG: " + mountFlag);
-		//priorityField.setText(Short.toString(priorityVal));
-		for (int i = 0; i < flagModel.getSize(); i++) {
-			MountFlag flag = flagModel.getElementAt(i);
-			if (flag.getValue() == mountFlagVal) {
-				mountFlagsCombobox.setSelectedItem(flag);
-				break;
-			}
-		}
-
-		editorPanel.setBorder(new TitledBorder(new EtchedBorder(), "Mount.dlc info (loaded)"));
-*/	}
+		 * //PRIORITY (16 BIT (SHORT)) String mountPriority =
+		 * hex.substring(PRIORITY_OFFSET, PRIORITY_OFFSET + 4);
+		 * System.out.println("MOUNT PRIORITY BYTES: " + mountPriority);
+		 * 
+		 * int priorityVal =
+		 * Integer.reverseBytes(Integer.parseUnsignedInt(mountPriority, 16));
+		 * priorityField.setText(Integer.toString(priorityVal));
+		 * 
+		 * //TLK1/TLK2 (32 BIT EACH (INTEGER)) String tlkID1 =
+		 * hex.substring(TLKOFFSET_1, TLKOFFSET_1 + 8); String tlkID2 =
+		 * hex.substring(TLKOFFSET_2, TLKOFFSET_2 + 8);
+		 * System.out.println("TLK HEX " + tlkID1); int tlkId1Val =
+		 * Integer.reverseBytes(Integer.parseUnsignedInt(tlkID1, 16)); int
+		 * tlkId2Val = Integer.reverseBytes(Integer.parseUnsignedInt(tlkID2,
+		 * 16)); if (tlkId1Val != tlkId2Val) { lStatus.setText(
+		 * "DLC Name (TLK ID) Values do not match in this Mount.dlc file."); }
+		 * tlkIdField.setText(Integer.toString(tlkId1Val));
+		 * 
+		 * //MOUNT FLAG (8-BIT) String mountFlag =
+		 * hex.substring(MPSPFLAG_OFFSET, MPSPFLAG_OFFSET + 2); byte
+		 * mountFlagVal = Byte.parseByte(mountFlag, 16);
+		 * System.out.println("MOUNT FLAG: " + mountFlag);
+		 * //priorityField.setText(Short.toString(priorityVal)); for (int i = 0;
+		 * i < flagModel.getSize(); i++) { MountFlag flag =
+		 * flagModel.getElementAt(i); if (flag.getValue() == mountFlagVal) {
+		 * mountFlagsCombobox.setSelectedItem(flag); break; } }
+		 * 
+		 * editorPanel.setBorder(new TitledBorder(new EtchedBorder(),
+		 * "Mount.dlc info (loaded)"));
+		 */}
 
 	/*
 	 * private void generateMountByteArray() { // TODO Auto-generated method
