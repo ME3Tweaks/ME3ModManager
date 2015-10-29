@@ -44,7 +44,7 @@ public class TLKTool {
 
 	public static void main(String[] args) throws Exception {
 
-		//decompileTLK();
+		decompileTLK();
 
 		System.out.println("Scanning XML files");
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -64,12 +64,12 @@ public class TLKTool {
 
 		for (String lang : langs) {
 			for (int currentIndex = 0; currentIndex < maxIndex; currentIndex++) {
-				Document origDoc = dbFactory.newDocumentBuilder().parse(
-						"file:///" + origFolder + File.separator + origPrefix + lang + File.separator + origPrefix + lang + currentIndex + ".xml");
+				Document origDoc = dbFactory.newDocumentBuilder()
+						.parse("file:///" + origFolder + File.separator + origPrefix + lang + File.separator + origPrefix + lang + currentIndex + ".xml");
 				origDoc.getDocumentElement().normalize();
 
-				Document xbxDoc = dbFactory.newDocumentBuilder().parse(
-						"file:///" + xbxFolder + File.separator + xboxPrefix + lang + File.separator + xboxPrefix + lang + currentIndex + ".xml");
+				Document xbxDoc = dbFactory.newDocumentBuilder()
+						.parse("file:///" + xbxFolder + File.separator + xboxPrefix + lang + File.separator + xboxPrefix + lang + currentIndex + ".xml");
 				xbxDoc.getDocumentElement().normalize();
 
 				NodeList origStringNodes = origDoc.getElementsByTagName("String");
@@ -127,7 +127,7 @@ public class TLKTool {
 
 	private static void decompileTLK() {
 
-		File dir = new File("G:\\mods\\ControllerSupport\\TLK\\MOONSHINE\\");
+		File dir = new File("H:\\Google Drive\\Mass Effect 3 Modding\\TLK\\DLC");
 		File[] files = dir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
@@ -163,7 +163,9 @@ public class TLKTool {
 			}
 
 		}
-
+		System.exit(0);
+		
+		
 		dir = new File("G:\\mods\\ControllerSupport\\TLK\\ORIG\\");
 		files = dir.listFiles(new FilenameFilter() {
 			@Override

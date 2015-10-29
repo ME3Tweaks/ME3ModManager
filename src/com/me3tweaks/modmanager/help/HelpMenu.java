@@ -88,7 +88,7 @@ public class HelpMenu {
 					buildSublist(null, topLevelList, true);
 				}
 
-			} catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException e) {
+			} catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException | NullPointerException e) {
 				ModManager.debugLogger.writeErrorWithException("Error loading help file:", e);
 			}
 		} catch (IOException | URISyntaxException e) {
