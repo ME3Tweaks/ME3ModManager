@@ -389,8 +389,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish("Downloading latest help information");
 					HelpMenu.getOnlineHelp();
 					publish("UPDATE_HELP_MENU");
-					publish("Checking for updates to mods");
-					checkAllModsForUpdates(false);
+					if (modModel.getSize() > 0) {
+						publish("Checking for updates to mods");
+						checkAllModsForUpdates(false);
+					}
 				}
 			}
 		}
