@@ -1589,13 +1589,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Revert Delta: Missing .NET Framework");
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
 			}
-			/*
-			 * } else { labelStatus.setText(
-			 * "Switching variants requires a valid BIOGame folder");
-			 * labelStatus.setVisible(true); JOptionPane.showMessageDialog(null,
-			 * "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing."
-			 * , "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
-			 */
 		} else if (e.getSource() == modutilsVerifyDeltas) {
 			if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
