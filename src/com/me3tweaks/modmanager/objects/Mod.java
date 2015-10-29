@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager.objects;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,11 +16,16 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.AutoTocWindow;
+import com.me3tweaks.modmanager.DeltaWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.ResourceUtils;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class Mod implements Comparable<Mod> {
+	public static final String DELTAS_FOLDER = "DELTAS";
+	public static final String ORIGINAL_FOLDER = "ORIGINAL";
+	public static final String VARIANT_FOLDER = "VARIANTS";
+
 	File modDescFile;
 	boolean validMod = false, modCoal = false;
 	String modName, modDisplayDescription, modDescription, modPath, modifyString;
@@ -33,6 +39,7 @@ public class Mod implements Comparable<Mod> {
 	public double modCMMVer = 1.0;
 	private int classicCode;
 	private ArrayList<Patch> requiredPatches = new ArrayList<Patch>();
+	private ArrayList<ModDelta> modDeltas = new ArrayList<ModDelta>();
 
 	/**
 	 * Creates a new mod object.
@@ -58,7 +65,8 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	/**
-	 * Empty constructor. This should not be used unless you really know what you're doing. (manually adding jobs etc)
+	 * Empty constructor. This should not be used unless you really know what
+	 * you're doing. (manually adding jobs etc)
 	 */
 	public Mod() {
 		jobs = new ArrayList<ModJob>();
@@ -85,13 +93,15 @@ public class Mod implements Comparable<Mod> {
 		String modFolderPath = ModManager.appendSlash(modDescFile.getParent());
 		modDisplayDescription = modini.get("ModInfo", "moddesc");
 		modName = modini.get("ModInfo", "modname");
-		ModManager.debugLogger.writeMessage("-------MOD----------------Reading " + modName + "--------------------");
+		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------Reading " + modName + "--------------------",
+				ModManager.LOG_MOD_INIT);
 		// Check if this mod has been made for Mod Manager 2.0 or legacy mode
 		modCMMVer = 1.0f;
 		try {
 			modCMMVer = Float.parseFloat(modini.get("ModManager", "cmmver"));
 		} catch (NumberFormatException e) {
-			ModManager.debugLogger.writeMessage("Didn't read a ModManager version of the mod. Setting modtype to legacy");
+			ModManager.debugLogger.writeMessageConditionally("Didn't read a ModManager version of the mod. Setting modtype to legacy",
+					ModManager.LOG_MOD_INIT);
 			modCMMVer = 1.0f;
 		}
 
@@ -99,17 +109,19 @@ public class Mod implements Comparable<Mod> {
 		// versions of mod manager (NO DLC)
 		if (modCMMVer < 2.0f) {
 			modCMMVer = 1.0f;
-			ModManager.debugLogger.writeMessage("Modcmmver is less than 2, checking for coalesced.bin in folder (legacy)");
+			ModManager.debugLogger.writeMessageConditionally("Modcmmver is less than 2, checking for coalesced.bin in folder (legacy)",
+					ModManager.LOG_MOD_INIT);
 			File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
 			if (!file.exists()) {
-				ModManager.debugLogger.writeMessage(modName + " doesn't have Coalesced.bin and is marked as legacy, marking as invalid.");
+				ModManager.debugLogger.writeError(modName + " doesn't have Coalesced.bin and is marked as legacy, marking as invalid.");
 				return;
 			}
 			addTask(ModType.COAL, null);
 
 			validMod = true;
-			ModManager.debugLogger.writeMessage(modName + " marked as legacy mod. Added coalesced swap job, marked valid, finish reading mod.");
-			ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+			ModManager.debugLogger.writeMessageConditionally(modName + " targets CMM 1.0. Added coalesced swap job.", ModManager.LOG_MOD_INIT);
+			ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+					ModManager.LOG_MOD_INIT);
 			return;
 		}
 
@@ -119,20 +131,18 @@ public class Mod implements Comparable<Mod> {
 
 		modCMMVer = (double) Math.round(modCMMVer * 10) / 10;
 
-		ModManager.debugLogger.writeMessage("Mod Manager version read: " + modCMMVer);
-		ModManager.debugLogger.writeMessage("Checking for DLC headers in the ini file.");
+		ModManager.debugLogger.writeMessageConditionally("Mod Manager version read: " + modCMMVer, ModManager.LOG_MOD_INIT);
+		ModManager.debugLogger.writeMessageConditionally("Checking for DLC headers in the ini file.", ModManager.LOG_MOD_INIT);
 
 		// It's a 2.0 or above mod. Check for mod tags in the desc file
 		String[] modIniHeaders = ModType.getHeaderNameArray();
 		for (String modHeader : modIniHeaders) {
-			ModManager.debugLogger.writeMessage("Scanning for header: " + modHeader + " in ini of " + modName);
-
 			// Check for each mod. If it exists, add the task
 			String iniModDir = modini.get(modHeader, "moddir");
 			if (iniModDir != null && !iniModDir.equals("")) {
 				// It's a DLC header, we should check for the files to mod, and
 				// make sure they all match properly
-				ModManager.debugLogger.writeMessage("Found INI header " + modHeader);
+				ModManager.debugLogger.writeMessageConditionally("Found INI header " + modHeader, ModManager.LOG_MOD_INIT);
 
 				//REPLACE FILES (Mod Manager 2.0+)
 				String newFileIni = modini.get(modHeader, "newfiles");
@@ -145,7 +155,7 @@ public class Mod implements Comparable<Mod> {
 				String requirementText = null;
 
 				if (newFileIni == null || oldFileIni == null || newFileIni.equals("") || oldFileIni.equals("")) {
-					ModManager.debugLogger.writeMessage("newfiles/replace files was null or empty, mod marked as invalid.");
+					ModManager.debugLogger.writeError("newfiles/replace files was null or empty, mod marked as invalid.");
 					return;
 				}
 
@@ -154,8 +164,9 @@ public class Mod implements Comparable<Mod> {
 				StringTokenizer oldStrok = new StringTokenizer(oldFileIni, ";");
 				if (newStrok.countTokens() != oldStrok.countTokens()) {
 					// Same number of tokens aren't the same
-					ModManager.debugLogger.writeMessage("Number of files to update/replace do not match, mod being marked as invalid.");
-					ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+					ModManager.debugLogger.writeError("Number of files to update/replace do not match, mod being marked as invalid.");
+					ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+							ModManager.LOG_MOD_INIT);
 					return;
 				}
 
@@ -168,7 +179,8 @@ public class Mod implements Comparable<Mod> {
 					if ((addFileIni != null && addFileTargetIni == null) || (addFileIni == null && addFileTargetIni != null)) {
 						ModManager.debugLogger
 								.writeError("addfiles/addtargetfiles is missing, but one is present, but both are required. Mod marked as invalid");
-						ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+						ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+								ModManager.LOG_MOD_INIT);
 						return;
 					}
 
@@ -180,7 +192,8 @@ public class Mod implements Comparable<Mod> {
 							// Same number of tokens aren't the same
 							ModManager.debugLogger
 									.writeError("Number of files to add and number of target files do not match, mod being marked as invalid.");
-							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+									ModManager.LOG_MOD_INIT);
 							return;
 						}
 					}
@@ -190,7 +203,7 @@ public class Mod implements Comparable<Mod> {
 						removeStrok = new StringTokenizer(removeFileTargetIni, ";");
 					}
 					requirementText = modini.get(modHeader, "jobdescription");
-					ModManager.debugLogger.writeMessage(modHeader + " job description: " + requirementText);
+					ModManager.debugLogger.writeMessageConditionally(modHeader + " job description: " + requirementText, ModManager.LOG_MOD_INIT);
 				}
 
 				// Check to make sure the filenames are the same, and if they
@@ -207,10 +220,11 @@ public class Mod implements Comparable<Mod> {
 						newJob.TESTPATCH = true;
 					}
 				}
+				newJob.setSourceDir(iniModDir);
 				while (newStrok.hasMoreTokens()) {
 					String newFile = newStrok.nextToken();
 					String oldFile = oldStrok.nextToken();
-					// ModManager.debugLogger.writeMessage("Validating tokens: "+newFile+" vs
+					// ModManager.debugLogger.writeMessageConditionally("Validating tokens: "+newFile+" vs
 					// "+oldFile);
 					if (!newFile.equals(getSfarFilename(oldFile))) {
 						ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs "
@@ -222,7 +236,8 @@ public class Mod implements Comparable<Mod> {
 					// false it means a file doesn't exist somewhere
 					if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile))) {
 						ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
-						ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+						ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+								ModManager.LOG_MOD_INIT);
 
 						return;
 					}
@@ -234,7 +249,8 @@ public class Mod implements Comparable<Mod> {
 						if (!addFile.equals(getSfarFilename(targetFile))) {
 							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs "
 									+ getSfarFilename(targetFile));
-							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+									ModManager.LOG_MOD_INIT);
 							return; // The names of the files don't match
 						}
 
@@ -243,7 +259,8 @@ public class Mod implements Comparable<Mod> {
 						if (!(newJob.addNewFileTask(modFolderPath + ModManager.appendSlash(iniModDir) + addFile, targetFile))) {
 							ModManager.debugLogger
 									.writeError("[ADDFILE]Failed to add task for file addition (File likely does not exist), marking as invalid.");
-							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+									ModManager.LOG_MOD_INIT);
 							return;
 						}
 					}
@@ -254,30 +271,32 @@ public class Mod implements Comparable<Mod> {
 						//add remove file to job
 						if (!newJob.addRemoveFileTask(removeFilePath)) {
 							ModManager.debugLogger.writeError("[REMOVE]Failed to add task for file removal.");
-							ModManager.debugLogger.writeMessage("-----MOD------------END OF " + modName + "--------------------");
+							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+									ModManager.LOG_MOD_INIT);
 							return;
 						}
 					}
 				}
-				ModManager.debugLogger.writeMessage(modName + ": Successfully made a new Mod Job for: " + modHeader);
+				ModManager.debugLogger.writeMessageConditionally(modName + ": Successfully made a new Mod Job for: " + modHeader,
+						ModManager.LOG_MOD_INIT);
 				addTask(modHeader, newJob);
 			}
 		}
 
 		// CHECK FOR CUSTOMDLC HEADER (3.1+)
 		if (modCMMVer >= 3.1) {
-			ModManager.debugLogger.writeMessage("Mod built for CMM 3.1+, checking for CUSTOMDLC header");
+			ModManager.debugLogger.writeMessageConditionally("Mod built for CMM 3.1+, checking for CUSTOMDLC header", ModManager.LOG_MOD_INIT);
 			String iniModDir = modini.get(ModType.CUSTOMDLC, "sourcedirs");
 			if (iniModDir != null && !iniModDir.equals("")) {
-				ModManager.debugLogger.writeMessage("Found CUSTOMDLC header");
+				ModManager.debugLogger.writeMessageConditionally("Found CUSTOMDLC header", ModManager.LOG_MOD_INIT);
 
 				//customDLC flag is set
 				String sourceFolderIni = modini.get(ModType.CUSTOMDLC, "sourcedirs");
 				String destFolderIni = modini.get(ModType.CUSTOMDLC, "destdirs");
-				// ModManager.debugLogger.writeMessage("New files: "+newFileIni);
-				// ModManager.debugLogger.writeMessage("Old Files: "+oldFileIni);
+				// ModManager.debugLogger.writeMessageConditionally("New files: "+newFileIni);
+				// ModManager.debugLogger.writeMessageConditionally("Old Files: "+oldFileIni);
 				if (sourceFolderIni == null || destFolderIni == null || sourceFolderIni.equals("") || destFolderIni.equals("")) {
-					ModManager.debugLogger.writeMessage("sourcedirs/destdirs files was null or empty, mod marked as invalid.");
+					ModManager.debugLogger.writeError("sourcedirs/destdirs files was null or empty, mod marked as invalid.");
 					return;
 				}
 
@@ -286,7 +305,7 @@ public class Mod implements Comparable<Mod> {
 				if (srcStrok.countTokens() != destStrok.countTokens()) {
 					// Same number of tokens aren't the same
 					ModManager.debugLogger
-							.writeMessage("Number of source and destination directories for custom DLC job do not match, mod being marked as invalid.");
+							.writeError("Number of source and destination directories for custom DLC job do not match, mod being marked as invalid.");
 					return;
 				}
 
@@ -318,7 +337,8 @@ public class Mod implements Comparable<Mod> {
 					newJob.sourceFolders.add(sourceFolder);
 					newJob.getDestFolders().add(destFolder);
 				}
-				ModManager.debugLogger.writeMessage(modName + ": Successfully made a new Mod Job for: " + ModType.CUSTOMDLC);
+				ModManager.debugLogger.writeMessageConditionally(modName + ": Successfully made a new Mod Job for: " + ModType.CUSTOMDLC,
+						ModManager.LOG_MOD_INIT);
 				addTask(ModType.CUSTOMDLC, newJob);
 			}
 		}
@@ -327,42 +347,41 @@ public class Mod implements Comparable<Mod> {
 		// moved to [BASEGAME] as of 3.0)
 		if (modCMMVer < 3.0f && modCMMVer >= 2.0f) {
 			modCMMVer = 2.0;
-			ModManager.debugLogger.writeMessage(modName + ": Checking for modcoal in moddesc.ini because moddesc targets cmm2.0");
+			ModManager.debugLogger.writeMessageConditionally(modName + ": Targets CMM2.0. Checking for modcoal flag", ModManager.LOG_MOD_INIT);
 
 			int modCoalFlag = 0;
 			try {
 				modCoalFlag = Integer.parseInt(modini.get("ModInfo", "modcoal"));
-				ModManager.debugLogger.writeMessage("Coalesced flag: " + modCoalFlag);
+				ModManager.debugLogger.writeMessageConditionally("Coalesced flag: " + modCoalFlag, ModManager.LOG_MOD_INIT);
 
 				if (modCoalFlag != 0) {
 					File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
-					ModManager.debugLogger.writeMessage("Coalesced flag was set, verifying its location");
+					ModManager.debugLogger.writeMessageConditionally("Coalesced flag was set, verifying its location", ModManager.LOG_MOD_INIT);
 
 					if (!file.exists()) {
-						ModManager.debugLogger.writeMessage(modName + " doesn't have Coalesced.bin even though flag was set. Marking as invalid.");
+						ModManager.debugLogger.writeMessageConditionally(modName
+								+ " doesn't have Coalesced.bin even though flag was set. Marking as invalid.", ModManager.LOG_MOD_INIT);
 						return;
 					} else {
-						ModManager.debugLogger.writeMessage("Coalesced.bin is OK");
+						ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 					}
 					addTask(ModType.COAL, null);
 				}
 			} catch (NumberFormatException e) {
-				ModManager.debugLogger
-						.writeMessage("Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal");
+				ModManager.debugLogger.writeMessageConditionally(
+						"Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal",
+						ModManager.LOG_MOD_INIT);
 			}
 		}
-		// Check for coalesced in the new mod manager version [2.0 only]
-		// (modcoal)
+		//
 
-		ModManager.debugLogger.writeMessage("Finished reading mod.");
 		if (modCMMVer < 3.0f) {
 			// only print if it's not able to use BASEGAME
-			ModManager.debugLogger.writeMessage("Coalesced Swap: " + modCoal);
+			ModManager.debugLogger.writeMessageConditionally("Coalesced Swap: " + modCoal, ModManager.LOG_MOD_INIT);
 		}
-		ModManager.debugLogger.writeMessage("Number of Mod Jobs:" + jobs.size());
+		ModManager.debugLogger.writeMessageConditionally("Number of Mod Jobs:" + jobs.size(), ModManager.LOG_MOD_INIT);
 		if (jobs.size() > 0 || modCoal == true) {
-			ModManager.debugLogger.writeMessage("Verified source files, mod should be OK to install");
-			setModDisplayDescription(false);
+			ModManager.debugLogger.writeMessageConditionally("Verified source files, mod should be OK to install", ModManager.LOG_MOD_INIT);
 			validMod = true;
 		}
 
@@ -370,41 +389,41 @@ public class Mod implements Comparable<Mod> {
 		// Add version
 		if (modini.get("ModInfo", "modver") != null) {
 			modVersion = modini.get("ModInfo", "modver");
-			ModManager.debugLogger.writeMessage("Detected mod version: " + modVersion);
+			ModManager.debugLogger.writeMessageConditionally("Detected mod version: " + modVersion, ModManager.LOG_MOD_INIT);
 		}
 
 		if (modini.get("ModInfo", "updatecode") != null) {
 			try {
 				classicCode = Integer.parseInt(modini.get("ModInfo", "updatecode"));
-				ModManager.debugLogger.writeMessage("Detected me3tweaks update code: " + classicCode);
+				ModManager.debugLogger.writeMessageConditionally("Detected me3tweaks update code: " + classicCode, ModManager.LOG_MOD_INIT);
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeError("Classic update code is not an integer");
 			}
 		}
 
-		// Add MP Changer
+		// Add MP Change
 		if (modini.get("ModInfo", "modmp") != null) {
 			modmp = modini.get("ModInfo", "modmp");
-			ModManager.debugLogger.writeMessage("Detected multiplayer modification");
+			ModManager.debugLogger.writeMessageConditionally("Detected multiplayer modification", ModManager.LOG_MOD_INIT);
 		}
 		// Add developer
 		if (modini.get("ModInfo", "moddev") != null) {
 			modAuthor = modini.get("ModInfo", "moddev");
-			ModManager.debugLogger.writeMessage("Detected developer name");
+			ModManager.debugLogger.writeMessageConditionally("Detected developer name", ModManager.LOG_MOD_INIT);
 		}
 		// Add Devsite
 		if (modini.get("ModInfo", "modsite") != null) {
 			modSite = modini.get("ModInfo", "modsite");
-			ModManager.debugLogger.writeMessage("Detected developer site");
+			ModManager.debugLogger.writeMessageConditionally("Detected developer site", ModManager.LOG_MOD_INIT);
 		}
 
 		// Add Modmaker
 		if (modini.get("ModInfo", "modid") != null) {
 			try {
 				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
-				ModManager.debugLogger.writeMessage("Detected modmaker code");
+				ModManager.debugLogger.writeMessageConditionally("Detected modmaker code", ModManager.LOG_MOD_INIT);
 			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer.");
+				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer: " + modini.get("ModInfo", "modid"));
 			}
 		}
 
@@ -412,13 +431,14 @@ public class Mod implements Comparable<Mod> {
 		if (modini.get("ModInfo", "compiledagainst") != null) {
 			try {
 				compiledAgainstModmakerVersion = Double.parseDouble(modini.get("ModInfo", "compiledagainst"));
-				ModManager.debugLogger.writeMessage("Server version compiled against: " + compiledAgainstModmakerVersion);
+				ModManager.debugLogger.writeMessageConditionally("Server version compiled against: " + compiledAgainstModmakerVersion,
+						ModManager.LOG_MOD_INIT);
 				if (compiledAgainstModmakerVersion < 1.5) {
 					try {
 						int ver = Integer.parseInt(modVersion);
 						ver++;
 						modVersion = Integer.toString(ver);
-						ModManager.debugLogger.writeMessage("ModMaker mod (<1.5), +1 to revision.");
+						ModManager.debugLogger.writeMessageConditionally("ModMaker mod (<1.5), +1 to revision.", ModManager.LOG_MOD_INIT);
 					} catch (NumberFormatException e) {
 						ModManager.debugLogger.writeError("ModMaker version failed to resolve to an integer.");
 						modVersion = Integer.toString(1);
@@ -431,12 +451,13 @@ public class Mod implements Comparable<Mod> {
 			if (modmakerCode > 0) {
 				//modmaker mod
 				compiledAgainstModmakerVersion = 1.4;
-				ModManager.debugLogger.writeMessage("Unknown server version, assuming 1.4 compilation target: " + compiledAgainstModmakerVersion);
+				ModManager.debugLogger.writeMessageConditionally("Unknown server version, assuming 1.4 compilation target: "
+						+ compiledAgainstModmakerVersion, ModManager.LOG_MOD_INIT);
 				try {
 					int ver = Integer.parseInt(modVersion);
 					ver++;
 					modVersion = Integer.toString(ver);
-					ModManager.debugLogger.writeMessage("ModMaker mod (<1.5), +1 to revision.");
+					ModManager.debugLogger.writeMessageConditionally("ModMaker mod (<1.5), +1 to revision.", ModManager.LOG_MOD_INIT);
 				} catch (NumberFormatException e) {
 					ModManager.debugLogger.writeError("ModMaker version failed to resolve to an integer.");
 					modVersion = Integer.toString(1);
@@ -447,13 +468,11 @@ public class Mod implements Comparable<Mod> {
 		if (modCMMVer > ModManager.MODDESC_VERSION_SUPPORT) {
 			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version");
 		}
-		setModDisplayDescription(modCMMVer < 3.0);
-
 		//check for patches directory
 		if (modCMMVer >= 2) {
 			File patchesdir = new File(modFolderPath + "patches/");
 			if (patchesdir.isDirectory()) {
-				ModManager.debugLogger.writeMessage("Mod has unprocessed patches! Importing patches now.");
+				ModManager.debugLogger.writeMessageConditionally("Mod has unprocessed patches! Importing patches now.", ModManager.LOG_MOD_INIT);
 				File[] directories = patchesdir.listFiles(File::isDirectory);
 				for (File directory : directories) {
 					String path = directory.getAbsolutePath();
@@ -464,21 +483,47 @@ public class Mod implements Comparable<Mod> {
 					}
 					Patch subPatch = new Patch(patchDesc.getAbsolutePath());
 					if (subPatch.isValid()) {
-						ModManager.debugLogger.writeMessage("Valid patch: " + subPatch.getPatchName() + ", importing to library and processing");
+						ModManager.debugLogger.writeMessageConditionally("Valid patch: " + subPatch.getPatchName()
+								+ ", importing to library and processing", ModManager.LOG_MOD_INIT);
 						subPatch = subPatch.importPatch();
 						requiredPatches.add(subPatch);
 					}
 				}
 				if (patchesdir.list().length <= 0) {
-					ModManager.debugLogger.writeMessage("All patches imported. Deleting patches directory.");
+					ModManager.debugLogger.writeMessageConditionally("All patches imported. Deleting patches directory.", ModManager.LOG_MOD_INIT);
 					FileUtils.deleteDirectory(patchesdir);
 				}
 			}
-
 		}
 
-		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for this mod");
-		ModManager.debugLogger.writeMessage("-------MOD----------------END OF " + modName + "--------------------------");
+		//Read deltas
+		File dir = new File(modFolderPath + DELTAS_FOLDER);
+		File[] deltas = dir.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String filename) {
+				return filename.endsWith(".xml");
+			}
+		});
+		if (deltas != null) {
+			for (File delta : deltas) {
+				ModDelta md = new ModDelta(delta.getAbsolutePath());
+				if (md.isValidDelta()) {
+					modDeltas.add(md);
+				}
+			}
+			if (modDeltas.size() > 0) {
+				ModManager.debugLogger.writeMessageConditionally("This mod has " + modDeltas.size() + " deltas.", ModManager.LOG_MOD_INIT);
+			}
+		}
+
+		generateModDisplayDescription(modCMMVer < 3.0);
+
+		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for " + getModName());
+		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------END OF " + modName + "--------------------------",
+				ModManager.LOG_MOD_INIT);
+	}
+
+	public ArrayList<ModDelta> getModDeltas() {
+		return modDeltas;
 	}
 
 	/**
@@ -551,7 +596,7 @@ public class Mod implements Comparable<Mod> {
 		this.modDescription = desc;
 	}
 
-	public void setModDisplayDescription(boolean markedLegacy) {
+	public void generateModDisplayDescription(boolean markedLegacy) {
 		modDisplayDescription = "This mod has no description in it's moddesc.ini file or there was an error reading the description of this mod.";
 		if (modDescFile == null) {
 			ModManager.debugLogger.writeMessage("Mod Desc file is null, unable to read description");
@@ -573,8 +618,16 @@ public class Mod implements Comparable<Mod> {
 		}
 		modDisplayDescription = breakFixer(modDisplayDescription);
 
-		// Add 1st newline
-		modDisplayDescription += "\n";
+		modDisplayDescription += "\n=============================\n";
+
+		//Available deltas
+		if (modDeltas.size() > 0) {
+			modDisplayDescription += "Included Variants:\n";
+			for (ModDelta delta : modDeltas) {
+				modDisplayDescription += " - " + delta.getDeltaName();
+				modDisplayDescription += "\n";
+			}
+		}
 
 		// Add modversion
 		if (modVersion != null) {
@@ -1152,14 +1205,13 @@ public class Mod implements Comparable<Mod> {
 						&& ignoreAddFiles.get(otherjob.getJobName()).contains(otherAddFilesTargets.get(i))) {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherAddFilesTargets.get(i));
 					continue;
-				} 
+				}
 				//skip add/remove conflict
 				if (ignoreAddRemoveFiles != null && ignoreAddRemoveFiles.get(otherjob.getJobName()) != null
 						&& ignoreAddRemoveFiles.get(otherjob.getJobName()).contains(otherAddFilesTargets.get(i))) {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherAddFilesTargets.get(i));
 					continue;
-				} 
-				else {
+				} else {
 					if (FilenameUtils.getName(otherfile).equals("PCConsoleTOC.bin")) {
 						ModManager.debugLogger.writeMessage("CHECKING IF SHOULD ADD TOC, EXIST IN THIS JOB ALREADY: " + myCorrespendingJob.hasTOC());
 						// check if its there already
@@ -1176,14 +1228,14 @@ public class Mod implements Comparable<Mod> {
 			ArrayList<String> otherRemoveFiles = otherjob.getFilesToRemoveTargets();
 			for (int i = 0; i < otherRemoveFiles.size(); i++) {
 				ModManager.debugLogger.writeMessage("CURRENT JOB: " + myCorrespendingJob.getJobName());
-				
+
 				//ignore replace/remove conflict
 				if (ignoreReplaceRemoveFiles != null && ignoreReplaceRemoveFiles.get(otherjob.getJobName()) != null
 						&& ignoreReplaceRemoveFiles.get(otherjob.getJobName()).contains(otherRemoveFiles.get(i))) {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherRemoveFiles.get(i));
 					continue;
 				}
-				
+
 				//ignore add/remove conflict
 				if (ignoreAddRemoveFiles != null && ignoreAddRemoveFiles.get(otherjob.getJobName()) != null
 						&& ignoreAddRemoveFiles.get(otherjob.getJobName()).contains(otherRemoveFiles.get(i))) {
@@ -1195,6 +1247,12 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 		}
+
+		//MERGE DELTAS
+		for (ModDelta delta : other.getModDeltas()) {
+			modDeltas.add(delta);
+		}
+
 		if (other.modCMMVer > modCMMVer) {
 			//upgrade to highest cmm ver
 			modCMMVer = other.modCMMVer;
@@ -1263,6 +1321,21 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessage(job.getJobName() + ": " + file);
 			}
 		}
+
+		//COPY DELTAS
+		if (modDeltas.size() > 0) {
+			File dir = new File(modFolder + File.separator + DELTAS_FOLDER);
+			dir.mkdirs();
+			for (ModDelta delta : modDeltas) {
+				try {
+					FileUtils.copyFile(new File(delta.getDeltaFilepath()),
+							new File(dir + File.separator + FilenameUtils.getName(delta.getDeltaFilepath())));
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Unable to copy delta:", e);
+				}
+			}
+		}
+
 		try {
 			ModManager.debugLogger.writeMessage("Creating moddesc.ini...");
 			FileUtils.writeStringToFile(new File(modFolder + File.separator + "moddesc.ini"), createModDescIni(modCMMVer));
@@ -1273,6 +1346,10 @@ public class Mod implements Comparable<Mod> {
 			e.printStackTrace();
 		}
 		Mod newMod = new Mod(modFolder + File.separator + "moddesc.ini");
+		for (ModDelta delta : newMod.getModDeltas()) {
+			new DeltaWindow(newMod, delta, true, true);
+		}
+		
 		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		return newMod;
 	}
@@ -1452,7 +1529,8 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	/**
-	 * Checks for conflicts with the other mod pertaining to add/replace. 
+	 * Checks for conflicts with the other mod pertaining to add/replace.
+	 * 
 	 * @param other
 	 * @return Hashmap of job names mapping to a list of targets that conflict
 	 */
@@ -1510,7 +1588,8 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	/**
-	 * Checks for conflicts with the other mod pertaining to remove/replace. 
+	 * Checks for conflicts with the other mod pertaining to remove/replace.
+	 * 
 	 * @param other
 	 * @return Hashmap of job names mapping to a list of targets that conflict
 	 */

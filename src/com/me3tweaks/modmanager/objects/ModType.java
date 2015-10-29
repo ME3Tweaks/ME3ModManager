@@ -225,7 +225,7 @@ public class ModType {
 	 * Returns a hashmap of names -> filesizes of a DLC.
 	 * 
 	 * @return HashMap with ModType.NAME mapped to that DLCs respective original
-	 *         hash value.
+	 *         size in bytes.
 	 */
 	public static HashMap<String, Long> getSizesMap() {
 		HashMap<String, Long> dlcMap = new HashMap<String, Long>();

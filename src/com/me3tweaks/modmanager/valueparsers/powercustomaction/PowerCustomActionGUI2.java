@@ -46,8 +46,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.me3tweaks.modmanager.cellrenderers.HintTextAreaUI;
-import com.me3tweaks.modmanager.cellrenderers.HintTextFieldUI;
+import com.me3tweaks.modmanager.ui.HintTextAreaUI;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerVariable.DLCPackage;
 
 @SuppressWarnings("serial")

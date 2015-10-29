@@ -1,4 +1,4 @@
-package com.me3tweaks.modmanager.cellrenderers;
+package com.me3tweaks.modmanager.ui;
 
 import java.awt.Component;
 
@@ -7,14 +7,14 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.Patch;
 
-public class ModCellRenderer implements ListCellRenderer<Mod> {
+public class PatchCellRenderer implements ListCellRenderer<Patch> {
 		protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 
-	public Component getListCellRendererComponent(JList list, Mod value, int index, boolean isSelected, boolean cellHasFocus) {
+	public Component getListCellRendererComponent(JList list, Patch value, int index, boolean isSelected, boolean cellHasFocus) {
 		JLabel renderer = (JLabel) defaultRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-		renderer.setText(value.getModName());
+		renderer.setText(value.getPatchName());
 		return renderer;
 	}
 }

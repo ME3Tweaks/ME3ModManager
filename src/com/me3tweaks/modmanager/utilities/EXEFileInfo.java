@@ -1,10 +1,11 @@
-package com.me3tweaks.modmanager;
+package com.me3tweaks.modmanager.utilities;
 
-	import com.sun.jna.Memory;
-	import com.sun.jna.Pointer;
-	import com.sun.jna.platform.win32.VerRsrc.VS_FIXEDFILEINFO;
-	import com.sun.jna.ptr.IntByReference;
-	import com.sun.jna.ptr.PointerByReference;
+	import com.me3tweaks.modmanager.ModManager;
+import com.sun.jna.Memory;
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.VerRsrc.VS_FIXEDFILEINFO;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
 	
 	public class EXEFileInfo {
 		public static int MAJOR = 0;

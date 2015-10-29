@@ -57,7 +57,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
+import com.me3tweaks.modmanager.help.HelpMenu;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
@@ -65,8 +65,13 @@ import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
 import com.me3tweaks.modmanager.modupdater.ModXMLTools;
 import com.me3tweaks.modmanager.modupdater.UpdatePackage;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.Patch;
+import com.me3tweaks.modmanager.objects.RestoreMode;
+import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
+import com.me3tweaks.modmanager.utilities.EXEFileInfo;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
@@ -86,17 +91,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
-	JMenu actionMenu, modMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu;
-	JMenuItem actionModMaker, actionVisitMe, actionOptions, actionOpenME3Exp, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsAutoTOCUpgrade, modutilsUninstallCustomDLC,
-			modutilsCheckforupdate;
+	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
+	JMenuItem actionModMaker, actionVisitMe, actionOptions, toolME3Explorer, actionReload, actionExit;
+	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC,
+			modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
-	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32;
+	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32,
+			toolsMountdlcEditor;
 	JMenuItem restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
 			sqlConsumableParser, sqlGearParser;
-	JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
+	//JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
@@ -113,6 +119,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem restoredeleteAllCustomDLC;
 	private JMenuItem backupBasegameUnpacked;
 	private JMenuItem toolsUnpackDLC;
+	private JMenuItem modDeltaRevert;
+	private JMenuItem toolTankmasterCoalFolder;
+	private JMenuItem toolTankmasterCoalUI;
+	private JMenuItem toolTankmasterTLK;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -323,7 +333,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (!f.exists()) {
 				ModManager.debugLogger.writeMessage("ME3Explorer is missing. Downloading from ME3TWeaks.");
 				if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
-					new ME3ExplorerUpdater(ModManagerWindow.this);
+					new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
 				} else {
 					ModManager.debugLogger.writeError("ME3Explorer missing but cannot download due to settings!");
 					JOptionPane
@@ -339,7 +349,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:" + rev + " required"
 							+ ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+");
 					if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
-						new ME3ExplorerUpdater(ModManagerWindow.this);
+						new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
 					} else {
 						ModManager.debugLogger.writeError("ME3Explorer outdated but cannot download due to settings!");
 						JOptionPane
@@ -359,15 +369,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
 				ModManager.debugLogger.writeMessage("Prompting user for auto-updates");
 				publish("NOTIFY_UPDATE_PROMPT");
+				while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
+					try {
+						Thread.sleep(200); //wait for prompt
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
 			} else {
 				ModManager.debugLogger.writeMessage("User has accepted mod updates or has been asked before");
-			}
-			while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
-				try {
-					Thread.sleep(200); //wait for prompt
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
 			}
 
 			//Check for updates
@@ -375,7 +385,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
 					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
 							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
-							+ " since the last update check.");
+							+ " since the last help/mods update check.");
+					publish("Downloading latest help information");
+					HelpMenu.getOnlineHelp();
+					publish("UPDATE_HELP_MENU");
 					publish("Checking for updates to mods");
 					checkAllModsForUpdates(false);
 				}
@@ -413,6 +426,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 										"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 							}
 						}
+						break;
+					case "UPDATE_HELP_MENU":
+						menuBar.remove(helpMenu);
+						menuBar.add(HelpMenu.constructHelpMenu());
 						break;
 					default:
 						labelStatus.setText(update);
@@ -767,25 +784,42 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionVisitMe.setToolTipText("Opens ME3Tweaks.com");
 		actionOptions = new JMenuItem("Options");
 		actionOptions.setToolTipText("Configure Mod Manager Options");
-		actionOpenME3Exp = new JMenuItem("Run ME3Explorer");
-		actionOpenME3Exp.setToolTipText("Runs the bundled ME3Explorer program");
-		actionReload = new JMenuItem("Reload Mods");
-		actionReload.setToolTipText("Refreshes the list of mods and their descriptions");
+
+		toolME3Explorer = new JMenuItem("ME3Explorer");
+		toolME3Explorer.setToolTipText("Runs the bundled ME3Explorer program");
+		toolTankmasterCoalFolder = new JMenuItem("TankMaster Coalesce Folder");
+		toolTankmasterCoalFolder.setToolTipText("Opens Tankmaster Coalesce folder");
+		toolTankmasterCoalUI = new JMenuItem("TankMaster Coalesce Interface");
+		toolTankmasterCoalUI.setToolTipText("Opens interface for Tankmaster's Coalesced compiler");
+		toolTankmasterTLK = new JMenuItem("TankMaster ME2/ME3 TLK Tool");
+		toolTankmasterTLK.setToolTipText("Runs the bundled TLK tool provided by TankMaster");
+		actionReload = new JMenuItem("Reload Mod Manager");
+		actionReload.setToolTipText("Reloads Mod Manager to refresh mods, mixins, and help documentation");
 		actionExit = new JMenuItem("Exit");
 		actionExit.setToolTipText("Closes Mod Manager");
+
+		openToolMenu = new JMenu("Open Modding Tool");
+		openToolMenu.add(toolME3Explorer);
+		openToolMenu.add(toolTankmasterCoalFolder);
+		openToolMenu.add(toolTankmasterCoalUI);
+		openToolMenu.add(toolTankmasterTLK);
 
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
 		actionMenu.add(actionOptions);
 		actionMenu.addSeparator();
-		actionMenu.add(actionOpenME3Exp);
+		actionMenu.add(openToolMenu);
 		actionMenu.add(actionReload);
 		actionMenu.add(actionExit);
 
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
 		actionOptions.addActionListener(this);
-		actionOpenME3Exp.addActionListener(this);
+		toolME3Explorer.addActionListener(this);
+		toolTankmasterTLK.addActionListener(this);
+		toolTankmasterCoalFolder.addActionListener(this);
+		toolTankmasterCoalUI.addActionListener(this);
+
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
 		menuBar.add(actionMenu);
@@ -812,12 +846,28 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsInfoEditor = new JMenuItem("Edit name/description");
 		modutilsInfoEditor.addActionListener(this);
 		modutilsInfoEditor.setToolTipText("Rename this mod and change the description shown in the descriptions window");
+
+		modDeltaMenu = new JMenu("0 available variants");
+		modDeltaMenu
+				.setToolTipText("<html>This mod has variants that allow quick changes to the mod without shipping a full new version.<br>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
+		modDeltaMenu.setVisible(false);
+
+		modNoDeltas = new JMenuItem("No included variants");
+		modNoDeltas
+				.setToolTipText("<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
+		modNoDeltas.setEnabled(false);
+
+		modutilsVerifyDeltas = new JMenuItem("Verify variants");
+		modutilsVerifyDeltas.setToolTipText("<html>Verifies all parts of deltas are applicable to mod</html>");
+		modutilsVerifyDeltas.addActionListener(this);
+
+		modDeltaRevert = new JMenuItem("Revert to original version");
+		modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");
+		modDeltaRevert.addActionListener(this);
+
 		modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
 		modutilsAutoTOC.addActionListener(this);
 		modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes");
-		modutilsAutoTOCUpgrade = new JMenuItem("Upgrade mod to use unpacked DLC");
-		modutilsAutoTOCUpgrade.addActionListener(this);
-		modutilsAutoTOCUpgrade.setToolTipText("Automatically update all TOC files this mod has to use file sizes of your unpacked DLC");
 
 		modutilsUninstallCustomDLC = new JMenuItem("Uninstall this mod's custom DLC");
 		modutilsUninstallCustomDLC.addActionListener(this);
@@ -833,7 +883,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.add(modutilsInstallCustomKeybinds);
 		modMenu.add(modutilsInfoEditor);
 		modMenu.add(modutilsAutoTOC);
-		//modMenu.add(modutilsAutoTOCUpgrade);
+		modMenu.add(modDeltaMenu);
+		modMenu.add(modNoDeltas);
+
 		modMenu.add(modutilsUninstallCustomDLC);
 		modMenu.add(modutilsCheckforupdate);
 		modMenu.setEnabled(false);
@@ -869,12 +921,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsUnpackDLC = new JMenuItem("Unpack DLC");
 		toolsUnpackDLC.setToolTipText("Opens the Unpack DLC window so you can unpack DLC automatically");
 
+		toolsMountdlcEditor = new JMenuItem("Mount.dlc Editor");
+		toolsMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
+
 		toolsModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
 		toolsCheckallmodsforupdate.addActionListener(this);
 		toolsUnpackDLC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsPatchLibary.addActionListener(this);
+		toolsMountdlcEditor.addActionListener(this);
 
 		toolsOpenME3Dir.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
@@ -885,6 +941,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsMergeMod);
 		toolsMenu.add(toolsPatchLibary);
+		toolsMenu.add(toolsMountdlcEditor);
 		toolsMenu.add(toolsUnpackDLC);
 		toolsMenu.add(toolsOpenME3Dir);
 		toolsMenu.addSeparator();
@@ -1027,34 +1084,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			menuBar.add(sqlMenu);
 		}
 
-		// Help
-		helpMenu = new JMenu("Help");
-		helpPost = new JMenuItem("View FAQ");
-		helpPost.setToolTipText("Opens the Mod Manager FAQ");
-		helpForums = new JMenuItem("Forums");
-		helpForums.setToolTipText("Opens the ME3Tweaks forum on ME3Explorer Forums");
-		helpAbout = new JMenuItem("About Mod Manager");
-		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
-
-		helpGetLog = new JMenuItem("Copy log to clipboard");
-		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
-
-		helpEmailFemShep = new JMenuItem("Contact FemShep");
-		helpEmailFemShep.setToolTipText("<html>Contact FemShep via email</html>");
-
-		helpForums.addActionListener(this);
-		helpPost.addActionListener(this);
-		helpAbout.addActionListener(this);
-		helpGetLog.addActionListener(this);
-		helpEmailFemShep.addActionListener(this);
-
-		helpMenu.add(helpPost);
-		helpMenu.add(helpForums);
-		helpMenu.addSeparator();
-		helpMenu.add(helpGetLog);
-		helpMenu.add(helpEmailFemShep);
-		helpMenu.addSeparator();
-		helpMenu.add(helpAbout);
+		helpMenu = HelpMenu.constructHelpMenu();
 		menuBar.add(helpMenu);
 
 		return menuBar;
@@ -1367,71 +1397,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (e.getSource() == actionExit) {
 			ModManager.debugLogger.writeMessage("User selected exit from Actions Menu");
 			System.exit(0);
-		} else
-
-		if (e.getSource() == helpPost) {
-			URI theURI;
-			try {
-				theURI = new URI("http://me3tweaks.com/tools/modmanager/faq");
-				java.awt.Desktop.getDesktop().browse(theURI);
-			} catch (URISyntaxException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			}
-		} else if (e.getSource() == helpForums) {
-			URI theURI;
-			try {
-				theURI = new URI("http://me3explorer.freeforums.org/me3tweaks-f33.html");
-				java.awt.Desktop.getDesktop().browse(theURI);
-			} catch (URISyntaxException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			}
-		} else if (e.getSource() == helpGetLog) {
-			if (!ModManager.logging) {
-				JOptionPane.showMessageDialog(this, "You must enable logging via the File>Options menu before logs are generated.");
-			} else {
-				String log = ModManager.debugLogger.getLog();
-				Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-				clpbrd.setContents(new StringSelection(log), null);
-				labelStatus.setText("Log copied to clipboard");
-			}
-		} else if (e.getSource() == helpEmailFemShep) {
-			JOptionPane
-					.showMessageDialog(
-							this,
-							"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>"
-									+ "Please email me if you have crashes or bugs. Feature requests should be posted to the forums.<br>"
-									+ "If you have a crash or a bug I will need the debugging log.<br><br>How to create a debugging log:<br>"
-									+ "1. Close Mod Manager with debugging enabled, restart it, and reproduce your issue.<br>"
-									+ "2. Immediately after the issue occurs, go to Help>Copy log to clipboard.<br>"
-									+ "3. Paste your log into a text file (.txt). I will not open other extensions. Use notepad.<br>"
-									+ "4. In your email, give me a description of the problem and the steps you took to produce it. I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
-									+ "5. Attach your log to the email and send it.<br><br>"
-									+ "Please do not do any other operations as it makes the logs harder to read.<br>"
-									+ "If you submit a crash/bug report without a debugging log there is very little I can do to help you.<br>"
-									+ "Please note that I only speak English.<br><br>" + "You can email me at femshep@me3tweaks.com.</div></html>",
-							"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
-		} else if (e.getSource() == helpForums) {
-			URI theURI;
-			try {
-				theURI = new URI("http://me3explorer.freeforums.org/me3tweaks-f33.html");
-				java.awt.Desktop.getDesktop().browse(theURI);
-			} catch (URISyntaxException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				// TODO Auto-generated catch block
-				ex.printStackTrace();
-			}
-		} else if (e.getSource() == helpAbout) {
-			new AboutWindow(this);
 		} else if (e.getSource() == buttonApplyMod) {
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Applying selected mod: Biogame Dir is valid.");
@@ -1468,7 +1433,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else
 
-		if (e.getSource() == actionOpenME3Exp) {
+		if (e.getSource() == toolME3Explorer) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
 				ModManager.debugLogger.writeMessage(".NET is installed");
@@ -1496,6 +1461,44 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
 				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5 or higher in order to run.");
 			}
+		} else if (e.getSource() == toolTankmasterCoalFolder) {
+			openDir(ModManager.getTankMasterCompilerDir());
+		} else if (e.getSource() == toolTankmasterTLK) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				updateApplyButton();
+				ArrayList<String> commandBuilder = new ArrayList<String>();
+				String tankmasterTLKDir = ModManager.getTankMasterTLKDir();
+				commandBuilder.add(tankmasterTLKDir + "MassEffect3.TlkEditor.exe");
+				// System.out.println("Building command");
+				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+				// Debug stuff
+				StringBuilder sb = new StringBuilder();
+				for (String arg : command) {
+					sb.append(arg + " ");
+				}
+				ModManager.debugLogger.writeMessage("Executing Tankmaster TLK (via action menu) via command: " + sb.toString());
+				try {
+					ProcessBuilder pb = new ProcessBuilder(command);
+					pb.directory(new File(tankmasterTLKDir)); // this is where you set the root folder for the executable to run with
+					pb.start();
+				} catch (IOException ex) {
+					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+				}
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run TLK: .NET is not installed");
+				new NetFrameworkMissingWindow("Tankmaster's TLK Tool requires .NET 4.5 or higher in order to run.");
+			}
+		} else if (e.getSource() == toolTankmasterCoalUI) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				new CoalescedWindow();
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
+				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5 or higher in order to run.");
+			}
 		} else if (e.getSource() == actionOptions) {
 			new OptionsWindow(this);
 		} else if (e.getSource() == toolsMergeMod) {
@@ -1510,16 +1513,28 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods.");
 			}
 		} else if (e.getSource() == toolsUnpackDLC) {
-			if (ModManager.validateNETFrameworkIsInstalled()) {
-				ModManager.debugLogger.writeMessage("Opening Unpack DLC window");
-				updateApplyButton();
-				new UnpackWindow(this, fieldBiogameDir.getText());
+			if (validateBIOGameDir()) {
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Opening Unpack DLC window");
+					updateApplyButton();
+					new UnpackWindow(this, fieldBiogameDir.getText());
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Unpack DLC Tool: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to unpack DLC.");
+				}
 			} else {
-				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
-				ModManager.debugLogger.writeMessage("Unpack DLC Tool: Missing .NET Framework");
-				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to unpack DLC.");
+				labelStatus.setText("Unpacking DLC requires a valid BIOGame directory");
+				labelStatus.setVisible(true);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BIOGame directory is not valid.\nCannot unpack DLC without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
+		} else if (e.getSource() == toolsMountdlcEditor) {
+			new MountFileEditorWindow();
 		} else if (e.getSource() == toolsOpenME3Dir) {
 			openME3Dir();
 		} else if (e.getSource() == modutilsAutoTOC) {
@@ -1533,8 +1548,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use the AutoTOC feature.");
 			}
-		} else if (e.getSource() == modutilsAutoTOCUpgrade) {
-			autoTOC(AutoTocWindow.UPGRADE_UNPACKED_MODE);
+
 		} else if (e.getSource() == modutilsInfoEditor) {
 			showInfoEditor();
 		} else if (e.getSource() == modutilsUninstallCustomDLC) {
@@ -1561,6 +1575,35 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			} else {
 				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
+		} else if (e.getSource() == modDeltaRevert) {
+			//if (validateBIOGameDir()) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Reverting a delta.");
+				new DeltaWindow(modModel.get(modList.getSelectedIndex()));
+			} else {
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Revert Delta: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
+			}
+		} else if (e.getSource() == modutilsVerifyDeltas) {
+			if (validateBIOGameDir()) {
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Verifying deltas");
+					Mod mod = modModel.get(modList.getSelectedIndex());
+					for (ModDelta delta : mod.getModDeltas()) {
+						new DeltaWindow(mod, delta, true, false);
+					}
+				} else {
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
+				}
+			} else {
+				labelStatus.setText("Switching variants requires a valid BIOGame folder");
 				labelStatus.setVisible(true);
 				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
@@ -1688,6 +1731,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	/**
+	 * Opens a directory in Windows Explorer.
+	 * 
+	 * @param dir
+	 *            Directory to open
+	 */
+	private void openDir(String dir) {
+		try {
+			Desktop.getDesktop().open(new File(dir));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
+		}
+	}
+
+	/**
 	 * Deletes the Custom DLC of this mod selected
 	 */
 	private void uninstallCustomDLC() {
@@ -1730,7 +1788,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		// System.out.println("SELECTED VALUE: " + selectedValue);
 		Mod mod = modModel.get(selectedIndex);
-		new ModInfoEditor(this, mod);
+		new ModInfoEditorWindow(this, mod);
 	}
 
 	private void createBasegameDB(String biogameDir) {
@@ -2036,6 +2094,43 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					modutilsUninstallCustomDLC.setEnabled(false);
 					modutilsUninstallCustomDLC.setText("Mod does not use custom DLC content");
 					modutilsUninstallCustomDLC.setToolTipText("This mod does not install any custom DLC modules");
+				}
+
+				if (selectedMod.getModDeltas().size() > 0) {
+					modDeltaMenu.removeAll();
+					modDeltaMenu.add(modDeltaRevert);
+					modDeltaMenu.add(modutilsVerifyDeltas);
+					File originalVariantFolder = new File(selectedMod.getModPath() + Mod.VARIANT_FOLDER + File.separator + Mod.ORIGINAL_FOLDER);
+					modDeltaRevert.setEnabled(originalVariantFolder.exists());
+					if (originalVariantFolder.exists()) {
+						modDeltaRevert.setToolTipText("Revert to the original version of this mod");
+					} else {
+						modDeltaRevert.setToolTipText("No variants have been applied yet, so this is the original");
+					}
+
+					modDeltaMenu.addSeparator();
+					modDeltaMenu.setText(selectedMod.getModDeltas().size() + " available variant"
+							+ (selectedMod.getModDeltas().size() != 1 ? "s" : ""));
+					modDeltaMenu.setVisible(true);
+					modNoDeltas.setVisible(false);
+					for (ModDelta delta : selectedMod.getModDeltas()) {
+						JMenuItem deltaItem = new JMenuItem(delta.getDeltaName());
+						deltaItem.setToolTipText(delta.getDeltaDescription());
+						deltaItem.addActionListener(new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent e) {
+								ModManager.debugLogger.writeMessage("Applying delta " + delta.getDeltaName() + " to " + selectedMod.getModName());
+								new DeltaWindow(selectedMod, delta, false, false);
+								modDeltaRevert.setEnabled(true);
+								modDeltaRevert.setText("Revert to original version");
+								modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");
+							}
+						});
+						modDeltaMenu.add(deltaItem);
+					}
+				} else {
+					modDeltaMenu.setVisible(false);
+					modNoDeltas.setVisible(true);
 				}
 			}
 		}

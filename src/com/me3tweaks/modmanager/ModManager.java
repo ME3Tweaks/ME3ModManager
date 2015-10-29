@@ -51,15 +51,17 @@ import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.Patch;
+import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.utilities.DebugLogger;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1 Beta 2";
-	public static long BUILD_NUMBER = 46L; // so it will upgrade when full is
-											// out.
-	public static final String BUILD_DATE = "10/15/2015";
+	public static final String VERSION = "4.1 Beta 3";
+	public static long BUILD_NUMBER = 47L;
+	public static final String BUILD_DATE = "10/29/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -86,9 +88,10 @@ public class ModManager {
 	public static long SKIP_UPDATES_UNTIL_BUILD = 0;
 	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
 	public static long AUTO_CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(AUTO_CHECK_INTERVAL_DAYS);
+	public static boolean LOG_MOD_INIT = false;
+	public static boolean LOG_PATCH_INIT = false;
 
 	public static void main(String[] args) {
-		
 		debugLogger = new DebugLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
@@ -297,6 +300,26 @@ public class ModManager {
 						}
 					}
 
+					// Log Mod Startup
+					String modstartupStr = settingsini.get("Settings", "logmodinit");
+					int modstartupInt = 0;
+					if (modstartupStr != null && !modstartupStr.equals("")) {
+						try {
+							modstartupInt = Integer.parseInt(modstartupStr);
+							if (modstartupInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("Mod startup logging is enabled");
+								LOG_MOD_INIT = true;
+							} else {
+								debugLogger.writeMessage("Mod startup logging is disabled");
+								LOG_MOD_INIT = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the log mod init - setting to disabled");
+							LOG_MOD_INIT = false;
+						}
+					}
+
 				} catch (InvalidFileFormatException e) {
 					ModManager.debugLogger.writeErrorWithException("Invalid file format exception. Settings in this file will be ignored", e);
 				} catch (IOException e) {
@@ -491,6 +514,8 @@ public class ModManager {
 				ModManager.debugLogger.writeException(e);
 			}
 		}
+		
+
 
 		// cleanup
 		File mod_info = new File(ModMakerCompilerWindow.DOWNLOADED_XML_FILENAME);
@@ -923,6 +948,12 @@ public class ModManager {
 		// file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
+	
+	public static String getHelpDir() {
+		File file = new File(getDataDir() + "help/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
 
 	/**
 	 * Gets ME3Explorer directory, with slash on the end
@@ -1268,19 +1299,25 @@ public class ModManager {
 	}
 
 	/**
-	 * Copies a file from the game to the specified location. Decompresses a basegame PCC if one is specified.
-	 * @param targetPath Path inside of module
-	 * @param targetModule Module to pull file from
-	 * @param copyToLocation Location to put copy of file
+	 * Copies a file from the game to the specified location. Decompresses a
+	 * basegame PCC if one is specified.
+	 * 
+	 * @param targetPath
+	 *            Path inside of module
+	 * @param targetModule
+	 *            Module to pull file from
+	 * @param copyToLocation
+	 *            Location to put copy of file
 	 * @return null if could not get file, otherwise copyToLocation.
 	 */
 	public static String getGameFile(String targetPath, String targetModule, String copyToLocation) {
-		ModManager.debugLogger.writeMessage("Getting game file (will use unpacked if possible) from "+targetModule+", with relative path "+targetPath);
+		ModManager.debugLogger.writeMessage("Getting game file (will use unpacked if possible) from " + targetModule + ", with relative path "
+				+ targetPath);
 		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		File destFile = new File(copyToLocation);
 		FileUtils.deleteQuietly(destFile);
 		new File(destFile.getParent()).mkdirs();
-		
+
 		if (targetModule.equals(ModType.BASEGAME)) {
 			if (targetPath.endsWith(".pcc")) {
 				// we must use PCCEditor2 to decompress the file using the
@@ -1325,12 +1362,12 @@ public class ModManager {
 			} else {
 				//not a pcc file.
 				String gamedir = ModManager.appendSlash(new File(bioGameDir).getParent());
-				String fileToGetPath = gamedir+targetPath;
+				String fileToGetPath = gamedir + targetPath;
 				File fileToGet = new File(fileToGetPath);
-				ModManager.debugLogger.writeMessage("Getting game file: "+fileToGet+", exists? "+fileToGet.exists());
+				ModManager.debugLogger.writeMessage("Getting game file: " + fileToGet + ", exists? " + fileToGet.exists());
 				if (fileToGet.exists()) {
 					try {
-						ModManager.debugLogger.writeMessage("Copying to destination: "+copyToLocation);
+						ModManager.debugLogger.writeMessage("Copying to destination: " + copyToLocation);
 						FileUtils.copyFile(fileToGet, destFile);
 						ModManager.debugLogger.writeMessage("Copied to destination.");
 						return copyToLocation;
@@ -1355,13 +1392,16 @@ public class ModManager {
 			File unpackedFile = new File(gamedir + targetPath);
 			if (unpackedFile.exists()) {
 				//check if PCConsoleTOC, as we probably want the one in the SFAR (or this one, provided DLC is unpacked)
-/*				if (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin")){
-
-					//if (inPlaceToc)
-				}*/
+				/*
+				 * if
+				 * (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin"
+				 * )){
+				 * 
+				 * //if (inPlaceToc) }
+				 */
 				try {
 					new File(destFile.getParent()).mkdirs();
-					ModManager.debugLogger.writeMessage("Copying unpacked file to destination: "+copyToLocation);
+					ModManager.debugLogger.writeMessage("Copying unpacked file to destination: " + copyToLocation);
 					FileUtils.copyFile(unpackedFile, destFile);
 					ModManager.debugLogger.writeMessage("Copied unpacked file to destination");
 					return copyToLocation;
@@ -1607,5 +1647,32 @@ public class ModManager {
 				System.setErr(systemErr);
 			}
 		}
+	}
+
+	/**
+	 * Runs a process already build via processbuilder, prints timing info and
+	 * returns the result
+	 * 
+	 * @param p
+	 *            Process to build and run
+	 * @return ProcessResult, with code if successful, or exception as not-null
+	 *         if one occured
+	 */
+	public static ProcessResult runProcess(ProcessBuilder p) {
+		try {
+			long startTime = System.currentTimeMillis();
+			Process process = p.start();
+			int returncode = process.waitFor();
+			long endTime = System.currentTimeMillis();
+			ModManager.debugLogger.writeMessage("Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
+			return new ProcessResult(returncode, null);
+		} catch (IOException | InterruptedException e) {
+			ModManager.debugLogger.writeErrorWithException("Process exception occured:", e);
+			return new ProcessResult(0, e);
+		}
+	}
+
+	public static File getHelpFile() {
+		return new File(getHelpDir()+"localhelp.xml");
 	}
 }

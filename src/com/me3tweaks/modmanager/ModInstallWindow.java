@@ -27,11 +27,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import com.me3tweaks.modmanager.basegamedb.BasegameHashDB;
-import com.me3tweaks.modmanager.basegamedb.RepairFileInfo;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
+import com.me3tweaks.modmanager.repairdb.RepairFileInfo;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 /**

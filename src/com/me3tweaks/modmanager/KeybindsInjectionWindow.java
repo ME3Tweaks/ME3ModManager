@@ -26,6 +26,7 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /**
  * This window injects a user's customized set of keybinds into the base

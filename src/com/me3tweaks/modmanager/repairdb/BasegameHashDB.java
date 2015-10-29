@@ -1,4 +1,4 @@
-package com.me3tweaks.modmanager.basegamedb;
+package com.me3tweaks.modmanager.repairdb;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -28,11 +28,11 @@ import javax.swing.border.EmptyBorder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
-import com.me3tweaks.modmanager.DebugLogger;
-import com.me3tweaks.modmanager.MD5Checksum;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.ResourceUtils;
+import com.me3tweaks.modmanager.utilities.DebugLogger;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class BasegameHashDB extends JFrame implements ActionListener {
 	static boolean isRunningAsMain = false;

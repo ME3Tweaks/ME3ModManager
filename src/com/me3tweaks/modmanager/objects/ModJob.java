@@ -25,6 +25,7 @@ public class ModJob {
 	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
 	
 	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFilesTargets;
+	private String sourceDir;
 	
 	/** Holds many parameters that are required to inject files into a DLC Sfar file.
 	 * @param DLCFilePath Path to the DLC Sfar file.
@@ -109,7 +110,13 @@ public class ModJob {
 		if (getJobType() == BASEGAME) {
 			//check first char is \
 			if (fileToReplace.charAt(0) != '\\'){
-				fileToReplace = "\\"+fileToReplace;
+				if (fileToReplace.charAt(0) == '/') {
+					StringBuffer sb = new StringBuffer(fileToReplace);
+					sb.setCharAt(0, '/');
+					fileToReplace = sb.toString();
+				} else {
+					fileToReplace = "\\"+fileToReplace;
+				}
 			}
 		} else {
 			//its dlc
@@ -248,5 +255,17 @@ public class ModJob {
 		}
 		removeFilesTargets.add(targetPath);
 		return true;
+	}
+
+	/**
+	 * Sets this job's source direcotry. For example, if the moddir ini flag is set to MP (moddir = MP1), then this will set sourceDir to MP1.
+	 * @param sourceDir Dir in the mod folder where this job will look for source files in add/replace/add.
+	 */
+	public void setSourceDir(String sourceDir) {
+		this.sourceDir = sourceDir;
+	}
+
+	public String getSourceDir() {
+		return sourceDir;
 	}
 }

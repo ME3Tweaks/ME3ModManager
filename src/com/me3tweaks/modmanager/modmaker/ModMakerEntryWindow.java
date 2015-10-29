@@ -37,9 +37,9 @@ import javax.swing.text.DocumentFilter;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
-import com.me3tweaks.modmanager.MD5Checksum;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 @SuppressWarnings("serial")
 public class ModMakerEntryWindow extends JDialog implements ActionListener {

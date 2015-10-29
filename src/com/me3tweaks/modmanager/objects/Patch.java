@@ -13,8 +13,8 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ResourceUtils;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /**
  * Patch class describes a patch file with metadata about the patch. It's
@@ -61,43 +61,43 @@ public class Patch implements Comparable<Patch> {
 			try {
 				String idstr = patchini.get("PatchInfo", "me3tweaksid");
 				me3tweaksid = Integer.parseInt(idstr);
-				ModManager.debugLogger.writeMessage("Patch ID on ME3Tweaks: " + me3tweaksid);
+				ModManager.debugLogger.writeMessageConditionally("Patch ID on ME3Tweaks: " + me3tweaksid,ModManager.LOG_PATCH_INIT);
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeError("me3tweaksid is not an integer, setting to 0");
 			}
 
-			ModManager.debugLogger.writeMessage("------PATCH--------------Reading Patch " + patchName + "-----------------");
+			ModManager.debugLogger.writeMessageConditionally("------PATCH--------------Reading Patch " + patchName + "-----------------",ModManager.LOG_PATCH_INIT);
 			File patchFile = new File(patchFolderPath + "patch.jsf");
 			if (!patchFile.exists()) {
 				ModManager.debugLogger.writeError("Patch.jsf is missing, patch is invalid");
-				ModManager.debugLogger.writeMessage("------PATCH--------------End of " + patchName + "-----------------");
+				ModManager.debugLogger.writeMessageConditionally("------PATCH--------------End of " + patchName + "-----------------",ModManager.LOG_PATCH_INIT);
 				isValid = false;
 				return;
 			}
 
-			ModManager.debugLogger.writeMessage("Patch Folder: " + patchFolderPath);
-			ModManager.debugLogger.writeMessage("Patch Name: " + patchName);
-			ModManager.debugLogger.writeMessage("Patch Description: " + patchDescription);
+			ModManager.debugLogger.writeMessageConditionally("Patch Folder: " + patchFolderPath,ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch Name: " + patchName,ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch Description: " + patchDescription,ModManager.LOG_PATCH_INIT);
 			// Check if this mod has been made for Mod Manager 2.0 or legacy mode
 			patchCMMVer = 3.2f;
 			patchVersion = 1;
 			try {
 				patchCMMVer = Float.parseFloat(patchini.get("ModManager", "cmmver"));
 				patchCMMVer = (double) Math.round(patchCMMVer * 10) / 10; //tenth rounding;
-				ModManager.debugLogger.writeMessage("Patch Targets Mod Manager: " + patchCMMVer);
+				ModManager.debugLogger.writeMessageConditionally("Patch Targets Mod Manager: " + patchCMMVer,ModManager.LOG_PATCH_INIT);
 				patchAuthor = patchini.get("PatchInfo", "patchdev");
-				ModManager.debugLogger.writeMessage("Patch Developer (if any) " + patchAuthor);
+				ModManager.debugLogger.writeMessageConditionally("Patch Developer (if any) " + patchAuthor,ModManager.LOG_PATCH_INIT);
 				String strPatchVersion = patchini.get("PatchInfo", "patchver");
 				if (strPatchVersion != null) {
 					patchVersion = Float.parseFloat(strPatchVersion);
 					patchVersion = (double) Math.round(patchVersion * 10) / 10; //tenth rounding
-					ModManager.debugLogger.writeMessage("Patch Version: " + patchVersion);
+					ModManager.debugLogger.writeMessageConditionally("Patch Version: " + patchVersion,ModManager.LOG_PATCH_INIT);
 				} else {
 					patchVersion = 1.0;
-					ModManager.debugLogger.writeMessage("Patch Version: Not specified, defaulting to 1.0");
+					ModManager.debugLogger.writeMessageConditionally("Patch Version: Not specified, defaulting to 1.0",ModManager.LOG_PATCH_INIT);
 				}
 			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeMessage("Didn't read a target version (cmmver) in the descriptor file. Targetting 3.2.");
+				ModManager.debugLogger.writeMessageConditionally("Didn't read a target version (cmmver) in the descriptor file. Targetting 4.0.",ModManager.LOG_PATCH_INIT);
 				patchCMMVer = 3.2f;
 				ModManager.debugLogger.writeException(e);
 			}
@@ -105,23 +105,23 @@ public class Patch implements Comparable<Patch> {
 			targetModule = patchini.get("PatchInfo", "targetmodule");
 			targetPath = patchini.get("PatchInfo", "targetfile");
 			targetSize = Long.parseLong(patchini.get("PatchInfo", "targetsize"));
-			ModManager.debugLogger.writeMessage("Patch Targets Module: " + targetModule);
-			ModManager.debugLogger.writeMessage("Patch Targets File in module: " + targetPath);
-			ModManager.debugLogger.writeMessage("Patch only works with files of size: " + targetSize);
+			ModManager.debugLogger.writeMessageConditionally("Patch Targets Module: " + targetModule,ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch Targets File in module: " + targetPath,ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch only works with files of size: " + targetSize,ModManager.LOG_PATCH_INIT);
 
 			if (targetPath == null || targetModule == null || targetPath.equals("") || targetModule.equals("")) {
-				ModManager.debugLogger.writeMessage("Invalid patch, targetfile or targetmodule was empty or missing");
+				ModManager.debugLogger.writeMessageConditionally("Invalid patch, targetfile or targetmodule was empty or missing",ModManager.LOG_PATCH_INIT);
 				isValid = false;
 			} else if (targetSize <= 0) {
-				ModManager.debugLogger.writeMessage("Invalid patch, target size of file to patch has to be bigger than 0");
+				ModManager.debugLogger.writeMessageConditionally("Invalid patch, target size of file to patch has to be bigger than 0",ModManager.LOG_PATCH_INIT);
 				isValid = false;
 			} else if (targetPath.endsWith("Coalesced.bin")) {
-				ModManager.debugLogger.writeMessage("Invalid patch, patches do not work with Coalesced.bin");
+				ModManager.debugLogger.writeError("Invalid patch, patches do not work with Coalesced.bin");
 				isValid = false;
 			} else {
 				isValid = true;
 			}
-			ModManager.debugLogger.writeMessage("Finished loading patchdesc.ini for this patch.");
+			ModManager.debugLogger.writeMessageConditionally("Finished loading patchdesc.ini for "+getPatchName(),ModManager.LOG_PATCH_INIT);
 		} catch (InvalidFileFormatException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeException(e);
@@ -133,7 +133,7 @@ public class Patch implements Comparable<Patch> {
 			ModManager.debugLogger.writeException(e);
 			isValid = false;
 		}
-		ModManager.debugLogger.writeMessage("------PATCH--------------END OF " + patchName + "-------------------------");
+		ModManager.debugLogger.writeMessageConditionally("------PATCH--------------END OF " + patchName + "-------------------------",ModManager.LOG_PATCH_INIT);
 	}
 
 	/**
