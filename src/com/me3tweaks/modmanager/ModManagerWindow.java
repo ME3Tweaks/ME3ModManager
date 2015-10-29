@@ -1513,15 +1513,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods.");
 			}
 		} else if (e.getSource() == toolsUnpackDLC) {
-			if (ModManager.validateNETFrameworkIsInstalled()) {
-				ModManager.debugLogger.writeMessage("Opening Unpack DLC window");
-				updateApplyButton();
-				new UnpackWindow(this, fieldBiogameDir.getText());
+			if (validateBIOGameDir()) {
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Opening Unpack DLC window");
+					updateApplyButton();
+					new UnpackWindow(this, fieldBiogameDir.getText());
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Unpack DLC Tool: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to unpack DLC.");
+				}
 			} else {
-				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
-				ModManager.debugLogger.writeMessage("Unpack DLC Tool: Missing .NET Framework");
-				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to unpack DLC.");
+				labelStatus.setText("Unpacking DLC requires a valid BIOGame directory");
+				labelStatus.setVisible(true);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BIOGame directory is not valid.\nCannot unpack DLC without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == toolsMountdlcEditor) {
 			new MountFileEditorWindow();
