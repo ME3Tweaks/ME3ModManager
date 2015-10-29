@@ -93,8 +93,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionOptions, toolME3Explorer, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC,
-			modutilsCheckforupdate;
+	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC,
+			modutilsUninstallCustomDLC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32,
 			toolsMountdlcEditor;
@@ -858,6 +858,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				.setToolTipText("<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
 		modNoDeltas.setEnabled(false);
 
+		modutilsVerifyDeltas = new JMenuItem("Verify variants");
+		modutilsVerifyDeltas.setToolTipText("<html>Verifies all parts of deltas are applicable to mod</html>");
+		modutilsVerifyDeltas.addActionListener(this);
+
 		modDeltaRevert = new JMenuItem("Revert to original version");
 		modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");
 		modDeltaRevert.addActionListener(this);
@@ -1567,10 +1571,31 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == modDeltaRevert) {
-			if (validateBIOGameDir()) {
+			//if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Reverting a delta.");
 					new DeltaWindow(modModel.get(modList.getSelectedIndex()));
+				} else {
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Revert Delta: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
+				}
+			/*
+			 * } else { labelStatus.setText(
+			 * "Switching variants requires a valid BIOGame folder");
+			 * labelStatus.setVisible(true); JOptionPane.showMessageDialog(null,
+			 * "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing."
+			 * , "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			 */
+			}
+		 else if (e.getSource() == modutilsVerifyDeltas) {
+			if (validateBIOGameDir()) {
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Verifying deltas");
+					Mod mod = modModel.get(modList.getSelectedIndex());
+					for (ModDelta delta : mod.getModDeltas()) {
+						new DeltaWindow(mod,delta,true,false);
+					}
 				} else {
 					labelStatus.setText(".NET Framework 4.5 or higher is missing");
 					ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
@@ -2073,6 +2098,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (selectedMod.getModDeltas().size() > 0) {
 					modDeltaMenu.removeAll();
 					modDeltaMenu.add(modDeltaRevert);
+					modDeltaMenu.add(modutilsVerifyDeltas);
 					File originalVariantFolder = new File(selectedMod.getModPath() + Mod.VARIANT_FOLDER + File.separator + Mod.ORIGINAL_FOLDER);
 					modDeltaRevert.setEnabled(originalVariantFolder.exists());
 					if (originalVariantFolder.exists()) {
@@ -2093,7 +2119,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								ModManager.debugLogger.writeMessage("Applying delta " + delta.getDeltaName() + " to " + selectedMod.getModName());
-								new DeltaWindow(selectedMod, delta, false);
+								new DeltaWindow(selectedMod, delta, false,false);
 								modDeltaRevert.setEnabled(true);
 								modDeltaRevert.setText("Revert to original version");
 								modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");

@@ -16,6 +16,7 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.AutoTocWindow;
+import com.me3tweaks.modmanager.DeltaWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
@@ -1323,12 +1324,12 @@ public class Mod implements Comparable<Mod> {
 
 		//COPY DELTAS
 		if (modDeltas.size() > 0) {
-			File dir = new File(modFolder + DELTAS_FOLDER);
+			File dir = new File(modFolder + File.separator + DELTAS_FOLDER);
 			dir.mkdirs();
 			for (ModDelta delta : modDeltas) {
 				try {
 					FileUtils.copyFile(new File(delta.getDeltaFilepath()),
-							new File(dir + File.separator + DELTAS_FOLDER+ File.separator+FilenameUtils.getName(delta.getDeltaFilepath())));
+							new File(dir + File.separator + FilenameUtils.getName(delta.getDeltaFilepath())));
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Unable to copy delta:", e);
 				}
@@ -1345,6 +1346,10 @@ public class Mod implements Comparable<Mod> {
 			e.printStackTrace();
 		}
 		Mod newMod = new Mod(modFolder + File.separator + "moddesc.ini");
+		for (ModDelta delta : newMod.getModDeltas()) {
+			new DeltaWindow(newMod, delta, true, true);
+		}
+		
 		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		return newMod;
 	}

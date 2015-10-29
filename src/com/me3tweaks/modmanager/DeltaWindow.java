@@ -76,6 +76,7 @@ public class DeltaWindow extends JDialog {
 	Document doc;
 	private Mod mod;
 	private ModDelta delta;
+	private boolean deleteOnFailedVerify;
 
 	/**
 	 * Starts a delta application window for the specified mod, with the
@@ -85,14 +86,19 @@ public class DeltaWindow extends JDialog {
 	 *            mod to apply delta to
 	 * @param delta
 	 *            delta to apply
+	 * @param verifyOnly
+	 *            Setting this to true will not show any prompts until the end.
+	 *            If everything is OK (this variant can be properly applied)
+	 *            nothing will show up, otherwise it will throw a dialog.
 	 */
-	public DeltaWindow(Mod mod, ModDelta delta, boolean verifyOnly) {
+	public DeltaWindow(Mod mod, ModDelta delta, boolean verifyOnly, boolean deleteOnFailedVerify) {
 		this.mod = mod;
 		this.delta = delta;
+		this.deleteOnFailedVerify = deleteOnFailedVerify;
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		if (verifyOnly) {
+		if (!verifyOnly) {
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Switching to " + delta.getDeltaName() + " variant");
-		} 
+		}
 		new DeltaWorker(verifyOnly).execute();
 		if (verifyOnly) {
 			setupWindow();
@@ -107,7 +113,7 @@ public class DeltaWindow extends JDialog {
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImages(ModManager.ICONS);
 		JPanel panel = new JPanel(new BorderLayout());
-		JLabel operationLabel = new JLabel("Verifying variants");
+		JLabel operationLabel = new JLabel("<html>Verifying variant for " + mod.getModName() + "<br>" + delta.getDeltaName() + "</html>");
 		panel.add(operationLabel, BorderLayout.CENTER);
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		getContentPane().add(panel);
@@ -122,10 +128,14 @@ public class DeltaWindow extends JDialog {
 	 *            Mod to restore to original
 	 */
 	public DeltaWindow(Mod mod) {
-		applyVariant(mod.getModPath(), mod.getModPath() + Mod.VARIANT_FOLDER + File.separator + Mod.ORIGINAL_FOLDER);
-		new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
-		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Reverted to original version of " + mod.getModName());
-		ModManager.debugLogger.writeMessage("Completed mod delta reversion");
+		boolean switched = applyVariant(mod.getModPath(), mod.getModPath() + Mod.VARIANT_FOLDER + File.separator + Mod.ORIGINAL_FOLDER);
+		if (switched) {
+			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Reverted to original version of " + mod.getModName());
+			ModManager.debugLogger.writeMessage("Completed mod delta reversion");
+		} else {
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Did not switch to original version of " + mod.getModName());
+		}
 	}
 
 	/**
@@ -142,6 +152,7 @@ public class DeltaWindow extends JDialog {
 			this.verifyOnly = verifyOnly;
 			errors = new ArrayList<String>();
 			ModManager.debugLogger.writeMessage("============PROCESSING DELTAWORKER()==============");
+			ModManager.debugLogger.writeMessage("Running in "+(verifyOnly ? "verify only" : "apply")+ " mode");
 		}
 
 		protected Boolean doInBackground() {
@@ -253,6 +264,11 @@ public class DeltaWindow extends JDialog {
 				return false;
 			}
 
+			if (verifyOnly) {
+				performCleanup();
+				return true;
+			}
+
 			//Edits applied. Now recompile.
 			for (String coal : coalesceds) {
 				String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
@@ -354,10 +370,11 @@ public class DeltaWindow extends JDialog {
 										"file:///" + ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
 							} catch (SAXException | IOException | ParserConfigurationException e) {
 								ModManager.debugLogger.writeErrorWithException("Exception loading file into memory:", e);
-								JOptionPane.showMessageDialog(null,
-										"<html>Unable to load decompiled coalesced file into memory:<br>" + ModManager.getCompilingDir()
-												+ "coalesceds\\" + foldername + "\\" + iniFileName + ".</html>", "Delta Error",
-										JOptionPane.ERROR_MESSAGE);
+								if (!verifyOnly) {
+									JOptionPane.showMessageDialog(null, "<html>Unable to load decompiled coalesced file into memory:<br>"
+											+ ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName + ".</html>",
+											"Delta Error", JOptionPane.ERROR_MESSAGE);
+								}
 								return false;
 							}
 							iniFile.getDocumentElement().normalize();
@@ -408,9 +425,11 @@ public class DeltaWindow extends JDialog {
 										break;
 									default:
 										ModManager.debugLogger.writeError("Unknown delta property type: " + nodeName);
-										JOptionPane.showMessageDialog(null, "<html>Unknown delta property type: " + nodeName
-												+ "<br>You may need to update Mod Manager, or this delta may be invalid.", "Delta Error",
-												JOptionPane.ERROR_MESSAGE);
+										if (!verifyOnly) {
+											JOptionPane.showMessageDialog(null, "<html>Unknown delta property type: " + nodeName
+													+ "<br>You may need to update Mod Manager, or this delta may be invalid.", "Delta Error",
+													JOptionPane.ERROR_MESSAGE);
+										}
 										return false;
 									}
 
@@ -510,17 +529,22 @@ public class DeltaWindow extends JDialog {
 											dispose();
 											ModManager.debugLogger.writeError("Could not find the path to a property: " + path + ".<br>Module: "
 													+ intCoalName + "<br>File: " + iniFileName);
-											JOptionPane.showMessageDialog(null, "<html>Could not find the path to a property: " + path
-													+ ".<br>Module: " + intCoalName + "<br>File: " + iniFileName
-													+ "<br>This delta is not valid.</html>", "Delta Error", JOptionPane.ERROR_MESSAGE);
+											if (!verifyOnly) {
+												JOptionPane.showMessageDialog(null, "<html>Could not find the path to a property: " + path
+														+ ".<br>Module: " + intCoalName + "<br>File: " + iniFileName
+														+ "<br>This delta is not valid.</html>", "Delta Error", JOptionPane.ERROR_MESSAGE);
+											}
 											return false;
 										}
 									}
 									if (drilled == null) {
 										//we didn't find what we wanted...
 										dispose();
-										JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " to property.<br>Module: "
-												+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+										if (!verifyOnly) {
+											JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " to property.<br>Module: "
+													+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error",
+													JOptionPane.ERROR_MESSAGE);
+										}
 										return false;
 									}
 									if (operation.equals("addition")) {
@@ -682,14 +706,16 @@ public class DeltaWindow extends JDialog {
 													default:
 														ModManager.debugLogger.writeError("ERROR: Unknown matching algorithm: " + arrayType
 																+ ". does this client need updated? Aborting this stat update.");
-														JOptionPane
-																.showMessageDialog(
-																		null,
-																		"<html>Unsupported delta matching algorithm: "
-																				+ arrayType
-																				+ ".<br>Mod Manager may need to be updated to support this, or the delta may be incorrect.<br>"
-																				+ "This part of the delta will be skipped.</html>", "Delta Error",
-																		JOptionPane.ERROR_MESSAGE);
+														if (!verifyOnly) {
+															JOptionPane
+																	.showMessageDialog(
+																			null,
+																			"<html>Unsupported delta matching algorithm: "
+																					+ arrayType
+																					+ ".<br>Mod Manager may need to be updated to support this, or the delta may be incorrect.<br>"
+																					+ "This part of the delta will be skipped.</html>",
+																			"Delta Error", JOptionPane.ERROR_MESSAGE);
+														}
 														break;
 													} //end matching algorithm switch
 													if (match) {
@@ -708,13 +734,15 @@ public class DeltaWindow extends JDialog {
 														default:
 															ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm: " + arrayType
 																	+ " does this client need updated? Aborting this stat update.");
-															JOptionPane
-																	.showMessageDialog(
-																			null,
-																			"<html>Unsupported delta operation: "
-																					+ operation
-																					+ ".<br>Mod Manager may need to be updated to support this, or the delta may be incorrect.</html>",
-																			"Delta Error", JOptionPane.ERROR_MESSAGE);
+															if (!verifyOnly) {
+																JOptionPane
+																		.showMessageDialog(
+																				null,
+																				"<html>Unsupported delta operation: "
+																						+ operation
+																						+ ".<br>Mod Manager may need to be updated to support this, or the delta may be incorrect.</html>",
+																				"Delta Error", JOptionPane.ERROR_MESSAGE);
+															}
 															return false;
 														} //end operation [switch]
 														break;
@@ -724,6 +752,9 @@ public class DeltaWindow extends JDialog {
 										} //end of property = element node (not junk) [if]
 									} //end of props.length to search through. [for loop]
 									if (foundProperty != true) {
+										if (verifyOnly) {
+											return false;
+										}
 										StringBuilder sb = new StringBuilder();
 										sb.append("<html>Could not find the following attribute:<br>");
 										sb.append("Coalesced File: ");
@@ -755,31 +786,34 @@ public class DeltaWindow extends JDialog {
 										sb.append("New data: ");
 										sb.append(newValue);
 										sb.append("</html>");
-
-										JOptionPane.showMessageDialog(null, sb.toString(), "Delta Error", JOptionPane.ERROR_MESSAGE);
-										ModManager.debugLogger.writeMessage(sb.toString());
+										if (!verifyOnly) {
+											JOptionPane.showMessageDialog(null, sb.toString(), "Delta Error", JOptionPane.ERROR_MESSAGE);
+										}
+										ModManager.debugLogger.writeError(sb.toString());
 										return false;
 									}
 								}
 							}
 							//end of the file node.
 							//Time to save the file...
-							try {
-								Transformer transformer = TransformerFactory.newInstance().newTransformer();
-								transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-								transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "1");
-								File outputFile = new File(ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
-								Result output = new StreamResult(outputFile);
-								Source input = new DOMSource(iniFile);
-								ModManager.debugLogger.writeMessage("Saving file: " + outputFile.toString());
-								transformer.transform(input, output);
-								ModManager.debugLogger.writeMessage("File saved: " + outputFile.toString());
-								//go to next file
-							} catch (TransformerFactoryConfigurationError | TransformerException e) {
-								ModManager.debugLogger.writeErrorWithException("Error saving modified file!", e);
-								JOptionPane.showMessageDialog(null, "<html>Error occured saving file: " + e.getMessage() + "</html>", "Delta Error",
-										JOptionPane.ERROR_MESSAGE);
-								return false;
+							if (!verifyOnly) {
+								try {
+									Transformer transformer = TransformerFactory.newInstance().newTransformer();
+									transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+									transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "1");
+									File outputFile = new File(ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
+									Result output = new StreamResult(outputFile);
+									Source input = new DOMSource(iniFile);
+									ModManager.debugLogger.writeMessage("Saving file: " + outputFile.toString());
+									transformer.transform(input, output);
+									ModManager.debugLogger.writeMessage("File saved: " + outputFile.toString());
+									//go to next file
+								} catch (TransformerFactoryConfigurationError | TransformerException e) {
+									ModManager.debugLogger.writeErrorWithException("Error saving modified file!", e);
+									JOptionPane.showMessageDialog(null, "<html>Error occured saving file: " + e.getMessage() + "</html>",
+											"Delta Error", JOptionPane.ERROR_MESSAGE);
+									return false;
+								}
 							}
 
 						}
@@ -795,10 +829,21 @@ public class DeltaWindow extends JDialog {
 
 		protected void done() {
 			boolean success = false;
+			dispose();
 			try {
 				success = get(); // this line can throw InterruptedException or ExecutionException
-				if (success) {
+				if (success && !verifyOnly) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Switched to variant: " + delta.getDeltaName());
+				} else if (success && verifyOnly) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Verified variant: " + delta.getDeltaName());
+				} else if (!success && verifyOnly) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Verification failed: " + delta.getDeltaName());
+					if (deleteOnFailedVerify) {
+						FileUtils.deleteQuietly(new File(delta.getDeltaFilepath()));
+					}
+					JOptionPane.showMessageDialog(DeltaWindow.this,
+							"This variant will not be able to fully apply to this mod:\n - " + delta.getDeltaName()+(deleteOnFailedVerify ? "\n\nThis variant will be unavailable for this mod." :""), "Delta Verification Error",
+							JOptionPane.ERROR_MESSAGE);
 				} else {
 					StringBuilder sb = new StringBuilder();
 					for (String str : errors) {
@@ -824,13 +869,21 @@ public class DeltaWindow extends JDialog {
 		}
 	}
 
-	private void applyVariant(String modFolder, String variantFolder) {
-		try {
-			ModManager.debugLogger.writeMessage("Applying Variant: " + variantFolder + " => " + modFolder);
-			FileUtils.copyDirectory(new File(variantFolder), new File(modFolder));
-			ModManager.debugLogger.writeMessage("Variant applied");
-		} catch (IOException e) {
-			ModManager.debugLogger.writeErrorWithException("Unable to apply variant:", e);
+	private boolean applyVariant(String modFolder, String variantFolder) {
+		if (new File(variantFolder).exists()) {
+			try {
+				ModManager.debugLogger.writeMessage("Applying Variant: " + variantFolder + " => " + modFolder);
+				FileUtils.copyDirectory(new File(variantFolder), new File(modFolder));
+				ModManager.debugLogger.writeMessage("Variant applied");
+				return true;
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException("Unable to apply variant:", e);
+				return false;
+			}
+		} else {
+			ModManager.debugLogger
+					.writeMessage("Unable to apply variant: Source folder doesn't exist. If applying original (during merge phase) this means the mod may not have been switched before.");
+			return false;
 		}
 	}
 }
