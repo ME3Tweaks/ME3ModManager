@@ -159,8 +159,9 @@ public class MountFileEditorWindow extends JDialog {
 
 		mountFlagsCombobox = new JComboBox<MountFlag>();
 		flagModel = new DefaultComboBoxModel<MountFlag>();
+		flagModel.addElement(new MountFlag("SP | Does not require DLC in save file", 8));
 		flagModel.addElement(new MountFlag("SP | Requires DLC in save file", 9));
-		flagModel.addElement(new MountFlag("SP/MP | Does not require DLC in save file", 28));
+		flagModel.addElement(new MountFlag("SP&MP | Does not require DLC in save file", 28));
 		flagModel.addElement(new MountFlag("MP (PATCH) | Loads in MP", 12));
 		flagModel.addElement(new MountFlag("MP | Loads in MP", 20));
 		flagModel.addElement(new MountFlag("MP | Loads in MP", 52));
