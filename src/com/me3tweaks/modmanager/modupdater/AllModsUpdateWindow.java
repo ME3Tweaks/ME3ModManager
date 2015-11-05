@@ -159,7 +159,7 @@ public class AllModsUpdateWindow extends JDialog {
 				publish(new Integer(numToGo));
 				ModManager.debugLogger.writeMessage("Processing: " + upackage.getMod().getModName());
 				ModUpdateWindow muw = new ModUpdateWindow(upackage);
-				muw.startAllModsUpdate(AllModsUpdateWindow.this);
+				boolean success = muw.startAllModsUpdate(AllModsUpdateWindow.this);
 				while (muw.isShowing()) {
 					Thread.sleep(350);
 				}

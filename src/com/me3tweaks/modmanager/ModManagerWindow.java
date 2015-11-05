@@ -1868,8 +1868,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * 
 	 * @return True if valid, false otherwise
 	 */
-	private boolean validateBIOGameDir() {
-		File coalesced = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + "CookedPCConsole\\Coalesced.bin");
+	public static boolean validateBIOGameDir() {
+		File coalesced = new File(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + "CookedPCConsole\\Coalesced.bin");
 		if (coalesced.exists()) {
 			return true;
 		} else {
