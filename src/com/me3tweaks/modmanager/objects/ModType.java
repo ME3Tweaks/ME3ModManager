@@ -54,7 +54,7 @@ public class ModType {
 
 	/**
 	 * Gets the list of standard folders in the DLC folder. Includes the __metadata directory.
-	 * @return
+	 * @return Arraylist of strings of things like DLC_CON_MP1 etc. Does not include DLC_TESTPATCH.
 	 */
 	public static ArrayList<String> getStandardDLCFolders() {
 		ArrayList<String> foldernames = new ArrayList<String>();
@@ -74,7 +74,6 @@ public class ModType {
 		foldernames.add("DLC_CON_APP01");
 		foldernames.add("DLC_CON_GUN01");
 		foldernames.add("DLC_CON_GUN02");
-		foldernames.add("DLC_CON_DH1");
 		foldernames.add("DLC_CON_DH1");
 		foldernames.add("DLC_OnlinePassHidCE");
 		foldernames.add("__metadata"); //don't delete
@@ -252,11 +251,11 @@ public class ModType {
 	}
 
 	public static String[] getSPHeaderNameArray() {
-		return new String[] { COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1 };
+		return new String[] { COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1, TESTPATCH };
 	}
 
 	public static String[] getSPBaseHeaderNameArray() {
-		return new String[] { BASEGAME, COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1};
+		return new String[] { BASEGAME, COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1, TESTPATCH};
 	}
 	
 	public static String[] getDLCHeaderNameArray() {
@@ -269,5 +268,22 @@ public class ModType {
 
 	public static String[] getMPBaseHeaderNameArray() {
 		return new String[] { BASEGAME, MP1, MP2, MP3, MP4, MP5, PATCH1, PATCH2, TESTPATCH };
+	}
+
+	/**
+	 * Checks if the the parameter is in the list of known DLC foldernames.
+	 * @param destFolder foldername to check
+	 * @return true if in the list, false otherwise. Comparison is done case insensitively.
+	 */
+	public static boolean isKnownDLCFolder(String destFolder) {
+		for (String knownFolder : getStandardDLCFolders()) {
+			if (destFolder.equalsIgnoreCase(knownFolder)) {
+				return true;
+			}
+		}
+		if (destFolder.equalsIgnoreCase("DLC_TestPatch")) {
+			return true;
+		}
+		return false;
 	}
 }

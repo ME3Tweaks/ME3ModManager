@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -52,6 +53,7 @@ public class ModInstallWindow extends JDialog {
 	JProgressBar progressBar;
 	HashMap<String, String> alternativeTOCFiles;
 	ModManagerWindow callingWindow;
+	public final static String CUSTOMDLC_METADATA_FILE = "_metacmm.txt";
 
 	public ModInstallWindow(ModManagerWindow callingWindow, ModJob[] jobs, String bioGameDir, Mod mod) {
 		// callingWindow.setEnabled(false);
@@ -959,9 +961,10 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("===Processing a customdlc job===");
 
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
-
+			HashSet<String> relativeDlcDirs = new HashSet<String>();
 			for (int i = 0; i < job.getFilesToReplaceTargets().size(); i++) {
-				String fileDestination = dlcdir + job.getFilesToReplaceTargets().get(i);
+				String target = job.getFilesToReplaceTargets().get(i);
+				String fileDestination = dlcdir + target;
 				String fileSource = job.getFilesToReplace().get(i);
 				// install file.
 				try {
@@ -974,8 +977,18 @@ public class ModInstallWindow extends JDialog {
 					Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
 					ModManager.debugLogger.writeMessage("Installed mod file: " + dest.getAbsolutePath());
 				} catch (IOException e) {
-					ModManager.debugLogger.writeException(e);
+					ModManager.debugLogger.writeErrorWithException("Installing custom dlc file failed:", e);
 					return false;
+				}
+			}
+			//create metadata file
+			for (String str : job.getDestFolders()) {
+				try {
+					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
+					ModManager.debugLogger.writeMessage("Writing custom DLC metadata file: " + metadatapath);
+					FileUtils.writeStringToFile(new File(metadatapath), mod.getModName());
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Couldn't write custom dlc metadata file:", e);
 				}
 			}
 			return true;
@@ -983,7 +996,6 @@ public class ModInstallWindow extends JDialog {
 
 		@Override
 		protected void process(List<String> updates) {
-			// System.out.println("Restoring next DLC");
 			for (String update : updates) {
 				try {
 

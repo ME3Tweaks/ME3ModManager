@@ -38,6 +38,7 @@ import org.apache.commons.io.FileUtils;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.MountFlagCellRenderer;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class MountFileEditorWindow extends JDialog {
 	private static final int MOUNTDLC_LENGTH = 108;
@@ -361,8 +362,7 @@ public class MountFileEditorWindow extends JDialog {
 					"Invalid DLC TLK ID", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
-
-		return false;
+		return true;
 	}
 
 	private void loadMount(String path) {
@@ -455,5 +455,38 @@ public class MountFileEditorWindow extends JDialog {
 	public static void main(String[] args) {
 		MountFileEditorWindow.ISRUNNINGASMAIN = true;
 		new MountFileEditorWindow();
+	}
+
+	public static String getMountDescription(File mountFile) {
+		byte[] data;
+		try {
+			data = Files.readAllBytes(mountFile.toPath());
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("Failed to read mountfile:", e);
+			return "I/O Exception";
+		}
+		if (data.length != MOUNTDLC_LENGTH) {
+			return "Invalid Mount File (size)";
+		}
+
+		//MOUNT FLAG (8-BIT)
+		byte mountFlagVal = data[MPSPFLAG_OFFSET];
+		switch (mountFlagVal) {
+		case 8:
+			return "SP | Not required 0x"+ Integer.toString(8,16);
+		case 9:
+			return "SP | Required 0x"+ Integer.toString(9,16);
+		case 28:
+			return "SP&MP | Not required (SP) 0x"+ Integer.toString(28,16);
+		case 12:
+			return "MP (PATCH)| Loads in MP 0x"+ Integer.toString(12,16);
+		case 20:
+			return "MP | Loads in MP 0x"+ Integer.toString(20,16);
+		case 52:
+			return "MP | Loads in MP 0x"+ Integer.toString(52,16);
+		default:
+			return "Unknown Mount Flag: 0x"+Integer.toString(mountFlagVal, 16);
+		
+		}
 	}
 }

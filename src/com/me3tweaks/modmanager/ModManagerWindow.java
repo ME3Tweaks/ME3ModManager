@@ -117,6 +117,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem restoreRevertUnpacked;
 	private JMenuItem restoreRevertBasegameUnpacked;
 	private JMenuItem restoredeleteAllCustomDLC;
+	private JMenuItem restoreCustomDLCManager;
 	private JMenuItem backupBasegameUnpacked;
 	private JMenuItem toolsUnpackDLC;
 	private JMenuItem modDeltaRevert;
@@ -993,6 +994,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoredeleteAllCustomDLC = new JMenuItem("Remove all Custom DLC");
 		restoredeleteAllCustomDLC.setToolTipText("<html>Deletes all non standard DLC folders in the DLC directory</html>");
 
+		restoreCustomDLCManager = new JMenuItem("Custom DLC Manager");
+		restoreCustomDLCManager.setToolTipText("<html>Allows selectively removing Custom DLC modules and indicates if MP is affected</html>");
+
 		restoreRevertBasegame = new JMenuItem("Restore basegame files");
 		restoreRevertBasegame.setToolTipText("<html>Restores all basegame files that have been modified by installing mods</html>");
 
@@ -1028,6 +1032,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertEverything.addActionListener(this);
 		restoreDeleteUnpacked.addActionListener(this);
 		restoredeleteAllCustomDLC.addActionListener(this);
+		restoreCustomDLCManager.addActionListener(this);
 		restoreRevertBasegame.addActionListener(this);
 		restoreRevertUnpacked.addActionListener(this);
 		restoreVanillifyDLC.addActionListener(this);
@@ -1043,6 +1048,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreMenu.add(restoreDeleteUnpacked);
 		restoreMenu.addSeparator();
 		restoreMenu.add(restoredeleteAllCustomDLC);
+		restoreMenu.add(restoreCustomDLCManager);
 		restoreMenu.addSeparator();
 		restoreMenu.add(restoreRevertBasegame);
 		restoreMenu.add(restoreRevertUnpacked);
@@ -1237,12 +1243,30 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == restoredeleteAllCustomDLC) {
 			if (validateBIOGameDir()) {
-				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.REMOVECUSTOMDLC);
+				if (JOptionPane
+						.showConfirmDialog(
+								this,
+								"This will delete all folders in the BIOGame/DLC folder that aren't known to be official.\nDelete all custom DLC?",
+								"Delete all Custom DLC", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+
+					restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.REMOVECUSTOMDLC);
+				}
 			} else {
 				labelStatus.setText("Can't remove custom DLC with invalid BIOGame directory");
 				JOptionPane.showMessageDialog(null,
 						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
+		} else if (e.getSource() == restoreCustomDLCManager) {
+			if (validateBIOGameDir()) {
+				new CustomDLCWindow(fieldBiogameDir.getText());
+			} else {
+				labelStatus.setText("Custom DLC Manager requires valid BIOGame directory");
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BioGame directory is not valid.\nCustom DLC Manager requires a valid directory.\nFix the BioGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertBasegame) {
 			if (validateBIOGameDir()) {
@@ -1592,23 +1616,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
 			}
 		} else if (e.getSource() == modutilsVerifyDeltas) {
-			if (validateBIOGameDir()) {
-				if (ModManager.validateNETFrameworkIsInstalled()) {
-					ModManager.debugLogger.writeMessage("Verifying deltas");
-					Mod mod = modModel.get(modList.getSelectedIndex());
-					for (ModDelta delta : mod.getModDeltas()) {
-						new DeltaWindow(mod, delta, true, false);
-					}
-				} else {
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
-					ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Verifying deltas");
+				Mod mod = modModel.get(modList.getSelectedIndex());
+				for (ModDelta delta : mod.getModDeltas()) {
+					new DeltaWindow(mod, delta, true, false);
 				}
 			} else {
-				labelStatus.setText("Switching variants requires a valid BIOGame folder");
-				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
 			}
 		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
 			ModManager.debugLogger.writeMessage(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
