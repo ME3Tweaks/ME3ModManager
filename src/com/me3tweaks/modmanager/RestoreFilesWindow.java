@@ -89,7 +89,7 @@ public class RestoreFilesWindow extends JDialog {
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("Restoring game files");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(430, 240));
+		this.setPreferredSize(new Dimension(350, 240));
 		this.setResizable(false);
 		this.setIconImages(ModManager.ICONS);
 
@@ -373,7 +373,7 @@ public class RestoreFilesWindow extends JDialog {
 				String specificdlcbackupfolder = dlcbackupfolder + dlcFolderMap.get(header);
 				File backupdir = new File(specificdlcbackupfolder);
 				if (backupdir.exists()) {
-					Collection<File> backupfiles = FileUtils.listFiles(new File(backupfolder), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+					Collection<File> backupfiles = FileUtils.listFiles(backupdir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 					for (File backup : backupfiles) {
 						String taskTitle = backup.getAbsolutePath().startsWith(dlcbackupfolder) ? "UNPACKED DLC" : "BASEGAME";
 						//verify it.

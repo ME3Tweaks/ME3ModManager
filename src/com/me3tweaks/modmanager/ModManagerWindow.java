@@ -2135,7 +2135,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					modNoDeltas.setVisible(false);
 					for (ModDelta delta : selectedMod.getModDeltas()) {
 						JMenuItem deltaItem = new JMenuItem(delta.getDeltaName());
-						deltaItem.setToolTipText(delta.getDeltaDescription());
+						deltaItem.setToolTipText("<html>"+delta.getDeltaDescription()+"</html>");
 						deltaItem.addActionListener(new ActionListener() {
 							@Override
 							public void actionPerformed(ActionEvent e) {

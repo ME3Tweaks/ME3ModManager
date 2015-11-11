@@ -14,6 +14,7 @@ import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -68,6 +69,7 @@ public class SelectiveRestoreWindow extends JDialog {
 	 * @param BioGameDir
 	 */
 	public SelectiveRestoreWindow(String BioGameDir) {
+		ModManager.debugLogger.writeMessage("==============STARTING THE SELECTIVE RESTORE WINDOW==============");
 		// callingWindow.setEnabled(false);
 		this.BioGameDir = BioGameDir;
 		setupWindow();
@@ -95,9 +97,11 @@ public class SelectiveRestoreWindow extends JDialog {
 		//TABLE
 		Action restoreSfar = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
+				
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String header = (String) table.getModel().getValueAt(modelRow, COL_HUMNAME);
+				ModManager.debugLogger.writeMessage("==RESTORE SFAR CLICKED: "+header+"==");
 				new RestoreFilesWindow(BioGameDir, header, RestoreMode.SFAR_HEADER_RESTORE);
 				updateTable();
 			}
@@ -107,6 +111,7 @@ public class SelectiveRestoreWindow extends JDialog {
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String header = (String) table.getModel().getValueAt(modelRow, COL_HUMNAME);
+				ModManager.debugLogger.writeMessage("==RESTORE UNPACKED CLICKED: "+header+"==");
 				new RestoreFilesWindow(BioGameDir, header, RestoreMode.UNPACKED_HEADER_RESTORE);
 				updateTable();
 			}
@@ -120,6 +125,7 @@ public class SelectiveRestoreWindow extends JDialog {
 						+ "?\nThis will additionally delete any unpacked backups Mod Manager has made of these files.", "Delete Unpacked Files",
 						JOptionPane.WARNING_MESSAGE);
 				if (result == JOptionPane.YES_OPTION) {
+					ModManager.debugLogger.writeMessage("==DELETE UNPACKED CLICKED: "+header+"==");
 					new RestoreFilesWindow(BioGameDir, header, RestoreMode.UNPACKED_HEADER_DELETE);
 					updateTable();
 				}
@@ -154,7 +160,9 @@ public class SelectiveRestoreWindow extends JDialog {
 		JPanel basegamePanel = new JPanel();
 		basegamePanel.setLayout(new BoxLayout(basegamePanel, BoxLayout.LINE_AXIS));
 		basegameRestoreButton = new JButton();
-		basegameFolderButton = new JButton("Open basegame backup folder");
+		basegameFolderButton = new JButton("Open backup folder");
+		basegameFolderButton.setToolTipText("<html>Opens the Mod Manager file backup folder</html>");
+
 		basegameRestoreButton.addActionListener(new ActionListener() {
 			
 			@Override
@@ -189,17 +197,24 @@ public class SelectiveRestoreWindow extends JDialog {
 			if (numfiles < 1) {
 				basegameRestoreButton.setText("No basegame files backed up yet");
 				basegameRestoreButton.setEnabled(false);
+				basegameRestoreButton.setToolTipText("<html>Mod Manager has not backed up any files that mods have modified yet.</html>");
 			} else {
 				basegameRestoreButton.setText("Restore "+numfiles+" basegame file"+((numfiles != 1) ? "s":""));
 				basegameRestoreButton.setEnabled(true);
+				basegameRestoreButton.setToolTipText("<html>Mod Manager has backed up basegame files as mods were installed.<br>Click this button to restore them.</html>");
 			}
 		} else {
 			basegameRestoreButton.setText("No basegame files backed up yet");
+			basegameRestoreButton.setToolTipText("<html>Mod Manager has not backed up any files that mods have modified yet.</html>");
 			basegameRestoreButton.setEnabled(false);
 		}
 
+		basegamePanel.add(Box.createHorizontalGlue());
 		basegamePanel.add(basegameRestoreButton);
+		basegamePanel.add(Box.createRigidArea(new Dimension(15,15)));
+
 		basegamePanel.add(basegameFolderButton);
+		basegamePanel.add(Box.createHorizontalGlue());
 
 		rootPanel.add(basegamePanel, BorderLayout.SOUTH);
 
@@ -221,6 +236,7 @@ public class SelectiveRestoreWindow extends JDialog {
 	 * Updates data in the dlcTableData table
 	 */
 	protected void updateTable() {
+		ModManager.debugLogger.writeMessage("===UPDATING CUSTOM RESTORE TABLE===");
 		HashMap<String, Long> sizesMap = ModType.getSizesMap();
 		HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
 
@@ -296,6 +312,7 @@ public class SelectiveRestoreWindow extends JDialog {
 				continue;
 			}
 		}
+		ModManager.debugLogger.writeMessage("===END OF UPDATING CUSTOM RESTORE TABLE===");
 	}
 
 	private void setDLCNotInstalled(int i) {
@@ -320,7 +337,6 @@ public class SelectiveRestoreWindow extends JDialog {
 					if (file.isFile()) {
 						String filepath = file.getAbsolutePath();
 						if (!filepath.endsWith(".sfar") && !filepath.endsWith(".bak")) {
-							ModManager.debugLogger.writeMessage("Unpacked file: " + filepath);
 							filepaths.add(filepath);
 						}
 					}
@@ -328,7 +344,7 @@ public class SelectiveRestoreWindow extends JDialog {
 				//find PCConsoleTOC.bin for it
 				File dlcConsoleTOC = new File(ModManager.appendSlash(dlcDirectory.getParent()) + "PCConsoleTOC.bin");
 				if (dlcConsoleTOC.exists()) {
-					ModManager.debugLogger.writeMessage("Unpacked file: " + dlcConsoleTOC.getAbsolutePath());
+					//ModManager.debugLogger.writeMessage("Unpacked file: " + dlcConsoleTOC.getAbsolutePath());
 					filepaths.add(dlcConsoleTOC.getAbsolutePath());
 				}
 			}

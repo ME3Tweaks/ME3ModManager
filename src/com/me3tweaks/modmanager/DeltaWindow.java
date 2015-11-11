@@ -789,6 +789,7 @@ public class DeltaWindow extends JDialog {
 										if (!verifyOnly) {
 											JOptionPane.showMessageDialog(null, sb.toString(), "Delta Error", JOptionPane.ERROR_MESSAGE);
 										}
+										addNewError("Could not find a property to update/remove.");
 										ModManager.debugLogger.writeError(sb.toString());
 										return false;
 									}
