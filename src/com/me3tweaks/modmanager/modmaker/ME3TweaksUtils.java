@@ -281,6 +281,64 @@ public class ME3TweaksUtils {
 			return "CITADEL";
 		case "CITADEL_BASE":
 			return "CITADEL_BASE";
+		case "GENESIS2":
+			return "GENESIS2";
+		case "COLLECTORS_EDITION":
+			return "OnlinePassHidCE";
+		default:
+			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => INTERNAL " + header);
+			return null;
+		}
+	}
+	
+	/**
+	 * Converts ModDesc.ini headers and job names into DLC folder names. These should be used for making mod folders. This is not the folders in the game that a DLC is placed in.
+	 * 
+	 * @param header Header to lookup
+	 * @return local DLC name, such as MP1 or HEN_PR
+	 */
+	public static String headerNameToShortDLCFolderName(String header) {
+		switch (header) {
+		case "RESURGENCE":
+			return "MP1";
+		case "REBELLION":
+			return "MP2";
+		case "EARTH":
+			return "MP3";
+		case "RETALIATION":
+			return "MP4";
+		case "RECKONING":
+			return "MP5";
+		case "PATCH1":
+			return "PATCH1";
+		case "PATCH2":
+			return "PATCH2";
+		case "BASEGAME":
+			return "BASEGAME";
+		case "TESTPATCH":
+			return "TESTPATCH";
+		case "FROM_ASHES":
+			return "HEN_PR";
+		case "APPEARANCE":
+			return "APP01";
+		case "FIREFIGHT":
+			return "GUN01";
+		case "GROUNDSIDE":
+			return "GUN02";
+		case "EXTENDED_CUT":
+			return "END";
+		case "LEVIATHAN":
+			return "EXP001";
+		case "OMEGA":
+			return "EXP002";
+		case "CITADEL":
+			return "EXP003";
+		case "CITADEL_BASE":
+			return "EXP003_BASE";
+		case "GENESIS2":
+			return "DH1";
+		case "COLLECTORS_EDITION":
+			return "OnlinePassHidCE";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => INTERNAL " + header);
 			return null;

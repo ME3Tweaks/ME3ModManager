@@ -54,7 +54,7 @@ public class ModType {
 
 	/**
 	 * Gets the list of standard folders in the DLC folder. Includes the __metadata directory.
-	 * @return
+	 * @return Arraylist of strings of things like DLC_CON_MP1 etc. Does not include DLC_TESTPATCH.
 	 */
 	public static ArrayList<String> getStandardDLCFolders() {
 		ArrayList<String> foldernames = new ArrayList<String>();
@@ -75,9 +75,32 @@ public class ModType {
 		foldernames.add("DLC_CON_GUN01");
 		foldernames.add("DLC_CON_GUN02");
 		foldernames.add("DLC_CON_DH1");
-		foldernames.add("DLC_CON_DH1");
 		foldernames.add("DLC_OnlinePassHidCE");
 		foldernames.add("__metadata"); //don't delete
+		return foldernames;
+	}
+	
+	public static HashMap<String,String> getHeaderFolderMap() {
+		HashMap<String,String> foldernames = new HashMap<String,String>();
+		foldernames.put(MP1,"DLC_CON_MP1");
+		foldernames.put(MP2,"DLC_CON_MP2");
+		foldernames.put(MP3,"DLC_CON_MP3");
+		foldernames.put(MP4,"DLC_CON_MP4");
+		foldernames.put(MP5,"DLC_CON_MP5");
+		foldernames.put(PATCH1,"DLC_UPD_Patch01");
+		foldernames.put(PATCH2,"DLC_UPD_Patch02");
+		foldernames.put(HEN_PR,"DLC_HEN_PR");
+		foldernames.put(TESTPATCH,"DLC_TESTPATCH");
+		foldernames.put(END,"DLC_CON_END");
+		foldernames.put(EXP1,"DLC_EXP_Pack001");
+		foldernames.put(EXP2,"DLC_EXP_Pack002");
+		foldernames.put(EXP3,"DLC_EXP_Pack003");
+		foldernames.put(EXP3B,"DLC_EXP_Pack003_Base");
+		foldernames.put(APP01,"DLC_CON_APP01");
+		foldernames.put(GUN01,"DLC_CON_GUN01");
+		foldernames.put(GUN02,"DLC_CON_GUN02");
+		foldernames.put(DH1,"DLC_CON_DH1");
+		foldernames.put(COLLECTORSEDITION,"DLC_OnlinePassHidCE");
 		return foldernames;
 	}
 
@@ -252,11 +275,11 @@ public class ModType {
 	}
 
 	public static String[] getSPHeaderNameArray() {
-		return new String[] { COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1 };
+		return new String[] { COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1, TESTPATCH };
 	}
 
 	public static String[] getSPBaseHeaderNameArray() {
-		return new String[] { BASEGAME, COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1};
+		return new String[] { BASEGAME, COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1, TESTPATCH};
 	}
 	
 	public static String[] getDLCHeaderNameArray() {
@@ -269,5 +292,22 @@ public class ModType {
 
 	public static String[] getMPBaseHeaderNameArray() {
 		return new String[] { BASEGAME, MP1, MP2, MP3, MP4, MP5, PATCH1, PATCH2, TESTPATCH };
+	}
+
+	/**
+	 * Checks if the the parameter is in the list of known DLC foldernames.
+	 * @param destFolder foldername to check
+	 * @return true if in the list, false otherwise. Comparison is done case insensitively.
+	 */
+	public static boolean isKnownDLCFolder(String destFolder) {
+		for (String knownFolder : getStandardDLCFolders()) {
+			if (destFolder.equalsIgnoreCase(knownFolder)) {
+				return true;
+			}
+		}
+		if (destFolder.equalsIgnoreCase("DLC_TestPatch")) {
+			return true;
+		}
+		return false;
 	}
 }
