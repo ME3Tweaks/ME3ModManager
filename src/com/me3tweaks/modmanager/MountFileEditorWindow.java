@@ -361,8 +361,7 @@ public class MountFileEditorWindow extends JDialog {
 					"Invalid DLC TLK ID", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
-
-		return false;
+		return true;
 	}
 
 	private void loadMount(String path) {
