@@ -4,9 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -72,6 +69,7 @@ import com.me3tweaks.modmanager.objects.RestoreMode;
 import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
@@ -98,8 +96,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32,
 			toolsMountdlcEditor;
-	JMenuItem restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
-			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
+	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC,
+			restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
 			sqlConsumableParser, sqlGearParser;
 	//JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
@@ -980,6 +978,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// RESTORE
 		restoreMenu = new JMenu("Restore");
+
+		restoreSelective = new JMenuItem("Custom Restore");
+		restoreSelective.setToolTipText("Allows you to restore specific basegame, DLC, and unpacked files");
+
 		restoreRevertEverything = new JMenuItem("Restore everything");
 		restoreRevertEverything
 				.setToolTipText("<html>Restores all basegame files, unpacked DLC files, and restores all SFAR files.<br>This will delete any non standard DLC folders.</html>");
@@ -1029,6 +1031,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertCoal = new JMenuItem("Restore vanilla Coalesced.bin");
 		restoreRevertCoal.setToolTipText("<html>Restores the basegame coalesced file</html>");
 
+		restoreSelective.addActionListener(this);
 		restoreRevertEverything.addActionListener(this);
 		restoreDeleteUnpacked.addActionListener(this);
 		restoredeleteAllCustomDLC.addActionListener(this);
@@ -1044,15 +1047,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertMPBaseDLC.addActionListener(this);
 		restoreRevertCoal.addActionListener(this);
 
-		restoreMenu.add(restoreRevertEverything);
-		restoreMenu.add(restoreDeleteUnpacked);
-		restoreMenu.addSeparator();
-		restoreMenu.add(restoredeleteAllCustomDLC);
+		
+		restoreMenu.add(restoreSelective);
 		restoreMenu.add(restoreCustomDLCManager);
+		restoreMenu.addSeparator();
+		restoreMenu.add(restoreRevertEverything);
+		restoreMenu.add(restoredeleteAllCustomDLC);
 		restoreMenu.addSeparator();
 		restoreMenu.add(restoreRevertBasegame);
 		restoreMenu.add(restoreRevertUnpacked);
 		restoreMenu.add(restoreRevertBasegameUnpacked);
+		restoreMenu.add(restoreDeleteUnpacked);
 		restoreMenu.addSeparator();
 		restoreMenu.add(restoreVanillifyDLC);
 		restoreMenu.add(restoreRevertAllDLC);
@@ -1243,11 +1248,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == restoredeleteAllCustomDLC) {
 			if (validateBIOGameDir()) {
-				if (JOptionPane
-						.showConfirmDialog(
-								this,
-								"This will delete all folders in the BIOGame/DLC folder that aren't known to be official.\nDelete all custom DLC?",
-								"Delete all Custom DLC", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+				if (JOptionPane.showConfirmDialog(this,
+						"This will delete all folders in the BIOGame/DLC folder that aren't known to be official.\nDelete all custom DLC?",
+						"Delete all Custom DLC", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
 
 					restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.REMOVECUSTOMDLC);
 				}
@@ -1266,6 +1269,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						.showMessageDialog(
 								null,
 								"The BioGame directory is not valid.\nCustom DLC Manager requires a valid directory.\nFix the BioGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
+		} else if (e.getSource() == restoreSelective) {
+			if (validateBIOGameDir()) {
+				new SelectiveRestoreWindow(fieldBiogameDir.getText());
+			} else {
+				labelStatus.setText("Custom Restore requires valid BIOGame directory");
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BioGame directory is not valid.\nCustom Restore requires a valid directory.\nFix the BioGame directory before continuing.",
 								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertBasegame) {
@@ -1488,7 +1502,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5 or higher in order to run.");
 			}
 		} else if (e.getSource() == toolTankmasterCoalFolder) {
-			openDir(ModManager.getTankMasterCompilerDir());
+			ResourceUtils.openDir(ModManager.getTankMasterCompilerDir());
 		} else if (e.getSource() == toolTankmasterTLK) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
@@ -1749,20 +1763,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
-	/**
-	 * Opens a directory in Windows Explorer.
-	 * 
-	 * @param dir
-	 *            Directory to open
-	 */
-	private void openDir(String dir) {
-		try {
-			Desktop.getDesktop().open(new File(dir));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
-		}
-	}
+	
 
 	/**
 	 * Deletes the Custom DLC of this mod selected
@@ -2230,7 +2231,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private boolean restoreDataFiles(String bioGameDir, int restoreMode) {
 		// Check to make sure biogame is correct
 		if (validateBIOGameDir()) {
-			new RestoreFilesWindow(this, bioGameDir, restoreMode);
+			new RestoreFilesWindow(bioGameDir, restoreMode);
 			return true;
 		} else {
 			labelStatus.setText("Invalid BioGame Directory");

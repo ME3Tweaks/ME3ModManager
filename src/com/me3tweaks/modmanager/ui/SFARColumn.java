@@ -20,7 +20,7 @@ import javax.swing.table.*;
  * number of the button that was clicked.
  *
  */
-public class ButtonColumn extends AbstractCellEditor implements TableCellRenderer, TableCellEditor, ActionListener, MouseListener {
+public class SFARColumn extends AbstractCellEditor implements TableCellRenderer, TableCellEditor, ActionListener, MouseListener {
 	private JTable table;
 	private Action action;
 	private int mnemonic;
@@ -45,10 +45,11 @@ public class ButtonColumn extends AbstractCellEditor implements TableCellRendere
 	 * @param column
 	 *            the column to which the button renderer/editor is added
 	 */
-	public ButtonColumn(JTable table, Action action, int column) {
+	public SFARColumn(JTable table, Action action, int column) {
 		this.table = table;
 		this.action = action;
 		defaultCell = new DefaultTableCellRenderer();
+		defaultCell.setHorizontalAlignment(JLabel.CENTER);
 		renderButton = new JButton();
 		editButton = new JButton();
 		editButton.setFocusPainted(false);
@@ -126,6 +127,14 @@ public class ButtonColumn extends AbstractCellEditor implements TableCellRendere
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 		if (value == null) {
 			return defaultCell;
+		}
+		if (value instanceof String && ((String) value).equals("NO BACKUP")) {
+			defaultCell.setText("NO BACKUP");
+			defaultCell.setBackground(SelectiveRestoreTableCellRenderer.badColor);
+			return defaultCell;
+		} else {
+			defaultCell.setText("");
+			defaultCell.setBackground(null);
 		}
 		if (isSelected) {
 			renderButton.setForeground(table.getSelectionForeground());

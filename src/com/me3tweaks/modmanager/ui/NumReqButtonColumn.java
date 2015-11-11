@@ -20,7 +20,7 @@ import javax.swing.table.*;
  * number of the button that was clicked.
  *
  */
-public class ButtonColumn extends AbstractCellEditor implements TableCellRenderer, TableCellEditor, ActionListener, MouseListener {
+public class NumReqButtonColumn extends AbstractCellEditor implements TableCellRenderer, TableCellEditor, ActionListener, MouseListener {
 	private JTable table;
 	private Action action;
 	private int mnemonic;
@@ -45,10 +45,11 @@ public class ButtonColumn extends AbstractCellEditor implements TableCellRendere
 	 * @param column
 	 *            the column to which the button renderer/editor is added
 	 */
-	public ButtonColumn(JTable table, Action action, int column) {
+	public NumReqButtonColumn(JTable table, Action action, int column) {
 		this.table = table;
 		this.action = action;
 		defaultCell = new DefaultTableCellRenderer();
+		defaultCell.setHorizontalAlignment(JLabel.CENTER);
 		renderButton = new JButton();
 		editButton = new JButton();
 		editButton.setFocusPainted(false);
@@ -103,11 +104,23 @@ public class ButtonColumn extends AbstractCellEditor implements TableCellRendere
 		if (value == null) {
 			editButton.setText("");
 			editButton.setIcon(null);
-		} else if (value instanceof Icon) {
+		}
+		
+		String text = "Undefined";
+		if (value instanceof Integer) {
+			int numVal  = (Integer) value;
+			if (numVal > 0) {
+				text = numVal + " file"+((numVal != 1) ? "s": "");
+			} else {
+				defaultCell.setText("N/A");
+				return defaultCell;
+			}
+		}
+		if (value instanceof Icon) {
 			editButton.setText("");
 			editButton.setIcon((Icon) value);
 		} else {
-			editButton.setText(value.toString());
+			editButton.setText(text);
 			editButton.setIcon(null);
 		}
 
@@ -127,6 +140,18 @@ public class ButtonColumn extends AbstractCellEditor implements TableCellRendere
 		if (value == null) {
 			return defaultCell;
 		}
+		
+		String text = "Undefined";
+		if (value instanceof Integer) {
+			int numVal  = (Integer) value;
+			if (numVal > 0) {
+				text = numVal + " file"+((numVal != 1) ? "s": "");
+			} else {
+				defaultCell.setText("N/A");
+				return defaultCell;
+			}
+		}
+		
 		if (isSelected) {
 			renderButton.setForeground(table.getSelectionForeground());
 			renderButton.setBackground(table.getSelectionBackground());
@@ -144,7 +169,7 @@ public class ButtonColumn extends AbstractCellEditor implements TableCellRendere
 			renderButton.setText("");
 			renderButton.setIcon((Icon) value);
 		} else {
-			renderButton.setText(value.toString());
+			renderButton.setText(text);
 			renderButton.setIcon(null);
 		}
 
