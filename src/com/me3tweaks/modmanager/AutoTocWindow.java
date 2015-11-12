@@ -23,6 +23,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.TocBatchDescriptor;
 
 @SuppressWarnings("serial")
@@ -47,49 +48,50 @@ public class AutoTocWindow extends JDialog {
 	 *            flag to use if this is a modmaker or user initiated TOC
 	 *            update.
 	 */
-/*	public AutoTocWindow(Mod mod, int mode) {
-		//mod is unused for now.
-		//this.mod = mod;
-		this.setTitle("AutoTOC");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		//this.setPreferredSize(new Dimension(380, 138));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		setupWindow(mode == LOCALMOD_MODE ? "Updating PCConsoleTOC files for " + mod.getModName() : "Upgrading " + mod.getModName()
-				+ " for use with unpacked DLC files");
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		this.mode = LOCALMOD_MODE;
-		new TOCWorker(mod).execute();
-		this.setVisible(true);
-	}*/
+	/*
+	 * public AutoTocWindow(Mod mod, int mode) { //mod is unused for now.
+	 * //this.mod = mod; this.setTitle("AutoTOC");
+	 * this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+	 * //this.setPreferredSize(new Dimension(380, 138));
+	 * this.setResizable(false);
+	 * this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+	 * setupWindow(mode == LOCALMOD_MODE ? "Updating PCConsoleTOC files for " +
+	 * mod.getModName() : "Upgrading " + mod.getModName() +
+	 * " for use with unpacked DLC files");
+	 * this.setIconImages(ModManager.ICONS); this.pack();
+	 * this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW); this.mode =
+	 * LOCALMOD_MODE; new TOCWorker(mod).execute(); this.setVisible(true); }
+	 */
 
 	/**
 	 * Automatically updates PCConsoleTOC files
-	 * @param mod Mod to use for sizes and possible TOc files
-	 * @param mode mode to use. Local mode uses mod's Toc files. Installed mode uses game toc files.
-	 * @param biogameDir Directory of biogame. Can be null.
+	 * 
+	 * @param mod
+	 *            Mod to use for sizes and possible TOc files
+	 * @param mode
+	 *            mode to use. Local mode uses mod's Toc files. Installed mode
+	 *            uses game toc files.
+	 * @param biogameDir
+	 *            Directory of biogame. Can be null.
 	 */
 	public AutoTocWindow(Mod mod, int mode, String biogameDir) {
 		this.mode = mode;
-		updatedGameTOCs = new HashMap<String,String>();
-		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: " + mode+"===");
+		updatedGameTOCs = new HashMap<String, String>();
+		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: " + mode + "===");
 		this.setTitle("Mod Manager AutoTOC");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		switch (mode) {
 		case LOCALMOD_MODE:
-			setupWindow("Updating "+mod.getModName()+"'s PCConsoleTOC files");
+			setupWindow("Updating " + mod.getModName() + "'s PCConsoleTOC files");
 			break;
 		case INSTALLED_MODE:
-			setupWindow("Updating installed PCConsoleTOCs for "+mod.getModName());
+			setupWindow("Updating installed PCConsoleTOCs for " + mod.getModName());
 			break;
 		default:
-			ModManager.debugLogger.writeError("Unknown AutoTOC mode: "+mode);
-			JOptionPane.showMessageDialog(null, "Unknown AutoTOC mode: "+mode,
-					"AutoTOC Error", JOptionPane.ERROR_MESSAGE);
+			ModManager.debugLogger.writeError("Unknown AutoTOC mode: " + mode);
+			JOptionPane.showMessageDialog(null, "Unknown AutoTOC mode: " + mode, "AutoTOC Error", JOptionPane.ERROR_MESSAGE);
 			dispose();
 			return;
 		}
@@ -111,12 +113,14 @@ public class AutoTocWindow extends JDialog {
 		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		this.getContentPane().add(aboutPanel);
 	}
-	
+
 	/**
 	 * Returns the hashmap of updated TOC files (JOB HEADER NAME => PATH OF TOC)
-	 * @return null if autotoc did not run in gametoc mode, otherwise list of updated TOC files copied from the game and updated
+	 * 
+	 * @return null if autotoc did not run in gametoc mode, otherwise list of
+	 *         updated TOC files copied from the game and updated
 	 */
-	public HashMap<String, String> getUpdatedGameTOCs(){
+	public HashMap<String, String> getUpdatedGameTOCs() {
 		return updatedGameTOCs;
 	}
 
@@ -145,7 +149,7 @@ public class AutoTocWindow extends JDialog {
 		private void calculateNumberOfUpdates(ArrayList<ModJob> jobs) {
 			for (ModJob job : jobs) {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
-					//don't autotoc custom DLC
+					numtoc += job.getSourceFolders().size();
 					continue;
 				}
 				boolean hasTOC = false;
@@ -183,9 +187,36 @@ public class AutoTocWindow extends JDialog {
 			//get list of all files to update for the progress bar
 			for (ModJob job : mod.jobs) {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
+					for (String srcFolder : job.getSourceFolders()) {
+						ArrayList<String> commandBuilder = new ArrayList<String>();
+						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+						commandBuilder.add(me3explorer);
+						commandBuilder.add("-autotoc");
+						commandBuilder.add(mod.getModPath()+srcFolder);
+
+						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+
+						//for logging
+						StringBuilder sb = new StringBuilder();
+						for (String arg : command) {
+							sb.append(arg + " ");
+						}
+						ModManager.debugLogger.writeMessage("Performing a CUSTOM DLC TOC update with command: " + sb.toString());
+						int returncode = 1;
+						ProcessBuilder pb = new ProcessBuilder(command);
+						ProcessResult pr = ModManager.runProcess(pb);
+						returncode = pr.getReturnCode();
+						if (returncode != 0 || pr.hadError()) {
+							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
+						} else {
+							completed++;
+							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
+							publish(Integer.toString(completed));
+						}
+					}
 					continue;
 				}
-				ModManager.debugLogger.writeMessage("======AutoTOC job on module "+job.getJobName()+"=======");
+				ModManager.debugLogger.writeMessage("======AutoTOC job on module " + job.getJobName() + "=======");
 				boolean hasTOC = false;
 				if (mode == LOCALMOD_MODE) {
 					//see if has toc file
@@ -198,15 +229,15 @@ public class AutoTocWindow extends JDialog {
 					}
 				} else {
 					//get TOC file.
-					String tocPath = ModManager.getGameFile(ModType.getTOCPathFromHeader(job.getJobName()), job.getJobName(), ModManager.getTempDir()+job.getJobName()+"_PCConsoleTOC.bin");
+					String tocPath = ModManager.getGameFile(ModType.getTOCPathFromHeader(job.getJobName()), job.getJobName(),
+							ModManager.getTempDir() + job.getJobName() + "_PCConsoleTOC.bin");
 					if (tocPath != null) {
 						updatedGameTOCs.put(job.getJobName(), tocPath);
 						hasTOC = true;
 					} else {
-						ModManager.debugLogger.writeError("Unable to get module's PCConsoleTOC file: "+job.getJobName()+". This update will be skipped.");
+						ModManager.debugLogger.writeError("Unable to get module's PCConsoleTOC file: " + job.getJobName() + ". This update will be skipped.");
 					}
 				}
-				
 
 				if (hasTOC) { //toc this job
 					//batches
@@ -260,7 +291,7 @@ public class AutoTocWindow extends JDialog {
 					String tocPath = modulePath + "PCConsoleTOC.bin";
 					if (updatedGameTOCs.containsKey(job.getJobName())) {
 						tocPath = updatedGameTOCs.get(job.getJobName());
-						ModManager.debugLogger.writeMessage("TOCing Alternative File: "+tocPath);
+						ModManager.debugLogger.writeMessage("TOCing Alternative File: " + tocPath);
 					}
 					//feed jobs into me3explorer for processing
 					for (TocBatchDescriptor batchJob : batchJobs) {
@@ -281,24 +312,15 @@ public class AutoTocWindow extends JDialog {
 							sb.append(arg + " ");
 						}
 						ModManager.debugLogger.writeMessage("Performing a batch TOC update with command: " + sb.toString());
-
-						Process p = null;
 						int returncode = 1;
-						try {
-							ProcessBuilder pb = new ProcessBuilder(command);
-							p = pb.start();
-							returncode = p.waitFor();
-						} catch (IOException e) {
-							e.printStackTrace();
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						if (returncode != 0) {
-							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code: " + returncode);
-							//failedTOC.add(filepath);
+						ProcessBuilder pb = new ProcessBuilder(command);
+						ProcessResult pr = ModManager.runProcess(pb);
+						returncode = pr.getReturnCode();
+						if (returncode != 0 || pr.hadError()) {
+							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
 						} else {
 							completed += batchJob.getNameSizePairs().size();
-							ModManager.debugLogger.writeMessage("Number of completed tasks: "+completed+", num left to do: "+(numtoc - completed));
+							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
 							publish(Integer.toString(completed));
 						}
 					}
@@ -331,28 +353,15 @@ public class AutoTocWindow extends JDialog {
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("AutoTOC prematurely ended:", e);
 			}
-			
+
 			if (numtoc != completed) {
-				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: "+numtoc+" total tasks, "+completed+" completed");
-				//failed something
-				for (ModJob job : mod.jobs) {
-					if (job.getJobType() == ModJob.CUSTOMDLC) {
-						JOptionPane.showMessageDialog(null, "This mod includes custom DLC content. Custom DLC content must be manually TOCed.",
-								"AutoTOC Info", JOptionPane.INFORMATION_MESSAGE);
-					}
-				}
+				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, " + completed + " completed");
 				if (ModManagerWindow.ACTIVE_WINDOW != null) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("AutoTOC had an error (check logs)");
 				}
 				dispose();
 
 			} else {
-				for (ModJob job : mod.jobs) {
-					if (job.getJobType() == ModJob.CUSTOMDLC) {
-						JOptionPane.showMessageDialog(null, "This mod includes custom DLC content. Custom DLC content must be manually TOCed.",
-								"AutoTOC Info", JOptionPane.INFORMATION_MESSAGE);
-					}
-				}
 				//we're good
 				if (ModManagerWindow.ACTIVE_WINDOW != null && mode == LOCALMOD_MODE) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(mod.getModName() + " TOC files updated");

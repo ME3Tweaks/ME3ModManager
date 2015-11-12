@@ -21,7 +21,7 @@ public class ModJob {
 	private int jobType;
 	String DLCFilePath;
 	private String jobName, requirementText;
-	ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
+	private ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
 	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
 	
 	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFilesTargets;
@@ -263,6 +263,14 @@ public class ModJob {
 	 */
 	public void setSourceDir(String sourceDir) {
 		this.sourceDir = sourceDir;
+	}
+
+	public ArrayList<String> getSourceFolders() {
+		return sourceFolders;
+	}
+
+	public void setSourceFolders(ArrayList<String> sourceFolders) {
+		this.sourceFolders = sourceFolders;
 	}
 
 	public String getSourceDir() {

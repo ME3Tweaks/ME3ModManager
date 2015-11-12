@@ -59,9 +59,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1 Beta 3";
-	public static long BUILD_NUMBER = 47L;
-	public static final String BUILD_DATE = "10/29/2015";
+	public static final String VERSION = "4.1 Beta 4";
+	public static long BUILD_NUMBER = 48L;
+	public static final String BUILD_DATE = "11/11/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -76,7 +76,8 @@ public class ModManager {
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
-	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 721; // my custom build
+	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 722;
+	
 	// version
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;

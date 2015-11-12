@@ -79,10 +79,17 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 	 * Starts a multi-mod update process (does not display modals)
 	 * @param amuw
 	 */
-	public void startAllModsUpdate(AllModsUpdateWindow amuw) {
+	public boolean startAllModsUpdate(AllModsUpdateWindow amuw) {
 		if (upackage.isModmakerupdate()) {
+			//validate biogamedir (TLK)
+			if (!ModManagerWindow.validateBIOGameDir()) {
+				ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.setText("ModMaker mods not updatable, invalid BIOGame directory");
+				return false;
+			}
+			
 			//get default language
 			//set combobox from settings
+			
 			statusLabel.setText("Upgrading via ModMaker Compiler");
 			ModMakerCompilerWindow mcw = new ModMakerCompilerWindow(upackage.getMod(), ModMakerEntryWindow.getDefaultLanguages());
 			while (mcw.isShowing()) {
@@ -100,6 +107,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			setVisible(true);
 		}
+		return true;
 	}
 
 	private void setupWindow() {

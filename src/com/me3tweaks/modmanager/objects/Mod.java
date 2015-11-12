@@ -312,7 +312,7 @@ public class Mod implements Comparable<Mod> {
 				ModJob newJob = new ModJob();
 				newJob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
 				newJob.setJobType(ModJob.CUSTOMDLC);
-				newJob.sourceFolders = new ArrayList<String>();
+				newJob.setSourceFolders(new ArrayList<String>());
 				newJob.setDestFolders(new ArrayList<String>());
 
 				while (srcStrok.hasMoreTokens()) {
@@ -325,6 +325,13 @@ public class Mod implements Comparable<Mod> {
 								+ ", mod marked as invalid");
 						return;
 					}
+					if (ModType.isKnownDLCFolder(destFolder)) {
+						// Same number of tokens aren't the same
+						ModManager.debugLogger
+								.writeError("Custom DLC folder is not allowed as it is a default game one: "+destFolder);
+						return;
+					}
+					
 					List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 					for (File file : sourceFiles) {
 						String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
@@ -334,7 +341,7 @@ public class Mod implements Comparable<Mod> {
 							return;
 						}
 					}
-					newJob.sourceFolders.add(sourceFolder);
+					newJob.getSourceFolders().add(sourceFolder);
 					newJob.getDestFolders().add(destFolder);
 				}
 				ModManager.debugLogger.writeMessageConditionally(modName + ": Successfully made a new Mod Job for: " + ModType.CUSTOMDLC,
@@ -970,7 +977,7 @@ public class Mod implements Comparable<Mod> {
 					StringBuilder dfsb = new StringBuilder();
 
 					//source dirs
-					for (String file : job.sourceFolders) {
+					for (String file : job.getSourceFolders()) {
 						if (isFirst) {
 							isFirst = false;
 						} else {
@@ -1272,7 +1279,7 @@ public class Mod implements Comparable<Mod> {
 		modFolder.mkdirs();
 		for (ModJob job : jobs) {
 			if (job.getJobType() == ModJob.CUSTOMDLC) {
-				for (String sourceFolder : job.sourceFolders) {
+				for (String sourceFolder : job.getSourceFolders()) {
 					try {
 						File srcFolder = new File(ModManager.appendSlash(modDescFile.getParentFile().getAbsolutePath()) + sourceFolder);
 						File destFolder = new File(modFolder + File.separator + sourceFolder); //source folder is a string
@@ -1349,7 +1356,7 @@ public class Mod implements Comparable<Mod> {
 		for (ModDelta delta : newMod.getModDeltas()) {
 			new DeltaWindow(newMod, delta, true, true);
 		}
-		
+
 		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		return newMod;
 	}

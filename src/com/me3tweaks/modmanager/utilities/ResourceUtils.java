@@ -1,12 +1,29 @@
 package com.me3tweaks.modmanager.utilities;
 
+import java.awt.Desktop;
 import java.io.File;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 
-public class ResourceUtils {
+import com.me3tweaks.modmanager.ModManager;
 
+public class ResourceUtils {
+	/**
+	 * Opens a directory in Windows Explorer.
+	 * 
+	 * @param dir
+	 *            Directory to open
+	 */
+	public static void openDir(String dir) {
+		try {
+			Desktop.getDesktop().open(new File(dir));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
+		}
+	}
     /**
      * Get the relative path from one file to another, specifying the directory separator. 
      * If one of the provided resources does not exist, it is assumed to be a file unless it ends with '/' or

@@ -789,6 +789,7 @@ public class DeltaWindow extends JDialog {
 										if (!verifyOnly) {
 											JOptionPane.showMessageDialog(null, sb.toString(), "Delta Error", JOptionPane.ERROR_MESSAGE);
 										}
+										addNewError("Could not find a property to update/remove.");
 										ModManager.debugLogger.writeError(sb.toString());
 										return false;
 									}
@@ -815,7 +816,6 @@ public class DeltaWindow extends JDialog {
 									return false;
 								}
 							}
-
 						}
 					}
 				}
@@ -865,13 +865,12 @@ public class DeltaWindow extends JDialog {
 			}
 			performCleanup();
 			ModManager.debugLogger.writeMessage("============END OF DELTAWORKER()==============");
-
 		}
 	}
 
 	private boolean applyVariant(String modFolder, String variantFolder) {
 		if (new File(variantFolder).exists()) {
-			try {
+			try {	
 				ModManager.debugLogger.writeMessage("Applying Variant: " + variantFolder + " => " + modFolder);
 				FileUtils.copyDirectory(new File(variantFolder), new File(modFolder));
 				ModManager.debugLogger.writeMessage("Variant applied");
