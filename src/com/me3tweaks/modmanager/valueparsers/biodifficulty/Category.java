@@ -8,6 +8,14 @@ import com.me3tweaks.modmanager.ModManager;
 public class Category {
 	public String categoryname;
 	ArrayList<Stat> stats;
+	public static String ENTRY_TEMPLATE = "\t\t\t\t\t<div class=\"modmaker_entry\">\n"
+			+ "\t\t\t\t\t\t<div class=\"defaultbox\">\n"
+			+ "\t\t\t\t\t\t\t<span class=\"inputtag defaultboxitem\">HUMANNAME</span>\n"
+			+ "\t\t\t\t\t\t\t<span class=\"modmaker_default defaultboxitem\">Default: PREFIX<\\?=\\$defaultsmod->TABLENAME_VARNAME[\\$difficulty];?>POSTFIX</span>\n"
+			+ "\t\t\t\t\t\t</div>\n"
+			+ "\t\t\t\t\t\t<input id=\"VARNAME\" class=\"short_input\" type=\"text\" name=\"VARNAME\" placeholder=\"HINTTEXT\" value=\"<?=\\$mod->TABLENAME_VARNAME[\\$difficulty];?>\">\n"
+			+ "\t\t\t\t\t</div>\n";
+	
 	public Category(String value) {
 		//get name
 		String workingStr;
