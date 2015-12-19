@@ -376,36 +376,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.pack();
 	}
 
-	/**
-	 * Converts a coalesced filename to a header you can place in moddesc.ini
-	 * files.
-	 * 
-	 * @param coalName
-	 *            Coalesced file
-	 * @return Corresponding heading
-	 */
-	/*
-	 * protected String coalFileNameToHeaderName(String coalName) { switch
-	 * (coalName) { case "Default_DLC_CON_MP1.bin": return "RESURGENCE"; case
-	 * "Default_DLC_CON_MP2.bin": return "REBELLION"; case
-	 * "Default_DLC_CON_MP3.bin": return "EARTH"; case
-	 * "Default_DLC_CON_MP4.bin": return "RETALIATION"; case
-	 * "Default_DLC_CON_MP5.bin": return "RECKONING"; case
-	 * "Default_DLC_UPD_Patch01.bin": return "PATCH1"; case
-	 * "Default_DLC_UPD_Patch02.bin": return "PATCH2"; case "Coalesced.bin":
-	 * return "BASEGAME"; case "Default_DLC_TestPatch.bin": return "TESTPATCH";
-	 * case "Default_DLC_HEN_PR.bin": return "FROM_ASHES"; case
-	 * "Default_DLC_CON_APP01.bin": return "APPEARANCE"; case
-	 * "Default_DLC_CON_GUN01.bin": return "FIREFIGHT"; case
-	 * "Default_DLC_CON_GUN02.bin": return "GROUNDSIDE"; case
-	 * "Default_DLC_CON_END.bin": return "EXTENDED_CUT"; case
-	 * "Default_DLC_EXP_Pack001.bin": return "LEVIATHAN"; case
-	 * "Default_DLC_EXP_Pack002.bin": return "OMEGA"; case
-	 * "Default_DLC_EXP_Pack003.bin": return "CITADEL"; case
-	 * "Default_DLC_EXP_Pack003_Base.bin": return "CITADEL_BASE"; default:
-	 * ModManager.debugLogger.writeMessage("ERROR: Unable to convert " +
-	 * coalName + " to it's filename."); return null; } }
-	 */
 
 	/**
 	 * Converts the Coalesced.bin filenames to their respective directory in the

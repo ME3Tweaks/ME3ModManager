@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -93,6 +94,12 @@ public class ModManager {
 	public static boolean LOG_PATCH_INIT = false;
 
 	public static void main(String[] args) {
+		try {
+			deferred();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		debugLogger = new DebugLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
@@ -413,6 +420,19 @@ public class ModManager {
 			JOptionPane.showMessageDialog(null, "Mod Manager had an uncaught exception during runtime:\n" + e.getMessage()
 					+ "\nThis error has been logged if logging was on.\nPlease report this to FemShep.");
 		}
+	}
+
+	private static void deferred() throws Exception {
+		File infile = new File("C:\\users\\mjperez\\desktop\\inputfile.txt");
+		try(BufferedReader br = new BufferedReader(new FileReader(infile))) {
+		    for(String line; (line = br.readLine()) != null; ) {
+		        // process the line.
+		    	String str = "UPDATE "+line+" SET difficulty = 'narrative' WHERE difficulty = 'narrativ';";
+		    	System.out.println(str);
+		    }
+		    // line is not visible here.
+		}
+		System.exit(0);
 	}
 
 	/**
