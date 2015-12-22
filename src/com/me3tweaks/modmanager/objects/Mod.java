@@ -1117,6 +1117,10 @@ public class Mod implements Comparable<Mod> {
 			return "PATCH2";
 		case "TESTPATCH":
 			return "TESTPATCH";
+		case "FROM_ASHES":
+			return "FROM_ASHES";
+		case "EXTENDED_CUT":
+			return "EXTENDED_CUT";
 		case "LEVIATHAN":
 			return "LEVIATHAN";
 		case "OMEGA":
@@ -1125,6 +1129,14 @@ public class Mod implements Comparable<Mod> {
 			return "CITADEL";
 		case "CITADEL_BASE":
 			return "CITADEL_BASE";
+		case "APPEARANCE":
+			return "APPEARANCE";
+		case "FIREFIGHT":
+			return "FIREFIGHT";
+		case "GROUNDSIDE":
+			return "GROUNDSIDE";
+		case "GENESIS2":
+			return "GENESIS2";
 		case "CUSTOMDLC":
 			return "CUSTOMDLC";
 		default:
