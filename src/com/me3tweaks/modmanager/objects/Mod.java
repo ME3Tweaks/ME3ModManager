@@ -1283,6 +1283,7 @@ public class Mod implements Comparable<Mod> {
 	 * a moddesc.ini file based on jobs in this mod.
 	 */
 	public Mod createNewMod() {
+		printModContents();
 		File modFolder = new File(ModManager.getModsDir() + modName);
 		modFolder.mkdirs();
 		for (ModJob job : jobs) {
@@ -1367,6 +1368,21 @@ public class Mod implements Comparable<Mod> {
 
 		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		return newMod;
+	}
+
+	private void printModContents() {
+		ModManager.debugLogger.writeMessage("========"+modName+"========");
+		for (ModJob job : jobs) {
+			if (job.getJobType() == ModJob.CUSTOMDLC) {
+				for (String sourceFolder : job.getSourceFolders()) {
+					ModManager.debugLogger.writeMessage(job.getJobName()+": "+sourceFolder);
+				}
+				continue;
+			}
+			for (String sourceFile : job.getFilesToAdd()){
+				ModManager.debugLogger.writeMessage(job.getJobName()+": "+sourceFile);
+			}
+		}
 	}
 
 	public static String convertNewlineToBr(String input) {
