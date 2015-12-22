@@ -316,6 +316,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		System.out.println("action");
 		if (e.getSource() == submit) {
 			// parse it.
 			String input_text = input.getText();
