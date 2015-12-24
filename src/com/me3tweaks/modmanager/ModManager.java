@@ -91,7 +91,7 @@ public class ModManager {
 	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
 	public static long AUTO_CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(AUTO_CHECK_INTERVAL_DAYS);
 	public static boolean LOG_MOD_INIT = false;
-	public static boolean LOG_PATCH_INIT = false;
+	public static boolean LOG_PATCH_INIT = false; 
 
 	public static void main(String[] args) {
 		debugLogger = new DebugLogger();
