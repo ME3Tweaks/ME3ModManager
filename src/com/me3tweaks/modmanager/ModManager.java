@@ -62,12 +62,12 @@ public class ModManager {
 
 	public static final String VERSION = "4.1";
 	public static long BUILD_NUMBER = 49L;
-	public static final String BUILD_DATE = "12/20/2015";
+	public static final String BUILD_DATE = "12/24/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
-	public static final double MODMAKER_VERSION_SUPPORT = 1.8; // max modmaker
+	public static final double MODMAKER_VERSION_SUPPORT = 1.9; // max modmaker
 																// version
 	public static final double MODDESC_VERSION_SUPPORT = 4.1; // max supported
 																// cmmver in
@@ -94,12 +94,6 @@ public class ModManager {
 	public static boolean LOG_PATCH_INIT = false;
 
 	public static void main(String[] args) {
-		try {
-			deferred();
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 		debugLogger = new DebugLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
@@ -423,16 +417,7 @@ public class ModManager {
 	}
 
 	private static void deferred() throws Exception {
-		File infile = new File("C:\\users\\mjperez\\desktop\\inputfile.txt");
-		try(BufferedReader br = new BufferedReader(new FileReader(infile))) {
-		    for(String line; (line = br.readLine()) != null; ) {
-		        // process the line.
-		    	String str = "UPDATE "+line+" SET difficulty = 'narrative' WHERE difficulty = 'narrativ';";
-		    	System.out.println(str);
-		    }
-		    // line is not visible here.
-		}
-		System.exit(0);
+		//put code here and deferred() in main to pre-execute testing values
 	}
 
 	/**

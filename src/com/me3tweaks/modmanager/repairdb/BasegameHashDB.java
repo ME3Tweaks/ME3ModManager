@@ -51,7 +51,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 	private static Statement stmt = null;
 	private boolean noDB = true;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws SQLException {
 		isRunningAsMain = true;
 		//init the debug logger.
 		ModManager.debugLogger = new DebugLogger();
@@ -60,7 +60,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		new BasegameHashDB(null, "I:/Origin Games/Mass Effect 3/", true); //debug only
 	}
 
-	public BasegameHashDB(JFrame callingWindow, String basePath, boolean showGUI) {
+	public BasegameHashDB(JFrame callingWindow, String basePath, boolean showGUI) throws SQLException{
 		this.callingWindow = callingWindow;
 		this.showGUI = showGUI;
 		this.basePath = basePath;
@@ -109,12 +109,11 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		consoleArea = new JTextArea();
 		consoleArea.setLineWrap(true);
 		consoleArea.setWrapStyleWord(true);
-		consoleArea
-				.setText("The game repair database keeps track of your preferred game configuration, so when restoring files you will be returned to the snapshotted state.\n"
-						+ "\nCreate or update the game repair DB to make a snapshot of all file hashes and filesizes so that when you install a new mod, the file that is backed up is known to be the one you want.\n"
-						+ "\nWhen restoring files, the game database checks the backed up files match the ones in the snapshot, and will show you a message if they don't."
-						+ "\n\nThe game repair database only works with unpacked DLC files and basegame files, not .sfar files. Modifications done outside of Mod Manager are unsupported by FemShep, so I won't help you fix problems with non Mod Manager mods.\n"
-						+ "If you choose to use non Mod Manager mods, you will need to enable the pre-install TOC option in the options page.");
+		consoleArea.setText("The game repair database keeps track of your preferred game configuration, so when restoring files you will be returned to the snapshotted state.\n"
+				+ "\nCreate or update the game repair DB to make a snapshot of all file hashes and filesizes so that when you install a new mod, the file that is backed up is known to be the one you want.\n"
+				+ "\nWhen restoring files, the game database checks the backed up files match the ones in the snapshot, and will show you a message if they don't."
+				+ "\n\nThe game repair database only works with unpacked DLC files and basegame files, not .sfar files. Modifications done outside of Mod Manager are unsupported by FemShep, so I won't help you fix problems with non Mod Manager mods.\n"
+				+ "If you choose to use non Mod Manager mods, you will need to enable the pre-install TOC option in the options page.");
 		consoleArea.setEditable(false);
 
 		rootPanel.add(consoleArea, BorderLayout.CENTER);
@@ -135,24 +134,19 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		this.setLocationRelativeTo(callingWindow);
 	}
 
-	public boolean loadDatabase() {
+	public boolean loadDatabase() throws SQLException {
 		ModManager.debugLogger.writeMessage("Loading game repair database.");
-		try {
-			// connect method #1 - embedded driver
-			File databases = new File(ModManager.getDatabaseDir());
-			databases.mkdirs();
-			String repairInfoURL = "jdbc:derby:data/databases/repairinfo;create=true";
-			dbConnection = DriverManager.getConnection(repairInfoURL);
-			if (dbConnection != null) {
-				ModManager.debugLogger.writeMessage("Loaded game repair database.");
-				databaseLoaded = true;
-				return true;
-			}
-
-		} catch (SQLException ex) {
-			ModManager.debugLogger.writeMessage("SQL error while loading BG Database");
-			ModManager.debugLogger.writeException(ex);
+		// connect method #1 - embedded driver
+		File databases = new File(ModManager.getDatabaseDir());
+		databases.mkdirs();
+		String repairInfoURL = "jdbc:derby:data/databases/repairinfo;create=true";
+		dbConnection = DriverManager.getConnection(repairInfoURL);
+		if (dbConnection != null) {
+			ModManager.debugLogger.writeMessage("Loaded game repair database.");
+			databaseLoaded = true;
+			return true;
 		}
+
 		ModManager.debugLogger.writeMessage("Game repair database failed to load.");
 		databaseLoaded = false;
 		return false;
@@ -222,8 +216,8 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				Iterable<File> files = FileUtils.listFiles(new File(basePath), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 				filesToHash = new ArrayList<File>();
 				for (File file : files) {
-					if (file.getAbsolutePath().toLowerCase().startsWith((ModManager.appendSlash(basePath)+"cmmbackup").toLowerCase())){
-						ModManager.debugLogger.writeError("Skipping cmmbackup file "+file);
+					if (file.getAbsolutePath().toLowerCase().startsWith((ModManager.appendSlash(basePath) + "cmmbackup").toLowerCase())) {
+						ModManager.debugLogger.writeError("Skipping cmmbackup file " + file);
 						continue; //skip backups folder
 					}
 					filesToHash.add(file);
@@ -238,8 +232,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				ModManager.debugLogger.writeMessage("Creating basegamefiles table.");
 				try {
 					stmt = dbConnection.createStatement();
-					stmt.execute("CREATE TABLE basegamefiles (" + "filepath VARCHAR(200) PRIMARY KEY," + "hash VARCHAR(65) NOT NULL,"
-							+ "filesize BIGINT NOT NULL)");
+					stmt.execute("CREATE TABLE basegamefiles (" + "filepath VARCHAR(200) PRIMARY KEY," + "hash VARCHAR(65) NOT NULL," + "filesize BIGINT NOT NULL)");
 					//stmt.close();
 				} catch (SQLException sqlExcept) {
 					ModManager.debugLogger.writeException(sqlExcept);
@@ -292,13 +285,13 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 					String me3dir = ModManager.appendSlash(bgdir.getParent());
 					// Make backup folder if it doesn't exist
 					String backupfolderpath = me3dir.toString() + "cmmbackup\\";
-					
+
 					File backupFile = new File(backupfolderpath + fileKey);
 					if (backupFile.exists()) {
 						//check it dubsguy.jpg
 						if (backupFile.length() != srs.getLong("filesize") || !MD5Checksum.createChecksum(backupFile.getAbsolutePath()).equals(srs.getString("hash"))) {
 							//mismatch. delete it.
-							ModManager.debugLogger.writeMessage("Deleting backed up file that no longer matches game file: "+fileKey);
+							ModManager.debugLogger.writeMessage("Deleting backed up file that no longer matches game file: " + fileKey);
 							FileUtils.deleteQuietly(backupFile);
 						}
 					}
@@ -358,8 +351,9 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 			} else {
 				if (showGUI) {
 					infoLabel.setText("Database can't be loaded.");
-					JOptionPane.showMessageDialog(null, "Unable to connect to database.\nDo you have multiple Mod Manager windows open?",
-							"Database error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "Unable to connect to database.\nDo you have multiple Mod Manager windows open?", "Database error",
+							JOptionPane.ERROR_MESSAGE);
+					dispose();
 				}
 			}
 		}
@@ -370,11 +364,9 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		// TODO Auto-generated method stub
 		if (e.getSource() == startMap) {
 			if (isBasegameTableCreated()) {
-				int result = JOptionPane
-						.showConfirmDialog(
-								BasegameHashDB.this,
-								"Updating your DB will delete any backed up unpacked/basegame files\nthat no longer match their currently installed counterpart.\nUpdate the database?",
-								"Update Game Repair Database", JOptionPane.WARNING_MESSAGE);
+				int result = JOptionPane.showConfirmDialog(BasegameHashDB.this,
+						"Updating your DB will delete any backed up unpacked/basegame files\nthat no longer match their currently installed counterpart.\nUpdate the database?",
+						"Update Game Repair Database", JOptionPane.WARNING_MESSAGE);
 				if (result == JOptionPane.YES_OPTION) {
 					createFileHashmap();
 				}
