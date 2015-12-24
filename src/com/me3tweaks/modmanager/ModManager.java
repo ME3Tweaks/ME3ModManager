@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -59,14 +60,14 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1 Beta 4";
-	public static long BUILD_NUMBER = 48L;
-	public static final String BUILD_DATE = "11/11/2015";
+	public static final String VERSION = "4.1";
+	public static long BUILD_NUMBER = 49L;
+	public static final String BUILD_DATE = "12/24/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
-	public static final double MODMAKER_VERSION_SUPPORT = 1.8; // max modmaker
+	public static final double MODMAKER_VERSION_SUPPORT = 1.9; // max modmaker
 																// version
 	public static final double MODDESC_VERSION_SUPPORT = 4.1; // max supported
 																// cmmver in
@@ -90,7 +91,7 @@ public class ModManager {
 	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
 	public static long AUTO_CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(AUTO_CHECK_INTERVAL_DAYS);
 	public static boolean LOG_MOD_INIT = false;
-	public static boolean LOG_PATCH_INIT = false;
+	public static boolean LOG_PATCH_INIT = false; 
 
 	public static void main(String[] args) {
 		debugLogger = new DebugLogger();
@@ -413,6 +414,10 @@ public class ModManager {
 			JOptionPane.showMessageDialog(null, "Mod Manager had an uncaught exception during runtime:\n" + e.getMessage()
 					+ "\nThis error has been logged if logging was on.\nPlease report this to FemShep.");
 		}
+	}
+
+	private static void deferred() throws Exception {
+		//put code here and deferred() in main to pre-execute testing values
 	}
 
 	/**

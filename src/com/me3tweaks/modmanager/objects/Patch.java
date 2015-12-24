@@ -30,7 +30,7 @@ public class Patch implements Comparable<Patch> {
 	public static final int APPLY_FAILED_SOURCE_FILE_WRONG_SIZE = 2;
 	public static final int APPLY_FAILED_NO_SOURCE_FILE = 3;
 	String targetPath, targetModule, patchPath;
-	boolean isValid = false;
+	boolean isValid = false, finalizer = false;
 
 	String patchName, patchDescription, patchFolderPath;
 	long targetSize;
@@ -101,6 +101,12 @@ public class Patch implements Comparable<Patch> {
 				patchCMMVer = 3.2f;
 				ModManager.debugLogger.writeException(e);
 			}
+			
+			String finalizerStr = patchini.get("PatchInfo", "finalizer");
+			if (finalizerStr != null && finalizerStr.toLowerCase().equals("true")){
+				finalizer = true;
+				ModManager.debugLogger.writeMessageConditionally("Patch is marked as finalizer",ModManager.LOG_PATCH_INIT);
+			}
 
 			targetModule = patchini.get("PatchInfo", "targetmodule");
 			targetPath = patchini.get("PatchInfo", "targetfile");
@@ -134,6 +140,14 @@ public class Patch implements Comparable<Patch> {
 			isValid = false;
 		}
 		ModManager.debugLogger.writeMessageConditionally("------PATCH--------------END OF " + patchName + "-------------------------",ModManager.LOG_PATCH_INIT);
+	}
+
+	public boolean isFinalizer() {
+		return finalizer;
+	}
+
+	public void setFinalizer(boolean finalizer) {
+		this.finalizer = finalizer;
 	}
 
 	/**

@@ -38,12 +38,37 @@ public class PatchApplicationWindow extends JDialog {
 	public PatchApplicationWindow(JDialog callingDialog, ArrayList<Patch> patches, Mod mod) {
 		ModManager.debugLogger.writeMessage("Starting mix-in applier.");
 		this.callingDialog = callingDialog;
-		this.patches = patches;
 		this.mod = mod;
+		this.patches = prioritizePatches(patches);
+
 		setupWindow();
 		pat = new PatchApplicationTask();
 		pat.execute();
 		setVisible(true);
+	}
+
+	/**
+	 * Prioritizes non-finalizers before finalizers
+	 * @param patches non-sorted patch list
+	 * @return  arraylist of non-finalizers then finalizers
+	 */
+	private ArrayList<Patch> prioritizePatches(ArrayList<Patch> patches) {
+		ArrayList<Patch> sortedList = new ArrayList<Patch>();
+		for (Patch patch : patches) {
+			if (patch.isFinalizer()) {
+				continue;
+			}
+			sortedList.add(patch);
+		}
+		
+		//run again, this time only adding finalizers
+		for (Patch patch : patches) {
+			if (!patch.isFinalizer()) {
+				continue;
+			}
+			sortedList.add(patch);
+		}
+		return sortedList;
 	}
 
 	public PatchApplicationWindow(JFrame callingFrame, ArrayList<Patch> patches, Mod mod) {

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /** Contains data that the DLC Injector can understand.
  * It is typically passed as a property container object. (object that contains properties)
@@ -118,13 +119,14 @@ public class ModJob {
 					fileToReplace = "\\"+fileToReplace;
 				}
 			}
+			fileToReplace = ResourceUtils.getForwardSlashVersion(fileToReplace);
 		} else {
 			//its dlc
 			if (fileToReplace.charAt(0) != '/'){
 				fileToReplace = "/"+fileToReplace;
 			}
 		}
-		
+
 		newFiles.add(newFile);
 		filesToReplace.add(fileToReplace);
 		return true;

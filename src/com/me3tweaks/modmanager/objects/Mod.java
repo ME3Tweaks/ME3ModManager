@@ -709,7 +709,7 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	public boolean canMergeWith(Mod other) {
-		ModManager.debugLogger.writeMessage("Checking if mods can cleanly merge. Will report only first failure");
+		ModManager.debugLogger.writeMessage("Checking if mods can cleanly merge. Will report only first failure.");
 		for (ModJob job : jobs) {
 			ModJob otherCorrespondingJob = null;
 			for (ModJob otherjob : other.jobs) {
@@ -728,14 +728,17 @@ public class Mod implements Comparable<Mod> {
 				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
 					continue;
 				}
+				ModManager.debugLogger.writeMessage("==Checking file for conflicts " + file+"==");
+
 				for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
-					if (file.equals(otherfile)) {
+					ModManager.debugLogger.writeMessage("Comparing replace files: " + file+" vs "+otherfile);
+					if (file.equalsIgnoreCase(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge conflicts with file to update " + file);
 						return false;
 					}
 				}
 				for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
-					if (file.equals(otherfile)) {
+					if (file.equalsIgnoreCase(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge conflicts with file to update " + file);
 						return false;
 					}
@@ -745,7 +748,7 @@ public class Mod implements Comparable<Mod> {
 			//Compare my replace files to others replace/remove 
 			for (String file : job.getFilesToRemoveTargets()) {
 				for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
-					if (file.equals(otherfile)) {
+					if (file.equalsIgnoreCase(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge would add a task to remove a file requiring replace: " + file);
 						return false;
 					}
@@ -755,7 +758,7 @@ public class Mod implements Comparable<Mod> {
 			//compare files to add
 			for (String file : job.getFilesToAdd()) {
 				for (String otherfile : otherCorrespondingJob.getFilesToAdd()) {
-					if (file.equals(otherfile)) {
+					if (file.equalsIgnoreCase(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge conflicts with file to add " + file);
 						return false;
 					}
@@ -765,7 +768,7 @@ public class Mod implements Comparable<Mod> {
 			//Compare my add files to others remove
 			for (String file : job.getFilesToAddTargets()) {
 				for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
-					if (file.equals(otherfile)) {
+					if (file.equalsIgnoreCase(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge conflicts with file to add/remove " + file);
 						return false;
 					}
@@ -773,7 +776,7 @@ public class Mod implements Comparable<Mod> {
 			}
 			for (String file : job.getFilesToRemoveTargets()) {
 				for (String otherfile : otherCorrespondingJob.getFilesToAddTargets()) {
-					if (file.equals(otherfile)) {
+					if (file.equalsIgnoreCase(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge conflicts with file to add/remove " + file);
 						return false;
 					}
@@ -783,6 +786,7 @@ public class Mod implements Comparable<Mod> {
 			//don't care about files to remove. I think...
 
 		}
+		ModManager.debugLogger.writeMessage("No conflicted detected.");
 		return true;
 	}
 
@@ -1078,7 +1082,6 @@ public class Mod implements Comparable<Mod> {
 				if (job.getFilesToRemoveTargets().size() > 0) {
 					ini.put(job.getJobName(), "removefilestargets", rftsb.toString());
 				}
-
 			}
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			ini.store(os);
@@ -1117,6 +1120,26 @@ public class Mod implements Comparable<Mod> {
 			return "PATCH2";
 		case "TESTPATCH":
 			return "TESTPATCH";
+		case "FROM_ASHES":
+			return "FROM_ASHES";
+		case "EXTENDED_CUT":
+			return "EXTENDED_CUT";
+		case "LEVIATHAN":
+			return "LEVIATHAN";
+		case "OMEGA":
+			return "OMEGA";
+		case "CITADEL":
+			return "CITADEL";
+		case "CITADEL_BASE":
+			return "CITADEL_BASE";
+		case "APPEARANCE":
+			return "APPEARANCE";
+		case "FIREFIGHT":
+			return "FIREFIGHT";
+		case "GROUNDSIDE":
+			return "GROUNDSIDE";
+		case "GENESIS2":
+			return "GENESIS2";
 		case "CUSTOMDLC":
 			return "CUSTOMDLC";
 		default:
@@ -1275,6 +1298,7 @@ public class Mod implements Comparable<Mod> {
 	 * a moddesc.ini file based on jobs in this mod.
 	 */
 	public Mod createNewMod() {
+		printModContents();
 		File modFolder = new File(ModManager.getModsDir() + modName);
 		modFolder.mkdirs();
 		for (ModJob job : jobs) {
@@ -1359,6 +1383,21 @@ public class Mod implements Comparable<Mod> {
 
 		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 		return newMod;
+	}
+
+	private void printModContents() {
+		ModManager.debugLogger.writeMessage("========"+modName+"========");
+		for (ModJob job : jobs) {
+			if (job.getJobType() == ModJob.CUSTOMDLC) {
+				for (String sourceFolder : job.getSourceFolders()) {
+					ModManager.debugLogger.writeMessage(job.getJobName()+": "+sourceFolder);
+				}
+				continue;
+			}
+			for (String sourceFile : job.getFilesToAdd()){
+				ModManager.debugLogger.writeMessage(job.getJobName()+": "+sourceFile);
+			}
+		}
 	}
 
 	public static String convertNewlineToBr(String input) {
