@@ -61,14 +61,14 @@ import com.sun.jna.platform.win32.WinReg;
 public class ModManager {
 
 	public static final String VERSION = "4.1";
-	public static long BUILD_NUMBER = 49L;
-	public static final String BUILD_DATE = "12/24/2015";
+	public static long BUILD_NUMBER = 50L;
+	public static final String BUILD_DATE = "12/31/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
-	public static final double MODMAKER_VERSION_SUPPORT = 1.9; // max modmaker
-																// version
+	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
+															// version
 	public static final double MODDESC_VERSION_SUPPORT = 4.1; // max supported
 																// cmmver in
 																// moddesc

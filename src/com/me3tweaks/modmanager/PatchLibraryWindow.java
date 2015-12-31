@@ -305,7 +305,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			} else {
 				description += "---------------------------------\n";
 			}
-			description += patch.getPatchName();
+			description += patch.getPatchName() +" v"+patch.getPatchVersion();
 			description += "\n\n";
 			description += patch.getPatchDescription();
 			description += "\n\n";
