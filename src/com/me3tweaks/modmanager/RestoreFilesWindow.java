@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -357,7 +358,24 @@ public class RestoreFilesWindow extends JDialog {
 			//load Basegame DB
 			ModManager.debugLogger.writeMessage("Processing an unpacked DLC job.");
 
-			BasegameHashDB bghDB = new BasegameHashDB(null, new File(BioGameDir).getParent(), false);
+			BasegameHashDB bghDB = null;
+			try {
+				bghDB = new BasegameHashDB(null, new File(BioGameDir).getParent(), false);
+			} catch (SQLException e) {
+				while (e.getNextException() != null) {
+					ModManager.debugLogger.writeError(e.getMessage());
+					e = e.getNextException();
+				}
+			}
+			if (bghDB == null) {
+				//cannot continue
+				JOptionPane.showMessageDialog(null,
+						"<html>The game repair database failed to load.<br>"
+								+ "Only one connection to the local database is allowed at a time.<br>"
+								+ "Please make sure you only have one instance of Mod Manager running.</html>",
+						"Database Failure", JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
 			HashMap<String, String> dlcFolderMap = ModType.getHeaderFolderMap();
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
 			String backupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\";
@@ -463,7 +481,24 @@ public class RestoreFilesWindow extends JDialog {
 			//load Basegame DB
 			ModManager.debugLogger.writeMessage("Processing a basegame/unpacked DLC job. Skip basegame: " + skipBasegame + ", Skip DLC: " + skipDLC);
 
-			BasegameHashDB bghDB = new BasegameHashDB(null, new File(BioGameDir).getParent(), false);
+			BasegameHashDB bghDB = null;
+			try {
+				bghDB = new BasegameHashDB(null, new File(BioGameDir).getParent(), false);
+			} catch (SQLException e) {
+				while (e.getNextException() != null) {
+					ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.",e);
+					e = e.getNextException();
+				}
+			}
+			if (bghDB == null) {
+				//cannot continue
+				JOptionPane.showMessageDialog(null,
+						"<html>The game repair database failed to load.<br>"
+								+ "Only one connection to the local database is allowed at a time.<br>"
+								+ "Please make sure you only have one instance of Mod Manager running.</html>",
+						"Database Failure", JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
 			String backupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\";
 			String dlcbackupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\BIOGame\\DLC";
