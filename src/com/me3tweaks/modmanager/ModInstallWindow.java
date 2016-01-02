@@ -477,7 +477,9 @@ public class ModInstallWindow extends JDialog {
 		 */
 		private boolean processDLCJob(ModJob job) {
 			ModManager.debugLogger.writeMessage("===Processing a dlc job: " + job.getJobName() + "===");
-
+			if (job.getJobName().equals("LEVIATHAN")) {
+				System.out.println("BREAK");
+			}
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
 
@@ -569,7 +571,7 @@ public class ModInstallWindow extends JDialog {
 						publish(job.getJobName() + ": Installing " + FilenameUtils.getName(newFile));
 						Path newfilepath = Paths.get(newFile);
 						Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
-						ModManager.debugLogger.writeMessage("Installed mod file: " + newFile);
+						ModManager.debugLogger.writeMessage("Installed mod file: " + originalpath);
 					} catch (IOException e) {
 						ModManager.debugLogger.writeException(e);
 						return false;
@@ -1057,7 +1059,7 @@ public class ModInstallWindow extends JDialog {
 						File bgdir = new File(ModManager.appendSlash(bioGameDir));
 						String me3dir = ModManager.appendSlash(bgdir.getParent());
 						try {
-							bghDB = new BasegameHashDB(null, me3dir, false);
+							bghDB = new BasegameHashDB(null, me3dir, true);
 						} catch (SQLException e) {
 							while (e.getNextException() != null) {
 								ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.", e);

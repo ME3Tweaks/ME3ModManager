@@ -341,26 +341,21 @@ public class Patch implements Comparable<Patch> {
 			}
 
 			ModManager.debugLogger.writeMessage("Executing JPATCH patch command: " + sb.toString());
-
 			ProcessBuilder patchProcessBuilder = new ProcessBuilder(commandBuilder);
-			//patchProcessBuilder.redirectErrorStream(true);
-			//patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-			Process patchProcess = patchProcessBuilder.start();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(patchProcess.getInputStream()));
-			String line;
-			while ((line = reader.readLine()) != null)
-				System.out.println("tasklist: " + line);
-			patchProcess.waitFor();
-			System.out.println("BREAK");
+			ProcessResult result = ModManager.runProcess(patchProcessBuilder);
+			if (result.hadError()) {
+				ModManager.debugLogger.writeMessage("Error occured while attempting to apply patch.");
+				return APPLY_FAILED_OTHERERROR;
+			}
+			if (result.getReturnCode() != 0) {
+				return APPLY_FAILED_OTHERERROR;
+			}
 			stagingFile.delete();
 			ModManager.debugLogger.writeMessage("File has been patched.");
 			return APPLY_SUCCESS;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeErrorWithException("IOException applying mod:", e);
-			return APPLY_FAILED_OTHERERROR;
-		} catch (InterruptedException e) {
-			ModManager.debugLogger.writeErrorWithException("Patching process was interrupted:", e);
 			return APPLY_FAILED_OTHERERROR;
 		}
 	}

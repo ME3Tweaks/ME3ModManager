@@ -72,9 +72,12 @@ public class HelpMenu {
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
 			FileUtils.writeStringToFile(ModManager.getHelpFile(), responseString);
+			ModManager.debugLogger.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getHelpFile().exists());
 			//Parse, download resources
 			DocumentBuilder db;
 			try {
+				helpItemExpr = xpath.compile("helpitem");
+				sublistExpr = xpath.compile("list");
 				db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 				InputSource is = new InputSource();
 				is.setCharacterStream(new FileReader(ModManager.getHelpFile()));

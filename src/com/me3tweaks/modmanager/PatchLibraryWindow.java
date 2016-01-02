@@ -78,18 +78,23 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	 * checked for being in the local library. If they aren't in the library, it
 	 * attempts to download them from me3tweaks.com's library.
 	 * 
-	 * @param mixinIds me3tweaks patch ids
+	 * @param requiredMixinIds me3tweaks patch ids
 	 */
-	public PatchLibraryWindow(JDialog callingDialog, ArrayList<Integer> mixinIds, Mod mod) {
+	public PatchLibraryWindow(JDialog callingDialog, ArrayList<String> requiredMixinIds, Mod mod) {
 		setModalityType(ModalityType.APPLICATION_MODAL);
-		this.automated_requiredMixinIds = mixinIds;
-		this.automated_mod = mod;
+		ArrayList<ModmakerMixinIdentifier> modmakerIds = new ArrayList<ModmakerMixinIdentifier>();
+		ArrayList<Integer> requiredIds = new ArrayList<Integer>();
+
+		for (String requiredID : requiredMixinIds) {
+			modmakerIds.add(new ModmakerMixinIdentifier(requiredID));
+		}
+		
 		ModManager.debugLogger.writeMessage("Loading mixin library in automated mode");
 		boolean hasMissingMixIn = false;
-		for (int requiredID : mixinIds) {
+		for (ModmakerMixinIdentifier modmakermixin : modmakerIds) {
 			boolean foundId = false;
 			for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
-				if (patch.getMe3tweaksid() == requiredID) {
+				if (patch.getMe3tweaksid() == modmakermixin.mixinid && patch.getPatchVersion() >= modmakermixin.minVersion) {
 					foundId = true;
 					break;
 				}
@@ -99,6 +104,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				break;
 			}
 		}
+		for (ModmakerMixinIdentifier mixin : modmakerIds) {
+			requiredIds.add(new Integer(mixin.mixinid));
+		}
+		this.automated_requiredMixinIds = requiredIds;
+		this.automated_mod = mod;
 
 		if (hasMissingMixIn) {
 			new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(), true).execute();
@@ -295,7 +305,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			} else {
 				description += "---------------------------------\n";
 			}
-			description += patch.getPatchName();
+			description += patch.getPatchName() +" v"+patch.getPatchVersion();
 			description += "\n\n";
 			description += patch.getPatchDescription();
 			description += "\n\n";
@@ -514,6 +524,40 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			}
 		}
 
+	}
+	
+	private class ModmakerMixinIdentifier {
+		public int getMinVersion() {
+			return minVersion;
+		}
+
+		public void setMinVersion(int minVersion) {
+			this.minVersion = minVersion;
+		}
+
+		public int getMixinid() {
+			return mixinid;
+		}
+
+		public void setMixinid(int mixinid) {
+			this.mixinid = mixinid;
+		}
+
+		private int minVersion;
+		private int mixinid;
+
+		public ModmakerMixinIdentifier(String modmakerString) {
+			if (modmakerString.contains("v")){
+				int endIDIndex = modmakerString.indexOf('v');
+				String id = modmakerString.substring(0, endIDIndex);
+				String version = modmakerString.substring(endIDIndex+1, modmakerString.length());
+				this.mixinid = Integer.parseInt(id);
+				this.minVersion = Integer.parseInt(version);
+			} else {
+				this.mixinid = Integer.parseInt(modmakerString);
+				this.minVersion = 1;
+			}
+		}
 	}
 
 }
