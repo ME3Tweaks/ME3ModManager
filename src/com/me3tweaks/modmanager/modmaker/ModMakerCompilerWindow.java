@@ -83,7 +83,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	JLabel infoLabel, currentOperationLabel;
 	JProgressBar overallProgress, currentStepProgress;
 	private Mod mod;
-	private ArrayList<Integer> requiredMixinIds = new ArrayList<Integer>();
+	private ArrayList<String> requiredMixinIds = new ArrayList<String>();
 
 	/**
 	 * Starts a modmaker session for a user-selected download
@@ -280,7 +280,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				for (int j = 0; j < mixinsNodeList.getLength(); j++) {
 					Node mixinNode = mixinsNodeList.item(j);
 					if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
-						requiredMixinIds.add(Integer.parseInt(mixinNode.getTextContent()));
+						requiredMixinIds.add(mixinNode.getTextContent());
 						ModManager.debugLogger.writeMessage("Mod recommends mixin with id "+mixinNode.getTextContent());
 					}
 				}
@@ -1456,7 +1456,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 			ModManager.debugLogger.writeMessage("Creating in-memory moddesc.ini");
 			ini = new Wini(moddesc);
-			ini.put("ModManager", "cmmver", 3.0);
+			ini.put("ModManager", "cmmver", 4.1);
 			ini.put("ModInfo", "modname", modName);
 			ini.put("ModInfo", "moddev", modDev);
 			ini.put("ModInfo", "moddesc", modDescription + "<br>Created with ME3Tweaks ModMaker.");
