@@ -341,6 +341,21 @@ public class SelectiveRestoreWindow extends JDialog {
 						}
 					}
 				}
+				//Find Movies folder
+				File moviesFolder = new File(ModManager.appendSlash(dlcDirectory.getParent()) + "Movies\\");
+				if (moviesFolder.exists()) {
+					File movieFiles[] = moviesFolder.listFiles();
+					for (File file : movieFiles) {
+						if (file.isFile()) {
+							String filepath = file.getAbsolutePath();
+							if (!filepath.endsWith(".sfar") && !filepath.endsWith(".bak")) {
+								ModManager.debugLogger.writeMessage("Unpacked file: " + filepath);
+								filepaths.add(filepath);
+							}
+						}
+					}
+					filepaths.add(moviesFolder.getAbsolutePath());
+				}
 				//find PCConsoleTOC.bin for it
 				File dlcConsoleTOC = new File(ModManager.appendSlash(dlcDirectory.getParent()) + "PCConsoleTOC.bin");
 				if (dlcConsoleTOC.exists()) {

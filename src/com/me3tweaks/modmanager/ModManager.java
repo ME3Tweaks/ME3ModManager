@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -62,7 +63,7 @@ public class ModManager {
 
 	public static final String VERSION = "4.1";
 	public static long BUILD_NUMBER = 50L;
-	public static final String BUILD_DATE = "12/31/2015";
+	public static final String BUILD_DATE = "1/8/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -1652,7 +1653,13 @@ public class ModManager {
 	 */
 	public static ProcessResult runProcess(ProcessBuilder p) {
 		try {
-			ModManager.debugLogger.writeMessage("runProcess(): "+p.command());
+			StringBuilder sb = new StringBuilder();
+			List<String> list = p.command();
+			for (String arg : list) {
+				sb.append(arg);
+				sb.append(" ");
+			}
+			ModManager.debugLogger.writeMessage("runProcess(): "+sb.toString());
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
 			int returncode = process.waitFor();

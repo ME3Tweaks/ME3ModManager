@@ -151,7 +151,7 @@ public class RestoreFilesWindow extends JDialog {
 				case RestoreMode.UNPACKED_HEADER_DELETE:
 					return processDeleteUnpackedFiles(customTaskHeader);
 				case RestoreMode.ALL:
-					numjobs = ModType.getHeaderNameArray().length + 1;
+					numjobs = ModType.getHeaderNameArray().length + 3;
 					publish("Deleting custom DLC, restoring basegame/unpacked files,SFARs, unpacked content");
 					return removeCustomDLC() && processRestoreBasegame(false, false) && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray())
 							&& processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
@@ -230,6 +230,22 @@ public class RestoreFilesWindow extends JDialog {
 							}
 						}
 					}
+					//Find Movies folder
+					File moviesFolder = new File(ModManager.appendSlash(dlcDirectory.getParent()) + "Movies\\");
+					if (moviesFolder.exists()) {
+						File movieFiles[] = moviesFolder.listFiles();
+						for (File file : movieFiles) {
+							if (file.isFile()) {
+								String filepath = file.getAbsolutePath();
+								if (!filepath.endsWith(".sfar") && !filepath.endsWith(".bak")) {
+									ModManager.debugLogger.writeMessage("Unpacked file: " + filepath);
+									filepaths.add(filepath);
+								}
+							}
+						}
+						filepaths.add(moviesFolder.getAbsolutePath());
+					}
+					
 					//find PCConsoleTOC.bin for it
 					File dlcConsoleTOC = new File(ModManager.appendSlash(dlcDirectory.getParent()) + "PCConsoleTOC.bin");
 					if (dlcConsoleTOC.exists()) {

@@ -5,9 +5,12 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -44,73 +47,160 @@ public class TLKTool {
 
 	public static void main(String[] args) throws Exception {
 
-		decompileTLK();
+		//decompileTLK();
+		//initialScan();
+		subsetScan("C:\\Users\\Michael\\Desktop\\BIOGAME_COMMANDSTR.txt", "C:\\Users\\Michael\\Desktop\\patch1_int.xml");
+		replacementScan("C:\\Users\\Michael\\Desktop\\patch1_int.xml", "C:\\Users\\Michael\\Desktop\\patch1_int_completed.xml");
+	}
 
-		System.out.println("Scanning XML files");
+	private static void replacementScan(String inputFile, String outputFile) throws Exception {
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-		Document doc;
+		//input
 
-		String xbxFolder = "G:\\mods\\ControllerSupport\\TLK\\MOONSHINE\\";
-		String origFolder = "G:\\mods\\ControllerSupport\\TLK\\ORIG\\";
-
-		//String[] langs = new String[] { "DEU", "ESN", "FRA", "INT", "ITA", "POL", "RUS" };
-		String[] langs = new String[] { "INT" };
-
-		String origPrefix = "BIOGame_";
-		String xboxPrefix = "DLC_CON_XBX_";
-		int maxIndex = 8;
-		ArrayList<TLKNode> differentIds = new ArrayList<TLKNode>();
-
-		for (String lang : langs) {
-			for (int currentIndex = 0; currentIndex < maxIndex; currentIndex++) {
-				Document origDoc = dbFactory.newDocumentBuilder()
-						.parse("file:///" + origFolder + File.separator + origPrefix + lang + File.separator + origPrefix + lang + currentIndex + ".xml");
-				origDoc.getDocumentElement().normalize();
-
-				Document xbxDoc = dbFactory.newDocumentBuilder()
-						.parse("file:///" + xbxFolder + File.separator + xboxPrefix + lang + File.separator + xboxPrefix + lang + currentIndex + ".xml");
-				xbxDoc.getDocumentElement().normalize();
-
-				NodeList origStringNodes = origDoc.getElementsByTagName("String");
-				NodeList xbxStringNodes = xbxDoc.getElementsByTagName("String");
-
-				System.out.println("NODES: " + origStringNodes.getLength());
-
-				for (int i = 0; i < origStringNodes.getLength(); i++) {
-					Element oStringElem = (Element) origStringNodes.item(i);
-					Element xStringElem = (Element) xbxStringNodes.item(i);
-
-					if (!oStringElem.getTextContent().equals(xStringElem.getTextContent())) {
-						String oID = oStringElem.getAttribute("id");
-						System.out.println("Diff on ID " + oID);
-						differentIds.add(new TLKNode(oID, currentIndex, xStringElem.getTextContent(), oStringElem.getTextContent()));
-					}
-				}
-			}
-		}
-
-		//add changes file
 		XPathFactory factory = XPathFactory.newInstance();
 		XPath xpath = factory.newXPath();
 
-		Document post700 = dbFactory.newDocumentBuilder().parse("file:///G:\\mods\\ControllerSupport\\TLK\\post7000.xml");
-		post700.getDocumentElement().normalize();
-		NodeList postStringNodes = post700.getElementsByTagName("string");
-		for (int i = 0; i < postStringNodes.getLength(); i++) {
-			Element postStringElem = (Element) postStringNodes.item(i);
-			Element dataElem = (Element) xpath.evaluate("data", postStringElem, XPathConstants.NODE);
-			Element idElem = (Element) xpath.evaluate("id", postStringElem, XPathConstants.NODE); // I get null here.
-			differentIds.add(new TLKNode(idElem.getTextContent(), 9, dataElem.getTextContent(), "none"));
+		Document origDoc = dbFactory.newDocumentBuilder().parse("file:///" + inputFile);
+		origDoc.getDocumentElement().normalize();
+
+		NodeList origStringNodes = (NodeList) xpath.evaluate("/Strings/String", origDoc.getDocumentElement(), XPathConstants.NODESET);
+
+		for (int i = 0; i < origStringNodes.getLength(); i++) {
+			Node singleNode = (Node) origStringNodes.item(i);
+
+			Element oStringElem = (Element) singleNode;
+			String content = oStringElem.getTextContent();
+			content = content.replace("([Shared_ShowMap])", "[XBoxB_Btn_A]");
+			content = content.replace("([Mouse_Btn_R])", "[XBoxB_Btn_LT]");
+			content = content.replace("[Mouse_Btn_R]", "[XBoxB_Btn_LT]");
+			content = content.replace("([Shared_Shoot])", "[XBoxB_Btn_RT]");
+			content = content.replace("([Shared_Action])", "[XBoxB_Btn_A]");
+			content = content.replace("([PC_MoveForward])", "[XBoxB_Btn_LSUp]");
+			content = content.replace("([Shared_Melee])", "[XBoxB_Btn_B]");
+			content = content.replace("([Shared_Aim])", "[XBoxB_Btn_LT]");
+			content = content.replace("([PC_StrafeLeft])", "[XBoxB_Btn_LSLeft]");
+			content = content.replace("([PC_StrafeRight])", "[XBoxB_Btn_LSRight]");
+			content = content.replace("([Shared_SquadFollow])", "[XBoxB_Btn_DPadD]");
+			content = content.replace("([Shared_SquadAttack])", "[XBoxB_Btn_DPadU]");
+			content = content.replace("([Shared_CoverTurn])", "[XBoxB_Btn_L3]");
+			content = content.replace("([Shared_ExitAtlas])", "[XBoxB_Btn_B]");
+			content = content.replace("([PC_HotKey5])", "[XBoxB_Btn_DPadU]");
+			content = content.replace("([PC_HotKey6])", "[XBoxB_Btn_DPadR]");
+			content = content.replace("([PC_HotKey7])", "[XBoxB_Btn_DPadD]");
+			content = content.replace("([PC_HotKey8])", "[XBoxB_Btn_DPadL]");
+			content = content.replace("([Shared_SquadMove1])", "[XBoxB_Btn_DPadL]");
+			content = content.replace("([Shared_SquadMove2])", "[XBoxB_Btn_DPadR]");
+			content = content.replace("([PC_EnterCommandMenu])", "[XBoxB_Btn_R3]");
+
+			content = content.replace("([PC_SwapWeapon])", "[XBoxB_Btn_X]");
+			content = content.replace("([Shared_Menu])", "[XBoxB_Btn_Start]");
+			content = content.replace("([PC_Reload])", "[XBoxB_Btn_X]");
+			content = content.replace("([PC_HotKey1])", "[XBoxB_Btn_LB]");
+			content = content.replace("([PC_HotKey2])", "[XBoxB_Btn_RB]");
+			content = content.replace("([PC_HotKey3])", "[XBoxB_Btn_Y]");
+			content = content.replace("([PC_MoveBackward])", "[XBoxB_Btn_LSDown]");
+			content = content.replace("([PC_NextWeapon])", "[XBoxB_Btn_X]");
+			
+			oStringElem.setTextContent(content);
 		}
 
+		Transformer tr = TransformerFactory.newInstance().newTransformer();
+		tr.setOutputProperty(OutputKeys.INDENT, "yes");
+		tr.setOutputProperty(OutputKeys.METHOD, "xml");
+		tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+		// send DOM to file
+		tr.transform(new DOMSource(origDoc), new StreamResult(new FileOutputStream(outputFile)));
+	}
+
+	/**
+	 * Scans a Strings file for xbox entries and removes them
+	 * 
+	 * @param outputFile
+	 * @param inputFile
+	 * @throws Exception
+	 */
+	private static void subsetScan(String inputFile, String outputFile) throws Exception {
+
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		//input
+		XPathFactory factory = XPathFactory.newInstance();
+		XPath xpath = factory.newXPath();
+
+		Document origDoc = dbFactory.newDocumentBuilder().parse("file:///" + inputFile);
+		origDoc.getDocumentElement().normalize();
+
+		NodeList origStringNodes = (NodeList) xpath.evaluate("/Strings/String", origDoc.getDocumentElement(), XPathConstants.NODESET);
+
+		for (int i = 0; i < origStringNodes.getLength(); i++) {
+			Node singleNode = (Node) origStringNodes.item(i);
+
+			Element oStringElem = (Element) singleNode;
+			String content = oStringElem.getTextContent();
+			if (content.contains("XBox") || content.contains("Logo_Dolby") || content.contains("[Exit]")  || content.contains("Logo_DTS_DigitalEntertainment") || content.contains("TEMP")
+					|| content.contains("UNRECOVERABLE DATA") || content.contains("Logo_NVIDIA_PhysX") || content.contains("Laughter") || content.contains("unintelligible")) {
+				singleNode.getParentNode().removeChild(singleNode);
+			}
+		}
+
+		Transformer tr = TransformerFactory.newInstance().newTransformer();
+		tr.setOutputProperty(OutputKeys.INDENT, "yes");
+		tr.setOutputProperty(OutputKeys.METHOD, "xml");
+		tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+		// send DOM to file
+		tr.transform(new DOMSource(origDoc), new StreamResult(new FileOutputStream(outputFile)));
+	}
+
+	/**
+	 * Scans a XML version of a TLK file (me2/3, not tankmaster) and gets rid of
+	 * anything without [ ] UI elements. Writes to a TLK Tankmaster format
+	 * 
+	 * @throws Exception
+	 */
+	private static void initialScan() throws Exception {
+
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		//input
+		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		//output
 		Document newDoc = dBuilder.newDocument();
 		Element root = newDoc.createElement("Strings");
-		for (TLKNode node : differentIds) {
-			Element changedElement = newDoc.createElement("String");
-			changedElement.setAttribute("id", node.id);
-			changedElement.setTextContent(node.xboxString);
-			root.appendChild(changedElement);
+
+		String tlkFile = "C:\\Users\\Michael\\Desktop\\biogame_xbx.xml";
+
+		XPathFactory factory = XPathFactory.newInstance();
+		XPath xpath = factory.newXPath();
+
+		Pattern pattern = Pattern.compile("\\[[a-zA-Z1-9_]+\\]");
+
+		Document origDoc = dbFactory.newDocumentBuilder().parse("file:///" + tlkFile);
+		origDoc.getDocumentElement().normalize();
+
+		NodeList origStringNodes = (NodeList) xpath.evaluate("/tlkFile/string", origDoc.getDocumentElement(), XPathConstants.NODESET);
+
+		for (int i = 0; i < origStringNodes.getLength(); i++) {
+			Node singleNode = (Node) origStringNodes.item(i);
+			singleNode.getParentNode().removeChild(singleNode);
+			Element oStringElem = (Element) singleNode;
+
+			String id = xpath.evaluate("id", oStringElem);
+			String content = xpath.evaluate("data", oStringElem);
+			Matcher matcher = pattern.matcher(content);
+			if (matcher.find()) {
+				/*
+				 * System.out.println("ok"); } if
+				 * (content.matches("\\[[a-zA-Z1-9_]+\\]")) {
+				 */ Element changedElement = newDoc.createElement("String");
+				changedElement.setAttribute("id", id);
+				changedElement.setTextContent(content);
+				root.appendChild(changedElement);
+				System.out.println("Found match: " + id);
+			} else {
+				//System.out.println("Match failed: "+content);
+			}
 		}
 
 		newDoc.appendChild(root);
@@ -122,7 +212,7 @@ public class TLKTool {
 		tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 
 		// send DOM to file
-		tr.transform(new DOMSource(newDoc), new StreamResult(new FileOutputStream("G:\\mods\\ControllerSupport\\TLK\\changes.xml")));
+		tr.transform(new DOMSource(newDoc), new StreamResult(new FileOutputStream("C:\\Users\\Michael\\Desktop\\XBX.xml")));
 	}
 
 	private static void decompileTLK() {
@@ -164,8 +254,7 @@ public class TLKTool {
 
 		}
 		System.exit(0);
-		
-		
+
 		dir = new File("G:\\mods\\ControllerSupport\\TLK\\ORIG\\");
 		files = dir.listFiles(new FilenameFilter() {
 			@Override

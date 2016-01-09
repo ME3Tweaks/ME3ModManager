@@ -99,7 +99,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser, sqlGearParser;
-	//JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
@@ -108,7 +107,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	final String selectAModDescription = "Select a mod on the left to view its description.";
 	DefaultListModel<Mod> modModel;
 	private ArrayList<Patch> patchList;
-	// static HashMap<String, Mod> listDescriptors;
 	private JMenuItem modutilsUpdateXMLGenerator;
 	private JMenuItem toolsCheckallmodsforupdate;
 	private JMenuItem restoreRevertUnpacked;
@@ -963,7 +961,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		restoreRevertEverything = new JMenuItem("Restore everything");
 		restoreRevertEverything
-				.setToolTipText("<html>Restores all basegame files, unpacked DLC files, and restores all SFAR files.<br>This will delete any non standard DLC folders.</html>");
+				.setToolTipText("<html>Restores all basegame files, deletes unpacked DLC files, and restores all SFAR files.<br>This will delete any non standard DLC folders.</html>");
 
 		restoreDeleteUnpacked = new JMenuItem("Delete all unpacked DLC files");
 		restoreDeleteUnpacked

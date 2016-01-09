@@ -415,24 +415,9 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						if (localpatch.getMe3tweaksid() != serverpack.getMe3tweaksid()) {
 							continue;
 						}
-						/*
-						 * if (!localpatch.getPatchName().equals(serverpack.
-						 * getPatchname())){ continue; }
-						 * 
-						 * //same name if
-						 * (!localpatch.getTargetModule().equals(serverpack.
-						 * getTargetmodule())){ continue; }
-						 * 
-						 * //same module if
-						 * (!localpatch.getTargetPath().equals(serverpack.
-						 * getTargetfile())){ continue; }
-						 */
-						// same target
-
-						// same name, same module, same target, likely the same
-						// - just check if version is newer.
 
 						if (localpatch.getPatchVersion() < serverpack.getPatchver()) {
+							ModManager.debugLogger.writeMessage("Local MixIn " + serverpack.getPatchname() + " is out of date, adding to download queue");
 							continue;
 						}
 
@@ -442,7 +427,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						break;
 					}
 					if (needsDownloaded) {
-						ModManager.debugLogger.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally (or out of date), adding to download queue");
+						ModManager.debugLogger.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally, adding to download queue");
 						packsToDownload.add(serverpack);
 					}
 				}
@@ -464,6 +449,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					FileUtils.writeStringToFile(new File(targetFolderStr + "patchdesc.ini"), patchDesc);
 
 					Patch p = new Patch(targetFolderStr + "patchdesc.ini");
+					publish(new ThreadCommand("REMOVE_LOCAL_LIST_PATCH", null, p));
 					publish(new ThreadCommand("ADD_PATCH", null, p));
 				}
 			} catch (Exception e) {
@@ -477,10 +463,21 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			for (ThreadCommand tc : chunks) {
 				if (!modmakerMode) {
 					Patch p = (Patch) tc.getData();
+					//Add new patch to list
 					if (tc.getCommand().equals("ADD_PATCH")) {
 						patchModel.addElement(p);
 					}
+					//Remove same-object patch from list
 					if (tc.getCommand().equals("REMOVE_PATCH")) {
+						patchModel.removeElement(p);
+					}
+					//Remove all existing patches with ID being updated
+					if (tc.getCommand().equals("REMOVE_LOCAL_LIST_PATCH")) {
+						for (int i = 0; i < patchModel.getSize(); i++) {
+							if (patchModel.getElementAt(i).getMe3tweaksid() == p.getMe3tweaksid()){
+								patchModel.remove(i);
+							}
+						}
 						patchModel.removeElement(p);
 					}
 				}
