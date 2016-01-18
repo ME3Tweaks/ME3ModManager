@@ -5,6 +5,8 @@ public class Card {
 	
 	public Card(String uniqueName) {
 		internalCardName = new UniqueName(uniqueName);
+		System.out.println(internalCardName.getName());
+		
 	}
 
 	public static String getHumanName(String uniqueName) {

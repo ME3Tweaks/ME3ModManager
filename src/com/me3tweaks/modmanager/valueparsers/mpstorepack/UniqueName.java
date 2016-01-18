@@ -11,6 +11,17 @@ public class UniqueName {
 		workingStr = value.substring(charIndex + 1);
 		charIndex = workingStr.indexOf('"'); // marks the end of name
 		uniqueName = workingStr.substring(0, charIndex);
+		workingStr = workingStr.substring(charIndex);
+		
+		if (workingStr.indexOf("VersionIdx") > 0){
+			workingStr = workingStr.substring(workingStr.indexOf("VersionIdx"));
+			charIndex = value.indexOf('='); // first "
+			workingStr = value.substring(charIndex + 1);
+			
+			versionIdx = Integer.parseInt(workingStr);
+			
+			
+		}
 	}
 
 	public String toString() {
