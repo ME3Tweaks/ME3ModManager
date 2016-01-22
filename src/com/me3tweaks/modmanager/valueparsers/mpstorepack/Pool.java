@@ -42,6 +42,12 @@ public class Pool {
 	public void setPoolweight(float poolweight) {
 		this.poolweight = poolweight;
 	}
+	
+	public String getPoolHTML(){
+		StringBuilder sb = new StringBuilder();
+		
+		return sb.toString();
+	}
 
 	@Override
 	public String toString() {
