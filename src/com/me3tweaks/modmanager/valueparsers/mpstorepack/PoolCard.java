@@ -2,11 +2,14 @@ package com.me3tweaks.modmanager.valueparsers.mpstorepack;
 
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
 
-public class Card implements Comparable<Card> {
+/**
+ * 
+ * @author mjperez
+ *
+ */
+public class PoolCard implements Comparable<PoolCard> {
 	private String uniqueName;
-	private int maxCount = -1;
 	private int versionIdx = -1;
-	private Rarity rarity = null;
 	private int PVIncrementBonus = -1;
 	private int GUIName = -1;
 	private boolean useVersionIdx;
@@ -39,7 +42,7 @@ public class Card implements Comparable<Card> {
 	 * @param uniqueNameString
 	 *            (UniqueName="AdeptVolus"... etc
 	 */
-	public Card(String uniqueNameString) {
+	public PoolCard(String uniqueNameString) {
 		uniqueName = ValueParserLib.getStringProperty(uniqueNameString, "UniqueName", true);
 		maxCount = ValueParserLib.getIntProperty(uniqueNameString, "MaxCount");
 		if (uniqueName.equals("SFXGameContentDLC_CON_MP1.SFXGameEffect_MatchConsumable_HeadshotDamage")) {
@@ -77,7 +80,6 @@ public class Card implements Comparable<Card> {
 	}
 
 	public String getCardHTML() {
-		System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "\">\n\t");
 		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
@@ -168,7 +170,7 @@ public class Card implements Comparable<Card> {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Card other = (Card) obj;
+		PoolCard other = (PoolCard) obj;
 		if (maxCount != other.maxCount)
 			return false;
 		if (rarity != other.rarity)
@@ -692,7 +694,7 @@ public class Card implements Comparable<Card> {
 	}
 
 	@Override
-	public int compareTo(Card other) {
+	public int compareTo(PoolCard other) {
 		int result = getUniqueName().compareTo(other.getUniqueName());
 		if (result != 0) return result;
 		//same name

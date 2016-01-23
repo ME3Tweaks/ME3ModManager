@@ -1,30 +1,34 @@
 package com.me3tweaks.modmanager.valueparsers.mpstorepack;
 
-public class Pool {
+import java.util.TreeSet;
+
+import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
+
+public class Pool implements Comparable<Pool>{
 	private String poolname;
-	private float poolweight;
+	private double poolweight;
+	private TreeSet<Card> poolContents;
 
 	public Pool(String poolString) {
-		//(PoolName="silverweapon",Weight=0.55)
-		String workingStr;
-		int charIndex = poolString.indexOf('"'); // first "
-		workingStr = poolString.substring(charIndex + 1);
-		charIndex = workingStr.indexOf('"'); // marks the end of pool name
-		poolname = workingStr.substring(0, charIndex);
-		workingStr.substring(charIndex);
+		poolname = ValueParserLib.getStringProperty(poolString, "PoolName", true);
+		poolweight = ValueParserLib.getFloatProperty(poolString, "Weight");
+		poolContents = new TreeSet<Card>();
+	}
 
-		//WEIGHT IS OPTIONAL!
-		charIndex = workingStr.indexOf("=");
+	public boolean removeCard(Card card) {
+		return poolContents.remove(card);
+	}
 
-		if (charIndex > 0) {
-			workingStr = workingStr.substring(charIndex + 1);
-			charIndex = workingStr.indexOf(')'); // marks the end of weight
-			try {
-				poolweight = Float.parseFloat(workingStr.substring(0, charIndex));
-			} catch (NumberFormatException e) {
-				System.err.println("Error reading weight as float: "+workingStr.substring(0, charIndex));
-			}
-		}
+	public void addCard(Card card) {
+		poolContents.add(card);
+	}
+
+	public TreeSet<Card> getPoolContents() {
+		return poolContents;
+	}
+
+	public void setPoolContents(TreeSet<Card> poolContents) {
+		this.poolContents = poolContents;
 	}
 
 	public String getPoolname() {
@@ -35,23 +39,31 @@ public class Pool {
 		this.poolname = poolname;
 	}
 
-	public float getPoolweight() {
+	public double getPoolweight() {
 		return poolweight;
 	}
 
-	public void setPoolweight(float poolweight) {
+	public void setPoolweight(double poolweight) {
 		this.poolweight = poolweight;
 	}
-	
-	public String getPoolHTML(){
+
+	public String getPoolHTML() {
 		StringBuilder sb = new StringBuilder();
-		
+
 		return sb.toString();
 	}
 
 	@Override
 	public String toString() {
 		return "Pool [poolname=" + poolname + ", poolweight=" + poolweight + "]";
+	}
+
+	@Override
+	public int compareTo(Pool other) {
+		// compareTo should return < 0 if this is supposed to be
+		// less than other, > 0 if this is supposed to be greater than 
+		// other and 0 if they are supposed to be equal
+		return getPoolname().compareTo(other.getPoolname());
 	}
 
 }

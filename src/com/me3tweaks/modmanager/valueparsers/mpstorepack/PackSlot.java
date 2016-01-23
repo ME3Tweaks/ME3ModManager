@@ -6,6 +6,8 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
+
 public class PackSlot {
 	private String packname;
 	private int numCards;
@@ -13,27 +15,16 @@ public class PackSlot {
 	private Pool backupPool;
 
 	public PackSlot(String value) {
-		//get Pack Name
-		String workingStr;
-		int charIndex = value.indexOf('"'); // first "
-		workingStr = value.substring(charIndex + 1);
-		charIndex = workingStr.indexOf('"'); // marks the end of pack name
-		packname = workingStr.substring(0, charIndex);
-
-		//Quantity
-		charIndex = workingStr.indexOf("=");
-		workingStr = workingStr.substring(charIndex + 1);
-		charIndex = workingStr.indexOf(','); // marks the end of pack name
-		try {
-			numCards = Integer.parseInt(workingStr.substring(0, charIndex));
-		} catch (NumberFormatException e) {
-			System.err.println("Failed to parse number of cards as int: " + workingStr.substring(0, charIndex));
+		packname = ValueParserLib.getStringProperty(value, "PackName", true);
+		numCards = ValueParserLib.getIntProperty(value, "Quantity");
+		String backupPoolname = ValueParserLib.getStringProperty(value, "BackupPool", true);
+		if (backupPoolname != null) {
+			backupPool = new Pool("(PoolName=\"" + backupPoolname + "\")");
 		}
 
-		//Pools
-		charIndex = workingStr.indexOf("=");
-		workingStr = workingStr.substring(charIndex + 1);
+		String workingStr = value.substring(value.indexOf("Pools=") + 6);
 
+		//Pools
 		String matchingStr = workingStr;
 		Matcher m = Pattern.compile("\\([a-zA-Z0-9=\",.]*\\)").matcher(workingStr);
 		while (m.find()) {
@@ -42,21 +33,25 @@ public class PackSlot {
 		}
 
 		//Backup Pool, if any.
-		System.out.println("Remaining text: " + workingStr);
+
 	}
 
+	@Override
 	public String toString() {
+		return "PackSlot [packname=" + packname + ", numCards=" + numCards + ", mainPools=" + mainPools + ", backupPool=" + backupPool + "]";
+	}
+
+	public String getDisplayString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(numCards + " card" + (numCards != 1 ? "s" : "") + " from one of the following pools:");
+		sb.append(numCards);
+		sb.append(" card" + (numCards != 1 ? "s" : ""));
+		sb.append(" from: ");
 		for (Pool pool : mainPools) {
 			sb.append("\n\t");
 			sb.append(pool.getPoolname());
 		}
-
-		sb.append("\n\n");
 		if (backupPool != null) {
-			sb.append("If all the above pools are unavailable for use, the following backup pool is used:\n\t");
-			sb.append(backupPool.getPoolname());
+			sb.append("\n\tBP: " + backupPool.getPoolname());
 		}
 		return sb.toString();
 	}
