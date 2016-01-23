@@ -21,11 +21,13 @@ public class CardParser {
 	private static TreeSet<Pool> poolList = new TreeSet<Pool>();
 	private static ArrayList<PackMetadata> metadataList = new ArrayList<PackMetadata>();
 	public static HashMap<Integer, String> livetlkMap;
-	public static LinkedHashSet<Card> cardList;
-
+	public static TreeSet<Card> cardList;
+	public static TreeSet<StorePack> packList;
+	public static HashMap<String, StorePack> packnameMap;
+	
+	
 	public static void main(String args[]) throws Exception {
-		TreeSet<String> cardNameSet = new TreeSet<String>();
-		HashMap<String, StorePack> packnameMap = new HashMap<String, StorePack>();
+		packnameMap = new HashMap<String, StorePack>();
 		XPath xpath = XPathFactory.newInstance().newXPath();
 		//String basepacklistExpression = "/CoalesceAsset/Sections/Section[@name='sfxgamempcontent.sfxgawreinforcementmanager']/Property[@name='packlist']/Value[@type='2']";
 		String packlistExpression = "/CoalesceAsset/Sections/Section[@name='sfxgamempcontent.sfxgawreinforcementmanager']/Property[@name='packlist']/Value[@type=3]";
@@ -48,10 +50,10 @@ public class CardParser {
 
 		InputSource livetlkSource = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\me3tlk.xml");
 
-		InputSource[] sources = new InputSource[] { basegameSource, testpatchSource, mp1Source, mp2Source, mp3Source, patch1Source, mp4Source,
-				mp5Source, patch2Source, liveiniSource };
+		InputSource[] sources = new InputSource[] { basegameSource, testpatchSource, mp1Source, mp2Source, mp3Source, patch1Source, mp4Source, mp5Source, patch2Source,
+				liveiniSource };
 
-		cardList = new LinkedHashSet<Card>(); //for list of all cards
+		cardList = new TreeSet<Card>(); //for list of all cards
 
 		//LOAD STRINGS INTO HASHMAP OF ID => STR
 		livetlkMap = new HashMap<Integer, String>();
@@ -130,8 +132,7 @@ public class CardParser {
 						} else {
 							contentNodes = (NodeList) xpath.evaluate(String.format(poolcontentsExpression, 3), poolNameNode, XPathConstants.NODESET);
 						}
-						NodeList removeNodes = (NodeList) xpath.evaluate(String.format(poolcontentsExpression, 4), poolNameNode,
-								XPathConstants.NODESET);
+						NodeList removeNodes = (NodeList) xpath.evaluate(String.format(poolcontentsExpression, 4), poolNameNode, XPathConstants.NODESET);
 						//GET CONTENTS OF POOL
 						//REMOVE POOL CONTENTS
 						if (removeNodes != null && removeNodes.getLength() > 0) {
@@ -151,17 +152,19 @@ public class CardParser {
 									Element contentNode = (Element) contentNodes.item(x);
 									//System.out.println("adding card to pool: "+contentNode.getTextContent());
 									Card multiCard = new Card(contentNode.getTextContent());
+									Card fetchedCard = getCardByName(multiCard.getUniqueName(), multiCard.getVersionIdx(), multiCard.getRarity());
+									if (fetchedCard == null) {
+										System.err.println("Missing " + multiCard);
+									}
 									pool.addCard(multiCard);
 								}
 							}
 						} else {
 							//try a 1-item array search.
 							if (inputSource == basegameSource) {
-								contentNodes = (NodeList) xpath.evaluate(String.format(singlepoolcontentsExpression, 2), poolNameNode,
-										XPathConstants.NODESET);
+								contentNodes = (NodeList) xpath.evaluate(String.format(singlepoolcontentsExpression, 2), poolNameNode, XPathConstants.NODESET);
 							} else {
-								contentNodes = (NodeList) xpath.evaluate(String.format(singlepoolcontentsExpression, 3), poolNameNode,
-										XPathConstants.NODESET);
+								contentNodes = (NodeList) xpath.evaluate(String.format(singlepoolcontentsExpression, 3), poolNameNode, XPathConstants.NODESET);
 							}
 							//GET CONTENTS OF POOL
 							if (contentNodes != null && contentNodes.getLength() > 0) {
@@ -204,10 +207,6 @@ public class CardParser {
 					metadataList.add(packMetadata);
 				}
 			}
-
-			for (Entry<String, StorePack> entry : packnameMap.entrySet()) {
-				StorePack pack = entry.getValue();
-			}
 		} else {
 			System.out.println("NO NODES!");
 		}
@@ -237,28 +236,49 @@ public class CardParser {
 				}
 			}
 
-			for (Card card : cardList) {
-				if (card.getRarity() == null) {
-					System.err.println("NULL RARITY: " + card);
-				}
-
-				if (card.getUniqueName().equals("AdeptAsari")) {
-					System.out.println("AsariAdept EXISTS!");
-					System.out.println(card);
-				}
-			}
+			/*
+			 * for (Card card : cardList) { if (card.getRarity() == null) {
+			 * System.err.println("NULL RARITY: " + card); }
+			 * 
+			 * if (card.getUniqueName().equals("AdeptAsari")) {
+			 * System.out.println("AsariAdept EXISTS!");
+			 * System.out.println(card); } }
+			 */
 
 			//generate pack contents
 			StringBuilder sb = new StringBuilder();
 
 			for (Entry<String, StorePack> entry : packnameMap.entrySet()) {
 				StorePack pack = entry.getValue();
-				String savepath = System.getProperty("user.dir") + "\\carddata\\" + pack.getPackName() + ".html";
+				System.out.println(pack.getSRPackName());
+				String savepath = System.getProperty("user.dir") + "\\carddata\\packcontents\\" + pack.getPackName() + ".html";
 				FileUtils.writeStringToFile(new File(savepath), pack.getPackHTML());
-				
-				sb.append("<a id='"+pack.getPackName()+"' class='roundedbutton' href='#"+pack.getPackName()+"' data-packname='"+pack.getPackName()+"'>"+pack.getHumanName()+"</a>\n\t");
+
+				sb.append("<a id='" + pack.getPackName() + "' class='roundedbutton' href='#" + pack.getPackName() + "' data-packname='" + pack.getPackName() + "'>"
+						+ pack.getHumanName() + "</a>\n\t");
 			}
-			String savepath = System.getProperty("user.dir") + "\\carddata\\packheading.html";
+			String savepath = System.getProperty("user.dir") + "\\carddata\\packcontents\\packheading.html";
+			FileUtils.writeStringToFile(new File(savepath), sb.toString());
+
+			//build cards page
+			sb = new StringBuilder();
+			String previousCategory = "";
+			int num = 0;
+			int numtodo = cardList.size();
+			for (Card card : cardList) {
+				//System.out.println("["+(num++)+"/"+numtodo+"]");
+				if (card.getUseVersionIdx() && card.getVersionIdx() < 0 && !card.getCategoryName().equals("weapons") && !card.getCategoryName().equals("weaponmods") && !card.getCategoryName().equals("misc") && !card.getRarity().equals(Card.Rarity.Unused)) {
+					//System.out.println("Skipping "+card);
+					continue;
+				}
+				if (!card.getCategoryName().equals(previousCategory)) {
+					sb.append("<hr class='dark_hr_center'>\n");
+				}
+				previousCategory = card.getCategoryName();
+				//System.out.println(card.getCardDisplayString());
+				sb.append(card.getCardHTML());
+			}
+			savepath = System.getProperty("user.dir") + "\\carddata\\packcontents\\cardlist.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
 
 		}
@@ -294,22 +314,35 @@ public class CardParser {
 		return pool;
 	}
 
-	public static Card getCardByName(String uniqueName, int versionIdx) {
+	public static Card getCardByName(String uniqueName, int versionIdx, Card.Rarity rarity) {
+		ArrayList<Card> samenameCards = new ArrayList<>();
 		for (Card card : cardList) {
 			if (card.getUniqueName().equals(uniqueName)) {
-				/*
-				 * if (card.getUseVersionIdx()) { if (card.getVersionIdx() ==
-				 * versionIdx) {
-				 * System.out.println("Found card by name and IDX: " +
-				 * uniqueName); return card; } } else {
-				 */
-				System.out.println("Found card by name only: " + uniqueName);
-				return card;
-				//}
+				samenameCards.add(card);
+				if (card.getUseVersionIdx()) {
+					if (card.getVersionIdx() == versionIdx) {
+						//System.out.println("Found card by name and IDX: " + uniqueName);
+						return card;
+					}
+				} else {
+					//System.out.println("Found card by name only: " + uniqueName);
+					return card;
+				}
 			}
 		}
-		System.out.println("Did not find card: " + uniqueName + ", vIDX: " + versionIdx);
-
+		//hasn't been found yet
+		for (Card card : samenameCards) {
+			if (card.getUseVersionIdx()) {
+				//it's probably not defined... somehow, the game accepts this.
+				Card cloneCard = new Card(card);
+				cloneCard.setVersionIdx(versionIdx);
+				if (rarity != null) {
+					cloneCard.setRarity(rarity);
+				}
+				cardList.add(cloneCard);
+				return cloneCard;
+			}
+		}
 		return null;
 	}
 }

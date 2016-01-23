@@ -67,6 +67,7 @@ public class StorePack {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<h2 class=\"centered dark\">" + getHumanName() + "</h2>\n");
 		sb.append("<h3 class=\"centered dark\">Internally known as " + packName + "</h3>\n");
+		sb.append("<p class='centered dark'>"+getDescripton()+"</p>");
 		sb.append("<hr class=\"dark_hr_center\">\n");
 
 		sb.append("<h3 class=\"centered\">Cards obtainable in this pack</h3>\n");
@@ -79,12 +80,12 @@ public class StorePack {
 				//these are only placeholder pools. we need to fetch the real ones
 				Pool realpool = CardParser.getPoolByName(slotPool.getPoolname());
 				for (Card card : realpool.getPoolContents()) {
-					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx());
+					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx(), null);
 					//System.out.println(realcard);
 					if (realcard != null) {
 						cards.add(realcard);
 					} else {
-						System.err.println("POOL CARD HAS NO STORE DEFINITION: "+card);
+					//	System.err.println("POOL CARD HAS NO STORE DEFINITION: "+card);
 					}
 				}
 			}
@@ -94,7 +95,7 @@ public class StorePack {
 		sb.append("<h3 class='centered dark'>Main Cards</h3>");
 
 		//print out tree - this is a set since pools may have overlapped.
-		System.out.println("STARTING HTML");
+		//System.out.println("STARTING HTML");
 		for (Card card : cards) {
 			//System.out.println(card);
 			sb.append(card.getCardHTML());
@@ -107,12 +108,12 @@ public class StorePack {
 				//these are only placeholder pools. we need to fetch the real ones
 				Pool realpool = CardParser.getPoolByName(backupPool.getPoolname());
 				for (Card card : realpool.getPoolContents()) {
-					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx());
+					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx(), null);
 					
 					if (realcard != null) {
 						backupCards.add(realcard);
 					} else {
-						System.err.println("BACKUP POOL CARD HAS NO STORE DEFINITION: "+card);
+						//System.err.println("BACKUP POOL CARD HAS NO STORE DEFINITION: "+card);
 					}
 				}
 			}
@@ -127,6 +128,10 @@ public class StorePack {
 
 		sb.append("</div>");
 		return sb.toString();
+	}
+
+	private String getDescripton() {
+		return metadata.getDescription();
 	}
 
 	public String getHumanName() {
@@ -195,6 +200,46 @@ public class StorePack {
 	public void setMetadata(PackMetadata metadata) {
 		// TODO Auto-generated method stub
 		this.metadata = metadata;
+	}
+
+	public boolean containsCard(Card findCard) {
+		Card cardToFind = CardParser.getCardByName( findCard.getUniqueName(), findCard.getVersionIdx(), null);
+
+		//MAIN POOLS
+		for (PackSlot slot : slotContents) {
+			for (Pool slotPool : slot.getMainPools()) {
+				//these are only placeholder pools. we need to fetch the real ones
+				Pool realpool = CardParser.getPoolByName(slotPool.getPoolname());
+				for (Card card : realpool.getPoolContents()) {
+					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx(), null);
+					if (realcard == cardToFind) {
+						return true;
+					}
+				}
+			}
+		}
+
+		//BACKUP POOL
+		for (PackSlot slot : slotContents) {
+			Pool backupPool = slot.getBackupPool();
+			if (backupPool != null) {
+				//these are only placeholder pools. we need to fetch the real ones
+				Pool realpool = CardParser.getPoolByName(backupPool.getPoolname());
+				for (Card card : realpool.getPoolContents()) {
+					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx(), null);
+					if (realcard == cardToFind) {
+						return true;
+					}
+				}
+			}
+		}
+		
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public String getSRPackName() {
+		return metadata.getSrTitle() + ": "+getHumanName();
 	}
 
 }

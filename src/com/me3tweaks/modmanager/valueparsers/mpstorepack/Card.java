@@ -1,5 +1,8 @@
 package com.me3tweaks.modmanager.valueparsers.mpstorepack;
 
+import java.util.ArrayList;
+import java.util.Map.Entry;
+
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
 
 public class Card implements Comparable<Card> {
@@ -10,12 +13,14 @@ public class Card implements Comparable<Card> {
 	private int PVIncrementBonus = -1;
 	private int GUIName = -1;
 	private boolean useVersionIdx;
+	private String htmlStr;
 
 	public enum Rarity { //rarity is the background of the card.
 		Common("Rarity_Common"), //blue
 		Uncommon("Rarity_Uncommon"), //silver
 		Rare("Rarity_Rare"), //gold
-		UltraRare("Rarity_UltraRare") //black
+		UltraRare("Rarity_UltraRare"), //black
+		Unused("Rarity_Unused") //red
 		;
 
 		private final String raritytext;
@@ -42,9 +47,6 @@ public class Card implements Comparable<Card> {
 	public Card(String uniqueNameString) {
 		uniqueName = ValueParserLib.getStringProperty(uniqueNameString, "UniqueName", true);
 		maxCount = ValueParserLib.getIntProperty(uniqueNameString, "MaxCount");
-		if (uniqueName.equals("SFXGameContentDLC_CON_MP1.SFXGameEffect_MatchConsumable_HeadshotDamage")) {
-			System.out.println("headshot breka");
-		}
 		useVersionIdx = ValueParserLib.getBooleanProperty(uniqueNameString, "bUseVersionIdx", true);
 		versionIdx = ValueParserLib.getIntProperty(uniqueNameString, "VersionIdx");
 		String rarity = ValueParserLib.getStringProperty(uniqueNameString, "Rarity", false);
@@ -64,8 +66,22 @@ public class Card implements Comparable<Card> {
 				break;
 			}
 		}
+		if (getCardDisplayString().toLowerCase().contains("unused") || getUniqueName().equals("InfiltratorHumanFemaleBF3")) {
+			this.rarity = Rarity.Unused;
+		}
 		PVIncrementBonus = ValueParserLib.getIntProperty(uniqueNameString, "PVIncrementBonus");
 		GUIName = ValueParserLib.getIntProperty(uniqueNameString, "GUIName");
+	}
+
+	/** Copy Constrcutor **/
+	public Card(Card card) {
+		uniqueName = card.uniqueName;
+		maxCount = card.maxCount;
+		useVersionIdx = card.useVersionIdx;
+		versionIdx = card.versionIdx;
+		rarity = card.rarity;
+		PVIncrementBonus = card.PVIncrementBonus;
+		GUIName = card.GUIName;
 	}
 
 	public boolean getUseVersionIdx() {
@@ -77,14 +93,73 @@ public class Card implements Comparable<Card> {
 	}
 
 	public String getCardHTML() {
-		System.out.println("Card HTML of "+this);
+		if (htmlStr == null) {
+			htmlStr = generateCardHTML();
+		}
+		return htmlStr;
+	}
+
+	public String generateCardHTML() {
+		//System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "\">\n\t");
 		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
 				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
-		sb.append("<span>" + getHumanName(uniqueName) + "</span>\n");
+		sb.append("<span>" + getCardDisplayString() + "</span>\n");
+		sb.append("<div class='ttip'>");
+		sb.append("<p>");
+		sb.append(getCardDescription());
+		sb.append("</p>");
+		sb.append("<hr class='dark_hr_center'>");
+		ArrayList<StorePack> packlist = getPacklistsCardIsIn();
+
+		StringBuilder unusedSB = new StringBuilder();
+
+		if (packlist.size() > 0) {
+			sb.append("<h3>Can be found in</h3>");
+			sb.append("<ul>");
+			unusedSB.append("<div class='extrapacks'><h3>Also in</h3>");
+			unusedSB.append("<ul>");
+			for (StorePack pack : packlist) {
+				switch (pack.getPackName()) {
+				case "starter":
+				case "bronze":
+				case "silver":
+				case "gold":
+				case "goldpremium":
+				case "arsenal":
+				case "reserves":
+					sb.append("<li>" + pack.getHumanName() + "</li>");
+					break;
+				default:
+					unusedSB.append("<li>" + pack.getHumanName() + "</li>");
+					break;
+				}
+			}
+			unusedSB.append("</ul></div>");
+			sb.append("</ul>");
+			sb.append(unusedSB.toString());
+		} else {
+			sb.append("<p>This card does not drop in any store pack. It must be modded into the game.</p>");
+		}
+		sb.append("</div>");
 		sb.append("</div>\n");
 		return sb.toString();
+	}
+
+	private ArrayList<StorePack> getPacklistsCardIsIn() {
+		ArrayList<StorePack> getPacklistCardIsIn = new ArrayList<>();
+		for (Entry<String, StorePack> entry : CardParser.packnameMap.entrySet()) {
+			StorePack pack = entry.getValue();
+			if (pack.containsCard(this)) {
+				getPacklistCardIsIn.add(pack);
+			}
+		}
+		return getPacklistCardIsIn;
+	}
+
+	private Object getCardDescription() {
+		return "Placeholder description.";
 	}
 
 	private String getImageName() {
@@ -111,8 +186,10 @@ public class Card implements Comparable<Card> {
 		return uniqueName;
 	}
 
-	private String getCategoryName() {
-
+	public String getCategoryName() {
+		if (getCardDisplayString().toLowerCase().contains("unused")) {
+			return "unused";
+		}
 		if (uniqueName.contains("Adept") || uniqueName.contains("Soldier") || uniqueName.contains("Sentinel") || uniqueName.contains("Infiltrator")
 				|| uniqueName.contains("Vanguard") || uniqueName.contains("Engineer")) {
 			return "kits";
@@ -182,19 +259,19 @@ public class Card implements Comparable<Card> {
 			return false;
 		return true;
 	}
-	
+
 	public String getCardDisplayString() {
 		String str = getHumanName(uniqueName);
 		if (versionIdx > -1) {
 			int num = versionIdx + 1;
 			ValueParserLib.RomanNumeral rn = new ValueParserLib.RomanNumeral(num);
-			str += " "+rn.toString();
+			str += " " + rn.toString();
 		}
-		
+
 		if (PVIncrementBonus > 0) {
-			str = PVIncrementBonus+"x "+str;
+			str = PVIncrementBonus + "x " + str;
 		}
-		
+
 		return str;
 	}
 
@@ -687,14 +764,25 @@ public class Card implements Comparable<Card> {
 
 	@Override
 	public String toString() {
-		return "Card [uniqueName=" + uniqueName + ", maxCount=" + maxCount + ", versionIdx=" + versionIdx + ", rarity=" + rarity
-				+ ", PVIncrementBonus=" + PVIncrementBonus + ", useVersionIdx=" + useVersionIdx + "]";
+		return "Card [uniqueName=" + uniqueName + ", maxCount=" + maxCount + ", versionIdx=" + versionIdx + ", rarity=" + rarity + ", PVIncrementBonus=" + PVIncrementBonus
+				+ ", useVersionIdx=" + useVersionIdx + "]";
 	}
 
 	@Override
 	public int compareTo(Card other) {
-		int result = getUniqueName().compareTo(other.getUniqueName());
-		if (result != 0) return result;
+		int result = getCategoryName().compareTo(other.getCategoryName());
+		if (result != 0)
+			return result;
+
+		if (getRarity() != null && other.getRarity() != null) {
+			result = getRarity().compareTo(other.getRarity());
+			if (result != 0)
+				return result;
+		}
+
+		result = getCardDisplayString().compareTo(other.getCardDisplayString());
+		if (result != 0)
+			return result;
 		//same name
 		return ((Integer) getVersionIdx()).compareTo((Integer) other.getVersionIdx());
 	}
