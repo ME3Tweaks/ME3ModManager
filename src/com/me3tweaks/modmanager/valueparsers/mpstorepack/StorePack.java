@@ -83,9 +83,6 @@ public class StorePack {
 					RealCard realcard = CardParser.getRealCardFromPoolCard(card);
 					//System.out.println(realcard);
 					if (realcard != null) {
-						if (realcard.getHumanName(realcard.getUniqueName()).equals("Alliance Infiltrator Unit")){
-							System.out.println("AIU FOUND.");
-						}
 						cards.add(realcard);
 					} else {
 					//	System.err.println("POOL CARD HAS NO STORE DEFINITION: "+card);
@@ -216,7 +213,9 @@ public class StorePack {
 							return true;
 						}
 						//check for version IDX
-						
+						if (findCard.getVersionIdx() == card.getVersionIdx()) {
+							return true;
+						}
 					}
 				}
 			}
@@ -234,7 +233,9 @@ public class StorePack {
 							return true;
 						}
 						//check for version IDX
-						
+						if (findCard.getVersionIdx() == card.getVersionIdx()) {
+							return true;
+						}
 					}
 				}
 			}
@@ -251,6 +252,10 @@ public class StorePack {
 
 	public String getSRPackName() {
 		return metadata.getSrTitle() + ": "+getHumanName();
+	}
+
+	public String getDescription() {
+		return metadata.getDescription();
 	}
 
 }
