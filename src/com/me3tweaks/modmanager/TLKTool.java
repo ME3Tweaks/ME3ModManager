@@ -5,12 +5,12 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -20,7 +20,10 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -216,14 +219,18 @@ public class TLKTool {
 	}
 
 	private static void decompileTLK() {
-
+		Collection<File> files = FileUtils.listFiles(
+				  new File("butthole"), 
+				  new RegexFileFilter("^(.*?)"), 
+				  DirectoryFileFilter.DIRECTORY
+				);
 		File dir = new File("H:\\Google Drive\\Mass Effect 3 Modding\\TLK\\DLC");
-		File[] files = dir.listFiles(new FilenameFilter() {
+		/*File[] files = dir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.endsWith(".tlk");
 			}
-		});
+		});*/
 
 		for (File f : files) {
 			ArrayList<String> commandBuilder = new ArrayList<String>();
@@ -256,12 +263,12 @@ public class TLKTool {
 		System.exit(0);
 
 		dir = new File("G:\\mods\\ControllerSupport\\TLK\\ORIG\\");
-		files = dir.listFiles(new FilenameFilter() {
+/*		files = dir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.endsWith(".tlk");
 			}
-		});
+		});*/
 
 		for (File f : files) {
 			ArrayList<String> commandBuilder = new ArrayList<String>();

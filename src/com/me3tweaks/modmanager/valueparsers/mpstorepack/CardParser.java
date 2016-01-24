@@ -23,7 +23,6 @@ public class CardParser {
 	//public static TreeSet<Card> cardList;
 	public static TreeSet<StorePack> packList;
 	public static HashMap<String, StorePack> packnameMap;
-
 	public static HashMap<String, TreeSet<RealCard>> carddataMap = new HashMap<String, TreeSet<RealCard>>();
 
 	public static void main(String args[]) throws Exception {
