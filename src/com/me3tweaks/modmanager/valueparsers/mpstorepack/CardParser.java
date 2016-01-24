@@ -3,7 +3,6 @@ package com.me3tweaks.modmanager.valueparsers.mpstorepack;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 import java.util.TreeSet;
 
@@ -21,11 +20,12 @@ public class CardParser {
 	private static TreeSet<Pool> poolList = new TreeSet<Pool>();
 	private static ArrayList<PackMetadata> metadataList = new ArrayList<PackMetadata>();
 	public static HashMap<Integer, String> livetlkMap;
-	public static TreeSet<Card> cardList;
+	//public static TreeSet<Card> cardList;
 	public static TreeSet<StorePack> packList;
 	public static HashMap<String, StorePack> packnameMap;
-	
-	
+
+	public static HashMap<String, TreeSet<RealCard>> carddataMap = new HashMap<String, TreeSet<RealCard>>();
+
 	public static void main(String args[]) throws Exception {
 		packnameMap = new HashMap<String, StorePack>();
 		XPath xpath = XPathFactory.newInstance().newXPath();
@@ -53,8 +53,6 @@ public class CardParser {
 		InputSource[] sources = new InputSource[] { basegameSource, testpatchSource, mp1Source, mp2Source, mp3Source, patch1Source, mp4Source, mp5Source, patch2Source,
 				liveiniSource };
 
-		cardList = new TreeSet<Card>(); //for list of all cards
-
 		//LOAD STRINGS INTO HASHMAP OF ID => STR
 		livetlkMap = new HashMap<Integer, String>();
 		String tlkExpression = "/TlkFile/Strings/String";
@@ -78,11 +76,11 @@ public class CardParser {
 				for (int i = 0; i < type4Nodes.getLength(); i++) {
 					if (type4Nodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
 						Element el = (Element) type4Nodes.item(i);
-						Card multiCard = new Card(el.getTextContent());
-						if (Card.getHumanName(multiCard.getUniqueName()).equals("Ops Survival Pack Capacity Upgrade")) {
+						RealCard multiCard = new RealCard(el.getTextContent());
+						if (RealCard.getHumanName(multiCard.getUniqueName()).equals("Ops Survival Pack Capacity Upgrade")) {
 							//System.out.println("REMOVE BREAK");
 						}
-						boolean removed = cardList.remove(multiCard);
+						boolean removed = removeCardFromMap(multiCard);
 						if (removed) {
 							//System.out.println("REMOVED A CARD: " + multiCard);
 						} else {
@@ -106,11 +104,8 @@ public class CardParser {
 				for (int i = 0; i < carddataNodes.getLength(); i++) {
 					if (carddataNodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
 						Element el = (Element) carddataNodes.item(i);
-						Card multiCard = new Card(el.getTextContent());
-						if (multiCard.getUniqueName().equals("AdeptAsari")) {
-							System.out.println("ADD BREAK");
-						}
-						cardList.add(multiCard);
+						RealCard multiCard = new RealCard(el.getTextContent());
+						addCardToMap(multiCard);
 						//System.out.println("CARD ADD: " + multiCard);
 
 						//System.out.println(multiCard.getCardHTML());
@@ -139,7 +134,7 @@ public class CardParser {
 							for (int x = 0; x < removeNodes.getLength(); x++) {
 								if (removeNodes.item(x).getNodeType() == Node.ELEMENT_NODE) {
 									Element removeNode = (Element) removeNodes.item(x);
-									Card multiCard = new Card(removeNode.getTextContent());
+									PoolCard multiCard = new PoolCard(removeNode.getTextContent());
 									pool.removeCard(multiCard);
 									//System.out.println("REMOVED CARD: " + multiCard);
 								}
@@ -151,10 +146,10 @@ public class CardParser {
 								if (contentNodes.item(x).getNodeType() == Node.ELEMENT_NODE) {
 									Element contentNode = (Element) contentNodes.item(x);
 									//System.out.println("adding card to pool: "+contentNode.getTextContent());
-									Card multiCard = new Card(contentNode.getTextContent());
-									Card fetchedCard = getCardByName(multiCard.getUniqueName(), multiCard.getVersionIdx(), multiCard.getRarity());
+									PoolCard multiCard = new PoolCard(contentNode.getTextContent());
+									RealCard fetchedCard = getRealCardFromPoolCard(multiCard);
 									if (fetchedCard == null) {
-										System.err.println("Missing " + multiCard);
+										System.err.println("Card not in realcards: " + multiCard);
 									}
 									pool.addCard(multiCard);
 								}
@@ -171,7 +166,7 @@ public class CardParser {
 								for (int x = 0; x < contentNodes.getLength(); x++) {
 									if (contentNodes.item(x).getNodeType() == Node.ELEMENT_NODE) {
 										Element contentNode = (Element) contentNodes.item(x);
-										Card singleCard = new Card(contentNode.getTextContent());
+										PoolCard singleCard = new PoolCard(contentNode.getTextContent());
 										pool.addCard(singleCard);
 									}
 								}
@@ -236,16 +231,23 @@ public class CardParser {
 				}
 			}
 
-			/*
-			 * for (Card card : cardList) { if (card.getRarity() == null) {
-			 * System.err.println("NULL RARITY: " + card); }
-			 * 
-			 * if (card.getUniqueName().equals("AdeptAsari")) {
-			 * System.out.println("AsariAdept EXISTS!");
-			 * System.out.println(card); } }
-			 */
-
 			//generate pack contents
+			int num = 0;
+			int numtodo = getNumCardsInMap();
+
+			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
+				for (RealCard card : entry.getValue()) {
+
+				}
+			}
+
+			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
+				for (RealCard card : entry.getValue()) {
+					System.out.println("Generating html [" + (num++) + "/" + numtodo + "]");
+					card.getCardHTML();
+				}
+			}
+
 			StringBuilder sb = new StringBuilder();
 
 			for (Entry<String, StorePack> entry : packnameMap.entrySet()) {
@@ -263,20 +265,23 @@ public class CardParser {
 			//build cards page
 			sb = new StringBuilder();
 			String previousCategory = "";
-			int num = 0;
-			int numtodo = cardList.size();
-			for (Card card : cardList) {
-				//System.out.println("["+(num++)+"/"+numtodo+"]");
-				if (card.getUseVersionIdx() && card.getVersionIdx() < 0 && !card.getCategoryName().equals("weapons") && !card.getCategoryName().equals("weaponmods") && !card.getCategoryName().equals("misc") && !card.getRarity().equals(Card.Rarity.Unused)) {
-					//System.out.println("Skipping "+card);
-					continue;
+			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
+				for (RealCard card : entry.getValue()) { //
+					/*
+					 * if (card.getUseVersionIdx() && card.getVersionIdx() < 0
+					 * && !card.getCategoryName().equals("weapons") &&
+					 * !card.getCategoryName().equals("weaponmods") &&
+					 * !card.getCategoryName().equals("misc") &&
+					 * !card.getRarity().equals(Card.Rarity.Unused)) { continue;
+					 * }
+					 */
+					if (!card.getCategoryName().equals(previousCategory)) {
+						sb.append("<hr class='dark_hr_center'>\n");
+					}
+					previousCategory = card.getCategoryName();
+					//System.out.println(card.getCardDisplayString());
+					sb.append(card.getCardHTML());
 				}
-				if (!card.getCategoryName().equals(previousCategory)) {
-					sb.append("<hr class='dark_hr_center'>\n");
-				}
-				previousCategory = card.getCategoryName();
-				//System.out.println(card.getCardDisplayString());
-				sb.append(card.getCardHTML());
 			}
 			savepath = System.getProperty("user.dir") + "\\carddata\\packcontents\\cardlist.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
@@ -314,35 +319,105 @@ public class CardParser {
 		return pool;
 	}
 
-	public static Card getCardByName(String uniqueName, int versionIdx, Card.Rarity rarity) {
-		ArrayList<Card> samenameCards = new ArrayList<>();
-		for (Card card : cardList) {
-			if (card.getUniqueName().equals(uniqueName)) {
-				samenameCards.add(card);
-				if (card.getUseVersionIdx()) {
-					if (card.getVersionIdx() == versionIdx) {
-						//System.out.println("Found card by name and IDX: " + uniqueName);
-						return card;
+	/*
+	 * public static RealCard getCardByName(String uniqueName, int versionIdx,
+	 * RealCard.Rarity rarity) { boolean isCharCard =
+	 * RealCard.IsCharacterCard(uniqueName);
+	 * 
+	 * ArrayList<RealCard> samenameCards = new ArrayList<>(); for (Entry<String,
+	 * TreeSet<RealCard>> entry : carddataMap.entrySet()) { for (RealCard card :
+	 * entry.getValue()){ if (card.getUniqueName().equals(uniqueName)) {
+	 * samenameCards.add(card); if (card.getUseVersionIdx()) { if
+	 * (card.getVersionIdx() == versionIdx) { //System.out.println(
+	 * "Found card by name and IDX: " + uniqueName); return card; } } else {
+	 * //System.out.println("Found card by name only: " + uniqueName); return
+	 * card; } } }
+	 */
+
+	//hasn't been found yet
+	/*
+	 * for (Card card : samenameCards) { if (card.getUseVersionIdx() ||
+	 * isCharCard) { //it's probably not defined... somehow, the game accepts
+	 * this. Card cloneCard = new Card(card);
+	 *  } extrageneratedCards.add(cloneCard); return
+	 * cloneCard; } }
+	 */
+
+	public static void addCardToMap(RealCard card) {
+		TreeSet<RealCard> cardset = carddataMap.get(card.getUniqueName());
+		if (cardset == null) {
+			cardset = new TreeSet<RealCard>();
+			carddataMap.put(card.getUniqueName(), cardset);
+		}
+		cardset.add(card);
+	}
+
+	public static boolean removeCardFromMap(RealCard card) {
+		TreeSet<RealCard> cardset = carddataMap.get(card.getUniqueName());
+		if (cardset != null)
+			return cardset.remove(card);
+		return false;
+	}
+
+	public static int getNumCardsInMap() {
+		int count = 0;
+		for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
+			TreeSet<RealCard> cardset = entry.getValue();
+			count += cardset.size();
+		}
+		return count;
+	}
+
+	public static RealCard getRealCardFromPoolCard(PoolCard card) {
+		TreeSet<RealCard> cardset = carddataMap.get(card.getUniqueName());
+		if (cardset == null || cardset.size() == 0) {
+			return null;
+		}
+		boolean isCharCard = false;
+		if (card.getCategoryName().equals("kits")) {
+			isCharCard = true;
+		}
+		boolean isConsumable = false;
+		if (card.getCategoryName().equals("consumables")) {
+			isConsumable = true;
+		}
+
+		for (RealCard rcard : cardset) {
+			if (rcard.getUseVersionIdx()) {
+				if (card.getVersionIdx() == rcard.getVersionIdx()) {
+					//System.out.println("Found card by name and IDX: " + uniqueName);
+					return rcard;
+				}
+			} else {
+				//System.out.println("Found card by name only: " + uniqueName);
+				return rcard;
+			}
+		}
+		if (isCharCard) {
+			RealCard maxidxcard = null;
+			for (RealCard rcard : cardset) {
+				if (maxidxcard != null) {
+					if (rcard.getVersionIdx() > card.getVersionIdx()) {
+						maxidxcard = rcard;
 					}
 				} else {
-					//System.out.println("Found card by name only: " + uniqueName);
-					return card;
+					maxidxcard = rcard;
 				}
 			}
+			return maxidxcard;
 		}
-		//hasn't been found yet
-		for (Card card : samenameCards) {
-			if (card.getUseVersionIdx()) {
-				//it's probably not defined... somehow, the game accepts this.
-				Card cloneCard = new Card(card);
-				cloneCard.setVersionIdx(versionIdx);
-				if (rarity != null) {
-					cloneCard.setRarity(rarity);
-				}
-				cardList.add(cloneCard);
-				return cloneCard;
+		if (isConsumable) {
+			
+			RealCard maxidxcard = cardset.first();
+			RealCard cloneCard = new RealCard(maxidxcard); //clonecard
+			cloneCard.setVersionIdx(card.getVersionIdx()); 
+			if (card.getRarity() != null) {
+				 cloneCard.setRarity(card.getRarity());
 			}
+			cardset.add(cloneCard);
+			return cloneCard;
 		}
+		
 		return null;
 	}
 }

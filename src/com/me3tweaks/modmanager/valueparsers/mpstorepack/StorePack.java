@@ -71,18 +71,21 @@ public class StorePack {
 		sb.append("<hr class=\"dark_hr_center\">\n");
 
 		sb.append("<h3 class=\"centered\">Cards obtainable in this pack</h3>\n");
-		TreeSet<Card> cards = new TreeSet<Card>();
-		TreeSet<Card> backupCards = new TreeSet<Card>();
+		TreeSet<RealCard> cards = new TreeSet<RealCard>();
+		TreeSet<RealCard> backupCards = new TreeSet<RealCard>();
 
 		//MAIN POOLS
 		for (PackSlot slot : slotContents) {
 			for (Pool slotPool : slot.getMainPools()) {
 				//these are only placeholder pools. we need to fetch the real ones
 				Pool realpool = CardParser.getPoolByName(slotPool.getPoolname());
-				for (Card card : realpool.getPoolContents()) {
-					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx(), null);
+				for (PoolCard card : realpool.getPoolContents()) {
+					RealCard realcard = CardParser.getRealCardFromPoolCard(card);
 					//System.out.println(realcard);
 					if (realcard != null) {
+						if (realcard.getHumanName(realcard.getUniqueName()).equals("Alliance Infiltrator Unit")){
+							System.out.println("AIU FOUND.");
+						}
 						cards.add(realcard);
 					} else {
 					//	System.err.println("POOL CARD HAS NO STORE DEFINITION: "+card);
@@ -96,7 +99,7 @@ public class StorePack {
 
 		//print out tree - this is a set since pools may have overlapped.
 		//System.out.println("STARTING HTML");
-		for (Card card : cards) {
+		for (RealCard card : cards) {
 			//System.out.println(card);
 			sb.append(card.getCardHTML());
 		}
@@ -107,9 +110,8 @@ public class StorePack {
 			if (backupPool != null) {
 				//these are only placeholder pools. we need to fetch the real ones
 				Pool realpool = CardParser.getPoolByName(backupPool.getPoolname());
-				for (Card card : realpool.getPoolContents()) {
-					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx(), null);
-					
+				for (PoolCard card : realpool.getPoolContents()) {
+					RealCard realcard = CardParser.getRealCardFromPoolCard(card);
 					if (realcard != null) {
 						backupCards.add(realcard);
 					} else {
@@ -121,7 +123,7 @@ public class StorePack {
 		if (backupCards.size() > 0) {
 			sb.append("<hr class=\"dark_hr_center\">");
 			sb.append("<h3 class='centered dark'>Backup Cards</h3>");
-			for (Card card : backupCards) {
+			for (RealCard card : backupCards) {
 				sb.append(card.getCardHTML());
 			}
 		}
@@ -202,18 +204,19 @@ public class StorePack {
 		this.metadata = metadata;
 	}
 
-	public boolean containsCard(Card findCard) {
-		Card cardToFind = CardParser.getCardByName( findCard.getUniqueName(), findCard.getVersionIdx(), null);
-
+	public boolean containsCard(RealCard findCard) {
 		//MAIN POOLS
 		for (PackSlot slot : slotContents) {
 			for (Pool slotPool : slot.getMainPools()) {
 				//these are only placeholder pools. we need to fetch the real ones
 				Pool realpool = CardParser.getPoolByName(slotPool.getPoolname());
-				for (Card card : realpool.getPoolContents()) {
-					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx(), null);
-					if (realcard == cardToFind) {
-						return true;
+				for (PoolCard card : realpool.getPoolContents()) {
+					if (card.getUniqueName().equals(findCard.getUniqueName())){
+						if (findCard.getUseVersionIdx() == false || findCard.isCharCard) {
+							return true;
+						}
+						//check for version IDX
+						
 					}
 				}
 			}
@@ -225,10 +228,13 @@ public class StorePack {
 			if (backupPool != null) {
 				//these are only placeholder pools. we need to fetch the real ones
 				Pool realpool = CardParser.getPoolByName(backupPool.getPoolname());
-				for (Card card : realpool.getPoolContents()) {
-					Card realcard = CardParser.getCardByName(card.getUniqueName(), card.getVersionIdx(), null);
-					if (realcard == cardToFind) {
-						return true;
+				for (PoolCard card : realpool.getPoolContents()) {
+					if (card.getUniqueName().equals(findCard.getUniqueName())){
+						if (findCard.getUseVersionIdx() == false || findCard.isCharCard) {
+							return true;
+						}
+						//check for version IDX
+						
 					}
 				}
 			}
@@ -236,6 +242,11 @@ public class StorePack {
 		
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public String toString() {
+		return "StorePack [packName=" + packName + ", cost=" + cost + "]";
 	}
 
 	public String getSRPackName() {

@@ -1,24 +1,24 @@
 package com.me3tweaks.modmanager.valueparsers.mpstorepack;
 
+import java.util.ArrayList;
+import java.util.Map.Entry;
+
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
-import com.me3tweaks.modmanager.valueparsers.mpstorepack.Card.Rarity;
 
-/**
- * 
- * @author mjperez
- *
- */
-public class PoolCard extends Card implements Comparable<PoolCard>  {
-	@Override
-	public String toString() {
-		return "PoolCard [uniqueName=" + uniqueName + ", versionIdx=" + versionIdx + ", PVIncrementBonus=" + PVIncrementBonus + ", rarity=" + rarity + "]";
-	}
-
+public class RealCard extends Card implements Comparable<RealCard> {
 	private String uniqueName;
+	private int maxCount = -1;
 	private int versionIdx = -1;
+	private Rarity rarity = null;
 	private int PVIncrementBonus = -1;
-	private Rarity rarity;
-
+	private int GUIName = -1;
+	private int GUIDescription = -1;
+	private boolean useVersionIdx;
+	private String htmlStr;
+	private String cardHTML;
+	private ArrayList<StorePack> packsIn;
+	public boolean isCharCard;
+	public boolean isConsumable;
 
 	/**
 	 * Represents a card.
@@ -26,11 +26,10 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 	 * @param uniqueNameString
 	 *            (UniqueName="AdeptVolus"... etc
 	 */
-	public PoolCard(String uniqueNameString) {
+	public RealCard(String uniqueNameString) {
 		uniqueName = ValueParserLib.getStringProperty(uniqueNameString, "UniqueName", true);
-		if (uniqueName.equals("SFXGameContentDLC_CON_MP1.SFXGameEffect_MatchConsumable_HeadshotDamage")) {
-			System.out.println("headshot breka");
-		}
+		maxCount = ValueParserLib.getIntProperty(uniqueNameString, "MaxCount");
+		useVersionIdx = ValueParserLib.getBooleanProperty(uniqueNameString, "bUseVersionIdx", true);
 		versionIdx = ValueParserLib.getIntProperty(uniqueNameString, "VersionIdx");
 		String rarity = ValueParserLib.getStringProperty(uniqueNameString, "Rarity", false);
 		if (rarity != null) {
@@ -49,19 +48,126 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 				break;
 			}
 		}
+		if (getCardDisplayString().toLowerCase().contains("unused") || getUniqueName().equals("InfiltratorHumanFemaleBF3")) {
+			this.rarity = Rarity.Unused;
+		}
 		PVIncrementBonus = ValueParserLib.getIntProperty(uniqueNameString, "PVIncrementBonus");
-		
+		GUIName = ValueParserLib.getIntProperty(uniqueNameString, "GUIName");
+		GUIDescription = ValueParserLib.getIntProperty(uniqueNameString, "GUIDescription");
+		isCharCard = (getCategoryName().equals("kits")? true : false);
+		isConsumable = (getCategoryName().equals("consumables")? true : false);
 		if (getCategoryName().equals("gear")) versionIdx = 0;
+
+	}
+
+	/** Copy Constrcutor **/
+	public RealCard(RealCard card) {
+		uniqueName = card.uniqueName;
+		maxCount = card.maxCount;
+		useVersionIdx = card.useVersionIdx;
+		versionIdx = card.versionIdx;
+		rarity = card.rarity;
+		PVIncrementBonus = card.PVIncrementBonus;
+		GUIName = card.GUIName;
+	}
+
+	public boolean getUseVersionIdx() {
+		return useVersionIdx;
+	}
+
+	public void setUseVersionIdx(boolean useVersionIdx) {
+		this.useVersionIdx = useVersionIdx;
 	}
 
 	public String getCardHTML() {
+		if (htmlStr == null) {
+			htmlStr = generateCardHTML();
+		}
+		return htmlStr;
+	}
+
+	private String generateCardHTML() {		
+		//System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "\">\n\t");
 		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
 				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
-		sb.append("<span>" + getHumanName(uniqueName) + "</span>\n");
+		sb.append("<span>" + getCardDisplayString() + "</span>\n");
+		sb.append("<div class='ttip'>");
+		sb.append("<p>");
+		sb.append(getCardDescription());
+		sb.append("</p>");
+		sb.append("<hr class='dark_hr_center'>");
+		ArrayList<StorePack> packlist = getPacklistsCardIsIn();
+
+		StringBuilder unusedSB = new StringBuilder();
+
+		if (packlist.size() > 0) {
+			sb.append("<h3>Can be found in</h3>");
+			sb.append("<ul>");
+			unusedSB.append("<div class='extrapacks'><h3>Also in</h3>");
+			unusedSB.append("<ul>");
+			for (StorePack pack : packlist) {
+				switch (pack.getPackName()) {
+				case "starter":
+				case "bronze":
+				case "silver":
+				case "gold":
+				case "goldpremium":
+				case "arsenal":
+				case "reserves":
+					sb.append("<li>" + pack.getHumanName() + "</li>");
+					break;
+				default:
+					unusedSB.append("<li>" + pack.getHumanName() + "</li>");
+					break;
+				}
+			}
+			unusedSB.append("</ul></div>");
+			sb.append("</ul>");
+			sb.append(unusedSB.toString());
+		} else {
+			sb.append("<p>This card does not drop in any store pack. It must be modded into the game.</p>");
+		}
+		sb.append("</div>");
 		sb.append("</div>\n");
-		return sb.toString();
+		cardHTML = sb.toString();
+		return cardHTML;
+	}
+
+	private ArrayList<StorePack> getPacklistsCardIsIn() {
+		if (packsIn != null) {return packsIn;}
+		ArrayList<StorePack> getPacklistCardIsIn = new ArrayList<>();
+		for (Entry<String, StorePack> entry : CardParser.packnameMap.entrySet()) {
+			StorePack pack = entry.getValue();
+			if (pack.containsCard(this)) {
+				getPacklistCardIsIn.add(pack);
+			}
+		}
+		
+		
+		if (getPacklistCardIsIn.size() == 0) {
+			for (Entry<String, StorePack> entry : CardParser.packnameMap.entrySet()) {
+				StorePack pack = entry.getValue();
+				if (pack.containsCard(this)) {
+					//System.err.println("Card is in a pack but with diff idx (but no idx exists for this): "+this);
+					getPacklistCardIsIn.add(pack);
+				}
+			}
+		}
+		if (getPacklistCardIsIn.size() == 0) {
+			System.err.println("Card not in a pack "+this);
+		}
+		packsIn = getPacklistCardIsIn;
+		return packsIn;
+	}
+
+	public String getCardName() {
+		return CardParser.livetlkMap.get(GUIName);
+	}
+	
+	public String getCardDescription() {
+		return CardParser.livetlkMap.get(GUIDescription);
 	}
 
 	private String getImageName() {
@@ -89,7 +195,9 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 	}
 
 	public String getCategoryName() {
-
+		if (getCardDisplayString().toLowerCase().contains("unused")) {
+			return "unused";
+		}
 		if (uniqueName.contains("Adept") || uniqueName.contains("Soldier") || uniqueName.contains("Sentinel") || uniqueName.contains("Infiltrator")
 				|| uniqueName.contains("Vanguard") || uniqueName.contains("Engineer")) {
 			return "kits";
@@ -118,10 +226,19 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 		this.uniqueName = uniqueName;
 	}
 
+	public int getMaxCount() {
+		return maxCount;
+	}
+
+	public void setMaxCount(int maxCount) {
+		this.maxCount = maxCount;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + maxCount;
 		result = prime * result + ((rarity == null) ? 0 : rarity.hashCode());
 		result = prime * result + ((uniqueName == null) ? 0 : uniqueName.hashCode());
 		result = prime * result + versionIdx;
@@ -136,7 +253,9 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PoolCard other = (PoolCard) obj;
+		RealCard other = (RealCard) obj;
+		if (maxCount != other.maxCount)
+			return false;
 		if (rarity != other.rarity)
 			return false;
 		if (uniqueName == null) {
@@ -148,19 +267,19 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 			return false;
 		return true;
 	}
-	
+
 	public String getCardDisplayString() {
 		String str = getHumanName(uniqueName);
 		if (versionIdx > -1) {
 			int num = versionIdx + 1;
 			ValueParserLib.RomanNumeral rn = new ValueParserLib.RomanNumeral(num);
-			str += " "+rn.toString();
+			str += " " + rn.toString();
 		}
-		
+
 		if (PVIncrementBonus > 0) {
-			str = PVIncrementBonus+"x "+str;
+			str = PVIncrementBonus + "x " + str;
 		}
-		
+
 		return str;
 	}
 
@@ -235,7 +354,7 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 		case "MPCapacity_Revive":
 			return "Medi-Gel Capacity Upgrade";
 		case "MPCapacity_Rocket":
-			return "Cobra Missle Launcher Capacity Upgrade";
+			return "Cobra Missile Launcher Capacity Upgrade";
 		case "MPCapacity_Shield":
 			return "Ops Survival Pack Capacity Upgrade";
 		case "MPCredits":
@@ -263,19 +382,19 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 		case "SFXGameContent.SFXWeaponMod_PistolMagSize":
 			return "Pistol Magazine Upgrade";
 		case "SFXGameContent.SFXWeaponMod_PistolReloadSpeed":
-			return "UNUSED - Pistol Reload Speed";
+			return "Pistol Piercing Mod";
 		case "SFXGameContent.SFXWeaponMod_PistolStability":
-			return "UNUSED - Pistol Stability";
+			return "Pistol Melee Stunner";
 		case "SFXGameContent.SFXWeaponMod_SMGAccuracy":
-			return "SMG Recoil System";
+			return "SMG Scope";
 		case "SFXGameContent.SFXWeaponMod_SMGConstraintDamage":
-			return "UNUSED - SMG Constraint Damage";
+			return "SMG Heat Sink"; //named wrong
 		case "SFXGameContent.SFXWeaponMod_SMGDamage":
 			return "SMG High Caliber Barrel";
 		case "SFXGameContent.SFXWeaponMod_SMGMagSize":
 			return "SMG Magazine Upgrade";
 		case "SFXGameContent.SFXWeaponMod_SMGStability":
-			return "SMG Recoil System";
+			return "SMG Ultralight Materials";
 		case "SFXGameContent.SFXWeaponMod_ShotgunAccuracy":
 			return "Shotgun Smart Choke";
 		case "SFXGameContent.SFXWeaponMod_ShotgunDamage":
@@ -283,17 +402,17 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 		case "SFXGameContent.SFXWeaponMod_ShotgunMeleeDamage":
 			return "Shotgun Blade Attachment";
 		case "SFXGameContent.SFXWeaponMod_ShotgunReloadSpeed":
-			return "Unused - Shotgun Reload Speed";
+			return "Shotgun Shredder Mod"; //named wrong
 		case "SFXGameContent.SFXWeaponMod_ShotgunStability":
-			return "UNUSED - Shotgun Stability";
+			return "Shotgun Spare Thermal Clip"; //named wrong
 		case "SFXGameContent.SFXWeaponMod_SniperRifleAccuracy":
 			return "Sniper Rifle Enhanced Scope";
 		case "SFXGameContent.SFXWeaponMod_SniperRifleConstraintDamage":
-			return "UNUSED - SniperRifle Constraint";
+			return "Sniper Rifle Piercing Mod";
 		case "SFXGameContent.SFXWeaponMod_SniperRifleDamage":
 			return "Sniper Rifle Extended Barrel";
 		case "SFXGameContent.SFXWeaponMod_SniperRifleReloadSpeed":
-			return "Unused - Sniper Rifle Reload Speed";
+			return "Sniper Rifle Spare Thermal Clip";
 		case "SFXGameContent.SFXWeapon_AssaultRifle_Argus":
 			return "M-55 Argus";
 		case "SFXGameContent.SFXWeapon_AssaultRifle_Avenger":
@@ -651,12 +770,31 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 		}
 	}
 
+
 	@Override
-	public int compareTo(PoolCard other) {
-		int result = getUniqueName().compareTo(other.getUniqueName());
-		if (result != 0) return result;
+	public int compareTo(RealCard other) {
+		int result = getCategoryName().compareTo(other.getCategoryName());
+		if (result != 0)
+			return result;
+
+		if (getRarity() != null && other.getRarity() != null) {
+			result = getRarity().compareTo(other.getRarity());
+			if (result != 0)
+				return result;
+		}
+
+		result = getCardDisplayString().compareTo(other.getCardDisplayString());
+		if (result != 0)
+			return result;
 		//same name
 		return ((Integer) getVersionIdx()).compareTo((Integer) other.getVersionIdx());
+	}
+
+	@Override
+	public String toString() {
+		return "RealCard [uniqueName=" + uniqueName + ", maxCount=" + maxCount + ", versionIdx=" + versionIdx + ", rarity=" + rarity + ", PVIncrementBonus=" + PVIncrementBonus
+				+ ", GUIName=" + GUIName + ", GUIDescription=" + GUIDescription + ", useVersionIdx=" + useVersionIdx + ", isCharCard=" + isCharCard + ", isConsumable="
+				+ isConsumable + "]";
 	}
 
 	public int getVersionIdx() {
@@ -681,5 +819,21 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 
 	public void setPVIncrementBonus(int pVIncrementBonus) {
 		PVIncrementBonus = pVIncrementBonus;
+	}
+
+	public int getGUIName() {
+		return GUIName;
+	}
+
+	public void setGUIName(int gUIName) {
+		GUIName = gUIName;
+	}
+
+	public static boolean IsCharacterCard(String uniqueName) {
+		if (uniqueName.contains("Adept") || uniqueName.contains("Soldier") || uniqueName.contains("Sentinel") || uniqueName.contains("Infiltrator")
+				|| uniqueName.contains("Vanguard") || uniqueName.contains("Engineer")) {
+			return true;
+		}
+		return false;
 	}
 }

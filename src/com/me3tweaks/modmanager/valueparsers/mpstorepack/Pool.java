@@ -7,27 +7,27 @@ import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
 public class Pool implements Comparable<Pool>{
 	private String poolname;
 	private double poolweight;
-	private TreeSet<Card> poolContents;
+	private TreeSet<PoolCard> poolContents;
 
 	public Pool(String poolString) {
 		poolname = ValueParserLib.getStringProperty(poolString, "PoolName", true);
 		poolweight = ValueParserLib.getFloatProperty(poolString, "Weight");
-		poolContents = new TreeSet<Card>();
+		poolContents = new TreeSet<PoolCard>();
 	}
 
-	public boolean removeCard(Card card) {
+	public boolean removeCard(PoolCard card) {
 		return poolContents.remove(card);
 	}
 
-	public void addCard(Card card) {
+	public void addCard(PoolCard card) {
 		poolContents.add(card);
 	}
 
-	public TreeSet<Card> getPoolContents() {
+	public TreeSet<PoolCard> getPoolContents() {
 		return poolContents;
 	}
 
-	public void setPoolContents(TreeSet<Card> poolContents) {
+	public void setPoolContents(TreeSet<PoolCard> poolContents) {
 		this.poolContents = poolContents;
 	}
 
