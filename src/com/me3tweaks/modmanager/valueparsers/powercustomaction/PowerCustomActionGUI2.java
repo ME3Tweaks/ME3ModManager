@@ -663,8 +663,10 @@ public class PowerCustomActionGUI2 extends JFrame implements ActionListener {
 			for (PowerVariable pv : loadedVariables) {
 				System.out.println("VAR: "+pv);
 				for (VariableRow vr : pv.getVariableRows()) {
-					if (vr.getContainerComboBox().getSelectedItem() == key) {
-						items.add(vr);
+					if (vr.getContainerComboBox() != null) {
+						if (vr.getContainerComboBox().getSelectedItem() == key) {
+							items.add(vr);
+						}
 					}
 				}
 			}

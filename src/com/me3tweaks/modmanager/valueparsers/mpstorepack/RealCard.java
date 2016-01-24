@@ -195,9 +195,6 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	}
 
 	public String getCategoryName() {
-		if (getCardDisplayString().toLowerCase().contains("unused")) {
-			return "unused";
-		}
 		if (uniqueName.contains("Adept") || uniqueName.contains("Soldier") || uniqueName.contains("Sentinel") || uniqueName.contains("Infiltrator")
 				|| uniqueName.contains("Vanguard") || uniqueName.contains("Engineer")) {
 			return "kits";
@@ -270,7 +267,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 
 	public String getCardDisplayString() {
 		String str = getHumanName(uniqueName);
-		if (versionIdx > -1) {
+		if (versionIdx > -1 && !getCategoryName().equals("gear") && !getCategoryName().equals("kits")) {
 			int num = versionIdx + 1;
 			ValueParserLib.RomanNumeral rn = new ValueParserLib.RomanNumeral(num);
 			str += " " + rn.toString();

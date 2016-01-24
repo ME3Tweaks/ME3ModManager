@@ -37,18 +37,18 @@ public class CardParser {
 		String carddatalistExpression = "/CoalesceAsset/Sections/Section[@name='sfxgamempcontent.sfxgawreinforcementmanager']/Property[@name='carddata']/Value[@type=%d]";
 		String metadataExpression = "/CoalesceAsset/Sections/Section[@name='sfxgamempcontent.sfxgawreinforcementmanager']/Property[@name='storeinfoarray']/Value[@type=3]";
 
-		InputSource basegameSource = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_basegame.xml");
-		InputSource patch1Source = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_patch1.xml");
-		InputSource patch2Source = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_patch2.xml");
-		InputSource testpatchSource = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_testpatch.xml");
-		InputSource mp1Source = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_mp1.xml");
-		InputSource mp2Source = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_mp2.xml");
-		InputSource mp3Source = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_mp3.xml");
-		InputSource mp4Source = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_mp4.xml");
-		InputSource mp5Source = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_mp5.xml");
-		InputSource liveiniSource = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\biogame_liveini.xml");
+		InputSource basegameSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_basegame.xml");
+		InputSource patch1Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_patch1.xml");
+		InputSource patch2Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_patch2.xml");
+		InputSource testpatchSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_testpatch.xml");
+		InputSource mp1Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp1.xml");
+		InputSource mp2Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp2.xml");
+		InputSource mp3Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp3.xml");
+		InputSource mp4Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp4.xml");
+		InputSource mp5Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp5.xml");
+		InputSource liveiniSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_liveini.xml");
 
-		InputSource livetlkSource = new InputSource("file:///" + System.getProperty("user.dir") + "\\carddata\\me3tlk.xml");
+		InputSource livetlkSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"me3tlk.xml");
 
 		InputSource[] sources = new InputSource[] { basegameSource, testpatchSource, mp1Source, mp2Source, mp3Source, patch1Source, mp4Source, mp5Source, patch2Source,
 				liveiniSource };
@@ -236,9 +236,13 @@ public class CardParser {
 			int numtodo = getNumCardsInMap();
 
 			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
+				ArrayList<RealCard> cardsToRemove = new ArrayList<RealCard>(); //clean out idx = -1 cards for consumables, gear, etc. they are cloned as necessary
 				for (RealCard card : entry.getValue()) {
-
+					if (card.isConsumable && card.getVersionIdx() == -1) {
+						cardsToRemove.add(card);
+					}
 				}
+				entry.getValue().removeAll(cardsToRemove);
 			}
 
 			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
@@ -249,22 +253,25 @@ public class CardParser {
 			}
 
 			StringBuilder sb = new StringBuilder();
-
+			sb.append("<ul>");
 			for (Entry<String, StorePack> entry : packnameMap.entrySet()) {
 				StorePack pack = entry.getValue();
-				System.out.println(pack.getSRPackName());
-				String savepath = System.getProperty("user.dir") + "\\carddata\\packcontents\\" + pack.getPackName() + ".html";
+				System.out.println("RewriteRule ^packs/"+pack.getHumanName().replaceAll(" ","").toLowerCase()+"/?$ /store_catalog/packs.php?packname="+pack.getPackName()+" [L]");
+				String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"packcontents"+ File.separator + pack.getPackName() + ".html";
 				FileUtils.writeStringToFile(new File(savepath), pack.getPackHTML());
 
-				sb.append("<a id='" + pack.getPackName() + "' class='roundedbutton' href='#" + pack.getPackName() + "' data-packname='" + pack.getPackName() + "'>"
-						+ pack.getHumanName() + "</a>\n\t");
-			}
-			String savepath = System.getProperty("user.dir") + "\\carddata\\packcontents\\packheading.html";
+				sb.append("<li><a id='" + pack.getPackName() + "' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "' title=\""+pack.getDescription()+"\" data-packname='" + pack.getPackName() + "'>"
+						+ pack.getHumanName() + "</a></li>\n\t");
+			} 
+			sb.append("</ul>");
+			String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"packcontents"+ File.separator+"packheading.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
 
 			//build cards page
 			sb = new StringBuilder();
 			String previousCategory = "";
+			TreeSet<RealCard> allcards = new TreeSet<RealCard>();
+			
 			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
 				for (RealCard card : entry.getValue()) { //
 					/*
@@ -275,15 +282,47 @@ public class CardParser {
 					 * !card.getRarity().equals(Card.Rarity.Unused)) { continue;
 					 * }
 					 */
-					if (!card.getCategoryName().equals(previousCategory)) {
-						sb.append("<hr class='dark_hr_center'>\n");
-					}
-					previousCategory = card.getCategoryName();
-					//System.out.println(card.getCardDisplayString());
-					sb.append(card.getCardHTML());
+					allcards.add(card);
 				}
 			}
-			savepath = System.getProperty("user.dir") + "\\carddata\\packcontents\\cardlist.html";
+			
+			for (RealCard card : allcards) { //
+				if (!card.getCategoryName().equals(previousCategory)) {
+					sb.append("<hr class='dark_hr_center'>\n");
+					switch (card.getCategoryName()) {
+					case "gear":
+						sb.append("<h3 class='dark centered'>Gear</h3>\n");
+						sb.append("<p class='dark centered'>Gear drops up to five times each.</p>\n");
+						break;
+					case "kits":
+						sb.append("<h3 class='dark centered'>Characters</h3>\n");
+						sb.append("<p class='dark centered'>Common characters will continue to drop in packs even after they are maxed out. Higher tier packs will yield higher XP on cards.</p>\n");
+
+						break;
+					case "consumables":
+						sb.append("<h3 class='dark centered'>Consumables</h3>\n");
+						sb.append("<p class='dark centered'>Consumables cap out at 255 while saving, but the game will still go over 255 if they appear in a pack you obtain.</p>\n");
+
+						break;
+					case "weaponmods":
+						sb.append("<h3 class='dark centered'>Weapon Mods</h3>\n");
+						sb.append("<p class='dark centered'>Weapon Mods drop up to 5 times each.</p>\n");
+						break;
+					case "misc":
+						sb.append("<h3 class='dark centered'>Miscellaneous</h3>\n");
+						sb.append("<p class='dark centered'>Miscellaneous items will drop until their max counts are reached. Credits are only dropped if EA custom support gives you the entitlement to the pack.</p>\n");
+						break;
+					case "weapons":
+						sb.append("<h3 class='dark centered'>Weapons</h3>\n");
+						sb.append("<p class='dark centered'>Weapons can each drop up to 10 times.</p>\n");
+						break;
+					}
+				}
+				previousCategory = card.getCategoryName();
+				//System.out.println(card.getCardDisplayString());
+				sb.append(card.getCardHTML());
+			}
+			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"packcontents"+ File.separator+"cardlist.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
 
 		}
