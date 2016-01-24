@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TlkFile name="DLC_UPD_Patch02_INT/DLC_UPD_Patch02_INT0.xml">
+	<Strings>
+		<String id="814198">ME3: Content Patch 2 DLC Module</String>
+		<String id="134217729">DLC_UPD_Patch02</String>
+		<String id="134217730">en-us</String>
+		<String id="134217731">Male</String>
+		<String id="134217731">Female</String>
+	</Strings>
+</TlkFile>

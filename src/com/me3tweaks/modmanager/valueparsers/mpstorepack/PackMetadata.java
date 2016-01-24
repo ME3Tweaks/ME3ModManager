@@ -28,7 +28,7 @@ public class PackMetadata {
 		srPromoString = ValueParserLib.getIntProperty(metadataStr, "srPromoString");
 		maxPurchases = ValueParserLib.getIntProperty(metadataStr, "PerPlayerMax");
 		cost = ValueParserLib.getIntProperty(metadataStr, "CreditCost");
-		description = CardParser.livetlkMap.get(srDescription);
+		description = CardParser.tlkMap.get(srDescription);
 	}
 
 	public String getPackname() {

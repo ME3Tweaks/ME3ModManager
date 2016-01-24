@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager.valueparsers.mpstorepack;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeSet;
@@ -11,6 +12,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -19,7 +23,7 @@ import org.xml.sax.InputSource;
 public class CardParser {
 	private static TreeSet<Pool> poolList = new TreeSet<Pool>();
 	private static ArrayList<PackMetadata> metadataList = new ArrayList<PackMetadata>();
-	public static HashMap<Integer, String> livetlkMap;
+	public static HashMap<Integer, String> tlkMap;
 	//public static TreeSet<Card> cardList;
 	public static TreeSet<StorePack> packList;
 	public static HashMap<String, StorePack> packnameMap;
@@ -36,31 +40,46 @@ public class CardParser {
 		String carddatalistExpression = "/CoalesceAsset/Sections/Section[@name='sfxgamempcontent.sfxgawreinforcementmanager']/Property[@name='carddata']/Value[@type=%d]";
 		String metadataExpression = "/CoalesceAsset/Sections/Section[@name='sfxgamempcontent.sfxgawreinforcementmanager']/Property[@name='storeinfoarray']/Value[@type=3]";
 
-		InputSource basegameSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_basegame.xml");
-		InputSource patch1Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_patch1.xml");
-		InputSource patch2Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_patch2.xml");
-		InputSource testpatchSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_testpatch.xml");
-		InputSource mp1Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp1.xml");
-		InputSource mp2Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp2.xml");
-		InputSource mp3Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp3.xml");
-		InputSource mp4Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp4.xml");
-		InputSource mp5Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_mp5.xml");
-		InputSource liveiniSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"biogame_liveini.xml");
+		InputSource basegameSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_basegame.xml");
+		InputSource patch1Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_patch1.xml");
+		InputSource patch2Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_patch2.xml");
+		InputSource testpatchSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_testpatch.xml");
+		InputSource mp1Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_mp1.xml");
+		InputSource mp2Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_mp2.xml");
+		InputSource mp3Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_mp3.xml");
+		InputSource mp4Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_mp4.xml");
+		InputSource mp5Source = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_mp5.xml");
+		InputSource liveiniSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "biogame_liveini.xml");
 
-		InputSource livetlkSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"me3tlk.xml");
+		InputSource livetlkSource = new InputSource("file:///" + System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "me3tlk.xml");
+		File dir = new File(System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "tlkfiles" + File.separator);
+		Collection<File> files = FileUtils.listFiles(dir, new SuffixFileFilter("xml"), TrueFileFilter.TRUE);
+		ArrayList<InputSource> tlkSources = new ArrayList<InputSource>();
+		for (File file : files) {
+			System.out.println("Loading TLK XML: "+file);
+			InputSource source = new InputSource("file:///" + file);
+			tlkSources.add(source);
+		}
+
+		tlkSources.add(livetlkSource);
 
 		InputSource[] sources = new InputSource[] { basegameSource, testpatchSource, mp1Source, mp2Source, mp3Source, patch1Source, mp4Source, mp5Source, patch2Source,
 				liveiniSource };
 
 		//LOAD STRINGS INTO HASHMAP OF ID => STR
-		livetlkMap = new HashMap<Integer, String>();
+		tlkMap = new HashMap<Integer, String>();
 		String tlkExpression = "/TlkFile/Strings/String";
-		NodeList tlkNodes = (NodeList) xpath.evaluate(tlkExpression, livetlkSource, XPathConstants.NODESET);
-		if (tlkNodes != null && tlkNodes.getLength() > 0) {
-			for (int i = 0; i < tlkNodes.getLength(); i++) {
-				if (tlkNodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
-					Element el = (Element) tlkNodes.item(i);
-					livetlkMap.put(Integer.parseInt(el.getAttribute("id")), el.getTextContent());
+		for (InputSource source : tlkSources) {
+			NodeList tlkNodes = (NodeList) xpath.evaluate(tlkExpression, source, XPathConstants.NODESET);
+			if (tlkNodes != null && tlkNodes.getLength() > 0) {
+				for (int i = 0; i < tlkNodes.getLength(); i++) {
+					if (tlkNodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
+						Element el = (Element) tlkNodes.item(i);
+						int id = Integer.parseInt(el.getAttribute("id"));
+						String str = el.getTextContent();
+						//System.out.println(Integer.parseInt(el.getAttribute("id"))+": "+ el.getTextContent());
+						tlkMap.put(id, StringEscapeUtils.escapeHtml4(str));
+					}
 				}
 			}
 		}
@@ -255,22 +274,23 @@ public class CardParser {
 			sb.append("<ul>");
 			for (Entry<String, StorePack> entry : packnameMap.entrySet()) {
 				StorePack pack = entry.getValue();
-				System.out.println("RewriteRule ^packs/"+pack.getHumanName().replaceAll(" ","").toLowerCase()+"/?$ /store_catalog/packs.php?packname="+pack.getPackName()+" [L]");
-				String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"packcontents"+ File.separator + pack.getPackName() + ".html";
+				System.out.println(
+						"RewriteRule ^packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "/?$ /store_catalog/packs.php?packname=" + pack.getPackName() + " [L]");
+				String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "packcontents" + File.separator + pack.getPackName() + ".html";
 				FileUtils.writeStringToFile(new File(savepath), pack.getPackHTML());
 
-				sb.append("<li><a id='" + pack.getPackName() + "' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "' title=\""+pack.getDescription()+"\" data-packname='" + pack.getPackName() + "'>"
-						+ pack.getHumanName() + "</a></li>\n\t");
-			} 
+				sb.append("<li><a id='" + pack.getPackName() + "' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "' title=\""
+						+ pack.getDescription() + "\" data-packname='" + pack.getPackName() + "'>" + pack.getHumanName() + "</a></li>\n\t");
+			}
 			sb.append("</ul>");
-			String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"packcontents"+ File.separator+"packheading.html";
+			String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "packcontents" + File.separator + "packheading.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
 
 			//build cards page
 			sb = new StringBuilder();
 			String previousCategory = "";
 			TreeSet<RealCard> allcards = new TreeSet<RealCard>();
-			
+
 			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
 				for (RealCard card : entry.getValue()) { //
 					/*
@@ -284,7 +304,7 @@ public class CardParser {
 					allcards.add(card);
 				}
 			}
-			
+
 			for (RealCard card : allcards) { //
 				if (!card.getCategoryName().equals(previousCategory)) {
 					sb.append("<hr class='dark_hr_center'>\n");
@@ -295,12 +315,14 @@ public class CardParser {
 						break;
 					case "kits":
 						sb.append("<h3 class='dark centered'>Characters</h3>\n");
-						sb.append("<p class='dark centered'>Common characters will continue to drop in packs even after they are maxed out. Higher tier packs will yield higher XP on cards.</p>\n");
+						sb.append(
+								"<p class='dark centered'>Common characters will continue to drop in packs even after they are maxed out. Higher tier packs will yield higher XP on cards.</p>\n");
 
 						break;
 					case "consumables":
 						sb.append("<h3 class='dark centered'>Consumables</h3>\n");
-						sb.append("<p class='dark centered'>Consumables cap out at 255 while saving, but the game will still go over 255 if they appear in a pack you obtain.</p>\n");
+						sb.append(
+								"<p class='dark centered'>Consumables cap out at 255 while saving, but the game will still go over 255 if they appear in a pack you obtain.</p>\n");
 
 						break;
 					case "weaponmods":
@@ -309,7 +331,8 @@ public class CardParser {
 						break;
 					case "misc":
 						sb.append("<h3 class='dark centered'>Miscellaneous</h3>\n");
-						sb.append("<p class='dark centered'>Miscellaneous items will drop until their max counts are reached. Credits are only dropped if EA custom support gives you the entitlement to the pack.</p>\n");
+						sb.append(
+								"<p class='dark centered'>Miscellaneous items will drop until their max counts are reached. Credits are only dropped if EA custom support gives you the entitlement to the pack.</p>\n");
 						break;
 					case "weapons":
 						sb.append("<h3 class='dark centered'>Weapons</h3>\n");
@@ -321,7 +344,7 @@ public class CardParser {
 				//System.out.println(card.getCardDisplayString());
 				sb.append(card.getCardHTML());
 			}
-			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"packcontents"+ File.separator+"cardlist.html";
+			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "packcontents" + File.separator + "cardlist.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
 
 		}
@@ -376,9 +399,8 @@ public class CardParser {
 	/*
 	 * for (Card card : samenameCards) { if (card.getUseVersionIdx() ||
 	 * isCharCard) { //it's probably not defined... somehow, the game accepts
-	 * this. Card cloneCard = new Card(card);
-	 *  } extrageneratedCards.add(cloneCard); return
-	 * cloneCard; } }
+	 * this. Card cloneCard = new Card(card); }
+	 * extrageneratedCards.add(cloneCard); return cloneCard; } }
 	 */
 
 	public static void addCardToMap(RealCard card) {
@@ -412,6 +434,7 @@ public class CardParser {
 			return null;
 		}
 		boolean isCharCard = false;
+
 		if (card.getCategoryName().equals("kits")) {
 			isCharCard = true;
 		}
@@ -427,6 +450,16 @@ public class CardParser {
 					return rcard;
 				}
 			} else {
+				if (card.getUniqueName().equals("MPCredits") && card.getPVIncrementBonus()!=rcard.getPVIncrementBonus()) {
+					RealCard cloneCard = new RealCard(rcard); //clonecard
+					cloneCard.setVersionIdx(card.getVersionIdx());
+					if (card.getRarity() != null) {
+						cloneCard.setRarity(card.getRarity());
+					}
+					cloneCard.setPVIncrementBonus(card.getPVIncrementBonus());
+					cardset.add(cloneCard);
+					return cloneCard;
+				}
 				//System.out.println("Found card by name only: " + uniqueName);
 				return rcard;
 			}
@@ -445,17 +478,17 @@ public class CardParser {
 			return maxidxcard;
 		}
 		if (isConsumable) {
-			
 			RealCard maxidxcard = cardset.first();
 			RealCard cloneCard = new RealCard(maxidxcard); //clonecard
-			cloneCard.setVersionIdx(card.getVersionIdx()); 
+			cloneCard.setVersionIdx(card.getVersionIdx());
 			if (card.getRarity() != null) {
-				 cloneCard.setRarity(card.getRarity());
+				cloneCard.setRarity(card.getRarity());
 			}
+			cloneCard.setPVIncrementBonus(card.getPVIncrementBonus());
 			cardset.add(cloneCard);
 			return cloneCard;
 		}
-		
+
 		return null;
 	}
 }

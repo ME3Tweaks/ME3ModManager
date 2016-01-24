@@ -85,6 +85,10 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		}
 		return htmlStr;
 	}
+	
+	public String getCardGameName(){
+		return CardParser.tlkMap.get(GUIName);
+	}
 
 	private String generateCardHTML() {		
 		//System.out.println("Card HTML of "+this);
@@ -94,7 +98,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
 		sb.append("<span>" + getCardDisplayString() + "</span>\n");
 		sb.append("<div class='ttip'>");
-		sb.append("<p>");
+		sb.append("<p class='centered'>");
 		sb.append(getCardDescription());
 		sb.append("</p>");
 		sb.append("<hr class='dark_hr_center'>");
@@ -163,11 +167,16 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	}
 
 	public String getCardName() {
-		return CardParser.livetlkMap.get(GUIName);
+		return CardParser.tlkMap.get(GUIName);
 	}
 	
 	public String getCardDescription() {
-		return CardParser.livetlkMap.get(GUIDescription);
+		String desc = CardParser.tlkMap.get(GUIDescription);
+		if (desc == null) {
+			return RealCard.getHumanName(uniqueName);
+		}
+		
+		return desc;
 	}
 
 	private String getImageName() {

@@ -1,0 +1,565 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TlkFile name="DLC_CON_MP3_INT/DLC_CON_MP3_INT0.xml">
+	<Strings>
+		<String id="515726">Ravager</String>
+		<String id="727442">Mass Effect™ 3: Earth</String>
+		<String id="727963">Pump</String>
+		<String id="728032">Firebase Vancouver</String>
+		<String id="728033">Firebase London</String>
+		<String id="731650">Firebase Rio</String>
+		<String id="731651">Firebase London</String>
+		<String id="739525">Shadow Strike</String>
+		<String id="739526">Cloak and sneak behind your target to unleash a vicious sword attack. 
+
+Receives damage bonuses from sword upgrades.
+Considered a melee attack.</String>
+		<String id="739807">Snap Freeze</String>
+		<String id="739895">$756004
+Weaken armor.</String>
+		<String id="739897">Duration &amp; Slow</String>
+		<String id="739899">Increase the duration of freeze effects by {Evolve_DurationBonus%p}%.
+Decrease the movement speed of chilled targets by an additional {Evolve_SpeedReductionBonus%p}%.</String>
+		<String id="739900">Damage &amp; Weakness</String>
+		<String id="739901">Increase damage by {Evolve_Damage2%p}%.
+Weaken armored targets by an additional {Evolve_ArmorReductionBonus%p}%.</String>
+		<String id="739903">Tech Combo</String>
+		<String id="739904">Increase the damage of tech combos by {Evolve_ComboBonus%p}%.</String>
+		<String id="739983">Offices</String>
+		<String id="739984">Upper Rooftops</String>
+		<String id="739985">Lower Rooftops</String>
+		<String id="739986">Helipad</String>
+		<String id="739987">Ventilation Housing</String>
+		<String id="740218">Devastator Mode</String>
+		<String id="740219">Turn into a powerful turret with the T5-V Battlesuit. 
+
+Increase weapon damage, rate of fire, and magazine size.
+Slows movement speed.
+Stays active until disabled.</String>
+		<String id="740220">Magazine Size</String>
+		<String id="740221">Increase magazine size by {MagSizeBonus%b}%.</String>
+		<String id="740222">Damage Bonus</String>
+		<String id="740223">Increase damage bonus by {DamageBonus%b}%.</String>
+		<String id="740225">Shield Recharge Delay</String>
+		<String id="740226">Reduce the delay before shields start regenerating by {Evolve_ShieldRegenBonus%p}%.</String>
+		<String id="740227">Weapon Accuracy</String>
+		<String id="740228">Increase weapon accuracy bonus by {Evolve_WeaponAccuracyBonus%p}% while active.</String>
+		<String id="740229">Increase magazine size by {Evolve_MagSizeBonus%p}%.</String>
+		<String id="740230">Rate of Fire</String>
+		<String id="740231">Increase rate of fire by {Evolve_WeaponRoFBonus%p}%.</String>
+		<String id="740232">Max Shields</String>
+		<String id="740233">Increase max shields by {Evolve_ShieldIncrease%p}%.</String>
+		<String id="740234">Increase damage bonus by {Evolve_DamageBonus%p}%.</String>
+		<String id="740235">Devastator Mode already active. Use it again to deactivate.</String>
+		<String id="740294">N7 Training</String>
+		<String id="740296">The N7 Shield Guardian obliterates a swath of enemies with explosives while using tech abilities and a heavy omni-shield to stay intact.
+
+More power damage.
+More weapon damage.
+More strength.</String>
+		<String id="740297">Damage</String>
+		<String id="740298">Increase damage by {Evolve_DamageBonus1%p}%.</String>
+		<String id="740299">Damage Protection</String>
+		<String id="740300">Reduce all damage taken by {Evolve_DamageTakenBonus%p}% for {Evolve_DamageTakenDuration} seconds after decloaking.</String>
+		<String id="740301">Hit your opponent with an electrical attack that does {Evolve_DoTDamagePercent%p}% additional damage over {Evolve_DoTDamageDuration} seconds.
+
+Detonate this effect with other powers.</String>
+		<String id="740306">Electric Damage</String>
+		<String id="740328">Recharge Speed</String>
+		<String id="740353">Increase recharge speed by {Evolve_CooldownBonus%p}%.</String>
+		<String id="740355">Increase damage by {Evolve_DamageBonus2%p}%.</String>
+		<String id="740692">Strike shields or barriers to drain their energy to refill your shields.
+Increase movement speed by {Evolve_MovementSpeedBonus%p}% for {Evolve_MovementSpeedDuration} seconds after decloaking.</String>
+		<String id="740693">Shield Drain</String>
+		<String id="740697">Shield Durability</String>
+		<String id="740698">Increase the damage the omni-shield withstands before collapsing by {Evolve_ShieldDurability%p}%.</String>
+		<String id="740699">Fire Shield</String>
+		<String id="740700">Cryo Shield</String>
+		<String id="740701">Add a flame effect to your omni-shield. Your shield melees will burn enemies and are highly effective against armor.
+
+Adds a fire effect to impacted targets that does {Evolve_FireDamage%p}% additional damage over {Evolve_FireDuration} seconds.</String>
+		<String id="740702">Add a freezing effect to your omni-shield that can chill or freeze enemies.
+
+Snap freeze unprotected enemies.
+Slow shielded and armored targets by {Evolve_SpeedReduction%p}%.
+Weaken enemy armor by {Evolve_ArmorReduction%p}% for {Evolve_CryoDuration} seconds.</String>
+		<String id="743715">Missile Launcher</String>
+		<String id="743716">$755984
+Decreases max shields while active.</String>
+		<String id="743717">Refire Time</String>
+		<String id="743718">Reduce refire time by {MissileFireCooldown%b}%.</String>
+		<String id="743719">Missile Damage</String>
+		<String id="743720">Increase missile damage by {Damage%b}%.
+</String>
+		<String id="743721">Shield Penalty</String>
+		<String id="743722">Reduce shield penalty by {Evolve_ShieldPercentIncrease%p}%.</String>
+		<String id="743723">Damage and Force</String>
+		<String id="743724">Increase missile damage and force by {Evolve_DamageBonus%p}%.</String>
+		<String id="743765">Reduce refire time by {Evolve_UpdateFrequency%p}%.
+</String>
+		<String id="743766">Armor Damage</String>
+		<String id="743767">Increase effectiveness against armored targets by {Evolve_ArmorDamagePct%p}%.</String>
+		<String id="743768">Hydra Missiles</String>
+		<String id="743769">Upgrade missile housing to fire {Evolve_NumExtraMultiMissile} extra seeking projectiles.
+
+Decreases the payload of each missile by {Evolve_DamageReduction%p}%</String>
+		<String id="743770">Cobra Missiles</String>
+		<String id="743771">Upgrade missile munitions to increase damage and force by {Evolve_DamageBonus2%p}%.
+Increase impact radius by {Evolve_ImpactRadiusBonus%p}%.</String>
+		<String id="743773">Multi-Frag Grenade</String>
+		<String id="743774">Launch multiple frag grenades by upgrading the T5-V's right gauntlet.</String>
+		<String id="743776">T5-V Battlesuit</String>
+		<String id="743930">Upgrade the cutting-edge T5-V Battlesuit.
+
+More power damage.
+More weapon damage.
+More strength.
+</String>
+		<String id="743931">T5-V Internal Systems</String>
+		<String id="743932">Upgrade the T5-V's internal systems to boost health, shields, melee damage, and durability.</String>
+		<String id="743933">Increase damage by {Evolve_DamageBonus3%p}%.
+Increase force by {Evolve_ForceBonus3%p}%.</String>
+		<String id="744302">Acolyte &lt;CUSTOM0&gt;</String>
+		<String id="744303">Light pistol that excels at destroying barriers and shields.</String>
+		<String id="744304">Designed for the asari resistance, the Acolyte's barrels fire advanced ammunition similar to that of an impact-triggered resonant warp bomb, which has a devastating effect on shields and biotic barriers. The specialized nature of the warp field means it does not pierce armor as effectively, but the shooter's biotics are expected to make up for this shortcoming.</String>
+		<String id="744335">N7 Typhoon &lt;CUSTOM0&gt;</String>
+		<String id="744336">Light machine gun with face shield. Recoil lowers if fired from cover.</String>
+		<String id="744350">Escort!</String>
+		<String id="744351">The Typhoon is a distinctive light machine gun featuring a face shield to protect the shooter from headshots. Its power and recoil are so notorious that it includes a high-tech kinetic reducer to fight muzzle climb. Since the reducer tries to limit all motion by the weapon, marksmen do not engage it while moving and instead reduce the recoil only while they are in cover.</String>
+		<String id="744361">Escort Progress</String>
+		<String id="744362">Activate</String>
+		<String id="744389">N7 Piranha &lt;CUSTOM0&gt;</String>
+		<String id="744425">Rapid-fire, low-recoil shotgun.</String>
+		<String id="744426">Escort</String>
+		<String id="744427">The N7 Piranha is an assault shotgun designed for the Reaper war. When the N7 program began training alien resistance forces, the lighter-bodied species wanted a low-recoil weapon with a wide pellet spread for dealing with hordes of husks. The result was the Piranha, which hit a sweet spot in close-range firepower. Its rapid-fire capability tears apart not only husks, but most opponents unlucky enough to be in its way.</String>
+		<String id="744609">Destination</String>
+		<String id="745318">Phase Disruptor</String>
+		<String id="745319">Focus the energy of your barrier to fire a high-powered beam at a target from afar.</String>
+		<String id="745320">Radius</String>
+		<String id="745321">Increase impact radius by {ImpactRadius%b}%.</String>
+		<String id="745322">Damage</String>
+		<String id="745323">Increase damage by {Damage%b}%.</String>
+		<String id="745324">Damage</String>
+		<String id="745325">Increase damage by {Evolve_DamageBonus%p}%.</String>
+		<String id="745326">Radius</String>
+		<String id="745327">Increase impact radius by {Evolve_RadiusBonus%p}%.</String>
+		<String id="745328">Knockdown</String>
+		<String id="745329">Knock weaker enemies to the ground.</String>
+		<String id="745330">Efficient Blast</String>
+		<String id="745331">Reduce the amount of barriers drained by {Evolve_BarrierReductionBonus%p}%.</String>
+		<String id="745332">Armor Damage</String>
+		<String id="745333">Increase damage to armor by {Evolve_ArmorDamageBonus%p}%.</String>
+		<String id="745334">Shield Damage</String>
+		<String id="745335">Increase damage to shields/barriers by {Evolve_ShieldDamageBonus%p}%.</String>
+		<String id="745420">Supply Pylon</String>
+		<String id="745421">Deploy an immobile pylon that supplies ammo and grenades. A built-in tech generator also increases maximum shields for nearby allies.
+
+Only one pylon can be active at a time.</String>
+		<String id="745422">Recharge Speed</String>
+		<String id="745423">Increase recharge speed by {CooldownTime%b}%.</String>
+		<String id="745424">Resupply Frequency</String>
+		<String id="745425">Increase the rate of ammunition generation by {TimeBetweenAmmoResupply%b}%.
+Increase the rate of grenade generation by {TimeBetweenGrenadeResupply%b}%.</String>
+		<String id="745426">Resupply Frequency</String>
+		<String id="745427">Increase the rate of ammunition generation by {Evolve_AmmoSupplyFrequencyBonus%p}%.
+Increase the rate of grenade generation by {Evolve_GrenadeSupplyFrequencyBonus%p}%.</String>
+		<String id="745428">Radius</String>
+		<String id="745429">Increase the radius in which the pylon gives bonuses to allies by {Evolve_BuffRadiusBonus%p}%.</String>
+		<String id="745430">Weapon Damage</String>
+		<String id="745431">Upgrade the tech generator to also increase allied weapon damage by {Evolve_WeaponDamageBonus%p}%.</String>
+		<String id="745432">Power Damage</String>
+		<String id="745433">Upgrade the tech generator to also increase allied power damage by {Evolve_PowerDamageBonus%p}%.</String>
+		<String id="745434">Extra Grenade</String>
+		<String id="745435">Increase the number of grenades generated by {Evolve_NumExtraGrenades}.</String>
+		<String id="745436">Max Shields</String>
+		<String id="745437">Increase max shields by an additional {Evolve_MaxShieldsBonus%p}%.</String>
+		<String id="745451">Pylon already deployed.</String>
+		<String id="745670">N7 Destroyer</String>
+		<String id="745671">N7 Paladin</String>
+		<String id="745672">N7 Demolisher</String>
+		<String id="745673">N7 Shadow</String>
+		<String id="745674">N7 Slayer</String>
+		<String id="745675">N7 Fury</String>
+		<String id="745676">The Destroyer's T5-V Battlesuit gives these strong-but-slow soldiers mech-like protection. Driven by eezo-assisted actuators, these frontline troopers carry heavy weapons onto the battlefield.</String>
+		<String id="745677">The Paladin carries a powerful omni-shield onto the battlefield to block enemy fire. The Paladin also uses the shield as a heavy-melee weapon that, when modified with incendiary or cryo upgrades, creates a devastating combination attack.</String>
+		<String id="745678">The Demolisher uses grenades to attack at range and to terrorize the battlefield. Demolishers can also create a supply pylon that stocks allies with an unending reserve of grenades and thermal reloads.</String>
+		<String id="745679">Shadow infiltrators use implants to dramatically improve agility, making them slippery combatants on the battlefield. Their monomolecular blades are a menace from cover and close range.</String>
+		<String id="745680">Slayers use implants to dramatically improve mobility. Their dizzying sword attacks can hit multiple opponents, and the Slayer’s ability to slip fire makes them hard to pin down on the battlefield.</String>
+		<String id="745681">Fury operatives use implants to fuel biotics and their incredible movement speed. These operatives wind an unpredictable path on the battlefield, moving in and out of combat before returning to unleash a sweeping biotic attack on their unsuspecting targets.</String>
+		<String id="746044">T5-V Battlesuit</String>
+		<String id="746045">- Omni-Shield</String>
+		<String id="746046">- Monomolecular Blades</String>
+		<String id="746047">- Biotic Strike</String>
+		<String id="746048">$745319 
+
+Firing the beam consumes {BarrierDrained%p}% of max barrier.</String>
+		<String id="746477">$745421
+Ammo and grenades expire after {AmmoGrenadeDuration}s.</String>
+		<String id="746478">Ammo Drop Frequency</String>
+		<String id="746479">Grenade Drop Frequency</String>
+		<String id="746480">Max Shield Increase</String>
+		<String id="746484">Biotic Slash</String>
+		<String id="746485">Charge your sword with biotic energy and slash nearby enemies in a wide swath, flattening unshielded opponents.</String>
+		<String id="747126">Annihilation Field</String>
+		<String id="747127">Spin this fiery effect around you to burn nearby enemies. When active, the field can be recast to blast a short-range area and to detonate combos.</String>
+		<String id="747128">Increase recharge speed by {CooldownTime%b}%.</String>
+		<String id="747129">Increase damage by {Damage%b}%.</String>
+		<String id="747130">Increase damage by {Evolve_DamageBonus%p}%.</String>
+		<String id="747131">Increase impact radius by {Evolve_ImpactRadiusBonus%p}%.</String>
+		<String id="747132">Targets caught in the field take {Evolve_DamageTakenBonus%p}% additional damage from all sources.</String>
+		<String id="747133">Increase movement speed by {Evolve_MovementSpeedBonus%p}% while active.</String>
+		<String id="747134">Increase damage by {Evolve_DamageBonus2%p}%.</String>
+		<String id="747135">Increase duration by {Evolve_DurationBonus%p}%.
+Drain {ShieldDrainConversion%p}% of the damage done to enemy shields/barriers to restore your own shields.</String>
+		<String id="747136">Ventilation Deck</String>
+		<String id="747137">Recharge Speed</String>
+		<String id="747138">Damage</String>
+		<String id="747139">Impact Radius</String>
+		<String id="747140">Damage Taken</String>
+		<String id="747141">Movement Speed</String>
+		<String id="747142">Drain</String>
+		<String id="-2146736310">-1</String>
+		<String id="747339">The enemy has one of our recon drones. Get it back and online.</String>
+		<String id="747340">A recon drone with enemy fleet intel went to ground in this area.</String>
+		<String id="747341">We've got a drone on the ground that scanned enemy tech. Secure it and upload its contents.</String>
+		<String id="747342">One of our agents didn't make it out. He dropped off his intel in a drone. Get it uploading.</String>
+		<String id="747343">They've got one of our drones. We need its contents uploaded before the enemy cracks its encryption.</String>
+		<String id="747344">We've got a drone downed in the area. It's got troop position data. Make it upload, stat.</String>
+		<String id="747345">We've got a ship down on the surface. A drone is the only thing that survived the crash. Get it online.</String>
+		<String id="747346">We've got a spy drone down. Cover it and get it to an upload location.</String>
+		<String id="747347">An N7 job went bad, but their drone survived. Recover its data and get out of there.</String>
+		<String id="747348">A drone went dark here. Recover its data before the enemy gets a crack at it.</String>
+		<String id="-2146736299">-1</String>
+		<String id="747350">Activate that drone, soldier.</String>
+		<String id="747351">Get that drone moving.</String>
+		<String id="747352">Get on that objective, soldier.</String>
+		<String id="747353">That drone needs a friendly to activate it.</String>
+		<String id="747354">Stay focused and get to that drone.</String>
+		<String id="-2146736293">-1</String>
+		<String id="747356">Good work. Stay close so your omni-tool keeps it live.</String>
+		<String id="747357">Nice. Keep close or the drone will go dark again.</String>
+		<String id="747358">It's tagged you as friendly. Stay close to keep it moving.</String>
+		<String id="747359">Drone is live. Stay close to escort it.</String>
+		<String id="747360">First objective down. Now keep close to the drone.</String>
+		<String id="-2146736287">-1</String>
+		<String id="747362">You're out of range, stay close.</String>
+		<String id="747363">Drone went dark. It needs a friendly by it.</String>
+		<String id="747364">Stick close to that drone. It shuts down defensively.</String>
+		<String id="747365">The drone lost connection. Get back to it.</String>
+		<String id="747366">The drone is down. Get close again.</String>
+		<String id="-2146736281">-1</String>
+		<String id="747368">You need to stay close to that drone or it goes nowhere.</String>
+		<String id="747369">That drone doesn't move without you, soldier.</String>
+		<String id="747370">The drone is the mission. Get back to it.</String>
+		<String id="747371">Get a friendly to that drone, soldier!</String>
+		<String id="747372">If that drone doesn't get moving, this mission is toast.</String>
+		<String id="-2146736275">-1</String>
+		<String id="747374">Halfway to go.</String>
+		<String id="747375">Keep at it, you're close to the upload site.</String>
+		<String id="747376">Halfway there. Watch your sectors.</String>
+		<String id="747377">Nearing the upload site. Keep that path open!</String>
+		<String id="747378">Halfway there. Stay on it.</String>
+		<String id="-2146736269">-1</String>
+		<String id="747380">You're almost there!</String>
+		<String id="747381">Just a few meters more!</String>
+		<String id="747382">Real close! Stay with it!</String>
+		<String id="747383">The drone's almost there!</String>
+		<String id="747384">Don't stop, you've got it!</String>
+		<String id="747385">Finish!</String>
+		<String id="-2146736262">-1</String>
+		<String id="747387">They're trying to hack the drone wirelessly. Get it there, now!</String>
+		<String id="747388">Now or never, people!</String>
+		<String id="747389">Time's up, people! Make it happen!</String>
+		<String id="747390">Get it done. Now!</String>
+		<String id="747391">If it ain't now, it ain't never!</String>
+		<String id="747392">You've got seconds! Do it!</String>
+		<String id="-2146736255">-1</String>
+		<String id="747394">Checking upload... it's good. Nice one.</String>
+		<String id="747395">We've got what we need.</String>
+		<String id="747396">Mission accomplished.</String>
+		<String id="747397">We've got a winner. Good one, team.</String>
+		<String id="747398">Data received in full. Good work.</String>
+		<String id="-2146736249">-1</String>
+		<String id="747400">We're DOA here. Prep for evac.</String>
+		<String id="747401">Mission terminated. Prep for evac.</String>
+		<String id="747402">No good. We're done here. Prep for evac.</String>
+		<String id="747403">Mission aborted. Prep for evac.</String>
+		<String id="747404">Abort. Let's get you outta there.</String>
+		<String id="-2146736243">-1</String>
+		<String id="747406">Squad member down.</String>
+		<String id="747407">Squad member in trouble.</String>
+		<String id="747408">Team member is hurt.</String>
+		<String id="747409">Team member offline.</String>
+		<String id="747410">Team member has gone dark.</String>
+		<String id="747411">Squad member needs help.</String>
+		<String id="747412">Squad member offline.</String>
+		<String id="747413">Squad member has flatlined.</String>
+		<String id="-2146736234">-1</String>
+		<String id="747415">Supply drop in play.</String>
+		<String id="747416">Dropped some supplies.</String>
+		<String id="747417">Resupply in play.</String>
+		<String id="747418">Resupply on the field.</String>
+		<String id="747419">Supply drop on-site.</String>
+		<String id="747420">Supplies have been dropped.</String>
+		<String id="747421">Resources dropped and in play.</String>
+		<String id="747422">Resources on the field.</String>
+		<String id="747423">Supply drop in target area.</String>
+		<String id="747424">Resupply in target area.</String>
+		<String id="-2146736223">-1</String>
+		<String id="747426">You got 'em.</String>
+		<String id="747427">Resupply achieved.</String>
+		<String id="747428">Resupply successful.</String>
+		<String id="747429">Supplies picked up.</String>
+		<String id="747430">Hand 'em out.</String>
+		<String id="747431">Stock up and reload.</String>
+		<String id="747432">Resources out of play.</String>
+		<String id="747433">Supplies out of play.</String>
+		<String id="747434">Pickup completed.</String>
+		<String id="747435">Pickup achieved.</String>
+		<String id="-2146736212">-1</String>
+		<String id="-2146736211">-1</String>
+		<String id="-2146736210">-1</String>
+		<String id="-2146736209">-1</String>
+		<String id="-2146736208">-1</String>
+		<String id="-2146736207">-1</String>
+		<String id="-2146736206">-1</String>
+		<String id="-2146736205">-1</String>
+		<String id="-2146736204">-1</String>
+		<String id="-2146736203">-1</String>
+		<String id="-2146736202">-1</String>
+		<String id="-2146736201">-1</String>
+		<String id="-2146736200">-1</String>
+		<String id="-2146736199">-1</String>
+		<String id="-2146736198">-1</String>
+		<String id="-2146736197">-1</String>
+		<String id="-2146736196">-1</String>
+		<String id="-2146736195">-1</String>
+		<String id="-2146736194">-1</String>
+		<String id="-2146736193">-1</String>
+		<String id="-2146736192">-1</String>
+		<String id="-2146736191">-1</String>
+		<String id="-2146736190">-1</String>
+		<String id="-2146736189">-1</String>
+		<String id="-2146736188">-1</String>
+		<String id="-2146736187">-1</String>
+		<String id="747607">Platinum</String>
+		<String id="747608">PLATINUM</String>
+		<String id="748066">Shield Mastery</String>
+		<String id="749149">Omni-Shield Health</String>
+		<String id="749913">Electric Slash</String>
+		<String id="749914">Unleash a wave of electrical energy from your sword to stun and damage all enemies in a cone.
+
+Highly effective against shields/barriers.
+Considered a power attack.
+Receives damage bonuses from power upgrades.</String>
+		<String id="749953">Blast Damage</String>
+		<String id="750118">Engineering Kit &lt;CUSTOM0&gt;</String>
+		<String id="750119">Install a variety of omni-tool upgrades to enhance the potency of tech attacks.
+Tech Power Damage +&lt;CUSTOM0&gt;%</String>
+		<String id="750120">Adaptive War Amp &lt;CUSTOM0&gt;</String>
+		<String id="750121">Use an advanced biotic amp to increase the strength of damaging biotic powers.
+Biotic Power Damage +&lt;CUSTOM0&gt;%</String>
+		<String id="750122">Thermal Clip Storage &lt;CUSTOM0&gt;</String>
+		<String id="750123">Add compartments to the user's armor to increase the capacity for thermal clips without sacrificing armor integrity.
+Thermal Clip Capacity +&lt;CUSTOM0&gt;%</String>
+		<String id="750124">Densified Ammunition &lt;CUSTOM0&gt;</String>
+		<String id="750125">Use an ammo shaver to load weapons with specially treated ammo blocks to fire heavier, harder ammunition that inflicts more damage per shot.
+Weapon Damage +&lt;CUSTOM0&gt;%</String>
+		<String id="750126">Guerrilla Upgrade &lt;CUSTOM0&gt;</String>
+		<String id="750127">Increase the lethality of the sniper rifle and SMG. 
+Sniper Rifle Damage +&lt;CUSTOM0&gt;%
+SMG Damage +&lt;CUSTOM1&gt;%</String>
+		<String id="750128">Combatives Upgrade &lt;CUSTOM0&gt;</String>
+		<String id="750129">Increase the lethality of the assault rifle and pistol.
+Assault Rifle Damage +&lt;CUSTOM0&gt;%
+Pistol Damage +&lt;CUSTOM0&gt;%</String>
+		<String id="750130">Shock Trooper Upgrade &lt;CUSTOM0&gt;</String>
+		<String id="750131">Increase the lethality of the shotgun, and increase grenade storage.
+Shotgun Damage +&lt;CUSTOM0&gt;%
+Max Grenades +&lt;CUSTOM3&gt;</String>
+		<String id="750132">Barrage Upgrade &lt;CUSTOM0&gt;</String>
+		<String id="750133">Boost the effectiveness of all weapons by increasing stability and thermal clip capacities.
+Weapon Stability +&lt;CUSTOM0&gt;%
+Thermal Clip Capacity +&lt;CUSTOM1&gt;%</String>
+		<String id="750134">Juggernaut Shield &lt;CUSTOM0&gt;</String>
+		<String id="750135">Use high-capacity kinetic barrier generators to provide bonuses to both shield strength and melee damage.
+Shield Strength +&lt;CUSTOM0&gt;%
+Melee Damage +&lt;CUSTOM1&gt;%</String>
+		<String id="750136">Martial Biotic Amp &lt;CUSTOM0&gt;</String>
+		<String id="750137">Use an advanced biotic amp to increase the strength of biotic attacks, including melee damage.
+Biotic Damage +&lt;CUSTOM0&gt;%
+Melee Damage +&lt;CUSTOM1&gt;%</String>
+		<String id="750138">Omni-Capacitors &lt;CUSTOM0&gt;</String>
+		<String id="750139">Provide more power to tech abilities to decrease recharge time.
+Tech Damage +&lt;CUSTOM0&gt;%
+Power Recharge Speed +&lt;CUSTOM1&gt;%</String>
+		<String id="750170">Missile Recharge Speed</String>
+		<String id="750415">Polonium Rounds &lt;CUSTOM0&gt;</String>
+		<String id="750416">Apply level &lt;CUSTOM1&gt; polonium rounds for one mission to add a damage-over-time effect to enemies you shoot.</String>
+		<String id="750417">Hammerhead Rounds &lt;CUSTOM0&gt;</String>
+		<String id="750418">Apply level &lt;CUSTOM1&gt; hammerhead rounds for one mission to increase your ammunition's force of impact.</String>
+		<String id="750419">Explosive Rounds &lt;CUSTOM0&gt;</String>
+		<String id="750420">Apply level &lt;CUSTOM1&gt; explosive rounds for one mission. Fire on an opponent continuously to build up the charge and then cease fire to detonate it.</String>
+		<String id="750421">Phasic Rounds &lt;CUSTOM0&gt;</String>
+		<String id="750422">Apply level &lt;CUSTOM1&gt; phasic rounds for one mission to break through enemy shields, increasing damage.</String>
+		<String id="750437">Rail Rounds &lt;CUSTOM0&gt;</String>
+		<String id="750438">Apply level &lt;CUSTOM1&gt; rail rounds for one mission, allowing ammunition to pass great distances through cover and other objects.</String>
+		<String id="750682">Damage</String>
+		<String id="750683">Increase damage by {Evolve_Damage1%p}%.</String>
+		<String id="750684">Radius</String>
+		<String id="750685">Increase impact radius by {Evolve_ImpactRadius%p}%.</String>
+		<String id="750686">Detonate</String>
+		<String id="750687">Increase force and damage of biotic detonations by {Evolve_ComboBonus%p}%.</String>
+		<String id="750688">Recharge Speed</String>
+		<String id="750689">Increase recharge speed by {Evolve_Cooldown%p}%.</String>
+		<String id="750690">Damage</String>
+		<String id="750691">Increase damage by {Evolve_Damage2%p}%.</String>
+		<String id="750692">Range</String>
+		<String id="750693">Increase range by {Evolve_NumShockwavesBonus%p}%.</String>
+		<String id="750694">Increase force and damage of tech detonations by {Evolve_ComboBonus%p}%.</String>
+		<String id="752551">Helipad</String>
+		<String id="752552">Armored Core</String>
+		<String id="752553">West Bridge</String>
+		<String id="752554">Central Tower</String>
+		<String id="752555">East Bridge</String>
+		<String id="752556">Relay Station</String>
+		<String id="752557">Loading Dock</String>
+		<String id="752558">Pedway</String>
+		<String id="752559">Shopping Arcade</String>
+		<String id="752560">Intersection </String>
+		<String id="752561">Ruined Buildings</String>
+		<String id="752562">Parking Structure</String>
+		<String id="753688">$755684
+Greater grenade capacity.
+</String>
+		<String id="753689">Damage &amp; Max Grenades</String>
+		<String id="753690">Increase power damage and force bonuses by {Evolve_PowerDamageBonus1%p}%.
+Increase grenade capacity by {Evolve_GrenadeBonus}.</String>
+		<String id="753691">Increase power damage and force bonuses by {Evolve_PowerDamageBonus3%p}%.</String>
+		<String id="753692">$755684
+More strength.</String>
+		<String id="754269">- Explosive Omni-Tool</String>
+		<String id="754270">These soldiers are the go-anywhere, fight-anything special forces of the Alliance that were trained at the Interplanetary Combatives Academy in Rio de Janeiro, Brazil. They had to survive combat situations "in an admirable and effective fashion" to receive the N7 rank. Many N7s now train other species in anti-Reaper asymmetric warfare.</String>
+		<String id="754338">Grenade Capacity Bonus</String>
+		<String id="754538">Damage</String>
+		<String id="754539">Increase damage by {Damage%b}%.</String>
+		<String id="754613">Homing Grenade</String>
+		<String id="754614">Launch this seeking grenade to track down a target, causing a massive explosion on impact.</String>
+		<String id="754615">Increase grenade capacity by {MaxGrenadeBonus}.</String>
+		<String id="754616">Increase damage by {Damage%b}%.</String>
+		<String id="754617">Increase damage by {Evolve_DamageBonus%p}%.</String>
+		<String id="754618">Increase impact radius by {Evolve_ImpactRadiusBonus%p}%.</String>
+		<String id="754619">Increase grenade capacity by {Evolve_GrenadeCountBonus}.</String>
+		<String id="754620">Add a fire effect to targets, dealing {Evolve_DoTDamage%p}% additional damage over {Evolve_DoTDuration} seconds.</String>
+		<String id="754621">Increase damage to armor by {Evolve_ArmorDamageBonus%p}%.
+Decrease weapon damage mitigation of armored targets by {Evolve_ArmorDebuffPercent%p}% for {Evolve_ArmorDebuffDuration} seconds.</String>
+		<String id="754622">Split a grenade in half to seek two targets that do {Evolve_SplitDamage%p}% damage each.</String>
+		<String id="754623">Damage</String>
+		<String id="754624">Impact Radius</String>
+		<String id="754625">Capacity</String>
+		<String id="754626">Fire Damage</String>
+		<String id="754627">Armor Damage</String>
+		<String id="754628">Split Grenade</String>
+		<String id="754700">Increase weapon mass for a split second per shot by using an expert timing-VI to reduce weapon kick and improve aim.</String>
+		<String id="754701">Superior kinetic coils increase shot penetration.</String>
+		<String id="754702">Attach an omni-blade to the weapon for increased melee damage.</String>
+		<String id="754703">$754701</String>
+		<String id="754704">$754702</String>
+		<String id="754706">Increase headshot lethality by balancing barrel calibration so that ammunition pierces bone and explodes in soft tissue.</String>
+		<String id="754707">Superior lightweight alloys replace weapon parts, making the weapon less obtrusive and easier to handle.</String>
+		<String id="754753">Reveal enemies through walls and smoke with a 4x optical scope and enhance stability and accuracy while zoomed. </String>
+		<String id="755684">Combat skills are perfected to an art with N7 training.
+
+More power damage.
+More weapon damage.</String>
+		<String id="755824">Sword Damage</String>
+		<String id="755825">Increase sword damage by {MeleeDamageBonus%b}%.</String>
+		<String id="755832">Increase sword damage by {Evolve_MeleeDamageBonus1%p}%.</String>
+		<String id="755833">Increase sword damage by {Evolve_MeleeSpreeBonus%p}% for {Evolve_MeleeSpreeDuration} seconds after an enemy is killed by a sword attack.</String>
+		<String id="755834">Shield Recharge &amp; Speed</String>
+		<String id="755835">Decrease shield-recharge delay by {Evolve_ShieldRegenBonus%p}%.
+Increase movement speed by {Evolve_MovementSpeedBonus%p}%.</String>
+		<String id="755836">Increase sword damage to shields/barrier by {Evolve_ShieldDamageBonus%p}%.</String>
+		<String id="755837">Increase sword damage to armor by {Evolve_ArmorDamageBonus%p}%.</String>
+		<String id="755838">Increase weapon damage bonus by {Evolve_WeaponDamageBonus2%p}%.
+Increase grenade capacity by {Evolve_GrenadeBonus2}.</String>
+		<String id="755839">Weapon Damage &amp; Max Grenades</String>
+		<String id="755840">Sword Mastery</String>
+		<String id="755841">Boost health, shields, melee damage, durability, and movement speed.</String>
+		<String id="755842">Weapon Damage Bonus</String>
+		<String id="755843">$755984
+Decreases max shields by {ShieldPercentPenalty%p}% while active.</String>
+		<String id="755891">Increase the number of grenades launched by {AdditionalChildPieces}.</String>
+		<String id="755892">Grenade Count</String>
+		<String id="755974">$756004
+Weaken armor by {ArmorWeakness%p}%.</String>
+		<String id="755984">Rip a target into shreds with the T5-V's autofiring shoulder cannon. 
+
+Lock onto a target to launch a stinger missile.
+Stays active until disabled.</String>
+		<String id="756004">Flash-freeze unprotected enemies and slow down the rest with a wave of ice damage.
+
+Frozen targets don't regenerate health.</String>
+		<String id="756716">Arc Grenade</String>
+		<String id="756717">Stun and electrocute your enemies with an EMP-packed grenade. Effective against shields and barriers.</String>
+		<String id="756718">Max Grenades</String>
+		<String id="756719">Increase grenade capacity by {Rank2GrenadeUpgrade}.</String>
+		<String id="756720">Damage</String>
+		<String id="756721">Increase damage by {Damage%b}%.</String>
+		<String id="756722">Damage</String>
+		<String id="756723">Increase damage by {Evolve_DamageBonus%p}%.</String>
+		<String id="756724">Radius</String>
+		<String id="756725">Increase impact radius by {Evolve_RadiusBonus%p}%.</String>
+		<String id="756726">Max Grenades</String>
+		<String id="756727">Increase grenade capacity by {Evolve_GrenadeCountBonus}.</String>
+		<String id="756728">Electrical Damage</String>
+		<String id="756729">Add an electrical effect that does {Evolve_DoTDamage%p}% additional damage over {Evolve_DoTDuration} seconds.</String>
+		<String id="756730">Armor-Piercing</String>
+		<String id="756731">Increase damage to armor by {Evolve_ArmorDamageBonus%p}%.</String>
+		<String id="756732">Shield Overload</String>
+		<String id="756733">Increase damage to shields and barriers by {Evolve_ShieldDamageBonus%p}%.</String>
+		<String id="765393">The Reapers hit us first, and they hit without warning.</String>
+		<String id="765394">While the rest of the galaxy gathers strength to fight a final battle...</String>
+		<String id="765395">A few us remain behind...</String>
+		<String id="765396">To hold the line.</String>
+		<String id="765397">To keep what's left of Earth free.</String>
+		<String id="765398">Or die trying.</String>
+		<String id="765399">This is it - today - all the training... all the sacrifices. This is why you do this.</String>
+		<String id="765400">You are the elite. You are the future of Earth.</String>
+		<String id="765401">The fleets are gathering, but until they come back... we're on our own.</String>
+		<String id="765402">The Reapers attacked Earth because they knew we were a threat.</String>
+		<String id="765403">But they don't know the half of it.</String>
+		<String id="765404">Earth is ours.</String>
+		<String id="765405">And if they want it... </String>
+		<String id="765406">They'll have to go through us to get it!</String>
+		<String id="-2146718241">-1</String>
+		<String id="-2146718240">-1</String>
+		<String id="-2146718239">-1</String>
+		<String id="-2146718238">-1</String>
+		<String id="-2146718237">-1</String>
+		<String id="765412">[Transition to Call to Arms for the men fighting on earth]</String>
+		<String id="-2146718235">-1</String>
+		<String id="-2146718234">-1</String>
+		<String id="-2146718233">-1</String>
+		<String id="-2146718232">-1</String>
+		<String id="-2146718231">-1</String>
+		<String id="-2146718230">-1</String>
+		<String id="-2146718229">-1</String>
+		<String id="-2146718228">-1</String>
+		<String id="-2146718227">-1</String>
+		<String id="-2146718226">-1</String>
+		<String id="-2146718225">-1</String>
+		<String id="-2146718224">-1</String>
+		<String id="-2146718223">-1</String>
+		<String id="-2146718222">-1</String>
+		<String id="-2146718221">-1</String>
+		<String id="-2146718220">-1</String>
+		<String id="-2146718219">-1</String>
+		<String id="-2146718218">-1</String>
+		<String id="-2146718217">-1</String>
+		<String id="-2146718216">-1</String>
+		<String id="134217729">DLC_CON_MP3</String>
+		<String id="134217730">en-us</String>
+		<String id="134217731">Male</String>
+		<String id="134217731">Female</String>
+	</Strings>
+</TlkFile>

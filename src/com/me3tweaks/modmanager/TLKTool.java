@@ -2,7 +2,6 @@ package com.me3tweaks.modmanager;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,8 +21,8 @@ import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -50,10 +49,10 @@ public class TLKTool {
 
 	public static void main(String[] args) throws Exception {
 
-		//decompileTLK();
+		decompileTLK();
 		//initialScan();
-		subsetScan("C:\\Users\\Michael\\Desktop\\BIOGAME_COMMANDSTR.txt", "C:\\Users\\Michael\\Desktop\\patch1_int.xml");
-		replacementScan("C:\\Users\\Michael\\Desktop\\patch1_int.xml", "C:\\Users\\Michael\\Desktop\\patch1_int_completed.xml");
+		//subsetScan("C:\\Users\\Michael\\Desktop\\BIOGAME_COMMANDSTR.txt", "C:\\Users\\Michael\\Desktop\\patch1_int.xml");
+		//replacementScan("C:\\Users\\Michael\\Desktop\\patch1_int.xml", "C:\\Users\\Michael\\Desktop\\patch1_int_completed.xml");
 	}
 
 	private static void replacementScan(String inputFile, String outputFile) throws Exception {
@@ -219,12 +218,18 @@ public class TLKTool {
 	}
 
 	private static void decompileTLK() {
+		File dir = new File(System.getProperty("user.dir") + File.separator + "carddata" + File.separator +"tlkfiles"+File.separator);
+		System.out.println(dir);
 		Collection<File> files = FileUtils.listFiles(
-				  new File("butthole"), 
-				  new RegexFileFilter("^(.*?)"), 
-				  DirectoryFileFilter.DIRECTORY
+				  dir, 
+				  new SuffixFileFilter("tlk"), 
+				  TrueFileFilter.TRUE
 				);
-		File dir = new File("H:\\Google Drive\\Mass Effect 3 Modding\\TLK\\DLC");
+		for (File file : files) {
+			System.out.println(file);
+		}
+		
+		//File dir = new File("H:\\Google Drive\\Mass Effect 3 Modding\\TLK\\DLC");
 		/*File[] files = dir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {

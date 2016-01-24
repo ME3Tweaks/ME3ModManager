@@ -68,6 +68,7 @@ public class StorePack {
 		sb.append("<h2 class=\"centered dark\">" + getHumanName() + "</h2>\n");
 		sb.append("<h3 class=\"centered dark\">Internally known as " + packName + "</h3>\n");
 		sb.append("<p class='centered dark'>"+getDescripton()+"</p>");
+		sb.append("<p class='centered dark'>"+(cost > 0 ? "Costs "+cost+" Credits" : "Free") +(metadata.getMaxPurchases() > 0 ? ", can be obtained "+metadata.getMaxPurchases()+" time"+(metadata.getMaxPurchases() != 1 ? "s": "") :"")+"</p>");
 		sb.append("<hr class=\"dark_hr_center\">\n");
 
 		sb.append("<h3 class=\"centered\">Cards obtainable in this pack</h3>\n");
@@ -134,7 +135,7 @@ public class StorePack {
 	}
 
 	public String getHumanName() {
-		return CardParser.livetlkMap.get(metadata.getSrTitle());
+		return CardParser.tlkMap.get(metadata.getSrTitle());
 		/*
 		 * 
 		 * 
