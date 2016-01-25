@@ -69,6 +69,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		rarity = card.rarity;
 		PVIncrementBonus = card.PVIncrementBonus;
 		GUIName = card.GUIName;
+		GUIDescription = card.GUIDescription;
 	}
 
 	public boolean getUseVersionIdx() {
@@ -96,6 +97,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "\">\n\t");
 		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
 				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
+		//sb.append("<span>" + getCardDisplayString() + "</span>\n");
 		sb.append("<span>" + getCardDisplayString() + "</span>\n");
 		sb.append("<div class='ttip'>");
 		sb.append("<p class='centered'>");
@@ -103,7 +105,6 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		sb.append("</p>");
 		sb.append("<hr class='dark_hr_center'>");
 		ArrayList<StorePack> packlist = getPacklistsCardIsIn();
-
 		StringBuilder unusedSB = new StringBuilder();
 
 		if (packlist.size() > 0) {
@@ -172,8 +173,21 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	
 	public String getCardDescription() {
 		String desc = CardParser.tlkMap.get(GUIDescription);
+		
 		if (desc == null) {
 			return RealCard.getHumanName(uniqueName);
+		}
+		
+		if (getCategoryName().equals("consumables")) {
+			return desc.replace("&lt;CUSTOM1&gt;", Integer.toString(versionIdx+1));
+		}
+		
+		if (desc.contains("&lt;CUSTOM") && getCategoryName().equals("gear")) {
+			String lopoff = desc;
+			while (lopoff.indexOf(".") > 0) {
+				lopoff = lopoff.substring(lopoff.indexOf(".") +1);
+			}
+			desc = desc.replace(lopoff, "");
 		}
 		
 		return desc;
@@ -275,7 +289,15 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	}
 
 	public String getCardDisplayString() {
-		String str = getHumanName(uniqueName);
+		String str = getCardName(); //gethumanname();
+		if (str != null) {
+			str = str.replace("&lt;CUSTOM0&gt;", "");
+			str = str.replace("&lt;CUSTOM2&gt;", "");
+		}
+		if (str == null) {
+			System.out.println("no name" +this);
+			str = getHumanName(uniqueName);
+		}
 		if (versionIdx > -1 && !getCategoryName().equals("gear") && !getCategoryName().equals("kits")) {
 			int num = versionIdx + 1;
 			ValueParserLib.RomanNumeral rn = new ValueParserLib.RomanNumeral(num);

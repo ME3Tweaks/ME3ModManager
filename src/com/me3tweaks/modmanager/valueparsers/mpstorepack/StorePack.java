@@ -6,7 +6,6 @@ import java.util.TreeSet;
 public class StorePack {
 	private ArrayList<PackSlot> slotContents = new ArrayList<PackSlot>();
 	private String packName;
-	private int cost;
 	private PackMetadata metadata;
 
 	public StorePack(String packname) {
@@ -39,10 +38,6 @@ public class StorePack {
 		return sb.toString();
 	}
 
-	public void setCost(int cost) {
-		this.cost = cost;
-	}
-
 	public ArrayList<PackSlot> getSlotContents() {
 		return slotContents;
 	}
@@ -60,7 +55,7 @@ public class StorePack {
 	}
 
 	public int getCost() {
-		return cost;
+		return metadata.getCost();
 	}
 
 	public String getPackHTML() {
@@ -68,7 +63,7 @@ public class StorePack {
 		sb.append("<h2 class=\"centered dark\">" + getHumanName() + "</h2>\n");
 		sb.append("<h3 class=\"centered dark\">Internally known as " + packName + "</h3>\n");
 		sb.append("<p class='centered dark'>"+getDescripton()+"</p>");
-		sb.append("<p class='centered dark'>"+(cost > 0 ? "Costs "+cost+" Credits" : "Free") +(metadata.getMaxPurchases() > 0 ? ", can be obtained "+metadata.getMaxPurchases()+" time"+(metadata.getMaxPurchases() != 1 ? "s": "") :"")+"</p>");
+		sb.append("<p class='centered dark'>"+(getCost() > 0 ? "Costs "+getCost()+" Credits" : "Free") +(metadata.getMaxPurchases() > 0 ? ", can be obtained "+metadata.getMaxPurchases()+" time"+(metadata.getMaxPurchases() != 1 ? "s": "") :"")+"</p>");
 		sb.append("<hr class=\"dark_hr_center\">\n");
 
 		sb.append("<h3 class=\"centered\">Cards obtainable in this pack</h3>\n");
@@ -248,7 +243,7 @@ public class StorePack {
 
 	@Override
 	public String toString() {
-		return "StorePack [packName=" + packName + ", cost=" + cost + "]";
+		return "StorePack [packName=" + packName + ", cost=" + getCost() + "]";
 	}
 
 	public String getSRPackName() {
