@@ -3,6 +3,7 @@ package com.me3tweaks.modmanager.valueparsers.mpstorepack;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeSet;
@@ -21,7 +22,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 public class CardParser {
-	private static TreeSet<Pool> poolList = new TreeSet<Pool>();
+	private static TreeSet<CardPool> cardPoolList = new TreeSet<CardPool>();
 	private static ArrayList<PackMetadata> metadataList = new ArrayList<PackMetadata>();
 	public static HashMap<Integer, String> tlkMap;
 	//public static TreeSet<Card> cardList;
@@ -56,7 +57,7 @@ public class CardParser {
 		Collection<File> files = FileUtils.listFiles(dir, new SuffixFileFilter("xml"), TrueFileFilter.TRUE);
 		ArrayList<InputSource> tlkSources = new ArrayList<InputSource>();
 		for (File file : files) {
-			System.out.println("Loading TLK XML: "+file);
+			System.out.println("Loading TLK XML: " + file);
 			InputSource source = new InputSource("file:///" + file);
 			tlkSources.add(source);
 		}
@@ -69,7 +70,10 @@ public class CardParser {
 		//LOAD STRINGS INTO HASHMAP OF ID => STR
 		tlkMap = new HashMap<Integer, String>();
 		String tlkExpression = "/TlkFile/Strings/String";
+		int numtlk = tlkSources.size();
+		int numtlkloaded = 0;
 		for (InputSource source : tlkSources) {
+			System.out.println("Parsing TLK file [" + (numtlkloaded + 1) + "/" + numtlk + "]");
 			NodeList tlkNodes = (NodeList) xpath.evaluate(tlkExpression, source, XPathConstants.NODESET);
 			if (tlkNodes != null && tlkNodes.getLength() > 0) {
 				for (int i = 0; i < tlkNodes.getLength(); i++) {
@@ -77,34 +81,25 @@ public class CardParser {
 						Element el = (Element) tlkNodes.item(i);
 						int id = Integer.parseInt(el.getAttribute("id"));
 						String str = el.getTextContent();
-						//System.out.println(Integer.parseInt(el.getAttribute("id"))+": "+ el.getTextContent());
 						tlkMap.put(id, StringEscapeUtils.escapeHtml4(str));
 					}
 				}
 			}
+			numtlkloaded++;
 		}
 
 		for (InputSource inputSource : sources) {
 			//PARSE - CARDLIST
+			System.out.println("Parsing card data");
+
 			String expression = String.format(carddatalistExpression, 4);
 			NodeList type4Nodes = (NodeList) xpath.evaluate(expression, inputSource, XPathConstants.NODESET);
-			//System.out.println("Number of nodes: " + carddataNodes.getLength());
 			if (type4Nodes != null && type4Nodes.getLength() > 0) {
-				//	System.out.println("Number of Type 4: " + type4Nodes.getLength());
 				for (int i = 0; i < type4Nodes.getLength(); i++) {
 					if (type4Nodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
 						Element el = (Element) type4Nodes.item(i);
 						RealCard multiCard = new RealCard(el.getTextContent());
-						if (RealCard.getHumanName(multiCard.getUniqueName()).equals("Ops Survival Pack Capacity Upgrade")) {
-							//System.out.println("REMOVE BREAK");
-						}
-						boolean removed = removeCardFromMap(multiCard);
-						if (removed) {
-							//System.out.println("REMOVED A CARD: " + multiCard);
-						} else {
-							//System.out.println("Didn't remove card: "+multiCard);
-						}
-						//System.out.println("CARD REM [" + (removed ? "OK" : "MISS") + "]: " + multiCard);
+						removeCardFromMap(multiCard);
 					}
 				}
 			}
@@ -117,28 +112,24 @@ public class CardParser {
 				expression = String.format(carddatalistExpression, 3);
 			}
 			NodeList carddataNodes = (NodeList) xpath.evaluate(expression, inputSource, XPathConstants.NODESET);
-			//System.out.println("Number of nodes: " + carddataNodes.getLength());
 			if (carddataNodes != null && carddataNodes.getLength() > 0) {
 				for (int i = 0; i < carddataNodes.getLength(); i++) {
 					if (carddataNodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
 						Element el = (Element) carddataNodes.item(i);
 						RealCard multiCard = new RealCard(el.getTextContent());
 						addCardToMap(multiCard);
-						//System.out.println("CARD ADD: " + multiCard);
-
-						//System.out.println(multiCard.getCardHTML());
 					}
 				}
 			}
 
 			//PARSE - POOLS
 			NodeList poolNodes = (NodeList) xpath.evaluate(poolnameExpression, inputSource, XPathConstants.NODESET);
-			//System.out.println("Number of nodes: " + poolNodes.getLength());
+			System.out.println("Parsing pool data");
 			if (poolNodes != null && poolNodes.getLength() > 0) {
 				for (int i = 0; i < poolNodes.getLength(); i++) {
 					if (poolNodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
 						Element poolNameNode = (Element) poolNodes.item(i);
-						Pool pool = getPoolByName(poolNameNode.getTextContent());
+						CardPool pool = getPoolByName(poolNameNode.getTextContent());
 						NodeList contentNodes = null;
 						if (inputSource == basegameSource) {
 							contentNodes = (NodeList) xpath.evaluate(String.format(poolcontentsExpression, 2), poolNameNode, XPathConstants.NODESET);
@@ -154,7 +145,6 @@ public class CardParser {
 									Element removeNode = (Element) removeNodes.item(x);
 									PoolCard multiCard = new PoolCard(removeNode.getTextContent());
 									pool.removeCard(multiCard);
-									//System.out.println("REMOVED CARD: " + multiCard);
 								}
 							}
 						}
@@ -163,11 +153,10 @@ public class CardParser {
 							for (int x = 0; x < contentNodes.getLength(); x++) {
 								if (contentNodes.item(x).getNodeType() == Node.ELEMENT_NODE) {
 									Element contentNode = (Element) contentNodes.item(x);
-									//System.out.println("adding card to pool: "+contentNode.getTextContent());
 									PoolCard multiCard = new PoolCard(contentNode.getTextContent());
 									RealCard fetchedCard = getRealCardFromPoolCard(multiCard);
 									if (fetchedCard == null) {
-										System.err.println("Card not in realcards: " + multiCard);
+										System.err.println("Poolcard not in realcards: " + multiCard);
 									}
 									pool.addCard(multiCard);
 								}
@@ -192,19 +181,11 @@ public class CardParser {
 						}
 					}
 				}
-
-				/*
-				 * for (Pool pool : poolList) { System.out.println("::" +
-				 * pool.getPoolname() + "::"); for (Card card :
-				 * pool.getPoolContents()) { System.out.println("     " +
-				 * card.getCardDisplayString()); } System.out.println(); }
-				 * 
-				 * if (true) { System.exit(0); }
-				 */
 			}
 		} //END OF INPUT SOURCE ITERATION
 
 		//PARSE - PACK METADATA
+		System.out.println("Parsing pack metadata");
 		NodeList metadataNodes = (NodeList) xpath.evaluate(metadataExpression, liveiniSource, XPathConstants.NODESET);
 		if (metadataNodes != null && metadataNodes.getLength() > 0) {
 			for (int i = 0; i < metadataNodes.getLength(); i++) {
@@ -215,7 +196,6 @@ public class CardParser {
 						continue;
 					}
 
-					//System.out.println("parsing: "+packData);
 					PackMetadata packMetadata = new PackMetadata(packData);
 					metadataList.add(packMetadata);
 				}
@@ -225,6 +205,7 @@ public class CardParser {
 		}
 
 		//PARSE - PACKS AND SLOTS
+		System.out.println("Parsing store slots");
 		NodeList nodes = (NodeList) xpath.evaluate(packlistExpression, liveiniSource, XPathConstants.NODESET);
 		if (nodes != null && nodes.getLength() > 0) {
 			for (int i = 0; i < nodes.getLength(); i++) {
@@ -235,7 +216,6 @@ public class CardParser {
 						continue;
 					}
 
-					//System.out.println("parsing: "+packData);
 					PackSlot packslot = new PackSlot(packData);
 					StorePack containingPack = packnameMap.get(packslot.getPackname());
 					if (containingPack != null) {
@@ -249,41 +229,115 @@ public class CardParser {
 				}
 			}
 
+			//Cleanup
+
 			//generate pack contents
 			int num = 0;
-			int numtodo = getNumCardsInMap();
+			int numtodo = carddataMap.entrySet().size();
 
+			//cleaning cards
 			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
+				//System.out.println("Removing unneeded cards [" + (num++) + "/" + numtodo + "]");
 				ArrayList<RealCard> cardsToRemove = new ArrayList<RealCard>(); //clean out idx = -1 cards for consumables, gear, etc. they are cloned as necessary
 				for (RealCard card : entry.getValue()) {
-					if (card.isConsumable && card.getVersionIdx() == -1) {
+					if ((card.isConsumable && card.getVersionIdx() == -1)) {
 						cardsToRemove.add(card);
+						System.out.println("Removing card " + card);
 					}
+					/*
+					 * switch (card.getUniqueName()) { case "MPCredits": if
+					 * (card.getPVIncrementBonus() < 1) {
+					 * cardsToRemove.add(card); System.out.println(
+					 * "Removing card " + card); } break; }
+					 */
 				}
 				entry.getValue().removeAll(cardsToRemove);
 			}
 
+			//generate pack contents
+			num = 0;
+			numtodo = getNumCardsInMap();
+
 			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
 				for (RealCard card : entry.getValue()) {
 					System.out.println("Generating html [" + (num++) + "/" + numtodo + "]");
-					card.getCardHTML();
+					card.getCardpageHTML();
 				}
 			}
 
 			StringBuilder sb = new StringBuilder();
 			sb.append("<ul>");
+			sb.append("<li><h2 class=\"slidebar-header centered\">Standard Packs</h2></li>");
+			//Build Store Files
+			ArrayList<StorePack> officialPacks = new ArrayList<>();
+			ArrayList<StorePack> unofficialPacks = new ArrayList<>();
 			for (Entry<String, StorePack> entry : packnameMap.entrySet()) {
-				StorePack pack = entry.getValue();
-				System.out.println(
-						"RewriteRule ^packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "/?$ /store_catalog/packs.php?packname=" + pack.getPackName() + " [L]");
-				String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "packcontents" + File.separator + pack.getPackName() + ".html";
+				if (entry.getValue().isOfficial()) {
+					officialPacks.add(entry.getValue());
+				} else {
+					unofficialPacks.add(entry.getValue());
+				}
+			}
+			
+			Collections.sort(officialPacks);
+			Collections.sort(unofficialPacks);
+
+			ArrayList<StorePack> sortedPacks = new ArrayList<>();
+			for (StorePack pack : officialPacks) {
+				sortedPacks.add(pack);
+			}
+			for (StorePack pack : unofficialPacks) {
+				sortedPacks.add(pack);
+			}
+			
+			
+			StringBuilder packSwitch = new StringBuilder();
+			packSwitch.append("<?php switch($packname){\n");
+			for (StorePack pack : sortedPacks) {
+				packSwitch.append("case '"+pack.getPackName()+"':\n\t$title = '"+pack.getHumanName()+"';\n");
+				packSwitch.append("\tbreak;\n");
+			}
+			packSwitch.append("default:\n\t$title = 'Store Packs';\n");
+			packSwitch.append("\tbreak;\n");
+			packSwitch.append("}");
+			packSwitch.append("?>");
+			String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "catdata" + File.separator + "storedata" + File.separator
+					+ "packtitleswitch.php";
+			FileUtils.writeStringToFile(new File(savepath), packSwitch.toString());
+
+			boolean lastWasOfficial = true;
+			for (StorePack pack : sortedPacks) {
+				savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "catdata" + File.separator + "storedata" + File.separator
+						+ pack.getPackName() + ".html";
 				FileUtils.writeStringToFile(new File(savepath), pack.getPackHTML());
 
+				if (lastWasOfficial != pack.isOfficial()) {
+					//generating first non official
+					sb.append("<li><h2 class=\"slidebar-header centered\">Non-Standard Packs</h2></li>");
+				}
+				
+				lastWasOfficial = pack.isOfficial();
+				
 				sb.append("<li><a id='" + pack.getPackName() + "' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "' title=\""
 						+ pack.getDescription() + "\" data-packname='" + pack.getPackName() + "'>" + pack.getHumanName() + "</a></li>\n\t");
 			}
 			sb.append("</ul>");
-			String savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "packcontents" + File.separator + "packheading.html";
+			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "catdata" + File.separator + "storedata" + File.separator
+					+ "packheading.html";
+			FileUtils.writeStringToFile(new File(savepath), sb.toString());
+
+			//Build pool files
+			sb = new StringBuilder();
+			for (CardPool pool : cardPoolList) {
+				savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "catdata" + File.separator + "pooldata" + File.separator
+						+ pool.getPoolname() + ".html";
+				FileUtils.writeStringToFile(new File(savepath), pool.getPoolHTML());
+				sb.append("<li><a id='" + pool.getPoolname() + "' href='/store_catalog/pools/" + pool.getPoolname() + "' data-poolname='" + pool.getPoolname() + "'>"
+						+ pool.getPoolname() + "</a></li>\n\t");
+			}
+			sb.append("</ul>");
+			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "catdata" + File.separator + "pooldata" + File.separator
+					+ "poolheading.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
 
 			//build cards page
@@ -341,10 +395,9 @@ public class CardParser {
 					}
 				}
 				previousCategory = card.getCategoryName();
-				//System.out.println(card.getCardDisplayString());
-				sb.append(card.getCardHTML());
+				sb.append(card.getCardpageHTML());
 			}
-			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "packcontents" + File.separator + "cardlist.html";
+			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "catdata" + File.separator + "cardlist.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
 
 		}
@@ -361,47 +414,27 @@ public class CardParser {
 	}
 
 	/**
-	 * Creates a pool if one does not exist by the specified name. REtunrs the
+	 * Creates a pool if one does not exist by the specified name. Returns the
 	 * existing one if one already does. If the pool does not exist, it will be
 	 * added and returned from the list.
+	 * 
+	 * This does not return a pool associated with the store pack, as those ones
+	 * determine the weight, but not the contents.
 	 * 
 	 * @param poolname
 	 *            Pool to find
 	 * @return pool
 	 */
-	public static Pool getPoolByName(String poolname) {
-		for (Pool pool : poolList) {
+	public static CardPool getPoolByName(String poolname) {
+		for (CardPool pool : cardPoolList) {
 			if (pool.getPoolname().equals(poolname)) {
 				return pool;
 			}
 		}
-		Pool pool = new Pool("(PoolName=\"" + poolname + "\")");
-		poolList.add(pool);
+		CardPool pool = new CardPool("(PoolName=\"" + poolname + "\")");
+		cardPoolList.add(pool);
 		return pool;
 	}
-
-	/*
-	 * public static RealCard getCardByName(String uniqueName, int versionIdx,
-	 * RealCard.Rarity rarity) { boolean isCharCard =
-	 * RealCard.IsCharacterCard(uniqueName);
-	 * 
-	 * ArrayList<RealCard> samenameCards = new ArrayList<>(); for (Entry<String,
-	 * TreeSet<RealCard>> entry : carddataMap.entrySet()) { for (RealCard card :
-	 * entry.getValue()){ if (card.getUniqueName().equals(uniqueName)) {
-	 * samenameCards.add(card); if (card.getUseVersionIdx()) { if
-	 * (card.getVersionIdx() == versionIdx) { //System.out.println(
-	 * "Found card by name and IDX: " + uniqueName); return card; } } else {
-	 * //System.out.println("Found card by name only: " + uniqueName); return
-	 * card; } } }
-	 */
-
-	//hasn't been found yet
-	/*
-	 * for (Card card : samenameCards) { if (card.getUseVersionIdx() ||
-	 * isCharCard) { //it's probably not defined... somehow, the game accepts
-	 * this. Card cloneCard = new Card(card); }
-	 * extrageneratedCards.add(cloneCard); return cloneCard; } }
-	 */
 
 	public static void addCardToMap(RealCard card) {
 		TreeSet<RealCard> cardset = carddataMap.get(card.getUniqueName());
@@ -442,28 +475,33 @@ public class CardParser {
 		if (card.getCategoryName().equals("consumables")) {
 			isConsumable = true;
 		}
+		boolean isMisc = false;
+		if (card.getCategoryName().equals("misc")) {
+			isMisc = true;
+		}
 
 		for (RealCard rcard : cardset) {
-			if (rcard.getUseVersionIdx()) {
-				if (card.getVersionIdx() == rcard.getVersionIdx()) {
-					//System.out.println("Found card by name and IDX: " + uniqueName);
+			if (rcard.getPVIncrementBonus() == card.getPVIncrementBonus() || card.getCategoryName()
+					.equals("weapons") /* we ignore weapon pv */) {
+				if (rcard.getUseVersionIdx()) {
+					if (card.getVersionIdx() == rcard.getVersionIdx()) {
+						return rcard;
+					}
+				} else {
 					return rcard;
 				}
-			} else {
-				if (card.getUniqueName().equals("MPCredits") && card.getPVIncrementBonus()!=rcard.getPVIncrementBonus()) {
-					RealCard cloneCard = new RealCard(rcard); //clonecard
-					cloneCard.setVersionIdx(card.getVersionIdx());
-					if (card.getRarity() != null) {
-						cloneCard.setRarity(card.getRarity());
-					}
-					cloneCard.setPVIncrementBonus(card.getPVIncrementBonus());
-					cardset.add(cloneCard);
-					return cloneCard;
-				}
-				//System.out.println("Found card by name only: " + uniqueName);
-				return rcard;
 			}
 		}
+
+		if (isMisc) {
+			System.out.println("Cloning MISC card " + card + ", set size " + cardset.size());
+			RealCard maxidxcard = cardset.first();
+			RealCard cloneCard = new RealCard(maxidxcard); //clonecard
+			cloneCard.setPVIncrementBonus(card.getPVIncrementBonus());
+			cardset.add(cloneCard);
+			return cloneCard;
+		}
+
 		if (isCharCard) {
 			RealCard maxidxcard = null;
 			for (RealCard rcard : cardset) {
@@ -485,10 +523,21 @@ public class CardParser {
 				cloneCard.setRarity(card.getRarity());
 			}
 			cloneCard.setPVIncrementBonus(card.getPVIncrementBonus());
+			cloneCard.getCardpageHTML();
 			cardset.add(cloneCard);
 			return cloneCard;
 		}
 
+		return null;
+	}
+
+	public static CardPool getCardPoolByName(String poolname) {
+		for (CardPool pool : cardPoolList) {
+			if (pool.getPoolname().equals(poolname)) {
+				return pool;
+			}
+		}
+		System.out.println("DID NOT FIND POOL: " + poolname);
 		return null;
 	}
 }

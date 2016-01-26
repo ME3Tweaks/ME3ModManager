@@ -28,9 +28,6 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 	 */
 	public PoolCard(String uniqueNameString) {
 		uniqueName = ValueParserLib.getStringProperty(uniqueNameString, "UniqueName", true);
-		if (uniqueName.equals("SFXGameContentDLC_CON_MP1.SFXGameEffect_MatchConsumable_HeadshotDamage")) {
-			System.out.println("headshot breka");
-		}
 		versionIdx = ValueParserLib.getIntProperty(uniqueNameString, "VersionIdx");
 		String rarity = ValueParserLib.getStringProperty(uniqueNameString, "Rarity", false);
 		if (rarity != null) {
@@ -50,7 +47,6 @@ public class PoolCard extends Card implements Comparable<PoolCard>  {
 			}
 		}
 		PVIncrementBonus = ValueParserLib.getIntProperty(uniqueNameString, "PVIncrementBonus");
-		
 		if (getCategoryName().equals("gear")) versionIdx = 0;
 	}
 

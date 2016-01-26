@@ -5386,8 +5386,8 @@
         <Value type="2">(UniqueName="SoldierHumanFemale", Rarity=Rarity_Common, GUIName=711374, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldier")</Value>
         <Value type="2">(UniqueName="VanguardHumanMale", Rarity=Rarity_Common, GUIName=711369, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
         <Value type="2">(UniqueName="VanguardHumanFemale", Rarity=Rarity_Common, GUIName=711375, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldier")</Value>
-        <Value type="2">(UniqueName="SoldierHumanMaleBF3", Rarity=Rarity_Uncommon, GUIName=723302, GUIDescription=723303, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
-        <Value type="2">(UniqueName="InfiltratorHumanFemaleBF3", Rarity=Rarity_Uncommon, GUIName=723371, GUIDescription=723303, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitAgent")</Value>
+        <Value type="2">(UniqueName="SoldierHumanMaleBF3", Rarity=Rarity_Uncommon, GUIName=723302, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
+        <Value type="2">(UniqueName="InfiltratorHumanFemaleBF3", Rarity=Rarity_Uncommon, GUIName=723371, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitAgent")</Value>
         <Value type="2">(UniqueName="AdeptDrell", Rarity=Rarity_Uncommon, VersionIdx=1, GUIName=711377, GUICategory=EReinforcementGUICategory_Kit, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitDrell")</Value>
         <Value type="2">(UniqueName="VanguardDrell", Rarity=Rarity_Rare, VersionIdx=2, GUIName=711386, GUICategory=EReinforcementGUICategory_Kit, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitDrell")</Value>
         <Value type="2">(UniqueName="EngineerSalarian", Rarity=Rarity_Uncommon, VersionIdx=1, GUIName=711379, GUICategory=EReinforcementGUICategory_Kit, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSalarian")</Value>

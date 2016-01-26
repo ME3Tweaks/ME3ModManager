@@ -11,15 +11,15 @@ import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
 public class PackSlot {
 	private String packname;
 	private int numCards;
-	private ArrayList<Pool> mainPools = new ArrayList<Pool>();
-	private Pool backupPool;
+	private ArrayList<SlotPool> mainPools = new ArrayList<SlotPool>();
+	private SlotPool backupPool;
 
 	public PackSlot(String value) {
 		packname = ValueParserLib.getStringProperty(value, "PackName", true);
 		numCards = ValueParserLib.getIntProperty(value, "Quantity");
 		String backupPoolname = ValueParserLib.getStringProperty(value, "BackupPool", true);
 		if (backupPoolname != null) {
-			backupPool = new Pool("(PoolName=\"" + backupPoolname + "\")");
+			backupPool = new SlotPool("(PoolName=\"" + backupPoolname + "\")");
 		}
 
 		String workingStr = value.substring(value.indexOf("Pools=") + 6);
@@ -29,7 +29,11 @@ public class PackSlot {
 		Matcher m = Pattern.compile("\\([a-zA-Z0-9=\",.]*\\)").matcher(workingStr);
 		while (m.find()) {
 			workingStr = matchingStr.substring(m.end());
-			mainPools.add(new Pool(m.group()));
+			mainPools.add(new SlotPool(m.group()));
+		}
+		
+		if (mainPools.size() == 1) {
+			mainPools.get(0).setPoolweight(1);
 		}
 
 		//Backup Pool, if any.
@@ -46,7 +50,7 @@ public class PackSlot {
 		sb.append(numCards);
 		sb.append(" card" + (numCards != 1 ? "s" : ""));
 		sb.append(" from: ");
-		for (Pool pool : mainPools) {
+		for (SlotPool pool : mainPools) {
 			sb.append("\n\t");
 			sb.append(pool.getPoolname());
 		}
@@ -72,19 +76,19 @@ public class PackSlot {
 		this.numCards = numCards;
 	}
 
-	public ArrayList<Pool> getMainPools() {
+	public ArrayList<SlotPool> getMainPools() {
 		return mainPools;
 	}
 
-	public void setMainPools(ArrayList<Pool> mainPools) {
+	public void setMainPools(ArrayList<SlotPool> mainPools) {
 		this.mainPools = mainPools;
 	}
 
-	public Pool getBackupPool() {
+	public SlotPool getBackupPool() {
 		return backupPool;
 	}
 
-	public void setBackupPool(Pool backupPool) {
+	public void setBackupPool(SlotPool backupPool) {
 		this.backupPool = backupPool;
 	}
 }

@@ -1693,8 +1693,8 @@
         <Value type="3">(UniqueName="SFXGameContentDLC_CON_MP3.SFXWeapon_AssaultRifle_LMG", MaxCount = 10, Rarity=Rarity_UltraRare, GUIName=744335, GUIDescription=744336, GUICategory=EReinforcementGUICategory_AssaultRifle, GUIType="assault", GUITextureRef="GUI_MPImages_MP3.asl_N7LMG_256x128")</Value>
         <Value type="4">(UniqueName="SFXGameContentDLC_CON_MP5.SFXWeapon_AssaultRifle_Spitfire", MaxCount = 10, Rarity=Rarity_Rare, GUIName=814438, GUIDescription=814604, GUICategory=EReinforcementGUICategory_AssaultRifle, GUIType="assault", GUITextureRef="DLC_MPImages_MP5.WPN_MP5_Spitfire_256x128")</Value>
         <Value type="3">(UniqueName="SFXGameContentDLC_CON_MP5.SFXWeapon_AssaultRifle_Spitfire", MaxCount = 10, Rarity=Rarity_UltraRare, GUIName=814438, GUIDescription=814604, GUICategory=EReinforcementGUICategory_AssaultRifle, GUIType="assault", GUITextureRef="DLC_MPImages_MP5.WPN_MP5_Spitfire_256x128")</Value>
-        <Value type="4">(UniqueName="SoldierHumanMaleBF3", Rarity=Rarity_Uncommon, GUIName=723302, GUIDescription=723303, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
-        <Value type="3">(UniqueName="SoldierHumanMaleBF3", Rarity=Rarity_Rare, VersionIdx=2, MaxCount = 1, GUIName=723302, GUIDescription=723303, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
+        <Value type="4">(UniqueName="SoldierHumanMaleBF3", Rarity=Rarity_Uncommon, GUIName=723302, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
+        <Value type="3">(UniqueName="SoldierHumanMaleBF3", Rarity=Rarity_Rare, VersionIdx=2, MaxCount = 1, GUIName=723302, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
       </Property>
       <Property name="consumableidpacknamemap">
         <Value type="1">null</Value>

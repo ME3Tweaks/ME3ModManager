@@ -14,11 +14,13 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	private int GUIName = -1;
 	private int GUIDescription = -1;
 	private boolean useVersionIdx;
-	private String htmlStr;
+	private String cardHtmlStr;
 	private String cardHTML;
 	private ArrayList<StorePack> packsIn;
 	public boolean isCharCard;
 	public boolean isConsumable;
+	public boolean isMisc;
+	public ArrayList<SlotPool> inPools; //used when making store html
 
 	/**
 	 * Represents a card.
@@ -48,15 +50,18 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				break;
 			}
 		}
-		if (getCardDisplayString().toLowerCase().contains("unused") || getUniqueName().equals("InfiltratorHumanFemaleBF3")) {
+		if (getCardDisplayString().toLowerCase().contains("unused") || getUniqueName().equals("InfiltratorHumanFemaleBF3")
+				|| getUniqueName().equals("SFXGameContentDLC_CON_MP2.SFXGameEffect_MatchConsumable_Gear_WeaponStability")) {
 			this.rarity = Rarity.Unused;
 		}
 		PVIncrementBonus = ValueParserLib.getIntProperty(uniqueNameString, "PVIncrementBonus");
 		GUIName = ValueParserLib.getIntProperty(uniqueNameString, "GUIName");
 		GUIDescription = ValueParserLib.getIntProperty(uniqueNameString, "GUIDescription");
-		isCharCard = (getCategoryName().equals("kits")? true : false);
-		isConsumable = (getCategoryName().equals("consumables")? true : false);
-		if (getCategoryName().equals("gear")) versionIdx = 0;
+		isCharCard = (getCategoryName().equals("kits") ? true : false);
+		isConsumable = (getCategoryName().equals("consumables") ? true : false);
+		isMisc = (getCategoryName().equals("misc") ? true : false);
+		if (getCategoryName().equals("gear"))
+			versionIdx = 0;
 
 	}
 
@@ -80,18 +85,18 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		this.useVersionIdx = useVersionIdx;
 	}
 
-	public String getCardHTML() {
-		if (htmlStr == null) {
-			htmlStr = generateCardHTML();
+	public String getCardpageHTML() {
+		if (cardHtmlStr == null) {
+			cardHtmlStr = generateCardHTML();
 		}
-		return htmlStr;
+		return cardHtmlStr;
 	}
-	
-	public String getCardGameName(){
+
+	public String getCardGameName() {
 		return CardParser.tlkMap.get(GUIName);
 	}
 
-	private String generateCardHTML() {		
+	private String generateCardHTML() {
 		//System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "\">\n\t");
@@ -121,7 +126,9 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				case "goldpremium":
 				case "arsenal":
 				case "reserves":
-					sb.append("<li>" + pack.getHumanName() + "</li>");
+				case "equipjumbo":
+					sb.append("<li><a class='dark' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "' title='"+pack.getHumanName()+" pack page'>"
+							+ pack.getHumanName() + "</a></li>");
 					break;
 				default:
 					unusedSB.append("<li>" + pack.getHumanName() + "</li>");
@@ -141,7 +148,9 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	}
 
 	private ArrayList<StorePack> getPacklistsCardIsIn() {
-		if (packsIn != null) {return packsIn;}
+		if (packsIn != null) {
+			return packsIn;
+		}
 		ArrayList<StorePack> getPacklistCardIsIn = new ArrayList<>();
 		for (Entry<String, StorePack> entry : CardParser.packnameMap.entrySet()) {
 			StorePack pack = entry.getValue();
@@ -149,8 +158,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				getPacklistCardIsIn.add(pack);
 			}
 		}
-		
-		
+
 		if (getPacklistCardIsIn.size() == 0) {
 			for (Entry<String, StorePack> entry : CardParser.packnameMap.entrySet()) {
 				StorePack pack = entry.getValue();
@@ -160,8 +168,9 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				}
 			}
 		}
+
 		if (getPacklistCardIsIn.size() == 0) {
-			System.err.println("Card not in a pack "+this);
+			//System.err.println("Card not in a pack " + this);
 		}
 		packsIn = getPacklistCardIsIn;
 		return packsIn;
@@ -170,26 +179,42 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	public String getCardName() {
 		return CardParser.tlkMap.get(GUIName);
 	}
-	
+
 	public String getCardDescription() {
 		String desc = CardParser.tlkMap.get(GUIDescription);
-		
-		if (desc == null) {
+
+		if (desc == null || getUniqueName().equals("SoldierHumanMaleBF3")) {
 			return RealCard.getHumanName(uniqueName);
 		}
 		
-		if (getCategoryName().equals("consumables")) {
-			return desc.replace("&lt;CUSTOM1&gt;", Integer.toString(versionIdx+1));
+		if (desc.startsWith("$")) {
+			desc = CardParser.tlkMap.get(Integer.parseInt(desc.substring(1)));
 		}
 		
+		if (desc.startsWith("You can now carry &lt;CUSTOM1&gt;")){
+			desc = desc.replace("You can now carry &lt;CUSTOM1&gt;", "You can now carry more");
+		}
+		
+		if (uniqueName.equals("SFXGameContentDLC_CON_MP5.SFXGameEffect_MatchConsumable_Gear_VisionHelmet")) {
+			desc = desc.replace("Scan range is &lt;CUSTOM0&gt; meters.\n", "");
+		}
+
+		if (desc.startsWith("&lt;CUSTOM2&gt;")) {
+			return desc.replace("&lt;CUSTOM2&gt;", Integer.toString(getPVIncrementBonus()));
+		}
+
+		if (getCategoryName().equals("consumables")) {
+			return desc.replace("&lt;CUSTOM1&gt;", Integer.toString(versionIdx + 1));
+		}
+
 		if (desc.contains("&lt;CUSTOM") && getCategoryName().equals("gear")) {
 			String lopoff = desc;
 			while (lopoff.indexOf(".") > 0) {
-				lopoff = lopoff.substring(lopoff.indexOf(".") +1);
+				lopoff = lopoff.substring(lopoff.indexOf(".") + 1);
 			}
 			desc = desc.replace(lopoff, "");
 		}
-		
+
 		return desc;
 	}
 
@@ -258,9 +283,11 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + PVIncrementBonus;
 		result = prime * result + maxCount;
 		result = prime * result + ((rarity == null) ? 0 : rarity.hashCode());
 		result = prime * result + ((uniqueName == null) ? 0 : uniqueName.hashCode());
+		result = prime * result + (useVersionIdx ? 1231 : 1237);
 		result = prime * result + versionIdx;
 		return result;
 	}
@@ -274,6 +301,8 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		if (getClass() != obj.getClass())
 			return false;
 		RealCard other = (RealCard) obj;
+		if (PVIncrementBonus != other.PVIncrementBonus)
+			return false;
 		if (maxCount != other.maxCount)
 			return false;
 		if (rarity != other.rarity)
@@ -282,6 +311,8 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			if (other.uniqueName != null)
 				return false;
 		} else if (!uniqueName.equals(other.uniqueName))
+			return false;
+		if (useVersionIdx != other.useVersionIdx)
 			return false;
 		if (versionIdx != other.versionIdx)
 			return false;
@@ -292,20 +323,28 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		String str = getCardName(); //gethumanname();
 		if (str != null) {
 			str = str.replace("&lt;CUSTOM0&gt;", "");
+
 			str = str.replace("&lt;CUSTOM2&gt;", "");
 		}
 		if (str == null) {
-			System.out.println("no name" +this);
 			str = getHumanName(uniqueName);
 		}
+
+		if (str.contains("+")/* && !uniqueName.equals("MPCredits")*/) {
+			str = str.substring(0, str.indexOf('+')).trim();
+		}
+
 		if (versionIdx > -1 && !getCategoryName().equals("gear") && !getCategoryName().equals("kits")) {
 			int num = versionIdx + 1;
 			ValueParserLib.RomanNumeral rn = new ValueParserLib.RomanNumeral(num);
 			str += " " + rn.toString();
 		}
 
-		if (PVIncrementBonus > 0) {
-			str = PVIncrementBonus + "x " + str;
+		if (PVIncrementBonus > 1 && PVIncrementBonus != 300000) {
+			str = (PVIncrementBonus + 1) + " " + str;
+			if (!str.endsWith("s")) {
+				str = str + "s";
+			}
 		}
 
 		return str;
@@ -798,7 +837,6 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		}
 	}
 
-
 	@Override
 	public int compareTo(RealCard other) {
 		int result = getCategoryName().compareTo(other.getCategoryName());
@@ -811,11 +849,20 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				return result;
 		}
 
-		result = getCardDisplayString().compareTo(other.getCardDisplayString());
+		result = getCardDisplayStringNoNum().compareTo(other.getCardDisplayStringNoNum());
 		if (result != 0)
 			return result;
 		//same name
 		return ((Integer) getVersionIdx()).compareTo((Integer) other.getVersionIdx());
+	}
+
+	private String getCardDisplayStringNoNum() {
+		// TODO Auto-generated method stub
+		String str = getCardDisplayString();
+		while (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+			str = str.substring(1);
+		}
+		return str.trim();
 	}
 
 	@Override
@@ -863,5 +910,63 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			return true;
 		}
 		return false;
+	}
+
+	public void addPool(SlotPool slotPool) {
+		if (inPools == null) {
+			inPools = new ArrayList<>();
+		}
+		inPools.add(slotPool);
+	}
+
+	public String getPackpageHTML() {
+		//System.out.println("Card HTML of "+this);
+		StringBuilder sb = new StringBuilder();
+		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "%ROTATECOLORCLASS%\">\n\t");
+		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
+				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
+		//sb.append("<span>" + getCardDisplayString() + "</span>\n");
+		sb.append("<span>" + getCardDisplayString() + "</span>\n");
+		sb.append("<div class='ttip'>");
+		sb.append("<p class='centered'>");
+		sb.append(getCardDescription());
+		sb.append("</p>");
+		sb.append("<hr class='dark_hr_center'>");
+
+		sb.append("<h3>Drop Rate</h3>");
+		if (maxCount > 0) {
+			sb.append("<p>Max drops: " + maxCount + "</p>");
+		} else {
+			sb.append("<p>Can drop infinitely</p>");
+		}
+		sb.append("%GUARANTEE%");
+		
+		boolean shouldmakeshiny = false;
+		sb.append("<ul>");
+		if (inPools != null) {
+			for (SlotPool pool : inPools) {
+				CardPool cardpool = CardParser.getCardPoolByName(pool.getPoolname()); 
+				
+				sb.append("<div class='pool_droprate'>\n\t");
+				sb.append("<p>Pool: " + pool.getPoolname() + "</p>");
+				sb.append("<p>Pool Chance: " + pool.getPoolweight() * 100 + "%</p>");
+				sb.append("<p>In-Pool Chance: " + ValueParserLib.round((1.0 / cardpool.getPoolContents().size()) * 100,2) + "%</p>");
+				sb.append("</div>");
+				if (pool.getPoolweight() > 0.99 && cardpool.getPoolContents().size() == 1) {
+					shouldmakeshiny = true;
+				}
+			}
+		}
+		sb.append("</ul></div>"); //end ttip
+		sb.append("</div>\n"); //end card
+		cardHTML = sb.toString();
+		if (shouldmakeshiny) {
+			cardHTML = cardHTML.replace("%ROTATECOLORCLASS%", " cardglow");
+			cardHTML = cardHTML.replace("%GUARANTEE%", "<p>This card is guaranteed to drop in this pack.</p>");
+		} else {
+			cardHTML = cardHTML.replace("%ROTATECOLORCLASS%", "");
+			cardHTML = cardHTML.replace("%GUARANTEE%", "");
+		}
+		return cardHTML;
 	}
 }
