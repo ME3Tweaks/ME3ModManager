@@ -340,7 +340,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			str += " " + rn.toString();
 		}
 
-		if (PVIncrementBonus > 1 && PVIncrementBonus != 300000) {
+		if (PVIncrementBonus > 0 && PVIncrementBonus != 300000) {
 			str = (PVIncrementBonus + 1) + " " + str;
 			if (!str.endsWith("s")) {
 				str = str + "s";
