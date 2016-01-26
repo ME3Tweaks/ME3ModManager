@@ -235,24 +235,7 @@ public class CardParser {
 			int num = 0;
 			int numtodo = carddataMap.entrySet().size();
 
-			//cleaning cards
-			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
-				//System.out.println("Removing unneeded cards [" + (num++) + "/" + numtodo + "]");
-				ArrayList<RealCard> cardsToRemove = new ArrayList<RealCard>(); //clean out idx = -1 cards for consumables, gear, etc. they are cloned as necessary
-				for (RealCard card : entry.getValue()) {
-					if ((card.isConsumable && card.getVersionIdx() == -1)) {
-						cardsToRemove.add(card);
-						System.out.println("Removing card " + card);
-					}
-					/*
-					 * switch (card.getUniqueName()) { case "MPCredits": if
-					 * (card.getPVIncrementBonus() < 1) {
-					 * cardsToRemove.add(card); System.out.println(
-					 * "Removing card " + card); } break; }
-					 */
-				}
-				entry.getValue().removeAll(cardsToRemove);
-			}
+			
 
 			//generate pack contents
 			num = 0;
@@ -340,6 +323,22 @@ public class CardParser {
 					+ "poolheading.html";
 			FileUtils.writeStringToFile(new File(savepath), sb.toString());
 
+			//cleaning cards
+			for (Entry<String, TreeSet<RealCard>> entry : carddataMap.entrySet()) {
+				//System.out.println("Removing unneeded cards [" + (num++) + "/" + numtodo + "]");
+				ArrayList<RealCard> cardsToRemove = new ArrayList<RealCard>(); //clean out idx = -1 cards for consumables, gear, etc. they are cloned as necessary
+				for (RealCard card : entry.getValue()) {
+					if ((card.isConsumable && card.getVersionIdx() == -1 && !card.getUniqueName().equals("SFXGameMPContent.SFXPowerCustomActionMP_Consumable_Ammo")&& !card.getUniqueName().equals("SFXGameMPContent.SFXPowerCustomActionMP_Consumable_Shield")&& !card.getUniqueName().equals("SFXGameMPContent.SFXPowerCustomActionMP_Consumable_Revive")&& !card.getUniqueName().equals("SFXGameMPContent.SFXPowerCustomActionMP_Consumable_Rocket"))) {
+						cardsToRemove.add(card);
+						System.out.println("Removing card " + card);
+					}
+					if (card.getUniqueName().equals("MPCredits") && card.getPVIncrementBonus() == -1) {
+						cardsToRemove.add(card);
+					}
+				}
+				entry.getValue().removeAll(cardsToRemove);
+			}
+			
 			//build cards page
 			sb = new StringBuilder();
 			String previousCategory = "";
@@ -497,7 +496,10 @@ public class CardParser {
 			System.out.println("Cloning MISC card " + card + ", set size " + cardset.size());
 			RealCard maxidxcard = cardset.first();
 			RealCard cloneCard = new RealCard(maxidxcard); //clonecard
+			System.out.println(cloneCard.getPVIncrementBonus());
 			cloneCard.setPVIncrementBonus(card.getPVIncrementBonus());
+			System.out.println("now: "+cloneCard.getPVIncrementBonus());
+
 			cardset.add(cloneCard);
 			return cloneCard;
 		}
@@ -516,6 +518,7 @@ public class CardParser {
 			return maxidxcard;
 		}
 		if (isConsumable) {
+			//System.out.println("Cloning consumable and adding to set. Set size now "+cardset.size());
 			RealCard maxidxcard = cardset.first();
 			RealCard cloneCard = new RealCard(maxidxcard); //clonecard
 			cloneCard.setVersionIdx(card.getVersionIdx());
@@ -525,6 +528,7 @@ public class CardParser {
 			cloneCard.setPVIncrementBonus(card.getPVIncrementBonus());
 			cloneCard.getCardpageHTML();
 			cardset.add(cloneCard);
+			//System.out.println("Cloned and added to set. Set size now "+cardset.size());
 			return cloneCard;
 		}
 

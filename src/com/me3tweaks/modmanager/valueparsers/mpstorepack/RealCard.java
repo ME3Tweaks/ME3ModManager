@@ -283,8 +283,17 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + GUIDescription;
+		result = prime * result + GUIName;
 		result = prime * result + PVIncrementBonus;
+		result = prime * result + ((cardHTML == null) ? 0 : cardHTML.hashCode());
+		result = prime * result + ((cardHtmlStr == null) ? 0 : cardHtmlStr.hashCode());
+		result = prime * result + ((inPools == null) ? 0 : inPools.hashCode());
+		result = prime * result + (isCharCard ? 1231 : 1237);
+		result = prime * result + (isConsumable ? 1231 : 1237);
+		result = prime * result + (isMisc ? 1231 : 1237);
 		result = prime * result + maxCount;
+		result = prime * result + ((packsIn == null) ? 0 : packsIn.hashCode());
 		result = prime * result + ((rarity == null) ? 0 : rarity.hashCode());
 		result = prime * result + ((uniqueName == null) ? 0 : uniqueName.hashCode());
 		result = prime * result + (useVersionIdx ? 1231 : 1237);
@@ -301,9 +310,39 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		if (getClass() != obj.getClass())
 			return false;
 		RealCard other = (RealCard) obj;
+		if (GUIDescription != other.GUIDescription)
+			return false;
+		if (GUIName != other.GUIName)
+			return false;
 		if (PVIncrementBonus != other.PVIncrementBonus)
 			return false;
+		if (cardHTML == null) {
+			if (other.cardHTML != null)
+				return false;
+		} else if (!cardHTML.equals(other.cardHTML))
+			return false;
+		if (cardHtmlStr == null) {
+			if (other.cardHtmlStr != null)
+				return false;
+		} else if (!cardHtmlStr.equals(other.cardHtmlStr))
+			return false;
+		if (inPools == null) {
+			if (other.inPools != null)
+				return false;
+		} else if (!inPools.equals(other.inPools))
+			return false;
+		if (isCharCard != other.isCharCard)
+			return false;
+		if (isConsumable != other.isConsumable)
+			return false;
+		if (isMisc != other.isMisc)
+			return false;
 		if (maxCount != other.maxCount)
+			return false;
+		if (packsIn == null) {
+			if (other.packsIn != null)
+				return false;
+		} else if (!packsIn.equals(other.packsIn))
 			return false;
 		if (rarity != other.rarity)
 			return false;
@@ -330,8 +369,11 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			str = getHumanName(uniqueName);
 		}
 
-		if (str.contains("+")/* && !uniqueName.equals("MPCredits")*/) {
+		if (str.contains("+") && !uniqueName.equals("MPCredits")) {
 			str = str.substring(0, str.indexOf('+')).trim();
+		}
+		if (str.startsWith("+")) {
+			str = str.substring(1);
 		}
 
 		if (versionIdx > -1 && !getCategoryName().equals("gear") && !getCategoryName().equals("kits")) {
@@ -345,6 +387,10 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			if (!str.endsWith("s")) {
 				str = str + "s";
 			}
+		}
+		
+		if (PVIncrementBonus == 300000) {
+			str = PVIncrementBonus + " " + str;
 		}
 
 		return str;
@@ -852,8 +898,21 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		result = getCardDisplayStringNoNum().compareTo(other.getCardDisplayStringNoNum());
 		if (result != 0)
 			return result;
+		
+		//Save PV Count
+		if (PVIncrementBonus != other.getPVIncrementBonus()) {
+			if (PVIncrementBonus > other.PVIncrementBonus) {
+				return 1;
+			} else {
+				return -1;
+			}
+		}
+		
+		
 		//same name
-		return ((Integer) getVersionIdx()).compareTo((Integer) other.getVersionIdx());
+		result = ((Integer) getVersionIdx()).compareTo((Integer) other.getVersionIdx());
+		if (result == 0 && !this.equals(other)) return 1;
+		return result;
 	}
 
 	private String getCardDisplayStringNoNum() {
