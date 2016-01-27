@@ -351,16 +351,13 @@ public class StorePack implements Comparable<StorePack> {
 				//these are only placeholder pools. we need to fetch the real ones
 				CardPool realpool = CardParser.getPoolByName(slotPool.getPoolname());
 				for (PoolCard card : realpool.getPoolContents()) {
-					if (card.getUniqueName().equals(findCard.getUniqueName()) && card.getPVIncrementBonus() == findCard.getPVIncrementBonus()) {
+					if (card.getUniqueName().equals(findCard.getUniqueName()) && (card.getPVIncrementBonus() == findCard.getPVIncrementBonus() || findCard.getCategoryName().equals("weapons"))) {
 						if (findCard.getUseVersionIdx() == false || findCard.isCharCard) {
 							return true;
 						}
 						//check for version IDX
 						if (findCard.getVersionIdx() == card.getVersionIdx()) {
 							return true;
-						}
-						if (findCard.isConsumable) {
-							System.out.println("Consumable containsCard()");
 						}
 					}
 				}
@@ -374,7 +371,7 @@ public class StorePack implements Comparable<StorePack> {
 				//these are only placeholder pools. we need to fetch the real ones
 				CardPool realpool = CardParser.getPoolByName(backupPool.getPoolname());
 				for (PoolCard card : realpool.getPoolContents()) {
-					if (card.getUniqueName().equals(findCard.getUniqueName()) && card.getPVIncrementBonus() == findCard.getPVIncrementBonus()) {
+					if (card.getUniqueName().equals(findCard.getUniqueName()) && (card.getPVIncrementBonus() == findCard.getPVIncrementBonus() || findCard.getCategoryName().equals("weapons"))) {
 						if (findCard.getUseVersionIdx() == false || findCard.isCharCard) {
 							return true;
 						}

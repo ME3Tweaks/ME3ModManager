@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Map.Entry;
 
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
+import com.me3tweaks.modmanager.valueparsers.ValueParserLib.RomanNumeral;
 
 public class RealCard extends Card implements Comparable<RealCard> {
 	private String uniqueName;
@@ -21,6 +22,8 @@ public class RealCard extends Card implements Comparable<RealCard> {
 	public boolean isConsumable;
 	public boolean isMisc;
 	public ArrayList<SlotPool> inPools; //used when making store html
+	boolean cardHTMLRegenerated = false; //true after regen (after store and pools are parsed, to prevent cloning issues)
+	private boolean isStandard4Consumable = false;
 
 	/**
 	 * Represents a card.
@@ -62,7 +65,17 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		isMisc = (getCategoryName().equals("misc") ? true : false);
 		if (getCategoryName().equals("gear"))
 			versionIdx = 0;
+		if (isConsumable && getVersionIdx() == -1 && uniqueName.contains("SFXPowerCustomActionMP_Consumable_")){
+			isStandard4Consumable = true;
+		}
+	}
 
+	public boolean isStandard4Consumable() {
+		return isStandard4Consumable;
+	}
+
+	public void setStandard4Consumable(boolean isStandard4Consumable) {
+		this.isStandard4Consumable = isStandard4Consumable;
 	}
 
 	/** Copy Constrcutor **/
@@ -75,6 +88,15 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		PVIncrementBonus = card.PVIncrementBonus;
 		GUIName = card.GUIName;
 		GUIDescription = card.GUIDescription;
+		isCharCard = (getCategoryName().equals("kits") ? true : false);
+		isConsumable = (getCategoryName().equals("consumables") ? true : false);
+		isMisc = (getCategoryName().equals("misc") ? true : false);
+		if (getCategoryName().equals("gear"))
+			versionIdx = 0;
+		if (isConsumable && getVersionIdx() == -1 && uniqueName.contains("SFXPowerCustomActionMP_Consumable_")){
+			isStandard4Consumable  = true;
+		}
+
 	}
 
 	public boolean getUseVersionIdx() {
@@ -92,6 +114,12 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		return cardHtmlStr;
 	}
 
+	public void forceCardpageHTMLRegen() {
+		cardHTMLRegenerated = true;
+		packsIn = null;
+		cardHtmlStr = generateCardHTML();
+	}
+
 	public String getCardGameName() {
 		return CardParser.tlkMap.get(GUIName);
 	}
@@ -100,22 +128,25 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		//System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "\">\n\t");
-		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
+		sb.append("<img src=\"/images/storecatalog/"
+				+ getCategoryName()
+				+ "/"
+				+ getImageName()
 				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
 		//sb.append("<span>" + getCardDisplayString() + "</span>\n");
 		sb.append("<span>" + getCardDisplayString() + "</span>\n");
 		sb.append("<div class='ttip'>");
-		sb.append("<p class='centered'>");
 		sb.append(getCardDescription());
-		sb.append("</p>");
 		sb.append("<hr class='dark_hr_center'>");
 		ArrayList<StorePack> packlist = getPacklistsCardIsIn();
 		StringBuilder unusedSB = new StringBuilder();
 
+		boolean hasOfficialPack = false, hasUnofficialPack = false;
+		StringBuilder officalSB = new StringBuilder();
 		if (packlist.size() > 0) {
-			sb.append("<h3>Can be found in</h3>");
-			sb.append("<ul>");
-			unusedSB.append("<div class='extrapacks'><h3>Also in</h3>");
+			officalSB.append("<h3 class='centered'>Can be found in</h3>");
+			officalSB.append("<ul>");
+			unusedSB.append("<div class='extrapacks'><h3 class='centered'>In Non-Standard packs</h3>");
 			unusedSB.append("<ul>");
 			for (StorePack pack : packlist) {
 				switch (pack.getPackName()) {
@@ -127,19 +158,31 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				case "arsenal":
 				case "reserves":
 				case "equipjumbo":
-					sb.append("<li><a class='dark' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "' title='"+pack.getHumanName()+" pack page'>"
-							+ pack.getHumanName() + "</a></li>");
+					hasOfficialPack = true;
+					officalSB.append("<li><a class='dark' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase()
+							+ "' title='" + pack.getHumanName() + " pack page'>" + pack.getHumanName() + "</a></li>");
 					break;
 				default:
+					hasUnofficialPack = true;
 					unusedSB.append("<li>" + pack.getHumanName() + "</li>");
 					break;
 				}
 			}
 			unusedSB.append("</ul></div>");
-			sb.append("</ul>");
+			if (hasOfficialPack) {
+				sb.append(officalSB.toString());
+				sb.append("</ul>");
+			}
+			if (hasUnofficialPack) {
+				sb.append(unusedSB.toString());
+				sb.append("</ul>");
+			}
+			if (!hasOfficialPack && hasUnofficialPack) {
+				sb.append("<p class='centered'>This card is only found in non-standard packs.</p>");
+			}
 			sb.append(unusedSB.toString());
 		} else {
-			sb.append("<p>This card does not drop in any store pack. It must be modded into the game.</p>");
+			sb.append("<p class='centered'>This card does not drop in any store pack. It must be modded into the game.</p>");
 		}
 		sb.append("</div>");
 		sb.append("</div>\n");
@@ -149,9 +192,16 @@ public class RealCard extends Card implements Comparable<RealCard> {
 
 	private ArrayList<StorePack> getPacklistsCardIsIn() {
 		if (packsIn != null) {
+			if (cardHTMLRegenerated) {
+				System.out.println("[" + uniqueName + " " + versionIdx + "]PACKS IN NOT NULL. SIZE: " + packsIn.size());
+			}
 			return packsIn;
 		}
 		ArrayList<StorePack> getPacklistCardIsIn = new ArrayList<>();
+		int numPacks = CardParser.packnameMap.entrySet().size();
+		if (numPacks != 84 && versionIdx != -1 && cardHTMLRegenerated) {
+			System.out.println("CHECKING PACKS FOR CARDS, NUM PACKS: " + numPacks);
+		}
 		for (Entry<String, StorePack> entry : CardParser.packnameMap.entrySet()) {
 			StorePack pack = entry.getValue();
 			if (pack.containsCard(this)) {
@@ -169,8 +219,8 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			}
 		}
 
-		if (getPacklistCardIsIn.size() == 0) {
-			//System.err.println("Card not in a pack " + this);
+		if (getPacklistCardIsIn.size() == 0 && !isCharCard && versionIdx != -1 && cardHTMLRegenerated) {
+			System.err.println("(char = " + isCharCard + ") Card not in a pack " + this);
 		}
 		packsIn = getPacklistCardIsIn;
 		return packsIn;
@@ -180,31 +230,50 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		return CardParser.tlkMap.get(GUIName);
 	}
 
+	/**
+	 * Returns the top part of a card description. Do not wrap in an tag.
+	 * Beneath this is a HR tag in the implementation of this method
+	 * 
+	 * @return
+	 */
 	public String getCardDescription() {
 		String desc = CardParser.tlkMap.get(GUIDescription);
-
-		if (desc == null || getUniqueName().equals("SoldierHumanMaleBF3")) {
-			return RealCard.getHumanName(uniqueName);
+		String human = getHumanName(uniqueName);
+		if (isConsumable && !isStandard4Consumable && versionIdx > -1) {
+			RomanNumeral rn = new RomanNumeral(versionIdx+1);
+			human = human + " " + rn.toString();
 		}
+		if (isConsumable && isStandard4Consumable && PVIncrementBonus > 0) {
+			human = (PVIncrementBonus + 1 ) + " " + human;
+			if (!human.endsWith("s")) {
+				human += "s";
+			}
+		}
+		String prefix = "<p class='centered'><b>" + human + "</b></p>";
 		
+		if (desc == null || getUniqueName().equals("SoldierHumanMaleBF3")) {
+			return prefix;
+		}
+		prefix = prefix + "<hr class='dark_hr_center'>";
+
 		if (desc.startsWith("$")) {
 			desc = CardParser.tlkMap.get(Integer.parseInt(desc.substring(1)));
 		}
-		
-		if (desc.startsWith("You can now carry &lt;CUSTOM1&gt;")){
+
+		if (desc.startsWith("You can now carry &lt;CUSTOM1&gt;")) {
 			desc = desc.replace("You can now carry &lt;CUSTOM1&gt;", "You can now carry more");
 		}
-		
+
 		if (uniqueName.equals("SFXGameContentDLC_CON_MP5.SFXGameEffect_MatchConsumable_Gear_VisionHelmet")) {
 			desc = desc.replace("Scan range is &lt;CUSTOM0&gt; meters.\n", "");
 		}
 
 		if (desc.startsWith("&lt;CUSTOM2&gt;")) {
-			return desc.replace("&lt;CUSTOM2&gt;", Integer.toString(getPVIncrementBonus()));
+			return prefix + "<p class='centered'>" + desc.replace("&lt;CUSTOM2&gt;", Integer.toString(getPVIncrementBonus())) + "</p>";
 		}
 
 		if (getCategoryName().equals("consumables")) {
-			return desc.replace("&lt;CUSTOM1&gt;", Integer.toString(versionIdx + 1));
+			return prefix + "<p class='centered'>" + desc.replace("&lt;CUSTOM1&gt;", Integer.toString(versionIdx + 1)) + "</p>";
 		}
 
 		if (desc.contains("&lt;CUSTOM") && getCategoryName().equals("gear")) {
@@ -214,7 +283,8 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			}
 			desc = desc.replace(lopoff, "");
 		}
-
+		
+		desc = prefix + "<p class='centered'>" + desc + "</p>";
 		return desc;
 	}
 
@@ -388,7 +458,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				str = str + "s";
 			}
 		}
-		
+
 		if (PVIncrementBonus == 300000) {
 			str = PVIncrementBonus + " " + str;
 		}
@@ -413,7 +483,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		case "AdeptHumanMale":
 			return "Human Male Adept";
 		case "AdeptHumanMaleCerberus":
-			return "Human Male Adept (Phoenix)";
+			return "Phoenix Human Adept";
 		case "AdeptKrogan":
 			return "Krogan Shaman Adept";
 		case "AdeptN7":
@@ -463,15 +533,15 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		case "InfiltratorSalarian":
 			return "Salarian Infiltrator";
 		case "MPCapacity_Ammo":
-			return "Thermal Clip Pack Capacity Upgrade";
+			return "Thermal Clip Pack Capacity";
 		case "MPCapacity_Revive":
 			return "Medi-Gel Capacity Upgrade";
 		case "MPCapacity_Rocket":
-			return "Cobra Missile Launcher Capacity Upgrade";
+			return "Cobra Missile Launcher Capacity";
 		case "MPCapacity_Shield":
-			return "Ops Survival Pack Capacity Upgrade";
+			return "Ops Survival Pack Capacity";
 		case "MPCredits":
-			return "Credits";
+			return "We're sorry! ='(";
 		case "MPRespec":
 			return "Reset Powers";
 		case "N7InfiltratorTurian":
@@ -863,7 +933,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		case "VanguardHumanMale":
 			return "Human Vanguard";
 		case "VanguardHumanMaleCerberus":
-			return "Phoenix Vanguard";
+			return "Phoenix Human Vanguard";
 		case "VanguardKrogan":
 			return "Krogan Vanguard";
 		case "VanguardN7":
@@ -898,7 +968,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		result = getCardDisplayStringNoNum().compareTo(other.getCardDisplayStringNoNum());
 		if (result != 0)
 			return result;
-		
+
 		//Save PV Count
 		if (PVIncrementBonus != other.getPVIncrementBonus()) {
 			if (PVIncrementBonus > other.PVIncrementBonus) {
@@ -907,11 +977,11 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				return -1;
 			}
 		}
-		
-		
+
 		//same name
 		result = ((Integer) getVersionIdx()).compareTo((Integer) other.getVersionIdx());
-		if (result == 0 && !this.equals(other)) return 1;
+		if (result == 0 && !this.equals(other))
+			return 1;
 		return result;
 	}
 
@@ -926,9 +996,9 @@ public class RealCard extends Card implements Comparable<RealCard> {
 
 	@Override
 	public String toString() {
-		return "RealCard [uniqueName=" + uniqueName + ", maxCount=" + maxCount + ", versionIdx=" + versionIdx + ", rarity=" + rarity + ", PVIncrementBonus=" + PVIncrementBonus
-				+ ", GUIName=" + GUIName + ", GUIDescription=" + GUIDescription + ", useVersionIdx=" + useVersionIdx + ", isCharCard=" + isCharCard + ", isConsumable="
-				+ isConsumable + "]";
+		return "RealCard [uniqueName=" + uniqueName + ", maxCount=" + maxCount + ", versionIdx=" + versionIdx + ", rarity=" + rarity
+				+ ", PVIncrementBonus=" + PVIncrementBonus + ", GUIName=" + GUIName + ", GUIDescription=" + GUIDescription + ", useVersionIdx="
+				+ useVersionIdx + ", isCharCard=" + isCharCard + ", isConsumable=" + isConsumable + "]";
 	}
 
 	public int getVersionIdx() {
@@ -982,14 +1052,15 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		//System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "%ROTATECOLORCLASS%\">\n\t");
-		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
+		sb.append("<img src=\"/images/storecatalog/"
+				+ getCategoryName()
+				+ "/"
+				+ getImageName()
 				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
 		//sb.append("<span>" + getCardDisplayString() + "</span>\n");
 		sb.append("<span>" + getCardDisplayString() + "</span>\n");
 		sb.append("<div class='ttip'>");
-		sb.append("<p class='centered'>");
 		sb.append(getCardDescription());
-		sb.append("</p>");
 		sb.append("<hr class='dark_hr_center'>");
 
 		sb.append("<h3>Drop Rate</h3>");
@@ -999,17 +1070,17 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			sb.append("<p>Can drop infinitely</p>");
 		}
 		sb.append("%GUARANTEE%");
-		
+
 		boolean shouldmakeshiny = false;
 		sb.append("<ul>");
 		if (inPools != null) {
 			for (SlotPool pool : inPools) {
-				CardPool cardpool = CardParser.getCardPoolByName(pool.getPoolname()); 
-				
+				CardPool cardpool = CardParser.getCardPoolByName(pool.getPoolname());
+
 				sb.append("<div class='pool_droprate'>\n\t");
 				sb.append("<p>Pool: " + pool.getPoolname() + "</p>");
 				sb.append("<p>Pool Chance: " + pool.getPoolweight() * 100 + "%</p>");
-				sb.append("<p>In-Pool Chance: " + ValueParserLib.round((1.0 / cardpool.getPoolContents().size()) * 100,2) + "%</p>");
+				sb.append("<p>In-Pool Chance: " + ValueParserLib.round((1.0 / cardpool.getPoolContents().size()) * 100, 2) + "%</p>");
 				sb.append("</div>");
 				if (pool.getPoolweight() > 0.99 && cardpool.getPoolContents().size() == 1) {
 					shouldmakeshiny = true;

@@ -42,7 +42,7 @@ public class CardPool implements Comparable<CardPool> {
 	public String getPoolHTML() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<h2 class=\"centered dark\">Card Pool</h2>\n");
-		sb.append("<h3 class=\"centered dark\">" + getPoolname() + "</h3>\n");
+		sb.append("<h3 id='pool_contents_title' class=\"centered dark\">" + getPoolname() + "</h3>\n");
 		sb.append("<p class=\"centered dark\">Slots in a store pack draw from a list of pools. Each slot can have independent pools from each other.</p>\n");
 		sb.append("<hr class=\"dark_hr_center\">\n");
 		sb.append("<div>");
