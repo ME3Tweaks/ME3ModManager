@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
@@ -99,7 +100,7 @@ public class StorePack implements Comparable<StorePack> {
 		sb.append("<hr class=\"dark_hr_center\">\n");
 
 		TreeSet<RealCard> cards = new TreeSet<RealCard>();
-		TreeSet<RealCard> backupCards = new TreeSet<RealCard>();
+		//TreeSet<RealCard> backupCards = new TreeSet<RealCard>();
 		sb.append("<h3 class=\"centered\">Pack composition</h3>\n");
 		int numCards = 0;
 		for (PackSlot slot : slotContents) {
@@ -168,11 +169,14 @@ public class StorePack implements Comparable<StorePack> {
 		//System.out.println("STARTING HTML");
 		for (RealCard card : cards) {
 			//System.out.println(card);
-			sb.append(card.getPackpageHTML());
+			sb.append(card.getPackpageHTML(0));
 		}
 		//sb.append("</div>");
 
 
+		
+		TreeMap<RealCard, Integer> backupCards = new TreeMap<RealCard,Integer>();
+		RealCard prevcard = null;
 		//BACKUP POOL
 		for (PackSlot slot : slotContents) {
 			SlotPool backupPool = slot.getBackupPool();
@@ -183,8 +187,14 @@ public class StorePack implements Comparable<StorePack> {
 					RealCard realcard = CardParser.getRealCardFromPoolCard(card);
 					if (realcard != null) {
 						RealCard cloneCard = new RealCard(realcard);
-						if (!cards.contains(cloneCard)) {
-							backupCards.add(cloneCard);
+						if (backupCards.get(cloneCard) == null) {
+							backupCards.put(cloneCard,1);
+//							if (cloneCard.getUniqueName().contains("Warp")) {
+//								System.out.println("["+packName+"]Adding backup card "+cloneCard);
+//								prevcard = cloneCard; //debugging only
+//							}
+						} else {
+							backupCards.put(cloneCard, new Integer(backupCards.get(cloneCard) + slot.getNumCards()));
 						}
 						cloneCard.addPool(backupPool);
 					}
@@ -198,8 +208,8 @@ public class StorePack implements Comparable<StorePack> {
 			sb.append("<h3 class='centered dark'>Backup Cards</h3>");
 			sb.append(
 					"<p class='centered dark'>If the randomly chosen pool cannot drop any cards (it's empty, you can't get any more drops of all the contents, etc), the backup pool is chosen.</p>");
-			for (RealCard card : backupCards) {
-				sb.append(card.getPackpageHTML());
+			for (Entry<RealCard,Integer> card : backupCards.entrySet()) {
+				sb.append(card.getKey().getPackpageHTML(card.getValue()));
 			}
 		}
 
