@@ -197,7 +197,7 @@ public class StorePack implements Comparable<StorePack> {
 			sb.append(
 					"<p class='centered dark'>If the randomly chosen pool cannot drop any cards (it's empty, you can't get any more drops of all the contents, etc), the backup pool is chosen.</p>");
 			for (RealCard card : backupCards) {
-				sb.append(card.getCardpageHTML());
+				sb.append(card.getPackpageHTML());
 			}
 		}
 

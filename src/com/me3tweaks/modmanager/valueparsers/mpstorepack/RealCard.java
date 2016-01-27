@@ -51,6 +51,9 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			case "Rarity_UltraRare": //black
 				this.rarity = Rarity.UltraRare;
 				break;
+			case "Rarity_Unused": //unused
+				this.rarity = Rarity.Unused;
+				break;
 			}
 		}
 		if (getCardDisplayString().toLowerCase().contains("unused") || getUniqueName().equals("InfiltratorHumanFemaleBF3")
@@ -65,7 +68,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		isMisc = (getCategoryName().equals("misc") ? true : false);
 		if (getCategoryName().equals("gear"))
 			versionIdx = 0;
-		if (isConsumable && getVersionIdx() == -1 && uniqueName.contains("SFXPowerCustomActionMP_Consumable_")){
+		if (isConsumable && getVersionIdx() == -1 && uniqueName.contains("SFXPowerCustomActionMP_Consumable_")) {
 			isStandard4Consumable = true;
 		}
 	}
@@ -93,8 +96,8 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		isMisc = (getCategoryName().equals("misc") ? true : false);
 		if (getCategoryName().equals("gear"))
 			versionIdx = 0;
-		if (isConsumable && getVersionIdx() == -1 && uniqueName.contains("SFXPowerCustomActionMP_Consumable_")){
-			isStandard4Consumable  = true;
+		if (isConsumable && getVersionIdx() == -1 && uniqueName.contains("SFXPowerCustomActionMP_Consumable_")) {
+			isStandard4Consumable = true;
 		}
 
 	}
@@ -240,17 +243,17 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		String desc = CardParser.tlkMap.get(GUIDescription);
 		String human = getHumanName(uniqueName);
 		if (isConsumable && !isStandard4Consumable && versionIdx > -1) {
-			RomanNumeral rn = new RomanNumeral(versionIdx+1);
+			RomanNumeral rn = new RomanNumeral(versionIdx + 1);
 			human = human + " " + rn.toString();
 		}
 		if (isConsumable && isStandard4Consumable && PVIncrementBonus > 0) {
-			human = (PVIncrementBonus + 1 ) + " " + human;
+			human = (PVIncrementBonus + 1) + " " + human;
 			if (!human.endsWith("s")) {
 				human += "s";
 			}
 		}
 		String prefix = "<p class='centered'><b>" + human + "</b></p>";
-		
+
 		if (desc == null || getUniqueName().equals("SoldierHumanMaleBF3")) {
 			return prefix;
 		}
@@ -283,7 +286,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			}
 			desc = desc.replace(lopoff, "");
 		}
-		
+
 		desc = prefix + "<p class='centered'>" + desc + "</p>";
 		return desc;
 	}
@@ -468,6 +471,8 @@ public class RealCard extends Card implements Comparable<RealCard> {
 
 	public static String getHumanName(String uniqueName) {
 		switch (uniqueName) {
+		case "SFXGameContent.SFXWeapon_AssaultRifle_Reckoning":
+			return "Chakram Launcher";
 		case "AdeptAsari":
 			return "Asari Adept";
 		case "AdeptAsariCommando":

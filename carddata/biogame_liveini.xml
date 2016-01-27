@@ -1695,6 +1695,11 @@
         <Value type="3">(UniqueName="SFXGameContentDLC_CON_MP5.SFXWeapon_AssaultRifle_Spitfire", MaxCount = 10, Rarity=Rarity_UltraRare, GUIName=814438, GUIDescription=814604, GUICategory=EReinforcementGUICategory_AssaultRifle, GUIType="assault", GUITextureRef="DLC_MPImages_MP5.WPN_MP5_Spitfire_256x128")</Value>
         <Value type="4">(UniqueName="SoldierHumanMaleBF3", Rarity=Rarity_Uncommon, GUIName=723302, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
         <Value type="3">(UniqueName="SoldierHumanMaleBF3", Rarity=Rarity_Rare, VersionIdx=2, MaxCount = 1, GUIName=723302, GUIType="char", GUITextureRef="GUI_MPImages.Cards.KitSoldierMale")</Value>
+        <Value type="3">(UniqueName="SFXGameContentDLC_CON_MP4.SFXGameEffect_MatchConsumable_AmmoPower_Polonium", VersionIdx = 0, Rarity=Rarity_Unused, GUIName=750415, GUIDescription=750416)</Value>
+        <Value type="3">(UniqueName="SFXGameContentDLC_CON_MP4.SFXGameEffect_MatchConsumable_AmmoPower_Polonium", VersionIdx = 1, Rarity=Rarity_Unused, GUIName=750415, GUIDescription=750416)</Value>
+        <Value type="3">(UniqueName="SFXGameContentDLC_CON_MP4.SFXGameEffect_MatchConsumable_AmmoPower_Polonium", VersionIdx = 2, Rarity=Rarity_Unused, GUIName=750415, GUIDescription=750416)</Value>
+        <Value type="3">(UniqueName="SFXGameContentDLC_CON_MP4.SFXGameEffect_MatchConsumable_AmmoPower_Polonium", VersionIdx = 3, Rarity=Rarity_Unused, GUIName=750415, GUIDescription=750416)</Value>
+        <Value type="3">(UniqueName="SFXGameContent.SFXWeapon_AssaultRifle_Reckoning", MaxCount = 10, Rarity=Rarity_Unused, GUIName=708423, GUIDescription=708424, GUICategory=EReinforcementGUICategory_AssaultRifle, GUIType="assault", GUITextureRef="GUI_Icons.Weapons.hvy_reckoning_256x128")</Value>
       </Property>
       <Property name="consumableidpacknamemap">
         <Value type="1">null</Value>
