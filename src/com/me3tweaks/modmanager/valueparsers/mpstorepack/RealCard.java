@@ -131,13 +131,10 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		//System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "\">\n\t");
-		sb.append("<img src=\"/images/storecatalog/"
-				+ getCategoryName()
-				+ "/"
-				+ getImageName()
+		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
 				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
 		//sb.append("<span>" + getCardDisplayString() + "</span>\n");
-		sb.append("<span>" + getCardDisplayString() + "</span>\n");
+		sb.append("<span class='cardname'>" + getCardDisplayString() + "</span>\n");
 		sb.append("<div class='ttip'>");
 		sb.append(getCardDescription());
 		sb.append("<hr class='dark_hr_center'>");
@@ -162,8 +159,8 @@ public class RealCard extends Card implements Comparable<RealCard> {
 				case "reserves":
 				case "equipjumbo":
 					hasOfficialPack = true;
-					officalSB.append("<li><a class='dark' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase()
-							+ "' title='" + pack.getHumanName() + " pack page'>" + pack.getHumanName() + "</a></li>");
+					officalSB.append("<li><a class='dark' href='/store_catalog/packs/" + pack.getHumanName().replaceAll(" ", "").toLowerCase() + "' title='" + pack.getHumanName()
+							+ " pack page'>" + pack.getHumanName() + "</a></li>");
 					break;
 				default:
 					hasUnofficialPack = true;
@@ -1001,9 +998,9 @@ public class RealCard extends Card implements Comparable<RealCard> {
 
 	@Override
 	public String toString() {
-		return "RealCard [uniqueName=" + uniqueName + ", maxCount=" + maxCount + ", versionIdx=" + versionIdx + ", rarity=" + rarity
-				+ ", PVIncrementBonus=" + PVIncrementBonus + ", GUIName=" + GUIName + ", GUIDescription=" + GUIDescription + ", useVersionIdx="
-				+ useVersionIdx + ", isCharCard=" + isCharCard + ", isConsumable=" + isConsumable + "]";
+		return "RealCard [uniqueName=" + uniqueName + ", maxCount=" + maxCount + ", versionIdx=" + versionIdx + ", rarity=" + rarity + ", PVIncrementBonus=" + PVIncrementBonus
+				+ ", GUIName=" + GUIName + ", GUIDescription=" + GUIDescription + ", useVersionIdx=" + useVersionIdx + ", isCharCard=" + isCharCard + ", isConsumable="
+				+ isConsumable + "]";
 	}
 
 	public int getVersionIdx() {
@@ -1057,13 +1054,10 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		//System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "%ROTATECOLORCLASS%\">\n\t");
-		sb.append("<img src=\"/images/storecatalog/"
-				+ getCategoryName()
-				+ "/"
-				+ getImageName()
+		sb.append("<img src=\"/images/storecatalog/" + getCategoryName() + "/" + getImageName()
 				+ ".png\" onerror=\"if (this.src != '/images/storecatalog/misc/QuestionMark.png') this.src = '/images/storecatalog/misc/QuestionMark.png';\">\n\t");
 		//sb.append("<span>" + getCardDisplayString() + "</span>\n");
-		sb.append("<span>" + getCardDisplayString() + "</span>\n");
+		sb.append("<span class='cardname'>" + getCardDisplayString() + "</span>\n");
 		sb.append("<div class='ttip'>");
 		sb.append(getCardDescription());
 		sb.append("<hr class='dark_hr_center'>");
@@ -1084,7 +1078,9 @@ public class RealCard extends Card implements Comparable<RealCard> {
 
 				sb.append("<div class='pool_droprate'>\n\t");
 				sb.append("<p>Pool: " + pool.getPoolname() + "</p>");
-				sb.append("<p>Pool Chance: " + pool.getPoolweight() * 100 + "%</p>");
+				if (pool.getPoolweight() >= 0) {
+					sb.append("<p>Pool Chance: " + pool.getPoolweight() * 100 + "%</p>");
+				}
 				sb.append("<p>In-Pool Chance: " + ValueParserLib.round((1.0 / cardpool.getPoolContents().size()) * 100, 2) + "%</p>");
 				sb.append("</div>");
 				if (pool.getPoolweight() > 0.99 && cardpool.getPoolContents().size() == 1) {

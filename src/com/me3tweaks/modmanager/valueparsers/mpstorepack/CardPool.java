@@ -49,6 +49,9 @@ public class CardPool implements Comparable<CardPool> {
 
 		if (poolContents.size() > 0) {
 			sb.append("<h3 class=\"centered\">Cards in this pool</h3>\n");
+			sb.append("<div class='cardslist'>");
+			sb.append("<div><input id='glowsearch' placeholder=\"Find a card...\"/></div>");
+
 			//MAIN POOLS
 			for (PoolCard pcard : poolContents) {
 				//these are only placeholder pools. we need to fetch the real ones
@@ -59,6 +62,7 @@ public class CardPool implements Comparable<CardPool> {
 					//	System.err.println("POOL CARD HAS NO STORE DEFINITION: "+card);
 				}
 			}
+			sb.append("</div>");
 		} else {
 			sb.append("<h3 class=\"centered\">This pool is empty.</h3><p class='centered'>If this pool is chosen by a pack, it will automatically choose the backup pool instead.</p>\n");
 		}

@@ -303,6 +303,8 @@ public class CardParser {
 		System.out.println("Building Pack Heading and store pack pages");
 		boolean lastWasOfficial = true;
 		for (StorePack pack : sortedPacks) {
+			System.out.println("RewriteRule ^packs/"+pack.getHumanName().replaceAll(" ", "").toLowerCase()+"/?$ /store_catalog/packs.php?packname="+pack.getPackName()+" [L]");
+
 			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "catdata" + File.separator + "storedata"
 					+ File.separator + pack.getPackName() + ".html";
 			FileUtils.writeStringToFile(new File(savepath), pack.getPackHTML());
@@ -337,6 +339,7 @@ public class CardParser {
 
 		sb = new StringBuilder();
 		for (CardPool pool : cardPoolList) {
+			//RewriteRule ^packs/collectorriflepack/?$ /store_catalog/packs.php?packname=collector7
 			savepath = System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "catdata" + File.separator + "pooldata"
 					+ File.separator + pool.getPoolname().toLowerCase() + ".html";
 			FileUtils.writeStringToFile(new File(savepath), pool.getPoolHTML());
@@ -406,6 +409,7 @@ public class CardParser {
 		for (RealCard card : allcards) { //
 			if (!card.getCategoryName().equals(previousCategory)) {
 				if (!previousCategory.equals("")) {
+					sb.append("</div>");
 					String fname = previousCategory;
 					if (fname.equals("misc")) {
 						fname = "miscellaneous";
@@ -463,7 +467,7 @@ public class CardParser {
 					sb.append("<p class='dark centered'>Weapons can each drop up to 10 times.</p>\n");
 					break;
 				}
-
+				sb.append("<div><input id='glowsearch' placeholder=\"Find a card...\"/></div><div class='cardslist'>");
 			}
 			previousCategory = card.getCategoryName();
 			sb.append(card.getCardpageHTML());

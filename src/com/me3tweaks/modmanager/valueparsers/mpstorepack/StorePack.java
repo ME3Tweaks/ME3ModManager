@@ -161,15 +161,17 @@ public class StorePack implements Comparable<StorePack> {
 		}
 		sb.append("<hr class=\"dark_hr_center\">\n");
 		sb.append("<h3 class=\"centered\">Cards obtainable in this pack</h3>\n");
-		sb.append("<div>");
+		sb.append("<div class='cardslist'>");
+		sb.append("<div><input id='glowsearch' placeholder=\"Find a card...\"/></div>");
 		sb.append("<h3 class='centered dark'>Main Cards</h3>");
-
 		//print out tree - this is a set since pools may have overlapped.
 		//System.out.println("STARTING HTML");
 		for (RealCard card : cards) {
 			//System.out.println(card);
 			sb.append(card.getPackpageHTML());
 		}
+		//sb.append("</div>");
+
 
 		//BACKUP POOL
 		for (PackSlot slot : slotContents) {
@@ -267,6 +269,18 @@ public class StorePack implements Comparable<StorePack> {
 				index--;
 			}
 			human += " " + packName.substring(index+1);
+		}
+		
+		if (packName.equals("prophecy")) {
+			human = "Commendation Pack (Prophecy)";
+		}
+		
+		if (packName.equals("Lodestar2")) {
+			human = "Commendation Pack (Lodestar Normal)";
+		}
+		
+		if (packName.equals("Lodestar2")) {
+			human = "Commendation Pack (Lodestar Insanity)";
 		}
 		
 		if (packName.startsWith("FreeReckoning")){
