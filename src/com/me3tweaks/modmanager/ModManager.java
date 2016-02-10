@@ -61,16 +61,16 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1";
-	public static long BUILD_NUMBER = 50L;
-	public static final String BUILD_DATE = "1/8/2015";
+	public static final String VERSION = "4.2 Beta 1";
+	public static long BUILD_NUMBER = 51L;
+	public static final String BUILD_DATE = "1/30/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
 															// version
-	public static final double MODDESC_VERSION_SUPPORT = 4.1; // max supported
+	public static final double MODDESC_VERSION_SUPPORT = 4.2; // max supported
 																// cmmver in
 																// moddesc
 	public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
@@ -1674,5 +1674,14 @@ public class ModManager {
 
 	public static File getHelpFile() {
 		return new File(getHelpDir()+"localhelp.xml");
+	}
+
+	/**
+	 * Gets the GUI Transplant Directory (Transplanter-CLI, Transplanter-GUI)
+	 * @return
+	 */
+	public static String getTransplantDir() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

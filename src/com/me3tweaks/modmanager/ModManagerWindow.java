@@ -306,6 +306,26 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
 			}
+			
+			/*File guitransplanter = new File(ModManager.getTransplantDir() + "Transplanter-CLI.exe");
+			if (!f7za.exists()) {
+				publish("Downloading 7za Unzipper");
+				ModManager.debugLogger.writeMessage("7za.exe does not exist at the following path, downloading new copy: " + f7za.getAbsolutePath());
+				String url = "http://me3tweaks.com/modmanager/tools/7za.exe";
+				try {
+					File updateDir = new File(ModManager.getToolsDir());
+					updateDir.mkdirs();
+					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7za.exe"));
+					publish("Downloaded 7za Unzipper into tools directory");
+					ModManager.debugLogger.writeMessage("Downloaded missing 7za.exe file for updating Mod Manager");
+
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Error downloading 7za into tools folder", e);
+					publish("Error downloading 7za");
+				}
+			} else {
+				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
+			}*/
 
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
 				checkForUpdates();
@@ -1582,7 +1602,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
 			}
 		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
-			ModManager.debugLogger.writeMessage(ModXMLTools.generateXMLList(modModel.getElementAt(modList.getSelectedIndex())));
+			ModManager.debugLogger.writeMessage(ModXMLTools.generateXMLFileList(modModel.getElementAt(modList.getSelectedIndex())));
 		} else if (e.getSource() == sqlDifficultyParser) {
 			new DifficultyGUI();
 		} else

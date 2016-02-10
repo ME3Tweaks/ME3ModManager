@@ -6,12 +6,15 @@ import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
@@ -47,7 +50,7 @@ public class ModXMLTools {
 	 *            Mod to create XML for
 	 * @return XML string of mod
 	 */
-	public static String generateXMLList(Mod mod) {
+	public static String generateModXMLList(Mod mod) {
 		if (mod.getModMakerCode() > 0) {
 			System.err.println("ModMaker codes use the ID");
 			return "";
@@ -129,7 +132,7 @@ public class ModXMLTools {
 			coalElement.setTextContent(ResourceUtils.getRelativePath(coalStr, mod.getModPath(), File.separator));
 			rootElement.appendChild(coalElement);
 		}
-		
+
 		//add deltas
 		for (ModDelta delta : mod.getModDeltas()) {
 			Element element = modDoc.createElement("sourcefile");
@@ -149,6 +152,59 @@ public class ModXMLTools {
 
 		modDoc.appendChild(rootElement);
 		return ModMakerCompilerWindow.docToString(modDoc);
+	}
+
+	public static String generateXMLFileList(Mod mod) {
+		if (mod.getModMakerCode() > 0) {
+			System.err.println("ModMaker codes use the ID");
+			return "";
+		}
+
+		if (mod.getClassicUpdateCode() <= 0) {
+			System.err.println("Mod does not have a classic update code set");
+			return "";
+		}
+
+		if (mod.getVersion() <= 0) {
+			System.err.println("Mod must have a double/numeric version number");
+			return "";
+		}
+
+		try {
+			docBuilder = docFactory.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		Document modDoc = docBuilder.newDocument();
+		Element rootElement = modDoc.createElement("mod");
+		rootElement.setAttribute("type", "classic");
+		rootElement.setAttribute("version", Double.toString(mod.getVersion()));
+		rootElement.setAttribute("updatecode", Integer.toString(mod.getClassicUpdateCode()));
+		rootElement.setAttribute("folder", "PUT_SERVER_FOLDER_HERE");
+		rootElement.setAttribute("manifesttype", "full");
+
+		Collection<File> files = FileUtils.listFiles(new File(mod.getModPath()), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+		for (File file : files) {
+			String srcFile = file.getAbsolutePath();
+			Element fileElement = modDoc.createElement("sourcefile");
+			try {
+				fileElement.setAttribute("hash", MD5Checksum.getMD5Checksum(srcFile));
+				fileElement.setAttribute("size", Long.toString(new File(srcFile).length()));
+
+			} catch (DOMException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			fileElement.setTextContent(ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator));
+			rootElement.appendChild(fileElement);
+		}
+		
+		modDoc.appendChild(rootElement);
+		return ModMakerCompilerWindow.docToString(modDoc);
+
 	}
 
 	/**

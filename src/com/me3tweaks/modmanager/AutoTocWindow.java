@@ -169,7 +169,7 @@ public class AutoTocWindow extends JDialog {
 				if (hasTOC) { //calc files
 					for (String file : job.newFiles) {
 						String filename = FilenameUtils.getName(file);
-						if (filename.equals("PCConsoleTOC.bin")) {
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin") || filename.equalsIgnoreCase("Mount.dlc")) {
 							continue;
 						} else {
 							//increment number of files to update
