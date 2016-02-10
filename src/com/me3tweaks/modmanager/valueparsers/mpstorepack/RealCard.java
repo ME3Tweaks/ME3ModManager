@@ -386,21 +386,6 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			return false;
 		if (PVIncrementBonus != other.PVIncrementBonus)
 			return false;
-		if (cardHTML == null) {
-			if (other.cardHTML != null)
-				return false;
-		} else if (!cardHTML.equals(other.cardHTML))
-			return false;
-		if (cardHtmlStr == null) {
-			if (other.cardHtmlStr != null)
-				return false;
-		} else if (!cardHtmlStr.equals(other.cardHtmlStr))
-			return false;
-		if (inPools == null) {
-			if (other.inPools != null)
-				return false;
-		} else if (!inPools.equals(other.inPools))
-			return false;
 		if (isCharCard != other.isCharCard)
 			return false;
 		if (isConsumable != other.isConsumable)
@@ -408,11 +393,6 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		if (isMisc != other.isMisc)
 			return false;
 		if (maxCount != other.maxCount)
-			return false;
-		if (packsIn == null) {
-			if (other.packsIn != null)
-				return false;
-		} else if (!packsIn.equals(other.packsIn))
 			return false;
 		if (rarity != other.rarity)
 			return false;
@@ -1050,7 +1030,7 @@ public class RealCard extends Card implements Comparable<RealCard> {
 		inPools.add(slotPool);
 	}
 
-	public String getPackpageHTML() {
+	public String getPackpageHTML(Integer numDraws) {
 		//System.out.println("Card HTML of "+this);
 		StringBuilder sb = new StringBuilder();
 		sb.append("<div class=\"card float-shadow " + rarity.toString().toLowerCase() + "%ROTATECOLORCLASS%\">\n\t");
@@ -1069,6 +1049,9 @@ public class RealCard extends Card implements Comparable<RealCard> {
 			sb.append("<p>Can drop infinitely</p>");
 		}
 		sb.append("%GUARANTEE%");
+		if (numDraws > 0 ) {
+			sb.append("<p>Backup card for "+numDraws+" slot"+(numDraws != 1 ? "s":"")+"</p>");
+		}
 
 		boolean shouldmakeshiny = false;
 		sb.append("<ul>");
