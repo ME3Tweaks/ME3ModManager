@@ -135,7 +135,6 @@ public class TLKTool {
 			// send DOM to file
 			tr.transform(new DOMSource(origDoc), new StreamResult(new FileOutputStream(savename)));
 		}
-
 	}
 
 	/**
