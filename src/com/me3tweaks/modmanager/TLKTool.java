@@ -65,6 +65,8 @@ public class TLKTool {
 		//initialScanME2Tool();
 		//subsetScan();
 		replacementScan();
+		compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
+
 	}
 
 	private static void nonINTME2ToolScan() throws Exception {
@@ -194,12 +196,15 @@ public class TLKTool {
 		//input
 
 		HashMap<Integer, ReplacementNode> localizedUncommonKeyMap = new HashMap<>();
-/*		localizedUncommonKeyMap.put(338642, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A] to use Singularity
+		localizedUncommonKeyMap.put(675852, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_RT"));
+		localizedUncommonKeyMap.put(786429, new ReplacementNode("[Q]", "[XBoxB_Btn_DPadL]"));
+/*
+		
+		localizedUncommonKeyMap.put(338642, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A] to use Singularity
 		localizedUncommonKeyMap.put(338681, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A] to use First Aid
 		localizedUncommonKeyMap.put(338685, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A] to use Overload
 		localizedUncommonKeyMap.put(338689, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A"));
 		localizedUncommonKeyMap.put(563797, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A"));
-		localizedUncommonKeyMap.put(675852, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A"));
 		localizedUncommonKeyMap.put(720736, new ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to exit turret
 
 		localizedUncommonKeyMap.put(345715, new ReplacementNode("Mouse_Btn_R", "XBoxB_Btn_LT")); //code segments (might be unused
@@ -211,7 +216,7 @@ public class TLKTool {
 */
         HashMap<Integer, Integer> pullFromOrigLang = new HashMap<>();
         pullFromOrigLang.put(335363, 336943); //Fly between systems in galaxy view...
-        pullFromOrigLang.put(338524, 338524); //Press [XBoxB_Btn_B] to end the mission.
+        pullFromOrigLang.put(338524, 335435); //Press [XBoxB_Btn_B] to end the mission.
         pullFromOrigLang.put(338636,338634); //Select Singularity
         pullFromOrigLang.put(338642,338639); //Press [XBoxB_Btn_A] to use Singularity
         pullFromOrigLang.put(338681,338679); //Press [XBoxB_Btn_A] to use First Aid
@@ -388,7 +393,7 @@ public class TLKTool {
         pullFromOrigLang.put(722371,722372); //powers can be mapped...
         //pullFromOrigLang.put(722373,); REQUIRES MANUAL Point your targeting reticle and press [XBoxB_Btn_DPadL] or [XBoxB_Btn_DPadR] to order a squadmate to a position.
         //pullFromOrigLang.put(722374,); //REQUIERS MANUAL Point the targeting reticle behind a cover position and press ([Shared_SquadMove1]) or ([Shared_SquadMove2]) to order a squadmate to take cover.
-        //pullFromOrigLang.put(722375,); //REQUIRES TRANSLATION - TO Point the targeting reticle at an enemy and press [XBoxB_Btn_DPadL] or [XBoxB_Btn_DPadR] to order a squadmate to attack the target with their respective default power. Any squadmate powers mapped to [XBoxB_Btn_DPadL] and [XBoxB_Btn_DPadR] work the same way. 
+        //pullFromOrigLang.put(722375,); //REQUIRES TRANSLATION - To Point the targeting reticle at an enemy and press [XBoxB_Btn_DPadL] or [XBoxB_Btn_DPadR] to order a squadmate to attack the target with their respective default power. Any squadmate powers mapped to [XBoxB_Btn_DPadL] and [XBoxB_Btn_DPadR] work the same way. 
 
 //$722837
         //pullFromOrigLang.put(722376,); //REQUIRES MANUAL Point the targeting reticle at an enemy and press ([Shared_SquadAttack]) to order both squadmates to open fire on the opponent.
@@ -436,7 +441,9 @@ public class TLKTool {
 			String lang = FilenameUtils.getBaseName(inputFile);
 			lang = lang.substring(lang.length()-3, lang.length());
 			
-			String savename = f.getParent() + "\\final_" + lang + ".xml";
+			File folder = new File(f.getParent() + "\\DLC_CON_XBX_" + lang.toUpperCase() + "\\");
+			folder.mkdirs();
+			String savename = f.getParent() + "\\DLC_CON_XBX_" + lang.toUpperCase()+"\\DLC_CON_XBX_" + lang.toUpperCase() + "0.xml";
 			System.out.println("Performing replacement scan: " + savename);
 			Document origDoc = dbFactory.newDocumentBuilder().parse("file:///" + inputFile);
 			origDoc.getDocumentElement().normalize();
@@ -453,16 +460,22 @@ public class TLKTool {
 
 			for (int i = 0; i < origStringNodes.getLength(); i++) {
 				Node singleNode = (Node) origStringNodes.item(i);
-
 				Element oStringElem = (Element) singleNode;
 				String idAsStr = oStringElem.getAttribute("id");
-				System.out.println("\t\tpullFromOrigLang.put("+idAsStr+",);");
+				//System.out.println("\t\tpullFromOrigLang.put("+idAsStr+",);");
+				//System.out.println("Parsing ["+(i+1)+"/"+origStringNodes.getLength()+"]");
 				int idAsInt = Integer.parseInt(idAsStr);
+				if (idAsInt >= 135000000) {
+					continue;
+				}
+				
 				String content = oStringElem.getTextContent();
-				if (pullFromOrigLang.containsKey(idAsInt)) {
+				Integer useId = pullFromOrigLang.get(idAsInt);
+				if (useId != null) {
 					//retreive from oriignal TLK
-					NodeList originalTLKNodes = (NodeList) xpath.evaluate("/tlkFile/string/id[text()="+idAsStr+"]", basegameTlk.getDocumentElement(), XPathConstants.NODESET);
+					NodeList originalTLKNodes = (NodeList) xpath.evaluate("/tlkFile/string/id[text()="+useId+"]", basegameTlk.getDocumentElement(), XPathConstants.NODESET);
 					if (originalTLKNodes.getLength() > 0) {
+
 						//inBG
 						Element idElem = (Element) originalTLKNodes.item(0);
 						String translatedStr = xpath.evaluate("../data", idElem);
@@ -470,16 +483,21 @@ public class TLKTool {
 						continue;
 					}
 					//check citadel
-					NodeList citTLKNodes = (NodeList) xpath.evaluate("/Strings/String/id[text()="+idAsStr+"]", citTlk.getDocumentElement(), XPathConstants.NODESET);
+					NodeList citTLKNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String[@id='"+useId+"']", citTlk.getDocumentElement(), XPathConstants.NODESET);
 					if (citTLKNodes.getLength() > 0) {
-						//inBG
-						Element idElem = (Element) originalTLKNodes.item(0);
-						String translatedStr = xpath.evaluate("../data", idElem);
-						oStringElem.setTextContent(translatedStr);
+						Element idElem = (Element) citTLKNodes.item(0);
+						oStringElem.setTextContent(idElem.getTextContent());
 						continue;
+					} else {
+						System.out.println("NOT IN CIT: "+useId);
 					}
 					
 				}
+				if (!content.contains("[") && !idAsStr.equals("719838") || idAsStr.equals("")) {
+					System.out.println("Translation required: "+idAsStr);
+					continue; //speedup
+				}
+				
 				if (localizedUncommonKeyMap.containsKey(idAsInt)) {
 					content = content.replace(localizedUncommonKeyMap.get(idAsInt).src, localizedUncommonKeyMap.get(idAsInt).repl);
 				}
@@ -514,14 +532,25 @@ public class TLKTool {
 				content = content.replace("([PC_HotKey3])", "[XBoxB_Btn_Y]");
 				content = content.replace("([PC_MoveBackward])", "[XBoxB_Btn_LSDown]");
 				content = content.replace("([PC_NextWeapon])", "[XBoxB_Btn_X]");
-
+				//System.out.println(idAsStr+" Item done manually: "+content);
 				oStringElem.setTextContent(content);
 			}
+			
+			NodeList oldRoot = (NodeList) xpath.evaluate("/Strings", origDoc, XPathConstants.NODESET);
+			if (oldRoot.getLength() > 0 ){
+				Element stringselem = (Element) oldRoot.item(0);
+				Element tlkFileElem = origDoc.createElement("TlkFile");
+				tlkFileElem.setAttribute("name", "DLC_CON_XBX_"+lang.toUpperCase()+"/DLC_CON_XBX_"+lang.toUpperCase()+"0.xml");
+				tlkFileElem.appendChild(stringselem);
+				origDoc.appendChild(tlkFileElem);
+			}
+
 
 			Transformer tr = TransformerFactory.newInstance().newTransformer();
 			tr.setOutputProperty(OutputKeys.INDENT, "yes");
 			tr.setOutputProperty(OutputKeys.METHOD, "xml");
 			tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+			tr.setOutputProperty(OutputKeys.VERSION, "1.0");
 			tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 
 			// send DOM to file
@@ -938,16 +967,9 @@ public class TLKTool {
 	private static void compileTLK(String path) throws IOException {
 		File dir = new File(path);
 		System.out.println(dir);
-		Collection<File> files = FileUtils.listFiles(dir, new SuffixFileFilter(".tlk"), FalseFileFilter.FALSE);
+		Collection<File> files = FileUtils.listFiles(dir, new WildcardFileFilter("DLC_CON_XBX_*.xml"), FalseFileFilter.FALSE);
 		for (File file : files) {
-			System.out.print("/BIOGame/DLC/DLC_UPD_Patch01/CookedPCConsole/");
-			System.out.print(file.getName());
-			System.out.print(";");
-		}
-
-		System.out.println();
-		if (true) {
-			return;
+			System.out.println(file.getAbsolutePath());
 		}
 
 		for (File f : files) {
