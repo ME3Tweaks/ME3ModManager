@@ -149,6 +149,7 @@ public class ImportEntryWindow extends JDialog {
 					modNameField.setEnabled(false);
 					modDescField.setEnabled(false);
 					modSiteField.setEnabled(false);
+					telemetryCheckbox.setEnabled(false);
 					new ImportWorker().execute();
 				}
 			}
