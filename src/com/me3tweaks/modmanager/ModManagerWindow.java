@@ -91,7 +91,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
-	JMenuItem actionModMaker, actionVisitMe, actionOptions, toolME3Explorer, actionReload, actionExit;
+	JMenuItem actionModMaker, actionVisitMe, actionImportFromArchive, actionImportAlreadyInstalled, actionOptions, toolME3Explorer, actionReload, actionExit;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC,
 			modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
@@ -198,14 +198,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void initializeWindow() {
-		this.setTitle("Mass Effect 3 Mod Manager");
-		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		this.setIconImages(ModManager.ICONS);
 		setupWindow();
 
-		Dimension minSize = new Dimension(560, 520);
-		this.setPreferredSize(minSize);
-		this.setMinimumSize(minSize);
+		
 		this.pack();
 		setLocationRelativeTo(null);
 		if (isUpdate) {
@@ -638,6 +633,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void setupWindow() {
+		this.setTitle("Mass Effect 3 Mod Manager");
+		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		this.setIconImages(ModManager.ICONS);
+		Dimension minSize = new Dimension(560, 520);
+		this.setPreferredSize(minSize);
+		this.setMinimumSize(minSize);
+		
 		// Menubar
 		menuBar = makeMenu();
 		ModManager.debugLogger.writeMessage("Menu system has initialized.");
@@ -784,6 +786,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionModMaker.setToolTipText("Opens ME3Tweaks ModMaker");
 		actionVisitMe = new JMenuItem("Open ME3Tweaks.com");
 		actionVisitMe.setToolTipText("Opens ME3Tweaks.com");
+		
+		JMenu actionImportMenu = new JMenu("Import mod");
+		actionImportAlreadyInstalled = new JMenuItem("Import installed DLC mod");
+		actionImportAlreadyInstalled.setToolTipText("<html>Import an already installed DLC mod.<br>You can then manage that mod with Mod Manager.</html>");
 		actionOptions = new JMenuItem("Options");
 		actionOptions.setToolTipText("Configure Mod Manager Options");
 		actionOpenModsFolder = new JMenuItem("Open mods/ folder");
@@ -808,6 +814,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		openToolMenu.add(toolTankmasterCoalUI);
 		openToolMenu.add(toolTankmasterTLK);
 
+		actionImportMenu.add(actionImportAlreadyInstalled);
+		actionMenu.add(actionImportMenu);
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
 		actionMenu.add(actionOptions);
@@ -817,6 +825,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionMenu.add(actionReload);
 		actionMenu.add(actionExit);
 
+		actionImportAlreadyInstalled.addActionListener(this);
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
 		actionOptions.addActionListener(this);
@@ -1380,6 +1389,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else
 
+		if (e.getSource() == actionImportAlreadyInstalled) {
+			if (validateBIOGameDir()) {
+				new ModImportWindow(this,fieldBiogameDir.getText());
+			}
+		} else
 		if (e.getSource() == actionVisitMe) {
 			URI theURI;
 			try {

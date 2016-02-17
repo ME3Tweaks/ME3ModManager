@@ -68,6 +68,8 @@ public class ModJob {
 	}
 
 	/** Creates a basegame modjob. It doesn't need a path since it can be derived without the need for one.
+	 * 
+	 * Use the alternative constructors if you don't want a basegame job.
 	 * @param DLCFilePath Path to the DLC Sfar file.
 	 */
 	public ModJob(){
