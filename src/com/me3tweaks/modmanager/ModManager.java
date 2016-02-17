@@ -61,11 +61,11 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.2 Beta 1";
-	public static long BUILD_NUMBER = 51L;
-	public static final String BUILD_DATE = "1/30/2015";
+	public static final String VERSION = "4.1 MR3";
+	public static long BUILD_NUMBER = 50L;
+	public static final String BUILD_DATE = "2/15/2015";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
@@ -95,7 +95,7 @@ public class ModManager {
 	public static boolean LOG_PATCH_INIT = false; 
 
 	public static void main(String[] args) {
-		debugLogger = new DebugLogger();
+		loadLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
 		try {
@@ -937,6 +937,15 @@ public class ModManager {
 	public static String getDataDir() {
 		return appendSlash(System.getProperty("user.dir")) + "data/";
 	}
+	
+	public static String getGUITransplanterDir() {
+		return getDataDir() + "guitransplanter/";
+	}
+	
+	public static String getGUITransplanterCLI() {
+		return "E:\\Documents\\GitHubVisualStudio\\ME3-GUI-Transplanter\\ME3 GUI Transplanter\\Build\\Release\\Transplanter-CLI.exe";
+		//return getGUITransplanterDir() + "Transplanter-CLI.exe";
+	}
 
 	public static String getTankMasterCompilerDir() {
 		File file = new File(getDataDir() + "tankmaster_coalesce/");
@@ -1683,5 +1692,9 @@ public class ModManager {
 	public static String getTransplantDir() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public static void loadLogger() {
+		debugLogger = new DebugLogger();
 	}
 }

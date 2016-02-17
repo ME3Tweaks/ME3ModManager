@@ -165,6 +165,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
+		new GUITransplanterWindow(this);
 	}
 
 	/**
@@ -2193,6 +2194,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		 * "Unable to Launch Game", JOptionPane.ERROR_MESSAGE); return; } }
 		 */
 		boolean binkw32bypass = checkForBinkBypass(); // favor bink over WV
+		System.err.println("BINKW32 BYPASS: "+binkw32bypass);
 		startingDir = new File(startingDir.getParent());
 		File executable = new File(startingDir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
 		if (!binkw32bypass) { // try to find Launcher_WV
