@@ -67,9 +67,12 @@ public class Mod implements Comparable<Mod> {
 	/**
 	 * Empty constructor. This should not be used unless you really know what
 	 * you're doing. (manually adding jobs etc)
+	 * 
+	 * Instantiates the jobs variable and modifystring to blank and nothing else.
 	 */
 	public Mod() {
 		jobs = new ArrayList<ModJob>();
+		modifyString = "";
 	}
 
 	/**
@@ -1400,10 +1403,6 @@ public class Mod implements Comparable<Mod> {
 		}
 	}
 
-	public static String convertNewlineToBr(String input) {
-		return input.replaceAll("\n", "<br>");
-	}
-
 	public void setModName(String modName) {
 		this.modName = modName;
 	}
@@ -1725,5 +1724,13 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 		return null;
+	}
+
+	public void setAuthor(String modAuthor) {
+		this.modAuthor = modAuthor;
+	}
+
+	public void setSite(String modSite) {
+		this.modSite = modSite;
 	}
 }

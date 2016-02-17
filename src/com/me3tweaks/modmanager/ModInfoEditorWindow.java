@@ -3,7 +3,6 @@ package com.me3tweaks.modmanager;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -24,6 +23,7 @@ import javax.swing.border.TitledBorder;
 import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class ModInfoEditorWindow extends JDialog implements ActionListener {
 	private Mod mod;
@@ -88,7 +88,7 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 		if (e.getSource() == saveButton) {
 			ModManager.debugLogger.writeMessage("Saving new mod description and name...");
 			mod.setModName(modNameField.getText());
-			mod.setModDescription(Mod.convertNewlineToBr(modDescriptionField.getText()));
+			mod.setModDescription(ResourceUtils.convertNewlineToBr(modDescriptionField.getText()));
 			File file = new File(ModManager.appendSlash(mod.getModPath())+"moddesc.ini");
 			try {
 				FileUtils.writeStringToFile(file, mod.createModDescIni(mod.modCMMVer));

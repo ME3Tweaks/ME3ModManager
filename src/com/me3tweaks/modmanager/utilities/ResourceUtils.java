@@ -9,6 +9,11 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.ModManager;
 
+/**
+ * Contains generic methods for basic tasks
+ *
+ *
+ */
 public class ResourceUtils {
 	/**
 	 * Opens a directory in Windows Explorer.
@@ -24,6 +29,16 @@ public class ResourceUtils {
 			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
 		}
 	}
+	
+	/**
+	 * Converts Newline characters to br tags 
+	 * @param input input string
+	 * @return string with newlines replaced with br
+	 */
+	public static String convertNewlineToBr(String input) {
+		return input.replaceAll("\n", "<br>");
+	}
+	
     /**
      * Get the relative path from one file to another, specifying the directory separator. 
      * If one of the provided resources does not exist, it is assumed to be a file unless it ends with '/' or
