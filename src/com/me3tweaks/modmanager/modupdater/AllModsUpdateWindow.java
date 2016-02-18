@@ -179,7 +179,7 @@ public class AllModsUpdateWindow extends JDialog {
 					case "PROMPT_USER":
 						String updatetext = upackages.size() + " mod" + (upackages.size() == 1 ? " has" : "s have") + " available updates on ME3Tweaks:\n";
 						for (UpdatePackage upackage : upackages) {
-							updatetext += " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + "\n";
+							updatetext += " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + " ("+upackage.getUpdateSizeMB()+")\n";
 						}
 						updatetext += "Update these mods?";
 						int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);

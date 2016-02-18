@@ -165,7 +165,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
-		new GUITransplanterWindow(this);
+		//new GUITransplanterWindow(this);
 	}
 
 	/**
@@ -480,7 +480,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (latest instanceof UpdatePackage) {
 					UpdatePackage upackage = (UpdatePackage) latest;
 					String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
-					updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + "\n";
+					updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + " ("+upackage.getUpdateSizeMB()+")\n";
 					updatetext += "Update this mod?";
 					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
 					if (result == JOptionPane.YES_OPTION) {
@@ -815,7 +815,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		openToolMenu.add(toolTankmasterTLK);
 
 		actionImportMenu.add(actionImportAlreadyInstalled);
-		actionMenu.add(actionImportMenu);
+		//actionMenu.add(actionImportMenu); not in 4.1.1
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
 		actionMenu.add(actionOptions);
@@ -1388,7 +1388,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ex.printStackTrace();
 			}
 		} else
-
 		if (e.getSource() == actionImportAlreadyInstalled) {
 			if (validateBIOGameDir()) {
 				new ModImportWindow(this,fieldBiogameDir.getText());

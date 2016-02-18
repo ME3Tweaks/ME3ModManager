@@ -61,16 +61,16 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1 MR3";
+	public static final String VERSION = "4.1 CUSTOM BUILD (stylz168)";
 	public static long BUILD_NUMBER = 50L;
-	public static final String BUILD_DATE = "2/15/2015";
+	public static final String BUILD_DATE = "2/18/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
 															// version
-	public static final double MODDESC_VERSION_SUPPORT = 4.2; // max supported
+	public static final double MODDESC_VERSION_SUPPORT = 4.1; // max supported
 																// cmmver in
 																// moddesc
 	public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
@@ -92,7 +92,8 @@ public class ModManager {
 	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
 	public static long AUTO_CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(AUTO_CHECK_INTERVAL_DAYS);
 	public static boolean LOG_MOD_INIT = false;
-	public static boolean LOG_PATCH_INIT = false; 
+	public static boolean LOG_PATCH_INIT = false;
+	public static boolean PERFORM_DOT_NET_CHECK = true; 
 
 	public static void main(String[] args) {
 		loadLogger();
@@ -153,6 +154,24 @@ public class ModManager {
 							logging = true;
 							debugLogger.writeMessage("Logging variable not set, defaulting to true. Starting logger. Mod Manager version "
 									+ ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
+						}
+					}
+					// .NET encforcement check
+					String netEnforcementStr = settingsini.get("Settings", "enforcedotnetrequirement");
+					int netEnforcementInt = 0;
+					if (netEnforcementStr != null && !netEnforcementStr.equals("")) {
+						try {
+							netEnforcementInt = Integer.parseInt(netEnforcementStr);
+							if (netEnforcementInt > 0) {
+								// logging is on
+								debugLogger.writeMessage(".NET enforcement check is ON");
+								PERFORM_DOT_NET_CHECK = true;
+							} else {
+								debugLogger.writeMessage(".NET enforcement check is OFF");
+								PERFORM_DOT_NET_CHECK = false;
+							}
+						} catch (NumberFormatException e) {
+							ModManager.debugLogger.writeError("Number format exception reading the .NET enforcement check flag, defaulting to enabled");
 						}
 					}
 					// Auto Update Check
@@ -1595,6 +1614,11 @@ public class ModManager {
 	 * @return true if satisfied, false otherwise
 	 */
 	public static boolean validateNETFrameworkIsInstalled() {
+		if (!PERFORM_DOT_NET_CHECK) {
+			NET_FRAMEWORK_IS_INSTALLED = true;
+			return true;
+		}
+		
 		String os = System.getProperty("os.name");
 		if (os.contains("Windows")) {
 			int releaseNum = 0;

@@ -25,6 +25,7 @@ import com.me3tweaks.modmanager.utilities.DebugLogger;
 public class OptionsWindow extends JDialog {
 	JCheckBox loggingMode;
 	private JCheckBox autoInjectKeybindsModMaker;
+	private JCheckBox enforceDotNetRequirement;
 	private JCheckBox autoUpdateModManager;
 	private JCheckBox autoUpdateMods;
 	private JCheckBox autoApplyMixins;
@@ -84,7 +85,34 @@ public class OptionsWindow extends JDialog {
 				}
 			}
 		});
-
+		
+		enforceDotNetRequirement = new JCheckBox("Perform .NET requirements check");
+		enforceDotNetRequirement.setToolTipText("<html>.NET 4.5 or higher is required for Mod Manager to complete most tasks.<br>Due to a bug in one of the libraries Mod Manager uses, this isn't always detected.<br>Turn this off if you have .NET 4.5 or higher, but Mod Manager can't detect it.</html>");
+		enforceDotNetRequirement.setSelected(ModManager.PERFORM_DOT_NET_CHECK);
+		enforceDotNetRequirement.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Wini ini;
+				try {
+					File settings = new File(ModManager.SETTINGS_FILENAME);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					if (enforceDotNetRequirement.isSelected()) {
+						ini.put("Settings", "enforcedotnetrequirement", "1");
+					} else {
+						ini.put("Settings", "enforcedotnetrequirement", "0");
+					}
+					ModManager.PERFORM_DOT_NET_CHECK = enforceDotNetRequirement.isSelected();
+					ini.store();
+				} catch (InvalidFileFormatException error) {
+					error.printStackTrace();
+				} catch (IOException error) {
+					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				}
+			}
+		});
+		
 		autoInjectKeybindsModMaker = new JCheckBox("Auto-inject custom keybinds into ModMaker mods");
 		autoInjectKeybindsModMaker
 				.setToolTipText("<html>If you use a custom keybinds file (BioInput.xml) and place it in the data/override directory,<br>at the end of compiling ModMaker mods Mod Manager will auto-inject them for you.</html>");
@@ -348,6 +376,7 @@ public class OptionsWindow extends JDialog {
 		optionsPanel.add(autoUpdateMods);
 		optionsPanel.add(autoUpdateME3Explorer);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
+		optionsPanel.add(enforceDotNetRequirement);
 		optionsPanel.add(loggingMode);
 		optionsPanel.add(logModInit);
 		optionsPanel.add(logPatchInit);

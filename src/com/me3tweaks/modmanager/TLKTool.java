@@ -57,14 +57,15 @@ public class TLKTool {
 	}
 
 	public static void main(String[] args) throws Exception {
-		compileTLK("C:\\Users\\mjperez\\Desktop\\GD\\diffs\\");
+		//replacementScan();
+		compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\diffs\\");
 		//decompileTLK();
 		//comparisonScan();
 		//initialScanTankmaster();
 		//nonINTME2ToolScan();
 		//initialScanME2Tool();
 		//subsetScan();
-		//replacementScan();
+		
 		//compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
 		//String folderpath = "C:\\Users\\mjperez\\Desktop\\tlk\\BIOGame_ITA\\";
 		//combineIntoSingleFile(folderpath);
@@ -522,12 +523,12 @@ public class TLKTool {
 		XPath xpath = factory.newXPath();
 
 		//get list of diffs to operate on.
-		File dir = new File("C:\\Users\\mjperez\\Desktop\\GD\\diffs");
+		File dir = new File("E:\\Google Drive\\SP Controller Support\\TLK\\diffs");
 		FileFilter fileFilter = new WildcardFileFilter("diff_*.xml");
 		File[] files = dir.listFiles(fileFilter);
 
-		String originalTlkDir = "C:\\Users\\mjperez\\Desktop\\GD\\tankmaster_original_tlk\\"; //tankmaster
-		String prefixCitPath = "C:\\Users\\mjperez\\Desktop\\GD\\dlc_tlk\\DLC_EXP_Pack003_"; //tankmaster
+		String originalTlkDir = "E:\\Google Drive\\SP Controller Support\\TLK\\tankmaster_original_tlk\\"; //tankmaster
+		String prefixCitPath = "E:\\Google Drive\\SP Controller Support\\TLK\\dlc_tlk\\DLC_EXP_Pack003_"; //tankmaster
 		for (File f : files) {
 			String inputFile = f.getAbsolutePath();
 			String lang = FilenameUtils.getBaseName(inputFile);
