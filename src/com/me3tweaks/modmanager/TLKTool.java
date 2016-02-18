@@ -40,8 +40,8 @@ import org.xml.sax.SAXException;
 
 public class TLKTool {
 
-	static int[] ignoredIds = new int[] { 320166, 180997, 330510, 340843, 340858, 351755, 371720, 372162, 375050, 579961, 581459, 589952, 627586, 699487, 699498, 699522, 717634,
-			717644, 727788, 727789 };
+	static int[] ignoredIds = new int[] { 320166, 180997, 330510, 340843, 340858, 351755, 371720, 372162, 375050, 579961, 581459, 589952, 627586,
+			699487, 699498, 699522, 717634, 717644, 727788, 727789 };
 
 	static class TLKNode {
 
@@ -57,16 +57,96 @@ public class TLKTool {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//compileTLK("C:\\Users\\Michael\\Desktop\\ME3CMM\\mods\\MP Controller Support\\PATCH1");
+		compileTLK("C:\\Users\\mjperez\\Desktop\\GD\\diffs\\");
 		//decompileTLK();
 		//comparisonScan();
 		//initialScanTankmaster();
 		//nonINTME2ToolScan();
 		//initialScanME2Tool();
 		//subsetScan();
-		replacementScan();
-		compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
+		//replacementScan();
+		//compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
+		//String folderpath = "C:\\Users\\mjperez\\Desktop\\tlk\\BIOGame_ITA\\";
+		//combineIntoSingleFile(folderpath);
+	}
 
+	/**
+	 * Combines tankmaster's decompiled files into a single XML file
+	 * 
+	 * @param folderpath
+	 * @throws Exception
+	 */
+	private static void combineIntoSingleFile(String folderpath) throws Exception {
+		// TODO Auto-generated method stub
+		File folder = new File(folderpath);
+		ArrayList<File> allfiles = new ArrayList<>();
+
+		//basegame
+		FileFilter fileFilter = new WildcardFileFilter("BIOGame_*.xml");
+		File[] files = folder.listFiles(fileFilter);
+
+		for (File f : files) {
+			System.out.println(f);
+		}
+		if (files[2].getName().contains("10")) {
+
+			ArrayList<File> reorderArray = new ArrayList<File>(Arrays.asList(files));
+
+			reorderArray.add(reorderArray.remove(2));
+			files = (File[]) reorderArray.toArray(new File[reorderArray.size()]);
+			/*
+			 * File temp = files[2]; files[2] = files[11]; files[11] = temp;
+			 */
+		}
+
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		XPathFactory factory = XPathFactory.newInstance();
+		XPath xpath = factory.newXPath();
+		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+		Document newDoc = dBuilder.newDocument();
+		Element root = newDoc.createElement("TlkFile");
+		Element strings = newDoc.createElement("Strings");
+
+		root.appendChild(strings);
+		newDoc.appendChild(root);
+
+		String lang = null;
+		System.out.println("FILES...");
+		for (File file : files) {
+			String basename = FilenameUtils.getBaseName(file.getAbsolutePath());
+			if (lang == null) {
+				lang = basename.substring(basename.length() - 4, basename.length() - 1);
+			}
+			//load XML
+			Document intDoc = dbFactory.newDocumentBuilder().parse("file:///" + file.getAbsolutePath());
+			intDoc.getDocumentElement().normalize();
+			System.out.println("Loaded " + basename);
+			NodeList intStringNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String", intDoc.getDocumentElement(), XPathConstants.NODESET);
+			System.out.println("NODE COUNT: " + intStringNodes.getLength());
+			for (int i = 0; i < intStringNodes.getLength(); i++) {
+				Node singleNode = (Node) intStringNodes.item(i);
+				singleNode.getParentNode().removeChild(singleNode);
+				Element oStringElem = (Element) singleNode;
+				String id = oStringElem.getAttribute("id");
+
+				Element clonedItem = newDoc.createElement("String");
+				clonedItem.setAttribute("id", id);
+				clonedItem.setTextContent(oStringElem.getTextContent());
+				strings.appendChild(clonedItem);
+			}
+		}
+		Transformer tr = TransformerFactory.newInstance().newTransformer();
+		tr.setOutputProperty(OutputKeys.INDENT, "yes");
+		tr.setOutputProperty(OutputKeys.METHOD, "xml");
+		tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		tr.setOutputProperty(OutputKeys.VERSION, "1.0");
+		tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+		// send DOM to file
+		String saveTo = folder.getParent() + "\\tankmaster_base_" + lang + ".xml";
+		System.out.println("SAVING TO " + saveTo);
+		tr.transform(new DOMSource(newDoc), new StreamResult(new FileOutputStream(folder.getParent() + "\\tankmaster_base_" + lang + ".xml")));
 	}
 
 	private static void nonINTME2ToolScan() throws Exception {
@@ -77,11 +157,11 @@ public class TLKTool {
 
 		//input
 		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-		String infile = "E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\DLC_CON_XBX_INT\\DLC_CON_XBX_INT0.xml";
+		String infile = "C:\\Users\\mjperez\\Desktop\\GD\\moonshine_tlk\\DLC_CON_XBX_INT\\DLC_CON_XBX_INT0.xml";
 		Document intDoc = dbFactory.newDocumentBuilder().parse("file:///" + infile);
 		intDoc.getDocumentElement().normalize();
 
-		NodeList intStringNodes = (NodeList) xpath.evaluate("/Strings/String", intDoc.getDocumentElement(), XPathConstants.NODESET);
+		NodeList intStringNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String", intDoc.getDocumentElement(), XPathConstants.NODESET);
 		for (int i = 0; i < intStringNodes.getLength(); i++) {
 			Node singleNode = (Node) intStringNodes.item(i);
 			singleNode.getParentNode().removeChild(singleNode);
@@ -89,13 +169,13 @@ public class TLKTool {
 			String id = oStringElem.getAttribute("id");
 			int idAsInt = Integer.parseInt(id);
 			idsToExport.add(idAsInt);
-			System.out.println("SAVE ID: " + idAsInt);
+			System.out.println("Save this ID: " + idAsInt);
 		}
 
 		//output
-		String outFolder = "E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\diffs_nonint";
-		File dir = new File("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
-		FileFilter fileFilter = new WildcardFileFilter("XBX*.xml");
+		String outFolder = "C:\\Users\\mjperez\\Desktop\\GD\\diffs\\";
+		File dir = new File("C:\\Users\\mjperez\\Desktop\\GD\\tankmaster_original_tlk\\");
+		FileFilter fileFilter = new WildcardFileFilter("tankmaster_base_*.xml");
 		File[] files = dir.listFiles(fileFilter);
 
 		HashMap<String, ArrayList<TLKNode>> nameElementMap = new HashMap<>();
@@ -122,23 +202,21 @@ public class TLKTool {
 			Document origDoc = dbFactory.newDocumentBuilder().parse("file:///" + tlkFile);
 			origDoc.getDocumentElement().normalize();
 
-			NodeList origStringNodes = (NodeList) xpath.evaluate("/tlkFile/string", origDoc.getDocumentElement(), XPathConstants.NODESET);
+			NodeList origStringNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String", origDoc.getDocumentElement(), XPathConstants.NODESET);
 
 			for (int i = 0; i < origStringNodes.getLength(); i++) {
-
 				Node singleNode = (Node) origStringNodes.item(i);
 				singleNode.getParentNode().removeChild(singleNode);
 				Element oStringElem = (Element) singleNode;
 
-				String id = xpath.evaluate("id", oStringElem);
+				String id = oStringElem.getAttribute("id");
 				int idAsInt = Integer.parseInt(id);
 
 				if (!idsToExport.contains(idAsInt)) {
 					continue; //ignore this
 				}
 				System.out.println("Saving id");
-				String content = xpath.evaluate("data", oStringElem);
-				TLKNode node = new TLKNode(idAsInt, content);
+				TLKNode node = new TLKNode(idAsInt, oStringElem.getTextContent());
 				tlks.add(node);
 				//System.out.println("Found match: " + id);
 			}
@@ -169,7 +247,7 @@ public class TLKTool {
 			tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 
 			// send DOM to file
-			tr.transform(new DOMSource(doc), new StreamResult(new FileOutputStream(outFolder + "idiff_" + langEntry.getKey() + ".xml")));
+			tr.transform(new DOMSource(doc), new StreamResult(new FileOutputStream(outFolder + "diff_" + langEntry.getKey() + ".xml")));
 		}
 	}
 
@@ -184,8 +262,7 @@ public class TLKTool {
 	}
 
 	/**
-	 * Scans and creates a replacement of command strings Input file should be a
-	 * tankmaster TLK XML
+	 * Scans and creates a replacement of command strings. Works with Tankmaster TLK
 	 * 
 	 * @param inputFile
 	 * @param outputFile
@@ -198,264 +275,279 @@ public class TLKTool {
 		HashMap<Integer, ReplacementNode> localizedUncommonKeyMap = new HashMap<>();
 		localizedUncommonKeyMap.put(675852, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_RT"));
 		localizedUncommonKeyMap.put(786429, new ReplacementNode("[Q]", "[XBoxB_Btn_DPadL]"));
-/*
-		
-		localizedUncommonKeyMap.put(338642, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A] to use Singularity
-		localizedUncommonKeyMap.put(338681, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A] to use First Aid
-		localizedUncommonKeyMap.put(338685, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A] to use Overload
-		localizedUncommonKeyMap.put(338689, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A"));
-		localizedUncommonKeyMap.put(563797, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A"));
-		localizedUncommonKeyMap.put(720736, new ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to exit turret
+		/*
+		 * 
+		 * localizedUncommonKeyMap.put(338642, new
+		 * ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A]
+		 * to use Singularity localizedUncommonKeyMap.put(338681, new
+		 * ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A]
+		 * to use First Aid localizedUncommonKeyMap.put(338685, new
+		 * ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A")); //Press [XBoxB_Btn_A]
+		 * to use Overload localizedUncommonKeyMap.put(338689, new
+		 * ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A"));
+		 * localizedUncommonKeyMap.put(563797, new
+		 * ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_A"));
+		 * localizedUncommonKeyMap.put(720736, new
+		 * ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to exit
+		 * turret
+		 * 
+		 * localizedUncommonKeyMap.put(345715, new
+		 * ReplacementNode("Mouse_Btn_R", "XBoxB_Btn_LT")); //code segments
+		 * (might be unused localizedUncommonKeyMap.put(563797, new
+		 * ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_RT")); //back (done) to
+		 * exit, click to fire localizedUncommonKeyMap.put(720735, new
+		 * ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_RT")); //Hold
+		 * [XBoxB_Btn_RT] to charge weapon localizedUncommonKeyMap.put(720736,
+		 * new ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to
+		 * exit turret localizedUncommonKeyMap.put(720736, new
+		 * ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to exit
+		 * turret localizedUncommonKeyMap.put(720736, new
+		 * ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to exit
+		 * turret
+		 */
+		HashMap<Integer, Integer> pullFromOrigLang = new HashMap<>();
+		pullFromOrigLang.put(335363, 336943); //Fly between systems in galaxy view...
+		pullFromOrigLang.put(338524, 335435); //Press [XBoxB_Btn_B] to end the mission.
+		pullFromOrigLang.put(338636, 338634); //Select Singularity
+		pullFromOrigLang.put(338642, 338639); //Press [XBoxB_Btn_A] to use Singularity
+		pullFromOrigLang.put(338681, 338679); //Press [XBoxB_Btn_A] to use First Aid
+		pullFromOrigLang.put(338683, 338682); //Press [XBoxB_Btn_LS] to select Overload
+		pullFromOrigLang.put(338685, 338684); //Press [XBoxB_Btn_A] to use Overload
+		pullFromOrigLang.put(338689, 338688); //Press [XBoxB_Btn_A] to equip grenade launcher
+		pullFromOrigLang.put(339230, 309316); //[XBoxB_Btn_A] Pick up pistol
+		pullFromOrigLang.put(339231, 309384); //Enter cover you are facing
+		pullFromOrigLang.put(339232, 337416); //[XBoxB_Btn_B] Exit cover
+		pullFromOrigLang.put(339242, 333751); //Reload
+		pullFromOrigLang.put(339243, 309384); //duplicate
+		pullFromOrigLang.put(339245, 333754); //fire
+		pullFromOrigLang.put(339246, 309384); //duplicate
+		pullFromOrigLang.put(339247, 337421); //Hold .... to zoom
+		pullFromOrigLang.put(339251, 282501); //[XBoxB_Btn_A] Pick up grenade launcher
+		pullFromOrigLang.put(339252, 333755); //Hold [XBoxB_Btn_LB] to select grenade launcher
+		pullFromOrigLang.put(339278, 337421); //duplicate
+		pullFromOrigLang.put(339280, 288593); //storm through fire
+		pullFromOrigLang.put(339289, 337426); //Hold [XBoxB_Btn_X] to switch back to previous weapon
+		pullFromOrigLang.put(339293, 334793); //Hold... to access power wheel
+		pullFromOrigLang.put(339297, 334793); //power wheel dup
+		pullFromOrigLang.put(339298, 337427); //Wrong power: Press to open
+		pullFromOrigLang.put(339300, 334835); //[XBoxB_Btn_RB] Hold to access the Power Wheel and use Overload on the crates
+		pullFromOrigLang.put(339314, 242442); //Hold [XBoxB_Btn_RB] and use Overload on the drones
+		pullFromOrigLang.put(339315, 326670); //Hold [XBoxB_Btn_RB] and use Warp on the door
+		//pullFromOrigLang.put(339317,); //REQUIRES MANUAL: Use ([Shared_SquadMove1]) and ([Shared_SquadMove2]) to send your squadmates to waypoints
+		pullFromOrigLang.put(339319, 385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
+		pullFromOrigLang.put(339323, 245674); //[UI_XBoxB_Btn_RT] to perform a Renegade action (when shown on screen)
+		pullFromOrigLang.put(339706, 339709); //Use [XBoxB_Btn_A] to fire
+		pullFromOrigLang.put(341015, 341014); //Press [XBoxB_Btn_Start] and select "Squad" to upgrade powers
+		pullFromOrigLang.put(341022, 341021); //[XBoxB_Btn_R3] Display direction of current objective
+		pullFromOrigLang.put(341303, 341302); //[UI_XBoxB_Btn_LT] to perform a Paragon action (when shown on screen)
+		pullFromOrigLang.put(341337, 278987); //Hold [XBoxB_Btn_RB] to use First Aid to heal your squad
+		//pullFromOrigLang.put(341338,); //REQUIRES MANUAL ([Shared_Melee]) to melee attack
+		pullFromOrigLang.put(341341, 278984); //Hold [XBoxB_Btn_LT] to aim weapon
+		//pullFromOrigLang.put(341345,); //REQUIRES MANUAL ([PC_SwapWeapon]) Switch to another weapon
+		pullFromOrigLang.put(341347, 338677); //Press [XBoxB_Btn_Start] and select the Squad screen to spend points on powers
+		pullFromOrigLang.put(341392, 348631); //Accept
+		pullFromOrigLang.put(343066, 343065); //Press and hold [XBoxB_Btn_A] to recover something from the ground.
+		pullFromOrigLang.put(343068, 343067); //Press ([Shared_ShowMap]) to recover something on the ground.
+		pullFromOrigLang.put(343070, 343069); //Press [XBoxB_Btn_X] to speed boost.
+		pullFromOrigLang.put(344116, 343132); //Your journal updates mission objectives. Press [XBoxB_Btn_Start] to access your journal.
+		pullFromOrigLang.put(344118, 343141); //In danger? Hold [XBoxB_Btn_RB] to raise the Power Wheel. Unleashing powers on your enemies could save your life.
+		pullFromOrigLang.put(344119, 343143); //Hold [XBoxB_Btn_A] to sprint.
+		//pullFromOrigLang.put(344120,); //REQUIRES MANUAL Command squadmates to attack enemies and use powers by using ([Shared_SquadMove1]) or ([Shared_SquadMove2]).
+		pullFromOrigLang.put(344121, 343146); //The radar arrow points to your next objective. Hold [XBoxB_Btn_RB] to view the radar.
+		pullFromOrigLang.put(344122, 343147); //Instantly use mapped powers by pressing [XBoxB_Btn_LB], [XBoxB_Btn_RB], or [XBoxB_Btn_Y]. Change mapped powers by holding [XBoxB_Btn_RB].
+		pullFromOrigLang.put(344123, 343148); //Reload weapons frequently to avoid being unable to fire during combat. Press [XBoxB_Btn_X] to reload.
+		pullFromOrigLang.put(344124, 343149); //You can change your difficulty level at any time. Select [XBoxB_Btn_Start] to access the Options Menu.
+		pullFromOrigLang.put(344125, 337426); //Hold [XBoxB_Btn_X] to switch back to previous weapon THIS IS DIFFERENT FROM MOONSHINES A BIT (NO YOUR)
+		pullFromOrigLang.put(344126, 343157); //When you're in cover, climb low obstacles by holding [XBoxB_Btn_LS] forward and pressing [XBoxB_Btn_A]
+		pullFromOrigLang.put(344127, 343180); //When the "[UI_XBoxB_Btn_LT]" symbol displays during a conversation, press [UI_XBoxB_Btn_LT] to have Shepard take a heroic Paragon action.
+		pullFromOrigLang.put(344128, 343161); //Your radar reveals the locations of nearby enemies. Hold [XBoxB_Btn_RB] to view the radar.
+		pullFromOrigLang.put(344129, 343164); //In trouble? Use [XBoxB_Btn_LB] to bring up weapon wheel and find nearby cover.
+		pullFromOrigLang.put(344130, 343159); //When the "[UI_XBoxB_Btn_RT]" symbol is displayed in a conversation, press [UI_XBoxB_Btn_RT] to have Shepard make a bold Renegade move.
+		//pullFromOrigLang.put(344131,); //REQUIRES MANUAL To command your squadmates to approach a target, move them into place using ([Shared_SquadMove1]) or ([Shared_SquadMove2]).
+		pullFromOrigLang.put(344132, 343191); //Tap [XBoxB_Btn_B] for a melee attack against nearby enemies.
+		pullFromOrigLang.put(344133, 343198); //Fire some weapons more quickly by tapping [XBoxB_Btn_RT].
+		pullFromOrigLang.put(344134, 343203); //Access map kiosks in civilized areas for directions to important landmarks. If you're lost, press [XBoxB_Btn_R3] to bring up a navigational arrow.
+		pullFromOrigLang.put(344135, 343206); //Replaying a section? Jump through cut scenes by pressing [XBoxB_Btn_Start]. Skip lines in a conversation by pressing [XBoxB_Btn_X].
+		pullFromOrigLang.put(344136, 343209); //While you're in low cover, vault over it by holding [XBoxB_Btn_LS] forward and pressing [XBoxB_Btn_A].
+		pullFromOrigLang.put(345216, 345104); //[XBoxB_Btn_X] Thermal Clip
+		pullFromOrigLang.put(345715, 345730); //Press [XBoxB_Btn_A] to select code segments that match the target code-segment
+		pullFromOrigLang.put(345729, 345728); //Press [XBoxB_Btn_A] to select matching node
+		pullFromOrigLang.put(345731, 345730); //Press [XBoxB_Btn_A] to select code segments that match the target code-segment
+		pullFromOrigLang.put(345999, 346000); //Press to Show Map
+		pullFromOrigLang.put(346001, 346002);
+		pullFromOrigLang.put(346003, 346002);
+		pullFromOrigLang.put(346119, 346118);
+		pullFromOrigLang.put(346395, 346394);
+		pullFromOrigLang.put(349072, 351791);
+		pullFromOrigLang.put(349073, 351792);
+		pullFromOrigLang.put(349240, 351791);
+		pullFromOrigLang.put(349241, 351792);
+		pullFromOrigLang.put(349305, 351791); //Exit the Hammerhead
+		pullFromOrigLang.put(349306, 351792); //Enter the Hammerhead
+		pullFromOrigLang.put(349326, 351791);
+		pullFromOrigLang.put(349327, 351792);
+		pullFromOrigLang.put(349408, 351791);
+		pullFromOrigLang.put(349409, 351792);
+		pullFromOrigLang.put(349413, 345718);
+		pullFromOrigLang.put(349415, 351791);
+		pullFromOrigLang.put(349416, 351792);
+		pullFromOrigLang.put(349559, 351791);
+		pullFromOrigLang.put(349560, 351792);
+		pullFromOrigLang.put(349583, 343177);
+		pullFromOrigLang.put(349596, 348565);
+		pullFromOrigLang.put(349607, 349605); //Hold [XBoxB_Btn_RB] to use an ammo power
+		pullFromOrigLang.put(351463, 350937); //Press [XBoxB_Btn_A] to jump
+		pullFromOrigLang.put(351464, 288593); //Storm through the fire
+		pullFromOrigLang.put(369236, 385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
+		pullFromOrigLang.put(385606, 385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
+		pullFromOrigLang.put(385610, 385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
+		pullFromOrigLang.put(385612, 385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
+		pullFromOrigLang.put(385614, 385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
+		pullFromOrigLang.put(385616, 385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
+		pullFromOrigLang.put(385618, 385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
+		pullFromOrigLang.put(388894, 388893); //[XBoxB_Btn_R3] Press to Show Map -- FLERPY EDITS BEGIN HERE
+		pullFromOrigLang.put(388896, 388895); //[XBoxB_Btn_R3] Press to Show Map
+		pullFromOrigLang.put(502401, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(502402, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(507525, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(507526, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(507527, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(507528, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(507577, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(507578, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(552671, 552672); //Press [XBoxB_Btn_LT] to focus on point of interest
+		pullFromOrigLang.put(554184, 554257); //Press [XBoxB_Btn_DPadL] and [XBoxB_Btn_DPadR] to order squad to move or attack
+		pullFromOrigLang.put(554185, 554272); //Press [XBoxB_Btn_A] to take cover
+		pullFromOrigLang.put(554190, 543205); //Hold [XBoxB_Btn_LSUp] and then [XBoxB_Btn_A] to sprint out of cover
+		pullFromOrigLang.put(554205, 554272); //Press [XBoxB_Btn_A] to take cover
+		pullFromOrigLang.put(554215, 554216); //[XBoxB_Btn_A] Take cover
+		pullFromOrigLang.put(554219, 543206); //Hold [XBoxB_Btn_LS] and press [XBoxB_Btn_A] to jump to near cover
+		pullFromOrigLang.put(554220, 543207); //Hold [XBoxB_Btn_LS] and press [XBoxB_Btn_A] to turn corner
+		pullFromOrigLang.put(554253, 554254); //[XBoxB_Btn_B] Break free
+		pullFromOrigLang.put(554255, 554256); //Hold [XBoxB_Btn_LB] to swap to the sniper rifle
+		pullFromOrigLang.put(554274, 554268); //Hold [XBoxB_Btn_B] to melee from cover
+		pullFromOrigLang.put(555170, 338638); //Hold [XBoxB_Btn_LB] to switch weapons
+		pullFromOrigLang.put(555172, 558124); //Hold [XBoxB_Btn_RB] to use powers
+		pullFromOrigLang.put(555174, 334793); //Hold [XBoxB_Btn_RB] to display power wheel
+		pullFromOrigLang.put(555204, 555200); //Hold [XBoxB_Btn_LSLeft] and press [XBoxB_Btn_A] to roll to next cover
+		pullFromOrigLang.put(555205, 555201); //Move to the edge and press [XBoxB_Btn_L3] to slide around the corner
+		pullFromOrigLang.put(555263, 555262); //Hold [XBoxB_Btn_B] to quick-kill from cover
+		pullFromOrigLang.put(558663, 558662); //Press [XBoxB_Btn_X] to swap to heavy pistol
+		pullFromOrigLang.put(558665, 558664); //Press [XBoxB_Btn_X] to swap to assault rifle
+		pullFromOrigLang.put(562469, 562470); //Press [XBoxB_Btn_Start] and select Squad to level up
+		pullFromOrigLang.put(562474, 562473); //Hold [XBoxB_Btn_A] to sprint
+		pullFromOrigLang.put(562479, 562478); //Hold [XBoxB_Btn_LS] and press [XBoxB_Btn_A] to evade roll
+		pullFromOrigLang.put(562481, 562480); //Hold [XBoxB_Btn_X] to swap weapons
+		pullFromOrigLang.put(562483, 562482); //Hold [XBoxB_Btn_LS] and press [XBoxB_Btn_A] to vault over low cover
+		pullFromOrigLang.put(563797, 563796); //Press [XBoxB_Btn_LSDown] to exit turret and [XBoxB_Btn_RT] to fire
+		//pullFromOrigLang.put(571131,); REQUIRES MANUAL: To sneak-melee an enemy walk behind it and press and hold [XBoxB_Btn_B]
+		//pullFromOrigLang.put(571132,); REQUIRES MANUAL: To sneak-melee an enemy walk behind it and press and hold [XBoxB_Btn_B]
+		pullFromOrigLang.put(604097, 604098); //Press [XBoxB_Btn_B] rapidly to escape
+		pullFromOrigLang.put(618884, 618885); //You are now in spectator mode. Use [XBoxB_Btn_LB] and [XBoxB_Btn_RB] to cycle through teammates
+		pullFromOrigLang.put(619366, 619367); //You are now in flycam mode. Use [XBoxB_Btn_LB] or [XBoxB_Btn_RB] to return to spectator mode
+		pullFromOrigLang.put(675661, 552673); //Hold [XBoxB_Btn_A] to run
+		pullFromOrigLang.put(675662, 552674); //Hold or press [XBoxB_Btn_A] to leap across
+		pullFromOrigLang.put(675841, 552664); //Hold [XBoxB_Btn_LSUp] and press [XBoxB_Btn_A] to climb up from cover
+		pullFromOrigLang.put(675847, 501296); //Hold [XBoxB_Btn_LT] to aim and press [XBoxB_Btn_RT] to fire
+		pullFromOrigLang.put(675848, 369315); //Press [XBoxB_Btn_B] to melee
+		pullFromOrigLang.put(675849, 553098); //Hold [XBoxB_Btn_B] to heavy melee
+		pullFromOrigLang.put(675850, 209098); //Press [XBoxB_Btn_X] to reload
+		//pullFromOrigLang.put(675852,675851); REQUIRES MANUAL: String matches but is on multiple lines //Hold [XBoxB_Btn_LT] to pop up from cover and click [XBoxB_Btn_RT] to fire
+		pullFromOrigLang.put(696668, 696667); //Press [XBoxB_Btn_R3] to display objectives
+		pullFromOrigLang.put(705044, 705039); //Press [XBoxB_Btn_A] to activate
+		pullFromOrigLang.put(705045, 705040); //Press [XBoxB_Btn_A] to revive
+		pullFromOrigLang.put(705046, 562480); //Press [XBoxB_Btn_X] to swap weapons
+		pullFromOrigLang.put(705047, 705042); //Mash [XBoxB_Btn_A] to extend your life!
+		pullFromOrigLang.put(705561, 705037); //Press [XBoxB_Btn_DPadD] to use a medi-gel to revive yourself
+		pullFromOrigLang.put(705562, 705038); //Press [XBoxB_Btn_DPadL] to spend an ammo pack to resupply your ammo
+		pullFromOrigLang.put(706260, 670436); //Hold [XBoxB_Btn_LB] to select any weapon
+		pullFromOrigLang.put(718564, 670181); //Double-tap [XBoxB_Btn_A] while walking toward low cover to quick climb --FLERPY EDITS END HERE
+		//pullFromOrigLang.put(719838,); //REQUIRES TRANSLATION (By order of alliance command... press a then start
+		pullFromOrigLang.put(720735, 720733); //Hold [XBoxB_Btn_RT] to charge weapon
+		pullFromOrigLang.put(720736, 720734); //Move [XBoxB_Btn_LSDown] to exit turret
+		pullFromOrigLang.put(721051, 719733); //The Mission Computer is the in-game menu.
+		//pullFromOrigLang.put(721561,); //REQUIRES MANUAL Press ([Shared_SquadMove1]) or ([Shared_SquadMove2]) to order a squadmate to attack, move to cover, or take a position.
+		//pullFromOrigLang.put(721562,); //requies manual
+		//pullFromOrigLang.put(721563,); //reuise manual
+		//pullFromOrigLang.put(721564,); //reuies manual
+		//pullFromOrigLang.put(722042,); //can ignore
+		pullFromOrigLang.put(722220, 722219); //Press [XBoxB_Btn_R3] to access the map while playing.
+		pullFromOrigLang.put(722318, 722319); //Move by using [XBoxB_Btn_LS].
+		pullFromOrigLang.put(722320, 722321); //Move [XBoxB_Btn_RS] to look around
+		pullFromOrigLang.put(722322, 722323); //To run, press and hold [XBoxB_Btn_A] while moving forward.
+		pullFromOrigLang.put(722324, 722325); //To fire a weapon, press [XBoxB_Btn_RT]. To reload, press [XBoxB_Btn_X].
+		pullFromOrigLang.put(722326, 722327); //To dodge attacks and projectiles or to get out of cover quickly, move using [XBoxB_Btn_LS] and press [XBoxB_Btn_A].
+		pullFromOrigLang.put(722328, 722329); //To perform a basic melee attack,
+		pullFromOrigLang.put(722331, 722330); //Switch to the previous weapon held by pressing and holding [XBoxB_Btn_X].
+		pullFromOrigLang.put(722332, 722333); //To bring up the Weapon Menu, press and hold
+		pullFromOrigLang.put(722334, 722335); //To bring up the Power Wheel, press and hold
+		pullFromOrigLang.put(722371, 722372); //powers can be mapped...
+		//pullFromOrigLang.put(722373,); REQUIRES MANUAL Point your targeting reticle and press [XBoxB_Btn_DPadL] or [XBoxB_Btn_DPadR] to order a squadmate to a position.
+		//pullFromOrigLang.put(722374,); //REQUIERS MANUAL Point the targeting reticle behind a cover position and press ([Shared_SquadMove1]) or ([Shared_SquadMove2]) to order a squadmate to take cover.
+		//pullFromOrigLang.put(722375,); //REQUIRES TRANSLATION - To Point the targeting reticle at an enemy and press [XBoxB_Btn_DPadL] or [XBoxB_Btn_DPadR] to order a squadmate to attack the target with their respective default power. Any squadmate powers mapped to [XBoxB_Btn_DPadL] and [XBoxB_Btn_DPadR] work the same way. 
 
-		localizedUncommonKeyMap.put(345715, new ReplacementNode("Mouse_Btn_R", "XBoxB_Btn_LT")); //code segments (might be unused
-		localizedUncommonKeyMap.put(563797, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_RT")); //back (done) to exit, click to fire
-		localizedUncommonKeyMap.put(720735, new ReplacementNode("Mouse_Btn_L", "XBoxB_Btn_RT")); //Hold [XBoxB_Btn_RT] to charge weapon
-		localizedUncommonKeyMap.put(720736, new ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to exit turret
-		localizedUncommonKeyMap.put(720736, new ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to exit turret
-		localizedUncommonKeyMap.put(720736, new ReplacementNode("Mouse_Btn_L", "XboxB_Btn_B")); //press back to exit turret
-*/
-        HashMap<Integer, Integer> pullFromOrigLang = new HashMap<>();
-        pullFromOrigLang.put(335363, 336943); //Fly between systems in galaxy view...
-        pullFromOrigLang.put(338524, 335435); //Press [XBoxB_Btn_B] to end the mission.
-        pullFromOrigLang.put(338636,338634); //Select Singularity
-        pullFromOrigLang.put(338642,338639); //Press [XBoxB_Btn_A] to use Singularity
-        pullFromOrigLang.put(338681,338679); //Press [XBoxB_Btn_A] to use First Aid
-        pullFromOrigLang.put(338683,338682); //Press [XBoxB_Btn_LS] to select Overload
-        pullFromOrigLang.put(338685,338684); //Press [XBoxB_Btn_A] to use Overload
-        pullFromOrigLang.put(338689,338688); //Press [XBoxB_Btn_A] to equip grenade launcher
-        pullFromOrigLang.put(339230,309316); //[XBoxB_Btn_A] Pick up pistol
-        pullFromOrigLang.put(339231,309384); //Enter cover you are facing
-        pullFromOrigLang.put(339232,337416); //[XBoxB_Btn_B] Exit cover
-        pullFromOrigLang.put(339242,333751); //Reload
-        pullFromOrigLang.put(339243,309384); //duplicate
-        pullFromOrigLang.put(339245,333754); //fire
-        pullFromOrigLang.put(339246,309384); //duplicate
-        pullFromOrigLang.put(339247,337421); //Hold .... to zoom
-        pullFromOrigLang.put(339251,282501); //[XBoxB_Btn_A] Pick up grenade launcher
-        pullFromOrigLang.put(339252,333755); //Hold [XBoxB_Btn_LB] to select grenade launcher
-        pullFromOrigLang.put(339278,337421); //duplicate
-        pullFromOrigLang.put(339280,288593); //storm through fire
-        pullFromOrigLang.put(339289,337426); //Hold [XBoxB_Btn_X] to switch back to previous weapon
-        pullFromOrigLang.put(339293,334793); //Hold... to access power wheel
-        pullFromOrigLang.put(339297,334793); //power wheel dup
-        pullFromOrigLang.put(339298,337427); //Wrong power: Press to open
-        pullFromOrigLang.put(339300,334835); //[XBoxB_Btn_RB] Hold to access the Power Wheel and use Overload on the crates
-        pullFromOrigLang.put(339314,242442); //Hold [XBoxB_Btn_RB] and use Overload on the drones
-        pullFromOrigLang.put(339315,326670); //Hold [XBoxB_Btn_RB] and use Warp on the door
-        //pullFromOrigLang.put(339317,); //REQUIRES MANUAL: Use ([Shared_SquadMove1]) and ([Shared_SquadMove2]) to send your squadmates to waypoints
-        pullFromOrigLang.put(339319,385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
-        pullFromOrigLang.put(339323,245674); //[UI_XBoxB_Btn_RT] to perform a Renegade action (when shown on screen)
-        pullFromOrigLang.put(339706,339709); //Use [XBoxB_Btn_A] to fire
-        pullFromOrigLang.put(341015,341014); //Press [XBoxB_Btn_Start] and select "Squad" to upgrade powers
-        pullFromOrigLang.put(341022,341021); //[XBoxB_Btn_R3] Display direction of current objective
-        pullFromOrigLang.put(341303,341302); //[UI_XBoxB_Btn_LT] to perform a Paragon action (when shown on screen)
-        pullFromOrigLang.put(341337,278987); //Hold [XBoxB_Btn_RB] to use First Aid to heal your squad
-        //pullFromOrigLang.put(341338,); //REQUIRES MANUAL ([Shared_Melee]) to melee attack
-        pullFromOrigLang.put(341341,278984); //Hold [XBoxB_Btn_LT] to aim weapon
-        //pullFromOrigLang.put(341345,); //REQUIRES MANUAL ([PC_SwapWeapon]) Switch to another weapon
-        pullFromOrigLang.put(341347,338677); //Press [XBoxB_Btn_Start] and select the Squad screen to spend points on powers
-        pullFromOrigLang.put(341392,348631); //Accept
-        pullFromOrigLang.put(343066,343065); //Press and hold [XBoxB_Btn_A] to recover something from the ground.
-        pullFromOrigLang.put(343068,343067); //Press ([Shared_ShowMap]) to recover something on the ground.
-        pullFromOrigLang.put(343070,343069); //Press [XBoxB_Btn_X] to speed boost.
-        pullFromOrigLang.put(344116,343132); //Your journal updates mission objectives. Press [XBoxB_Btn_Start] to access your journal.
-        pullFromOrigLang.put(344118,343141); //In danger? Hold [XBoxB_Btn_RB] to raise the Power Wheel. Unleashing powers on your enemies could save your life.
-        pullFromOrigLang.put(344119,343143); //Hold [XBoxB_Btn_A] to sprint.
-        //pullFromOrigLang.put(344120,); //REQUIRES MANUAL Command squadmates to attack enemies and use powers by using ([Shared_SquadMove1]) or ([Shared_SquadMove2]).
-        pullFromOrigLang.put(344121,343146); //The radar arrow points to your next objective. Hold [XBoxB_Btn_RB] to view the radar.
-        pullFromOrigLang.put(344122,343147); //Instantly use mapped powers by pressing [XBoxB_Btn_LB], [XBoxB_Btn_RB], or [XBoxB_Btn_Y]. Change mapped powers by holding [XBoxB_Btn_RB].
-        pullFromOrigLang.put(344123,343148); //Reload weapons frequently to avoid being unable to fire during combat. Press [XBoxB_Btn_X] to reload.
-        pullFromOrigLang.put(344124,343149); //You can change your difficulty level at any time. Select [XBoxB_Btn_Start] to access the Options Menu.
-        pullFromOrigLang.put(344125,337426); //Hold [XBoxB_Btn_X] to switch back to previous weapon THIS IS DIFFERENT FROM MOONSHINES A BIT (NO YOUR)
-        pullFromOrigLang.put(344126,343157); //When you're in cover, climb low obstacles by holding [XBoxB_Btn_LS] forward and pressing [XBoxB_Btn_A]
-        pullFromOrigLang.put(344127,343180); //When the "[UI_XBoxB_Btn_LT]" symbol displays during a conversation, press [UI_XBoxB_Btn_LT] to have Shepard take a heroic Paragon action.
-        pullFromOrigLang.put(344128,343161); //Your radar reveals the locations of nearby enemies. Hold [XBoxB_Btn_RB] to view the radar.
-        pullFromOrigLang.put(344129,343164); //In trouble? Use [XBoxB_Btn_LB] to bring up weapon wheel and find nearby cover.
-        pullFromOrigLang.put(344130,343159); //When the "[UI_XBoxB_Btn_RT]" symbol is displayed in a conversation, press [UI_XBoxB_Btn_RT] to have Shepard make a bold Renegade move.
-        //pullFromOrigLang.put(344131,); //REQUIRES MANUAL To command your squadmates to approach a target, move them into place using ([Shared_SquadMove1]) or ([Shared_SquadMove2]).
-        pullFromOrigLang.put(344132,343191); //Tap [XBoxB_Btn_B] for a melee attack against nearby enemies.
-        pullFromOrigLang.put(344133,343198); //Fire some weapons more quickly by tapping [XBoxB_Btn_RT].
-        pullFromOrigLang.put(344134,343203); //Access map kiosks in civilized areas for directions to important landmarks. If you're lost, press [XBoxB_Btn_R3] to bring up a navigational arrow.
-        pullFromOrigLang.put(344135,343206); //Replaying a section? Jump through cut scenes by pressing [XBoxB_Btn_Start]. Skip lines in a conversation by pressing [XBoxB_Btn_X].
-        pullFromOrigLang.put(344136,343209); //While you're in low cover, vault over it by holding [XBoxB_Btn_LS] forward and pressing [XBoxB_Btn_A].
-        pullFromOrigLang.put(345216,345104); //[XBoxB_Btn_X] Thermal Clip
-        pullFromOrigLang.put(345715,345730); //Press [XBoxB_Btn_A] to select code segments that match the target code-segment
-        pullFromOrigLang.put(345729,345728); //Press [XBoxB_Btn_A] to select matching node
-        pullFromOrigLang.put(345731,345730); //Press [XBoxB_Btn_A] to select code segments that match the target code-segment
-        pullFromOrigLang.put(345999,346000); //Press to Show Map
-        pullFromOrigLang.put(346001,346002);
-        pullFromOrigLang.put(346003,346002);
-        pullFromOrigLang.put(346119,346118);
-        pullFromOrigLang.put(346395,346394);
-        pullFromOrigLang.put(349072,351791);
-        pullFromOrigLang.put(349073,351792);
-        pullFromOrigLang.put(349240,351791);
-        pullFromOrigLang.put(349241,351792);
-        pullFromOrigLang.put(349305,351791); //Exit the Hammerhead
-        pullFromOrigLang.put(349306,351792); //Enter the Hammerhead
-        pullFromOrigLang.put(349326,351791);
-        pullFromOrigLang.put(349327,351792);
-        pullFromOrigLang.put(349408,351791);
-        pullFromOrigLang.put(349409,351792);
-        pullFromOrigLang.put(349413,345718);
-        pullFromOrigLang.put(349415,351791);
-        pullFromOrigLang.put(349416,351792);
-        pullFromOrigLang.put(349559,351791);
-        pullFromOrigLang.put(349560,351792);
-        pullFromOrigLang.put(349583,343177);
-        pullFromOrigLang.put(349596,348565);
-        pullFromOrigLang.put(349607,349605); //Hold [XBoxB_Btn_RB] to use an ammo power
-        pullFromOrigLang.put(351463,350937); //Press [XBoxB_Btn_A] to jump
-        pullFromOrigLang.put(351464,288593); //Storm through the fire
-        pullFromOrigLang.put(369236,385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
-        pullFromOrigLang.put(385606,385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
-        pullFromOrigLang.put(385610,385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
-        pullFromOrigLang.put(385612,385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
-        pullFromOrigLang.put(385614,385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
-        pullFromOrigLang.put(385616,385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
-        pullFromOrigLang.put(385618,385605); //Hold [XBoxB_Btn_RB] and use Warp on the mech
-        pullFromOrigLang.put(388894,388893); //[XBoxB_Btn_R3] Press to Show Map -- FLERPY EDITS BEGIN HERE
-        pullFromOrigLang.put(388896,388895); //[XBoxB_Btn_R3] Press to Show Map
-        pullFromOrigLang.put(502401,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(502402,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(507525,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(507526,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(507527,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(507528,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(507577,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(507578,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(552671,552672); //Press [XBoxB_Btn_LT] to focus on point of interest
-        pullFromOrigLang.put(554184,554257); //Press [XBoxB_Btn_DPadL] and [XBoxB_Btn_DPadR] to order squad to move or attack
-        pullFromOrigLang.put(554185,554272); //Press [XBoxB_Btn_A] to take cover
-        pullFromOrigLang.put(554190,543205); //Hold [XBoxB_Btn_LSUp] and then [XBoxB_Btn_A] to sprint out of cover
-        pullFromOrigLang.put(554205,554272); //Press [XBoxB_Btn_A] to take cover
-        pullFromOrigLang.put(554215,554216); //[XBoxB_Btn_A] Take cover
-        pullFromOrigLang.put(554219,543206); //Hold [XBoxB_Btn_LS] and press [XBoxB_Btn_A] to jump to near cover
-        pullFromOrigLang.put(554220,543207); //Hold [XBoxB_Btn_LS] and press [XBoxB_Btn_A] to turn corner
-        pullFromOrigLang.put(554253,554254); //[XBoxB_Btn_B] Break free
-        pullFromOrigLang.put(554255,554256); //Hold [XBoxB_Btn_LB] to swap to the sniper rifle
-        pullFromOrigLang.put(554274,554268); //Hold [XBoxB_Btn_B] to melee from cover
-        pullFromOrigLang.put(555170,338638); //Hold [XBoxB_Btn_LB] to switch weapons
-        pullFromOrigLang.put(555172,558124); //Hold [XBoxB_Btn_RB] to use powers
-        pullFromOrigLang.put(555174,334793); //Hold [XBoxB_Btn_RB] to display power wheel
-        pullFromOrigLang.put(555204,555200); //Hold [XBoxB_Btn_LSLeft] and press [XBoxB_Btn_A] to roll to next cover
-        pullFromOrigLang.put(555205,555201); //Move to the edge and press [XBoxB_Btn_L3] to slide around the corner
-        pullFromOrigLang.put(555263,555262); //Hold [XBoxB_Btn_B] to quick-kill from cover
-        pullFromOrigLang.put(558663,558662); //Press [XBoxB_Btn_X] to swap to heavy pistol
-        pullFromOrigLang.put(558665,558664); //Press [XBoxB_Btn_X] to swap to assault rifle
-        pullFromOrigLang.put(562469,562470); //Press [XBoxB_Btn_Start] and select Squad to level up
-        pullFromOrigLang.put(562474,562473); //Hold [XBoxB_Btn_A] to sprint
-        pullFromOrigLang.put(562479,562478); //Hold [XBoxB_Btn_LS] and press [XBoxB_Btn_A] to evade roll
-        pullFromOrigLang.put(562481,562480); //Hold [XBoxB_Btn_X] to swap weapons
-        pullFromOrigLang.put(562483,562482); //Hold [XBoxB_Btn_LS] and press [XBoxB_Btn_A] to vault over low cover
-        pullFromOrigLang.put(563797,563796); //Press [XBoxB_Btn_LSDown] to exit turret and [XBoxB_Btn_RT] to fire
-        //pullFromOrigLang.put(571131,); REQUIRES MANUAL: To sneak-melee an enemy walk behind it and press and hold [XBoxB_Btn_B]
-        //pullFromOrigLang.put(571132,); REQUIRES MANUAL: To sneak-melee an enemy walk behind it and press and hold [XBoxB_Btn_B]
-        pullFromOrigLang.put(604097,604098); //Press [XBoxB_Btn_B] rapidly to escape
-        pullFromOrigLang.put(618884,618885); //You are now in spectator mode. Use [XBoxB_Btn_LB] and [XBoxB_Btn_RB] to cycle through teammates
-        pullFromOrigLang.put(619366,619367); //You are now in flycam mode. Use [XBoxB_Btn_LB] or [XBoxB_Btn_RB] to return to spectator mode
-        pullFromOrigLang.put(675661,552673); //Hold [XBoxB_Btn_A] to run
-        pullFromOrigLang.put(675662,552674); //Hold or press [XBoxB_Btn_A] to leap across
-        pullFromOrigLang.put(675841,552664); //Hold [XBoxB_Btn_LSUp] and press [XBoxB_Btn_A] to climb up from cover
-        pullFromOrigLang.put(675847,501296); //Hold [XBoxB_Btn_LT] to aim and press [XBoxB_Btn_RT] to fire
-        pullFromOrigLang.put(675848,369315); //Press [XBoxB_Btn_B] to melee
-        pullFromOrigLang.put(675849,553098); //Hold [XBoxB_Btn_B] to heavy melee
-        pullFromOrigLang.put(675850,209098); //Press [XBoxB_Btn_X] to reload
-        //pullFromOrigLang.put(675852,675851); REQUIRES MANUAL: String matches but is on multiple lines //Hold [XBoxB_Btn_LT] to pop up from cover and click [XBoxB_Btn_RT] to fire
-        pullFromOrigLang.put(696668,696667); //Press [XBoxB_Btn_R3] to display objectives
-        pullFromOrigLang.put(705044,705039); //Press [XBoxB_Btn_A] to activate
-        pullFromOrigLang.put(705045,705040); //Press [XBoxB_Btn_A] to revive
-        pullFromOrigLang.put(705046,562480); //Press [XBoxB_Btn_X] to swap weapons
-        pullFromOrigLang.put(705047,705042); //Mash [XBoxB_Btn_A] to extend your life!
-        pullFromOrigLang.put(705561,705037); //Press [XBoxB_Btn_DPadD] to use a medi-gel to revive yourself
-        pullFromOrigLang.put(705562,705038); //Press [XBoxB_Btn_DPadL] to spend an ammo pack to resupply your ammo
-        pullFromOrigLang.put(706260,670436); //Hold [XBoxB_Btn_LB] to select any weapon
-        pullFromOrigLang.put(718564,670181); //Double-tap [XBoxB_Btn_A] while walking toward low cover to quick climb --FLERPY EDITS END HERE
-        //pullFromOrigLang.put(719838,); //REQUIRES TRANSLATION (By order of alliance command... press a then start
-        pullFromOrigLang.put(720735,720733); //Hold [XBoxB_Btn_RT] to charge weapon
-        pullFromOrigLang.put(720736,720734); //Move [XBoxB_Btn_LSDown] to exit turret
-        pullFromOrigLang.put(721051,719733); //The Mission Computer is the in-game menu.
-        //pullFromOrigLang.put(721561,); //REQUIRES MANUAL Press ([Shared_SquadMove1]) or ([Shared_SquadMove2]) to order a squadmate to attack, move to cover, or take a position.
-        //pullFromOrigLang.put(721562,); //requies manual
-        //pullFromOrigLang.put(721563,); //reuise manual
-        //pullFromOrigLang.put(721564,); //reuies manual
-        //pullFromOrigLang.put(722042,); //can ignore
-        pullFromOrigLang.put(722220,722219); //Press [XBoxB_Btn_R3] to access the map while playing.
-        pullFromOrigLang.put(722318,722319); //Move by using [XBoxB_Btn_LS].
-        pullFromOrigLang.put(722320,722321); //Move [XBoxB_Btn_RS] to look around
-        pullFromOrigLang.put(722322,722323); //To run, press and hold [XBoxB_Btn_A] while moving forward.
-        pullFromOrigLang.put(722324,722325); //To fire a weapon, press [XBoxB_Btn_RT]. To reload, press [XBoxB_Btn_X].
-        pullFromOrigLang.put(722326,722327); //To dodge attacks and projectiles or to get out of cover quickly, move using [XBoxB_Btn_LS] and press [XBoxB_Btn_A].
-        pullFromOrigLang.put(722328,722329); //To perform a basic melee attack,
-        pullFromOrigLang.put(722331,722330); //Switch to the previous weapon held by pressing and holding [XBoxB_Btn_X].
-        pullFromOrigLang.put(722332,722333); //To bring up the Weapon Menu, press and hold
-        pullFromOrigLang.put(722334,722335); //To bring up the Power Wheel, press and hold
-        pullFromOrigLang.put(722371,722372); //powers can be mapped...
-        //pullFromOrigLang.put(722373,); REQUIRES MANUAL Point your targeting reticle and press [XBoxB_Btn_DPadL] or [XBoxB_Btn_DPadR] to order a squadmate to a position.
-        //pullFromOrigLang.put(722374,); //REQUIERS MANUAL Point the targeting reticle behind a cover position and press ([Shared_SquadMove1]) or ([Shared_SquadMove2]) to order a squadmate to take cover.
-        //pullFromOrigLang.put(722375,); //REQUIRES TRANSLATION - To Point the targeting reticle at an enemy and press [XBoxB_Btn_DPadL] or [XBoxB_Btn_DPadR] to order a squadmate to attack the target with their respective default power. Any squadmate powers mapped to [XBoxB_Btn_DPadL] and [XBoxB_Btn_DPadR] work the same way. 
+		//$722837
+		//pullFromOrigLang.put(722376,); //REQUIRES MANUAL Point the targeting reticle at an enemy and press ([Shared_SquadAttack]) to order both squadmates to open fire on the opponent.
+		//pullFromOrigLang.put(722377,); //REQUIRES MANUAL Press ([Shared_SquadFollow]) to rally squadmates to your current position.
+		pullFromOrigLang.put(722398, 722397); //1. Take cover by pressing [XBoxB_Btn_A] 
+		pullFromOrigLang.put(722401, 722402); //Move from one cover spot to adjacent cover on
+		pullFromOrigLang.put(722403, 722404); //Round a corner in cover by standing at
+		pullFromOrigLang.put(722405, 722406); //Vault over low cover by holding [XBoxB_Btn_LSUp] and pressing [XBoxB_Btn_A]. 
+		pullFromOrigLang.put(722407, 722408); //Storm forward out of cover by holding [XBoxB_Btn_LSUp]
+		pullFromOrigLang.put(722409, 722410); //Instantly kill enemies standing on the other side of a shared piece of low cover by moving across from them and pressing and holding [XBoxB_Btn_B]
+		pullFromOrigLang.put(722411, 722412); //Attack enemies around the edges of cover by standing at the edge and pressing [XBoxB_Btn_B].
+		pullFromOrigLang.put(722413, 722414); //Pop out of cover to fire accurately by 
+		pullFromOrigLang.put(722415, 722416); //Fire over cover without standing up by pressing [XBoxB_Btn_RT].
+		pullFromOrigLang.put(722585, 722586); //Fly between systems in galaxy view...
+		pullFromOrigLang.put(722610, 722611); //Fly the Normandy across a system...
+		pullFromOrigLang.put(722615, 722616); //Fly the Normandy through a cluster with 
+		pullFromOrigLang.put(722617, 722618); //Mass relays are used as the 
+		pullFromOrigLang.put(722622, 722623); //Press [UI_XBoxB_Btn_LT] to use
+		pullFromOrigLang.put(723517, 723516); //Press [XBoxB_Btn_B] to exit Atlas
+		pullFromOrigLang.put(724281, 724283); //Hold [XBoxB_Btn_LSLeft] to move into position
+		pullFromOrigLang.put(724282, 724280); //Hold [XBoxB_Btn_LSRight] to move into position
+		pullFromOrigLang.put(724629, 724630); //Hold [XBoxB_Btn_LT] to accurately aim your weapon.
+		pullFromOrigLang.put(724748, 724568); //Press [Console_NavAssistanceOrCoverTurn] to show Udina's location on the map
+		pullFromOrigLang.put(724947, 724946); //The current number of supplies you are carrying 
+		pullFromOrigLang.put(813911, 813910); //-Move the [XBoxB_Btn_LS] to operate the claw...
+		pullFromOrigLang.put(814588, 814589); //place a bet
+		pullFromOrigLang.put(813590, 813589); //Use the stick to target...
+		//pullFromOrigLang.put(786429,); REQUIRES MANUAL - PRESS Q TO DISTRACT SELECTED GUARD
+		pullFromOrigLang.put(817553, 813055);
+		pullFromOrigLang.put(817554, 813055);
+		pullFromOrigLang.put(817555, 813051);
+		pullFromOrigLang.put(817556, 813051);
 
-//$722837
-        //pullFromOrigLang.put(722376,); //REQUIRES MANUAL Point the targeting reticle at an enemy and press ([Shared_SquadAttack]) to order both squadmates to open fire on the opponent.
-        //pullFromOrigLang.put(722377,); //REQUIRES MANUAL Press ([Shared_SquadFollow]) to rally squadmates to your current position.
-        pullFromOrigLang.put(722398,722397); //1. Take cover by pressing [XBoxB_Btn_A] 
-        pullFromOrigLang.put(722401,722402); //Move from one cover spot to adjacent cover on
-        pullFromOrigLang.put(722403,722404); //Round a corner in cover by standing at
-        pullFromOrigLang.put(722405,722406); //Vault over low cover by holding [XBoxB_Btn_LSUp] and pressing [XBoxB_Btn_A]. 
-        pullFromOrigLang.put(722407,722408); //Storm forward out of cover by holding [XBoxB_Btn_LSUp]
-        pullFromOrigLang.put(722409,722410); //Instantly kill enemies standing on the other side of a shared piece of low cover by moving across from them and pressing and holding [XBoxB_Btn_B]
-        pullFromOrigLang.put(722411,722412); //Attack enemies around the edges of cover by standing at the edge and pressing [XBoxB_Btn_B].
-        pullFromOrigLang.put(722413,722414); //Pop out of cover to fire accurately by 
-        pullFromOrigLang.put(722415,722416); //Fire over cover without standing up by pressing [XBoxB_Btn_RT].
-        pullFromOrigLang.put(722585,722586); //Fly between systems in galaxy view...
-        pullFromOrigLang.put(722610,722611); //Fly the Normandy across a system...
-        pullFromOrigLang.put(722615,722616); //Fly the Normandy through a cluster with 
-        pullFromOrigLang.put(722617,722618); //Mass relays are used as the 
-        pullFromOrigLang.put(722622,722623); //Press [UI_XBoxB_Btn_LT] to use
-        pullFromOrigLang.put(723517,723516); //Press [XBoxB_Btn_B] to exit Atlas
-        pullFromOrigLang.put(724281,724283); //Hold [XBoxB_Btn_LSLeft] to move into position
-        pullFromOrigLang.put(724282,724280); //Hold [XBoxB_Btn_LSRight] to move into position
-        pullFromOrigLang.put(724629,724630); //Hold [XBoxB_Btn_LT] to accurately aim your weapon.
-        pullFromOrigLang.put(724748,724568); //Press [Console_NavAssistanceOrCoverTurn] to show Udina's location on the map
-        pullFromOrigLang.put(724947,724946); //The current number of supplies you are carrying 
-        pullFromOrigLang.put(813911,813910); //-Move the [XBoxB_Btn_LS] to operate the claw...
-        pullFromOrigLang.put(814588,814589); //place a bet
-        pullFromOrigLang.put(813590,813589); //Use the stick to target...
-        //pullFromOrigLang.put(786429,); REQUIRES MANUAL - PRESS Q TO DISTRACT SELECTED GUARD
-        pullFromOrigLang.put(817553,813055);
-        pullFromOrigLang.put(817554,813055);
-        pullFromOrigLang.put(817555,813051);
-        pullFromOrigLang.put(817556,813051);
-		
 		XPathFactory factory = XPathFactory.newInstance();
 		XPath xpath = factory.newXPath();
 
-		File dir = new File("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk");
-		FileFilter fileFilter = new WildcardFileFilter("diffs_nonintidiff_*.xml");
+		//get list of diffs to operate on.
+		File dir = new File("C:\\Users\\mjperez\\Desktop\\GD\\diffs");
+		FileFilter fileFilter = new WildcardFileFilter("diff_*.xml");
 		File[] files = dir.listFiles(fileFilter);
 
-		String originalTlkDir = "E:\\Google Drive\\SP Controller Support\\TLK\\original_tlk\\";
-		String prefixCitPath = "E:\\Google Drive\\SP Controller Support\\TLK\\dlc_tlk\\DLC_EXP_Pack003_";
-		for (File f : files) {			
+		String originalTlkDir = "C:\\Users\\mjperez\\Desktop\\GD\\tankmaster_original_tlk\\"; //tankmaster
+		String prefixCitPath = "C:\\Users\\mjperez\\Desktop\\GD\\dlc_tlk\\DLC_EXP_Pack003_"; //tankmaster
+		for (File f : files) {
 			String inputFile = f.getAbsolutePath();
 			String lang = FilenameUtils.getBaseName(inputFile);
-			lang = lang.substring(lang.length()-3, lang.length());
-			
+			lang = lang.substring(lang.length() - 3, lang.length());
+
 			File folder = new File(f.getParent() + "\\DLC_CON_XBX_" + lang.toUpperCase() + "\\");
 			folder.mkdirs();
-			String savename = f.getParent() + "\\DLC_CON_XBX_" + lang.toUpperCase()+"\\DLC_CON_XBX_" + lang.toUpperCase() + "0.xml";
+			String savename = f.getParent() + "\\DLC_CON_XBX_" + lang.toUpperCase() + "\\DLC_CON_XBX_" + lang.toUpperCase() + "0.xml";
 			System.out.println("Performing replacement scan: " + savename);
 			Document origDoc = dbFactory.newDocumentBuilder().parse("file:///" + inputFile);
 			origDoc.getDocumentElement().normalize();
 
-			//ME2/ME3 TOOL
-			Document basegameTlk = dbFactory.newDocumentBuilder().parse("file:///" + originalTlkDir + "bg_"+lang+".xml");
-			basegameTlk.getDocumentElement().normalize();
-			
 			//TANKMASTER
-			Document citTlk = dbFactory.newDocumentBuilder().parse("file:///" + prefixCitPath + lang +"/DLC_EXP_Pack003_"+lang+"1.xml");
+			Document basegameTlk = dbFactory.newDocumentBuilder().parse("file:///" + originalTlkDir + "tankmaster_base_" + lang + ".xml");
+			basegameTlk.getDocumentElement().normalize();
+
+			//TANKMASTER
+			Document citTlk = dbFactory.newDocumentBuilder().parse("file:///" + prefixCitPath + lang + "/DLC_EXP_Pack003_" + lang + "1.xml");
 			citTlk.getDocumentElement().normalize();
-			
+
 			NodeList origStringNodes = (NodeList) xpath.evaluate("/Strings/String", origDoc.getDocumentElement(), XPathConstants.NODESET);
 
 			for (int i = 0; i < origStringNodes.getLength(); i++) {
@@ -468,36 +560,37 @@ public class TLKTool {
 				if (idAsInt >= 135000000) {
 					continue;
 				}
-				
+
 				String content = oStringElem.getTextContent();
 				Integer useId = pullFromOrigLang.get(idAsInt);
 				if (useId != null) {
 					//retreive from oriignal TLK
-					NodeList originalTLKNodes = (NodeList) xpath.evaluate("/tlkFile/string/id[text()="+useId+"]", basegameTlk.getDocumentElement(), XPathConstants.NODESET);
+					NodeList originalTLKNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String[@id=" + useId + "]",
+							basegameTlk.getDocumentElement(), XPathConstants.NODESET);
 					if (originalTLKNodes.getLength() > 0) {
 
 						//inBG
 						Element idElem = (Element) originalTLKNodes.item(0);
-						String translatedStr = xpath.evaluate("../data", idElem);
-						oStringElem.setTextContent(translatedStr);
+						oStringElem.setTextContent(idElem.getTextContent());
 						continue;
 					}
 					//check citadel
-					NodeList citTLKNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String[@id='"+useId+"']", citTlk.getDocumentElement(), XPathConstants.NODESET);
+					NodeList citTLKNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String[@id='" + useId + "']", citTlk.getDocumentElement(),
+							XPathConstants.NODESET);
 					if (citTLKNodes.getLength() > 0) {
 						Element idElem = (Element) citTLKNodes.item(0);
 						oStringElem.setTextContent(idElem.getTextContent());
 						continue;
 					} else {
-						System.out.println("NOT IN CIT: "+useId);
+						System.out.println("NOT IN CIT: " + useId);
 					}
-					
+
 				}
 				if (!content.contains("[") && !idAsStr.equals("719838") || idAsStr.equals("")) {
-					System.out.println("Translation required: "+idAsStr);
+					System.out.println("Translation required: " + idAsStr);
 					continue; //speedup
 				}
-				
+
 				if (localizedUncommonKeyMap.containsKey(idAsInt)) {
 					content = content.replace(localizedUncommonKeyMap.get(idAsInt).src, localizedUncommonKeyMap.get(idAsInt).repl);
 				}
@@ -535,16 +628,15 @@ public class TLKTool {
 				//System.out.println(idAsStr+" Item done manually: "+content);
 				oStringElem.setTextContent(content);
 			}
-			
+
 			NodeList oldRoot = (NodeList) xpath.evaluate("/Strings", origDoc, XPathConstants.NODESET);
-			if (oldRoot.getLength() > 0 ){
+			if (oldRoot.getLength() > 0) {
 				Element stringselem = (Element) oldRoot.item(0);
 				Element tlkFileElem = origDoc.createElement("TlkFile");
-				tlkFileElem.setAttribute("name", "DLC_CON_XBX_"+lang.toUpperCase()+"/DLC_CON_XBX_"+lang.toUpperCase()+"0.xml");
+				tlkFileElem.setAttribute("name", "DLC_CON_XBX_" + lang.toUpperCase() + "/DLC_CON_XBX_" + lang.toUpperCase() + "0.xml");
 				tlkFileElem.appendChild(stringselem);
 				origDoc.appendChild(tlkFileElem);
 			}
-
 
 			Transformer tr = TransformerFactory.newInstance().newTransformer();
 			tr.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -592,9 +684,9 @@ public class TLKTool {
 
 				Element oStringElem = (Element) singleNode;
 				String content = oStringElem.getTextContent();
-				if (content.contains("XBox") || content.contains("Logo_Dolby") || content.contains("[Exit]") || content.contains("Logo_DTS_DigitalEntertainment")
-						|| content.contains("TEMP") || content.contains("UNRECOVERABLE DATA") || content.contains("Logo_NVIDIA_PhysX") || content.contains("Laughter")
-						|| content.contains("unintelligible")) {
+				if (content.contains("XBox") || content.contains("Logo_Dolby") || content.contains("[Exit]")
+						|| content.contains("Logo_DTS_DigitalEntertainment") || content.contains("TEMP") || content.contains("UNRECOVERABLE DATA")
+						|| content.contains("Logo_NVIDIA_PhysX") || content.contains("Laughter") || content.contains("unintelligible")) {
 					singleNode.getParentNode().removeChild(singleNode);
 				}
 			}
@@ -622,7 +714,8 @@ public class TLKTool {
 	 * 
 	 * @throws Exception
 	 */
-	private static void comparisonScan() throws ParserConfigurationException, SAXException, IOException, XPathExpressionException, TransformerException {
+	private static void comparisonScan() throws ParserConfigurationException, SAXException, IOException, XPathExpressionException,
+			TransformerException {
 		String origFolder = "E:\\Google Drive\\SP Controller Support\\TLK\\original_tlk\\";
 		String moonFolder = "E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\";
 		ArrayList<String> languageKeys = new ArrayList<String>();
@@ -886,7 +979,7 @@ public class TLKTool {
 
 	private static void decompileTLK() {
 		//		File dir = new File(System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "tlkfiles" + File.separator);
-		File dir = new File("E:\\Google Drive\\SP Controller Support\\TLK\\dlc_tlk\\");
+		File dir = new File("C:\\Users\\mjperez\\Desktop\\tlk\\");
 
 		Collection<File> files = FileUtils.listFiles(dir, new SuffixFileFilter("tlk"), TrueFileFilter.TRUE);
 		for (File file : files) {
@@ -964,7 +1057,7 @@ public class TLKTool {
 			return;
 	}
 
-	private static void compileTLK(String path) throws IOException {
+	private static void compileTLK(String path) throws IOException, InterruptedException {
 		File dir = new File(path);
 		System.out.println(dir);
 		Collection<File> files = FileUtils.listFiles(dir, new WildcardFileFilter("DLC_CON_XBX_*.xml"), FalseFileFilter.FALSE);
@@ -993,7 +1086,7 @@ public class TLKTool {
 			ProcessBuilder pb = new ProcessBuilder(command);
 			pb.redirectErrorStream(true);
 			p = pb.start();
-
+			p.waitFor();
 		}
 	}
 }
