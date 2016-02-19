@@ -927,6 +927,7 @@ public class Mod implements Comparable<Mod> {
 	/**
 	 * Creates a moddesc.ini string that should be written to a file that
 	 * describes this mod object.
+	 * @param keepUpdaterCode 
 	 * 
 	 * @param modName
 	 *            Name of this mod
@@ -936,7 +937,7 @@ public class Mod implements Comparable<Mod> {
 	 *            mod's foldername
 	 * @return moddesc.ini file as a string
 	 */
-	public String createModDescIni(double cmmVersion) {
+	public String createModDescIni(boolean keepUpdaterCode, double cmmVersion) {
 		// Write mod descriptor file
 		try {
 			Wini ini = new Wini();
@@ -962,6 +963,13 @@ public class Mod implements Comparable<Mod> {
 			}
 			if (compiledAgainstModmakerVersion > 0) {
 				ini.put("ModInfo", "compiledagainst", Double.toString(compiledAgainstModmakerVersion));
+			}
+			if (keepUpdaterCode && isME3TweaksUpdatable()) {
+				if (getClassicUpdateCode() > 0) {
+					ini.put("ModInfo", "updatecode", getClassicUpdateCode());
+				} else {
+					ini.put("ModInfo", "me3tweaksid", getModMakerCode());
+				}
 			}
 
 			for (ModJob job : jobs) {
@@ -1359,7 +1367,7 @@ public class Mod implements Comparable<Mod> {
 
 		try {
 			ModManager.debugLogger.writeMessage("Creating moddesc.ini...");
-			FileUtils.writeStringToFile(new File(modFolder + File.separator + "moddesc.ini"), createModDescIni(modCMMVer));
+			FileUtils.writeStringToFile(new File(modFolder + File.separator + "moddesc.ini"), createModDescIni(false, modCMMVer));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeMessage("IOException while merging mods.");
@@ -1453,6 +1461,10 @@ public class Mod implements Comparable<Mod> {
 		return modCMMVer;
 	}
 
+	/**
+	 * Returns if this mod is able to check for updates on ME3Tweaks
+	 * @return true if classic and has update code, or has modmaker code and version > 0
+	 */
 	public boolean isME3TweaksUpdatable() {
 		if ((getClassicUpdateCode() > 0 || getModMakerCode() > 0) && getVersion() > 0) {
 			return true;

@@ -27,7 +27,7 @@ import javax.swing.event.ListSelectionListener;
 
 import com.me3tweaks.modmanager.objects.ModType;
 
-public class ModImportWindow extends JDialog implements ListSelectionListener {
+public class ModImportDLCWindow extends JDialog implements ListSelectionListener {
 
 	DefaultListModel<String> model = new DefaultListModel<>();
 	JList<String> dlcModlist = new JList<String>(model);
@@ -35,7 +35,7 @@ public class ModImportWindow extends JDialog implements ListSelectionListener {
 	private JButton importButton;
 	protected boolean reloadWhenClosed;
 
-	public ModImportWindow(JFrame callingWindow, String biogameDir) {
+	public ModImportDLCWindow(JFrame callingWindow, String biogameDir) {
     	ModManager.debugLogger.writeMessage("Opening ModImportWindow (DLC Import)");
 
 		this.biogameDir = biogameDir;
@@ -90,7 +90,7 @@ public class ModImportWindow extends JDialog implements ListSelectionListener {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String folder = mainDlcDir.getAbsolutePath() + File.separator + model.get(dlcModlist.getSelectedIndex());
-				ImportEntryWindow iew = new ImportEntryWindow(ModImportWindow.this, folder);
+				ImportEntryWindow iew = new ImportEntryWindow(ModImportDLCWindow.this, folder);
 				if (iew.getResult() == ImportEntryWindow.OK){
 					reloadWhenClosed = true;
 				}

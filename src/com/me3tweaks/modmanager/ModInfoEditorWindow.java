@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -30,7 +31,8 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 	private JTextField modNameField;
 	private JTextArea modDescriptionField;
 	private JButton saveButton;
-	
+	private JCheckBox keepUpdateCode;
+
 	public ModInfoEditorWindow(JFrame frame, Mod mod) {
 		this.mod = mod;
 		setupWindow();
@@ -46,40 +48,45 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImages(ModManager.ICONS);
-		
+
 		JPanel contentPanel = new JPanel(new BorderLayout());
-		contentPanel.setBorder(new EmptyBorder(5,5,5,5));
+		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		JPanel namePanel = new JPanel(new BorderLayout());
-		TitledBorder nameBorder = BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
-				"Mod Name");
+		TitledBorder nameBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Name");
 		namePanel.setBorder(nameBorder);
 		modNameField = new JTextField(mod.getModName());
 		namePanel.add(modNameField, BorderLayout.NORTH);
-		
+
 		JPanel descriptionPanel = new JPanel(new BorderLayout());
-		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
-				"Mod Description");
+		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description");
 		descriptionPanel.setBorder(descriptionBorder);
 		modDescriptionField = new JTextArea(Mod.breakFixer(mod.getModDescription()));
 		JScrollPane scrollPane = new JScrollPane(modDescriptionField);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		
-		
+
 		modDescriptionField.setWrapStyleWord(true);
 		modDescriptionField.setLineWrap(true);
 		descriptionPanel.add(scrollPane, BorderLayout.CENTER);
-		
+
+		JPanel savePanel = new JPanel(new BorderLayout());
+		keepUpdateCode = new JCheckBox("Keep updater information for this mod");
+		keepUpdateCode.setSelected(true);
+		keepUpdateCode.setToolTipText("Unchecking this box will remove the ability for this mod to use the ME3Tweaks updater service.");
+
 		saveButton = new JButton("Save");
 		saveButton.addActionListener(this);
-		
+
+		if (mod.isME3TweaksUpdatable()) {
+			savePanel.add(keepUpdateCode, BorderLayout.NORTH);
+		}
+		savePanel.add(saveButton, BorderLayout.SOUTH);
+
 		contentPanel.add(namePanel, BorderLayout.NORTH);
 		contentPanel.add(descriptionPanel, BorderLayout.CENTER);
-		contentPanel.add(saveButton, BorderLayout.SOUTH);
+		contentPanel.add(savePanel, BorderLayout.SOUTH);
 		add(contentPanel);
-		
+
 		this.pack();
 	}
 
@@ -89,9 +96,9 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 			ModManager.debugLogger.writeMessage("Saving new mod description and name...");
 			mod.setModName(modNameField.getText());
 			mod.setModDescription(ResourceUtils.convertNewlineToBr(modDescriptionField.getText()));
-			File file = new File(ModManager.appendSlash(mod.getModPath())+"moddesc.ini");
+			File file = new File(ModManager.appendSlash(mod.getModPath()) + "moddesc.ini");
 			try {
-				FileUtils.writeStringToFile(file, mod.createModDescIni(mod.modCMMVer));
+				FileUtils.writeStringToFile(file, mod.createModDescIni(keepUpdateCode.isSelected(), mod.modCMMVer));
 			} catch (IOException e1) {
 				ModManager.debugLogger.writeException(e1);
 			}

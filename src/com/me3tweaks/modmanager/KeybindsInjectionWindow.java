@@ -145,7 +145,7 @@ public class KeybindsInjectionWindow extends JDialog {
 				}
 
 				//write new moddesc.ini file
-				String descini = mod.createModDescIni(mod.modCMMVer);
+				String descini = mod.createModDescIni(true, mod.modCMMVer);
 				ModManager.debugLogger.writeMessage("Writing new moddesc.ini with new coal modding job");
 				FileUtils.writeStringToFile(new File(stagingIniPath), descini);
 

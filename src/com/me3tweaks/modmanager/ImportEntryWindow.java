@@ -213,7 +213,7 @@ public class ImportEntryWindow extends JDialog {
 			dlcJob.getDestFolders().add(dlcModName);
 			mod.addTask(ModType.CUSTOMDLC, dlcJob);
 
-			String desc = mod.createModDescIni(ModManager.MODDESC_VERSION_SUPPORT);
+			String desc = mod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT);
 			FileUtils.writeStringToFile(new File(localModPathFile + File.separator + "moddesc.ini"), desc);
 			return null;
 		}

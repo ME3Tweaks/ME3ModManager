@@ -92,7 +92,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionModMaker, actionVisitMe, actionImportFromArchive, actionImportAlreadyInstalled, actionOptions, toolME3Explorer, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsUninstallCustomDLC,
+	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC,
 			modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor;
@@ -120,6 +120,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem toolTankmasterCoalUI;
 	private JMenuItem toolTankmasterTLK;
 	private JMenuItem actionOpenModsFolder;
+	private JMenu mountMenu;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -790,6 +791,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JMenu actionImportMenu = new JMenu("Import mod");
 		actionImportAlreadyInstalled = new JMenuItem("Import installed DLC mod");
 		actionImportAlreadyInstalled.setToolTipText("<html>Import an already installed DLC mod.<br>You can then manage that mod with Mod Manager.</html>");
+		actionImportFromArchive = new JMenuItem("Import mod from .7z/.rar/.zip");
+		actionImportFromArchive.setToolTipText("<html>Import a mod that has been packaged for importing into Mod Manager.<br>For directions on how to make mods in this format, please see the Mod Manager moddesc page.</html>");
+		
 		actionOptions = new JMenuItem("Options");
 		actionOptions.setToolTipText("Configure Mod Manager Options");
 		actionOpenModsFolder = new JMenuItem("Open mods/ folder");
@@ -814,8 +818,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		openToolMenu.add(toolTankmasterCoalUI);
 		openToolMenu.add(toolTankmasterTLK);
 
+		actionImportMenu.add(actionImportFromArchive);
 		actionImportMenu.add(actionImportAlreadyInstalled);
-		//actionMenu.add(actionImportMenu); not in 4.1.1
+		actionMenu.add(actionImportMenu);
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
 		actionMenu.add(actionOptions);
@@ -834,6 +839,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolTankmasterTLK.addActionListener(this);
 		toolTankmasterCoalFolder.addActionListener(this);
 		toolTankmasterCoalUI.addActionListener(this);
+		actionImportFromArchive.addActionListener(this);
 
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
@@ -841,6 +847,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// MOD TOOLS
 		modMenu = new JMenu("Mod Utils");
+		mountMenu = new JMenu("DLC Mount files");
 		modutilsHeader = new JMenuItem("No mod selected");
 		modutilsHeader.setEnabled(false);
 		modutilsInstallCustomKeybinds = new JMenuItem("Install custom keybinds into this mod");
@@ -882,9 +889,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsAutoTOC.addActionListener(this);
 		modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes");
 
-		modutilsUninstallCustomDLC = new JMenuItem("Uninstall this mod's custom DLC");
-		modutilsUninstallCustomDLC.addActionListener(this);
-
 		modutilsCheckforupdate = new JMenuItem("Check for newer version (ME3Tweaks)");
 		modutilsCheckforupdate.addActionListener(this);
 
@@ -892,15 +896,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (ModManager.IS_DEBUG) {
 			modMenu.add(modutilsUpdateXMLGenerator);
 		}
+		modMenu.add(modutilsCheckforupdate);
+		modMenu.add(modDeltaMenu);
+		modMenu.add(modNoDeltas);
 		modMenu.addSeparator();
 		modMenu.add(modutilsInstallCustomKeybinds);
 		modMenu.add(modutilsInfoEditor);
 		modMenu.add(modutilsAutoTOC);
-		modMenu.add(modDeltaMenu);
-		modMenu.add(modNoDeltas);
-
-		modMenu.add(modutilsUninstallCustomDLC);
-		modMenu.add(modutilsCheckforupdate);
 		modMenu.setEnabled(false);
 		menuBar.add(modMenu);
 
@@ -1390,9 +1392,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else
 		if (e.getSource() == actionImportAlreadyInstalled) {
 			if (validateBIOGameDir()) {
-				new ModImportWindow(this,fieldBiogameDir.getText());
+				new ModImportDLCWindow(this,fieldBiogameDir.getText());
 			}
-		} else
+		} else if (e.getSource() == actionImportFromArchive) {
+			new ModImportArchiveWindow();
+		}
 		if (e.getSource() == actionVisitMe) {
 			URI theURI;
 			try {
@@ -1565,8 +1569,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		} else if (e.getSource() == modutilsInfoEditor) {
 			showInfoEditor();
-		} else if (e.getSource() == modutilsUninstallCustomDLC) {
-			uninstallCustomDLC();
 		} else if (e.getSource() == sqlWavelistParser) {
 			new WavelistGUI();
 		} else if (e.getSource() == modutilsCheckforupdate) {
@@ -2066,16 +2068,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					modutilsCheckforupdate.setEnabled(false);
 					modutilsCheckforupdate.setText("Mod not eligible for updates");
 					modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
-					modutilsUninstallCustomDLC.setToolTipText("Deletes this mod's custom DLC modules");
-				}
-
-				if (selectedMod.containsCustomDLCJob()) {
-					modutilsUninstallCustomDLC.setEnabled(true);
-					modutilsUninstallCustomDLC.setText("Uninstall this mod's custom DLC content");
-				} else {
-					modutilsUninstallCustomDLC.setEnabled(false);
-					modutilsUninstallCustomDLC.setText("Mod does not use custom DLC content");
-					modutilsUninstallCustomDLC.setToolTipText("This mod does not install any custom DLC modules");
 				}
 
 				if (selectedMod.getModDeltas().size() > 0) {
