@@ -1,9 +1,11 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -41,6 +43,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -50,6 +53,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
@@ -125,6 +129,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem toolTankmasterTLK;
 	private JMenuItem actionOpenModsFolder;
 	private JMenu mountMenu;
+	private JButton modWebsiteLink;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -746,8 +751,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		scrollDescription.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollDescription.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
+		modWebsiteLink = new JButton();
+		modWebsiteLink.setText("<HTML>Click the <FONT color=\"#000099\"><U>link</U></FONT>" + " to go to the Java website.</HTML>");
+		modWebsiteLink.setBorderPainted(false);
+		modWebsiteLink.setBackground(UIManager.getColor ( "Panel.background" ));
+		modWebsiteLink.setFocusPainted(false);
+		modWebsiteLink.setMargin(new Insets(0, 0, 0, 0));
+		modWebsiteLink.setContentAreaFilled(false);
+		modWebsiteLink.setBorderPainted(false);
+		modWebsiteLink.setOpaque(false);
+		modWebsiteLink.setOpaque(false);
+		modWebsiteLink.setVisible(false);
+		modWebsiteLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		modWebsiteLink.addActionListener(this);
+
 		// descriptionPanel.add(descriptionLabel, BorderLayout.NORTH);
 		descriptionPanel.add(scrollDescription, BorderLayout.CENTER);
+		descriptionPanel.add(modWebsiteLink, BorderLayout.SOUTH);
+
 		fieldDescription.setCaretPosition(0);
 
 		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, modsListPanel, descriptionPanel);
@@ -1460,6 +1481,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// TODO Auto-generated catch block
 				ex.printStackTrace();
 			}
+		} else if (e.getSource() == modWebsiteLink) {
+			Mod mod = modModel.get(modList.getSelectedIndex());
+			try {
+				ModManager.openWebpage(new URI(mod.getModSite()));
+			} catch (URISyntaxException e1) {
+				// TODO Auto-generated catch block
+				ModManager.debugLogger.writeErrorWithException("Unable to open this mod's web site:", e1);
+			}
 		} else if (e.getSource() == actionImportAlreadyInstalled) {
 			if (validateBIOGameDir()) {
 				new ModImportDLCWindow(this, fieldBiogameDir.getText());
@@ -2114,16 +2143,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @param modName
 	 *            Name of the mod from the list (display name)
 	 * @return File that describes the selected mod
-	 * 
-	 *         private Mod lookupModByFileName(String modName) { if
-	 *         (listDescriptors.containsKey(modName) == false) {
-	 *         ModManager.debugLogger.writeMessage(modName +
-	 *         " doesn't exist in the mod hashmap."); return null; }
-	 *         ModManager.debugLogger.writeMessage(
-	 *         "Hashmap contains location of mod " + modName + ": " +
-	 *         listDescriptors.containsKey(modName));
-	 * 
-	 *         return listDescriptors.get(modName); }
 	 */
 
 	@Override
@@ -2157,11 +2176,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					modutilsCheckforupdate
 							.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 				}
+				
+				UrlValidator urlValidator = new UrlValidator(new String[] {"http","https"});
+				if (selectedMod.getModSite() != null && urlValidator.isValid(selectedMod.getModSite())) {
+					modWebsiteLink.setToolTipText(selectedMod.getModSite());
+					modWebsiteLink.setVisible(true);
+					modWebsiteLink.setText("<html><u><font color='#000099'>Visit "+selectedMod.getModName()+"'s web site</u></font></html>");
+				} else {
+					modWebsiteLink.setVisible(false);
+				}
 
 				mountMenu.removeAll();
 
 				if (selectedMod.containsCustomDLCJob()) {
-					System.out.println("CUST DLC JOB.");
 					mountMenu.setVisible(true);
 					for (ModJob job : selectedMod.getJobs()) {
 						if (job.getJobType() == ModJob.CUSTOMDLC) {
@@ -2173,9 +2200,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 									//mount.dlc file found!
 									File mountFile = new File(target);
 									String folderName = FilenameUtils.getBaseName(mountFile.getParentFile().getParent());
-									JMenuItem mountItem = new JMenuItem("Mount.dlc in "+folderName);
+									JMenuItem mountItem = new JMenuItem("Mount.dlc in " + folderName);
 									mountItem.addActionListener(new ActionListener() {
-										
+
 										@Override
 										public void actionPerformed(ActionEvent arg0) {
 											new MountFileEditorWindow(target);
@@ -2187,7 +2214,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						}
 					}
 				} else {
-					System.out.println("no custom dlc jobs");
 					mountMenu.setVisible(false);
 				}
 

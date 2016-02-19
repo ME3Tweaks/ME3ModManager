@@ -689,10 +689,6 @@ public class Mod implements Comparable<Mod> {
 		if (modAuthor != null) {
 			modDisplayDescription += "\nMod Developer: " + modAuthor;
 		}
-		// Add Devsite
-		if (modSite != null) {
-			modDisplayDescription += "\nMod Site: " + modSite;
-		}
 
 		// Add Modmaker
 		if (modmakerCode > 0) {
@@ -1778,5 +1774,9 @@ public class Mod implements Comparable<Mod> {
 
 	public void setSite(String modSite) {
 		this.modSite = modSite;
+	}
+
+	public String getModSite() {
+		return modSite;
 	}
 }
