@@ -1005,7 +1005,6 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("===Processing a customdlc job===");
 
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
-			HashSet<String> relativeDlcDirs = new HashSet<String>();
 			for (int i = 0; i < job.getFilesToReplaceTargets().size(); i++) {
 				String target = job.getFilesToReplaceTargets().get(i);
 				String fileDestination = dlcdir + target;

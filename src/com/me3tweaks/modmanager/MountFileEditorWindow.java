@@ -61,12 +61,31 @@ public class MountFileEditorWindow extends JDialog {
 	private JLabel sStatus;
 	private JButton butSave;
 	private JTextField sInputField;
+	private JTextField lInputField;
+	private JButton butLoadMount;
 
 	private static DecimalFormat integerFormat = new DecimalFormat("#");
 
+	/**
+	 * Opens a blank mount file editor.
+	 */
 	public MountFileEditorWindow() {
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		setVisible(true);
+	}
+
+	/**
+	 * Opens mount editor and automatically loads the specified mount file
+	 * @param target mount to load
+	 */
+	public MountFileEditorWindow(String target) {
+		setupWindow();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		lInputField.setText(target);
+		lStatus.setText(" ");
+		butLoadMount.setEnabled(true);
+		loadMount(target);
 		setVisible(true);
 	}
 
@@ -82,11 +101,11 @@ public class MountFileEditorWindow extends JDialog {
 		//Load Panel
 		JPanel loadPanel = new JPanel(new GridBagLayout());
 		loadPanel.setBorder(new TitledBorder(new EtchedBorder(), "Load a Mount.dlc file for editing (optional)"));
-		JTextField lInputField = new JTextField(55);
+		lInputField = new JTextField(55);
 		lInputField.setUI(new HintTextFieldUI("Select a Mount.dlc"));
 		JButton lBrowse = new JButton("Browse...");
 		lBrowse.setPreferredSize(new Dimension(100, 19));
-		JButton butLoadMount = new JButton("Load Mount");
+		butLoadMount = new JButton("Load Mount");
 		butLoadMount.setEnabled(false);
 		butLoadMount.setPreferredSize(new Dimension(100, 23));
 		lStatus = new JLabel(" ");
