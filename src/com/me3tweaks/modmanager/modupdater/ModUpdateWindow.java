@@ -109,6 +109,8 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			task.execute();
 			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			setVisible(true);
+			return task.wasSuccessful();
+			
 		}
 		return true;
 	}
@@ -187,6 +189,10 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			ModManager.debugLogger.writeMessage("Created a download task");
 		}
 
+		public boolean wasSuccessful() {
+			return !error;
+		}
+
 		public DownloadTask(UpdatePackage upackage, AllModsUpdateWindow amuw) {
 			String modpath = upackage.getMod().getModPath();
 			String updateFolder = ResourceUtils.getRelativePath(modpath, ModManager.getModsDir(), File.separator);
@@ -241,7 +247,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 				executeUpdate();
 			} catch (IOException ex) {
 				JOptionPane.showMessageDialog(ModUpdateWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				ex.printStackTrace();
+				ModManager.debugLogger.writeErrorWithException("IOException while updating mod.", ex);
 				setProgress(0);
 				error = true;
 				cancel(true);
@@ -289,7 +295,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		protected void done() {
 			// TODO: Install update through the update script
 			dispose();
-			if (amuw == null) {
+			if (amuw == null && error != true) {
 				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nMod Manager will now reload mods.");
 			}
 		}
@@ -521,7 +527,6 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 			} else {
 				throw new IOException("No file to download. Server replied HTTP code: " + responseCode);
-
 			}
 		}
 

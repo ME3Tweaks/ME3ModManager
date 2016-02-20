@@ -12,6 +12,10 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -201,7 +205,7 @@ public class ModXMLTools {
 			fileElement.setTextContent(ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator));
 			rootElement.appendChild(fileElement);
 		}
-		
+
 		modDoc.appendChild(rootElement);
 		return ModMakerCompilerWindow.docToString(modDoc);
 
@@ -236,28 +240,70 @@ public class ModXMLTools {
 		return null;
 	}
 
+	public static ArrayList<UpdatePackage> validateLatestAgainstServer(ArrayList<Mod> mods) {
+		String updateURL;
+		if (ModManager.IS_DEBUG) {
+			updateURL = "http://webdev-mgamerz.c9.io/mods/getlatest_batch";
+		} else {
+			updateURL = "https://me3tweaks.com/mods/getlatest_batch";
+		}
+		ModManager.debugLogger.writeMessage("Checking for updates of the following mods:");
+		ArrayList<Mod> modmakerMods = new ArrayList<>();
+		ArrayList<Mod> classicMods = new ArrayList<>();
+		for (Mod mod : mods) {
+			ModManager.debugLogger.writeMessage(mod.getModMakerCode() > 0 ? mod.getModMakerCode() + " " + mod.getModName() + " " + mod.getVersion() + "(ModMaker)"
+					: mod.getClassicUpdateCode() + " " + mod.getModName() + " " + mod.getVersion() + " (Classic)");
+			if (mod.getModMakerCode() > 0) {
+				modmakerMods.add(mod);
+			} else {
+				classicMods.add(mod);
+			}
+		}
+		Document doc = getOnlineInfo(updateURL, modmakerMods, classicMods);
+		ArrayList<UpdatePackage> updates = new ArrayList<>();
+		for (Mod mod : modmakerMods) {
+			UpdatePackage update = checkForModMakerUpdate(mod, doc);
+			if (update != null) {
+				updates.add(update);
+			}
+		}
+
+		for (Mod mod : classicMods) {
+			UpdatePackage update = checkForClassicUpdate(mod, doc);
+			if (update != null) {
+				updates.add(update);
+			}
+		}
+
+		return updates;
+	}
+
 	private static UpdatePackage checkForModMakerUpdate(Mod mod, Document doc) {
 		// got document, now parse metainfo
 		if (doc != null) {
-			NodeList modList = doc.getElementsByTagName("modmakermod");
-			if (modList.getLength() < 1) {
-				ModManager.debugLogger.writeError("XML response has no <modmakermod> tags, error from server");
+			XPath xPath = XPathFactory.newInstance().newXPath();
+			Element modElem = null;
+			try {
+				modElem = (Element) xPath.evaluate("/updatemanifest/modmakermod[@id=" + mod.getModMakerCode() + "]", doc, XPathConstants.NODE);
+				if (modElem == null) {
+					ModManager.debugLogger.writeError("Mod not found in update manifest " + mod.getModMakerCode() + " " + mod.getModName());
+					return null;
+				}
+			} catch (XPathExpressionException e1) {
+				// TODO Auto-generated catch block
+				ModManager.debugLogger.writeErrorWithException("Xpath Expression Error: ", e1);
 				return null;
 			}
 
 			// for all mods in serverlist
-			for (int i = 0; i < modList.getLength(); i++) {
-				Element modElem = (Element) modList.item(i);
-				double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
-				String serverModName = modElem.getAttribute("name");
-				if (mod.getVersion() >= serverModVer) {
-
-					ModManager.debugLogger.writeMessage("Mod up to date. Local version: " + mod.getVersion() + " Server Version: " + serverModVer);
-					continue; // not an update
-				} else {
-					ModManager.debugLogger.writeMessage("ModMaker Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
-					return new UpdatePackage(mod, serverModName, serverModVer);
-				}
+			double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
+			String serverModName = modElem.getAttribute("name");
+			if (mod.getVersion() >= serverModVer) {
+				ModManager.debugLogger.writeMessage(mod.getModName() + " up to date. Local version: " + mod.getVersion() + " Server Version: " + serverModVer);
+				return null; // not an update
+			} else {
+				ModManager.debugLogger.writeMessage(mod.getModName() + " - ModMaker Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
+				return new UpdatePackage(mod, serverModName, serverModVer);
 			}
 		} else {
 			ModManager.debugLogger.writeMessage("XML document from server was null.");
@@ -268,120 +314,124 @@ public class ModXMLTools {
 	private static UpdatePackage checkForClassicUpdate(Mod mod, Document doc) {
 		// got document, now parse metainfo
 		if (doc != null) {
-			NodeList modList = doc.getElementsByTagName("mod");
-			if (modList.getLength() < 1) {
-				ModManager.debugLogger.writeError("XML response has no <mod> tags, error from server");
-				ModManager.debugLogger.writeMessage(ModMakerCompilerWindow.docToString(doc));
+			XPath xPath = XPathFactory.newInstance().newXPath();
+			Element modElem = null;
+			try {
+				modElem = (Element) xPath.evaluate("/updatemanifest/mod[@updatecode=" + mod.getClassicUpdateCode() + "]", doc, XPathConstants.NODE);
+				if (modElem == null) {
+					ModManager.debugLogger.writeError("Mod not found in update manifest " + mod.getClassicUpdateCode() + " " + mod.getModName());
+					return null;
+				}
+			} catch (XPathExpressionException e1) {
+				// TODO Auto-generated catch block
+				ModManager.debugLogger.writeErrorWithException("Xpath Expression Error: ", e1);
 				return null;
 			}
 
 			// for all mods in serverlist
-			for (int i = 0; i < modList.getLength(); i++) {
-				Element modElem = (Element) modList.item(i);
-				double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
-				String serverFolder = modElem.getAttribute("folder");
-				String manifesttype = modElem.getAttribute("manifesttype");
-				boolean isFullManifest = manifesttype.equals("full");
-				System.out.println("Manifest type: " + manifesttype);
-				System.out.println("Server folder: " + serverFolder);
-				if (mod.getVersion() >= serverModVer) {
-					ModManager.debugLogger.writeMessage("Mod up to date");
-					continue; // not an update
+			double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
+			String serverFolder = modElem.getAttribute("folder");
+			String manifesttype = modElem.getAttribute("manifesttype");
+			boolean isFullManifest = manifesttype.equals("full");
+			if (mod.getVersion() >= serverModVer) {
+				ModManager.debugLogger.writeMessage(mod.getModName() + " is up to date");
+				return null; // not an update
+			}
+			ModManager.debugLogger.writeMessage("Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
+			// build manifest of files
+			ArrayList<ManifestModFile> serverFiles = new ArrayList<ManifestModFile>();
+			NodeList serverFileList = modElem.getElementsByTagName("sourcefile");
+			for (int j = 0; j < serverFileList.getLength(); j++) {
+				Element fileElem = (Element) serverFileList.item(j);
+				ManifestModFile metafile = new ManifestModFile(fileElem.getTextContent(), fileElem.getAttribute("hash"), Long.parseLong(fileElem.getAttribute("size")));
+				serverFiles.add(metafile);
+			}
+
+			ModManager.debugLogger.writeMessage("Number of files in manifest: " + serverFiles.size());
+
+			// get list of new files
+			ArrayList<ManifestModFile> newFiles = new ArrayList<ManifestModFile>();
+			String modpath = ModManager.appendSlash(mod.getModPath());
+
+			for (ManifestModFile mf : serverFiles) {
+				File localFile = new File(modpath + mf.getRelativePath());
+
+				// check existence
+				if (!localFile.exists()) {
+					newFiles.add(mf);
+					ModManager.debugLogger.writeMessage(mf.getRelativePath() + " does not exist, adding to update list");
+					continue;
 				}
-				ModManager.debugLogger.writeMessage("Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
-				// build manifest of files
-				ArrayList<ManifestModFile> serverFiles = new ArrayList<ManifestModFile>();
-				NodeList serverFileList = modElem.getElementsByTagName("sourcefile");
-				for (int j = 0; j < serverFileList.getLength(); j++) {
-					Element fileElem = (Element) serverFileList.item(j);
-					ManifestModFile metafile = new ManifestModFile(fileElem.getTextContent(), fileElem.getAttribute("hash"), Long.parseLong(fileElem.getAttribute("size")));
-					serverFiles.add(metafile);
+
+				// check size
+				if (localFile.length() != mf.getFilesize()) {
+					newFiles.add(mf);
+					ModManager.debugLogger
+							.writeMessage(mf.getRelativePath() + " size has changed (local: " + localFile.length() + " | server: " + mf.getFilesize() + "), adding to update list");
+					continue;
 				}
 
-				ModManager.debugLogger.writeMessage("Number of files in manifest: " + serverFiles.size());
-
-				// get list of new files
-				ArrayList<ManifestModFile> newFiles = new ArrayList<ManifestModFile>();
-				String modpath = ModManager.appendSlash(mod.getModPath());
-
-				for (ManifestModFile mf : serverFiles) {
-					File localFile = new File(modpath + mf.getRelativePath());
-
-					// check existence
-					if (!localFile.exists()) {
+				// check hash
+				try {
+					if (!MD5Checksum.getMD5Checksum(localFile.getAbsolutePath()).equals(mf.getHash())) {
 						newFiles.add(mf);
-						ModManager.debugLogger.writeMessage(mf.getRelativePath() + " does not exist, adding to update list");
+						ModManager.debugLogger.writeMessage(mf.getRelativePath() + " hash is different, adding to update list");
 						continue;
 					}
-
-					// check size
-					if (localFile.length() != mf.getFilesize()) {
-						newFiles.add(mf);
-						ModManager.debugLogger.writeMessage(
-								mf.getRelativePath() + " size has changed (local: " + localFile.length() + " | server: " + mf.getFilesize() + "), adding to update list");
-						continue;
-					}
-
-					// check hash
-					try {
-						if (!MD5Checksum.getMD5Checksum(localFile.getAbsolutePath()).equals(mf.getHash())) {
-							newFiles.add(mf);
-							ModManager.debugLogger.writeMessage(mf.getRelativePath() + " hash is different, adding to update list");
-							continue;
-						}
-					} catch (Exception e) {
-						ModManager.debugLogger.writeError("Exception generating MD5.");
-						ModManager.debugLogger.writeException(e);
-					}
-					ModManager.debugLogger.writeMessage(mf.getRelativePath() + " is up to date");
+				} catch (Exception e) {
+					ModManager.debugLogger.writeError("Exception generating MD5.");
+					ModManager.debugLogger.writeException(e);
 				}
+				ModManager.debugLogger.writeMessage(mf.getRelativePath() + " is up to date");
+			}
 
-				// check for files that DON'T exist on the server
-				ArrayList<String> filesToRemove = new ArrayList<String>();
-				if (isFullManifest) {
-					System.out.println("Checking for files that are no longer necessary");
-					for (ModJob job : mod.getJobs()) {
-						for (String srcFile : job.getFilesToReplace()) {
-							String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
-							boolean existsOnServer = false;
-							for (ManifestModFile mf : serverFiles) {
-								if (mf.getRelativePath().toLowerCase().equals(relativePath)) {
-									existsOnServer = true;
-									continue;
-								}
-							}
-							if (!existsOnServer) {
-								// file needs to be removed
-								ModManager.debugLogger.writeMessage(relativePath + " is not in updated version of mod on server, marking for removal");
-								filesToRemove.add(srcFile);
-							}
-						}
-					}
-
-					// Check legacy Coalesced.bin
-					if (mod.getCMMVer() < 3.0 && mod.modsCoal()) {
+			// check for files that DON'T exist on the server
+			ArrayList<String> filesToRemove = new ArrayList<String>();
+			if (isFullManifest) {
+				ModManager.debugLogger.writeMessage("Checking for files that are no longer necessary");
+				for (ModJob job : mod.getJobs()) {
+					for (String srcFile : job.getFilesToReplace()) {
+						String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
 						boolean existsOnServer = false;
 						for (ManifestModFile mf : serverFiles) {
-							if (mf.getRelativePath().toLowerCase().equals("Coalesced.bin")) {
+							if (mf.getRelativePath().toLowerCase().equals(relativePath)) {
 								existsOnServer = true;
 								continue;
 							}
 						}
 						if (!existsOnServer) {
 							// file needs to be removed
-							ModManager.debugLogger.writeMessage("Coalesced.bin is not in updated version of mod on server, marking for removal");
-							filesToRemove.add(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
+							ModManager.debugLogger.writeMessage(relativePath + " is not in updated version of mod on server, marking for removal");
+							filesToRemove.add(srcFile);
 						}
 					}
 				}
 
-				ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: " + filesToRemove.size());
-				return new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
+				// Check legacy Coalesced.bin
+				if (mod.getCMMVer() < 3.0 && mod.modsCoal()) {
+					boolean existsOnServer = false;
+					for (ManifestModFile mf : serverFiles) {
+						if (mf.getRelativePath().toLowerCase().equals("Coalesced.bin")) {
+							existsOnServer = true;
+							continue;
+						}
+					}
+					if (!existsOnServer) {
+						// file needs to be removed
+						ModManager.debugLogger.writeMessage("Coalesced.bin is not in updated version of mod on server, marking for removal");
+						filesToRemove.add(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
+					}
+				}
 			}
+
+			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: " + filesToRemove.size());
+			return new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
+
 		} else {
-			ModManager.debugLogger.writeMessage("XML Document from server was null.");
+			ModManager.debugLogger.writeMessage("Server returned a null document.");
 		}
 		return null;
+
 	}// end classic update
 
 	private static Document getOnlineInfo(String updateURL, boolean modmakerMod, int updatecode) {
@@ -439,6 +489,64 @@ public class ModXMLTools {
 			return null;
 		}
 
+		return doc;
+	}
+
+	private static Document getOnlineInfo(String updateURL, ArrayList<Mod> modmakerMods, ArrayList<Mod> classicMods) {
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		// params.add(new BasicNameValuePair("updatecode",
+		// Integer.toString(mod.getClassicUpdateCode())));
+
+		for (Mod mmMod : modmakerMods) {
+			params.add(new BasicNameValuePair("modmakerupdatecode[]", Integer.toString(mmMod.getModMakerCode())));
+		}
+		for (Mod mmMod : classicMods) {
+			params.add(new BasicNameValuePair("classicupdatecode[]", Integer.toString(mmMod.getClassicUpdateCode())));
+		}
+
+		URIBuilder urib;
+		String responseString = null;
+		try {
+			urib = new URIBuilder(updateURL);
+			urib.setParameters(params);
+			HttpClient httpClient = HttpClientBuilder.create().build();
+			URI uri = urib.build();
+			ModManager.debugLogger.writeMessage("Getting latest mod info from link: " + uri.toASCIIString());
+			HttpResponse response = httpClient.execute(new HttpGet(uri));
+			responseString = new BasicResponseHandler().handleResponse(response);
+			ModManager.debugLogger.writeMessage("Response:\n" + responseString);
+		} catch (URISyntaxException e) {
+			ModManager.debugLogger.writeErrorWithException("Error getting online mod update info:", e);
+		} catch (ClientProtocolException e) {
+			ModManager.debugLogger.writeErrorWithException("Error getting online mod update info:", e);
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("Error getting online mod update info:", e);
+		}
+
+		if (responseString == null) {
+			// error occured
+			ModManager.debugLogger.writeError("Server response was null.");
+			return null;
+		}
+
+		// got XML, build document for reading
+		Document doc = null;
+		try {
+			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			InputSource is = new InputSource();
+			is.setCharacterStream(new StringReader(responseString));
+			doc = db.parse(is);
+		} catch (SAXException e) {
+			ModManager.debugLogger.writeErrorWithException("Server responded with invalid XML:", e);
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("IOException generating document:", e);
+		} catch (ParserConfigurationException e) {
+			ModManager.debugLogger.writeErrorWithException("Parser configuration error...?", e);
+		}
+
+		if (doc == null) {
+			return null;
+		}
 		return doc;
 	}
 }

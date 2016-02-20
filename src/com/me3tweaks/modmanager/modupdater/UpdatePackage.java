@@ -134,6 +134,9 @@ public class UpdatePackage {
 
 	public String getUpdateSizeMB() {
 		long size = 0;
+		if (filesToDownload == null) {
+			System.out.println("break");
+		}
 		for (ManifestModFile mf : filesToDownload) {
 			size += mf.getFilesize();
 		}

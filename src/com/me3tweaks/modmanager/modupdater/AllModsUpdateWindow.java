@@ -107,12 +107,57 @@ public class AllModsUpdateWindow extends JDialog {
 	class AllModsDownloadTask extends SwingWorker<Void, Object> {
 		int numToGo = 0;
 		boolean canceled = false;
+		ArrayList<UpdatePackage> completedUpdates = new ArrayList<UpdatePackage>();
 
 		/**
 		 * Executed in background thread
 		 */
 		@Override
 		protected Void doInBackground() throws Exception {
+			// Iterate through files to download and put them in the update
+			// folder
+			upackages = ModXMLTools.validateLatestAgainstServer(updatableMods);
+			if (upackages.size() <= 0) {
+				return null;
+			}
+
+			publish("PROMPT_USER");
+			while (AllModsUpdateWindow.this.userChose == 0) {
+				Thread.sleep(500); //make thread sleep until an answer on another thread comes back. this is such a hack.
+			}
+
+			if (AllModsUpdateWindow.this.userChose < 0) {
+				return null; //declined
+			}
+
+			//user chose yes
+			publish("NOTIFY_START");
+			numToGo = upackages.size();
+			for (UpdatePackage upackage : upackages) {
+				if (canceled) {
+					return null;
+				}
+				publish(new Integer(numToGo));
+				ModManager.debugLogger.writeMessage("Processing: " + upackage.getMod().getModName());
+				ModUpdateWindow muw = new ModUpdateWindow(upackage);
+				boolean success = muw.startAllModsUpdate(AllModsUpdateWindow.this);
+				ModManager.debugLogger.writeMessage("Update complete. The result of the task was " + (success ? "SUCCESS" : "FAILURE"));
+				if (success) {
+					completedUpdates.add(upackage);
+				}
+				while (muw.isShowing()) {
+					Thread.sleep(350);
+				}
+				publish(new Integer(--numToGo));
+			}
+
+			return null;
+		}
+
+		/**
+		 * Executed in background thread
+		 */
+		protected Void doInBackgroundOLD() throws Exception {
 			// Iterate through files to download and put them in the update
 			// folder
 			upackages = new ArrayList<UpdatePackage>();
@@ -179,7 +224,9 @@ public class AllModsUpdateWindow extends JDialog {
 					case "PROMPT_USER":
 						String updatetext = upackages.size() + " mod" + (upackages.size() == 1 ? " has" : "s have") + " available updates on ME3Tweaks:\n";
 						for (UpdatePackage upackage : upackages) {
-							updatetext += " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + " ("+upackage.getUpdateSizeMB()+")\n";
+							ModManager.debugLogger.writeMessage("Preparing user prompt. Parsing upackage " + upackage.getServerModName());
+							updatetext += " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion()
+									+ (upackage.isModmakerupdate() ? "" : " (" + upackage.getUpdateSizeMB() + ")") + "\n";
 						}
 						updatetext += "Update these mods?";
 						int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
@@ -199,7 +246,7 @@ public class AllModsUpdateWindow extends JDialog {
 						operationLabel.setText("Updating mods from ME3Tweaks");
 						break;
 					default:
-						operationLabel.setText("Checking "+command);
+						operationLabel.setText("Checking " + command);
 						break;
 					}
 					continue;
@@ -240,7 +287,7 @@ public class AllModsUpdateWindow extends JDialog {
 				} catch (InvalidFileFormatException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.",e);
+					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 				}
 			}
 
@@ -268,7 +315,18 @@ public class AllModsUpdateWindow extends JDialog {
 				return;
 			}
 
-			JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.","Mods updated", JOptionPane.INFORMATION_MESSAGE);
+			if (completedUpdates.size() == 0) {
+				JOptionPane.showMessageDialog(callingWindow, "No mods successfully updated.\nCheck the debugging log for more info or contact FemShep for help.",
+						"Mods failed to update", JOptionPane.ERROR_MESSAGE);
+			} else if (upackages.size() != completedUpdates.size()) {
+				//one error occured
+				JOptionPane.showMessageDialog(callingWindow, completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
+						+ " failed to update.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
+			} else {
+				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.", "Mods updated",
+						JOptionPane.INFORMATION_MESSAGE);
+			}
+
 			new ModManagerWindow(false);
 		}
 	}
