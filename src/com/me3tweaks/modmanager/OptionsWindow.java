@@ -98,12 +98,18 @@ public class OptionsWindow extends JDialog {
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
-					if (enforceDotNetRequirement.isSelected()) {
-						ini.put("Settings", "enforcedotnetrequirement", "1");
-					} else {
-						ini.put("Settings", "enforcedotnetrequirement", "0");
-					}
 					ModManager.PERFORM_DOT_NET_CHECK = enforceDotNetRequirement.isSelected();
+					if (enforceDotNetRequirement.isSelected()) {
+						ModManager.debugLogger.writeMessage("Enabling .NET framework check");
+						ini.put("Settings", "enforcedotnetrequirement", "1");
+						ModManager.validateNETFrameworkIsInstalled();
+						ModManagerWindow.ACTIVE_WINDOW.updateApplyButton();
+					} else {
+						ModManager.debugLogger.writeMessage("Disabling .NET framework check");
+						ini.put("Settings", "enforcedotnetrequirement", "0");
+						ModManager.NET_FRAMEWORK_IS_INSTALLED = true;
+						ModManagerWindow.ACTIVE_WINDOW.updateApplyButton();
+					}
 					ini.store();
 				} catch (InvalidFileFormatException error) {
 					error.printStackTrace();

@@ -61,7 +61,7 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1 CUSTOM BUILD (stylz168)";
+	public static final String VERSION = "4.1";
 	public static long BUILD_NUMBER = 50L;
 	public static final String BUILD_DATE = "2/18/2015";
 	public static DebugLogger debugLogger;
@@ -81,7 +81,8 @@ public class ModManager {
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 722;
 	
 	// version
-	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
+//	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
+	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 1000000; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
@@ -408,13 +409,14 @@ public class ModManager {
 			}
 			debugLogger.initialize();
 			logging = true;
+			debugLogger.writeErrorWithException("A throwable was thrown during Mod Manager Startup.", e);
 			if (emergencyMode) {
 				debugLogger
 						.writeMessage("Logger starting in emergency mode. Startup failed as well as logging settings, but logger was able to initialize.");
 			} else {
 				debugLogger.writeMessage("Logger starting in limited mode. Startup failed but logger was able to initialize.");
 			}
-			debugLogger.writeMessage("Mod Manager version" + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
+			debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
 			if (emergencyMode) {
 				JOptionPane.showMessageDialog(null, "<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
 						+ "Logging mode was attempted to be turned on, but failed. Logging for this session has been enabled.<br>"
@@ -1616,6 +1618,7 @@ public class ModManager {
 	public static boolean validateNETFrameworkIsInstalled() {
 		if (!PERFORM_DOT_NET_CHECK) {
 			NET_FRAMEWORK_IS_INSTALLED = true;
+			System.out.println("INSTALLED IS TRUE");
 			return true;
 		}
 		

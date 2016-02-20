@@ -818,11 +818,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	}
 
-	private void updateApplyButton() {
+	protected void updateApplyButton() {
 		if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
 			buttonApplyMod.setText("Apply Mod");
 		} else {
 			buttonApplyMod.setText(".NET Missing");
+			buttonApplyMod.setEnabled(false);
 		}
 	}
 
