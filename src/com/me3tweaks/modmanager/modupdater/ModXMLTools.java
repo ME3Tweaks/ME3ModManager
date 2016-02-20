@@ -37,6 +37,7 @@ import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow.AllModsDownloadTask;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
@@ -240,7 +241,7 @@ public class ModXMLTools {
 		return null;
 	}
 
-	public static ArrayList<UpdatePackage> validateLatestAgainstServer(ArrayList<Mod> mods) {
+	public static ArrayList<UpdatePackage> validateLatestAgainstServer(ArrayList<Mod> mods, AllModsDownloadTask allModsDownloadTask) {
 		String updateURL;
 		if (ModManager.IS_DEBUG) {
 			updateURL = "http://webdev-mgamerz.c9.io/mods/getlatest_batch";
@@ -260,6 +261,9 @@ public class ModXMLTools {
 			}
 		}
 		Document doc = getOnlineInfo(updateURL, modmakerMods, classicMods);
+		if (allModsDownloadTask != null) {
+			allModsDownloadTask.setManifestDownloaded();
+		}
 		ArrayList<UpdatePackage> updates = new ArrayList<>();
 		for (Mod mod : modmakerMods) {
 			UpdatePackage update = checkForModMakerUpdate(mod, doc);
@@ -269,6 +273,9 @@ public class ModXMLTools {
 		}
 
 		for (Mod mod : classicMods) {
+			if (allModsDownloadTask != null) {
+				allModsDownloadTask.publishUpdate(mod.getModName());
+			}
 			UpdatePackage update = checkForClassicUpdate(mod, doc);
 			if (update != null) {
 				updates.add(update);

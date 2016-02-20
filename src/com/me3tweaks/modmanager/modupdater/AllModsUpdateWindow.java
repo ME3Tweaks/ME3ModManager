@@ -72,7 +72,7 @@ public class AllModsUpdateWindow extends JDialog {
 
 		JPanel panel = new JPanel(new BorderLayout());
 
-		statusLabel = new JLabel("Connecting");
+		statusLabel = new JLabel("Downloading server manifest");
 		operationLabel = new JLabel("Obtaining latest mod information from ME3Tweaks...");
 		panel.add(operationLabel, BorderLayout.NORTH);
 		panel.add(statusLabel, BorderLayout.SOUTH);
@@ -116,7 +116,7 @@ public class AllModsUpdateWindow extends JDialog {
 		protected Void doInBackground() throws Exception {
 			// Iterate through files to download and put them in the update
 			// folder
-			upackages = ModXMLTools.validateLatestAgainstServer(updatableMods);
+			upackages = ModXMLTools.validateLatestAgainstServer(updatableMods,this);
 			if (upackages.size() <= 0) {
 				return null;
 			}
@@ -245,6 +245,9 @@ public class AllModsUpdateWindow extends JDialog {
 						AllModsUpdateWindow.this.setLocation(getX(), (getY() - 160));
 						operationLabel.setText("Updating mods from ME3Tweaks");
 						break;
+					case "MANIFEST_DOWNLOADED":
+						statusLabel.setText("Creating checksums of local mods");
+						break;
 					default:
 						operationLabel.setText("Checking " + command);
 						break;
@@ -328,6 +331,14 @@ public class AllModsUpdateWindow extends JDialog {
 			}
 
 			new ModManagerWindow(false);
+		}
+
+		public void setManifestDownloaded() {
+			publish("MANIFEST_DOWNLOADED");
+		}
+		
+		public void publishUpdate(String update) {
+			publish(update);
 		}
 	}
 }
