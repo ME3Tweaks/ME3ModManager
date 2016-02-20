@@ -521,7 +521,7 @@ public class ModXMLTools {
 			ModManager.debugLogger.writeMessage("Getting latest mod info from link: " + uri.toASCIIString());
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
-			ModManager.debugLogger.writeMessage("Response:\n" + responseString);
+			ModManager.debugLogger.writeMessage("Response from server:\n" + responseString);
 		} catch (URISyntaxException e) {
 			ModManager.debugLogger.writeErrorWithException("Error getting online mod update info:", e);
 		} catch (ClientProtocolException e) {

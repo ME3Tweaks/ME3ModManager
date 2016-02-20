@@ -61,9 +61,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1";
-	public static long BUILD_NUMBER = 50L;
-	public static final String BUILD_DATE = "2/18/2015";
+	public static final String VERSION = "4.2 Beta 1";
+	public static long BUILD_NUMBER = 51L;
+	public static final String BUILD_DATE = "2/20/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -81,8 +81,8 @@ public class ModManager {
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 722;
 	
 	// version
-//	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
-	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 1000000; //4.5.0
+	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
+	//private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 1000000; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
@@ -390,7 +390,7 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage(getSystemInfo());
 			doFileSystemUpdate();
 			if (!validateNETFrameworkIsInstalled()) {
-				new NetFrameworkMissingWindow("Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly.");
+				new NetFrameworkMissingWindow("Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly. ");
 			}
 			ModManager.debugLogger.writeMessage("========End of startup=========");
 		} catch (Throwable e) {
@@ -1618,7 +1618,6 @@ public class ModManager {
 	public static boolean validateNETFrameworkIsInstalled() {
 		if (!PERFORM_DOT_NET_CHECK) {
 			NET_FRAMEWORK_IS_INSTALLED = true;
-			System.out.println("INSTALLED IS TRUE");
 			return true;
 		}
 		

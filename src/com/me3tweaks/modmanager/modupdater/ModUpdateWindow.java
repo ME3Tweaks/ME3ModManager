@@ -237,6 +237,10 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 						outputStream.write(buffer, 0, bytesRead);
 						bytesDownloaded += bytesRead;
 						percentCompleted = (int) (bytesDownloaded * 100 / totalBytes);
+						//						percentCompleted = (int) (bytesDownloaded * 100 / totalBytes);
+
+						System.out.println(bytesDownloaded * 100 +"/"+ totalBytes+" = "+ percentCompleted);
+						percentCompleted = Math.min(percentCompleted, 100);
 						setProgress(percentCompleted);
 					}
 
@@ -294,6 +298,13 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		@Override
 		protected void done() {
 			// TODO: Install update through the update script
+			try {
+				get();
+			} catch (ExecutionException | InterruptedException e) {
+				ModManager.debugLogger.writeErrorWithException("UPDATE FAILED:", e);
+				error = true;
+			}
+			
 			dispose();
 			if (amuw == null && error != true) {
 				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nMod Manager will now reload mods.");
