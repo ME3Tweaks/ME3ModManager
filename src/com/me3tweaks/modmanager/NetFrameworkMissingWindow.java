@@ -22,7 +22,7 @@ public class NetFrameworkMissingWindow extends JDialog {
 	private static final String netPage = "https://www.microsoft.com/en-us/download/details.aspx?id=48130";
 
 	public NetFrameworkMissingWindow(String text) {
-		this.setTitle(".NET Framework 4.5 not installed");
+		this.setTitle("No usable .NET Framework installed");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
@@ -37,7 +37,7 @@ public class NetFrameworkMissingWindow extends JDialog {
 		JPanel updatePanel = new JPanel();
 		updatePanel.setBorder(new EmptyBorder(5,5,5,5));
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("<html><div style=\"width:200px;\">"+text+"<br><br></div></html>");
+		introLabel = new JLabel("<html><div style=\"width:200px;\">"+text+"<br></div></html>");
 		downloadButton = new JButton("Download .NET 4.6 from Microsoft");
 		downloadButton.addActionListener(new ActionListener() {
 			
@@ -54,6 +54,7 @@ public class NetFrameworkMissingWindow extends JDialog {
 		updatePanel.add(introLabel);
 		updatePanel.add(Box.createRigidArea(new Dimension(5,5)));
 		updatePanel.add(downloadButton);
+		updatePanel.add(new JLabel("<html><div style=\"width:200px;\">If you are certain that this is installed, turn off this check in the Actions > Options menu.</div></html>"));
 		this.getContentPane().add(updatePanel);
 	}
 }

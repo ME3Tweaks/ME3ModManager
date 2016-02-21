@@ -67,9 +67,13 @@ public class Mod implements Comparable<Mod> {
 	/**
 	 * Empty constructor. This should not be used unless you really know what
 	 * you're doing. (manually adding jobs etc)
+	 * 
+	 * Instantiates the jobs variable and modifystring to blank and nothing
+	 * else.
 	 */
 	public Mod() {
 		jobs = new ArrayList<ModJob>();
+		modifyString = "";
 	}
 
 	/**
@@ -154,20 +158,35 @@ public class Mod implements Comparable<Mod> {
 				String removeFileTargetIni = modini.get(modHeader, "removefilestargets");
 				String requirementText = null;
 
-				if (newFileIni == null || oldFileIni == null || newFileIni.equals("") || oldFileIni.equals("")) {
-					ModManager.debugLogger.writeError("newfiles/replace files was null or empty, mod marked as invalid.");
+				boolean taskDoesSomething = false;
+				if (newFileIni != null && oldFileIni != null && !newFileIni.equals("") && !oldFileIni.equals("")) {
+					taskDoesSomething = true;
+				}
+				if (addFileIni != null && addFileTargetIni != null && !addFileIni.equals("") && !addFileTargetIni.equals("")) {
+					taskDoesSomething = true;
+				}
+				if (removeFileTargetIni != null && !removeFileTargetIni.equals("")) {
+					taskDoesSomething = true;
+				}
+
+				if (!taskDoesSomething) {
+					ModManager.debugLogger
+							.writeError("This task appears to do nothing. It should be removed if this is the case. Marking mod as invalid.");
 					return;
 				}
 
-				//Parse replace files
-				StringTokenizer newStrok = new StringTokenizer(newFileIni, ";");
-				StringTokenizer oldStrok = new StringTokenizer(oldFileIni, ";");
-				if (newStrok.countTokens() != oldStrok.countTokens()) {
-					// Same number of tokens aren't the same
-					ModManager.debugLogger.writeError("Number of files to update/replace do not match, mod being marked as invalid.");
-					ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
-							ModManager.LOG_MOD_INIT);
-					return;
+				StringTokenizer newStrok = null, oldStrok = null;
+				if (newFileIni != null && oldFileIni != null) {
+					//Parse replace files
+					newStrok = new StringTokenizer(newFileIni, ";");
+					oldStrok = new StringTokenizer(oldFileIni, ";");
+					if (newStrok.countTokens() != oldStrok.countTokens()) {
+						// Same number of tokens aren't the same
+						ModManager.debugLogger.writeError("Number of files to update/replace do not match, mod being marked as invalid.");
+						ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+								ModManager.LOG_MOD_INIT);
+						return;
+					}
 				}
 
 				//Mod Manager 4.1+ ADD/REMOVE/JOBDESCRIPTIONS
@@ -221,27 +240,28 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 				newJob.setSourceDir(iniModDir);
-				while (newStrok.hasMoreTokens()) {
-					String newFile = newStrok.nextToken();
-					String oldFile = oldStrok.nextToken();
-					// ModManager.debugLogger.writeMessageConditionally("Validating tokens: "+newFile+" vs
-					// "+oldFile);
-					if (!newFile.equals(getSfarFilename(oldFile))) {
-						ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs "
-								+ getSfarFilename(oldFile));
-						return; // The names of the files don't match
-					}
+				if (newStrok != null && oldStrok != null)
+					while (newStrok.hasMoreTokens()) {
+						String newFile = newStrok.nextToken();
+						String oldFile = oldStrok.nextToken();
+						// ModManager.debugLogger.writeMessageConditionally("Validating tokens: "+newFile+" vs
+						// "+oldFile);
+						if (!newFile.equals(getSfarFilename(oldFile))) {
+							ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs "
+									+ getSfarFilename(oldFile));
+							return; // The names of the files don't match
+						}
 
-					// Add the file swap to task job - if this method returns
-					// false it means a file doesn't exist somewhere
-					if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile))) {
-						ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
-						ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
-								ModManager.LOG_MOD_INIT);
+						// Add the file swap to task job - if this method returns
+						// false it means a file doesn't exist somewhere
+						if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile))) {
+							ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
+							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
+									ModManager.LOG_MOD_INIT);
 
-						return;
+							return;
+						}
 					}
-				}
 				if (addStrok != null) {
 					while (addStrok.hasMoreTokens()) {
 						String addFile = addStrok.nextToken();
@@ -327,11 +347,10 @@ public class Mod implements Comparable<Mod> {
 					}
 					if (ModType.isKnownDLCFolder(destFolder)) {
 						// Same number of tokens aren't the same
-						ModManager.debugLogger
-								.writeError("Custom DLC folder is not allowed as it is a default game one: "+destFolder);
+						ModManager.debugLogger.writeError("Custom DLC folder is not allowed as it is a default game one: " + destFolder);
 						return;
 					}
-					
+
 					List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 					for (File file : sourceFiles) {
 						String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
@@ -562,7 +581,21 @@ public class Mod implements Comparable<Mod> {
 			updateModifyString(ModType.COAL);
 			return;
 		}
-		updateModifyString(name);
+		if (name.equals(ModType.CUSTOMDLC)) {
+			String appendStr = name + " (";
+			boolean first = true;
+			for (String destFolder : newJob.getDestFolders()) {
+				if (!first) {
+					appendStr += ",";
+					first = false;
+				}
+				appendStr += destFolder;
+			}
+			appendStr += ")";
+			updateModifyString(appendStr);
+		} else {
+			updateModifyString(name);
+		}
 		jobs.add(newJob);
 
 	}
@@ -656,10 +689,6 @@ public class Mod implements Comparable<Mod> {
 		if (modAuthor != null) {
 			modDisplayDescription += "\nMod Developer: " + modAuthor;
 		}
-		// Add Devsite
-		if (modSite != null) {
-			modDisplayDescription += "\nMod Site: " + modSite;
-		}
 
 		// Add Modmaker
 		if (modmakerCode > 0) {
@@ -728,10 +757,10 @@ public class Mod implements Comparable<Mod> {
 				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
 					continue;
 				}
-				ModManager.debugLogger.writeMessage("==Checking file for conflicts " + file+"==");
+				ModManager.debugLogger.writeMessage("==Checking file for conflicts " + file + "==");
 
 				for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
-					ModManager.debugLogger.writeMessage("Comparing replace files: " + file+" vs "+otherfile);
+					ModManager.debugLogger.writeMessage("Comparing replace files: " + file + " vs " + otherfile);
 					if (file.equalsIgnoreCase(otherfile)) {
 						ModManager.debugLogger.writeMessage("Merge conflicts with file to update " + file);
 						return false;
@@ -934,6 +963,8 @@ public class Mod implements Comparable<Mod> {
 	 * Creates a moddesc.ini string that should be written to a file that
 	 * describes this mod object.
 	 * 
+	 * @param keepUpdaterCode
+	 * 
 	 * @param modName
 	 *            Name of this mod
 	 * @param modDescription
@@ -942,7 +973,7 @@ public class Mod implements Comparable<Mod> {
 	 *            mod's foldername
 	 * @return moddesc.ini file as a string
 	 */
-	public String createModDescIni(double cmmVersion) {
+	public String createModDescIni(boolean keepUpdaterCode, double cmmVersion) {
 		// Write mod descriptor file
 		try {
 			Wini ini = new Wini();
@@ -968,6 +999,13 @@ public class Mod implements Comparable<Mod> {
 			}
 			if (compiledAgainstModmakerVersion > 0) {
 				ini.put("ModInfo", "compiledagainst", Double.toString(compiledAgainstModmakerVersion));
+			}
+			if (keepUpdaterCode && isME3TweaksUpdatable()) {
+				if (getClassicUpdateCode() > 0) {
+					ini.put("ModInfo", "updatecode", getClassicUpdateCode());
+				} else {
+					ini.put("ModInfo", "me3tweaksid", getModMakerCode());
+				}
 			}
 
 			for (ModJob job : jobs) {
@@ -1369,7 +1407,7 @@ public class Mod implements Comparable<Mod> {
 
 		try {
 			ModManager.debugLogger.writeMessage("Creating moddesc.ini...");
-			FileUtils.writeStringToFile(new File(modFolder + File.separator + "moddesc.ini"), createModDescIni(modCMMVer));
+			FileUtils.writeStringToFile(new File(modFolder + File.separator + "moddesc.ini"), createModDescIni(false, modCMMVer));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeMessage("IOException while merging mods.");
@@ -1386,22 +1424,18 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	private void printModContents() {
-		ModManager.debugLogger.writeMessage("========"+modName+"========");
+		ModManager.debugLogger.writeMessage("========" + modName + "========");
 		for (ModJob job : jobs) {
 			if (job.getJobType() == ModJob.CUSTOMDLC) {
 				for (String sourceFolder : job.getSourceFolders()) {
-					ModManager.debugLogger.writeMessage(job.getJobName()+": "+sourceFolder);
+					ModManager.debugLogger.writeMessage(job.getJobName() + ": " + sourceFolder);
 				}
 				continue;
 			}
-			for (String sourceFile : job.getFilesToAdd()){
-				ModManager.debugLogger.writeMessage(job.getJobName()+": "+sourceFile);
+			for (String sourceFile : job.getFilesToAdd()) {
+				ModManager.debugLogger.writeMessage(job.getJobName() + ": " + sourceFile);
 			}
 		}
-	}
-
-	public static String convertNewlineToBr(String input) {
-		return input.replaceAll("\n", "<br>");
 	}
 
 	public void setModName(String modName) {
@@ -1423,6 +1457,7 @@ public class Mod implements Comparable<Mod> {
 			return false;
 		}
 		for (ModJob job : jobs) {
+			System.out.println(job);
 			if (job.getJobType() == ModJob.CUSTOMDLC) {
 				return true;
 			}
@@ -1467,6 +1502,12 @@ public class Mod implements Comparable<Mod> {
 		return modCMMVer;
 	}
 
+	/**
+	 * Returns if this mod is able to check for updates on ME3Tweaks
+	 * 
+	 * @return true if classic and has update code, or has modmaker code and
+	 *         version > 0
+	 */
 	public boolean isME3TweaksUpdatable() {
 		if ((getClassicUpdateCode() > 0 || getModMakerCode() > 0) && getVersion() > 0) {
 			return true;
@@ -1725,5 +1766,17 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 		return null;
+	}
+
+	public void setAuthor(String modAuthor) {
+		this.modAuthor = modAuthor;
+	}
+
+	public void setSite(String modSite) {
+		this.modSite = modSite;
+	}
+
+	public String getModSite() {
+		return modSite;
 	}
 }

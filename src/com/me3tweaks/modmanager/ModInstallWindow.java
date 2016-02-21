@@ -285,21 +285,18 @@ public class ModInstallWindow extends JDialog {
 					bghDB = new BasegameHashDB(null, me3dir, false);
 				} catch (SQLException e) {
 					while (e.getNextException() != null) {
-						ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.",e);
+						ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.", e);
 						e = e.getNextException();
 					}
 				}
 				if (bghDB == null) {
 					//cannot continue
 					failedLoadingDB = true;
-					JOptionPane.showMessageDialog(null,
-							"<html>The game repair database failed to load.<br>"
-									+ "Only one connection to the local database is allowed at a time.<br>"
-									+ "Please make sure you only have one instance of Mod Manager running.</html>",
-							"Database Failure", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
+							+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
 					return true;
 				}
-				
+
 			}
 			//check if DB exists
 			if (!bghDB.isBasegameTableCreated()) {
@@ -404,40 +401,82 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Created unpacked files backup directory.");
 			}
 			// Prep replacement job
-			ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
-			ArrayList<String> newFiles = job.getFilesToReplace();
-			int numFilesToReplace = filesToReplace.size();
-			ModManager.debugLogger.writeMessage("Number of files to replace in the basegame: " + numFilesToReplace);
-			for (int i = 0; i < numFilesToReplace; i++) {
-				String fileToReplace = filesToReplace.get(i);
-				String newFile = newFiles.get(i);
-				if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
-					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
-					newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
-				}
+			{
+				ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
+				ArrayList<String> newFiles = job.getFilesToReplace();
+				int numFilesToReplace = filesToReplace.size();
+				ModManager.debugLogger.writeMessage("Number of files to replace in the basegame: " + numFilesToReplace);
+				for (int i = 0; i < numFilesToReplace; i++) {
+					String fileToReplace = filesToReplace.get(i);
+					String newFile = newFiles.get(i);
+					if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
+						ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
+						newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
+					}
 
-				boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
+					boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
+					if (!shouldContinue) {
+						installCancelled = true;
+						return false;
+					}
+
+					// install file.
+					File unpacked = new File(me3dir + fileToReplace);
+					Path originalpath = Paths.get(unpacked.toString());
+					if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.USE_GAME_TOCFILES_INSTEAD) {
+						try {
+							ModManager.debugLogger.writeMessage("Installing mod file: " + newFile);
+							publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
+							Path newfilepath = Paths.get(newFile);
+							Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
+							ModManager.debugLogger.writeMessage("Installed mod file: " + newFile);
+						} catch (IOException e) {
+							ModManager.debugLogger.writeException(e);
+							return false;
+						}
+					} else {
+						ModManager.debugLogger.writeMessage("Post-Install TOC indicates we should skip installing PCConsoleTOC for this job");
+					}
+				}
+			}
+
+			//ADD TASKS
+			ArrayList<String> filesToAddTargets = job.getFilesToAddTargets();
+			ArrayList<String> filesToAdd = job.getFilesToAdd();
+			int numFilesToAdd = filesToAdd.size();
+			ModManager.debugLogger.writeMessage("Number of files to add to the basegame: " + numFilesToAdd);
+			for (int i = 0; i < numFilesToAdd; i++) {
+				String fileToAddTarget = filesToAddTargets.get(i);
+				String fileToAdd = filesToAdd.get(i);
+				//cant use alternative toc with add files for now. If needed this can be added
+				/*
+				 * if (fileToAdd.endsWith("PCConsoleTOC.bin") &&
+				 * alternativeTOCFiles != null &&
+				 * alternativeTOCFiles.containsKey(job.getJobName())) {
+				 * ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: "
+				 * + alternativeTOCFiles.get(job.getJobName())); fileToAdd =
+				 * alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE
+				 * TOC }
+				 *
+
+				boolean shouldContinue = checkBackupAndHash(me3dir, fileToAddTarget, job);
 				if (!shouldContinue) {
 					installCancelled = true;
 					return false;
-				}
+				}*/
 
 				// install file.
-				File unpacked = new File(me3dir + fileToReplace);
-				Path originalpath = Paths.get(unpacked.toString());
-				if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.USE_GAME_TOCFILES_INSTEAD) {
-					try {
-						ModManager.debugLogger.writeMessage("Installing mod file: " + newFile);
-						publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
-						Path newfilepath = Paths.get(newFile);
-						Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
-						ModManager.debugLogger.writeMessage("Installed mod file: " + newFile);
-					} catch (IOException e) {
-						ModManager.debugLogger.writeException(e);
-						return false;
-					}
-				} else {
-					ModManager.debugLogger.writeMessage("Post-Install TOC indicates we should skip installing PCConsoleTOC for this job");
+				File installFile = new File(me3dir + fileToAddTarget);
+				Path installPath = Paths.get(installFile.toString());
+				try {
+					ModManager.debugLogger.writeMessage("Installing mod file: " + fileToAdd);
+					publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(fileToAdd));
+					Path newfilepath = Paths.get(fileToAdd);
+					Files.copy(newfilepath, installPath, StandardCopyOption.REPLACE_EXISTING);
+					ModManager.debugLogger.writeMessage("Installed mod file: " + fileToAdd);
+				} catch (IOException e) {
+					ModManager.debugLogger.writeException(e);
+					return false;
 				}
 			}
 
@@ -687,8 +726,8 @@ public class ModInstallWindow extends JDialog {
 				boolean installAndUpdate = false;
 				if (rfi == null) {
 					int reply = JOptionPane.showOptionDialog(null,
-							"<html>The file:<br>" + relative + "<br>is not in the repair database. "
-									+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.<br></html>",
+							"<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
+									+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
 							"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
 							new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
 					switch (reply) {
@@ -966,7 +1005,6 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("===Processing a customdlc job===");
 
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
-			HashSet<String> relativeDlcDirs = new HashSet<String>();
 			for (int i = 0; i < job.getFilesToReplaceTargets().size(); i++) {
 				String target = job.getFilesToReplaceTargets().get(i);
 				String fileDestination = dlcdir + target;

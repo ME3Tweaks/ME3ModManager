@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TlkFile name="DLC_Shared_Test_INT/DLC_Shared_Test_INT0.xml">
+	<Strings>
+		<String id="681146">Shared</String>
+		<String id="758774">asf</String>
+		<String id="134217729">DLC_Shared</String>
+		<String id="134217730">en-us</String>
+		<String id="134217731">Male</String>
+		<String id="134217731">Female</String>
+	</Strings>
+</TlkFile>

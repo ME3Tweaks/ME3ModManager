@@ -112,7 +112,7 @@ public class HelpMenu {
 		helpPost = new JMenuItem("View FAQ");
 		helpPost.setToolTipText("Opens the Mod Manager FAQ");
 		helpForums = new JMenuItem("Forums");
-		helpForums.setToolTipText("Opens the ME3Tweaks forum on ME3Explorer Forums");
+		helpForums.setToolTipText("Opens the ME3Tweaks forums");
 		helpAbout = new JMenuItem("About Mod Manager");
 		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
 
@@ -154,7 +154,7 @@ public class HelpMenu {
 			public void actionPerformed(ActionEvent e) {
 				URI theURI;
 				try {
-					theURI = new URI("http://me3explorer.freeforums.org/me3tweaks-f33.html");
+					theURI = new URI("http://me3tweaks.com/forums");
 					java.awt.Desktop.getDesktop().browse(theURI);
 				} catch (URISyntaxException ex) {
 					// TODO Auto-generated catch block
@@ -207,7 +207,7 @@ public class HelpMenu {
 			public void actionPerformed(ActionEvent e) {
 				URI theURI;
 				try {
-					theURI = new URI("http://me3explorer.freeforums.org/me3tweaks-f33.html");
+					theURI = new URI("http://me3tweaks.com/forums");
 					java.awt.Desktop.getDesktop().browse(theURI);
 				} catch (URISyntaxException ex) {
 					// TODO Auto-generated catch block

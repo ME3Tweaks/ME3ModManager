@@ -274,18 +274,34 @@ public class ModType {
 		return dlcMap;
 	}
 
+	/**
+	 * Gets list of headers for known official SP DLC a
+	 * @return
+	 */
 	public static String[] getSPHeaderNameArray() {
 		return new String[] { COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1, TESTPATCH };
 	}
 
+	/**
+	 * Gets list of headers for known official SP DLC and the basegame header
+	 * @return
+	 */
 	public static String[] getSPBaseHeaderNameArray() {
 		return new String[] { BASEGAME, COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1, TESTPATCH};
 	}
 	
+	/**
+	 * Gets the list of headers for known offical DLC
+	 * @return
+	 */
 	public static String[] getDLCHeaderNameArray() {
 		return new String[] {MP1, MP2, MP3, MP4, MP5, PATCH1, PATCH2, TESTPATCH, COLLECTORSEDITION, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01, GUN02, DH1 };
 	}
 
+	/**
+	 * Gets list of headers for known official MP DLC
+	 * @return
+	 */
 	public static String[] getMPHeaderNameArray() {
 		return new String[] { MP1, MP2, MP3, MP4, MP5, PATCH1, PATCH2, TESTPATCH };
 	}

@@ -44,11 +44,7 @@ public class MountFileEditorWindow extends JDialog {
 	private static final int MOUNTDLC_LENGTH = 108;
 	private static boolean ISRUNNINGASMAIN = false;
 	private static final String DEFAULT_MOUNT_DATA = "01000000AC020000C20000006B0003008C0A0000000000001C00000092190B0092190B00331500000B0000005A7BBD26DD417E499CC660D2587278EB2E2C6A06130AE44783EA08F387A0E2DA0000000000000000000000000000000000000000000000000000000000000000";
-	/*
-	 * private byte[] mountBytes = DatatypeConverter .parseHexBinary(
-	 * "01000000AC020000C20000006B0003008C0A0000000000001C00000092190B0092190B00331500000B0000005A7BBD26DD417E499CC660D2587278EB2E2C6A06130AE44783EA08F387A0E2DA0000000000000000000000000000000000000000000000000000000000000000"
-	 * );
-	 */private JComboBox<MountFlag> mountFlagsCombobox;
+	private JComboBox<MountFlag> mountFlagsCombobox;
 	private JFormattedTextField tlkIdField;
 	private JFormattedTextField priorityField;
 	private JLabel lStatus;
@@ -61,12 +57,33 @@ public class MountFileEditorWindow extends JDialog {
 	private JLabel sStatus;
 	private JButton butSave;
 	private JTextField sInputField;
+	private JTextField lInputField;
+	private JButton butLoadMount;
 
 	private static DecimalFormat integerFormat = new DecimalFormat("#");
 
+	/**
+	 * Opens a blank mount file editor.
+	 */
 	public MountFileEditorWindow() {
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		setVisible(true);
+	}
+
+	/**
+	 * Opens mount editor and automatically loads the specified mount file
+	 * 
+	 * @param target
+	 *            mount to load
+	 */
+	public MountFileEditorWindow(String target) {
+		setupWindow();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		lInputField.setText(target);
+		lStatus.setText(" ");
+		butLoadMount.setEnabled(true);
+		loadMount(target);
 		setVisible(true);
 	}
 
@@ -82,11 +99,11 @@ public class MountFileEditorWindow extends JDialog {
 		//Load Panel
 		JPanel loadPanel = new JPanel(new GridBagLayout());
 		loadPanel.setBorder(new TitledBorder(new EtchedBorder(), "Load a Mount.dlc file for editing (optional)"));
-		JTextField lInputField = new JTextField(55);
+		lInputField = new JTextField(55);
 		lInputField.setUI(new HintTextFieldUI("Select a Mount.dlc"));
 		JButton lBrowse = new JButton("Browse...");
 		lBrowse.setPreferredSize(new Dimension(100, 19));
-		JButton butLoadMount = new JButton("Load Mount");
+		butLoadMount = new JButton("Load Mount");
 		butLoadMount.setEnabled(false);
 		butLoadMount.setPreferredSize(new Dimension(100, 23));
 		lStatus = new JLabel(" ");
@@ -153,8 +170,8 @@ public class MountFileEditorWindow extends JDialog {
 		tlkIdField = new JFormattedTextField(integerFormat);
 		tlkIdField.setColumns(8);
 		tlkIdField.setUI(new HintTextFieldUI("TLK ID"));
-		tlkIdField
-				.setToolTipText("<html>This is the name of the DLC, in-game.<br>If this DLC is removed and it is required by the save files, this string will appear at the main menu error screen.<br>If a modified DLC authorizer is not used, this DLC will not load and will display this name at the main menu error screen.<br>You should always provide one for your DLC as this will provide feedback to end-users that something is wrong.</html>");
+		tlkIdField.setToolTipText(
+				"<html>This is the name of the DLC, in-game.<br>If this DLC is removed and it is required by the save files, this string will appear at the main menu error screen.<br>If a modified DLC authorizer is not used, this DLC will not load and will display this name at the main menu error screen.<br>You should always provide one for your DLC as this will provide feedback to end-users that something is wrong.</html>");
 
 		JLabel mountFlags = new JLabel("DLC Mount Flags");
 
@@ -169,8 +186,8 @@ public class MountFileEditorWindow extends JDialog {
 
 		mountFlagsCombobox.setModel(flagModel);
 		mountFlagsCombobox.setRenderer(new MountFlagCellRenderer());
-		mountFlagsCombobox
-				.setToolTipText("<html>Mount flags determine when this DLC is loaded and if it is required by save files.<br>Having a DLC load in MP will require all players to have the DLC installed or connections will be refused.<br>TESTPATCH ignores the Mount.dlc flag and always loads regardless at startup.</html>");
+		mountFlagsCombobox.setToolTipText(
+				"<html>Mount flags determine when this DLC is loaded and if it is required by save files.<br>Having a DLC load in MP will require all players to have the DLC installed or connections will be refused.<br>TESTPATCH ignores the Mount.dlc flag and always loads regardless at startup.</html>");
 		c = new GridBagConstraints();
 		c.gridx = 0;
 		editorPanel.add(priority, c);
@@ -229,8 +246,7 @@ public class MountFileEditorWindow extends JDialog {
 		c.anchor = GridBagConstraints.EAST;
 		savePanel.add(butSave, c);
 
-		JLabel label = new JLabel(
-				"<html>Use this tool to create new or modify existing Mount.dlc files.<br>Loading a file will load its values into the editor.</html>");
+		JLabel label = new JLabel("<html>Use this tool to create new or modify existing Mount.dlc files.<br>Loading a file will load its values into the editor.</html>");
 		label.setAlignmentX(Component.LEFT_ALIGNMENT);
 		tStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
 		sStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -340,26 +356,23 @@ public class MountFileEditorWindow extends JDialog {
 		try {
 			int mountPriorityVal = Integer.parseInt(mountPriority);
 			if (mountPriorityVal > Short.MAX_VALUE || mountPriorityVal < 0) {
-				JOptionPane.showMessageDialog(this, "Mount priority must be between 1 and " + Short.MAX_VALUE, "Invalid Mount Priority",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Mount priority must be between 1 and " + Short.MAX_VALUE, "Invalid Mount Priority", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 		} catch (NumberFormatException e) {
-			JOptionPane.showMessageDialog(this, "Mount priority must be between 1 and " + Short.MAX_VALUE, "Invalid Mount Priority",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Mount priority must be between 1 and " + Short.MAX_VALUE, "Invalid Mount Priority", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
 		try {
 			long tlkIdVal = Long.parseLong(tlkId);
 			if (tlkIdVal > Integer.MAX_VALUE || tlkIdVal < Integer.MIN_VALUE) {
-				JOptionPane.showMessageDialog(this, "DLC TLK ID must be between " + Integer.MIN_VALUE + " and " + Integer.MAX_VALUE,
-						"Invalid DLC TLK ID", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "DLC TLK ID must be between " + Integer.MIN_VALUE + " and " + Integer.MAX_VALUE, "Invalid DLC TLK ID",
+						JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 		} catch (NumberFormatException e) {
-			JOptionPane.showMessageDialog(this, "DLC TLK ID must be between " + Integer.MIN_VALUE + " and " + Integer.MAX_VALUE,
-					"Invalid DLC TLK ID", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "DLC TLK ID must be between " + Integer.MIN_VALUE + " and " + Integer.MAX_VALUE, "Invalid DLC TLK ID", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		return true;
@@ -406,7 +419,7 @@ public class MountFileEditorWindow extends JDialog {
 			}
 
 			editorPanel.setBorder(new TitledBorder(new EtchedBorder(), "Mount.dlc info (loaded)"));
-			
+
 			sInputField.setText(path);
 			butSave.setEnabled(true);
 		} catch (IOException e) {
@@ -473,20 +486,20 @@ public class MountFileEditorWindow extends JDialog {
 		byte mountFlagVal = data[MPSPFLAG_OFFSET];
 		switch (mountFlagVal) {
 		case 8:
-			return "SP | Not required 0x"+ Integer.toString(8,16);
+			return "SP | Not required 0x" + Integer.toString(8, 16);
 		case 9:
-			return "SP | Required 0x"+ Integer.toString(9,16);
+			return "SP | Required 0x" + Integer.toString(9, 16);
 		case 28:
-			return "SP&MP | Not required (SP) 0x"+ Integer.toString(28,16);
+			return "SP&MP | Not required (SP) 0x" + Integer.toString(28, 16);
 		case 12:
-			return "MP (PATCH)| Loads in MP 0x"+ Integer.toString(12,16);
+			return "MP (PATCH)| Loads in MP 0x" + Integer.toString(12, 16);
 		case 20:
-			return "MP | Loads in MP 0x"+ Integer.toString(20,16);
+			return "MP | Loads in MP 0x" + Integer.toString(20, 16);
 		case 52:
-			return "MP | Loads in MP 0x"+ Integer.toString(52,16);
+			return "MP | Loads in MP 0x" + Integer.toString(52, 16);
 		default:
-			return "Unknown Mount Flag: 0x"+Integer.toString(mountFlagVal, 16);
-		
+			return "Unknown Mount Flag: 0x" + Integer.toString(mountFlagVal, 16);
+
 		}
 	}
 }

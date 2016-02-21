@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TlkFile name="DLC_CON_MP1_NonShip_INT/DLC_CON_MP1_NonShip_INT0.xml">
+	<Strings>
+		<String id="727801">Geth_2</String>
+		<String id="134217729">DLC_CON_MP1</String>
+		<String id="134217730">en-us</String>
+		<String id="134217731">Male</String>
+		<String id="134217731">Female</String>
+	</Strings>
+</TlkFile>

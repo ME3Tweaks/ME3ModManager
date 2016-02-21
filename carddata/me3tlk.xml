@@ -1,0 +1,390 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TlkFile name="ME3TLK/ME3TLK0.xml">
+	<Strings>
+		<String id="664978">Recruit Pack</String>
+		<String id="664979">Reinforcements</String>
+		<String id="664980">A great way to upgrade and unlock your basic weapons, mods and characters.
+
+Includes 5 random items or characters, with a small chance for an Uncommon.</String>
+		<String id="674491">Premium Spectre Pack</String>
+		<String id="674492">Even more of the best equipment for the galaxy's best operatives.
+ 
+Includes 5 random items or characters, with at least 2 Rares or better and a higher chance for Ultra-Rares.</String>
+		<String id="669285">Spectre Pack</String>
+		<String id="669286">The best equipment for the galaxy's best operatives.
+
+Includes 5 random items or characters, with at least 1 Rare or better.</String>
+<String id="669283">Veteran Pack</String>
+		<String id="669284">Advanced hardware and training for experienced operatives. 
+
+Includes 5 random items or characters, with at least 1 Uncommon or better.</String>
+		<String id="705015">Starter Pack</String>
+		<String id="705016">Redeem your free starter pack to unlock new weapons and characters!</String>
+		<String id="723280">Battlefield 3 Pack</String>
+		<String id="723281">Unlock your Battlefield 3 Limited Edition soldier!</String>
+		<String id="314057">$703605</String>
+		<String id="352864">Heavy-hitting Collector assault rifle with advanced accuracy stabilization.</String>
+		<String id="502406">Increase health bonus and barrier bonus by {HealthShieldBonus%b}%.</String>
+		<String id="502448">Decrease shield-recharge delay by {Evolve_ShieldRegenBonus%p}%.</String>
+		<String id="563797">Press ([PC_MoveBackward]) to exit turret and [Shared_Shoot] to fire</String>
+		<String id="599452">Drop-Off Location</String>
+		<String id="641202">Defend</String>
+		<String id="643740">Map Pack: Jungle</String>
+		<String id="644440">Live INI</String>
+		<String id="650679">From Ashes</String>
+		<String id="657809">Cannot join game. Your friend is using downloadable content you don't have.
+
+Go to the Main Menu and select (Downloadable Content) to get the content at no additional charge.</String>
+		<String id="662313">Level &lt;CUSTOM0&gt;</String>
+		<String id="665403">Drop-Off Location</String>
+		<String id="674492">Even more of the best equipment for the galaxy's best operatives.
+ 
+Includes 5 random items or characters with at least 2 Rares or better and a higher chance for Ultra-Rares.
+
+Now with a chance to find new characters and weapons when the Earth Multiplayer Expansion is installed!</String>
+		<String id="675847">Move (Mouse) to aim and [Shared_Shoot] to fire</String>
+		<String id="675852">Hold [Shared_Aim] to pop up from cover and click [Shared_Shoot] to fire</String>
+		<String id="718418">Test DLC Weapon Pack</String>
+		<String id="720735">Hold [Shared_Shoot] to charge weapon</String>
+		<String id="722303">German Language Pack</String>
+		<String id="723420">English Voice-Over Pack</String>
+		<String id="723560">Collector's Edition Squadmate Appearance Pack</String>
+		<String id="723561">Alternate Appearance Pack 1 (Garrus, Liara, EDI)</String>
+		<String id="723970">Online Pass Entitlement</String>
+		<String id="724024">Collector's Edition Online Pass Entitlement</String>
+		<String id="724025">Hidden Online Pass Entitlement</String>
+		<String id="724245">Test Paid MP DLC Pack</String>
+		<String id="724246">Test Free MP DLC Pack</String>
+		<String id="724420">PC Pre-Order - Indra Sniper Rifle</String>
+		<String id="724424">Pre-Order - N7 Valkyrie Assault Rifle, N7 Defender Armor, M55 Argus Assault Rifle</String>
+		<String id="724428">Pre-Order - M55 Argus Assault Rifle</String>
+		<String id="724429">PC Pre-Order - AT12 Raider Shotgun, M55 Argus Assault Rifle</String>
+		<String id="724432">Reckoning Cross-Promo Pack</String>
+		<String id="724441">Gear Equipment Bonus</String>
+		<String id="724629">Hold ([Shared_Aim]) to accurately aim your weapon.</String>
+		<String id="724655">Cannot join game. Your friend is using downloadable content you don't have.
+
+Go to the Main Menu and select (Downloadable Content) to get the content at no additional charge.</String>
+		<String id="724754">Recruitment Reward Pack</String>
+		<String id="724755">A reward for participating in the Mass Effect 3 Recruitment Program.</String>
+		<String id="724786">French Voice-Over Pack</String>
+		<String id="724787">Italian Voice-Over Pack</String>
+		<String id="725185">Reckoner Pack 2 - Chakram Launcher</String>
+		<String id="727440">Resurgence Multiplayer Expansion</String>
+		<String id="727441">Rebellion Pack</String>
+		<String id="727442">Mass Effect™ 3: Earth</String>
+		<String id="727500">Omega</String>
+		<String id="727761">Collectible Pack</String>
+		<String id="727762">A special bonus for dedicated Mass Effect fans.</String>
+		<String id="727763">Premium Collectible Pack</String>
+		<String id="727765">Collector Rifle Pack</String>
+		<String id="727767">M-8 Avenger Collectible Pack</String>
+		<String id="727768">A limited-release pack available only to owners of the Triforce M-8 Avenger Assault Rifle.</String>
+		<String id="727769">M-3 Predator Collectible Pack</String>
+		<String id="727770">A limited-release pack available only to owners of the M-3 Predator Heavy Pistol.</String>
+		<String id="727784">Equipment Pack</String>
+		<String id="727785">Enough bonus equipment to survive any mission.
+
+Includes 5 random equipment and supply items.</String>
+		<String id="727804">DLC Test Pack</String>
+		<String id="727805">FOR TESTING ONLY - will grant all of the new DLC items. Please don't file bugs on this pack's appearance/translation.</String>
+		<String id="727816">Premium Recruit Pack</String>
+		<String id="727817">The best way to upgrade and unlock your basic weapons, mods, and characters.
+
+Includes five random items or characters with two chances for an Uncommon.</String>
+		<String id="727818">Premium Veteran Pack</String>
+		<String id="727819">Advanced hardware and training for experienced operatives looking for an edge.
+
+Includes five random items or characters with at least two Uncommons or better as well as a higher chance for Rares.</String>
+		<String id="727820">Jumbo Spectre Pack</String>
+		<String id="727821">Even more of the best equipment for the galaxy's best operatives. Double the size of a Premium Spectre Pack!
+
+Includes 10 random items or characters with at least four Rares or better as well as a higher chance for Ultra-Rares.</String>
+		<String id="727822">Jumbo Equipment Pack</String>
+		<String id="727823">Load up on even more bonus equipment. Double the size of a regular Equipment Pack!
+
+Includes 10 random equipment and supply items.</String>
+		<String id="728043">Leviathan</String>
+		<String id="728137">Citadel</String>
+		<String id="728589">Mass Effect™ 3: Resurgence Multiplayer Expansion</String>
+		<String id="728645">Firefight Pack</String>
+		<String id="729120">New allies and munitions available for the fight against the Reapers!
+
+Includes five random items or characters with at least one of the new Resurgence Rares.</String>
+		<String id="729121">Resurgence Pack</String>
+		<String id="731378">Commendation Pack</String>
+		<String id="731380">Victory Pack</String>
+		<String id="731663">Italian Crash Fix</String>
+		<String id="734635">Mass Effect™ 3: Extended Cut</String>
+		<String id="735694">Mass Effect™ 3: Rebellion Multiplayer Expansion</String>
+		<String id="735696">New allies rise up to join the fight!
+
+Includes five random items or characters with at least one Rare or better as well as a higher chance for the new Rebellion content.</String>
+		<String id="735919">The best equipment for the galaxy's best operatives.
+
+Includes five random items or characters with at least one Rare or better.
+
+Now with a chance to find new characters and weapons when the Earth Multiplayer Expansion is installed!</String>
+		<String id="735928">Download the Resurgence Multiplayer Expansion at no additional charge.</String>
+		<String id="735929">Download the Resurgence Multiplayer Expansion to receive new maps and a chance to find reinforcement packs containing new characters, weapons, and equipment.</String>
+		<String id="737200">ME3: Content Patch DLC Module</String>
+		<String id="738450">Gift Pack</String>
+		<String id="738451">A gift from the Mass Effect team.</String>
+		<String id="738452">You have received this reward for Operation Resurgence.</String>
+		<String id="747202">Mass Effect™ 3: Earth</String>
+		<String id="747610">For review purposes only.</String>
+		<String id="752066">N7 Equipment Pack</String>
+		<String id="752067">Superior gear to round out your combat kit.
+
+Includes 10 random equipment and supply items and a chance for Ultra-Rares.</String>
+		<String id="752068">Arsenal Pack</String>
+		<String id="752069">It's easy to smile when you're armed to the teeth!
+
+Includes five random items with at least two Rares or better, as well as a higher chance for weapons.</String>
+		<String id="752070">Reserves Pack</String>
+		<String id="752071">Need backup? Bring in fighters from all corners of the galaxy to diversify your team.
+
+Includes five random items with at least two Rares or better, as well as a higher chance for characters.</String>
+		<String id="768117">Press Pack</String>
+		<String id="768171">ME3: WiiU Talk Table DLC Module</String>
+		<String id="768382">Mass Effect™ 3: Retaliation Multiplayer Expansion</String>
+		<String id="768485">ME3: EoR Talk Table DLC Module</String>
+		<String id="770728">Earn &lt;CUSTOM0&gt; Medals</String>
+		<String id="774519">Weekend Challenge</String>
+		<String id="778497">Number of times completed: &lt;CUSTOM0&gt;
+
+</String>
+		<String id="782577">Mass Effect™ 3: Reckoning</String>
+		<String id="782929">Particle Rifle Use</String>
+		<String id="782930">Earn &lt;CUSTOM0&gt; Points Using the Particle Rifle</String>
+		<String id="793994">The best equipment for the galaxy's best operatives.
+
+Includes five random items or characters with at least one Rare or better.</String>
+		<String id="793995">Even more of the best equipment for the galaxy's best operatives.
+ 
+Includes five random items or characters with at least two Rares or better as well as a higher chance for Ultra-Rares.</String>
+		<String id="796074">Operation Valkyrie</String>
+		<String id="796075">Earn &lt;CUSTOM0&gt; Points Using One of the Four N7 Commendation Weapons</String>
+		<String id="796076">Operation Bloodlust</String>
+		<String id="796077">Earn a Gold Melee Medal with a Krogan Character</String>
+		<String id="796078">Operation Alamo</String>
+		<String id="796079">Earn the "Survive Five Waves" Medal as a Squad on Palaven</String>
+		<String id="797318">You have received this reward because the community met the challenge of the Operation OVERDRIVE event.</String>
+		<String id="797319">A reward for successfully meeting the Operation OVERDRIVE squad challenge.</String>
+		<String id="806473">Even more of the best equipment for the galaxy's best operatives.
+ 
+Includes five random items or characters with at least two Rares or better as well as a higher chance for Ultra-Rares.</String>
+		<String id="809298">A reward for successfully meeting a Weekend Challenge.</String>
+		<String id="811532">Operation Jackhammer </String>
+		<String id="811533">Earn &lt;CUSTOM0&gt; Points Using Biotic Charge</String>
+		<String id="811538">N7 Day Loyalty Pack</String>
+		<String id="811539">N7 Day Trilogy Pack</String>
+		<String id="811558">Halloween Challenge</String>
+		<String id="811559">Complete &lt;CUSTOM0&gt; Halloween Challenges</String>
+		<String id="811560">Ghostbuster</String>
+		<String id="811561">Extract &lt;CUSTOM0&gt; Times on Firebase Ghost or [Ux2623] Firebase Ghost [Ux2623]</String>
+		<String id="811562">Zombie Hunter</String>
+		<String id="811563">Earn &lt;CUSTOM0&gt; points by killing husks or abominations.</String>
+		<String id="811564">Monster Killer</String>
+		<String id="811565">Earn &lt;CUSTOM0&gt; points by killing brutes, scions, praetorians, or banshees.</String>
+		<String id="811900">A free bonus pack for owners of the Trilogy Collection.</String>
+		<String id="812323">N7 Day Alliance Challenge</String>
+		<String id="812324">Extract &lt;CUSTOM0&gt; Times with a Human Character</String>
+		<String id="812492">M-55 Argus Assault Rifle Use</String>
+		<String id="812493">Earn &lt;CUSTOM0&gt; points using the M-55 Argus assault rifle.</String>
+		<String id="812494">AT-12 Raider Shotgun Use</String>
+		<String id="812495">Earn &lt;CUSTOM0&gt; points using the AT-12 Raider shotgun.</String>
+		<String id="812496">N7 Valkyrie Assault Rifle Use</String>
+		<String id="812497">Earn &lt;CUSTOM0&gt; points using the N7 Valkyrie assault rifle.</String>
+		<String id="812513">Hallowed Hero</String>
+		<String id="812514">Smash Use</String>
+		<String id="812515">Earn &lt;CUSTOM0&gt; points using smash.</String>
+		<String id="812516">Biotic Orbs Use</String>
+		<String id="812517">Earn &lt;CUSTOM0&gt; points using biotic orbs.</String>
+		<String id="812519">Barrier Use</String>
+		<String id="812520">Earn &lt;CUSTOM0&gt; points using barrier.</String>
+		<String id="812526">Operation Blast Furnace</String>
+		<String id="812527">Earn &lt;CUSTOM0&gt; points using fire-based powers.</String>
+		<String id="813081">Priority Target</String>
+		<String id="813082">Discover a plot against you.</String>
+		<String id="813083">High Society</String>
+		<String id="813084">Go undercover to follow a lead.</String>
+		<String id="813085">Team Player</String>
+		<String id="813086">Infiltrate an enemy stronghold with your crew.</String>
+		<String id="813087">Last Resort</String>
+		<String id="813088">Stop an out-of-control scheme before it's too late.</String>
+		<String id="813089">Perfect Host</String>
+		<String id="813090">Throw a party for your friends.</String>
+		<String id="813091">King of the Castle</String>
+		<String id="813092">Win a prize at one of the arcade games.</String>
+		<String id="813093">Technical Issues</String>
+		<String id="813094">Investigate a strange occurrence in the combat simulator.</String>
+		<String id="813095">Simulated Hero</String>
+		<String id="813096">Score 9999 points in the combat simulator on Normal, Hardcore, or Insanity.</String>
+		<String id="813097">Mass Effect™ 3: Citadel</String>
+		<String id="813100">Citadel</String>
+		<String id="813591">Operation Gearhead</String>
+		<String id="813592">Earn &lt;CUSTOM0&gt; points as any engineer class.</String>
+		<String id="813593">Extract &lt;CUSTOM0&gt; Times as any Engineer Class</String>
+		<String id="813603">BioWare</String>
+		<String id="813744">Loyalist</String>
+		<String id="813745">The Tickler</String>
+		<String id="813908">ME3: Split DLC Part 1</String>
+		<String id="813909">ME3: Split DLC Part 2</String>
+		<String id="813915">Corsair</String>
+		<String id="813916">Score &lt;CUSTOM0&gt; cumulative total points versus shielded enemies.</String>
+		<String id="813917">Complete &lt;CUSTOM0&gt; cumulative total extractions of batarian, vorcha, or turian characters.</String>
+		<String id="813918">A Commendation Pack awarded for completing the individual challenge in Operation PRIVATEER.</String>
+		<String id="813919">Operation Privateer</String>
+		<String id="813920">A Victory Pack awarded for completing the allied challenge in Operation PRIVATEER.</String>
+		<String id="814128">April Banigan
+Wes Borg
+Lora Brovold
+Clinton Carew
+Belinda Cornish
+Keith David
+Alastair Duncan
+Dannah Feinglass
+Quinton Flynn
+Chris Fries
+Siobhan Hewlitt
+Paula Humby
+David Lodge
+Gord Marriott
+Jeff Page
+Andrea Rankin
+William Salyers
+Marc Schulte
+Jane Singer
+John Ullyatt
+Travis Willingham
+Fred Zbryski
+
+In Memory of Robin Sachs</String>
+		<String id="814155">Operation Detonator</String>
+		<String id="814156">Earn &lt;CUSTOM0&gt; points using biotic explosions.</String>
+		<String id="814157">Operation Onslaught</String>
+		<String id="814158">Earn &lt;CUSTOM0&gt; points using assault rifles.</String>
+		<String id="814159">Operation Alamo</String>
+		<String id="814160">Earn a &lt;CUSTOM0&gt; Waves Survived medal on Palaven.</String>
+		<String id="814161">Operation Genesis</String>
+		<String id="814162">Extract as any base human male.</String>
+		<String id="814163">Extract as any base human female.</String>
+		<String id="814164">Operation Geronimo</String>
+		<String id="814165">Earn &lt;CUSTOM0&gt; Revive Medal</String>
+		<String id="814166">Operation Ballistic</String>
+		<String id="814167">Earn Any Gold Weapon Medal</String>
+		<String id="814168">Operation Firestorm</String>
+		<String id="814169">Complete 3 Killstreaks in One Match</String>
+		<String id="814198">ME3: Content Patch 2 DLC Module</String>
+		<String id="814351">The One and Only</String>
+		<String id="814352">Defeat a group of Spectre-level opponents on Normal, Hardcore, or Insanity.</String>
+		<String id="814420">Superior gear to round out your combat kit.
+
+Includes 5 random consumables with a small chance for Ultra-Rare weapons or characters.</String>
+		<String id="814442">Operation Prophecy</String>
+		<String id="814443">Extract Once on Each Earth Map (London, Vancouver, and Rio)</String>
+		<String id="814444">Score &lt;CUSTOM0&gt; Cumulative Points Against Reaper Enemies</String>
+		<String id="814448">Extract from Firebase London</String>
+		<String id="814449">Extract from Firebase Vancouver</String>
+		<String id="814450">Extract from Firebase Rio</String>
+		<String id="814464">Krogan Mastery</String>
+		<String id="814465">Complete &lt;CUSTOM0&gt; Krogan Mastery Challenges</String>
+		<String id="814466">Chieftain</String>
+		<String id="814467">Krogan Waves Completed</String>
+		<String id="814468">Complete &lt;CUSTOM0&gt; Waves as a Krogan</String>
+		<String id="814469">Krogan Weapon Use</String>
+		<String id="814470">Earn &lt;CUSTOM0&gt; Points with Krogan Weaponry</String>
+		<String id="814471">Inner Council Space Defense</String>
+		<String id="814472">Defend Inner Council Space for &lt;CUSTOM0&gt; Waves</String>
+		<String id="814473">Melee Damage Use</String>
+		<String id="814474">Melee Medals</String>
+		<String id="814475">Earn &lt;CUSTOM0&gt; Melee Medals</String>
+		<String id="814476">Turian Mastery</String>
+		<String id="814477">Complete &lt;CUSTOM0&gt; Turian Mastery Challenges</String>
+		<String id="814478">Calibrator</String>
+		<String id="814479">Turian Waves Completed</String>
+		<String id="814480">Complete &lt;CUSTOM0&gt; Waves as a Turian</String>
+		<String id="814481">Turian Weapon Use</String>
+		<String id="814482">Earn &lt;CUSTOM0&gt; Points with Turian Weaponry</String>
+		<String id="814483">Asari Mastery</String>
+		<String id="814484">Complete &lt;CUSTOM0&gt; Asari Mastery Challenges</String>
+		<String id="814485">Matriarch</String>
+		<String id="814486">Asari Waves Completed</String>
+		<String id="814487">Complete &lt;CUSTOM0&gt; Waves as an Asari</String>
+		<String id="814488">Asari Weapon Use</String>
+		<String id="814489">Earn &lt;CUSTOM0&gt; Points with Asari Weaponry</String>
+		<String id="814490">Outer Council Space Defense</String>
+		<String id="814491">Defend the Outer Council Space for &lt;CUSTOM0&gt; Waves</String>
+		<String id="814492">Biotic Explosions Detonated</String>
+		<String id="814493">Biotic Medals</String>
+		<String id="814494">Earn &lt;CUSTOM0&gt; Biotic Medals</String>
+		<String id="814495">Salarian Mastery</String>
+		<String id="814496">Complete &lt;CUSTOM0&gt; Salarian Mastery Challenges</String>
+		<String id="814497">Scientist Salarian</String>
+		<String id="814498">Salarian Waves Completed</String>
+		<String id="814499">Complete &lt;CUSTOM0&gt; Waves as a Salarian</String>
+		<String id="814500">Headshots</String>
+		<String id="814501">Tech Power Medals</String>
+		<String id="814502">Earn &lt;CUSTOM0&gt; Tech Powers Medals</String>
+		<String id="814503">Synthetic Mastery</String>
+		<String id="814504">Complete &lt;CUSTOM0&gt; Synthetic Mastery Challenges</String>
+		<String id="814505">Geth Prime</String>
+		<String id="814506">Geth Waves Completed</String>
+		<String id="814507">Complete &lt;CUSTOM0&gt; Waves as a Geth</String>
+		<String id="814508">Geth Weapon Use</String>
+		<String id="814509">Earn &lt;CUSTOM0&gt; Points with Geth Weaponry</String>
+		<String id="814510">Attican Traverse Defense</String>
+		<String id="814511">Defend the Attican Traverse for &lt;CUSTOM0&gt; Waves</String>
+		<String id="814512">Tech Explosions Detonated</String>
+		<String id="814513">Alliance Mastery</String>
+		<String id="814514">Complete &lt;CUSTOM0&gt; Alliance Mastery Challenges</String>
+		<String id="814515">Admiral</String>
+		<String id="814516">Human Waves Completed</String>
+		<String id="814517">Complete &lt;CUSTOM0&gt; Waves with Alliance Humans</String>
+		<String id="814518">Alliance Weapon Use</String>
+		<String id="814519">Earn &lt;CUSTOM0&gt; Points with Alliance Weaponry</String>
+		<String id="814520">Earth Systems Defense</String>
+		<String id="814521">Defend the Earth Systems for &lt;CUSTOM0&gt; Waves</String>
+		<String id="814532">Hero of the Last Days</String>
+		<String id="814545">Punisher</String>
+		<String id="814570">M-7 Lancer Use</String>
+		<String id="814576">M-11 Suppressor Use</String>
+		<String id="814577">Earn &lt;CUSTOM0&gt; Points Using the M-7 Lancer</String>
+		<String id="814583">Earn &lt;CUSTOM0&gt; Points Using the M-11 Suppressor</String>
+		<String id="817743">Headshot Medals</String>
+		<String id="817744">Earn &lt;CUSTOM0&gt; Headshot Medals</String>
+		<String id="817769">Operation Nightfall</String>
+		<String id="817770">Earn &lt;CUSTOM0&gt; Points Versus Geth Troopers with any Quarian Character</String>
+		<String id="817826">Operation Heartbreaker</String>
+		<String id="817827">Earn &lt;CUSTOM0&gt; Points by Killing Banshees </String>
+		<String id="817828">Operation Tribute</String>
+		<String id="817829">Earn &lt;CUSTOM0&gt; Points Using Inferno Grenades</String>
+		<String id="817830">Operation Impact</String>
+		<String id="817831">Extract Once Using Any Reckoning Character</String>
+		<String id="817832">Operation Lodestar (Normal)</String>
+		<String id="817833">Extract Once Against Cerberus on Silver or Higher</String>
+		<String id="817834">Extract Once Against the Reapers on Silver or Higher</String>
+		<String id="817835">Operation Tribute</String>
+		<String id="817836">Operation Lodestar (Insanity)</String>
+		<String id="817837">Extract Once Against the Geth on Silver or Higher</String>
+		<String id="817838">Extract Once Against the Collectors on Silver or Higher</String>
+		<String id="817839">Extract Once Against Cerberus on Platinum</String>
+		<String id="817840">Extract Once Against the Reapers on Platinum</String>
+		<String id="817841">Extract Once Against the Geth on Platinum</String>
+		<String id="817842">Extract Once Against the Collectors on Platinum</String>
+		<String id="817847">Stood Fast, Stood Strong, Stood Together</String>
+		<String id="817848">DLC Test - Chars</String>
+		<String id="817849">DLC Test - Mods</String>
+		<String id="817850">DLC Test - Weapon</String>
+		<String id="817851">Heartbreaker</String>
+		<String id="817852">Unknown Map Extractions</String>
+		<String id="817853">Extract &lt;CUSTOM0&gt; Times from Unknown Locations</String>
+		<String id="817854">Unknown Enemy Extractions</String>
+		<String id="817855">Extract &lt;CUSTOM0&gt; Times Against an Unknown Enemy</String>
+		<String id="134217729">DLC_LiveTlk</String>
+		<String id="134217730">en-us</String>
+		<String id="134217731">Male</String>
+		<String id="134217731">Female</String>
+	</Strings>
+</TlkFile>

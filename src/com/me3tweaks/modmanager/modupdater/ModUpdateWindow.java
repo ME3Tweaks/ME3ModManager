@@ -3,7 +3,6 @@ package com.me3tweaks.modmanager.modupdater;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -12,10 +11,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -28,8 +31,6 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FileUtils;
-import org.ini4j.InvalidFileFormatException;
-import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
@@ -58,6 +59,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 	/**
 	 * Starts a single-mod update process
+	 * 
 	 * @param frame
 	 */
 	public void startUpdate(JFrame frame) {
@@ -66,7 +68,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			//set combobox from settings
 			new ModMakerCompilerWindow(Integer.toString(upackage.getMod().getModMakerCode()), ModMakerEntryWindow.getDefaultLanguages());
 		} else {
-			DownloadTask task = new DownloadTask(upackage);
+			MultithreadDownloadTask task = new MultithreadDownloadTask(upackage);
 			task.addPropertyChangeListener(this);
 			task.execute();
 			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
@@ -77,6 +79,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 	/**
 	 * Starts a multi-mod update process (does not display modals)
+	 * 
 	 * @param amuw
 	 */
 	public boolean startAllModsUpdate(AllModsUpdateWindow amuw) {
@@ -86,10 +89,10 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 				ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.setText("ModMaker mods not updatable, invalid BIOGame directory");
 				return false;
 			}
-			
+
 			//get default language
 			//set combobox from settings
-			
+
 			statusLabel.setText("Upgrading via ModMaker Compiler");
 			ModMakerCompilerWindow mcw = new ModMakerCompilerWindow(upackage.getMod(), ModMakerEntryWindow.getDefaultLanguages());
 			while (mcw.isShowing()) {
@@ -106,6 +109,8 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			task.execute();
 			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			setVisible(true);
+			return task.wasSuccessful();
+			
 		}
 		return true;
 	}
@@ -184,10 +189,14 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			ModManager.debugLogger.writeMessage("Created a download task");
 		}
 
+		public boolean wasSuccessful() {
+			return !error;
+		}
+
 		public DownloadTask(UpdatePackage upackage, AllModsUpdateWindow amuw) {
 			String modpath = upackage.getMod().getModPath();
 			String updateFolder = ResourceUtils.getRelativePath(modpath, ModManager.getModsDir(), File.separator);
-			this.saveDirectory = "update" + File.separator + updateFolder;
+			this.saveDirectory = ModManager.getTempDir() + updateFolder;
 			this.upackage = upackage;
 			this.amuw = amuw;
 			numFilesToDownload = upackage.getFilesToDownload().size();
@@ -228,6 +237,10 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 						outputStream.write(buffer, 0, bytesRead);
 						bytesDownloaded += bytesRead;
 						percentCompleted = (int) (bytesDownloaded * 100 / totalBytes);
+						//						percentCompleted = (int) (bytesDownloaded * 100 / totalBytes);
+
+						System.out.println(bytesDownloaded * 100 +"/"+ totalBytes+" = "+ percentCompleted);
+						percentCompleted = Math.min(percentCompleted, 100);
 						setProgress(percentCompleted);
 					}
 
@@ -238,7 +251,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 				executeUpdate();
 			} catch (IOException ex) {
 				JOptionPane.showMessageDialog(ModUpdateWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				ex.printStackTrace();
+				ModManager.debugLogger.writeErrorWithException("IOException while updating mod.", ex);
 				setProgress(0);
 				error = true;
 				cancel(true);
@@ -285,9 +298,184 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		@Override
 		protected void done() {
 			// TODO: Install update through the update script
+			try {
+				get();
+			} catch (ExecutionException | InterruptedException e) {
+				ModManager.debugLogger.writeErrorWithException("UPDATE FAILED:", e);
+				error = true;
+			}
+			
 			dispose();
-			if (amuw == null) {
+			if (amuw == null && error != true) {
 				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nMod Manager will now reload mods.");
+			}
+		}
+	}
+
+	/**
+	 * Execute file download in a background thread and update the progress.
+	 * 
+	 * @author www.codejava.net
+	 * 
+	 */
+	class MultithreadDownloadTask extends SwingWorker<Void, Object> {
+		private static final int BUFFER_SIZE = 4096;
+		private String saveDirectory;
+		private UpdatePackage upackage;
+		private int numFilesToDownload;
+		private int numProcessed; //may have race condition
+		private long bytesDownloaded; //may have race condition
+		private long totalBytes;
+		private AllModsUpdateWindow amuw;
+
+		public MultithreadDownloadTask(UpdatePackage upackage) {
+			String modpath = upackage.getMod().getModPath();
+			String updateFolder = ResourceUtils.getRelativePath(modpath, ModManager.getModsDir(), File.separator);
+			this.saveDirectory = "update" + File.separator + updateFolder;
+			this.upackage = upackage;
+			numFilesToDownload = upackage.getFilesToDownload().size();
+			upackage.sortByLargestFirst();
+			for (ManifestModFile mf : upackage.getFilesToDownload()) {
+				totalBytes += mf.getFilesize();
+			}
+			statusLabel.setText("0/" + upackage.getFilesToDownload().size() + " files downloaded");
+			ModManager.debugLogger.writeMessage("Created a download task");
+		}
+
+		public MultithreadDownloadTask(UpdatePackage upackage, AllModsUpdateWindow amuw) {
+			String modpath = upackage.getMod().getModPath();
+			String updateFolder = ResourceUtils.getRelativePath(modpath, ModManager.getModsDir(), File.separator);
+			MultithreadDownloadTask.this.saveDirectory = ModManager.getTempDir() + updateFolder;
+			MultithreadDownloadTask.this.upackage = upackage;
+			MultithreadDownloadTask.this.amuw = amuw;
+			numFilesToDownload = upackage.getFilesToDownload().size();
+			for (ManifestModFile mf : upackage.getFilesToDownload()) {
+				totalBytes += mf.getFilesize();
+			}
+			statusLabel.setText("0/" + upackage.getFilesToDownload().size() + " files downloaded");
+			ModManager.debugLogger.writeMessage("Created an all mods download task");
+		}
+
+		/**
+		 * Executed in background thread
+		 */
+		@Override
+		protected Void doInBackground() throws Exception {
+			ModManager.debugLogger.writeMessage("Downloading update from server source: " + downloadSource);
+			ExecutorService downloadExecutor = Executors.newFixedThreadPool(4);
+			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
+			for (ManifestModFile mf : upackage.getFilesToDownload()) {
+				DownloadTask dt = new DownloadTask(mf.getRelativePath(), downloadSource + upackage.getServerFolderName() + "/" + mf.getRelativePath());
+				futures.add(downloadExecutor.submit(dt));
+			}
+			downloadExecutor.shutdown();
+			downloadExecutor.awaitTermination(60, TimeUnit.MINUTES);
+			for (Future<Boolean> f : futures) {
+				try {
+					Boolean result = f.get();
+					if (result == false) {
+						error = true;
+						ModManager.debugLogger.writeError("update failed.");
+					}
+				} catch (ExecutionException e) {
+					ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE DOWNLOADING FILE (AFTER EXECUTOR FINISHED): ", e);
+				}
+			}
+
+			if (!error) {
+				executeUpdate();
+			}
+			return null;
+		}
+
+		class DownloadTask implements Callable<Boolean> {
+			private String url;
+			private String relativePath;
+
+			public DownloadTask(String relativePath, String url) {
+				this.url = url;
+				this.relativePath = relativePath;
+			}
+
+			@Override
+			public Boolean call() throws Exception {
+				// TODO Auto-generated method stub
+				try {
+					HTTPDownloadUtil util = new HTTPDownloadUtil();
+					String saveFilePath = saveDirectory + File.separator + relativePath;
+					File saveFile = new File(saveFilePath);
+					new File(saveFile.getParent()).mkdirs();
+					ModManager.debugLogger.writeMessage("Downloading file: " + url);
+
+					util.downloadFile(url);
+					InputStream inputStream = util.getInputStream();
+					// opens an output stream to save into file
+					FileOutputStream outputStream = new FileOutputStream(saveFilePath);
+
+					byte[] buffer = new byte[BUFFER_SIZE];
+					int bytesRead = -1;
+					int percentCompleted = 0;
+
+					while ((bytesRead = inputStream.read(buffer)) != -1) {
+						outputStream.write(buffer, 0, bytesRead);
+						bytesDownloaded += bytesRead;
+						percentCompleted = (int) (bytesDownloaded * 100 / totalBytes);
+						setProgress(percentCompleted);
+					}
+					outputStream.close();
+					publish(++numProcessed);
+					return true;
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Failed to download file " + relativePath + ":", e);
+					return false;
+				}
+			}
+		}
+
+		@Override
+		public void process(List<Object> chunks) {
+			setStatusText(numProcessed + "/" + numFilesToDownload + " files downloaded");
+		}
+
+		public void executeUpdate() {
+			ModManager.debugLogger.writeMessage("Applying downloaded update " + saveDirectory + " => " + upackage.getMod().getModPath());
+			File updateDirectory = new File(saveDirectory);
+			try {
+				FileUtils.copyDirectory(updateDirectory, new File(upackage.getMod().getModPath()));
+				ModManager.debugLogger.writeMessage("Installed new files");
+			} catch (IOException e) {
+				ModManager.debugLogger.writeError("Unable to copy update directory over the source");
+				ModManager.debugLogger.writeException(e);
+			}
+
+			for (String str : upackage.getFilesToDelete()) {
+				ModManager.debugLogger.writeMessage("Deleting unused file: " + str);
+				File file = new File(str);
+				file.delete();
+			}
+			ModManager.debugLogger.writeMessage("Update applied, cleaning up");
+
+			try {
+				FileUtils.deleteDirectory(updateDirectory);
+			} catch (IOException e) {
+				ModManager.debugLogger.writeError("Unable to delete update directory");
+				ModManager.debugLogger.writeException(e);
+			}
+
+			ModManager.debugLogger.writeMessage("Mod cleaned up, install finished");
+		}
+
+		/**
+		 * Executed in Swing's event dispatching thread
+		 */
+		@Override
+		protected void done() {
+			// TODO: Install update through the update script
+			dispose();
+			if (amuw == null && !error) {
+				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nMod Manager will now reload mods.", "Update successful", JOptionPane.INFORMATION_MESSAGE);
+			} else if (amuw == null) {
+				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " failed to update. The debugging log will have more information.", "Updated failed", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -350,7 +538,6 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 			} else {
 				throw new IOException("No file to download. Server replied HTTP code: " + responseCode);
-
 			}
 		}
 

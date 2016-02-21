@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -60,9 +61,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.1";
-	public static long BUILD_NUMBER = 50L;
-	public static final String BUILD_DATE = "12/31/2015";
+	public static final String VERSION = "4.2 Beta 1";
+	public static long BUILD_NUMBER = 51L;
+	public static final String BUILD_DATE = "2/20/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -81,6 +82,7 @@ public class ModManager {
 	
 	// version
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
+	//private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 1000000; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
@@ -91,10 +93,11 @@ public class ModManager {
 	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
 	public static long AUTO_CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(AUTO_CHECK_INTERVAL_DAYS);
 	public static boolean LOG_MOD_INIT = false;
-	public static boolean LOG_PATCH_INIT = false; 
+	public static boolean LOG_PATCH_INIT = false;
+	public static boolean PERFORM_DOT_NET_CHECK = true; 
 
 	public static void main(String[] args) {
-		debugLogger = new DebugLogger();
+		loadLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
 		try {
@@ -152,6 +155,24 @@ public class ModManager {
 							logging = true;
 							debugLogger.writeMessage("Logging variable not set, defaulting to true. Starting logger. Mod Manager version "
 									+ ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
+						}
+					}
+					// .NET encforcement check
+					String netEnforcementStr = settingsini.get("Settings", "enforcedotnetrequirement");
+					int netEnforcementInt = 0;
+					if (netEnforcementStr != null && !netEnforcementStr.equals("")) {
+						try {
+							netEnforcementInt = Integer.parseInt(netEnforcementStr);
+							if (netEnforcementInt > 0) {
+								// logging is on
+								debugLogger.writeMessage(".NET enforcement check is ON");
+								PERFORM_DOT_NET_CHECK = true;
+							} else {
+								debugLogger.writeMessage(".NET enforcement check is OFF");
+								PERFORM_DOT_NET_CHECK = false;
+							}
+						} catch (NumberFormatException e) {
+							ModManager.debugLogger.writeError("Number format exception reading the .NET enforcement check flag, defaulting to enabled");
 						}
 					}
 					// Auto Update Check
@@ -369,7 +390,7 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage(getSystemInfo());
 			doFileSystemUpdate();
 			if (!validateNETFrameworkIsInstalled()) {
-				new NetFrameworkMissingWindow("Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly.");
+				new NetFrameworkMissingWindow("Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly. ");
 			}
 			ModManager.debugLogger.writeMessage("========End of startup=========");
 		} catch (Throwable e) {
@@ -388,13 +409,14 @@ public class ModManager {
 			}
 			debugLogger.initialize();
 			logging = true;
+			debugLogger.writeErrorWithException("A throwable was thrown during Mod Manager Startup.", e);
 			if (emergencyMode) {
 				debugLogger
 						.writeMessage("Logger starting in emergency mode. Startup failed as well as logging settings, but logger was able to initialize.");
 			} else {
 				debugLogger.writeMessage("Logger starting in limited mode. Startup failed but logger was able to initialize.");
 			}
-			debugLogger.writeMessage("Mod Manager version" + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
+			debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
 			if (emergencyMode) {
 				JOptionPane.showMessageDialog(null, "<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
 						+ "Logging mode was attempted to be turned on, but failed. Logging for this session has been enabled.<br>"
@@ -935,6 +957,15 @@ public class ModManager {
 	 */
 	public static String getDataDir() {
 		return appendSlash(System.getProperty("user.dir")) + "data/";
+	}
+	
+	public static String getGUITransplanterDir() {
+		return getDataDir() + "guitransplanter/";
+	}
+	
+	public static String getGUITransplanterCLI() {
+		return "E:\\Documents\\GitHubVisualStudio\\ME3-GUI-Transplanter\\ME3 GUI Transplanter\\Build\\Release\\Transplanter-CLI.exe";
+		//return getGUITransplanterDir() + "Transplanter-CLI.exe";
 	}
 
 	public static String getTankMasterCompilerDir() {
@@ -1585,6 +1616,11 @@ public class ModManager {
 	 * @return true if satisfied, false otherwise
 	 */
 	public static boolean validateNETFrameworkIsInstalled() {
+		if (!PERFORM_DOT_NET_CHECK) {
+			NET_FRAMEWORK_IS_INSTALLED = true;
+			return true;
+		}
+		
 		String os = System.getProperty("os.name");
 		if (os.contains("Windows")) {
 			int releaseNum = 0;
@@ -1652,7 +1688,13 @@ public class ModManager {
 	 */
 	public static ProcessResult runProcess(ProcessBuilder p) {
 		try {
-			ModManager.debugLogger.writeMessage("runProcess(): "+p.command());
+			StringBuilder sb = new StringBuilder();
+			List<String> list = p.command();
+			for (String arg : list) {
+				sb.append(arg);
+				sb.append(" ");
+			}
+			ModManager.debugLogger.writeMessage("runProcess(): "+sb.toString());
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
 			int returncode = process.waitFor();
@@ -1667,5 +1709,18 @@ public class ModManager {
 
 	public static File getHelpFile() {
 		return new File(getHelpDir()+"localhelp.xml");
+	}
+
+	/**
+	 * Gets the GUI Transplant Directory (Transplanter-CLI, Transplanter-GUI)
+	 * @return
+	 */
+	public static String getTransplantDir() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public static void loadLogger() {
+		debugLogger = new DebugLogger();
 	}
 }
