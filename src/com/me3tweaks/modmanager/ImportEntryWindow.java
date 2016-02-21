@@ -9,7 +9,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -27,10 +31,23 @@ import javax.swing.border.TitledBorder;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -48,10 +65,6 @@ public class ImportEntryWindow extends JDialog {
 	private JCheckBox telemetryCheckbox;
 	private String dlcModName;
 	private int result = NO_ANSWER;
-
-	public static void main(String[] args) {
-		new ImportEntryWindow(null, "C:\\Users\\mjperez\\Desktop\\Big Test Folder").setVisible(true);
-	}
 
 	public ImportEntryWindow(JDialog modImportWindow, String importPath) {
 		this.importPath = importPath;
@@ -72,8 +85,7 @@ public class ImportEntryWindow extends JDialog {
 
 		JPanel panel = new JPanel(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
-		JLabel importHeader = new JLabel("<html><div style='text-align: center;'>Importing DLC Mod<br>" + dlcModName + "</div></html>",
-				SwingConstants.CENTER);
+		JLabel importHeader = new JLabel("<html><div style='text-align: center;'>Importing DLC Mod<br>" + dlcModName + "</div></html>", SwingConstants.CENTER);
 		int row = 0;
 		c.gridx = 0;
 		c.gridy = row;
@@ -134,15 +146,15 @@ public class ImportEntryWindow extends JDialog {
 
 		telemetryCheckbox = new JCheckBox("Send this info to ME3Tweaks");
 		telemetryCheckbox.setSelected(true);
-		telemetryCheckbox
-				.setToolTipText("<html><div style='width: 250px'>Sending this information to ME3Tweaks helps build a database of Non-Mod Manager mods that will automatically fill this information out when another user is importing it.<br>Nothing except the above information is submitted.</div></html>");
+		telemetryCheckbox.setToolTipText(
+				"<html><div style='width: 250px'>Sending this information to ME3Tweaks helps build a database of Non-Mod Manager mods that will automatically fill this information out when another user is importing it.<br>Nothing except the above information and the Mount.dlc mount priority value is submitted.</div></html>");
 		importButton = new JButton("Import into Mod Manager");
 		importButton.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				if (inputValidate()) {
-					ModManager.debugLogger.writeMessage("Importing mod: "+dlcModName+" as "+modNameField.getText());
+					ModManager.debugLogger.writeMessage("Importing mod: " + dlcModName + " as " + modNameField.getText());
 					importButton.setEnabled(false);
 					importButton.setText("Importing...");
 					modAuthorField.setEnabled(false);
@@ -175,6 +187,7 @@ public class ImportEntryWindow extends JDialog {
 		private String modAuthor;
 		private String modSite;
 		private String modName;
+		private boolean sendTelemetry;
 
 		protected ImportWorker() {
 			//calculate number of files
@@ -182,18 +195,63 @@ public class ImportEntryWindow extends JDialog {
 			modDesc = ResourceUtils.convertNewlineToBr(modDescField.getText());
 			modSite = modSiteField.getText();
 			modAuthor = modAuthorField.getText();
+			sendTelemetry = telemetryCheckbox.isSelected();
 		}
 
 		@Override
 		protected Void doInBackground() throws Exception {
+			File importF = new File(importPath);
+
+			if (sendTelemetry) {
+				try {
+					Collection<File> allfiles = FileUtils.listFiles(importF, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+					File mountFile = null;
+					for (File f : allfiles) {
+						if (f.getName().equalsIgnoreCase("mount.dlc")) {
+							mountFile = f;
+							ModManager.debugLogger.writeMessage("Telemetry using mount file: " + mountFile.getAbsolutePath());
+							break;
+						}
+					}
+
+					ModManager.debugLogger
+							.writeMessage("Sending DLC mod telemetry to ME3Tweaks. This information will be used to help build a database of what DLC content mods exist.");
+
+					// Request parameters and other properties.
+					List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+					params.add(new BasicNameValuePair("dlc_folder_name", dlcModName));
+					params.add(new BasicNameValuePair("mod_name", modName));
+					params.add(new BasicNameValuePair("mod_author", modAuthor));
+					params.add(new BasicNameValuePair("mod_site", modSite));
+					if (mountFile != null) {
+						MountFile mf = new MountFile(mountFile.getAbsolutePath());
+						params.add(new BasicNameValuePair("mod_mount_priority", Integer.toString(mf.getMountPriority())));
+						params.add(new BasicNameValuePair("mod_mount_tlk1", Integer.toString(mf.getTlkId1())));
+						params.add(new BasicNameValuePair("mod_mount_flag", Byte.toString(mf.getMountFlag())));
+					}
+					//UrlEncodedFormEntity uri = new UrlEncodedFormEntity(params, "UTF-8");
+					//httppost.setParams(params);
+					URIBuilder urib = new URIBuilder("https://me3tweaks.com/mods/dlc_mods/telemetry");
+					urib.setParameters(params);
+					HttpClient httpClient = HttpClientBuilder.create().build();
+					URI uri = urib.build();
+					System.out.println("Sending telemetry via GET: "+uri.toString());
+					//Execute and get the response.
+					HttpGet get = new HttpGet(uri);
+					HttpResponse response = httpClient.execute(get);
+					HttpEntity entity = response.getEntity();
+				} catch (Exception e) {
+					ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since this is optional we will ignore this error: ", e);
+				}
+			}
+
 			String localModPath = ModManager.getModsDir() + modName;
 			File localModPathFile = new File(localModPath);
 			localModPathFile.mkdirs();
-			ModManager.debugLogger.writeMessage("Importing mod: "+dlcModName+" to "+localModPathFile.getAbsolutePath());
+			ModManager.debugLogger.writeMessage("Importing mod: " + dlcModName + " to " + localModPathFile.getAbsolutePath());
 
-			File importF = new File(importPath);
 			File exportF = new File(localModPathFile + File.separator + dlcModName);
-			ModManager.debugLogger.writeMessage("Copying DLC folder: "+importF+" to "+exportF);
+			ModManager.debugLogger.writeMessage("Copying DLC folder: " + importF + " to " + exportF);
 			FileUtils.copyDirectory(importF, exportF);
 
 			//files copied, now make moddesc.ini
@@ -223,15 +281,14 @@ public class ImportEntryWindow extends JDialog {
 			try {
 				get();
 				result = OK;
-				JOptionPane.showMessageDialog(ImportEntryWindow.this, modName + " has been imported into Mod Manager.", "Mod Imported",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(ImportEntryWindow.this, modName + " has been imported into Mod Manager.", "Mod Imported", JOptionPane.INFORMATION_MESSAGE);
 			} catch (Exception e) {
 				result = ERROR;
 				ModManager.debugLogger.writeErrorWithException("Exception importing DLC:", e);
-				JOptionPane.showMessageDialog(ImportEntryWindow.this, "Error occured importing this mod:\n"+(e.getCause()!=null ? e.getCause().getMessage() : e.getMessage()), "Import Error",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ImportEntryWindow.this, "Error occured importing this mod:\n" + (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()),
+						"Import Error", JOptionPane.ERROR_MESSAGE);
 			}
-			ModManager.debugLogger.writeMessage("Import of mod complete. Result code: "+result);
+			ModManager.debugLogger.writeMessage("Import of mod complete. Result code: " + result);
 			dispose();
 		}
 	}
@@ -241,9 +298,12 @@ public class ImportEntryWindow extends JDialog {
 			File.createTempFile(modNameField.getText(), "tmp");
 		} catch (IOException e) {
 			//illegal characters in name likely
-			JOptionPane.showMessageDialog(this,
-					"Illegal characters in the mod name.\nThis OS cannot make a folder with the mod name you specified, please change it.",
+			JOptionPane.showMessageDialog(this, "Illegal characters in the mod name.\nThis OS cannot make a folder with the mod name you specified, please change it.",
 					"Illegal characters in name", JOptionPane.ERROR_MESSAGE);
+			return false;
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(this, "This OS cannot make a folder with the mod name you specified, please change it.",
+					"Could not create mod folder", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		return true;
