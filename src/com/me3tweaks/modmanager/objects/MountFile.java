@@ -7,10 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
-
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.MountFileEditorWindow;
 
 public class MountFile {
 	private static int PRIORITY_OFFSET = 16;
@@ -26,6 +24,8 @@ public class MountFile {
 	private boolean matchingTLKIds = true;
 	private boolean correctSize = true;
 	private boolean validMount = true;
+	private String reason;
+	private String mountName;
 
 	public String getFilepath() {
 		return filepath;
@@ -87,6 +87,7 @@ public class MountFile {
 		if (!(new File(path).exists())) {
 			return;
 		}
+		this.filepath = path;
 		Path fpath = Paths.get(path);
 		byte[] data;
 		try {
@@ -120,6 +121,20 @@ public class MountFile {
 			// TODO Auto-generated catch block
 			validMount  = false;
 			ModManager.debugLogger.writeErrorWithException("IOException reading mount file:", e);
+		}
+	}
+
+	public MountFile(String dlcName, String reason) {
+		this.mountName = dlcName;
+		this.reason = reason;
+	}
+
+	public String getMountFlagString() {
+		if (filepath != null) {
+			return MountFileEditorWindow.getMountDescription(new File(this.filepath));
+		} else {
+			System.out.println("reas");
+			return reason;
 		}
 	}
 }

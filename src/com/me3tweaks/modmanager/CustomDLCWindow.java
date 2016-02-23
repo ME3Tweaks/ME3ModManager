@@ -1,7 +1,6 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -18,11 +17,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.ui.ButtonColumn;
 
 public class CustomDLCWindow extends JDialog {
@@ -30,11 +31,12 @@ public class CustomDLCWindow extends JDialog {
 	protected static final int COL_FOLDER = 0;
 	protected static final int COL_NAME = 1;
 	protected static final int COL_MOUNT = 2;
-	protected static final int COL_ACTION = 3;
+	public static final int COL_MOUNT_PRIORITY = 3;
+	protected static final int COL_ACTION = 4;
 	private ArrayList<String> nameList;
 	private ArrayList<String> folderList;
 	private String bioGameDir;
-	private ArrayList<String> mountList;
+	private ArrayList<MountFile> mountList;
 
 	public CustomDLCWindow(String bioGameDir) {
 		this.bioGameDir = bioGameDir;
@@ -47,12 +49,12 @@ public class CustomDLCWindow extends JDialog {
 		setIconImages(ModManager.ICONS);
 		setTitle("Custom DLCs");
 		setModal(true);
-		setPreferredSize(new Dimension(640, 480));
+		setPreferredSize(new Dimension(640, 600));
 		setMinimumSize(new Dimension(300, 200));
 
 		nameList = new ArrayList<String>();
 		folderList = new ArrayList<String>();
-		mountList = new ArrayList<String>();
+		mountList = new ArrayList<MountFile>();
 
 		JPanel panel = new JPanel(new BorderLayout());
 		JLabel infoLabel = new JLabel("<html>Installed Custom DLCs</html>",SwingConstants.CENTER);
@@ -89,24 +91,25 @@ public class CustomDLCWindow extends JDialog {
 			
 			if (!mountFile.exists()){
 				dlcName = "No Mount.dlc file";
-				mountList.add(dlcName);
+				mountList.add(new MountFile(dlcName, "No Mount found"));
 			} else if (!sfarFile.exists()){
 				dlcName = "No Default.sfar file";
-				mountList.add("Not checked");
+				mountList.add(new MountFile(dlcName, "Not checked"));
 			} else {
-				String mount = MountFileEditorWindow.getMountDescription(mountFile);
-				mountList.add(mount);
+				//String mount = MountFileEditorWindow.getMountDescription(mountFile);
+				mountList.add(new MountFile(mountFile.getAbsolutePath()));
 			}
 			folderList.add(dir);
 			nameList.add(dlcName);
 		}
 
 		//TABLE
-		Object[][] data = new Object[datasize][4];
+		Object[][] data = new Object[datasize][5];
 		for (int i = 0; i < datasize; i++) {
 			data[i][COL_FOLDER] = folderList.get(i);
 			data[i][COL_NAME] = nameList.get(i);
-			data[i][COL_MOUNT] = mountList.get(i);
+			data[i][COL_MOUNT] = mountList.get(i).getMountFlagString();
+			data[i][COL_MOUNT_PRIORITY] = mountList.get(i).getMountPriority();
 			data[i][COL_ACTION] = "Delete DLC";
 		}
 
@@ -121,7 +124,7 @@ public class CustomDLCWindow extends JDialog {
 				((DefaultTableModel) table.getModel()).removeRow(modelRow);
 			}
 		};
-		String[] columnNames = { "DLC Folder", "DLC Name", "DLC Mount Flag","Delete DLC" };
+		String[] columnNames = { "DLC Folder", "DLC Name", "Mount Flag", "Mount Priority","Delete DLC" };
 		DefaultTableModel model = new DefaultTableModel(data, columnNames);
 		JTable table = new JTable(model) {
 			public boolean isCellEditable(int row, int column) {
@@ -130,8 +133,12 @@ public class CustomDLCWindow extends JDialog {
 		};
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		ButtonColumn buttonColumn = new ButtonColumn(table, delete, COL_ACTION);
+		
+		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+		centerRenderer.setHorizontalAlignment( JLabel.CENTER );
+		table.getColumnModel().getColumn(COL_MOUNT_PRIORITY).setCellRenderer(centerRenderer);
+		
 		JScrollPane scrollpane = new JScrollPane(table);
-
 		panel.add(scrollpane, BorderLayout.CENTER);
 		
 		JLabel mpLabel = new JLabel("<html><div style=\"text-align: center;\">Custom DLC will never authorize unless you use a DLC bypass.<br>DLC that have MP in their Mount Flag will make all players require that DLC.</div></html>",SwingConstants.CENTER);
