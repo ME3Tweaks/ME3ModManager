@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.SimpleTimeZone;
 
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -638,10 +639,12 @@ public class RestoreFilesWindow extends JDialog {
 			File defaultSfar = new File(fullDLCDirectory + "Default.sfar");
 			File testpatchSfar = new File(fullDLCDirectory + "Patch_001.sfar");
 			File mainSfar = null;
+			boolean isTestpatch = false;
 			if (defaultSfar.exists()) {
 				mainSfar = new File(fullDLCDirectory + "Default.sfar");
 			} else {
 				if (testpatchSfar.exists()) {
+					isTestpatch = true;
 					mainSfar = new File(fullDLCDirectory + "Patch_001.sfar");
 				}
 			}
@@ -657,7 +660,7 @@ public class RestoreFilesWindow extends JDialog {
 				//Check filesize first, its faster.
 				boolean sizeMatch = true; //default to true - falls back to hashing in the event something goes wrong.
 				Long filesize = mainSfar.length();
-				if (!filesize.equals(sfarSizes.get(jobName))) {
+				if (!filesize.equals(sfarSizes.get(jobName)) && (!(isTestpatch && !filesize.equals(ModType.TESTPATCH_16_SIZE)))) {
 					sizeMatch = false;
 					ModManager.debugLogger.writeMessage(jobName + ": size mismatch between known original and existing - marking for restore");
 					publish(jobName + ": DLC is modified [size]");
@@ -671,7 +674,7 @@ public class RestoreFilesWindow extends JDialog {
 						mainSfarHash = MD5Checksum.getMD5Checksum(mainSfar.toString());
 						ModManager.debugLogger.writeMessage(jobName + ": Hash of Default.sfar is " + mainSfarHash);
 
-						if (mainSfarHash.equals(sfarHashes.get(jobName))) {
+						if (mainSfarHash.equals(sfarHashes.get(jobName)) || mainSfarHash.equals(ModType.TESTPATCH_16_HASH)) {
 							// This DLC sfar matches the known original, we're good
 							ModManager.debugLogger.writeMessage(jobName + ": OK");
 
@@ -723,7 +726,7 @@ public class RestoreFilesWindow extends JDialog {
 					backupSfarHash = MD5Checksum.getMD5Checksum(backupSfar.toString());
 					ModManager.debugLogger.writeMessage(jobName + ": backupSfar hash: " + backupSfarHash);
 					//publish(jobName + ": Hash of backup sfar is " + backupSfarHash);
-					if (backupSfarHash.equals(sfarHashes.get(jobName))) {
+					if (backupSfarHash.equals(sfarHashes.get(jobName)) || backupSfarHash.equals(ModType.TESTPATCH_16_HASH)) {
 						// This DLC sfar matches the known original - let's copy it to Default.sfar
 						publish(jobName + ": Restoring backup...");
 						Files.copy(backupSfar.toPath(), mainSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);

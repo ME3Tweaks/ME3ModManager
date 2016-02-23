@@ -2272,17 +2272,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	private void startGame(String CookedDir) {
 		File startingDir = new File(CookedDir);
-		/*
-		 * for (int i = 0; i<2; i++){ if (!startingDir.exists()){
-		 * JOptionPane.showMessageDialog(null,
-		 * "Unable to find the following game executable:\n" +CookedDir+
-		 * "\nMake sure your BIOGame directory is correct.",
-		 * "Unable to Launch Game", JOptionPane.ERROR_MESSAGE); return; } }
-		 */
+		ModManager.debugLogger.writeMessage("Starting game.");
 		boolean binkw32bypass = checkForBinkBypass(); // favor bink over WV
-		System.err.println("BINKW32 BYPASS: " + binkw32bypass);
 		startingDir = new File(startingDir.getParent());
+		boolean is16Version = false;
 		File executable = new File(startingDir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
+		//check ME3 version for 1.6
+		try {
+			int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
+			if (minorBuildNum > 4) {
+				ModManager.debugLogger.writeMessage("!!!!This user has >1.5 version of Mass Effect 3!!!!");
+				JOptionPane.showMessageDialog(this, "<html><div style='width: 300px'>You have a version of Mass Effect 3 higher than 1.5 (1."+minorBuildNum+"), which is the main version most of the world uses.<br>"
+						+ "It seems BioWare has been slowly pushing this version out to some users starting in September 2013. Not all users will get this version.<br><br>If you encounter issues you may consider downgrading to the 1.5 EXE. If you play Multiplayer, you will only be able to connect to other 1.6 users, which are very few.<br>Check the ME3Tweaks forums for info on how to downgrade.</div></html>","Mass Effect 3 Rare Version Detected", JOptionPane.WARNING_MESSAGE);
+			}
+		} catch (Exception e) {
+			//do nothing. Continue like the old mod manager did.
+			ModManager.debugLogger.writeErrorWithException("Error getting Mass Effect 3 EXE version. This error will be ignored.", e);
+		}
+
 		if (!binkw32bypass) { // try to find Launcher_WV
 			executable = new File(startingDir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
 			if (!executable.exists()) {
@@ -2326,27 +2333,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @return
 	 */
 	private boolean checkForBinkBypass() {
-		String wvdlcBink32MD5 = "5a826dd66ad28f0099909d84b3b51ea4"; // Binkw32.dll
-																	// that
-																	// bypasses
-																	// DLC check
-																	// (WV) -
-																	// from
-																	// Private
-																	// Server
-																	// SVN
-		String wvdlcBink32MD5_2 = "05540bee10d5e3985608c81e8b6c481a"; // Binkw32.dll
-																		// that
-																		// bypasses
-																		// DLC
-																		// check
-																		// (WV)
-																		// -
-																		// from
-																		// DLC
-																		// Patcher
-																		// thread
-
 		File bgdir = new File(fieldBiogameDir.getText());
 		if (!bgdir.exists()) {
 			return false;
@@ -2354,10 +2340,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		File gamedir = bgdir.getParentFile();
 		ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
 		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
+		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 		try {
-			String binkhash;
-			binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
-			if (binkhash.equals(wvdlcBink32MD5) || binkhash.equals(wvdlcBink32MD5_2)) {
+			String originalBink32MD5 = "128b560ef70e8085c507368da6f26fe6";
+			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
+			if (!binkhash.equals(originalBink32MD5) && bink23.exists()) {
 				return true;
 			}
 		} catch (Exception e) {

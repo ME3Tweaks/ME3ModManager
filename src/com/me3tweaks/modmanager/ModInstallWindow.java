@@ -541,7 +541,7 @@ public class ModInstallWindow extends JDialog {
 			String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
 			File sfarFile = new File(sfarPath);
 			if (sfarFile.exists()) {
-				if (sfarFile.length() >= knownsfarsize) {
+				if (sfarName.equals("Patch_001.sfar") || sfarFile.length() >= knownsfarsize) {
 					ModManager.debugLogger.writeMessage(
 							"SFAR is same or larger in bytes than the known original. Likely is the vanilla one, or has been modified, but not unpacked. Using the SFAR method: "
 									+ job.getJobName());
@@ -552,15 +552,6 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			//We don't need to check for files to remove, as if it this is an unpacked DLC we can just skip the file. If it is missing in the DLC then there would be nothing we can do.
-			/*
-			 * for (int i = 0; i < job.getFilesToRemove().size(); i++) { String
-			 * fileToRemove = job.getFilesToRemove().get(i); File
-			 * unpackeddlcfile = new File(me3dir + fileToRemove); if
-			 * (!unpackeddlcfile.exists()) {
-			 * ModManager.debugLogger.writeMessage(
-			 * "Game DB: unpacked DLC file not present. DLC job will use SFAR method: "
-			 * + job.getJobName()); return processSFARDLCJob(job); } }
-			 */
 
 			//UNPACKED DLC METHOD
 			return updateUnpackedDLC(job);
