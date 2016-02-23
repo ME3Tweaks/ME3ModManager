@@ -6,19 +6,19 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -35,13 +35,16 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipNativeInitializationException;
+
 import com.me3tweaks.modmanager.objects.CompressedMod;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.JCheckBoxList;
 import com.me3tweaks.modmanager.utilities.SevenZipCompressedModInspector;
 
-public class ModImportArchiveWindow extends JFrame {
+public class ModImportArchiveWindow extends JDialog {
 
 	private JCheckBoxList compressedModList;
 	private DefaultListModel<JCheckBox> compressedModModel;
@@ -53,6 +56,13 @@ public class ModImportArchiveWindow extends JFrame {
 	private JButton browseButton;
 
 	public ModImportArchiveWindow() {
+		try {
+			SevenZip.initSevenZipFromPlatformJAR();
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Error loading 7zip binding, it may be open in another instance of Mod Manager:", e);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to load the 7-zip library.\nDo you have another instance of Mod Manager open?", "Cannot load 7zip library", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
@@ -62,7 +72,7 @@ public class ModImportArchiveWindow extends JFrame {
 		setTitle("Import compressed mods into Mod Manager");
 		setIconImages(ModManager.ICONS);
 		setPreferredSize(new Dimension(650, 400));
-
+		setModalityType(ModalityType.APPLICATION_MODAL);
 		descriptionArea = new JTextArea();
 		descriptionArea.setLineWrap(true);
 		descriptionArea.setWrapStyleWord(true);
