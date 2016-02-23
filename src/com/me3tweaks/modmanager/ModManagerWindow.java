@@ -95,11 +95,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JFileChooser dirChooser;
 	JMenuBar menuBar;
-	JMenu actionMenu, modMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
-	JMenuItem actionModMaker, actionVisitMe, actionImportFromArchive, actionImportAlreadyInstalled, actionOptions, toolME3Explorer, actionReload, actionExit;
+	JMenu actionMenu, modMenu, modManagementMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
+	JMenuItem actionModMaker, actionVisitMe, modManagementImportFromArchive, modManagementImportAlreadyInstalled, actionOptions, toolME3Explorer, actionReload, actionExit;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate;
 	JMenuItem backupBackupDLC, backupCreateGDB;
-	JMenuItem toolsModMaker, toolsMergeMod, toolsPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor;
+	JMenuItem modManagementModMaker, toolsMergeMod, modManagementPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser, sqlGearParser;
@@ -112,7 +112,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	DefaultListModel<Mod> modModel;
 	private ArrayList<Patch> patchList;
 	private JMenuItem modutilsUpdateXMLGenerator;
-	private JMenuItem toolsCheckallmodsforupdate;
+	private JMenuItem modManagementCheckallmodsforupdate;
 	private JMenuItem restoreRevertUnpacked;
 	private JMenuItem restoreRevertBasegameUnpacked;
 	private JMenuItem restoredeleteAllCustomDLC;
@@ -123,7 +123,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem toolTankmasterCoalFolder;
 	private JMenuItem toolTankmasterCoalUI;
 	private JMenuItem toolTankmasterTLK;
-	private JMenuItem actionOpenModsFolder;
+	private JMenuItem modManagementOpenModsFolder;
 	private JMenu mountMenu;
 	private JButton modWebsiteLink;
 
@@ -466,10 +466,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		@Override
 		public Void doInBackground() {
-			UpdatePackage upackage = ModXMLTools.validateLatestAgainstServer(mod);
-			if (upackage != null) {
+			ArrayList<Mod> modsToValidate = new ArrayList<Mod>();
+			modsToValidate.add(mod);
+			ArrayList<UpdatePackage> upackages = ModXMLTools.validateLatestAgainstServer(modsToValidate,null);
+			if (upackages != null) {
 				publish("Update available for " + mod.getModName());
-				publish(upackage);
+				publish(upackages.get(0)); //singleu pdate
 			} else {
 				publish(mod.getModName() + " is up to date");
 			}
@@ -822,16 +824,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionVisitMe.setToolTipText("Opens ME3Tweaks.com");
 
 		JMenu actionImportMenu = new JMenu("Import mod");
-		actionImportAlreadyInstalled = new JMenuItem("Import installed DLC mod");
-		actionImportAlreadyInstalled.setToolTipText("<html>Import an already installed DLC mod.<br>You can then manage that mod with Mod Manager.</html>");
-		actionImportFromArchive = new JMenuItem("Import mod from .7z/.rar/.zip");
-		actionImportFromArchive.setToolTipText(
+		modManagementImportAlreadyInstalled = new JMenuItem("Import installed DLC mod");
+		modManagementImportAlreadyInstalled.setToolTipText("<html>Import an already installed DLC mod.<br>You can then manage that mod with Mod Manager.</html>");
+		modManagementImportFromArchive = new JMenuItem("Import mod from .7z/.rar/.zip");
+		modManagementImportFromArchive.setToolTipText(
 				"<html>Import a mod that has been packaged for importing into Mod Manager.<br>For directions on how to make mods in this format, please see the Mod Manager moddesc page.</html>");
 
 		actionOptions = new JMenuItem("Options");
 		actionOptions.setToolTipText("Configure Mod Manager Options");
-		actionOpenModsFolder = new JMenuItem("Open mods/ folder");
-		actionOpenModsFolder.setToolTipText("Opens the mods/ folder so you can inspect and add/remove mods");
 
 		toolME3Explorer = new JMenuItem("ME3Explorer");
 		toolME3Explorer.setToolTipText("Runs the bundled ME3Explorer program");
@@ -846,39 +846,47 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionExit = new JMenuItem("Exit");
 		actionExit.setToolTipText("Closes Mod Manager");
 
-		openToolMenu = new JMenu("Open Modding Tool");
-		openToolMenu.add(toolME3Explorer);
-		openToolMenu.add(toolTankmasterCoalFolder);
-		openToolMenu.add(toolTankmasterCoalUI);
-		openToolMenu.add(toolTankmasterTLK);
-
-		actionImportMenu.add(actionImportFromArchive);
-		actionImportMenu.add(actionImportAlreadyInstalled);
-		actionMenu.add(actionImportMenu);
 		actionMenu.add(actionModMaker);
 		actionMenu.add(actionVisitMe);
 		actionMenu.add(actionOptions);
 		actionMenu.addSeparator();
-		actionMenu.add(openToolMenu);
-		actionMenu.add(actionOpenModsFolder);
 		actionMenu.add(actionReload);
 		actionMenu.add(actionExit);
 
-		actionImportAlreadyInstalled.addActionListener(this);
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
 		actionOptions.addActionListener(this);
-		actionOpenModsFolder.addActionListener(this);
-		toolME3Explorer.addActionListener(this);
-		toolTankmasterTLK.addActionListener(this);
-		toolTankmasterCoalFolder.addActionListener(this);
-		toolTankmasterCoalUI.addActionListener(this);
-		actionImportFromArchive.addActionListener(this);
+
 
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
 		menuBar.add(actionMenu);
 
+		//MOD MANAGEMENT
+		modManagementMenu = new JMenu("Mod Management");
+		modManagementModMaker = new JMenuItem("Download ME3Tweaks ModMaker Mod");
+		modManagementModMaker.setToolTipText("Allows you to download and compile ME3Tweaks ModMaker mods");
+		modManagementCheckallmodsforupdate = new JMenuItem("Check eligible mods for updates");
+		modManagementCheckallmodsforupdate.setToolTipText("Checks eligible mods for updates on ME3Tweaks and prompts to download an update if one is available");
+		modManagementPatchLibary = new JMenuItem("MixIn Library");
+		modManagementPatchLibary.setToolTipText("Add premade mixins to mods using patches in your patch library");
+		modManagementOpenModsFolder = new JMenuItem("Open mods/ folder");
+		modManagementOpenModsFolder.setToolTipText("Opens the mods/ folder so you can inspect and add/remove mods");
+		
+		actionImportMenu.add(modManagementImportFromArchive);
+		actionImportMenu.add(modManagementImportAlreadyInstalled);
+		modManagementMenu.add(actionImportMenu);
+		modManagementMenu.add(modManagementModMaker);
+		modManagementMenu.add(modManagementCheckallmodsforupdate);
+		modManagementMenu.add(modManagementPatchLibary);
+		modManagementMenu.add(modManagementOpenModsFolder);
+		menuBar.add(modManagementMenu);
+		
+		modManagementOpenModsFolder.addActionListener(this);
+		modManagementImportFromArchive.addActionListener(this);
+		modManagementImportAlreadyInstalled.addActionListener(this);
+
+		
 		// MOD TOOLS
 		modMenu = new JMenu("Mod Utils");
 		mountMenu = new JMenu("Manage Custom DLC Mount files");
@@ -944,14 +952,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// Tools
 		toolsMenu = new JMenu("Tools");
-		toolsModMaker = new JMenuItem("Enter ME3Tweaks ModMaker code");
-		toolsModMaker.setToolTipText("Allows you to download and compile mods with ease");
+		
 
 		toolsMergeMod = new JMenuItem("Mod Merging Utility");
 		toolsMergeMod.setToolTipText("Allows you to merge CMM3+ mods together and resolve conflicts between mods");
 
-		toolsPatchLibary = new JMenuItem("MixIn Library");
-		toolsPatchLibary.setToolTipText("Add premade mixins to mods using patches in your patch library");
+		
 
 		toolsOpenME3Dir = new JMenuItem("Open BIOGame directory");
 		toolsOpenME3Dir.setToolTipText("Opens a Windows Explorer window in the BIOGame Directory");
@@ -964,37 +970,39 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		toolsUninstallBinkw32.setToolTipText("<html>Removes the Binkw32.dll startup patcher, reverting the original file</html>");
 
-		toolsCheckallmodsforupdate = new JMenuItem("Check eligible mods for updates");
-		toolsCheckallmodsforupdate.setToolTipText("Checks eligible mods for updates on ME3Tweaks and prompts to download an update if one is available");
+		
 
-		toolsUnpackDLC = new JMenuItem("Unpack DLC");
+		toolsUnpackDLC = new JMenuItem("DLC Unpacker");
 		toolsUnpackDLC.setToolTipText("Opens the Unpack DLC window so you can unpack DLC automatically");
 
 		toolsMountdlcEditor = new JMenuItem("Mount.dlc Editor");
 		toolsMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
 
-		toolsModMaker.addActionListener(this);
+		modManagementModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
-		toolsCheckallmodsforupdate.addActionListener(this);
+		modManagementCheckallmodsforupdate.addActionListener(this);
 		toolsUnpackDLC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
-		toolsPatchLibary.addActionListener(this);
+		modManagementPatchLibary.addActionListener(this);
 		toolsMountdlcEditor.addActionListener(this);
 
 		toolsOpenME3Dir.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
-
-		toolsMenu.add(toolsModMaker);
-		toolsMenu.add(toolsCheckallmodsforupdate);
-		toolsMenu.addSeparator();
+		toolME3Explorer.addActionListener(this);
+		toolTankmasterTLK.addActionListener(this);
+		toolTankmasterCoalFolder.addActionListener(this);
+		toolTankmasterCoalUI.addActionListener(this);
 		toolsMenu.add(toolsMergeMod);
-		toolsMenu.add(toolsPatchLibary);
 		toolsMenu.add(toolsMountdlcEditor);
 		toolsMenu.add(toolsUnpackDLC);
 		toolsMenu.add(toolsOpenME3Dir);
 		toolsMenu.addSeparator();
-
+		toolsMenu.add(toolME3Explorer);
+		toolsMenu.add(toolTankmasterCoalFolder);
+		toolsMenu.add(toolTankmasterCoalUI);
+		toolsMenu.add(toolTankmasterTLK);
+		toolsMenu.addSeparator();
 		toolsMenu.add(toolsInstallLauncherWV);
 		toolsMenu.add(toolsInstallBinkw32);
 		toolsMenu.add(toolsUninstallBinkw32);
@@ -1204,7 +1212,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("No directory selected...");
 				}
 			}
-		} else if (e.getSource() == toolsModMaker) {
+		} else if (e.getSource() == modManagementModMaker) {
 			if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
@@ -1433,11 +1441,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// TODO Auto-generated catch block
 				ModManager.debugLogger.writeErrorWithException("Unable to open this mod's web site:", e1);
 			}
-		} else if (e.getSource() == actionImportAlreadyInstalled) {
+		} else if (e.getSource() == modManagementImportAlreadyInstalled) {
 			if (validateBIOGameDir()) {
 				new ModImportDLCWindow(this, fieldBiogameDir.getText());
 			}
-		} else if (e.getSource() == actionImportFromArchive) {
+		} else if (e.getSource() == modManagementImportFromArchive) {
 			new ModImportArchiveWindow();
 		}
 		if (e.getSource() == actionVisitMe) {
@@ -1524,7 +1532,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == toolTankmasterCoalFolder) {
 			ResourceUtils.openDir(ModManager.getTankMasterCompilerDir());
-		} else if (e.getSource() == actionOpenModsFolder) {
+		} else if (e.getSource() == modManagementOpenModsFolder) {
 			ResourceUtils.openDir(ModManager.getModsDir());
 		} else if (e.getSource() == toolTankmasterTLK) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
@@ -1618,9 +1626,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new SingleModUpdateCheckThread(modModel.getElementAt(modList.getSelectedIndex())).execute();
 		} else if (e.getSource() == modutilsInstallCustomKeybinds) {
 			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()), false);
-		} else if (e.getSource() == toolsCheckallmodsforupdate) {
+		} else if (e.getSource() == modManagementCheckallmodsforupdate) {
 			checkAllModsForUpdates(true);
-		} else if (e.getSource() == toolsPatchLibary) {
+		} else if (e.getSource() == modManagementPatchLibary) {
 			if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Opening patch library window.");
@@ -2275,12 +2283,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		ModManager.debugLogger.writeMessage("Starting game.");
 		boolean binkw32bypass = checkForBinkBypass(); // favor bink over WV
 		startingDir = new File(startingDir.getParent());
-		boolean is16Version = false;
 		File executable = new File(startingDir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
 		//check ME3 version for 1.6
 		try {
 			int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
-			if (minorBuildNum > 4) {
+			if (minorBuildNum > 5) {
 				ModManager.debugLogger.writeMessage("!!!!This user has >1.5 version of Mass Effect 3!!!!");
 				JOptionPane.showMessageDialog(this, "<html><div style='width: 300px'>You have a version of Mass Effect 3 higher than 1.5 (1."+minorBuildNum+"), which is the main version most of the world uses.<br>"
 						+ "It seems BioWare has been slowly pushing this version out to some users starting in September 2013. Not all users will get this version.<br><br>If you encounter issues you may consider downgrading to the 1.5 EXE. If you play Multiplayer, you will only be able to connect to other 1.6 users, which are very few.<br>Check the ME3Tweaks forums for info on how to downgrade.</div></html>","Mass Effect 3 Rare Version Detected", JOptionPane.WARNING_MESSAGE);

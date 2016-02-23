@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -48,6 +49,8 @@ public class ModImportArchiveWindow extends JFrame {
 	private JButton importButton;
 	private JProgressBar progressBar;
 	private JPanel leftsidePanel;
+	private JTextArea descriptionArea;
+	private JButton browseButton;
 
 	public ModImportArchiveWindow() {
 		setupWindow();
@@ -60,7 +63,7 @@ public class ModImportArchiveWindow extends JFrame {
 		setIconImages(ModManager.ICONS);
 		setPreferredSize(new Dimension(650, 400));
 
-		JTextArea descriptionArea = new JTextArea();
+		descriptionArea = new JTextArea();
 		descriptionArea.setLineWrap(true);
 		descriptionArea.setWrapStyleWord(true);
 		descriptionArea.setEditable(false);
@@ -77,7 +80,7 @@ public class ModImportArchiveWindow extends JFrame {
 		JTextField archivePathField = new JTextField(55);
 		archivePathField.setUI(new HintTextFieldUI("Select an archive (.7z, .zip, .rar)"));
 		archivePathField.setEnabled(false);
-		JButton browseButton = new JButton("Browse...");
+		browseButton = new JButton("Browse...");
 		browseButton.setPreferredSize(new Dimension(100, 19));
 		browsePanel.add(archivePathField, BorderLayout.CENTER);
 		browsePanel.add(browseButton, BorderLayout.EAST);
@@ -97,23 +100,28 @@ public class ModImportArchiveWindow extends JFrame {
 						descriptionArea.setText("Select a mod on the left to view its description.");
 					} else {
 						descriptionArea.setText(checkMap.get(compressedModModel.get(compressedModList.getSelectedIndex())).getModDescription());
+						descriptionArea.setCaretPosition(0);
 					}
 				}
 			}
 		});
 
+		JPanel actionPanel = new JPanel(new BorderLayout());
+		
 		importButton = new JButton("Import Selected");
 		importButton.setEnabled(false);
 		importButton.setPreferredSize(new Dimension(100, 23));
 		progressBar = new JProgressBar();
-
-		JScrollPane importScroller = new JScrollPane(compressedModList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		progressBar.setVisible(false);
+		actionPanel.add(importButton,BorderLayout.NORTH);
+		actionPanel.add(progressBar,BorderLayout.SOUTH);
+		
+		JScrollPane importScroller = new JScrollPane(compressedModList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		importScroller.setEnabled(false);
 
 		leftsidePanel.add(browsePanel, BorderLayout.NORTH);
 		leftsidePanel.add(importScroller, BorderLayout.CENTER);
-		leftsidePanel.add(importButton, BorderLayout.SOUTH);
+		leftsidePanel.add(actionPanel, BorderLayout.SOUTH);
 
 		//RIGHT SIDE
 		JScrollPane descScroller = new JScrollPane(descriptionArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -149,14 +157,11 @@ public class ModImportArchiveWindow extends JFrame {
 					compressedModModel.clear();
 					String chosenFile = binChooser.getSelectedFile().getAbsolutePath();
 					archivePathField.setText(chosenFile);
-					importButton.setEnabled(true);
-					ArrayList<CompressedMod> compressedMods = SevenZipCompressedModInspector.getCompressedModsInArchive(chosenFile);
-					for (CompressedMod cm : compressedMods) {
-						JCheckBox importBox = new JCheckBox(cm.getModName());
-						importBox.setSelected(true);
-						checkMap.put(importBox, cm);
-						compressedModModel.addElement(importBox);
-					}
+					importButton.setEnabled(false);
+					importButton.setVisible(false);
+					progressBar.setVisible(true);
+					ScanWorker worker = new ScanWorker(archivePathField.getText());
+					worker.execute();
 				}
 			}
 		});
@@ -175,24 +180,83 @@ public class ModImportArchiveWindow extends JFrame {
 					}
 				}
 				if (modsToImport.size() > 0) {
-					ImportWorker worker = new ImportWorker(archivePathField.getText(), modsToImport);
 					importButton.setText("Importing");
 					importButton.setEnabled(false);
-					leftsidePanel.remove(importButton);
-					leftsidePanel.add(progressBar, BorderLayout.SOUTH);
-					pack();
+					importButton.setVisible(false);
+					progressBar.setVisible(true);
+					ImportWorker worker = new ImportWorker(archivePathField.getText(), modsToImport);
 					worker.execute();
+					invalidate();
+					validate();
+					repaint();
 				}
 			}
 		});
 	}
 
-	class ScanWorker extends SwingWorker<Void, Void> {
+	public class ScanWorker extends SwingWorker<ArrayList<CompressedMod>, ThreadCommand> {
+
+		private String archiveFile;
+
+		public ScanWorker(String archiveFile) {
+			this.archiveFile = archiveFile;
+			checkMap.clear();
+			compressedModModel.clear();
+			progressBar.setIndeterminate(true);
+			descriptionArea.setText("Scanning archive for Mod Manager mods...");
+			browseButton.setEnabled(false);
+		}
 
 		@Override
-		protected Void doInBackground() throws Exception {
+		protected ArrayList<CompressedMod> doInBackground() throws Exception {
 			// TODO Auto-generated method stub
-			return null;
+			return SevenZipCompressedModInspector.getCompressedModsInArchive(archiveFile);
+		}
+
+		protected void process(List<ThreadCommand> commands) {
+			for (ThreadCommand command : commands) {
+				switch (command.getCommand()) {
+				case "PROGRESS_UPDATE":
+					progressBar.setValue(Integer.parseInt((String) command.getMessage()));
+					break;
+				}
+			}
+		}
+
+		public void setProgressValue(int progress) {
+			publish(new ThreadCommand("PROGRESS_UPDATE", Integer.toString(progress)));
+		}
+
+		protected void done() {
+			checkMap.clear();
+			compressedModModel.clear();
+			ArrayList<CompressedMod> compressedMods = null;
+			try {
+				compressedMods = get();
+			} catch (ExecutionException | InterruptedException e) {
+				ModManager.debugLogger.writeErrorWithException("Unable to get compressed mod info from archive:", e);
+				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "An error occured while reading this archive file.", "Error reaching archive file",
+						JOptionPane.ERROR_MESSAGE);
+			}
+			browseButton.setEnabled(true);
+			
+			for (CompressedMod cm : compressedMods) {
+				JCheckBox importBox = new JCheckBox(cm.getModName());
+				importBox.setSelected(true);
+				checkMap.put(importBox, cm);
+				compressedModModel.addElement(importBox);
+			}
+			if (compressedMods.size() > 0 ) {
+				importButton.setEnabled(true); //will stay false if no mods loaded
+				importButton.setText("Import Selected Mods");
+			} else {
+				importButton.setEnabled(true); //will stay false if no mods loaded
+				importButton.setText("No mods in this archive");
+			}
+			progressBar.setIndeterminate(false);
+			progressBar.setVisible(false);
+			importButton.setVisible(true);
+			descriptionArea.setText("Select a mod in the list to view its description.");
 		}
 
 	}
@@ -206,6 +270,8 @@ public class ModImportArchiveWindow extends JFrame {
 			// TODO Auto-generated constructor stub
 			this.archiveFilePath = archiveFilePath;
 			this.modsToImport = modsToImport;
+			descriptionArea.setText("Importing mods into Mod Manager...");
+			browseButton.setEnabled(false);
 		}
 
 		@Override
@@ -253,10 +319,13 @@ public class ModImportArchiveWindow extends JFrame {
 				dispose();
 				new ModManagerWindow(false);
 			} else {
-				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Error occured during mod import.\nSome mods may have successfully imported.\nReload Mod Manager from the actions menu\nto see new mods that may have imported.", "Import Unsuccessful", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModImportArchiveWindow.this,
+						"Error occured during mod import.\nSome mods may have successfully imported.\nReload Mod Manager from the actions menu\nto see new mods that may have imported.",
+						"Import Unsuccessful", JOptionPane.ERROR_MESSAGE);
 			}
-			
-		}
+			descriptionArea.setText("Select an archive file to scan contents for Mod Manager mods.");
+			browseButton.setEnabled(true);
 
+		}
 	}
 }
