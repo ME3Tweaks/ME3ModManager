@@ -82,10 +82,12 @@ public class DebugLogger {
 		if (ModManager.logging) {
 			try {
 				System.out.println("[L]: " + message);
-				fw.write(message);
-				fw.write(System.getProperty("line.separator"));
-				currentMessages++;
-				checkIfFlushNeeded();
+				if (fw != null) {
+					fw.write(message);
+					fw.write(System.getProperty("line.separator"));
+					currentMessages++;
+					checkIfFlushNeeded();
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				System.out.println("cannot write to log file! IOException");
@@ -101,8 +103,10 @@ public class DebugLogger {
 		if (ModManager.logging) {
 			try {
 				System.err.println("[L-E]: " + ExceptionUtils.getStackTrace(e));
-				fw.write(ExceptionUtils.getStackTrace(e));
-				fw.write(System.getProperty("line.separator"));
+				if (fw != null) {
+					fw.write(ExceptionUtils.getStackTrace(e));
+					fw.write(System.getProperty("line.separator"));
+				}
 				currentMessages++;
 				checkIfFlushNeeded();
 			} catch (IOException ex) {
@@ -120,9 +124,11 @@ public class DebugLogger {
 		if (ModManager.logging) {
 			try {
 				System.err.println("[L:E]: " + message);
-				fw.write("WARN/ERROR: ");
-				fw.write(message);
-				fw.write(System.getProperty("line.separator"));
+				if (fw != null) {
+					fw.write("WARN/ERROR: ");
+					fw.write(message);
+					fw.write(System.getProperty("line.separator"));
+				}
 				currentMessages++;
 				checkIfFlushNeeded();
 			} catch (IOException e) {
@@ -137,7 +143,7 @@ public class DebugLogger {
 	}
 
 	private void checkIfFlushNeeded() {
-		if (ModManager.logging && currentMessages > messagesBeforeFlush) {
+		if (ModManager.logging && currentMessages > messagesBeforeFlush && fw != null) {
 			try {
 				fw.flush();
 			} catch (IOException e) {
@@ -160,7 +166,7 @@ public class DebugLogger {
 	 * @return Log text
 	 */
 	public String getLog() {
-		if (ModManager.logging) {
+		if (ModManager.logging && fw != null) {
 			try {
 				ModManager.debugLogger.writeMessage("Flushing log to disk and returning log contents");
 				fw.flush();
@@ -178,12 +184,11 @@ public class DebugLogger {
 			writeMessage(string);
 		}
 	}
-	
+
 	public void writeErrorConditionally(String string, boolean condition) {
 		if (condition) {
 			writeError(string);
 		}
 	}
-	
-	
+
 }

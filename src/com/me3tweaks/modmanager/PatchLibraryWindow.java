@@ -228,7 +228,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		modComboBox.setModel(modModel);
 		modComboBox.setRenderer(new ModCellRenderer());
 
-		Mod mod = new Mod(null); // invalid
+		Mod mod = new Mod(); // invalid
 		mod.setModName("Select a mod to add mixins to");
 
 		modModel.addElement(mod);

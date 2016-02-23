@@ -852,7 +852,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		openToolMenu.add(toolTankmasterCoalUI);
 		openToolMenu.add(toolTankmasterTLK);
 
-		//actionImportMenu.add(actionImportFromArchive);
+		actionImportMenu.add(actionImportFromArchive);
 		actionImportMenu.add(actionImportAlreadyInstalled);
 		actionMenu.add(actionImportMenu);
 		actionMenu.add(actionModMaker);
