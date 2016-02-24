@@ -19,6 +19,7 @@ import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.DeltaWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.utilities.ByteArrayInOutStream;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class Mod implements Comparable<Mod> {
@@ -38,6 +39,7 @@ public class Mod implements Comparable<Mod> {
 	private String modVersion;
 	public double modCMMVer = 1.0;
 	private int classicCode;
+	private boolean ignoreLoadErrors = false;
 	private ArrayList<Patch> requiredPatches = new ArrayList<Patch>();
 	private ArrayList<ModDelta> modDeltas = new ArrayList<ModDelta>();
 
@@ -56,9 +58,31 @@ public class Mod implements Comparable<Mod> {
 		modPath = modDescFile.getParent();
 		jobs = new ArrayList<ModJob>();
 		try {
-			readDesc();
+			readDesc(new Wini(modDescFile));
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Error reading moddesc.ini:", e);
+			setValidMod(false);
+			return;
+		}
+	}
+
+	/**
+	 * Loads a moddesc from a stream of bytes. Typically this is from a
+	 * compressed archive.
+	 * 
+	 * @param bytes
+	 */
+	public Mod(ByteArrayInOutStream bytes) {
+		modDescFile = new File(System.getProperty("user.dir"));
+		ignoreLoadErrors = true;
+		modifyString = "";
+		jobs = new ArrayList<ModJob>();
+		try {
+			Wini wini = new Wini();
+			wini.load(bytes.getInputStream());
+			readDesc(wini);
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Error reading moddesc.ini from stream:", e);
 			setValidMod(false);
 			return;
 		}
@@ -92,10 +116,10 @@ public class Mod implements Comparable<Mod> {
 	 * @throws InvalidFileFormatException
 	 * @throws IOException
 	 */
-	private void readDesc() throws InvalidFileFormatException, IOException {
-		Wini modini = new Wini(modDescFile);
+	private void readDesc(Wini modini) throws InvalidFileFormatException, IOException {
 		String modFolderPath = ModManager.appendSlash(modDescFile.getParent());
-		modDisplayDescription = modini.get("ModInfo", "moddesc");
+		modDescription = modini.get("ModInfo", "moddesc");
+		//modDisplayDescription = modini.get("ModInfo", "moddesc");
 		modName = modini.get("ModInfo", "modname");
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------Reading " + modName + "--------------------",
 				ModManager.LOG_MOD_INIT);
@@ -116,7 +140,7 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeMessageConditionally("Modcmmver is less than 2, checking for coalesced.bin in folder (legacy)",
 					ModManager.LOG_MOD_INIT);
 			File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
-			if (!file.exists()) {
+			if (!file.exists() && !ignoreLoadErrors) {
 				ModManager.debugLogger.writeError(modName + " doesn't have Coalesced.bin and is marked as legacy, marking as invalid.");
 				return;
 			}
@@ -254,7 +278,7 @@ public class Mod implements Comparable<Mod> {
 
 						// Add the file swap to task job - if this method returns
 						// false it means a file doesn't exist somewhere
-						if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile))) {
+						if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile)) && !ignoreLoadErrors) {
 							ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
 									ModManager.LOG_MOD_INIT);
@@ -276,7 +300,7 @@ public class Mod implements Comparable<Mod> {
 
 						// Add the file swap to task job - if this method returns
 						// false it means a file doesn't exist somewhere
-						if (!(newJob.addNewFileTask(modFolderPath + ModManager.appendSlash(iniModDir) + addFile, targetFile))) {
+						if (!(newJob.addNewFileTask(modFolderPath + ModManager.appendSlash(iniModDir) + addFile, targetFile) && !ignoreLoadErrors)) {
 							ModManager.debugLogger
 									.writeError("[ADDFILE]Failed to add task for file addition (File likely does not exist), marking as invalid.");
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
@@ -340,7 +364,7 @@ public class Mod implements Comparable<Mod> {
 					String destFolder = destStrok.nextToken();
 
 					File sf = new File(modFolderPath + sourceFolder);
-					if (!sf.exists()) {
+					if (!sf.exists() && !ignoreLoadErrors) {
 						ModManager.debugLogger.writeError("Custom DLC Source folder does not exist: " + sf.getAbsolutePath()
 								+ ", mod marked as invalid");
 						return;
@@ -351,13 +375,15 @@ public class Mod implements Comparable<Mod> {
 						return;
 					}
 
-					List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-					for (File file : sourceFiles) {
-						String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
-						String destFilePath = ModManager.appendSlash(destFolder) + relativePath;
-						if (!(newJob.addFileReplace(file.getAbsolutePath(), destFilePath))) {
-							ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
-							return;
+					if (sf.exists()) { //ignore errors is not present here.
+						List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+						for (File file : sourceFiles) {
+							String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
+							String destFilePath = ModManager.appendSlash(destFolder) + relativePath;
+							if (!(newJob.addFileReplace(file.getAbsolutePath(), destFilePath) && !ignoreLoadErrors)) {
+								ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
+								return;
+							}
 						}
 					}
 					newJob.getSourceFolders().add(sourceFolder);
@@ -384,7 +410,7 @@ public class Mod implements Comparable<Mod> {
 					File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
 					ModManager.debugLogger.writeMessageConditionally("Coalesced flag was set, verifying its location", ModManager.LOG_MOD_INIT);
 
-					if (!file.exists()) {
+					if (!file.exists() && !ignoreLoadErrors) {
 						ModManager.debugLogger.writeMessageConditionally(modName
 								+ " doesn't have Coalesced.bin even though flag was set. Marking as invalid.", ModManager.LOG_MOD_INIT);
 						return;
@@ -642,21 +668,19 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeMessage("Mod Desc file is null, unable to read description");
 			return;
 		}
-		Wini modini = null;
-		try {
-			modini = new Wini(modDescFile);
-			modDisplayDescription = modini.get("ModInfo", "moddesc");
-			modDescription = modini.get("ModInfo", "moddesc");
-			modDisplayDescription = breakFixer(modDisplayDescription);
-		} catch (InvalidFileFormatException e) {
-			e.printStackTrace();
-			ModManager.debugLogger.writeMessage("Invalid File Format exception on moddesc.");
-			return;
-		} catch (IOException e) {
-			ModManager.debugLogger.writeMessage("I/O Error reading mod file. It may not exist or it might be corrupt.");
-			return;
-		}
-		modDisplayDescription = breakFixer(modDisplayDescription);
+		/*
+		 * Wini modini = null; try { modini = new Wini(modDescFile);
+		 * modDisplayDescription = modini.get("ModInfo", "moddesc");
+		 * modDescription = modini.get("ModInfo", "moddesc");
+		 * modDisplayDescription = breakFixer(modDisplayDescription); } catch
+		 * (InvalidFileFormatException e) { e.printStackTrace();
+		 * ModManager.debugLogger
+		 * .writeMessage("Invalid File Format exception on moddesc."); return; }
+		 * catch (IOException e) { ModManager.debugLogger.writeMessage(
+		 * "I/O Error reading mod file. It may not exist or it might be corrupt."
+		 * ); return; }
+		 */
+		modDisplayDescription = breakFixer(modDescription);
 
 		modDisplayDescription += "\n=============================\n";
 

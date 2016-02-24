@@ -345,7 +345,8 @@ public class BackupWindow extends JDialog {
 				try {
 					//We should hash it and compare it against the known original
 					publish("Verifying "+dlcName+"...");
-					if (!(MD5Checksum.getMD5Checksum(testpatchSfar.toString()).equals(sfarHashes.get(dlcName)))) {
+					String hash = MD5Checksum.getMD5Checksum(testpatchSfar.toString());
+					if (!(hash.equals(sfarHashes.get(dlcName)) && !hash.equals(ModType.TESTPATCH_16_HASH))) {
 						//It's not the original
 						addFailure(dlcName, "DLC has been modified");
 						return false;
@@ -363,7 +364,6 @@ public class BackupWindow extends JDialog {
 				}
 				return true;
 			}
-
 			return false; //neither sfar could be found.
 		}
 

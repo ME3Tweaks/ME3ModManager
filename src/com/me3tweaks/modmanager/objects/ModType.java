@@ -30,22 +30,9 @@ public class ModType {
 	public static final String BINI = "LIVEBALANCE";
 	public static final String DH1 = "GENESIS2";
 	public static final String COLLECTORSEDITION = "COLLECTORS_EDITION";
+	public static final String TESTPATCH_16_HASH = "9f7811a54c7f3bc21f5de7600a1ce721";
+	public static final long TESTPATCH_16_SIZE = 2455091;
 
-	/*
-	 * DONT DELETE protected static final String COAL = "COALESCED"; protected
-	 * static final String MP1 = "RESURGENCE"; protected static final String MP2
-	 * = "REBELLION"; protected static final String MP3 = "EARTH"; protected
-	 * static final String MP4 = "RETALIATION"; protected static final String
-	 * MP5 = "RECKONING"; protected static final String PATCH1 = "PATCH1";
-	 * protected static final String PATCH2 = "PATCH2"; protected static final
-	 * String TESTPATCH = "TESTPATCH"; protected static final String HEN_PR =
-	 * "FROM_ASHES"; protected static final String END = "EXTENDED_CUT";
-	 * protected static final String EXP1 = "LEVIATHAN"; protected static final
-	 * String EXP2 = "OMEGA"; protected static final String EXP3 = "CITADEL";
-	 * protected static final String EXP3B = "CITADEL_BASE"; protected static
-	 * final String APP01 = "APPEARANCE"; protected static final String GUN01 =
-	 * "GROUNDSIDE"; protected static final String GUN02 = "FIREFIGHT";
-	 */
 
 	public static String[] getHeaderNameArray() {
 		return new String[] { BASEGAME, MP1, MP2, MP3, MP4, MP5, PATCH1, PATCH2, TESTPATCH, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01,

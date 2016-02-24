@@ -61,9 +61,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.2 Beta 1";
-	public static long BUILD_NUMBER = 51L;
-	public static final String BUILD_DATE = "2/20/2015";
+	public static final String VERSION = "4.2 Beta 2";
+	public static long BUILD_NUMBER = 52L;
+	public static final String BUILD_DATE = "2/23/2015";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -806,7 +806,7 @@ public class ModManager {
 	}
 
 	public static boolean installBinkw32Bypass(String biogamedir) {
-		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer. Will backup original to binkw23.dll");
+		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer.");
 		// extract and install binkw32.dll
 		// from
 		// http://stackoverflow.com/questions/7168747/java-creating-self-extracting-jar-that-can-extract-parts-of-itself-out-of-the-a
@@ -819,7 +819,7 @@ public class ModManager {
 		File bink32_orig = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 
 		// File bink32 = new File("dlcpatcher/binkw32.dll");
-		if (bink32.exists()) {
+		/*if (bink32.exists()) {
 			// if we got here binkw32.dll should have failed the hash check
 			Path source = Paths.get(bink32.toString());
 			Path destination = Paths.get(bink32_orig.toString());
@@ -830,8 +830,9 @@ public class ModManager {
 				ex.printStackTrace();
 				return false;
 			}
-		}
+		}*/
 		try {
+			ModManager.ExportResource("/binkw23.dll", bink32_orig.toString());
 			ModManager.ExportResource("/binkw32.dll", bink32.toString());
 		} catch (Exception e1) {
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));

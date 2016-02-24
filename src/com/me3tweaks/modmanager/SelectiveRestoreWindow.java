@@ -282,7 +282,7 @@ public class SelectiveRestoreWindow extends JDialog {
 						table.setValueAt("ORIGINAL", i, COL_MODIFIED);
 					}
 				} else {
-					if (testpatchSfar.length() != sizesMap.get(dlcName)) {
+					if (testpatchSfar.length() != sizesMap.get(dlcName) && testpatchSfar.length() != ModType.TESTPATCH_16_SIZE) {
 						table.setValueAt("MODIFIED" + (testpatchSfar.length() > sizesMap.get(dlcName) ? "+" : "-"), i, COL_MODIFIED);
 					} else {
 						table.setValueAt("ORIGINAL", i, COL_MODIFIED);
