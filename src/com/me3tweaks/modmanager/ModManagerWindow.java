@@ -97,7 +97,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modManagementMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionModMaker, actionVisitMe, modManagementImportFromArchive, modManagementImportAlreadyInstalled, actionOptions, toolME3Explorer, actionReload, actionExit;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate;
+	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsDeleteMod;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem modManagementModMaker, toolsMergeMod, modManagementPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
@@ -469,7 +469,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ArrayList<Mod> modsToValidate = new ArrayList<Mod>();
 			modsToValidate.add(mod);
 			ArrayList<UpdatePackage> upackages = ModXMLTools.validateLatestAgainstServer(modsToValidate,null);
-			if (upackages != null) {
+			if (upackages != null && upackages.size() > 0) {
 				publish("Update available for " + mod.getModName());
 				publish(upackages.get(0)); //singleu pdate
 			} else {
@@ -934,6 +934,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		modutilsCheckforupdate = new JMenuItem("Check for newer version (ME3Tweaks)");
 		modutilsCheckforupdate.addActionListener(this);
+		
+		modutilsDeleteMod = new JMenuItem("Delete mod");
+		modutilsDeleteMod.addActionListener(this);
+		modutilsDeleteMod.setToolTipText("Delete this mod from Mod Manager");
 
 		modMenu.add(modutilsHeader);
 		if (ModManager.IS_DEBUG) {
@@ -947,6 +951,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.add(modutilsInstallCustomKeybinds);
 		modMenu.add(modutilsInfoEditor);
 		modMenu.add(modutilsAutoTOC);
+		modMenu.addSeparator();
+		modMenu.add(modutilsDeleteMod);
 		modMenu.setEnabled(false);
 		menuBar.add(modMenu);
 
@@ -1070,13 +1076,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertSPDLC = new JMenuItem("Restore SP DLC SFARs");
 		restoreRevertSPDLC.setToolTipText("<html>Restores all SP DLCs.<br>This does not remove custom DLC modules.</html>");
 
-		restoreRevertSPBaseDLC = new JMenuItem("Restore SP DLC SFARs + Basegame");
+		restoreRevertSPBaseDLC = new JMenuItem("> Restore SP DLC SFARs + Basegame <");
 		restoreRevertSPBaseDLC.setToolTipText("<html>Restores all basegame files, and checks all SP DLC SFAR files.<br>This does not remove custom DLC modules.</html>");
 
 		restoreRevertMPDLC = new JMenuItem("Restore MP DLC SFARs");
 		restoreRevertMPDLC.setToolTipText("<html>Restores all MP DLC SFARs.<br>This does not remove custom DLC modules.</html>");
 
-		restoreRevertMPBaseDLC = new JMenuItem("Restore MP DLC SFARs + Basegame");
+		restoreRevertMPBaseDLC = new JMenuItem("> Restore MP DLC SFARs + Basegame <");
 		restoreRevertMPBaseDLC.setToolTipText(
 				"<html>Restores all basegame files, and checks all Multiplayer DLC files.<br>This does not remove custom DLC modules.<br>If you are doing multiplayer mods, you should use this to restore</html>");
 		restoreRevertCoal = new JMenuItem("Restore vanilla Coalesced.bin");
@@ -1624,6 +1630,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new WavelistGUI();
 		} else if (e.getSource() == modutilsCheckforupdate) {
 			new SingleModUpdateCheckThread(modModel.getElementAt(modList.getSelectedIndex())).execute();
+		} else if (e.getSource() == modutilsDeleteMod) {
+			ModManager.debugLogger.writeMessage("User clicked Delete Mod on "+modModel.get(modList.getSelectedIndex()).getModName());
+			int result = JOptionPane.showConfirmDialog(this, "Deleting this mod will remove it from your filesystem.\nThis operation cannot be reversed.\nDelete "+modModel.get(modList.getSelectedIndex()).getModName()+"?", "Confirm Mod Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (result == JOptionPane.OK_OPTION) {
+				ModManager.debugLogger.writeMessage("Deleting mod: "+modModel.get(modList.getSelectedIndex()).getModPath());
+				FileUtils.deleteQuietly(new File(modModel.get(modList.getSelectedIndex()).getModPath()));
+				new ModManagerWindow(false);
+			}
 		} else if (e.getSource() == modutilsInstallCustomKeybinds) {
 			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()), false);
 		} else if (e.getSource() == modManagementCheckallmodsforupdate) {
