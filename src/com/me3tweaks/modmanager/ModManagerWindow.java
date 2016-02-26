@@ -1027,7 +1027,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolGUITransplant.addActionListener(this);
 		toolsMenu.add(toolsMergeMod);
 		toolsMenu.add(toolsMountdlcEditor);
-		toolsMenu.add(toolGUITransplant);
+		//toolsMenu.add(toolGUITransplant);
 		toolsMenu.add(toolsUnpackDLC);
 		toolsMenu.add(toolsOpenME3Dir);
 		toolsMenu.addSeparator();

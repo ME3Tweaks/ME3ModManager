@@ -20,11 +20,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
+import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 
 /** Automates the GUI-Transplanter tool **/
 public class GUITransplanterWindow extends JFrame {
@@ -230,5 +232,19 @@ public class GUITransplanterWindow extends JFrame {
 
 	private void performTransplant() {
 
+	}
+	
+	class TransplantWorker extends SwingWorker<Void,ThreadCommand> {
+
+		public TransplantWorker(Mod source, Mod target, int transplantType) {
+			
+		}
+		
+		@Override
+		protected Void doInBackground() throws Exception {
+
+			return null;
+		}
+		
 	}
 }

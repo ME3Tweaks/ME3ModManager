@@ -271,7 +271,7 @@ public class ModImportArchiveWindow extends JDialog {
 
 	}
 
-	public class ImportWorker extends SwingWorker<Void, ThreadCommand> {
+	public class ImportWorker extends SwingWorker<Boolean, ThreadCommand> {
 
 		private ArrayList<CompressedMod> modsToImport;
 		private String archiveFilePath;
@@ -285,10 +285,9 @@ public class ModImportArchiveWindow extends JDialog {
 		}
 
 		@Override
-		protected Void doInBackground() throws Exception {
+		protected Boolean doInBackground() throws Exception {
 			// TODO Auto-generated method stub
-			SevenZipCompressedModInspector.extractCompressedModsFromArchive(archiveFilePath, modsToImport, this);
-			return null;
+			return SevenZipCompressedModInspector.extractCompressedModsFromArchive(archiveFilePath, modsToImport, this);
 		}
 
 		protected void process(List<ThreadCommand> commands) {
@@ -308,7 +307,7 @@ public class ModImportArchiveWindow extends JDialog {
 		public void done() {
 			boolean error = false;
 			try {
-				get();
+				error = !get(); //returns true for OK
 			} catch (ExecutionException | InterruptedException e) {
 				error = true;
 				ModManager.debugLogger.writeErrorWithException("Error extracting mod archive:", e);
