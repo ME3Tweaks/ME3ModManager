@@ -92,7 +92,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 			//get default language
 			//set combobox from settings
-
+			ModManager.debugLogger.writeMessage("Starting AllModsUpdate for MODMAKER MOD");
 			statusLabel.setText("Upgrading via ModMaker Compiler");
 			ModMakerCompilerWindow mcw = new ModMakerCompilerWindow(upackage.getMod(), ModMakerEntryWindow.getDefaultLanguages());
 			while (mcw.isShowing()) {

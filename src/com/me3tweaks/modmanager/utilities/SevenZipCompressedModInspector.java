@@ -1,9 +1,12 @@
 package com.me3tweaks.modmanager.utilities;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +16,6 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.ModImportArchiveWindow;
 import com.me3tweaks.modmanager.ModImportArchiveWindow.ImportWorker;
-import com.me3tweaks.modmanager.ModImportArchiveWindow.ScanWorker;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.objects.CompressedMod;
 import com.me3tweaks.modmanager.objects.Mod;
@@ -34,16 +36,21 @@ public class SevenZipCompressedModInspector {
 		private ArrayList<String> parentPathsToExtract;
 		private ImportWorker worker;
 		private int numTotalFiles, numCompletedFiles = 0;
+		private String modName;
 
 		//private HashMap<>
 
-		public DecompressModToDiskCallback(IInArchive inArchive, ArrayList<String> parentPathsToExtract, int numTotalFiles, ModImportArchiveWindow.ImportWorker worker) {
+		public DecompressModToDiskCallback(IInArchive inArchive, ArrayList<String> parentPathsToExtract, int numTotalFiles, String modName, ModImportArchiveWindow.ImportWorker worker) {
 			this.inArchive = inArchive;
 			this.numTotalFiles = numTotalFiles;
 			this.parentPathsToExtract = parentPathsToExtract;
 			this.worker = worker;
+			this.modName = modName; //can be null. only used if mod is directly zipped.
 			for (String modpath : parentPathsToExtract) {
-				FileUtils.deleteQuietly(new File(ModManager.getModsDir() + FilenameUtils.getBaseName(modpath)));
+				if (modpath != null) {
+					ModManager.debugLogger.writeMessage("Deleting existing mod folder: "+modpath);
+					FileUtils.deleteQuietly(new File(ModManager.getModsDir() + FilenameUtils.getBaseName(modpath)));
+				}
 			}
 		}
 
@@ -55,12 +62,20 @@ public class SevenZipCompressedModInspector {
 			String outputDirectory = (String) inArchive.getProperty(index, PropID.PATH);
 			boolean modFound = false;
 			for (String modpath : parentPathsToExtract) {
-				if (outputDirectory.startsWith(modpath)) {
-					//this file is part of this modpath...
-					String parentPath = new File(modpath).getParent();
-					if (parentPath != null) {
-						outputDirectory = ResourceUtils.getRelativePath(outputDirectory, parentPath, File.separator);
+				if (modpath == null || outputDirectory.startsWith(modpath)) {
+					if (modpath == null) {
+						modName = modName.replaceAll("/", "-");
+						modName = modName.replaceAll("\\\\", "-"); //prevents path creation
+						outputDirectory = modName + File.separator + outputDirectory;
+					} else {
+						File path = new File(modpath);
+						String parent = path.getParent();
+						if (parent != null) {
+							outputDirectory = ResourceUtils.getRelativePath(outputDirectory, parent, File.separator);
+						}
 					}
+					
+					//this file is part of this modpath...
 					modFound = true;
 					break;
 				}
@@ -78,6 +93,7 @@ public class SevenZipCompressedModInspector {
 			return new ISequentialOutStream() {
 
 				public int write(byte[] data) throws SevenZipException {
+					ModManager.debugLogger.writeMessage("Decompressing chunk to "+finaldir);
 					FileOutputStream fos = null;
 					try {
 						File path = new File(finaldir);
@@ -206,9 +222,12 @@ public class SevenZipCompressedModInspector {
 
 	}
 
-	public static void extractCompressedModsFromArchive(String archivePath, ArrayList<CompressedMod> compressedModsToExtract, ModImportArchiveWindow.ImportWorker importWorker) {
+	public static boolean extractCompressedModsFromArchive(String archivePath, ArrayList<CompressedMod> compressedModsToExtract, ModImportArchiveWindow.ImportWorker importWorker) {
+		ModManager.debugLogger.writeMessage("Extracting "+ compressedModsToExtract.size() + " compressed mods from archive:" +archivePath);
+
 		RandomAccessFile randomAccessFile = null;
 		IInArchive inArchive = null;
+		boolean error = false;
 		try {
 			randomAccessFile = new RandomAccessFile(archivePath, "r");
 			inArchive = SevenZip.openInArchive(null, // autodetect archive type
@@ -220,16 +239,21 @@ public class SevenZipCompressedModInspector {
 			//get parent paths of mods.
 			ArrayList<String> parentPathsToExtract = new ArrayList<String>();
 			for (CompressedMod compressedMod : compressedModsToExtract) {
-				parentPathsToExtract.add(new File(compressedMod.getDescLocationInArchive()).getParent());
+				String parent = new File(compressedMod.getDescLocationInArchive()).getParent();
+				ModManager.debugLogger.writeMessage("Marked mod parent path:" +parent+  " (if null, extract everything.)");
+				parentPathsToExtract.add(parent);
 			}
 
 			int numItems = 0;
 			//1st pass - Get all files and a count.
 			for (int i = 0; i < count; i++) {
 				String path = (String) inArchive.getProperty(i, PropID.PATH);
+				ModManager.debugLogger.writeMessage("Iterating over archive files: "+path);
 				for (String str : parentPathsToExtract) {
 					boolean folder = (Boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
-					if (!folder && path.startsWith(str)) {
+					if (!folder && (str == null || path.startsWith(str))) {
+						//null str means parent path resolved to nothing, extract whole folder.
+						ModManager.debugLogger.writeMessage("Marked for extraction:" +path);
 						itemsToExtract.add(i);
 						numItems++;
 						break;
@@ -243,16 +267,24 @@ public class SevenZipCompressedModInspector {
 				items[i++] = integer.intValue();
 				System.out.println(integer + " " + inArchive.getProperty(integer, PropID.PATH));
 			}
-			DecompressModToDiskCallback dftmc = new DecompressModToDiskCallback(inArchive, parentPathsToExtract, numItems, importWorker);
+			DecompressModToDiskCallback dftmc = new DecompressModToDiskCallback(inArchive, parentPathsToExtract, numItems, compressedModsToExtract.get(0).getModName(), importWorker);
 			inArchive.extract(items, false, // Non-test mode
 					dftmc);
 		} catch (SevenZipException e) {
 			//ModManager.debugLogger.writeErrorWithException("First Potential Cause of SevenZipException while extracting mod:", e.getCauseFirstPotentialThrown());
 			//ModManager.debugLogger.writeErrorWithException("Last Potential Cause of SevenZipException while extracting mod:", e.getCauseLastPotentialThrown());
-			e.printStackTraceExtended();
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			PrintStream ps = new PrintStream(baos);
+			e.printStackTrace(ps);
+			try {
+				ModManager.debugLogger.writeError("Error while extracting 7zip archive: "+baos.toString("utf-8"));
+			} catch (UnsupportedEncodingException e1) {
+				//this shouldn't happen.
+			}
+			error = true;
 		} catch (Exception e) {
-
-			System.err.println("Error occurs: " + e);
+			error = true;
+			ModManager.debugLogger.writeErrorWithException("Error extracting mod(s) from archive:", e);
 		} finally {
 			if (inArchive != null) {
 				try {
@@ -269,6 +301,7 @@ public class SevenZipCompressedModInspector {
 				}
 			}
 		}
+		return !error;
 	}
 
 	public static ArrayList<CompressedMod> getCompressedModsInArchive(String archivePath) {
