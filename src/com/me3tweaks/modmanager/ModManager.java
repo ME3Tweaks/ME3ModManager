@@ -902,6 +902,7 @@ public class ModManager {
 	 *         previously.
 	 */
 	public static String appendSlash(String string) {
+		if (string == null) return null;
 		if (string.charAt(string.length() - 1) == File.separatorChar) {
 			return string;
 		} else {

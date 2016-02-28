@@ -479,6 +479,7 @@ public class MountFileEditorWindow extends JDialog {
 			return "I/O Exception";
 		}
 		if (data.length != MOUNTDLC_LENGTH) {
+			ModManager.debugLogger.writeError("Mount file appears invalid, size is not normal: (this) "+data.length+" vs (normal) "+MOUNTDLC_LENGTH);
 			return "Invalid Mount File (size)";
 		}
 

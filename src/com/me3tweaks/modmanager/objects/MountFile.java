@@ -10,12 +10,55 @@ import java.nio.file.Paths;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.MountFileEditorWindow;
 
-public class MountFile {
+public class MountFile implements Comparable<MountFile> {
+	@Override
+	public String toString() {
+		return "MountFile [filepath=" + filepath + ", tlkId1=" + tlkId1 + ", tlkId2=" + tlkId2 + ", mountFlag=" + mountFlag + ", mountPriority=" + mountPriority + "]";
+	}
+
 	private static int PRIORITY_OFFSET = 16;
 	private static int MPSPFLAG_OFFSET = 24;
 	private static int TLKOFFSET_1 = 28;
 	private static int TLKOFFSET_2 = 32;
 	private static final int MOUNTDLC_LENGTH = 108;
+	private String associatedModName, associatedDLCName;
+	public String getAssociatedModName() {
+		if (associatedModName == null) {
+			return "Unknown";
+		}
+		return associatedModName;
+	}
+
+	public void setAssociatedModName(String associatedModName) {
+		this.associatedModName = associatedModName;
+	}
+
+	public String getAssociatedDLCName() {
+		if (associatedDLCName == null) {
+			return "Unknown";
+		}
+		return associatedDLCName;
+	}
+
+	public String getReason() {
+		return reason;
+	}
+
+	public void setReason(String reason) {
+		this.reason = reason;
+	}
+
+	public String getMountName() {
+		return mountName;
+	}
+
+	public void setMountName(String mountName) {
+		this.mountName = mountName;
+	}
+
+	public void setAssociatedDLCName(String associatedDLCName) {
+		this.associatedDLCName = associatedDLCName;
+	}
 
 	private String filepath;
 	private int tlkId1, tlkId2;
@@ -136,5 +179,10 @@ public class MountFile {
 			System.out.println("reas");
 			return reason;
 		}
+	}
+
+	@Override
+	public int compareTo(MountFile other) {
+		return new Integer(mountPriority).compareTo(other.mountPriority);
 	}
 }

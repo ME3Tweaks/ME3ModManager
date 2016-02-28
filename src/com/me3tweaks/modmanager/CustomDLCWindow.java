@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -39,6 +40,7 @@ public class CustomDLCWindow extends JDialog {
 	private ArrayList<MountFile> mountList;
 
 	public CustomDLCWindow(String bioGameDir) {
+		ModManager.debugLogger.writeMessage("Opening custom DLC window.");
 		this.bioGameDir = bioGameDir;
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
@@ -88,28 +90,30 @@ public class CustomDLCWindow extends JDialog {
 			String pcConsole = path+"CookedPCConsole/";
 			File mountFile = new File(pcConsole+"Mount.dlc");
 			File sfarFile = new File(pcConsole+"Default.sfar");
-			
+			MountFile mount = new MountFile(mountFile.getAbsolutePath());
+			ModManager.debugLogger.writeMessage("Found mount file: "+mount);
 			if (!mountFile.exists()){
-				dlcName = "No Mount.dlc file";
-				mountList.add(new MountFile(dlcName, "No Mount found"));
+				mount.setReason("No Mount.dlc file");
 			} else if (!sfarFile.exists()){
-				dlcName = "No Default.sfar file";
-				mountList.add(new MountFile(dlcName, "Not checked"));
+				mount.setReason("No SFAR");
 			} else {
 				//String mount = MountFileEditorWindow.getMountDescription(mountFile);
-				mountList.add(new MountFile(mountFile.getAbsolutePath()));
+				mount.setAssociatedDLCName(dir);
+				mount.setAssociatedModName(dlcName);
 			}
-			folderList.add(dir);
-			nameList.add(dlcName);
+			mountList.add(mount);
 		}
+		
+		Collections.sort(mountList);
 
 		//TABLE
 		Object[][] data = new Object[datasize][5];
 		for (int i = 0; i < datasize; i++) {
-			data[i][COL_FOLDER] = folderList.get(i);
-			data[i][COL_NAME] = nameList.get(i);
-			data[i][COL_MOUNT] = mountList.get(i).getMountFlagString();
-			data[i][COL_MOUNT_PRIORITY] = mountList.get(i).getMountPriority();
+			MountFile mount = mountList.get(i);
+			data[i][COL_FOLDER] = mount.getAssociatedDLCName();
+			data[i][COL_NAME] = mount.getAssociatedModName();
+			data[i][COL_MOUNT] = mount.getMountFlagString();
+			data[i][COL_MOUNT_PRIORITY] = mount.getMountPriority();
 			data[i][COL_ACTION] = "Delete DLC";
 		}
 
