@@ -85,6 +85,12 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
+/**
+ * Controls the main window for Mass Effect 3 Mod Manager.
+ * 
+ * @author mgamerz
+ *
+ */
 @SuppressWarnings("serial")
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
 	public static ModManagerWindow ACTIVE_WINDOW;
@@ -93,7 +99,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JTextArea fieldDescription;
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
-	JFileChooser dirChooser;
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modManagementMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionModMaker, actionVisitMe, modManagementImportFromArchive, modManagementImportAlreadyInstalled, actionOptions, toolME3Explorer,
@@ -1226,7 +1231,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	public void actionPerformed(ActionEvent e) {
 		// too bad we can't do a switch statement on the object :(
 		if (e.getSource() == buttonBioGameDir) {
-			dirChooser = new JFileChooser();
+			JFileChooser dirChooser = new JFileChooser();
 			File tryDir = new File(fieldBiogameDir.getText());
 			if (tryDir.exists()) {
 				dirChooser.setCurrentDirectory(new File(fieldBiogameDir.getText()));
@@ -1245,30 +1250,30 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			dirChooser.setAcceptAllFileFilterUsed(false);
 			//
 			if (dirChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-				checkForValidBioGame();
+				checkForValidBioGame(dirChooser);
 			} else {
 				if (ModManager.logging) {
 					ModManager.debugLogger.writeMessage("No directory selected...");
 				}
 			}
 		} else if (e.getSource() == modManagementModMaker) {
-			if (validateBIOGameDir()) {
-				if (ModManager.validateNETFrameworkIsInstalled()) {
-					ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
-					updateApplyButton();
-					new ModMakerEntryWindow(this, fieldBiogameDir.getText());
-				} else {
-					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
-					ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
-				}
+			//if (validateBIOGameDir()) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
+				updateApplyButton();
+				new ModMakerEntryWindow(this, fieldBiogameDir.getText());
 			} else {
-				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
-				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
 			}
+			//} else {
+			//labelStatus.setText("ModMaker requires valid BIOGame directory to start");
+			//	labelStatus.setVisible(true);
+			//	JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+			//			"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			//}
 		} else
 
 		if (e.getSource() == backupBackupDLC) {
@@ -1723,7 +1728,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()), false);
 		} else if (e.getSource() == modManagementCheckallmodsforupdate) {
 			if (!validateBIOGameDir()) {
-				JOptionPane.showMessageDialog(this, "Your BIOGame directory is not correctly set.\nOnly non-ModMaker mods will be checked for updates.", "Invalid BIOGame Directory", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(this,
+						"Your BIOGame directory is not correctly set.\nOnly non-ModMaker mods will be checked for updates.",
+						"Invalid BIOGame Directory", JOptionPane.WARNING_MESSAGE);
 			}
 			checkAllModsForUpdates(true);
 		} else if (e.getSource() == modManagementPatchLibary) {
@@ -1840,7 +1847,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage(mod.getModName() + " is not ME3Tweaks updatable");
 			}
 		}
-		
+
 		if (!ModManagerWindow.validateBIOGameDir()) {
 			ArrayList<Mod> modsThatCantUpdate = new ArrayList<>();
 			for (Mod mod : updatableMods) {
@@ -1986,7 +1993,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	/**
 	 * Checks that the user has chosen a correct biogame directory.
 	 */
-	private void checkForValidBioGame() {
+	private void checkForValidBioGame(JFileChooser dirChooser) {
 		File coalesced = new File(ModManager.appendSlash(dirChooser.getSelectedFile().toString()) + "CookedPCConsole\\Coalesced.bin");
 		if (coalesced.exists()) {
 			String YesNo[] = { "Yes", "No" };
