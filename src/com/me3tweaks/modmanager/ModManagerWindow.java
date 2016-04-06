@@ -87,7 +87,14 @@ import com.sun.jna.platform.win32.WinReg;
 
 import net.iharder.dnd.FileDrop;
 
+/**
+ * Controls the main window for Mass Effect 3 Mod Manager.
+ * 
+ * @author mgamerz
+ *
+ */
 @SuppressWarnings("serial")
+
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
 	public static ModManagerWindow ACTIVE_WINDOW;
 	boolean isUpdate;
@@ -95,7 +102,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JTextArea fieldDescription;
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
-	JFileChooser dirChooser;
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modManagementMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionModMaker, actionVisitMe, modManagementImportFromArchive, modManagementImportAlreadyInstalled, actionOptions, toolME3Explorer, actionReload, actionExit,
@@ -670,7 +676,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
 						break;
 					}
-					
+
 				}
 			}
 		});
@@ -1213,7 +1219,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	public void actionPerformed(ActionEvent e) {
 		// too bad we can't do a switch statement on the object :(
 		if (e.getSource() == buttonBioGameDir) {
-			dirChooser = new JFileChooser();
+			JFileChooser dirChooser = new JFileChooser();
 			File tryDir = new File(fieldBiogameDir.getText());
 			if (tryDir.exists()) {
 				dirChooser.setCurrentDirectory(new File(fieldBiogameDir.getText()));
@@ -1231,7 +1237,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			dirChooser.setAcceptAllFileFilterUsed(false);
 			//
 			if (dirChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-				checkForValidBioGame();
+				checkForValidBioGame(dirChooser);
 			} else {
 				if (ModManager.logging) {
 					ModManager.debugLogger.writeMessage("No directory selected...");
@@ -1244,16 +1250,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					updateApplyButton();
 					new ModMakerEntryWindow(this, fieldBiogameDir.getText());
 				} else {
-					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
-					ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
+					labelStatus.setText("ModMaker requires valid BIOGame directory to start");
+					labelStatus.setVisible(true);
+					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+							JOptionPane.ERROR_MESSAGE);
 				}
-			} else {
-				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
-				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
 			}
 		} else
 
@@ -1931,7 +1936,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	/**
 	 * Checks that the user has chosen a correct biogame directory.
 	 */
-	private void checkForValidBioGame() {
+	private void checkForValidBioGame(JFileChooser dirChooser) {
 		File coalesced = new File(ModManager.appendSlash(dirChooser.getSelectedFile().toString()) + "CookedPCConsole\\Coalesced.bin");
 		if (coalesced.exists()) {
 			String YesNo[] = { "Yes", "No" };
@@ -2237,6 +2242,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						JMenuItem deltaItem = new JMenuItem(delta.getDeltaName());
 						deltaItem.setToolTipText("<html>" + delta.getDeltaDescription() + "</html>");
 						deltaItem.addActionListener(new ActionListener() {
+
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								ModManager.debugLogger.writeMessage("Applying delta " + delta.getDeltaName() + " to " + selectedMod.getModName());
@@ -2245,6 +2251,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								modDeltaRevert.setText("Revert to original version");
 								modDeltaRevert.setToolTipText("<html>Restores the mod to the original version, without variants applied</html>");
 							}
+
 						});
 						modDeltaMenu.add(deltaItem);
 					}

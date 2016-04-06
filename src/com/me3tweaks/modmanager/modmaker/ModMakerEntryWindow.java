@@ -22,6 +22,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -29,6 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -37,6 +39,7 @@ import javax.swing.text.DocumentFilter;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
+import com.me3tweaks.modmanager.CoalescedWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
@@ -63,6 +66,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	ModManagerWindow callingWindow;
 	private JButton makeModButton;
 	private JButton browseModsButton;
+	private JButton sideloadButton;
 
 	public ModMakerEntryWindow(JFrame callingWindow, String biogameDir) {
 		this.callingWindow = (ModManagerWindow) callingWindow;
@@ -143,12 +147,22 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		getCodePane.add(Box.createHorizontalGlue());
 
 		makeModButton = new JButton("Create a mod");
+		makeModButton.setToolTipText("Make a mod on ME3Tweaks Modmaker");
+
 		browseModsButton = new JButton("Browse mods");
+		browseModsButton.setToolTipText("Make a mod on ME3Tweaks Modmaker");
+
+		sideloadButton = new JButton("Sideload mod");
+		sideloadButton.setToolTipText("Compile a mod from a ME3Tweaks Modmaker XML file");
+
+		sideloadButton.addActionListener(this);
 		makeModButton.addActionListener(this);
 		browseModsButton.addActionListener(this);
 		getCodePane.add(makeModButton);
 		getCodePane.add(Box.createRigidArea(new Dimension(10, 5)));
 		getCodePane.add(browseModsButton);
+		getCodePane.add(Box.createRigidArea(new Dimension(10, 5)));
+		getCodePane.add(sideloadButton);
 		getCodePane.add(Box.createHorizontalGlue());
 		modMakerPanel.add(getCodePane);
 		modMakerPanel.add(Box.createVerticalGlue());
@@ -251,7 +265,9 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == downloadButton) {
+		if (e.getSource() == sideloadButton) {
+			sideloadModmaker(getLanguages(languageChoices.getSelectedItem().toString()));
+		} else if (e.getSource() == downloadButton) {
 			startModmaker(getLanguages(languageChoices.getSelectedItem().toString()));
 		} else if (e.getSource() == codeField) {
 			//enter button
@@ -284,6 +300,53 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			}
 		}
 
+	}
+
+	/**
+	 * Sideloads a ModMaker XML file rather than downloading one to memory.
+	 * 
+	 * @param languages
+	 */
+	private void sideloadModmaker(ArrayList<String> languages) {
+		JFileChooser dirChooser = new JFileChooser();
+		String home = System.getProperty("user.home");
+		File file = new File(home + "/Downloads");
+		if (file.exists()) {
+			dirChooser.setCurrentDirectory(file);
+		} else {
+			dirChooser.setCurrentDirectory(new java.io.File("."));
+		}
+		dirChooser.setDialogTitle("Select ModMaker XML file");
+		dirChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		dirChooser.setAcceptAllFileFilterUsed(false);
+		dirChooser.setFileFilter(new FileNameExtensionFilter("ModMaker Mod Delta Files (.xml)", "xml"));
+
+		String chosenFile = null;
+		if (dirChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+			chosenFile = dirChooser.getSelectedFile().getAbsolutePath();
+			dispose();
+			boolean shouldContinue = true;
+			if (!hasDLCBypass) {
+				shouldContinue = installBypass();
+			}
+			if (shouldContinue) {
+				Wini ini;
+				try {
+					File settings = new File(ModManager.SETTINGS_FILENAME);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					ini.put("Settings", "modmaker_language", languageChoices.getSelectedItem());
+					ini.store();
+				} catch (InvalidFileFormatException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+				}
+				callingWindow.startModMaker(chosenFile, languages);
+			}
+		}
 	}
 
 	private static ArrayList<String> getLanguages(String chosenLang) {
@@ -325,6 +388,11 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		return languagesToCompile;
 	}
 
+	/**
+	 * Gets an arraylist of languages to compile by default.
+	 * 
+	 * @return
+	 */
 	public static ArrayList<String> getDefaultLanguages() {
 		String defaultLang = ALL_LANG;
 		Wini settingsini;
@@ -345,6 +413,12 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		return getLanguages(defaultLang);
 	}
 
+	/**
+	 * Starts modmaker in download mode.
+	 * 
+	 * @param languages
+	 *            Languages to compile
+	 */
 	private void startModmaker(ArrayList<String> languages) {
 		dispose();
 		boolean shouldContinue = true;
@@ -363,12 +437,18 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			} catch (InvalidFileFormatException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
-				ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.",e);
+				ModManager.debugLogger.writeErrorWithException(
+						"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 			}
 			callingWindow.startModMaker(codeField.getText().toString(), languages);
 		}
 	}
 
+	/**
+	 * Installs the LauncherWV bypass.
+	 * 
+	 * @return
+	 */
 	private boolean installBypass() {
 		return ModManager.installLauncherWV(biogameDir);
 	}
