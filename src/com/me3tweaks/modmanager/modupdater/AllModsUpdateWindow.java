@@ -3,13 +3,13 @@ package com.me3tweaks.modmanager.modupdater;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -271,7 +271,10 @@ public class AllModsUpdateWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Auto-Updater thread: performing done()");
 			try {
 				get();
+			} catch (CancellationException e) {
+				dispose();
 			} catch (Exception e) {
+				dispose(); 
 				ModManager.debugLogger.writeException(e);
 				ModManager.debugLogger.writeMessage("Auto-Updater thread likely ended pre-maturely due to an exception.");
 			}
