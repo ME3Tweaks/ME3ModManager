@@ -432,6 +432,10 @@ public class ModXMLTools {
 			}
 
 			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: " + filesToRemove.size());
+			if (newFiles.size() == 0 && filesToRemove.size() ==0){
+				//server lists update, but local copy matches server
+				return null;
+			}
 			return new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
 
 		} else {
