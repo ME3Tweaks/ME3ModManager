@@ -1250,15 +1250,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					updateApplyButton();
 					new ModMakerEntryWindow(this, fieldBiogameDir.getText());
 				} else {
-					labelStatus.setText("ModMaker requires valid BIOGame directory to start");
-					labelStatus.setVisible(true);
-					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-							JOptionPane.ERROR_MESSAGE);
+
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
 				}
-				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
-				ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
-				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
+			} else {
+				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
+
 			}
 		} else
 

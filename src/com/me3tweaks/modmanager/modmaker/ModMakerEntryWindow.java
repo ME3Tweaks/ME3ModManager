@@ -104,6 +104,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 				.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Languages to compile");
 		languageChoicesPanel.setBorder(languageBorder);
 		languageChoices = new JComboBox<String>(languages);
+		languageChoices.setToolTipText("Languages to compile. Choose your game's language to speed up compiling significantly.");
 		languageChoicesPanel.add(languageChoices);
 		modMakerPanel.add(languageChoicesPanel);
 
@@ -131,11 +132,13 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			}
 		});
 		codeField.setMaximumSize(new Dimension(60, 20));
+		codeField.setToolTipText("ME3Tweaks ModMaker mod code to download. You can get these from ME3Tweaks.com/modmaker.");
 		codeDownloadPanel.add(codeField);
 		codeDownloadPanel.add(Box.createRigidArea(new Dimension(10, 10)));
 
 		downloadButton = new JButton("Download & Compile");
 		downloadButton.setPreferredSize(new Dimension(185, 22));
+		downloadButton.setToolTipText("Download the mod with the specified ID from ME3Tweaks ModMaker and compile for installation");
 		//codeDownloadPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		codeDownloadPanel.add(downloadButton);
 		codeDownloadPanel.add(Box.createHorizontalGlue());
@@ -324,7 +327,6 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		String chosenFile = null;
 		if (dirChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			chosenFile = dirChooser.getSelectedFile().getAbsolutePath();
-			dispose();
 			boolean shouldContinue = true;
 			if (!hasDLCBypass) {
 				shouldContinue = installBypass();
@@ -344,6 +346,8 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 					ModManager.debugLogger.writeErrorWithException(
 							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 				}
+				this.setModalityType(Dialog.ModalityType.MODELESS);
+				dispose();
 				callingWindow.startModMaker(chosenFile, languages);
 			}
 		}
