@@ -92,7 +92,7 @@ public class ModInstallWindow extends JDialog {
 	private void checkModCMMVersion(Mod mod) {
 		if (mod.getCMMVer() > ModManager.MODDESC_VERSION_SUPPORT) {
 			JOptionPane.showMessageDialog(callingWindow,
-					"This mod specifies it requires a newer Mod Manager " + mod.getCMMVer() + ".\nMod Manager will attempt to install the mod but it may not work.",
+					"This mod specifies it requires a newer version of Mod Manager: " + mod.getCMMVer() + ".\nMod Manager will attempt to install the mod but it may not work.",
 					"Outdated Mod Manager", JOptionPane.WARNING_MESSAGE);
 		}
 	}
