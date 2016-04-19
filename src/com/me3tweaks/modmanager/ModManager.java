@@ -7,13 +7,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,6 +43,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -61,11 +62,11 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.2";
-	public static long BUILD_NUMBER = 53L;
+	public static final String VERSION = "4.2.1";
+	public static long BUILD_NUMBER = 54L;
 	public static final String BUILD_DATE = "4/5/2016";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
@@ -1699,6 +1700,18 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage("runProcess(): "+sb.toString());
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
+			//handle stdout
+		    final StringWriter writer = new StringWriter();
+			new Thread(new Runnable() {
+		        public void run() {
+		            try {
+						IOUtils.copy(process.getInputStream(), writer);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		        }
+		    }).start();
 			int returncode = process.waitFor();
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");

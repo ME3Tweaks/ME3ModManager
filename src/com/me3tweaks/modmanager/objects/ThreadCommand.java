@@ -6,6 +6,8 @@ package com.me3tweaks.modmanager.objects;
  *
  */
 public class ThreadCommand {
+	public final static String COMMAND_ERROR = "ERROR";
+	
 	private String command;
 	private String message;
 	private Object data;

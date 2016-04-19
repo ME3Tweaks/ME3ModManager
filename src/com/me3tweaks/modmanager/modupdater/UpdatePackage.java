@@ -64,6 +64,7 @@ public class UpdatePackage {
 		this.filesToDelete = filesToDelete;
 		this.serverFolderName = serverFolderName;
 		this.modmakerupdate = false;
+		this.serverModName = mod.getModName();
 	}
 
 	/**
@@ -117,14 +118,15 @@ public class UpdatePackage {
 	}
 
 	public void sortByLargestFirst() {
+		//Sort by uncompressed size. Theoretically a larger uncompressed file with compress to a larger compressed file.
 		filesToDownload.sort(new Comparator<ManifestModFile>() {
 
 			@Override
 			public int compare(ManifestModFile o1, ManifestModFile o2) {
-				if (o1.getFilesize() > o2.getFilesize()) {
+				if (o1.getSize() > o2.getSize()) {
 					return -1;
 				}
-				if (o1.getFilesize() < o2.getFilesize()) {
+				if (o1.getSize() < o2.getSize()) {
 					return 1;
 				} else
 					return 0;
@@ -134,11 +136,11 @@ public class UpdatePackage {
 
 	public String getUpdateSizeMB() {
 		long size = 0;
-		if (filesToDownload == null) {
-			System.out.println("break");
-		}
 		for (ManifestModFile mf : filesToDownload) {
-			size += mf.getFilesize();
+			//use LZMA if it exists on the server.
+			size += mf.getLzmasize() > 0 ? mf.getLzmasize() : mf.getSize();
+			System.out.println(size+", Added "+(mf.getLzmasize() > 0 ? mf.getLzmasize() : mf.getSize())+ "bytes, used "+(mf.getLzmasize() > 0 ? "LZMA" : "DECOMP"));
+
 		}
 		return ResourceUtils.humanReadableByteCount(size,true);
 	}
