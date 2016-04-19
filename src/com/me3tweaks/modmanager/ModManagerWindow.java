@@ -1769,11 +1769,49 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == sqlWavelistParser) {
 			new WavelistGUI();
 		} else if (e.getSource() == modutilsCheckforupdate) {
-			new SingleModUpdateCheckThread(modModel.getElementAt(modList.getSelectedIndex())).execute();
-		} else if (e.getSource() == modutilsRestoreMod) {
 			Mod mod = modModel.getElementAt(modList.getSelectedIndex());
-			mod.setVersion(0.0001);
-			new SingleModUpdateCheckThread(mod).execute();
+			if (mod.getModMakerCode() <= 0 || validateBIOGameDir()) {
+				if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Running single mod update check on "+mod.getModName());
+					new SingleModUpdateCheckThread(mod).execute();
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Single mode updater: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 to update ModMaker mods.");
+				}
+			} else {
+				labelStatus.setText("Updating ModMaker mods requires valid BIOGame");
+				labelStatus.setVisible(true);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BIOGame directory is not valid.\nCannot update ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
+		} else if (e.getSource() == modutilsRestoreMod) {
+			
+			Mod mod = modModel.getElementAt(modList.getSelectedIndex());
+			if (mod.getModMakerCode() <= 0 || validateBIOGameDir()) {
+				if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Running (restore mode) single mod update check on "+mod.getModName());
+					mod.setVersion(0.0001);
+					new SingleModUpdateCheckThread(mod).execute();
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("Single mode updater: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 to update ModMaker mods.");
+				}
+			} else {
+				labelStatus.setText("Updating ModMaker mods requires valid BIOGame");
+				labelStatus.setVisible(true);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BIOGame directory is not valid.\nCannot update ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == modutilsDeleteMod) {
 			ModManager.debugLogger.writeMessage("User clicked Delete Mod on " + modModel.get(modList.getSelectedIndex()).getModName());
 			int result = JOptionPane.showConfirmDialog(
