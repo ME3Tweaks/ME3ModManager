@@ -36,6 +36,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -48,6 +49,8 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import net.iharder.dnd.FileDrop;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -70,6 +73,7 @@ import com.me3tweaks.modmanager.modupdater.UpdatePackage;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.objects.ModList;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.RestoreMode;
 import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
@@ -84,8 +88,6 @@ import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomAction
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
-
-import net.iharder.dnd.FileDrop;
 
 /**
  * Controls the main window for Mass Effect 3 Mod Manager.
@@ -104,11 +106,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modManagementMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionExitDebugMode, actionModMaker, actionVisitMe, modManagementImportFromArchive, modManagementImportAlreadyInstalled, actionOptions,
-			toolME3Explorer, actionReload, actionExit, toolGUITransplant;
+			toolME3Explorer, toolsMergeMod, actionReload, actionExit, toolGUITransplant;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC,
 			modutilsCheckforupdate, modutilsRestoreMod, modutilsDeleteMod;
 	JMenuItem backupBackupDLC, backupCreateGDB;
-	JMenuItem modManagementModMaker, toolsMergeMod, modManagementPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32,
+	JMenuItem modManagementModMaker, modManagementFailedMods, modManagementPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32,
 			toolsUninstallBinkw32, toolsMountdlcEditor;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC,
 			restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
@@ -137,6 +139,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem modManagementOpenModsFolder;
 	private JMenu mountMenu;
 	private JButton modWebsiteLink;
+	private ArrayList<Mod> invalidMods;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -535,7 +538,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (latest instanceof UpdatePackage) {
 					UpdatePackage upackage = (UpdatePackage) latest;
 					String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
-					updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + (upackage.isModmakerupdate() ? "" : " (" + upackage.getUpdateSizeMB()+")")+"\n";
+					updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion()
+							+ (upackage.isModmakerupdate() ? "" : " (" + upackage.getUpdateSizeMB() + ")") + "\n";
 					updatetext += "Update this mod?";
 					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
 					if (result == JOptionPane.YES_OPTION) {
@@ -697,6 +701,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.setPreferredSize(minSize);
 		this.setMinimumSize(minSize);
 
+		//Load mods first
+		ModManager.debugLogger.writeMessage("Loading mods...");
+		ModList ml = ModManager.getModsFromDirectory();
+		ArrayList<Mod> validMods = ml.getValidMods();
+		invalidMods = ml.getInvalidMods();
+		ModManager.debugLogger.writeMessage("Mods have loaded");
+
 		// Menubar
 		menuBar = makeMenu();
 		ModManager.debugLogger.writeMessage("Menu system has initialized.");
@@ -748,7 +759,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		northPanel.add(titlePanel, BorderLayout.NORTH);
 		northPanel.add(cookedDirPanel, BorderLayout.CENTER);
 
-		ModManager.debugLogger.writeMessage("Setting up modlist UI");
+		ModManager.debugLogger.writeMessage("Preparing ModList UI");
 		// ModsList
 		JPanel modsListPanel = new JPanel(new BorderLayout());
 		// JLabel availableModsLabel = new JLabel("  Available Mods:");
@@ -766,13 +777,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		modModel = new DefaultListModel<Mod>();
 		modList.setModel(modModel);
-		ModManager.debugLogger.writeMessage("Loading mods.");
-		ArrayList<Mod> modList = ModManager.getModsFromDirectory();
-		Collections.sort(modList);
-		for (Mod mod : modList) {
+		
+		for (Mod mod : validMods) {
 			modModel.addElement(mod);
 		}
-		ModManager.debugLogger.writeMessage("Mods have loaded.");
+		ModManager.debugLogger.writeMessage("Populated the mod list model");
 
 		//load patches
 		ModManager.debugLogger.writeMessage("Loading mixins");
@@ -952,8 +961,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementOpenModsFolder = new JMenuItem("Open mods/ folder");
 		modManagementOpenModsFolder.setToolTipText("Opens the mods/ folder so you can inspect and add/remove mods");
 
+		int numFailedMods = getInvalidMods().size();
+		modManagementFailedMods = new JMenuItem(numFailedMods + " mod" + (numFailedMods != 1 ? "s" : "") + " failed to load");
+		modManagementFailedMods.setToolTipText("See why mods failed to load");
+
 		actionImportMenu.add(modManagementImportFromArchive);
 		actionImportMenu.add(modManagementImportAlreadyInstalled);
+
+		if (numFailedMods > 0) {
+			modManagementMenu.add(modManagementFailedMods);
+			modManagementMenu.add(new JSeparator());
+		}
 		modManagementMenu.add(actionImportMenu);
 		modManagementMenu.add(modManagementModMaker);
 		modManagementMenu.add(modManagementCheckallmodsforupdate);
@@ -962,6 +980,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		menuBar.add(modManagementMenu);
 
 		modManagementOpenModsFolder.addActionListener(this);
+		modManagementFailedMods.addActionListener(this);
 		modManagementImportFromArchive.addActionListener(this);
 		modManagementImportAlreadyInstalled.addActionListener(this);
 
@@ -1331,6 +1350,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 
 			}
+		} else if (e.getSource() == modManagementFailedMods) {
+			new FailedModsWindow();
 		} else
 
 		if (e.getSource() == backupBackupDLC) {
@@ -1772,7 +1793,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			Mod mod = modModel.getElementAt(modList.getSelectedIndex());
 			if (mod.getModMakerCode() <= 0 || validateBIOGameDir()) {
 				if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
-					ModManager.debugLogger.writeMessage("Running single mod update check on "+mod.getModName());
+					ModManager.debugLogger.writeMessage("Running single mod update check on " + mod.getModName());
 					new SingleModUpdateCheckThread(mod).execute();
 				} else {
 					updateApplyButton();
@@ -1790,11 +1811,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == modutilsRestoreMod) {
-			
+
 			Mod mod = modModel.getElementAt(modList.getSelectedIndex());
 			if (mod.getModMakerCode() <= 0 || validateBIOGameDir()) {
 				if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
-					ModManager.debugLogger.writeMessage("Running (restore mode) single mod update check on "+mod.getModName());
+					ModManager.debugLogger.writeMessage("Running (restore mode) single mod update check on " + mod.getModName());
 					mod.setVersion(0.0001);
 					new SingleModUpdateCheckThread(mod).execute();
 				} else {
@@ -2715,6 +2736,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	public void setPatchList(ArrayList<Patch> patchList) {
 		this.patchList = patchList;
+	}
+
+	/**
+	 * Returns the list of mods that failed to load when the mod manager window
+	 * loaded
+	 * 
+	 * @return
+	 */
+	public ArrayList<Mod> getInvalidMods() {
+		return invalidMods;
 	}
 
 }

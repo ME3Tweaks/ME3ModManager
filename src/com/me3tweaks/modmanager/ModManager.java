@@ -52,6 +52,7 @@ import org.w3c.dom.Document;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModList;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
@@ -455,7 +456,8 @@ public class ModManager {
 		}
 
 		ModManager.debugLogger.writeMessage("==Looking for mods in running directory, will move valid ones to mods/==");
-		ArrayList<Mod> modsToMove = new ArrayList<Mod>(getValidMods(System.getProperty("user.dir")));
+		ModList modList = getValidMods("user.dir");
+		ArrayList<Mod> modsToMove = modList.getValidMods();
 		for (Mod mod : modsToMove) {
 			try {
 				FileUtils.moveDirectory(new File(mod.getModPath()), new File(ModManager.getModsDir() + mod.getModName()));
@@ -563,12 +565,13 @@ public class ModManager {
 
 	}
 
-	public static ArrayList<Mod> getModsFromDirectory() {
+	public static ModList getModsFromDirectory() {
 		ModManager.debugLogger.writeMessage("==Getting list of mods in mods directory==");
 		File modsDir = new File(ModManager.getModsDir());
-		ArrayList<Mod> availableMod = new ArrayList<Mod>(getValidMods(modsDir.getAbsolutePath()));
-		Collections.sort(availableMod);
-		return availableMod;
+		ModList mods = getValidMods(modsDir.getAbsolutePath());
+		Collections.sort(mods.getValidMods());
+		Collections.sort(mods.getInvalidMods());
+		return mods;
 	}
 
 	/**
@@ -577,7 +580,7 @@ public class ModManager {
 	 * 
 	 * @return
 	 */
-	private static ArrayList<Mod> getValidMods(String path) {
+	private static ModList getValidMods(String path) {
 		File modsDir = new File(path);
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
@@ -586,7 +589,8 @@ public class ModManager {
 			}
 		};
 		File[] subdirs = modsDir.listFiles(fileFilter);
-		ArrayList<Mod> availableMod = new ArrayList<Mod>();
+		ArrayList<Mod> availableMods = new ArrayList<Mod>();
+		ArrayList<Mod> failedMods = new ArrayList<Mod>();
 
 		if (subdirs != null && subdirs.length > 0) {
 			// Got a list of subdirs. Now loop them to find all moddesc.ini
@@ -598,13 +602,15 @@ public class ModManager {
 				if (searchSubDirDesc.exists()) {
 					Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
 					if (validatingMod.isValidMod()) {
-						availableMod.add(validatingMod);
+						availableMods.add(validatingMod);
+					} else {
+						failedMods.add(validatingMod);
 					}
 				}
 			}
 		}
 
-		return availableMod;
+		return new ModList(availableMods,failedMods);
 	}
 
 	/*

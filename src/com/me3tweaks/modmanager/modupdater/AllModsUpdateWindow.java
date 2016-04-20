@@ -246,7 +246,7 @@ public class AllModsUpdateWindow extends JDialog {
 						operationLabel.setText("Updating mods from ME3Tweaks");
 						break;
 					case "MANIFEST_DOWNLOADED":
-						statusLabel.setText("Creating checksums of local mods");
+						statusLabel.setText("Calculating files to update");
 						break;
 					default:
 						operationLabel.setText("Checking " + command);
