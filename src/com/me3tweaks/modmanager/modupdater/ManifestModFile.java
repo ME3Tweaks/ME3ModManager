@@ -8,13 +8,41 @@ package com.me3tweaks.modmanager.modupdater;
 public class ManifestModFile {
 	private String relativePath;
 	private String hash;
-	private long filesize;
-	
-	public ManifestModFile(String relativePath, String hash, long filesize) {
+	private long size;
+	private String lzmahash;
+	private long lzmasize;
+
+	public ManifestModFile(String relativePath, String svrHash, long svrSize, String svrCompressedHash, long svrCompressedSize) {
 		super();
 		this.relativePath = relativePath.replaceAll("\\\\", "/");
-		this.hash = hash;
-		this.filesize = filesize;
+		this.hash = svrHash;
+		this.size = svrSize;
+		this.lzmahash = svrCompressedHash;
+		this.lzmasize = svrCompressedSize;
+	}
+
+	public long getSize() {
+		return size;
+	}
+
+	public void setSize(long size) {
+		this.size = size;
+	}
+
+	public String getLzmahash() {
+		return lzmahash;
+	}
+
+	public void setLzmahash(String lzmahash) {
+		this.lzmahash = lzmahash;
+	}
+
+	public long getLzmasize() {
+		return lzmasize;
+	}
+
+	public void setLzmasize(long lzmasize) {
+		this.lzmasize = lzmasize;
 	}
 
 	public String getRelativePath() {
@@ -32,14 +60,4 @@ public class ManifestModFile {
 	public void setHash(String hash) {
 		this.hash = hash;
 	}
-
-	public long getFilesize() {
-		return filesize;
-	}
-
-	public void setFilesize(long filesize) {
-		this.filesize = filesize;
-	}
-	
-	
 }

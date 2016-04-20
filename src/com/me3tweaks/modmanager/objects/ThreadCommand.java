@@ -2,10 +2,12 @@ package com.me3tweaks.modmanager.objects;
 
 /**
  * Defines an object that contains a command and optionally a message for passing from background to UI threads
- * @author mjperez
+ * @author mgamerz
  *
  */
 public class ThreadCommand {
+	public final static String COMMAND_ERROR = "ERROR";
+	
 	private String command;
 	private String message;
 	private Object data;

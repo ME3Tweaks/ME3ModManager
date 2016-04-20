@@ -7,13 +7,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,6 +43,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -51,6 +52,7 @@ import org.w3c.dom.Document;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModList;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
@@ -61,9 +63,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.2";
-	public static long BUILD_NUMBER = 53L;
-	public static final String BUILD_DATE = "4/5/2016";
+	public static final String VERSION = "4.2.1";
+	public static long BUILD_NUMBER = 54L;
+	public static final String BUILD_DATE = "4/20/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -454,7 +456,8 @@ public class ModManager {
 		}
 
 		ModManager.debugLogger.writeMessage("==Looking for mods in running directory, will move valid ones to mods/==");
-		ArrayList<Mod> modsToMove = new ArrayList<Mod>(getValidMods(System.getProperty("user.dir")));
+		ModList modList = getValidMods("user.dir");
+		ArrayList<Mod> modsToMove = modList.getValidMods();
 		for (Mod mod : modsToMove) {
 			try {
 				FileUtils.moveDirectory(new File(mod.getModPath()), new File(ModManager.getModsDir() + mod.getModName()));
@@ -562,12 +565,13 @@ public class ModManager {
 
 	}
 
-	public static ArrayList<Mod> getModsFromDirectory() {
+	public static ModList getModsFromDirectory() {
 		ModManager.debugLogger.writeMessage("==Getting list of mods in mods directory==");
 		File modsDir = new File(ModManager.getModsDir());
-		ArrayList<Mod> availableMod = new ArrayList<Mod>(getValidMods(modsDir.getAbsolutePath()));
-		Collections.sort(availableMod);
-		return availableMod;
+		ModList mods = getValidMods(modsDir.getAbsolutePath());
+		Collections.sort(mods.getValidMods());
+		Collections.sort(mods.getInvalidMods());
+		return mods;
 	}
 
 	/**
@@ -576,7 +580,7 @@ public class ModManager {
 	 * 
 	 * @return
 	 */
-	private static ArrayList<Mod> getValidMods(String path) {
+	private static ModList getValidMods(String path) {
 		File modsDir = new File(path);
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
@@ -585,7 +589,8 @@ public class ModManager {
 			}
 		};
 		File[] subdirs = modsDir.listFiles(fileFilter);
-		ArrayList<Mod> availableMod = new ArrayList<Mod>();
+		ArrayList<Mod> availableMods = new ArrayList<Mod>();
+		ArrayList<Mod> failedMods = new ArrayList<Mod>();
 
 		if (subdirs != null && subdirs.length > 0) {
 			// Got a list of subdirs. Now loop them to find all moddesc.ini
@@ -597,13 +602,15 @@ public class ModManager {
 				if (searchSubDirDesc.exists()) {
 					Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
 					if (validatingMod.isValidMod()) {
-						availableMod.add(validatingMod);
+						availableMods.add(validatingMod);
+					} else {
+						failedMods.add(validatingMod);
 					}
 				}
 			}
 		}
 
-		return availableMod;
+		return new ModList(availableMods,failedMods);
 	}
 
 	/*
@@ -1699,6 +1706,18 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage("runProcess(): "+sb.toString());
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
+			//handle stdout
+		    final StringWriter writer = new StringWriter();
+			new Thread(new Runnable() {
+		        public void run() {
+		            try {
+						IOUtils.copy(process.getInputStream(), writer);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		        }
+		    }).start();
 			int returncode = process.waitFor();
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");

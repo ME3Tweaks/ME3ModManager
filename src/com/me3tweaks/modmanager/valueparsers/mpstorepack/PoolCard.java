@@ -5,7 +5,7 @@ import com.me3tweaks.modmanager.valueparsers.mpstorepack.Card.Rarity;
 
 /**
  * 
- * @author mjperez
+ * @author mgamerz
  *
  */
 public class PoolCard extends Card implements Comparable<PoolCard>  {
