@@ -110,6 +110,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 				description += "---------------------------------\n";
 			}
 			description += mod.getModName();
+			description += "    "+mod.getModPath();
 			description += "\n\n";
 			description += mod.getFailedReason();
 		}

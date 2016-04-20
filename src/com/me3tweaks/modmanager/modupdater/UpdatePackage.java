@@ -10,7 +10,7 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
  * Contains info about an update that can be executed (downloading new
  * files/deleting files)
  * 
- * @author mjperez
+ * @author mgamerz
  *
  */
 public class UpdatePackage {

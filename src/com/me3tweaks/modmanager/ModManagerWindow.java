@@ -140,6 +140,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenu mountMenu;
 	private JButton modWebsiteLink;
 	private ArrayList<Mod> invalidMods;
+	private JButton modlistFailedIndicatorLink;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -521,7 +522,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ArrayList<UpdatePackage> upackages = ModXMLTools.validateLatestAgainstServer(modsToValidate, null);
 			if (upackages != null && upackages.size() > 0) {
 				publish("Update available for " + mod.getModName());
-				publish(upackages.get(0)); //singleu pdate
+				publish(upackages.get(0)); //single update
 			} else {
 				publish(mod.getModName() + " is up to date");
 			}
@@ -771,10 +772,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modList.setLayoutOrientation(JList.VERTICAL);
 		JScrollPane listScroller = new JScrollPane(modList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
+		modlistFailedIndicatorLink = new JButton();
+		modlistFailedIndicatorLink.setText("<HTML><font color=#ff2020><u>"+invalidMods.size()+" mod"+(invalidMods.size() != 1 ? "s" : "")+" failed to load</u></font></HTML>");
+		modlistFailedIndicatorLink.setBorderPainted(false);
+		modlistFailedIndicatorLink.setBackground(UIManager.getColor("Panel.background"));
+		modlistFailedIndicatorLink.setFocusPainted(false);
+		modlistFailedIndicatorLink.setMargin(new Insets(0, 0, 0, 0));
+		modlistFailedIndicatorLink.setContentAreaFilled(false);
+		modlistFailedIndicatorLink.setBorderPainted(false);
+		modlistFailedIndicatorLink.setOpaque(false);
+		modlistFailedIndicatorLink.setVisible(false);
+		modlistFailedIndicatorLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		modlistFailedIndicatorLink.addActionListener(this);
+		modlistFailedIndicatorLink.setVisible(invalidMods.size() > 0);
+		
 		// modsListPanel.add(availableModsLabel, BorderLayout.NORTH);
 		modsListPanel.setBorder(modListsBorder);
 		modsListPanel.add(listScroller, BorderLayout.CENTER);
-
+		modsListPanel.add(modlistFailedIndicatorLink, BorderLayout.SOUTH);
 		modModel = new DefaultListModel<Mod>();
 		modList.setModel(modModel);
 		
@@ -804,15 +819,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		scrollDescription.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollDescription.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
+
+		
+		
 		modWebsiteLink = new JButton();
-		modWebsiteLink.setText("<HTML>Click the <FONT color=\"#000099\"><U>link</U></FONT>" + " to go to the Java website.</HTML>");
+		modWebsiteLink.setText("<HTML>You fool! You didn't code this to show anything!</HTML>");
 		modWebsiteLink.setBorderPainted(false);
 		modWebsiteLink.setBackground(UIManager.getColor("Panel.background"));
 		modWebsiteLink.setFocusPainted(false);
 		modWebsiteLink.setMargin(new Insets(0, 0, 0, 0));
 		modWebsiteLink.setContentAreaFilled(false);
 		modWebsiteLink.setBorderPainted(false);
-		modWebsiteLink.setOpaque(false);
 		modWebsiteLink.setOpaque(false);
 		modWebsiteLink.setVisible(false);
 		modWebsiteLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -836,6 +853,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		labelStatus = new JLabel("Loaded mods");
 		labelStatus.setVisible(true);
 
+		
 		// ProgressBar
 
 		// ButtonPanel
@@ -1595,6 +1613,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// TODO Auto-generated catch block
 				ModManager.debugLogger.writeErrorWithException("Unable to open this mod's web site:", e1);
 			}
+		} else if (e.getSource() == modlistFailedIndicatorLink) {
+			new FailedModsWindow();
 		} else if (e.getSource() == modManagementImportAlreadyInstalled) {
 			if (validateBIOGameDir()) {
 				new ModImportDLCWindow(this, fieldBiogameDir.getText());

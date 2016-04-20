@@ -67,7 +67,7 @@ public class TLKTool {
 		//subsetScan();
 		
 		//compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
-		//String folderpath = "C:\\Users\\mjperez\\Desktop\\tlk\\BIOGame_ITA\\";
+		//String folderpath = "C:\\Users\\\Desktop\\tlk\\BIOGame_ITA\\";
 		//combineIntoSingleFile(folderpath);
 	}
 
@@ -158,7 +158,7 @@ public class TLKTool {
 
 		//input
 		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-		String infile = "C:\\Users\\mjperez\\Desktop\\GD\\moonshine_tlk\\DLC_CON_XBX_INT\\DLC_CON_XBX_INT0.xml";
+		String infile = "C:\\Users\\\\Desktop\\GD\\moonshine_tlk\\DLC_CON_XBX_INT\\DLC_CON_XBX_INT0.xml";
 		Document intDoc = dbFactory.newDocumentBuilder().parse("file:///" + infile);
 		intDoc.getDocumentElement().normalize();
 
@@ -174,8 +174,8 @@ public class TLKTool {
 		}
 
 		//output
-		String outFolder = "C:\\Users\\mjperez\\Desktop\\GD\\diffs\\";
-		File dir = new File("C:\\Users\\mjperez\\Desktop\\GD\\tankmaster_original_tlk\\");
+		String outFolder = "C:\\Users\\\\Desktop\\GD\\diffs\\";
+		File dir = new File("C:\\Users\\\\Desktop\\GD\\tankmaster_original_tlk\\");
 		FileFilter fileFilter = new WildcardFileFilter("tankmaster_base_*.xml");
 		File[] files = dir.listFiles(fileFilter);
 
@@ -980,7 +980,7 @@ public class TLKTool {
 
 	private static void decompileTLK() {
 		//		File dir = new File(System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "tlkfiles" + File.separator);
-		File dir = new File("C:\\Users\\mjperez\\Desktop\\tlk\\");
+		File dir = new File("C:\\Users\\\\Desktop\\tlk\\");
 
 		Collection<File> files = FileUtils.listFiles(dir, new SuffixFileFilter("tlk"), TrueFileFilter.TRUE);
 		for (File file : files) {

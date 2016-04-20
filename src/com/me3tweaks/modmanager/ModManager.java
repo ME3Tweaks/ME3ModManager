@@ -65,9 +65,9 @@ public class ModManager {
 
 	public static final String VERSION = "4.2.1";
 	public static long BUILD_NUMBER = 54L;
-	public static final String BUILD_DATE = "4/5/2016";
+	public static final String BUILD_DATE = "4/20/2016";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker

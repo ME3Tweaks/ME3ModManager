@@ -1,10 +1,8 @@
 package com.me3tweaks.modmanager;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -32,7 +30,7 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
  * This window injects a user's customized set of keybinds into the base
  * coalesced file by swapping the BioInput.xml file after decompilation
  * 
- * @author mjperez
+ * @author mgamerz
  *
  */
 public class KeybindsInjectionWindow extends JDialog {
