@@ -3,6 +3,7 @@ package com.me3tweaks.modmanager.utilities;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;

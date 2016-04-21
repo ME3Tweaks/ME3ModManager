@@ -1836,7 +1836,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (mod.getModMakerCode() <= 0 || validateBIOGameDir()) {
 				if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Running (restore mode) single mod update check on " + mod.getModName());
-					mod.setVersion(0.0001);
+					mod.setVersion(0.001);
 					new SingleModUpdateCheckThread(mod).execute();
 				} else {
 					updateApplyButton();
@@ -2766,6 +2766,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	public ArrayList<Mod> getInvalidMods() {
 		return invalidMods;
+	}
+
+	/**
+	 * External API for calling single mod updater
+	 * @param mod
+	 */
+	public void startSingleModUpdate(Mod mod) {
+		new SingleModUpdateCheckThread(mod).execute();
 	}
 
 }

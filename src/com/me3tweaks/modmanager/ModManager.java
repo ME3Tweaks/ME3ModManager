@@ -63,8 +63,8 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.2.1";
-	public static long BUILD_NUMBER = 54L;
+	public static final String VERSION = "4.2.2";
+	public static long BUILD_NUMBER = 55L;
 	public static final String BUILD_DATE = "4/20/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
