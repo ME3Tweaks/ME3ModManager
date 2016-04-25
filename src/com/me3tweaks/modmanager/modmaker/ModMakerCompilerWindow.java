@@ -89,7 +89,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * Starts a modmaker session for a user-selected download
 	 * 
 	 * @param code
-	 *            code to download (if not an integer, use sideload method.)
+	 *            code to download (if not an integer, use sideload method, which assumes the value is a filepath to an xml file.)
 	 * @param languages
 	 *            languages to compile
 	 */

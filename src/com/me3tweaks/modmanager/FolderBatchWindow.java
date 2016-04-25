@@ -4,6 +4,8 @@ import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Collection;
+import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -11,9 +13,13 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
@@ -44,63 +50,100 @@ public class FolderBatchWindow extends JDialog {
 			panel.add(headerLabel, c);
 
 			JButton compileAllTLK = new JButton("Compile all TLK XML Manifests");
+
 			JButton decompileAllTLK = new JButton("Decompile all TLK files");
 			JButton compileAllCoalesced = new JButton("Compile all Coalesced manifest");
 			JButton decompileAllCoalesced = new JButton("Deompile all Coalesced files");
+			JButton decompressAllPcc = new JButton("Decompress all PCC files");
+			JButton compressAllPcc = new JButton("Compress all PCC files");
+			JButton sideloadAllModMaker = new JButton("Sideload all ModMaker XML files");
+
+			compileAllTLK
+					.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
+			decompileAllTLK.setToolTipText("<html>Decompiles all TLK files using the TankMaster compiler tool included with Mod Manager.</html>");
+			decompileAllCoalesced
+					.setToolTipText("<html>Decompils all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
+			decompressAllPcc.setToolTipText("<html></html>");
+			compressAllPcc.setToolTipText("<html></html>");
+			sideloadAllModMaker.setToolTipText("<html></html>");
 
 			compileAllTLK.addActionListener(new ActionListener() {
-				
+
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					
+					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK).execute();
 				}
 			});
-			
+
 			decompileAllTLK.addActionListener(new ActionListener() {
-				
+
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					
+					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_TLK).execute();
 				}
 			});
-			
+
 			compileAllCoalesced.addActionListener(new ActionListener() {
-				
+
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					
+					new BatchWorker(droppedFile, BatchWorker.COMPILE_COAL).execute();
 				}
 			});
-			
+
 			decompileAllCoalesced.addActionListener(new ActionListener() {
-				
+
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					
+					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_COAL).execute();
 				}
 			});
-			
+
+			decompressAllPcc.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					new BatchWorker(droppedFile, BatchWorker.DECOMPRESS_PCC).execute();
+				}
+			});
+
+			compressAllPcc.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					new BatchWorker(droppedFile, BatchWorker.COMPRESS_PCC).execute();
+				}
+			});
+
+			sideloadAllModMaker.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK).execute();
+				}
+			});
+
 			c.gridy++;
 			panel.add(compileAllTLK, c);
 			c.gridy++;
-
 			panel.add(decompileAllTLK, c);
 			c.gridy++;
-
 			panel.add(compileAllCoalesced, c);
 			c.gridy++;
-
 			panel.add(decompileAllCoalesced, c);
+			panel.add(decompressAllPcc, c);
+			c.gridy++;
+			panel.add(compressAllPcc, c);
+			c.gridy++;
+			panel.add(sideloadAllModMaker, c);
+			c.gridy++;
 
 		} else {
 			String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath());
 			switch (extension) {
 			case "xml":
-				JLabel headerLabel = new JLabel("<html>You dropped an XML file onto Mod Manager.<br>Select what operation to perform with this file.</html>");
+				JLabel headerLabel = new JLabel(
+						"<html>You dropped an XML file onto Mod Manager.<br>Select what operation to perform with this file.</html>");
 				panel.add(headerLabel, c);
 
 				JButton compileTLK = new JButton("Compile TLK (TLK Manifest (Tankmaster only))");
@@ -165,5 +208,106 @@ public class FolderBatchWindow extends JDialog {
 		add(panel);
 		pack();
 
+	}
+
+	class BatchWorker extends SwingWorker<Void, String> {
+
+		protected static final int COMPILE_TLK = 0;
+		protected static final int DECOMPILE_TLK = 1;
+		protected static final int COMPILE_COAL = 2;
+		protected static final int DECOMPILE_COAL = 3;
+		protected static final int DECOMPRESS_PCC = 4;
+		protected static final int COMPRESS_PCC = 5;
+		protected static final int SIDELOAD_MODMAKER = 6;
+
+		private int operation;
+		private File folder;
+
+		public BatchWorker(File droppedFile, int operation) {
+			this.operation = operation;
+			this.folder = droppedFile;
+			dispose();
+		}
+
+		@Override
+		protected Void doInBackground() throws Exception {
+			SuffixFileFilter suff = null;
+			switch (operation) {
+			case DECOMPILE_TLK:
+				suff = new SuffixFileFilter(".tlk");
+				break;
+			case COMPRESS_PCC:
+			case DECOMPRESS_PCC:
+				suff = new SuffixFileFilter(".pcc");
+				break;
+			case SIDELOAD_MODMAKER:
+			case COMPILE_TLK:
+			case COMPILE_COAL:
+				suff = new SuffixFileFilter(".xml");
+				break;
+			}
+			if (suff == null) {
+				return null;
+			}
+			Collection<File> files = FileUtils.listFiles(folder, suff, TrueFileFilter.TRUE);
+			int processed = 0;
+			for (File file : files) {
+				processed++;
+				switch (operation) {
+				case COMPILE_TLK: {
+					publish("Compiling " + FilenameUtils.getName(file.getAbsolutePath()));
+					ProcessResult pr = TLKTool.compileTLK(file);
+					break;
+				}
+				case DECOMPILE_TLK: {
+					publish("Decompiling " + FilenameUtils.getName(file.getAbsolutePath()));
+					ProcessResult pr = TLKTool.decompileTLK(file);
+					break;
+				}
+				case COMPRESS_PCC: {
+					publish("Compressing " + FilenameUtils.getName(file.getAbsolutePath()));
+					ProcessResult pr = ModManager.compressPCC(file, file);
+					break;
+				}
+				case DECOMPRESS_PCC: {
+					publish("Decompressing " + FilenameUtils.getName(file.getAbsolutePath()));
+					ProcessResult pr = ModManager.decompressPCC(file, file);
+					break;
+				}
+				case SIDELOAD_MODMAKER:
+					publish("Sideloading ModMaker mod [" + processed + "/" + files.size() + "]");
+					ModMakerCompilerWindow mcw = new ModMakerCompilerWindow(file.getAbsolutePath(), ModMakerEntryWindow.getDefaultLanguages());
+					while (mcw.isShowing()) {
+						try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					break;
+				case COMPILE_COAL: {
+					publish("Compiling " + FilenameUtils.getBaseName(file.getAbsolutePath()));
+					ProcessResult pr = CoalescedWindow.compileCoalesced(file.getAbsolutePath());
+					break;
+				}
+				case DECOMPILE_COAL: {
+					publish("Decompiling " + FilenameUtils.getBaseName(file.getAbsolutePath()));
+					ProcessResult pr = CoalescedWindow.decompileCoalesced(file.getAbsolutePath());
+					break;
+				}
+				}
+			}
+			return null;
+		}
+
+		@Override
+		protected void process(List<String> chunks) {
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(chunks.get(chunks.size() - 1));
+		}
+		@Override
+		protected void done(){
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Batch operation completed");
+		}
 	}
 }

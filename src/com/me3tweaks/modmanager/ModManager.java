@@ -1243,24 +1243,13 @@ public class ModManager {
 		}
 		if (targetModule.equals(ModType.BASEGAME)) {
 			// we must use PCCEditor2 to decompress the file using the
-			// --decompress-pcc command line arg
+			// -decompresspcc command line arg
 			//get source directory via relative path chaining
 			File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath);
-			// run ME3EXPLORER --decompress-pcc
-			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("-decompresspcc");
-			commandBuilder.add(sourceSource.getAbsolutePath());
-			commandBuilder.add(sourceDestination.getAbsolutePath());
-			StringBuilder sb = new StringBuilder();
-			for (String arg : commandBuilder) {
-				sb.append("\"" + arg + "\" ");
-			}
 			sourceDestination.getParentFile().mkdirs();
 
-
-			ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
-			ProcessResult result = ModManager.runProcess(decompressProcessBuilder);
+			// run ME3EXPLORER --decompress-pcc
+			ProcessResult pr = ModManager.decompressPCC(sourceSource,sourceDestination);
 			ModManager.debugLogger.writeMessage("File decompressed to location, and ready? : " + sourceDestination.exists());
 			return sourceDestination.getAbsolutePath();
 			// END OF
@@ -1332,6 +1321,39 @@ public class ModManager {
 		return null;
 	}
 
+	/**
+	 * Decompresses the PCC to the listed destination, location can be the same.
+	 * @param sourceSource
+	 * @param sourceDestination
+	 * @return
+	 */
+	public static ProcessResult decompressPCC(File sourceSource, File sourceDestination) {
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
+		commandBuilder.add("-decompresspcc");
+		commandBuilder.add(sourceSource.getAbsolutePath());
+		commandBuilder.add(sourceDestination.getAbsolutePath());
+		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
+		return ModManager.runProcess(decompressProcessBuilder);
+	}
+
+	/**
+	 * Compresses the listed PCC to the listed destination, both can be the same.
+	 * @param sourceSource
+	 * @param sourceDestination
+	 * @return
+	 */
+	public static ProcessResult compressPCC(File sourceSource, File sourceDestination) {
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
+		commandBuilder.add("-compresspcc");
+		commandBuilder.add(sourceSource.getAbsolutePath());
+		commandBuilder.add(sourceDestination.getAbsolutePath());
+		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
+		return ModManager.runProcess(decompressProcessBuilder);
+	}
+
+	
 	/**
 	 * Copies a file from the game to the specified location. Decompresses a
 	 * basegame PCC if one is specified.
