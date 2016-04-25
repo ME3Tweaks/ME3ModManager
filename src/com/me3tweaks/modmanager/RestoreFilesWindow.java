@@ -654,19 +654,26 @@ public class RestoreFilesWindow extends JDialog {
 				mainSfar = new File("DLC SFAR MISSING");
 			}
 
-			String mainSfarHash = "Error: Unable to hash";
+			//String mainSfarHash = "Error: Unable to hash";
 			if (mainSfar.exists()) {
 				// the sfar exists. 
 				//Check filesize first, its faster.
-				boolean sizeMatch = true; //default to true - falls back to hashing in the event something goes wrong.
+				boolean sizeMatch = false; //Default to false on size match
 				Long filesize = mainSfar.length();
 				if (!filesize.equals(sfarSizes.get(jobName)) && (!(isTestpatch && !filesize.equals(ModType.TESTPATCH_16_SIZE)))) {
 					sizeMatch = false;
 					ModManager.debugLogger.writeMessage(jobName + ": size mismatch between known original and existing - marking for restore");
 					publish(jobName + ": DLC is modified [size]");
 				}
-
+				
 				if (sizeMatch) {
+					publish(jobName + ": DLC is OK");
+					ModManager.debugLogger.writeMessage(jobName + ": OK");
+					return true;
+				}
+
+				//if size is same we can assume it is original.
+				/*if (sizeMatch) {
 					//We should hash it to check if it's original
 					try {
 						//publish(jobName + ": Known original hash: " + sfarHashes.get(jobName));
@@ -689,7 +696,7 @@ public class RestoreFilesWindow extends JDialog {
 						ModManager.debugLogger.writeMessage(e.getMessage());
 						return false;
 					}
-				}
+				}*/
 			} else {
 				ModManager.debugLogger.writeMessage(jobName + ": DLC file does not exist: " + mainSfar.toString());
 				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping.");
@@ -717,8 +724,20 @@ public class RestoreFilesWindow extends JDialog {
 				return false;
 			}
 
-			String backupSfarHash = "Error";
 			if (backupSfar.exists()) {
+				publish(jobName + ": Restoring backup...");
+				try {
+					Files.copy(backupSfar.toPath(), mainSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				} catch (Exception e) {
+					// it died somehow
+					ModManager.debugLogger.writeErrorWithException("Failure restoring backup SFAR:", e);
+					return false;
+				}
+				completed++;
+				publish(Integer.toString(completed));
+				return true;	
+			}
+			/*
 				// the sfar exists. We should hash it to check if it's original
 				try {
 
@@ -743,7 +762,7 @@ public class RestoreFilesWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Failure restoring backup SFAR:", e);
 					return false;
 				}
-			}
+			}*/
 
 			return false;
 		}

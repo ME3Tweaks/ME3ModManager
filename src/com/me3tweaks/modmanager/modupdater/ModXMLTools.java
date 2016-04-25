@@ -40,6 +40,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.me3tweaks.modmanager.DeltaWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
@@ -219,22 +220,29 @@ public class ModXMLTools {
 
 		public ManifestGeneratorUpdateCompressor(Mod mod) {
 			this.mod = mod;
+			//Verify Deltas
+			for (ModDelta delta : mod.getModDeltas()) {
+				new DeltaWindow(mod, delta, true, false);
+			}
 		}
 
 		@Override
 		protected String doInBackground() throws Exception {
 			if (mod.getModMakerCode() > 0) {
 				System.err.println("ModMaker codes use the ID");
+				publish(new ThreadCommand("ModMaker mods can't use classic updater", "ERROR"));
 				return "";
 			}
 
 			if (mod.getClassicUpdateCode() <= 0) {
 				System.err.println("Mod does not have a classic update code set");
+				publish(new ThreadCommand("Mod needs an updatecode in ModInfo", "ERROR"));
 				return "";
 			}
 
 			if (mod.getVersion() <= 0) {
 				System.err.println("Mod must have a double/numeric version number");
+				publish(new ThreadCommand("Mod requires numeric version number", "ERROR"));
 				return "";
 			}
 
@@ -248,6 +256,10 @@ public class ModXMLTools {
 			int numFiles = files.size();
 			int processed = 1;
 			for (File file : files) {
+				if (FilenameUtils.getExtension(file.getAbsolutePath()).equals(".bak")) {
+					processed++;
+					continue;
+				}
 				publish(new ThreadCommand("Compressing " + FilenameUtils.getBaseName(file.getAbsolutePath()), processed + "/" + numFiles));
 				String srcFile = file.getAbsolutePath();
 				String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
@@ -272,7 +284,7 @@ public class ModXMLTools {
 			rootElement.setAttribute("type", "classic");
 			rootElement.setAttribute("version", Double.toString(mod.getVersion()));
 			rootElement.setAttribute("updatecode", Integer.toString(mod.getClassicUpdateCode()));
-			rootElement.setAttribute("folder", "PUT_SERVER_FOLDER_HERE");
+			rootElement.setAttribute("folder", mod.getServerModFolder());
 			rootElement.setAttribute("manifesttype", "full");
 			processed = 1;
 			for (File file : files) {
@@ -300,7 +312,6 @@ public class ModXMLTools {
 			Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
 			clpbrd.setContents(new StringSelection(ModMakerCompilerWindow.docToString(modDoc)), null);
 			publish(new ThreadCommand("Manifest copied to clipboard, mod in /serverupdate.", "Done"));
-
 			return null;
 		}
 

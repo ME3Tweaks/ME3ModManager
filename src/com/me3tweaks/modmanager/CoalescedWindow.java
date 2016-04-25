@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -21,15 +22,52 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.apache.commons.io.FilenameUtils;
+
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 
 public class CoalescedWindow extends JFrame {
 
+	private JTextField cInputField;
+	private JTextField dInputField;
+	private JButton cCompile;
+	private JButton dCompile;
+
 	public CoalescedWindow() {
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
+	}
+
+	public CoalescedWindow(File file, boolean automated) {		
+		ModManager.debugLogger.writeMessage("Opening Coalesced window with prepopulated value: "+file+", automated? "+automated);
+		if (automated) {
+			if (FilenameUtils.getExtension(file.getAbsolutePath()).equals("xml")) {
+				//manifest
+				compileCoalesced(file.getAbsolutePath());
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiled "+FilenameUtils.getName(file.getAbsolutePath())+" (Be sure to verify)");
+			}
+			if (FilenameUtils.getExtension(file.getAbsolutePath()).equals("bin")) {
+				//coalesced
+				decompileCoalesced(file.getAbsolutePath());
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Decompiled "+FilenameUtils.getName(file.getAbsolutePath()));
+			}
+		} else {
+			setupWindow();
+			if (FilenameUtils.getExtension(file.getAbsolutePath()).equals("xml")) {
+				//manifest
+				cInputField.setText(file.getAbsolutePath());
+				cCompile.setEnabled(true);
+			}
+			if (FilenameUtils.getExtension(file.getAbsolutePath()).equals("bin")) {
+				//coalesced
+				dInputField.setText(file.getAbsolutePath());
+				dCompile.setEnabled(true);
+			}
+			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+			setVisible(true);
+		}
 	}
 
 	private void setupWindow() {
@@ -43,11 +81,11 @@ public class CoalescedWindow extends JFrame {
 		//Decompile Panel
 		JPanel decompilePanel = new JPanel(new GridBagLayout());
 		decompilePanel.setBorder(new TitledBorder(new EtchedBorder(), "Decompile a .bin file to .xml files"));
-		JTextField dInputField = new JTextField(55);
+		dInputField = new JTextField(55);
 		dInputField.setUI(new HintTextFieldUI("Select a Coalesced .bin file"));
 		JButton dBrowse = new JButton("Browse...");
 		dBrowse.setPreferredSize(new Dimension(100, 19));
-		JButton dCompile = new JButton("Decompile");
+		dCompile = new JButton("Decompile");
 		dCompile.setEnabled(false);
 		dCompile.setPreferredSize(new Dimension(100, 23));
 		JLabel dStatus = new JLabel(" ");
@@ -72,11 +110,11 @@ public class CoalescedWindow extends JFrame {
 		//Compile Panel
 		JPanel compilePanel = new JPanel(new GridBagLayout());
 		compilePanel.setBorder(new TitledBorder(new EtchedBorder(), "Compile a .bin file from .xml files"));
-		JTextField cInputField = new JTextField(55);
+		cInputField = new JTextField(55);
 		cInputField.setUI(new HintTextFieldUI("Select a .xml manifest file"));
 		JButton cBrowse = new JButton("Browse...");
 		cBrowse.setPreferredSize(new Dimension(100, 19));
-		JButton cCompile = new JButton("Compile");
+		cCompile = new JButton("Compile");
 		cCompile.setPreferredSize(new Dimension(100, 23));
 		cCompile.setEnabled(false);
 		JLabel cStatus = new JLabel("Manifest file is the .xml file with the same name as the file that was originally decompiled");
@@ -179,27 +217,14 @@ public class CoalescedWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (new File(dInputField.getText()).exists()) {
-					String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
-
-					ArrayList<String> commandBuilder = new ArrayList<String>();
-					commandBuilder.add(compilerPath);
-					commandBuilder.add(dInputField.getText());
-					//System.out.println("Building command");
-					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-					//Debug stuff
-					StringBuilder sb = new StringBuilder();
-					for (String arg : command) {
-						sb.append(arg + " ");
-					}
-					ProcessBuilder decompileProcessBuilder = new ProcessBuilder(command);
-					decompileProcessBuilder.redirectErrorStream(true);
-					decompileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-					ProcessResult res = ModManager.runProcess(decompileProcessBuilder);
+					ProcessResult res = decompileCoalesced(dInputField.getText());
 					if (!res.hadError() && res.getReturnCode() == 0) {
 						dStatus.setText("Decompiled .bin file. Files are located in a folder of the same name.");
 					}
 				}
 			}
+
+			
 		});
 
 		cCompile.addActionListener(new ActionListener() {
@@ -207,27 +232,40 @@ public class CoalescedWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (new File(cInputField.getText()).exists()) {
-					String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
-
-					ArrayList<String> commandBuilder = new ArrayList<String>();
-					commandBuilder.add(compilerPath);
-					commandBuilder.add(cInputField.getText());
-					//System.out.println("Building command");
-					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-					//Debug stuff
-					StringBuilder sb = new StringBuilder();
-					for (String arg : command) {
-						sb.append(arg + " ");
-					}
-					ProcessBuilder compileProcessBuilder = new ProcessBuilder(command);
-					compileProcessBuilder.redirectErrorStream(true);
-					compileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-					ProcessResult res = ModManager.runProcess(compileProcessBuilder);
+					ProcessResult res = compileCoalesced(cInputField.getText());
 					if (!res.hadError() && res.getReturnCode() == 0) {
 						cStatus.setText("Compiled .bin file. The new file is located in the same folder as the manifest.");
 					}
 				}
 			}
 		});
+	}
+	
+	protected static ProcessResult compileCoalesced(String path) {
+		String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
+
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(compilerPath);
+		commandBuilder.add(path);
+		//System.out.println("Building command");
+		String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+		ProcessBuilder compileProcessBuilder = new ProcessBuilder(command);
+		compileProcessBuilder.redirectErrorStream(true);
+		compileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+		return ModManager.runProcess(compileProcessBuilder);
+	}
+
+	protected static ProcessResult decompileCoalesced(String path) {
+		String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
+
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(compilerPath);
+		commandBuilder.add(path);
+		//System.out.println("Building command");
+		String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+		ProcessBuilder decompileProcessBuilder = new ProcessBuilder(command);
+		decompileProcessBuilder.redirectErrorStream(true);
+		decompileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+		return ModManager.runProcess(decompileProcessBuilder);
 	}
 }

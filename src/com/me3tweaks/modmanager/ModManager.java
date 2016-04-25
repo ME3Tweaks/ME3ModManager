@@ -67,7 +67,7 @@ public class ModManager {
 	public static long BUILD_NUMBER = 55L;
 	public static final String BUILD_DATE = "4/20/2016";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
@@ -80,10 +80,11 @@ public class ModManager {
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
-	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 722;
+	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 0;
 	
 	// version
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
+	public static final int MIN_REQUIRED_ME3EXPLORER_MAIN = 2;
 	//private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 1000000; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
@@ -96,7 +97,8 @@ public class ModManager {
 	public static long AUTO_CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(AUTO_CHECK_INTERVAL_DAYS);
 	public static boolean LOG_MOD_INIT = false;
 	public static boolean LOG_PATCH_INIT = false;
-	public static boolean PERFORM_DOT_NET_CHECK = true; 
+	public static boolean PERFORM_DOT_NET_CHECK = true;
+	protected final static int COALESCED_MAGIC_NUMBER = 1836215654; 
 
 	public static void main(String[] args) {
 		loadLogger();
@@ -456,7 +458,7 @@ public class ModManager {
 		}
 
 		ModManager.debugLogger.writeMessage("==Looking for mods in running directory, will move valid ones to mods/==");
-		ModList modList = getValidMods("user.dir");
+		ModList modList = getMods(System.getProperty("user.dir"));
 		ArrayList<Mod> modsToMove = modList.getValidMods();
 		for (Mod mod : modsToMove) {
 			try {
@@ -568,7 +570,7 @@ public class ModManager {
 	public static ModList getModsFromDirectory() {
 		ModManager.debugLogger.writeMessage("==Getting list of mods in mods directory==");
 		File modsDir = new File(ModManager.getModsDir());
-		ModList mods = getValidMods(modsDir.getAbsolutePath());
+		ModList mods = getMods(modsDir.getAbsolutePath());
 		Collections.sort(mods.getValidMods());
 		Collections.sort(mods.getInvalidMods());
 		return mods;
@@ -580,7 +582,7 @@ public class ModManager {
 	 * 
 	 * @return
 	 */
-	private static ModList getValidMods(String path) {
+	private static ModList getMods(String path) {
 		File modsDir = new File(path);
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
@@ -597,8 +599,8 @@ public class ModManager {
 			// files
 			for (int i = 0; i < subdirs.length; i++) {
 				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini");
-				// System.out.println("Searching for file: " +
-				// searchSubDirDesc);
+				 System.out.println("Searching for file: " +
+				 searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
 					Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
 					if (validatingMod.isValidMod()) {

@@ -181,6 +181,16 @@ public class ResourceUtils {
 		return hexString;
 	}
 
+	public static int byteArrayToInt(byte[] buffer) {
+		if (buffer.length != 4) {
+			return -1;
+		}
+		return (buffer[0]<<24)&0xff000000|
+	       (buffer[1]<<16)&0x00ff0000|
+	       (buffer[2]<< 8)&0x0000ff00|
+	       (buffer[3]<< 0)&0x000000ff;
+	}
+
 	/*
 	 * public static void main(final String[] args) throws IOException { try
 	 * 

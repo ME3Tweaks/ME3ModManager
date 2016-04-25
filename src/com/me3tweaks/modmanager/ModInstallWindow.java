@@ -893,15 +893,14 @@ public class ModInstallWindow extends JDialog {
 					sb.append(arg + " ");
 				}
 				ModManager.debugLogger.writeMessage("Executing injection command: " + sb.toString());
-				Process p = null;
 				int returncode = 1;
 				ProcessBuilder pb = new ProcessBuilder(command);
 				ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
 				// p = Runtime.getRuntime().exec(command);
 				ProcessResult pr = ModManager.runProcess(pb);
 				returncode = pr.getReturnCode();
-				ModManager.debugLogger.writeMessage("Job completed successfully: " + (p != null && returncode == 0));
-				result = (p != null && returncode == 0) && result;
+				ModManager.debugLogger.writeMessage("Return code for process was 0: "+(returncode == 0));
+				result = (returncode == 0) && result;
 			}
 
 			//ADD FILE TASK
@@ -937,14 +936,13 @@ public class ModInstallWindow extends JDialog {
 					sb.append(arg + " ");
 				}
 				ModManager.debugLogger.writeMessage("Executing injection command: " + sb.toString());
-				Process p = null;
 				int returncode = 1;
 				ProcessBuilder pb = new ProcessBuilder(command);
 				ModManager.debugLogger.writeMessage("Executing process for SFAR File Injection (Adding files).");
 				ProcessResult pr = ModManager.runProcess(pb);
 				returncode = pr.getReturnCode();
-				ModManager.debugLogger.writeMessage("ProcessSFARJob ADD FILES returned 0: " + (p != null && returncode == 0));
-				result = (p != null && returncode == 0) && result;
+				ModManager.debugLogger.writeMessage("ProcessSFARJob ADD FILES returned 0: " + (returncode == 0));
+				result = (returncode == 0) && result;
 			}
 
 			//REMOVE FILE TASK
@@ -978,11 +976,10 @@ public class ModInstallWindow extends JDialog {
 					sb.append(arg + " ");
 				}
 				ModManager.debugLogger.writeMessage("Executing removal command: " + sb.toString());
-				Process p = null;
 				int returncode = 1;
 				ProcessBuilder pb = new ProcessBuilder(command);
 				returncode = ModManager.runProcess(pb).getReturnCode();
-				result = (p != null && returncode == 0) && result;
+				result = returncode == 0 && result;
 			}
 			return result;
 		}
@@ -1000,13 +997,13 @@ public class ModInstallWindow extends JDialog {
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
 			taskSteps = job.getFilesToReplaceTargets().size();
 			completedTaskSteps = 0;
+			ModManager.debugLogger.writeMessage("Number of files to install: "+taskSteps);
 			for (int i = 0; i < job.getFilesToReplaceTargets().size(); i++) {
 				String target = job.getFilesToReplaceTargets().get(i);
 				String fileDestination = dlcdir + target;
 				String fileSource = job.getFilesToReplace().get(i);
 				// install file.
 				try {
-					ModManager.debugLogger.writeMessage("Processing CustomDLC Job.");
 					publish(ModType.CUSTOMDLC + ": Installing " + FilenameUtils.getName(fileSource));
 					Path sourcePath = Paths.get(fileSource);
 					Path destPath = Paths.get(fileDestination);
@@ -1036,18 +1033,17 @@ public class ModInstallWindow extends JDialog {
 		@Override
 		protected void process(List<String> updates) {
 			for (String update : updates) {
-				try {
-
-					Integer.parseInt(update); // see if we got a number. if we
-												// did that means we should
-												// update the bar
-					if (numjobs != 0) {
-						int fullJobCompletion = (int) ((completed / numjobs) * 100);
-						if (taskSteps != 0) {
-							fullJobCompletion += (int) (((completedTaskSteps / taskSteps) * 100) / numjobs);
-						}
-						progressBar.setValue(fullJobCompletion);
+				if (numjobs != 0) {
+					int fullJobCompletion = (int) ((completed / numjobs) * 100);
+					if (taskSteps != 0) {
+						fullJobCompletion += (int) (((completedTaskSteps / taskSteps) * 100) / numjobs);
 					}
+					progressBar.setValue(fullJobCompletion);
+				}
+				try {
+					Integer.parseInt(update); // see if we got a number. if we
+					// did that means we should
+					// update the bar
 				} catch (NumberFormatException e) {
 					// this is not a progress update, it's a string update
 					addToQueue(update);
@@ -1074,10 +1070,10 @@ public class ModInstallWindow extends JDialog {
 				if (numjobs != completed) {
 					// failed something
 					StringBuilder sb = new StringBuilder();
-					sb.append("Failed to process mod installation.\nSome parts of the install may have succeeded.\nTurn on debugging via Help>About and check the log file.");
+					sb.append("Failed to process mod installation.\nSome parts of the install may have succeeded.\nCheck the log file by copying it to the clipboard in the help menu.");
 					callingWindow.labelStatus.setText("Failed to install at least 1 part of mod");
+					ModManager.debugLogger.writeMessage(mod.getModName() + " failed to fully install. Jobs required to copmlete: "+numjobs+", while injectioncommander only reported "+completed);
 					JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
-					ModManager.debugLogger.writeMessage(mod.getModName() + " failed to fully install.");
 				} else {
 					// we're good
 					callingWindow.labelStatus.setText(" " + mod.getModName() + " installed");
@@ -1085,7 +1081,7 @@ public class ModInstallWindow extends JDialog {
 			} else {
 				if (!hasException) {
 					ModManager.debugLogger
-							.writeMessage("Installation canceled by user because basegame database update is required (or connection failed and auto canceled.");
+							.writeMessage("Installation canceled by user because game repair database update is required (or connection failed and auto canceled.");
 					if (bghDB != null) {
 						bghDB.shutdownDB();
 						bghDB = null;
