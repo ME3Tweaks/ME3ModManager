@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ public class AutoTocWindow extends JDialog {
 	 * @param biogameDir
 	 */
 	public AutoTocWindow(String biogameDir) {
+		setupWindow("Updating Basegame and DLC TOC files");
 		updatedGameTOCs = new HashMap<String, String>();
 		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: GAME-WIDE ===");
 		this.setTitle("Mod Manager AutoTOC");
@@ -59,7 +61,7 @@ public class AutoTocWindow extends JDialog {
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		new TOCWorker(biogameDir).execute();
+		new GameWideTOCWorker(biogameDir).execute();
 		this.setVisible(true);
 	}
 
@@ -144,15 +146,6 @@ public class AutoTocWindow extends JDialog {
 			me3explorer = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true)) + "ME3Explorer.exe";
 			ModManager.debugLogger.writeMessage("Starting the AutoTOC worker. Number of toc updates to do: " + numtoc);
 			ModManager.debugLogger.writeMessage("Using ME3Explorer from: " + me3explorer);
-		}
-
-		/**
-		 * Tocworker constructor for game-wide tocing
-		 * 
-		 * @param biogameDir
-		 */
-		public TOCWorker(String biogameDir) {
-			// TODO Auto-generated constructor stub
 		}
 
 		private void calculateNumberOfUpdates(ArrayList<ModJob> jobs) {
@@ -406,16 +399,19 @@ public class AutoTocWindow extends JDialog {
 
 		private void calculateTasksToDo(String biogameDir) {
 			//add basegame
-			File basegameToc = new File(ModManager.appendSlash(biogameDir) + "BIOGame" + File.separator + "PCConsoleTOC.bin");
+			File basegameToc = new File(ModManager.appendSlash(biogameDir)  + File.separator + "PCConsoleTOC.bin");
 			if (basegameToc.exists()) {
 				unpackedPaths.add(basegameToc.getAbsolutePath());
+				System.out.println(basegameToc);
 			}
 
 			//add testpatch
-			File testpatchSfar = new File(ModManager.appendSlash(biogameDir) + "BIOGame" + File.separator + "PCConsoleTOC.bin");
-			if (testpatchSfar.exists()) {
-				sfarPaths.add(basegameToc.getAbsolutePath());
+			HashMap<String, Long> sizesMap = ModType.getSizesMap();
+			File testpatchSfar = new File(ModManager.appendSlash(biogameDir) + File.separator +"Patches" + File.separator +"PCConsole"+ File.separator+"Patch_001.sfar");
+			if (testpatchSfar.exists() && (testpatchSfar.length() != sizesMap.get(ModType.TESTPATCH) && testpatchSfar.length() != ModType.TESTPATCH_16_SIZE)) {
+				sfarPaths.add(testpatchSfar.getAbsolutePath());
 			}
+			System.out.println(testpatchSfar);
 
 			//iterate over DLC.
 			File mainDlcDir = new File(ModManager.appendSlash(biogameDir) + "DLC" + File.separator);
@@ -425,11 +421,10 @@ public class AutoTocWindow extends JDialog {
 					return new File(current, name).isDirectory();
 				}
 			});
-			HashMap<String, Long> sizesMap = ModType.getSizesMap();
 			HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
 			for (String dir : directories) {
 				if (ModType.isKnownDLCFolder(dir)) {
-					File mainSfar = new File(dir + "CookedPCConsole\\Default.sfar");
+					File mainSfar = new File(biogameDir + File.separator + "DLC" + File.separator + dir + File.separator+ "CookedPCConsole\\Default.sfar");
 					if (mainSfar.exists()) {
 						//find the header (the lazy way)
 						String header = null;
@@ -444,17 +439,21 @@ public class AutoTocWindow extends JDialog {
 						}
 						assert header != null;
 
-						if (mainSfar.length() != sizesMap.get(header)) {
+						if (mainSfar.length() == sizesMap.get(header)) {
 							//vanilla
+							ModManager.debugLogger.writeMessage("Skipping vanilla SFAR: "+mainSfar);
 							continue;
 						}
 						File externalTOC = new File(dir + "PCConsoleTOC.bin");
 						if (externalTOC.exists()) {
 							//its unpacked
+							ModManager.debugLogger.writeMessage("Found external toc file, adding to unpacked list: "+externalTOC);
+
 							unpackedPaths.add(externalTOC.getAbsolutePath());
 							continue;
 						} else {
 							//its a modified SFAR
+							ModManager.debugLogger.writeMessage("SFAR size is not vanilla, adding to sfar list: "+mainSfar);
 							sfarPaths.add(mainSfar.getAbsolutePath());
 							continue;
 						}
@@ -476,8 +475,11 @@ public class AutoTocWindow extends JDialog {
 		@Override
 		public Boolean doInBackground() {
 			ModManager.debugLogger.writeMessage("Game-Wide AutoTOC background thread has started.");
+			System.out.println(unpackedPaths.toString());
+			System.out.println(sfarPaths.toString());
 
 			for (String unpackedFolder : unpackedPaths) {
+				System.out.println(unpackedFolder);
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
 				commandBuilder.add(me3explorer);
