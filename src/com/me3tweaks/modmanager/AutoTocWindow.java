@@ -3,11 +3,12 @@ package com.me3tweaks.modmanager;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.io.File;
-import java.io.IOException;
+import java.io.FilenameFilter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -40,34 +41,33 @@ public class AutoTocWindow extends JDialog {
 	public static final int INSTALLED_MODE = 1;
 
 	/**
-	 * Makes a new AutoTOC window and starts the autotoc.
+	 * Starts AutoTOC in game-wide autotoc mode. Will update Game TOC files for
+	 * basegame and all DLC folders that have a PCConsoleTOC file present. For
+	 * official DLCs, the SFAR files are file-size checked, and if they are
+	 * original, the step is ignored. Otherwise it updates them via SFAR method
+	 * in ME3Explorer.
 	 * 
-	 * @param mod
-	 *            Mod to toc.
-	 * @param modmaker
-	 *            flag to use if this is a modmaker or user initiated TOC
-	 *            update.
+	 * @param biogameDir
 	 */
-	/*
-	 * public AutoTocWindow(Mod mod, int mode) { //mod is unused for now.
-	 * //this.mod = mod; this.setTitle("AutoTOC");
-	 * this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-	 * //this.setPreferredSize(new Dimension(380, 138));
-	 * this.setResizable(false);
-	 * this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-	 * setupWindow(mode == LOCALMOD_MODE ? "Updating PCConsoleTOC files for " +
-	 * mod.getModName() : "Upgrading " + mod.getModName() +
-	 * " for use with unpacked DLC files");
-	 * this.setIconImages(ModManager.ICONS); this.pack();
-	 * this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW); this.mode =
-	 * LOCALMOD_MODE; new TOCWorker(mod).execute(); this.setVisible(true); }
-	 */
+	public AutoTocWindow(String biogameDir) {
+		updatedGameTOCs = new HashMap<String, String>();
+		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: GAME-WIDE ===");
+		this.setTitle("Mod Manager AutoTOC");
+		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		this.setResizable(false);
+		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		this.setIconImages(ModManager.ICONS);
+		this.pack();
+		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		new TOCWorker(biogameDir).execute();
+		this.setVisible(true);
+	}
 
 	/**
 	 * Automatically updates PCConsoleTOC files
 	 * 
 	 * @param mod
-	 *            Mod to use for sizes and possible TOc files
+	 *            Mod to use for sizes and possible TOC files
 	 * @param mode
 	 *            mode to use. Local mode uses mod's Toc files. Installed mode
 	 *            uses game toc files.
@@ -146,6 +146,15 @@ public class AutoTocWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Using ME3Explorer from: " + me3explorer);
 		}
 
+		/**
+		 * Tocworker constructor for game-wide tocing
+		 * 
+		 * @param biogameDir
+		 */
+		public TOCWorker(String biogameDir) {
+			// TODO Auto-generated constructor stub
+		}
+
 		private void calculateNumberOfUpdates(ArrayList<ModJob> jobs) {
 			for (ModJob job : jobs) {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
@@ -192,7 +201,7 @@ public class AutoTocWindow extends JDialog {
 						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
 						commandBuilder.add(me3explorer);
 						commandBuilder.add("-autotoc");
-						commandBuilder.add(mod.getModPath()+srcFolder);
+						commandBuilder.add(mod.getModPath() + srcFolder);
 
 						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 
@@ -210,7 +219,8 @@ public class AutoTocWindow extends JDialog {
 							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
 						} else {
 							completed++;
-							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
+							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: "
+									+ (numtoc - completed));
 							publish(Integer.toString(completed));
 						}
 					}
@@ -229,13 +239,14 @@ public class AutoTocWindow extends JDialog {
 					}
 				} else {
 					//get TOC file.
-					String tocPath = ModManager.getGameFile(ModType.getTOCPathFromHeader(job.getJobName()), job.getJobName(),
-							ModManager.getTempDir() + job.getJobName() + "_PCConsoleTOC.bin");
+					String tocPath = ModManager.getGameFile(ModType.getTOCPathFromHeader(job.getJobName()), job.getJobName(), ModManager.getTempDir()
+							+ job.getJobName() + "_PCConsoleTOC.bin");
 					if (tocPath != null) {
 						updatedGameTOCs.put(job.getJobName(), tocPath);
 						hasTOC = true;
 					} else {
-						ModManager.debugLogger.writeError("Unable to get module's PCConsoleTOC file: " + job.getJobName() + ". This update will be skipped.");
+						ModManager.debugLogger.writeError("Unable to get module's PCConsoleTOC file: " + job.getJobName()
+								+ ". This update will be skipped.");
 					}
 				}
 
@@ -320,7 +331,8 @@ public class AutoTocWindow extends JDialog {
 							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
 						} else {
 							completed += batchJob.getNameSizePairs().size();
-							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
+							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: "
+									+ (numtoc - completed));
 							publish(Integer.toString(completed));
 						}
 					}
@@ -355,7 +367,8 @@ public class AutoTocWindow extends JDialog {
 			}
 
 			if (numtoc != completed) {
-				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, " + completed + " completed");
+				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, "
+						+ completed + " completed");
 				if (ModManagerWindow.ACTIVE_WINDOW != null) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("AutoTOC had an error (check logs)");
 				}
@@ -365,6 +378,187 @@ public class AutoTocWindow extends JDialog {
 				//we're good
 				if (ModManagerWindow.ACTIVE_WINDOW != null && mode == LOCALMOD_MODE) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(mod.getModName() + " TOC files updated");
+				}
+				dispose();
+			}
+			return;
+		}
+	}
+
+	class GameWideTOCWorker extends SwingWorker<Boolean, String> {
+		int completed = 0;
+		int numtoc = 0;
+		String me3explorer;
+		ArrayList<String> unpackedPaths = new ArrayList<>(), sfarPaths = new ArrayList<>();
+
+		/**
+		 * Tocworker constructor for game-wide tocing
+		 * 
+		 * @param biogameDir
+		 */
+		public GameWideTOCWorker(String biogameDir) {
+			// TODO Auto-generated constructor stub
+			progressBar.setValue(0);
+			me3explorer = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true)) + "ME3Explorer.exe";
+			calculateTasksToDo(biogameDir);
+			ModManager.debugLogger.writeMessage("Starting the GameWide AutoTOC worker. Number of ME3Explorer TOC jobs " + numtoc);
+		}
+
+		private void calculateTasksToDo(String biogameDir) {
+			//add basegame
+			File basegameToc = new File(ModManager.appendSlash(biogameDir) + "BIOGame" + File.separator + "PCConsoleTOC.bin");
+			if (basegameToc.exists()) {
+				unpackedPaths.add(basegameToc.getAbsolutePath());
+			}
+
+			//add testpatch
+			File testpatchSfar = new File(ModManager.appendSlash(biogameDir) + "BIOGame" + File.separator + "PCConsoleTOC.bin");
+			if (testpatchSfar.exists()) {
+				sfarPaths.add(basegameToc.getAbsolutePath());
+			}
+
+			//iterate over DLC.
+			File mainDlcDir = new File(ModManager.appendSlash(biogameDir) + "DLC" + File.separator);
+			String[] directories = mainDlcDir.list(new FilenameFilter() {
+				@Override
+				public boolean accept(File current, String name) {
+					return new File(current, name).isDirectory();
+				}
+			});
+			HashMap<String, Long> sizesMap = ModType.getSizesMap();
+			HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
+			for (String dir : directories) {
+				if (ModType.isKnownDLCFolder(dir)) {
+					File mainSfar = new File(dir + "CookedPCConsole\\Default.sfar");
+					if (mainSfar.exists()) {
+						//find the header (the lazy way)
+						String header = null;
+						for (Map.Entry<String, String> entry : nameMap.entrySet()) {
+							String localHeader = entry.getKey();
+							String foldername = entry.getValue();
+							if (FilenameUtils.getBaseName(dir).equalsIgnoreCase(foldername)) {
+								header = localHeader;
+								break;
+							}
+
+						}
+						assert header != null;
+
+						if (mainSfar.length() != sizesMap.get(header)) {
+							//vanilla
+							continue;
+						}
+						File externalTOC = new File(dir + "PCConsoleTOC.bin");
+						if (externalTOC.exists()) {
+							//its unpacked
+							unpackedPaths.add(externalTOC.getAbsolutePath());
+							continue;
+						} else {
+							//its a modified SFAR
+							sfarPaths.add(mainSfar.getAbsolutePath());
+							continue;
+						}
+					} else {
+						continue; //not valid DLC
+					}
+				} else {
+					//unnofficial DLC
+					File externalTOC = new File(dir + "PCConsoleTOC.bin");
+					if (externalTOC.exists()) {
+						unpackedPaths.add(externalTOC.getAbsolutePath());
+						continue;
+					}
+				}
+			}
+			numtoc = unpackedPaths.size() + sfarPaths.size();
+		}
+
+		@Override
+		public Boolean doInBackground() {
+			ModManager.debugLogger.writeMessage("Game-Wide AutoTOC background thread has started.");
+
+			for (String unpackedFolder : unpackedPaths) {
+				ArrayList<String> commandBuilder = new ArrayList<String>();
+				// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+				commandBuilder.add(me3explorer);
+				commandBuilder.add("-autotoc");
+				commandBuilder.add(new File(unpackedFolder).getParent());
+				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+
+				//for logging
+				int returncode = 1;
+				ProcessBuilder pb = new ProcessBuilder(command);
+				ProcessResult pr = ModManager.runProcess(pb);
+				returncode = pr.getReturnCode();
+				if (returncode != 0 || pr.hadError()) {
+					ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
+				} else {
+					completed++;
+					publish(Integer.toString(completed));
+				}
+			}
+
+			//SFARS
+			for (String sfarPath : sfarPaths) {
+				ArrayList<String> commandBuilder = new ArrayList<String>();
+				// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+				commandBuilder.add(me3explorer);
+				commandBuilder.add("-sfarautotoc");
+				commandBuilder.add(sfarPath);
+				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+
+				//for logging
+				int returncode = 1;
+				ProcessBuilder pb = new ProcessBuilder(command);
+				ProcessResult pr = ModManager.runProcess(pb);
+				returncode = pr.getReturnCode();
+				if (returncode != 0 || pr.hadError()) {
+					ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
+				} else {
+					completed++;
+					publish(Integer.toString(completed));
+				}
+			}
+			return true;
+		}
+
+		@Override
+		protected void process(List<String> updates) {
+			//System.out.println("Restoring next DLC");
+			for (String update : updates) {
+				try {
+					Integer.parseInt(update); // see if we got a number. if we did that means we should update the bar
+					if (numtoc != 0) {
+						progressBar.setValue((int) (((float) completed / numtoc) * 100));
+					}
+				} catch (NumberFormatException e) {
+					// this is not a progress update, it's a string update
+					//addToQueue(update);
+				}
+			}
+
+		}
+
+		@Override
+		protected void done() {
+			try {
+				get();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Game-Wide AutoTOC prematurely ended:", e);
+			}
+
+			if (numtoc != completed) {
+				ModManager.debugLogger.writeError("Game-Wide AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, "
+						+ completed + " completed");
+				if (ModManagerWindow.ACTIVE_WINDOW != null) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Game AutoTOC had an error (check logs)");
+				}
+				dispose();
+
+			} else {
+				//we're good
+				if (ModManagerWindow.ACTIVE_WINDOW != null && mode == LOCALMOD_MODE) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Game TOC files updated");
 				}
 				dispose();
 			}
