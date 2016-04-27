@@ -65,9 +65,9 @@ public class ModManager {
 
 	public static final String VERSION = "4.2.2";
 	public static long BUILD_NUMBER = 55L;
-	public static final String BUILD_DATE = "4/20/2016";
+	public static final String BUILD_DATE = "4/27/2016";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
@@ -80,12 +80,10 @@ public class ModManager {
 	public static boolean ASKED_FOR_AUTO_UPDATE = false;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
-	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 0;
-	
-	// version
-	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
 	public static final int MIN_REQUIRED_ME3EXPLORER_MAIN = 2;
-	//private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 1000000; //4.5.0
+	public static final int MIN_REQUIRED_ME3EXPLORER_MINOR = 0;
+	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 3;
+	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;

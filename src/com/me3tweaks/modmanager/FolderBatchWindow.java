@@ -63,9 +63,9 @@ public class FolderBatchWindow extends JDialog {
 			decompileAllTLK.setToolTipText("<html>Decompiles all TLK files using the TankMaster compiler tool included with Mod Manager.</html>");
 			decompileAllCoalesced
 					.setToolTipText("<html>Decompils all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
-			decompressAllPcc.setToolTipText("<html></html>");
-			compressAllPcc.setToolTipText("<html></html>");
-			sideloadAllModMaker.setToolTipText("<html></html>");
+			decompressAllPcc.setToolTipText("<html>Decompresses all PCC files to their uncompressed state</html>");
+			compressAllPcc.setToolTipText("<html>Compresses all PCC files to their compressed state, using the game's method of compression</html>");
+			sideloadAllModMaker.setToolTipText("<html>Sideload all XML files as ModMaker mods and compile them in batch mode</html>");
 
 			compileAllTLK.addActionListener(new ActionListener() {
 
