@@ -18,6 +18,7 @@ import javax.swing.border.EmptyBorder;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
@@ -46,7 +47,7 @@ public class FolderBatchWindow extends JDialog {
 		c.gridy = 0;
 		if (droppedFile.isDirectory()) {
 			JLabel headerLabel = new JLabel(
-					"<html>You dropped a folder onto Mod Manager.<br>Select what operation to perform on the contents of this folder.<br>Hover over each button to see a description.</html>");
+					"<html>You dropped a folder onto Mod Manager:<br>"+droppedFile+"<br>Select what operation to perform on the contents of this folder.<br>Hover over each button to see a description.</html>");
 			panel.add(headerLabel, c);
 
 			JButton compileAllTLK = new JButton("Compile all TLK XML Manifests");
@@ -71,6 +72,7 @@ public class FolderBatchWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose COMPILE_TLK operation");
 					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK).execute();
 				}
 			});
@@ -79,6 +81,7 @@ public class FolderBatchWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose DECOMPILE_TLK operation");
 					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_TLK).execute();
 				}
 			});
@@ -87,6 +90,7 @@ public class FolderBatchWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose COMPILE_COAL operation");
 					new BatchWorker(droppedFile, BatchWorker.COMPILE_COAL).execute();
 				}
 			});
@@ -95,6 +99,7 @@ public class FolderBatchWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose DECOMPILE_COAL operation");
 					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_COAL).execute();
 				}
 			});
@@ -103,6 +108,7 @@ public class FolderBatchWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
+					ModManager.debugLogger.writeMessage("User chose DECOMPRESS_PCC operation");
 					new BatchWorker(droppedFile, BatchWorker.DECOMPRESS_PCC).execute();
 				}
 			});
@@ -111,6 +117,7 @@ public class FolderBatchWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
+					ModManager.debugLogger.writeMessage("User chose COMPRESS_PCC operation");
 					new BatchWorker(droppedFile, BatchWorker.COMPRESS_PCC).execute();
 				}
 			});
@@ -119,7 +126,8 @@ public class FolderBatchWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK).execute();
+					ModManager.debugLogger.writeMessage("User chose SIDELOAD_MODMAKER operation");
+					new BatchWorker(droppedFile, BatchWorker.SIDELOAD_MODMAKER).execute();
 				}
 			});
 
@@ -143,7 +151,7 @@ public class FolderBatchWindow extends JDialog {
 			switch (extension) {
 			case "xml":
 				JLabel headerLabel = new JLabel(
-						"<html>You dropped an XML file onto Mod Manager.<br>Select what operation to perform with this file.</html>");
+						"<html>You dropped an XML file onto Mod Manager.<br>"+droppedFile+"<br>Select what operation to perform with this file.</html>");
 				panel.add(headerLabel, c);
 
 				JButton compileTLK = new JButton("Compile TLK (TLK Manifest (Tankmaster only))");
@@ -249,7 +257,7 @@ public class FolderBatchWindow extends JDialog {
 			if (suff == null) {
 				return null;
 			}
-			Collection<File> files = FileUtils.listFiles(folder, suff, TrueFileFilter.TRUE);
+			Collection<File> files = FileUtils.listFiles(folder, suff, FalseFileFilter.INSTANCE);
 			int processed = 0;
 			for (File file : files) {
 				processed++;
