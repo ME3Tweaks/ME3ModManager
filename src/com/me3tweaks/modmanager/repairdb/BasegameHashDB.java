@@ -49,7 +49,6 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 	boolean databaseLoaded = false;
 	JFrame callingWindow;
 	private static Statement stmt = null;
-	private boolean noDB = true;
 
 	public static void main(String[] args) throws SQLException {
 		isRunningAsMain = true;
@@ -237,6 +236,16 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				} catch (SQLException sqlExcept) {
 					ModManager.debugLogger.writeException(sqlExcept);
 				}
+			} else {
+				//clear the table.
+				ModManager.debugLogger.writeMessage("Clearing basegamefiles table.");
+				try {
+					stmt = dbConnection.createStatement();
+					stmt.execute("DELETE FROM basegamefiles WHERE 1=1");
+					//stmt.close();
+				} catch (SQLException sqlExcept) {
+					ModManager.debugLogger.writeException(sqlExcept);
+				}
 			}
 
 			int filesProcessed = 0;
@@ -339,11 +348,9 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				if (showGUI) {
 					startMap.setEnabled(true);
 					if (isBasegameTableCreated()) {
-						noDB = false;
 						infoLabel.setText("Database loaded.");
 						startMap.setText("Update Database");
 					} else {
-						noDB = true;
 						infoLabel.setText("No repair database has been created yet.");
 						startMap.setText("Create Database");
 					}
