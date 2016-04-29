@@ -246,7 +246,7 @@ public class RestoreFilesWindow extends JDialog {
 						}
 						filepaths.add(moviesFolder.getAbsolutePath());
 					}
-					
+
 					//find PCConsoleTOC.bin for it
 					File dlcConsoleTOC = new File(ModManager.appendSlash(dlcDirectory.getParent()) + "PCConsoleTOC.bin");
 					if (dlcConsoleTOC.exists()) {
@@ -386,11 +386,8 @@ public class RestoreFilesWindow extends JDialog {
 			}
 			if (bghDB == null) {
 				//cannot continue
-				JOptionPane.showMessageDialog(null,
-						"<html>The game repair database failed to load.<br>"
-								+ "Only one connection to the local database is allowed at a time.<br>"
-								+ "Please make sure you only have one instance of Mod Manager running.</html>",
-						"Database Failure", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
+						+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 			HashMap<String, String> dlcFolderMap = ModType.getHeaderFolderMap();
@@ -450,7 +447,9 @@ public class RestoreFilesWindow extends JDialog {
 						if (!restoreAnyways) {
 							//this is outside of the previous if statement as the previous one could set the restoreAnyways variable again.
 							try {
-								if (!MD5Checksum.getMD5Checksum(backup.getAbsolutePath()).equals(rfi.md5)) {
+								String hash = MD5Checksum.getMD5Checksum(backup.getAbsolutePath());
+								if (!hash.equals(rfi.md5)) {
+									ModManager.debugLogger.writeError("Hash of backup failed: DB Lists: " + rfi.md5 + ", Backup file has: " + hash);
 									int reply = JOptionPane.showOptionDialog(null,
 											"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
 													+ "This file has changed since the database was created.<br>"
@@ -503,17 +502,14 @@ public class RestoreFilesWindow extends JDialog {
 				bghDB = new BasegameHashDB(null, new File(BioGameDir).getParent(), false);
 			} catch (SQLException e) {
 				while (e.getNextException() != null) {
-					ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.",e);
+					ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.", e);
 					e = e.getNextException();
 				}
 			}
 			if (bghDB == null) {
 				//cannot continue
-				JOptionPane.showMessageDialog(null,
-						"<html>The game repair database failed to load.<br>"
-								+ "Only one connection to the local database is allowed at a time.<br>"
-								+ "Please make sure you only have one instance of Mod Manager running.</html>",
-						"Database Failure", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
+						+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
@@ -580,7 +576,9 @@ public class RestoreFilesWindow extends JDialog {
 					if (!restoreAnyways) {
 						//this is outside of the previous if statement as the previous one could set the restoreAnyways variable again.
 						try {
-							if (!MD5Checksum.getMD5Checksum(backup.getAbsolutePath()).equals(rfi.md5)) {
+							String hash = MD5Checksum.getMD5Checksum(backup.getAbsolutePath());
+							if (!hash.equals(rfi.md5)) {
+								ModManager.debugLogger.writeError("Hash of backup failed: DB Lists: " + rfi.md5 + ", Backup file has: " + hash);
 								int reply = JOptionPane.showOptionDialog(null,
 										"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
 												+ "This file has changed since the database was created.<br>"
@@ -665,7 +663,7 @@ public class RestoreFilesWindow extends JDialog {
 					ModManager.debugLogger.writeMessage(jobName + ": size mismatch between known original and existing - marking for restore");
 					publish(jobName + ": DLC is modified [size]");
 				}
-				
+
 				if (sizeMatch) {
 					publish(jobName + ": DLC is OK");
 					ModManager.debugLogger.writeMessage(jobName + ": OK");
@@ -673,30 +671,28 @@ public class RestoreFilesWindow extends JDialog {
 				}
 
 				//if size is same we can assume it is original.
-				/*if (sizeMatch) {
-					//We should hash it to check if it's original
-					try {
-						//publish(jobName + ": Known original hash: " + sfarHashes.get(jobName));
-						publish(jobName + ": Verifying DLC...");
-						mainSfarHash = MD5Checksum.getMD5Checksum(mainSfar.toString());
-						ModManager.debugLogger.writeMessage(jobName + ": Hash of Default.sfar is " + mainSfarHash);
-
-						if (mainSfarHash.equals(sfarHashes.get(jobName)) || mainSfarHash.equals(ModType.TESTPATCH_16_HASH)) {
-							// This DLC sfar matches the known original, we're good
-							ModManager.debugLogger.writeMessage(jobName + ": OK");
-
-							publish(jobName + ": DLC is OK");
-							return true;
-						} else {
-							ModManager.debugLogger.writeMessage(jobName + ": hash mismatch between known original and existing - marking for restore");
-							publish(jobName + ": DLC is modified [hash]");
-						}
-					} catch (Exception e) {
-						// it died somehow
-						ModManager.debugLogger.writeMessage(e.getMessage());
-						return false;
-					}
-				}*/
+				/*
+				 * if (sizeMatch) { //We should hash it to check if it's
+				 * original try { //publish(jobName + ": Known original hash: "
+				 * + sfarHashes.get(jobName)); publish(jobName +
+				 * ": Verifying DLC..."); mainSfarHash =
+				 * MD5Checksum.getMD5Checksum(mainSfar.toString());
+				 * ModManager.debugLogger.writeMessage(jobName +
+				 * ": Hash of Default.sfar is " + mainSfarHash);
+				 * 
+				 * if (mainSfarHash.equals(sfarHashes.get(jobName)) ||
+				 * mainSfarHash.equals(ModType.TESTPATCH_16_HASH)) { // This DLC
+				 * sfar matches the known original, we're good
+				 * ModManager.debugLogger.writeMessage(jobName + ": OK");
+				 * 
+				 * publish(jobName + ": DLC is OK"); return true; } else {
+				 * ModManager.debugLogger.writeMessage(jobName +
+				 * ": hash mismatch between known original and existing - marking for restore"
+				 * ); publish(jobName + ": DLC is modified [hash]"); } } catch
+				 * (Exception e) { // it died somehow
+				 * ModManager.debugLogger.writeMessage(e.getMessage()); return
+				 * false; } }
+				 */
 			} else {
 				ModManager.debugLogger.writeMessage(jobName + ": DLC file does not exist: " + mainSfar.toString());
 				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping.");
@@ -735,34 +731,31 @@ public class RestoreFilesWindow extends JDialog {
 				}
 				completed++;
 				publish(Integer.toString(completed));
-				return true;	
+				return true;
 			}
 			/*
-				// the sfar exists. We should hash it to check if it's original
-				try {
-
-					publish(jobName + ": Verifying backup...");
-					backupSfarHash = MD5Checksum.getMD5Checksum(backupSfar.toString());
-					ModManager.debugLogger.writeMessage(jobName + ": backupSfar hash: " + backupSfarHash);
-					//publish(jobName + ": Hash of backup sfar is " + backupSfarHash);
-					if (backupSfarHash.equals(sfarHashes.get(jobName)) || backupSfarHash.equals(ModType.TESTPATCH_16_HASH)) {
-						// This DLC sfar matches the known original - let's copy it to Default.sfar
-						publish(jobName + ": Restoring backup...");
-						Files.copy(backupSfar.toPath(), mainSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
-						completed++;
-						publish(Integer.toString(completed));
-						return true;
-					} else {
-						// DLC is modified but we don't have a backup
-						ModManager.debugLogger.writeMessage(jobName + ": Backup hash doesn't match known original, unable to automatically restore");
-						return false;
-					}
-				} catch (Exception e) {
-					// it died somehow
-					ModManager.debugLogger.writeErrorWithException("Failure restoring backup SFAR:", e);
-					return false;
-				}
-			}*/
+			 * // the sfar exists. We should hash it to check if it's original
+			 * try {
+			 * 
+			 * publish(jobName + ": Verifying backup..."); backupSfarHash =
+			 * MD5Checksum.getMD5Checksum(backupSfar.toString());
+			 * ModManager.debugLogger.writeMessage(jobName +
+			 * ": backupSfar hash: " + backupSfarHash); //publish(jobName +
+			 * ": Hash of backup sfar is " + backupSfarHash); if
+			 * (backupSfarHash.equals(sfarHashes.get(jobName)) ||
+			 * backupSfarHash.equals(ModType.TESTPATCH_16_HASH)) { // This DLC
+			 * sfar matches the known original - let's copy it to Default.sfar
+			 * publish(jobName + ": Restoring backup...");
+			 * Files.copy(backupSfar.toPath(), mainSfar.toPath(),
+			 * StandardCopyOption.REPLACE_EXISTING); completed++;
+			 * publish(Integer.toString(completed)); return true; } else { //
+			 * DLC is modified but we don't have a backup
+			 * ModManager.debugLogger.writeMessage(jobName +
+			 * ": Backup hash doesn't match known original, unable to automatically restore"
+			 * ); return false; } } catch (Exception e) { // it died somehow
+			 * ModManager.debugLogger.writeErrorWithException(
+			 * "Failure restoring backup SFAR:", e); return false; } }
+			 */
 
 			return false;
 		}
