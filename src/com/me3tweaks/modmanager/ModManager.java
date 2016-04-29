@@ -821,7 +821,12 @@ public class ModManager {
 		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer.");
 		
 		//Check to make sure ME3 1.05
-		File executable = new File(biogamedir + "\\Binaries\\Win32\\MassEffect3.exe");
+		File executable = new File(new File(biogamedir).getParent() + "\\Binaries\\Win32\\MassEffect3.exe");
+		if (!executable.exists()) {
+			ModManager.debugLogger.writeError("Unable to find game EXE at "+executable);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to detect game executable version.\nInstall aborted.", "Mass Effect 3 1.06 detected",JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
 		int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
 		
 		if (minorBuildNum != 5)
