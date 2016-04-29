@@ -819,6 +819,18 @@ public class ModManager {
 
 	public static boolean installBinkw32Bypass(String biogamedir) {
 		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer.");
+		
+		//Check to make sure ME3 1.05
+		File executable = new File(biogamedir + "\\Binaries\\Win32\\MassEffect3.exe");
+		int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
+		
+		if (minorBuildNum != 5)
+		{
+			ModManager.debugLogger.writeError("Binkw32 does not work with 1.06 version of ME3, aborting.");
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "The included binkw32.dll file does not support Mass Effect 3 1.06.\nDowngrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this.", "Mass Effect 3 1.06 detected",JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+		
 		// extract and install binkw32.dll
 		// from
 		// http://stackoverflow.com/questions/7168747/java-creating-self-extracting-jar-that-can-extract-parts-of-itself-out-of-the-a
