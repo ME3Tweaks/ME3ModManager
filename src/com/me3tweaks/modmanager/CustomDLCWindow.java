@@ -34,8 +34,6 @@ public class CustomDLCWindow extends JDialog {
 	protected static final int COL_MOUNT = 2;
 	public static final int COL_MOUNT_PRIORITY = 3;
 	protected static final int COL_ACTION = 4;
-	private ArrayList<String> nameList;
-	private ArrayList<String> folderList;
 	private String bioGameDir;
 	private ArrayList<MountFile> mountList;
 
@@ -54,8 +52,6 @@ public class CustomDLCWindow extends JDialog {
 		setPreferredSize(new Dimension(640, 600));
 		setMinimumSize(new Dimension(300, 200));
 
-		nameList = new ArrayList<String>();
-		folderList = new ArrayList<String>();
 		mountList = new ArrayList<MountFile>();
 
 		JPanel panel = new JPanel(new BorderLayout());

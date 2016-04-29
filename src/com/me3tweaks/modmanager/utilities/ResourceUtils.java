@@ -3,6 +3,7 @@ package com.me3tweaks.modmanager.utilities;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
@@ -178,6 +179,16 @@ public class ResourceUtils {
 		while (hexString.length() < length)
 			hexString = "0" + hexString;
 		return hexString;
+	}
+
+	public static int byteArrayToInt(byte[] buffer) {
+		if (buffer.length != 4) {
+			return -1;
+		}
+		return (buffer[0]<<24)&0xff000000|
+	       (buffer[1]<<16)&0x00ff0000|
+	       (buffer[2]<< 8)&0x0000ff00|
+	       (buffer[3]<< 0)&0x000000ff;
 	}
 
 	/*

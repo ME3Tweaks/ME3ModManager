@@ -49,7 +49,6 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 	boolean databaseLoaded = false;
 	JFrame callingWindow;
 	private static Statement stmt = null;
-	private boolean noDB = true;
 
 	public static void main(String[] args) throws SQLException {
 		isRunningAsMain = true;
@@ -237,6 +236,16 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				} catch (SQLException sqlExcept) {
 					ModManager.debugLogger.writeException(sqlExcept);
 				}
+			} else {
+				//clear the table.
+				ModManager.debugLogger.writeMessage("Clearing basegamefiles table.");
+				try {
+					stmt = dbConnection.createStatement();
+					stmt.execute("DELETE FROM basegamefiles WHERE 1=1");
+					//stmt.close();
+				} catch (SQLException sqlExcept) {
+					ModManager.debugLogger.writeException(sqlExcept);
+				}
 			}
 
 			int filesProcessed = 0;
@@ -259,10 +268,11 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				ResultSet srs = selectStatement.getResultSet();
 				if (!srs.next()) {
 					//INSERT - ITS NOT THERE.
-					ModManager.debugLogger.writeMessage("Inserting entry " + fileKey.toUpperCase());
 					try {
+						String md5 = MD5Checksum.getMD5Checksum(file.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("INSERT INTO basegamefiles (filepath, hash, filesize) VALUES (UPPER("+fileKey.toUpperCase()+"),"+md5+","+file.length()+")");
 						insertStatement.setString(1, fileKey.toUpperCase());
-						insertStatement.setString(2, MD5Checksum.getMD5Checksum(file.getAbsolutePath()));
+						insertStatement.setString(2, md5);
 						insertStatement.setLong(3, file.length());
 						insertStatement.execute();
 					} catch (SQLException sqlExcept) {
@@ -270,11 +280,12 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 					}
 				} else {
 					//UPDATE SINCE IT EXISTS.
-					ModManager.debugLogger.writeMessage("Updating entry " + fileKey.toUpperCase());
 					try {
-						updateStatement.setString(3, fileKey.toUpperCase());
-						updateStatement.setString(1, MD5Checksum.getMD5Checksum(file.getAbsolutePath()));
+						String md5 = MD5Checksum.getMD5Checksum(file.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("UPDATE basegamefiles SET hash="+md5+", filesize="+file.length()+" WHERE filepath=UPPER("+fileKey.toUpperCase()+")");
+						updateStatement.setString(1, md5);
 						updateStatement.setLong(2, file.length());
+						updateStatement.setString(3, fileKey.toUpperCase());
 						updateStatement.execute();
 					} catch (SQLException sqlExcept) {
 						ModManager.debugLogger.writeException(sqlExcept);
@@ -339,11 +350,9 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				if (showGUI) {
 					startMap.setEnabled(true);
 					if (isBasegameTableCreated()) {
-						noDB = false;
 						infoLabel.setText("Database loaded.");
 						startMap.setText("Update Database");
 					} else {
-						noDB = true;
 						infoLabel.setText("No repair database has been created yet.");
 						startMap.setText("Create Database");
 					}
@@ -382,7 +391,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				String selectString = "SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(?)";
 				PreparedStatement stmt;
 				stmt = dbConnection.prepareStatement(selectString);
-				ModManager.debugLogger.writeMessage("Querying database: SELECT * FROM BASEGAMEFILES WHERE filepath = " + relativePath.toUpperCase());
+				ModManager.debugLogger.writeMessage("Querying database: SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(" + relativePath.toUpperCase()+")");
 				stmt.setString(1, relativePath.toUpperCase());
 				stmt.execute();
 				ResultSet srs = stmt.getResultSet();

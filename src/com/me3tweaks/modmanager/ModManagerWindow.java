@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
@@ -8,18 +9,21 @@ import java.awt.FlowLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -105,13 +109,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modManagementMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
-	JMenuItem actionExitDebugMode, actionModMaker, actionVisitMe, modManagementImportFromArchive, modManagementImportAlreadyInstalled, actionOptions,
-			toolME3Explorer, toolsMergeMod, actionReload, actionExit, toolGUITransplant;
+	JMenuItem actionExitDebugMode, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
+	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementModMaker, modManagementFailedMods,
+			modManagementPatchLibary;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC,
 			modutilsCheckforupdate, modutilsRestoreMod, modutilsDeleteMod;
+	JMenuItem toolME3Explorer, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor,
+			toolsMergeMod, toolME3Config;
 	JMenuItem backupBackupDLC, backupCreateGDB;
-	JMenuItem modManagementModMaker, modManagementFailedMods, modManagementPatchLibary, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32,
-			toolsUninstallBinkw32, toolsMountdlcEditor;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC,
 			restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2,
@@ -141,6 +146,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JButton modWebsiteLink;
 	private ArrayList<Mod> invalidMods;
 	private JButton modlistFailedIndicatorLink;
+	private JPanel cookedDirPanel;
+	private JMenuItem toolsAutoTOCGame;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -174,6 +181,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							"Critical Interface Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
+		validateBIOGameDir();
 		if (reload) {
 			new ModManagerWindow(false);
 		} else {
@@ -227,7 +235,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	private void initializeWindow() {
 		setupWindow();
-
 		this.pack();
 		setLocationRelativeTo(null);
 		if (isUpdate) {
@@ -397,13 +404,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 									"Missing ME3Explorer", JOptionPane.ERROR_MESSAGE);
 				}
 			} else {
+				int main = EXEFileInfo.getMajorVersionOfProgram(me3explorer);
 				int rev = EXEFileInfo.getBuildOfProgram(me3explorer);
-				if (rev < ModManager.MIN_REQUIRED_ME3EXPLORER_REV) {
+				ModManager.debugLogger.writeMessage("ME3Explorer Version: " + Arrays.toString(EXEFileInfo.getVersionInfo(me3explorer)));
+				if (main < ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN || main == ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN
+						&& rev < ModManager.MIN_REQUIRED_ME3EXPLORER_REV) {
 					//we must update it
-					ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:" + rev + " required"
-							+ ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+");
+					ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:" + main + "." + rev + ", required"
+							+ ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN + "." + ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+");
 					if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
-						new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
+						//new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
 					} else {
 						ModManager.debugLogger.writeError("ME3Explorer outdated but cannot download due to settings!");
 						JOptionPane
@@ -719,15 +729,58 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				//only works with first file
 				if (files.length > 0 && files[0].exists()) {
 					ModManager.debugLogger.writeMessage("File was dropped onto Mod Manager Window: " + files[0]);
-					String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
-					switch (extension) {
-					case "7z":
-					case "zip":
-					case "rar":
-						new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
-						break;
-					}
 
+					if (files[0].isDirectory()) {
+						//prompt
+						new FolderBatchWindow(ModManagerWindow.this, files[0]);
+					}
+					if (files[0].isFile()) {
+						String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
+						switch (extension) {
+						case "7z":
+						case "zip":
+						case "rar":
+							new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
+							break;
+						case "xml":
+							new FolderBatchWindow(ModManagerWindow.this, files[0]);
+							break;
+						case "dlc":
+							new MountFileEditorWindow(files[0].toString());
+							break;
+						case "tlk":
+							TLKTool.decompileTLK(files[0]);
+							break;
+						case "bin":
+							//read magic at beginning to find out what type of file this is
+							try {
+								byte[] buffer = new byte[4];
+								InputStream is = new FileInputStream(files[0]);
+								if (is.read(buffer) != buffer.length) {
+									// do something 
+								}
+								int magic = ResourceUtils.byteArrayToInt(buffer);
+								switch (magic) {
+								case ModManager.COALESCED_MAGIC_NUMBER:
+									new CoalescedWindow(files[0], false);
+									break;
+								}
+
+								is.close();
+
+								/*
+								 * switch (magic) { default:
+								 * System.out.println("uh"); }
+								 */
+							} catch (IOException e) {
+								e.printStackTrace();
+								// this shouldn't be possible
+							} finally {
+
+							}
+							break;
+						}
+					}
 				}
 			}
 		});
@@ -741,11 +794,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				SwingConstants.LEFT), BorderLayout.WEST);
 
 		// BioGameDir Panel
-		JPanel cookedDirPanel = new JPanel(new BorderLayout());
+		cookedDirPanel = new JPanel(new BorderLayout());
 		TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
 				"Mass Effect 3 BIOGame Directory");
 		fieldBiogameDir = new JTextField();
 		fieldBiogameDir.setText(getInitialBiogameDirText());
+		fieldBiogameDir.addFocusListener(new FocusListener() {
+
+			@Override
+			public void focusLost(FocusEvent e) {
+				validateBIOGameDir();
+			}
+
+			@Override
+			public void focusGained(FocusEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+		});
 		buttonBioGameDir = new JButton("Browse...");
 		buttonBioGameDir
 				.setToolTipText("<html>Browse and set the BIOGame directory.<br>This is located in the installation directory for Mass Effect 3.<br>Typically this is in the Origin Games folder.</html>");
@@ -773,7 +839,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JScrollPane listScroller = new JScrollPane(modList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 		modlistFailedIndicatorLink = new JButton();
-		modlistFailedIndicatorLink.setText("<HTML><font color=#ff2020><u>"+invalidMods.size()+" mod"+(invalidMods.size() != 1 ? "s" : "")+" failed to load</u></font></HTML>");
+		modlistFailedIndicatorLink.setText("<HTML><font color=#ff2020><u>" + invalidMods.size() + " mod" + (invalidMods.size() != 1 ? "s" : "")
+				+ " failed to load</u></font></HTML>");
 		modlistFailedIndicatorLink.setBorderPainted(false);
 		modlistFailedIndicatorLink.setBackground(UIManager.getColor("Panel.background"));
 		modlistFailedIndicatorLink.setFocusPainted(false);
@@ -785,14 +852,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modlistFailedIndicatorLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
 		modlistFailedIndicatorLink.addActionListener(this);
 		modlistFailedIndicatorLink.setVisible(invalidMods.size() > 0);
-		
+
 		// modsListPanel.add(availableModsLabel, BorderLayout.NORTH);
 		modsListPanel.setBorder(modListsBorder);
 		modsListPanel.add(listScroller, BorderLayout.CENTER);
 		modsListPanel.add(modlistFailedIndicatorLink, BorderLayout.SOUTH);
 		modModel = new DefaultListModel<Mod>();
 		modList.setModel(modModel);
-		
+
 		for (Mod mod : validMods) {
 			modModel.addElement(mod);
 		}
@@ -810,6 +877,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description");
 		descriptionPanel.setBorder(descriptionBorder);
 		fieldDescription = new JTextArea(selectAModDescription);
+		fieldDescription.setDropTarget(null);
 		scrollDescription = new JScrollPane(fieldDescription);
 
 		fieldDescription.setLineWrap(true);
@@ -819,9 +887,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		scrollDescription.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollDescription.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-
-		
-		
 		modWebsiteLink = new JButton();
 		modWebsiteLink.setText("<HTML>You fool! You didn't code this to show anything!</HTML>");
 		modWebsiteLink.setBorderPainted(false);
@@ -853,7 +918,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		labelStatus = new JLabel("Loaded mods");
 		labelStatus.setVisible(true);
 
-		
 		// ProgressBar
 
 		// ButtonPanel
@@ -888,7 +952,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.setJMenuBar(menuBar);
 		contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
 		this.add(contentPanel);
-		verifyBackupCoalesced();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: SetupWindow() has completed.");
 
 	}
@@ -935,15 +998,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolME3Explorer = new JMenuItem("ME3Explorer");
 		toolME3Explorer.setToolTipText("Runs the bundled ME3Explorer program");
-		toolGUITransplant = new JMenuItem("Generate GUI compatability mod");
-		toolGUITransplant
-				.setToolTipText("<html>Generate a GUI compatability mod with another mod.<br>This is typically used to generate compatability packs for the SP Controller Support mod.</html>");
 		toolTankmasterCoalFolder = new JMenuItem("TankMaster Coalesce Folder");
 		toolTankmasterCoalFolder.setToolTipText("Opens Tankmaster Coalesce folder");
 		toolTankmasterCoalUI = new JMenuItem("TankMaster Coalesce Interface");
 		toolTankmasterCoalUI.setToolTipText("Opens interface for Tankmaster's Coalesced compiler");
 		toolTankmasterTLK = new JMenuItem("TankMaster ME2/ME3 TLK Tool");
 		toolTankmasterTLK.setToolTipText("Runs the bundled TLK tool provided by TankMaster");
+		toolsAutoTOCGame = new JMenuItem("Run AutoTOC on game");
+		toolsAutoTOCGame
+				.setToolTipText("<html>Updates TOC files for basegame, DLC (unpacked and modified SFAR), and custom DLC.<br>May help fix infinite loading issues</html>");
+
 		actionReload = new JMenuItem("Reload Mod Manager");
 		actionReload.setToolTipText("Reloads Mod Manager to refresh mods, mixins, and help documentation");
 		actionExit = new JMenuItem("Exit");
@@ -1106,6 +1170,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMountdlcEditor = new JMenuItem("Mount.dlc Editor");
 		toolsMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
 
+		toolME3Config = new JMenuItem("ME3 Config Tool");
+		toolME3Config
+				.setToolTipText("<html>Opens the ME3 Configuration Utility that comes packaged with the game.<br>Lets you configure graphics and audio settings.</html>");
+
+		toolsAutoTOCGame.addActionListener(this);
 		modManagementModMaker.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
 		modManagementCheckallmodsforupdate.addActionListener(this);
@@ -1117,17 +1186,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsOpenME3Dir.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
+		toolME3Config.addActionListener(this);
 		toolME3Explorer.addActionListener(this);
 		toolTankmasterTLK.addActionListener(this);
 		toolTankmasterCoalFolder.addActionListener(this);
 		toolTankmasterCoalUI.addActionListener(this);
-		toolGUITransplant.addActionListener(this);
 		toolsMenu.add(toolsMergeMod);
 		toolsMenu.add(toolsMountdlcEditor);
 		//toolsMenu.add(toolGUITransplant);
 		toolsMenu.add(toolsUnpackDLC);
+		toolsMenu.add(toolsAutoTOCGame);
 		toolsMenu.add(toolsOpenME3Dir);
 		toolsMenu.addSeparator();
+		toolsMenu.add(toolME3Config);
 		toolsMenu.add(toolME3Explorer);
 		toolsMenu.add(toolTankmasterCoalFolder);
 		toolsMenu.add(toolTankmasterCoalUI);
@@ -1288,37 +1359,32 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		return menuBar;
 	}
 
-	private void verifyBackupCoalesced() {
-		File restoreTest = new File(ModManager.getDataDir() + "Coalesced.original");
-		if (!restoreTest.exists()) {
-			ModManager.debugLogger.writeMessage("Didn't find Coalesced.original - checking existing installed one, will copy if verified.");
-			// try to copy the current one
-			String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e";
-			File coalesced = new File(ModManager.appendSlash(fieldBiogameDir.getText().toString()) + "CookedPCConsole\\Coalesced.bin");
-			// Take the MD5 first to verify it.
-			if (coalesced.exists()) {
-				try {
-					if (patch3CoalescedHash.equals(MD5Checksum.getMD5Checksum(coalesced.toString()))) {
-						// back it up
-						Files.copy(coalesced.toPath(), restoreTest.toPath());
-						restoreRevertCoal.setEnabled(true);
-						ModManager.debugLogger.writeMessage("Backed up Coalesced.");
-					} else {
-						ModManager.debugLogger.writeMessage("Didn't back up coalecsed, hash mismatch.");
-						restoreRevertCoal.setEnabled(false);
-					}
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					ModManager.debugLogger.writeErrorWithException("I/O Exception while verifying backup coalesced.", e);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					ModManager.debugLogger.writeErrorWithException("General Exception while verifying backup coalesced.", e);
-				}
-			} else {
-				ModManager.debugLogger.writeMessage("Coalesced.bin was not found - unable to back up automatically");
-			}
-		}
-	}
+	/*
+	 * private void verifyBackupCoalesced() { File restoreTest = new
+	 * File(ModManager.getDataDir() + "Coalesced.original"); if
+	 * (!restoreTest.exists()) { ModManager.debugLogger.writeMessage(
+	 * "Didn't find Coalesced.original - checking existing installed one, will copy if verified."
+	 * ); // try to copy the current one String patch3CoalescedHash =
+	 * "540053c7f6eed78d92099cf37f239e8e"; File coalesced = new
+	 * File(ModManager.appendSlash(fieldBiogameDir.getText().toString()) +
+	 * "CookedPCConsole\\Coalesced.bin"); // Take the MD5 first to verify it. if
+	 * (coalesced.exists()) { try { if
+	 * (patch3CoalescedHash.equals(MD5Checksum.getMD5Checksum
+	 * (coalesced.toString()))) { // back it up Files.copy(coalesced.toPath(),
+	 * restoreTest.toPath()); restoreRevertCoal.setEnabled(true);
+	 * ModManager.debugLogger.writeMessage("Backed up Coalesced."); } else {
+	 * ModManager
+	 * .debugLogger.writeMessage("Didn't back up coalecsed, hash mismatch.");
+	 * restoreRevertCoal.setEnabled(false); } } catch (IOException e) { // TODO
+	 * Auto-generated catch block
+	 * ModManager.debugLogger.writeErrorWithException(
+	 * "I/O Exception while verifying backup coalesced.", e); } catch (Exception
+	 * e) { // TODO Auto-generated catch block
+	 * ModManager.debugLogger.writeErrorWithException
+	 * ("General Exception while verifying backup coalesced.", e); } } else {
+	 * ModManager.debugLogger.writeMessage(
+	 * "Coalesced.bin was not found - unable to back up automatically"); } } }
+	 */
 
 	public void actionPerformed(ActionEvent e) {
 		// too bad we can't do a switch statement on the object :(
@@ -1759,6 +1825,35 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Merge Tool: Missing .NET Framework");
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods.");
 			}
+
+		} else if (e.getSource() == toolME3Config) {
+			if (validateBIOGameDir()) {
+				ModManager.debugLogger.writeMessage("Opening ME3 Config tool");
+				File path = new File(fieldBiogameDir.getText());
+				path = path.getParentFile();
+				String command = path.getAbsolutePath() + "\\Binaries\\MassEffect3Config.exe";
+				if (new File(command).exists()) {
+					ProcessBuilder p = new ProcessBuilder(command);
+					ModManager.debugLogger.writeMessage("Launching ME3 Config tool: " + command);
+					try {
+						p.start();
+					} catch (IOException e1) {
+						ModManager.debugLogger.writeErrorWithException("Unable to launch ME3 config tool:", e1);
+					}
+				} else {
+					ModManager.debugLogger.writeError("Config tool is missing! Not found at " + path);
+					JOptionPane.showMessageDialog(null, "The config tool executable doesn't exist where it should:\n" + path,
+							"Missing Config Tool exe", JOptionPane.ERROR_MESSAGE);
+				}
+			} else {
+				labelStatus.setText("ME3 Config tool requires a valid BIOGame directory");
+				labelStatus.setVisible(true);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BIOGame directory is not valid.\nCannot open the ME3 Config tool if Mod Manager doesn't know where Mass Effect 3 is.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == toolsUnpackDLC) {
 			if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
@@ -1782,17 +1877,29 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == toolsMountdlcEditor) {
 			new MountFileEditorWindow();
-		} else if (e.getSource() == toolGUITransplant) {
-			if (ModManager.validateNETFrameworkIsInstalled()) {
-				new GUITransplanterWindow(this);
-			} else {
-				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
-				ModManager.debugLogger.writeMessage("GUITransplanter: Missing .NET Framework");
-				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use generate  feature.");
-			}
 		} else if (e.getSource() == toolsOpenME3Dir) {
 			openME3Dir();
+		} else if (e.getSource() == toolsAutoTOCGame) {
+			if (validateBIOGameDir()) {
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Running Game-wide AutoTOC.");
+					updateApplyButton();
+					new AutoTocWindow(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use the AutoTOC feature.");
+				}
+			} else {
+				labelStatus.setText("Game AutoTOC requires a valid BIOGame directory");
+				labelStatus.setVisible(true);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"The BIOGame directory is not valid.\nCannot update TOC files without a valid directory.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == modutilsAutoTOC) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				ModManager.debugLogger.writeMessage("Running AutoTOC.");
@@ -1836,7 +1943,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (mod.getModMakerCode() <= 0 || validateBIOGameDir()) {
 				if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Running (restore mode) single mod update check on " + mod.getModName());
-					mod.setVersion(0.0001);
+					mod.setVersion(0.001);
 					new SingleModUpdateCheckThread(mod).execute();
 				} else {
 					updateApplyButton();
@@ -2161,6 +2268,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				labelStatus.setVisible(true);
 			}
 			fieldBiogameDir.setText(dirChooser.getSelectedFile().toString());
+			validateBIOGameDir();
 		} else {
 			JOptionPane.showMessageDialog(null, "Coalesced.bin not found in " + dirChooser.getSelectedFile().toString(), "Error",
 					JOptionPane.ERROR_MESSAGE);
@@ -2175,12 +2283,41 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	public static boolean validateBIOGameDir() {
 		File coalesced = new File(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + "CookedPCConsole\\Coalesced.bin");
 		if (coalesced.exists()) {
+			setBioDirHighlight(false);
 			return true;
 		} else {
+			setBioDirHighlight(true);
 			return false;
 		}
 	}
 
+	/**
+	 * Changes the border around the Biogame Directory panel to indicate
+	 * something is wrong.
+	 * 
+	 * @param highlight
+	 */
+	private static void setBioDirHighlight(boolean highlight) {
+		if (highlight) {
+			TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+					"Mass Effect 3 BIOGame Directory (INVALID)", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager
+							.getDefaults().getFont("titledBorder.font"), Color.RED);
+			ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
+		} else {
+			TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+					"Mass Effect 3 BIOGame Directory", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager.getDefaults()
+							.getFont("titledBorder.font"), new Color(0, 150, 0));
+			ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
+		}
+	}
+
+	/**
+	 * Gets the initial string to place into the biogame dir part of mod
+	 * manager. Will default to a reasonably well guessed value if it can't read
+	 * from settings or registry.
+	 * 
+	 * @return
+	 */
 	private String getInitialBiogameDirText() {
 		ModManager.debugLogger.writeMessage("Getting location of Mass Effect 3 directory.");
 		Wini settingsini;
@@ -2259,48 +2396,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		Mod mod = modModel.get(modList.getSelectedIndex());
-		// Read mod
-		// Apply The Mod
-		// Update Coalesced (main game)
-		if (mod.modsCoal()) {
-			if (ModManager.checkDoOriginal(fieldBiogameDir.getText())) {
-				// check source file
-				File source = new File(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
-
-				if (!source.exists()) {
-					labelStatus.setText("Mod not installed");
-					labelStatus.setVisible(true);
-					JOptionPane
-							.showMessageDialog(
-									null,
-									"Coalesced.bin was not found in the Mod file's directory.\nIt might have moved, been deleted, or renamed.\nPlease check this mod's directory.",
-									"Coalesced not found", JOptionPane.ERROR_MESSAGE);
-
-					return false;
-				}
-
-				String destFile = coalesced.toString();
-				String sourceFile = ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin";
-				try {
-					Files.copy(Paths.get(sourceFile), Paths.get(destFile), StandardCopyOption.REPLACE_EXISTING);
-					if (mod.getJobs().length == 0) {
-						labelStatus.setText(mod.getModName() + " installed");
-					} else {
-						labelStatus.setText("Injecting files into DLC modules...");
-					}
-				} catch (IOException e) {
-					JOptionPane.showMessageDialog(null, "Copying Coalesced.bin failed. Stack trace:\n" + e.getMessage(),
-							"Error copying Coalesced.bin", JOptionPane.ERROR_MESSAGE);
-					labelStatus.setText("Mod failed to install");
-				}
-			} else {
-
-				labelStatus.setText("Mod not installed");
-				labelStatus.setVisible(true);
-				return false;
-			}
-		}
-
 		if (mod.getJobs().length > 0) {
 			checkBackedUp(mod);
 			new ModInstallWindow(this, mod.getJobs(), fieldBiogameDir.getText(), mod);
@@ -2564,7 +2659,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void startGame(String CookedDir) {
 		File startingDir = new File(CookedDir);
 		ModManager.debugLogger.writeMessage("Starting game.");
-		boolean binkw32bypass = checkForBinkBypass(); // favor bink over WV
+		boolean binkw32bypass = ModManager.checkIfBinkBypassIsInstalled(fieldBiogameDir.getText()); // favor bink over WV
 		startingDir = new File(startingDir.getParent());
 		File executable = new File(startingDir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
 		//check ME3 version for 1.6
@@ -2619,35 +2714,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		}
 		ModManager.debugLogger.writeMessage("Path: " + executable.getAbsolutePath() + " - Exists? " + executable.exists());
-	}
-
-	/**
-	 * Checks for the binkw32 bypass. If its there it will skip the LauncherWV
-	 * check.
-	 * 
-	 * @return
-	 */
-	private boolean checkForBinkBypass() {
-		File bgdir = new File(fieldBiogameDir.getText());
-		if (!bgdir.exists()) {
-			return false;
-		}
-		File gamedir = bgdir.getParentFile();
-		ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
-		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
-		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
-		try {
-			String originalBink32MD5 = "128b560ef70e8085c507368da6f26fe6";
-			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
-			if (!binkhash.equals(originalBink32MD5) && bink23.exists()) {
-				return true;
-			}
-		} catch (Exception e) {
-			ModManager.debugLogger.writeErrorWithException("Exception while attempting to find DLC bypass (Binkw32).", e);
-			ModManager.debugLogger.writeMessage("Bink bypass was not found.");
-			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
-		}
-		return false;
 	}
 
 	/**
@@ -2766,6 +2832,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	public ArrayList<Mod> getInvalidMods() {
 		return invalidMods;
+	}
+
+	/**
+	 * External API for calling single mod updater
+	 * 
+	 * @param mod
+	 */
+	public void startSingleModUpdate(Mod mod) {
+		new SingleModUpdateCheckThread(mod).execute();
 	}
 
 }

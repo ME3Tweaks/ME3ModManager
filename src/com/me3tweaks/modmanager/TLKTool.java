@@ -38,6 +38,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.me3tweaks.modmanager.objects.ProcessResult;
+
 public class TLKTool {
 
 	static int[] ignoredIds = new int[] { 320166, 180997, 330510, 340843, 340858, 351755, 371720, 372162, 375050, 579961, 581459, 589952, 627586,
@@ -58,8 +60,8 @@ public class TLKTool {
 
 	public static void main(String[] args) throws Exception {
 		//replacementScan();
-		compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\diffs\\");
-		//decompileTLK();
+		compileTLK("E:\\MPTLK\\mp5");
+		//decompileTLK("E:\\MPTLK\\mp5");
 		//comparisonScan();
 		//initialScanTankmaster();
 		//nonINTME2ToolScan();
@@ -978,9 +980,9 @@ public class TLKTool {
 		}
 	}
 
-	private static void decompileTLK() {
+	private static void decompileTLK(String path) {
 		//		File dir = new File(System.getProperty("user.dir") + File.separator + "carddata" + File.separator + "tlkfiles" + File.separator);
-		File dir = new File("C:\\Users\\\\Desktop\\tlk\\");
+		File dir = new File(path);
 
 		Collection<File> files = FileUtils.listFiles(dir, new SuffixFileFilter("tlk"), TrueFileFilter.TRUE);
 		for (File file : files) {
@@ -1061,7 +1063,7 @@ public class TLKTool {
 	private static void compileTLK(String path) throws IOException, InterruptedException {
 		File dir = new File(path);
 		System.out.println(dir);
-		Collection<File> files = FileUtils.listFiles(dir, new WildcardFileFilter("DLC_CON_XBX_*.xml"), FalseFileFilter.FALSE);
+		Collection<File> files = FileUtils.listFiles(dir, new SuffixFileFilter(".xml"), FalseFileFilter.FALSE);
 		for (File file : files) {
 			System.out.println(file.getAbsolutePath());
 		}
@@ -1089,5 +1091,39 @@ public class TLKTool {
 			p = pb.start();
 			p.waitFor();
 		}
+	}
+	/**
+	 * Compiles a TLK file from a .xml file (tankmaster)
+	 * @param file
+	 * @return 
+	 */
+	public static ProcessResult compileTLK(File file) {
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+
+		String compilerPath = ModManager.getTankMasterTLKDir() + "MassEffect3.TlkEditor.exe";
+		commandBuilder.add(compilerPath);
+		commandBuilder.add(file.getAbsolutePath());
+		commandBuilder.add("--mode");
+		commandBuilder.add("ToTlk");
+		commandBuilder.add("--no-ui");
+		String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+		ProcessBuilder pb = new ProcessBuilder(command);
+		return ModManager.runProcess(pb);
+	}
+
+	/**Decompiles a TLK file
+	 * @return */
+	public static ProcessResult decompileTLK(File file) {
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+
+		String compilerPath = ModManager.getTankMasterTLKDir() + "MassEffect3.TlkEditor.exe";
+		commandBuilder.add(compilerPath);
+		commandBuilder.add(file.getAbsolutePath()); //inputfile
+		commandBuilder.add(file.getParent() + File.separator + FilenameUtils.getBaseName(file.getAbsolutePath()) + ".xml"); //manifest name for output
+		commandBuilder.add("--mode");
+		commandBuilder.add("ToXml");
+		commandBuilder.add("--no-ui");
+		String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+		return ModManager.runProcess(new ProcessBuilder(command));
 	}
 }

@@ -43,6 +43,15 @@ public class Mod implements Comparable<Mod> {
 	private ArrayList<Patch> requiredPatches = new ArrayList<Patch>();
 	private ArrayList<ModDelta> modDeltas = new ArrayList<ModDelta>();
 	private String failedReason;
+	private String serverModFolder = "PUT_SERVER_PATH_HERE"; //only for mod devs
+
+	public String getServerModFolder() {
+		return serverModFolder;
+	}
+
+	public void setServerModFolder(String serverModFolder) {
+		this.serverModFolder = serverModFolder;
+	}
 
 	/**
 	 * Creates a new mod object.
@@ -107,9 +116,9 @@ public class Mod implements Comparable<Mod> {
 	 * 
 	 * @return true if legacy coal install, false otherwise
 	 */
-	public boolean modsCoal() {
+/*	public boolean modsCoal() {
 		return modCoal;
-	}
+	}*/
 
 	/**
 	 * Parses the moddesc.ini file and validates it.
@@ -132,6 +141,52 @@ public class Mod implements Comparable<Mod> {
 			modCMMVer = 1.0f;
 		}
 
+		//READ NON-ESSENTIAL DATA, USEFUL FOR FAILED MODS, AS THEY WILL ABORT ON ERROR
+		if (modini.get("ModInfo", "modver") != null) {
+			modVersion = modini.get("ModInfo", "modver");
+			ModManager.debugLogger.writeMessageConditionally("Detected mod version: " + modVersion, ModManager.LOG_MOD_INIT);
+		}
+
+		if (modini.get("ModInfo", "updatecode") != null) {
+			try {
+				classicCode = Integer.parseInt(modini.get("ModInfo", "updatecode"));
+				ModManager.debugLogger.writeMessageConditionally("Detected me3tweaks update code: " + classicCode, ModManager.LOG_MOD_INIT);
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeError("Classic update code is not an integer. Defaulting to 0");
+			}
+		}
+
+		if (modini.get("ModInfo", "serverfolder") != null) {
+			serverModFolder = modini.get("ModInfo", "serverfolder");
+			ModManager.debugLogger.writeMessageConditionally("Detected me3tweaks server folder: " + classicCode, ModManager.LOG_MOD_INIT);
+		}
+
+		// Add MP Change
+		if (modini.get("ModInfo", "modmp") != null) {
+			modmp = modini.get("ModInfo", "modmp");
+			ModManager.debugLogger.writeMessageConditionally("Detected multiplayer modification", ModManager.LOG_MOD_INIT);
+		}
+		// Add developer
+		if (modini.get("ModInfo", "moddev") != null) {
+			modAuthor = modini.get("ModInfo", "moddev");
+			ModManager.debugLogger.writeMessageConditionally("Detected developer name", ModManager.LOG_MOD_INIT);
+		}
+		// Add Devsite
+		if (modini.get("ModInfo", "modsite") != null) {
+			modSite = modini.get("ModInfo", "modsite");
+			ModManager.debugLogger.writeMessageConditionally("Detected developer site", ModManager.LOG_MOD_INIT);
+		}
+
+		// Add Modmaker
+		if (modini.get("ModInfo", "modid") != null) {
+			try {
+				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
+				ModManager.debugLogger.writeMessageConditionally("Detected modmaker code", ModManager.LOG_MOD_INIT);
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer: " + modini.get("ModInfo", "modid"));
+			}
+		}
+
 		// Backwards compatibility for mods that are built to target older
 		// versions of mod manager (NO DLC)
 		if (modCMMVer < 2.0f) {
@@ -145,11 +200,26 @@ public class Mod implements Comparable<Mod> {
 					return;
 				}
 			}
-			addTask(ModType.COAL, null);
+			File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
+			ModManager.debugLogger.writeMessageConditionally("Mod Manager 1.0 mod, verifying Coaleseced.bin location", ModManager.LOG_MOD_INIT);
 
+			if (!file.exists() && !ignoreLoadErrors) {
+				ModManager.debugLogger.writeMessageConditionally(modName + " doesn't have Coalesced.bin even though flag was set. Marking as invalid.",
+						ModManager.LOG_MOD_INIT);
+				setFailedReason(
+						"Mod targets Mod Manager 1.x but the Coalesced.bin file in the mod folder doesn't exist. Place a Coalesced.bin file in the same folder as moddesc.ini or remove the modcoal descriptor.");
+
+				return;
+			} else {
+				ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
+			}
+			ModJob job = new ModJob();
+			job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
+			addTask(ModType.BASEGAME, job);
+			
 			validMod = true;
-			generateModDisplayDescription(modCMMVer < 3.0);
-			ModManager.debugLogger.writeMessage("Finished reading moddesc.ini file for cmm 1.0 mod "+modName);
+			generateModDisplayDescription();
+			ModManager.debugLogger.writeMessage("Finished reading moddesc.ini file for cmm 1.0 mod " + modName);
 			ModManager.debugLogger.writeMessageConditionally(modName + " targets CMM 1.0. Added coalesced swap job.", ModManager.LOG_MOD_INIT);
 			ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 			return;
@@ -196,7 +266,7 @@ public class Mod implements Comparable<Mod> {
 				}
 
 				if (!taskDoesSomething) {
-					setFailedReason("Mod has a header ("+modHeader+") with tasks that effectively do nothing. Add tasks or remove the header to fix this issue.");
+					setFailedReason("Mod has a header (" + modHeader + ") with tasks that effectively do nothing. Add tasks or remove the header to fix this issue.");
 					ModManager.debugLogger.writeError("This task appears to do nothing. It should be removed if this is the case. Marking mod as invalid.");
 					return;
 				}
@@ -209,7 +279,8 @@ public class Mod implements Comparable<Mod> {
 					if (newStrok.countTokens() != oldStrok.countTokens()) {
 						// Same number of tokens aren't the same
 						ModManager.debugLogger.writeError("Number of files to update/replace do not match, mod being marked as invalid.");
-						setFailedReason("Mod has a header ("+modHeader+") that has different number of files to update/replace. The lists must be the same length (source files and destination paths).");
+						setFailedReason("Mod has a header (" + modHeader
+								+ ") that has different number of files to update/replace. The lists must be the same length (source files and destination paths).");
 						ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 						return;
 					}
@@ -223,7 +294,7 @@ public class Mod implements Comparable<Mod> {
 					//check for add/remove pairs
 					if ((addFileIni != null && addFileTargetIni == null) || (addFileIni == null && addFileTargetIni != null)) {
 						ModManager.debugLogger.writeError("addfiles/addtargetfiles is missing, but one is present, but both are required. Mod marked as invalid");
-						setFailedReason("Mod has a header ("+modHeader+") that has an addfiles or addtargetfiles task, but the corresponding task is not present.");
+						setFailedReason("Mod has a header (" + modHeader + ") that has an addfiles or addtargetfiles task, but the corresponding task is not present.");
 						ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 						return;
 					}
@@ -235,7 +306,8 @@ public class Mod implements Comparable<Mod> {
 						if (addStrok.countTokens() != addTargetStrok.countTokens()) {
 							// Same number of tokens aren't the same
 							ModManager.debugLogger.writeError("Number of files to add and number of target files do not match, mod being marked as invalid.");
-							setFailedReason("Mod has a header ("+modHeader+") that has an addfiles task, but the number of source files and the number of targets do not match.");
+							setFailedReason(
+									"Mod has a header (" + modHeader + ") that has an addfiles task, but the number of source files and the number of targets do not match.");
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 							return;
 						}
@@ -271,7 +343,8 @@ public class Mod implements Comparable<Mod> {
 						// ModManager.debugLogger.writeMessageConditionally("Validating tokens: "+newFile+" vs
 						// "+oldFile);
 						if (!newFile.equals(getSfarFilename(oldFile))) {
-							setFailedReason("Mod has a newfiles/replacefiles task in a header ("+modHeader+") that has different filenames in the source vs target paths: "+ newFile + " vs " + getSfarFilename(oldFile)+". These filenames currently must be the same. This restriction may be lifted in the future.");
+							setFailedReason("Mod has a newfiles/replacefiles task in a header (" + modHeader + ") that has different filenames in the source vs target paths: "
+									+ newFile + " vs " + getSfarFilename(oldFile) + ". These filenames currently must be the same. This restriction may be lifted in the future.");
 							ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs " + getSfarFilename(oldFile));
 							return; // The names of the files don't match
 						}
@@ -280,7 +353,9 @@ public class Mod implements Comparable<Mod> {
 						// false it means a file doesn't exist somewhere
 						if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile)) && !ignoreLoadErrors) {
 							ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
-							setFailedReason("Mod has a newfiles/replacefiles task in a header ("+modHeader+") that encoutnered an error while building the list of source/targets. This likely means the source file does not exist: "+modFolderPath + ModManager.appendSlash(iniModDir) + newFile);
+							setFailedReason("Mod has a newfiles/replacefiles task in a header (" + modHeader
+									+ ") that encoutnered an error while building the list of source/targets. This likely means the source file does not exist: " + modFolderPath
+									+ ModManager.appendSlash(iniModDir) + newFile);
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 							return;
 						}
@@ -291,7 +366,8 @@ public class Mod implements Comparable<Mod> {
 						String targetFile = addTargetStrok.nextToken();
 						if (!addFile.equals(getSfarFilename(targetFile))) {
 							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs " + getSfarFilename(targetFile));
-							setFailedReason("Mod specifies an addfile/addfiles target task in ("+modHeader+"), but the filenames for source vs targets doesn't match: "+addFile +" vs "+getSfarFilename(targetFile));
+							setFailedReason("Mod specifies an addfile/addfiles target task in (" + modHeader + "), but the filenames for source vs targets doesn't match: "
+									+ addFile + " vs " + getSfarFilename(targetFile));
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 							return; // The names of the files don't match
 						}
@@ -300,7 +376,9 @@ public class Mod implements Comparable<Mod> {
 						// false it means a file doesn't exist somewhere
 						if (!(newJob.addNewFileTask(modFolderPath + ModManager.appendSlash(iniModDir) + addFile, targetFile) && !ignoreLoadErrors)) {
 							ModManager.debugLogger.writeError("[ADDFILE]Failed to add task for file addition (File likely does not exist), marking as invalid.");
-							setFailedReason("Mod has an addfiles/addfilestargets task in a header ("+modHeader+") that encoutnered an error while building the list of source/targets. This likely means the source file does not exist: "+modFolderPath + ModManager.appendSlash(iniModDir) + addFile);
+							setFailedReason("Mod has an addfiles/addfilestargets task in a header (" + modHeader
+									+ ") that encoutnered an error while building the list of source/targets. This likely means the source file does not exist: " + modFolderPath
+									+ ModManager.appendSlash(iniModDir) + addFile);
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 							return;
 						}
@@ -312,7 +390,8 @@ public class Mod implements Comparable<Mod> {
 						//add remove file to job
 						if (!newJob.addRemoveFileTask(removeFilePath)) {
 							ModManager.debugLogger.writeError("[REMOVE]Failed to add task for file removal.");
-							setFailedReason("Mod failed to add file for removal as part of header ("+modHeader+"), his shouldn't be able to happen! The file target that failed: "+removeFilePath);
+							setFailedReason("Mod failed to add file for removal as part of header (" + modHeader
+									+ "), his shouldn't be able to happen! The file target that failed: " + removeFilePath);
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 							return;
 						}
@@ -362,13 +441,14 @@ public class Mod implements Comparable<Mod> {
 
 					File sf = new File(modFolderPath + sourceFolder);
 					if (!sf.exists() && !ignoreLoadErrors) {
-						setFailedReason("Mod specifies a CUSTOMDLC header, but one of the source directories doesn't list: "+sf.getAbsolutePath());
+						setFailedReason("Mod specifies a CUSTOMDLC header, but one of the source directories doesn't list: " + sf.getAbsolutePath());
 						ModManager.debugLogger.writeError("Custom DLC Source folder does not exist: " + sf.getAbsolutePath() + ", mod marked as invalid");
 						return;
 					}
 					if (ModType.isKnownDLCFolder(destFolder)) {
 						// Same number of tokens aren't the same
-						setFailedReason("Mod specifies a CUSTOMDLC header, but one of the target directories isn't allowed as it is a known official DLC foldername: "+destFolder);
+						setFailedReason(
+								"Mod specifies a CUSTOMDLC header, but one of the target directories isn't allowed as it is a known official DLC foldername: " + destFolder);
 						ModManager.debugLogger.writeError("Custom DLC folder is not allowed as it is a default game one: " + destFolder);
 						return;
 					}
@@ -379,7 +459,8 @@ public class Mod implements Comparable<Mod> {
 							String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
 							String destFilePath = ModManager.appendSlash(destFolder) + relativePath;
 							if (!(newJob.addFileReplace(file.getAbsolutePath(), destFilePath) && !ignoreLoadErrors)) {
-								setFailedReason("Mod specifies a CUSTOMDLC header, but a file in one of the source directories ("+sf+") had a file that was unable to be added. This error should be encountered.");
+								setFailedReason("Mod specifies a CUSTOMDLC header, but a file in one of the source directories (" + sf
+										+ ") had a file that was unable to be added. This error should be encountered.");
 								ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
 								return;
 							}
@@ -411,13 +492,16 @@ public class Mod implements Comparable<Mod> {
 					if (!file.exists() && !ignoreLoadErrors) {
 						ModManager.debugLogger.writeMessageConditionally(modName + " doesn't have Coalesced.bin even though flag was set. Marking as invalid.",
 								ModManager.LOG_MOD_INIT);
-						setFailedReason("Mod targets Mod Manager 2.0 and specifies a Coalesced file should be present, but one doesn't exist. Place a Coalesced.bin file in the same folder as moddesc.ini or remove the modcoal descriptor.");
+						setFailedReason(
+								"Mod targets Mod Manager 2.0 and specifies a Coalesced file should be present, but one doesn't exist. Place a Coalesced.bin file in the same folder as moddesc.ini or remove the modcoal descriptor.");
 
 						return;
 					} else {
 						ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 					}
-					addTask(ModType.COAL, null);
+					ModJob job = new ModJob();
+					job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
+					addTask(ModType.BASEGAME, job);
 				}
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeMessageConditionally("Was not able to read the coalesced mod value. Coal flag was not set/not entered, skipping setting coal",
@@ -434,48 +518,6 @@ public class Mod implements Comparable<Mod> {
 		if (jobs.size() > 0 || modCoal == true) {
 			ModManager.debugLogger.writeMessageConditionally("Verified source files, mod should be OK to install", ModManager.LOG_MOD_INIT);
 			validMod = true;
-		}
-
-		// read additional parameters
-		// Add version
-		if (modini.get("ModInfo", "modver") != null) {
-			modVersion = modini.get("ModInfo", "modver");
-			ModManager.debugLogger.writeMessageConditionally("Detected mod version: " + modVersion, ModManager.LOG_MOD_INIT);
-		}
-
-		if (modini.get("ModInfo", "updatecode") != null) {
-			try {
-				classicCode = Integer.parseInt(modini.get("ModInfo", "updatecode"));
-				ModManager.debugLogger.writeMessageConditionally("Detected me3tweaks update code: " + classicCode, ModManager.LOG_MOD_INIT);
-			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeError("Classic update code is not an integer");
-			}
-		}
-
-		// Add MP Change
-		if (modini.get("ModInfo", "modmp") != null) {
-			modmp = modini.get("ModInfo", "modmp");
-			ModManager.debugLogger.writeMessageConditionally("Detected multiplayer modification", ModManager.LOG_MOD_INIT);
-		}
-		// Add developer
-		if (modini.get("ModInfo", "moddev") != null) {
-			modAuthor = modini.get("ModInfo", "moddev");
-			ModManager.debugLogger.writeMessageConditionally("Detected developer name", ModManager.LOG_MOD_INIT);
-		}
-		// Add Devsite
-		if (modini.get("ModInfo", "modsite") != null) {
-			modSite = modini.get("ModInfo", "modsite");
-			ModManager.debugLogger.writeMessageConditionally("Detected developer site", ModManager.LOG_MOD_INIT);
-		}
-
-		// Add Modmaker
-		if (modini.get("ModInfo", "modid") != null) {
-			try {
-				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
-				ModManager.debugLogger.writeMessageConditionally("Detected modmaker code", ModManager.LOG_MOD_INIT);
-			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer: " + modini.get("ModInfo", "modid"));
-			}
 		}
 
 		//modmaker compiledagainst flag (1.5+)
@@ -519,7 +561,10 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version");
 		}
 		//check for patches directory
-		if (modCMMVer >= 2 && !ignoreLoadErrors /*don't bother with patches on compressed*/) {
+		if (modCMMVer >= 2 && !ignoreLoadErrors /*
+												 * don't bother with patches on
+												 * compressed
+												 */) {
 			File patchesdir = new File(modFolderPath + "patches/");
 			if (patchesdir.isDirectory()) {
 				ModManager.debugLogger.writeMessageConditionally("Mod has unprocessed patches! Importing patches now.", ModManager.LOG_MOD_INIT);
@@ -565,7 +610,7 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 
-		generateModDisplayDescription(modCMMVer < 3.0);
+		generateModDisplayDescription();
 		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for " + getModName());
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------END OF " + modName + "--------------------------", ModManager.LOG_MOD_INIT);
 	}
@@ -598,11 +643,11 @@ public class Mod implements Comparable<Mod> {
 	 * @param newJob
 	 */
 	public void addTask(String name, ModJob newJob) {
-		if (name.equals(ModType.COAL)) {
+		/*if (name.equals(ModType.COAL)) {
 			modCoal = true;
 			updateModifyString(ModType.COAL);
 			return;
-		}
+		}*/
 		if (name.equals(ModType.CUSTOMDLC)) {
 			String appendStr = name + " (";
 			boolean first = true;
@@ -658,7 +703,7 @@ public class Mod implements Comparable<Mod> {
 		this.modDescription = desc;
 	}
 
-	public void generateModDisplayDescription(boolean markedLegacy) {
+	public void generateModDisplayDescription() {
 		modDisplayDescription = "This mod has no description in it's moddesc.ini file or there was an error reading the description of this mod.";
 		if (modDescFile == null) {
 			ModManager.debugLogger.writeMessage("Mod Desc file is null, unable to read description");
@@ -694,9 +739,7 @@ public class Mod implements Comparable<Mod> {
 			modDisplayDescription += "\nMod Version: " + modVersion;
 		}
 		// Add mod manager build version
-		if (markedLegacy) {
-			modDisplayDescription += "\nLegacy Mod";
-		}
+		modDisplayDescription += "\nTargets Mod Manager "+modCMMVer;
 
 		// Add modifier
 		modDisplayDescription += getModifyString();
@@ -1590,8 +1633,9 @@ public class Mod implements Comparable<Mod> {
 	 * @return path to new file if found, null if it does't exist.
 	 */
 	public String getModTaskPath(String modulePath, String header) {
-		if (header.equals(ModType.COAL) && modsCoal()) {
-			return ModManager.appendSlash(modPath) + "Coalesced.bin";
+		if (header.equals(ModType.COAL)) {
+			header = ModType.BASEGAME;
+			modulePath = "\\BIOGame\\CookedPCConsole\\Coalesced.bin";
 		}
 		modulePath = modulePath.replaceAll("\\\\", "/");
 		if (!modulePath.startsWith("/")) {

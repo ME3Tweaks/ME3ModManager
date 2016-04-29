@@ -175,7 +175,8 @@ public class RestoreFilesWindow extends JDialog {
 				case RestoreMode.VANILLIFYDLC:
 					numjobs = 2 + ModType.getDLCHeaderNameArray().length;
 					publish("Attempting to return DLC to vanilla state");
-					return removeCustomDLC() && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray()) && processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
+					return removeCustomDLC() && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray())
+							&& processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
 				case RestoreMode.ALLDLC:
 					numjobs = ModType.getHeaderNameArray().length;
 					publish("Restoring all DLC SFARs");
@@ -218,7 +219,8 @@ public class RestoreFilesWindow extends JDialog {
 			ArrayList<String> filepaths = new ArrayList<String>();
 
 			for (String header : dlcHeaders) {
-				String dlcFolderPath = ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(header));
+				String dlcFolderPath = ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir)
+						+ ModManager.appendSlash(ModType.getDLCPath(header));
 				File dlcDirectory = new File(dlcFolderPath);
 				if (dlcDirectory.exists()) {
 					File files[] = dlcDirectory.listFiles();
@@ -246,7 +248,7 @@ public class RestoreFilesWindow extends JDialog {
 						}
 						filepaths.add(moviesFolder.getAbsolutePath());
 					}
-					
+
 					//find PCConsoleTOC.bin for it
 					File dlcConsoleTOC = new File(ModManager.appendSlash(dlcDirectory.getParent()) + "PCConsoleTOC.bin");
 					if (dlcConsoleTOC.exists()) {
@@ -293,35 +295,11 @@ public class RestoreFilesWindow extends JDialog {
 			return true;
 		}
 
-		/*
-		 * private boolean deleteUnpackedFilesUsingHeaders(String[] headers) {
-		 * completed = 0; ArrayList<String> filestodelete =
-		 * getUnpackedFilesList(headers); numjobs = filestodelete.size();
-		 * ModManager.debugLogger.writeMessage("===Deleting " + numjobs +
-		 * " unpacked files==="); for (String filepath : filestodelete) {
-		 * ModManager.debugLogger.writeMessage("Deleting " + filepath); publish(
-		 * "Deleting " + FilenameUtils.getName(filepath));
-		 * FileUtils.deleteQuietly(new File(filepath)); completed++;
-		 * publish(Integer.toString(completed)); }
-		 * ModManager.debugLogger.writeMessage(
-		 * "===Deleting the unpacked DLC backup folder==="); String me3dir =
-		 * (new File(RestoreFilesWindow.this.BioGameDir)).getParent(); String
-		 * dlcbackupfolder = ModManager.appendSlash(me3dir) +
-		 * "cmmbackup\\BIOGame\\DLC"; File dlcBackupDirectory = new
-		 * File(dlcbackupfolder); try {
-		 * FileUtils.deleteDirectory(dlcBackupDirectory);
-		 * ModManager.debugLogger.writeMessage("Deleted cmmbackup/biogame/dlc."
-		 * ); } catch (IOException e) { if (dlcBackupDirectory.exists()) {
-		 * ModManager.debugLogger.writeErrorWithException(
-		 * "Unable to delete unpacked backup directory that exists:", e); } }
-		 * 
-		 * ModManager.debugLogger.writeMessage("===End of unpacked deletion==="
-		 * ); return true; }
-		 */
 		private boolean restoreSFARsUsingHeaders(String[] dlcHeaders) {
 			int restoresCompleted = 0;
 			for (String header : dlcHeaders) {
-				if (processRestoreJob(ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(header)), header)) {
+				if (processRestoreJob(
+						ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(header)), header)) {
 					ModManager.debugLogger.writeMessage("Processed Restore SFAR Job (SUCCESS): " + header);
 					completed++; //for progress bar
 					restoresCompleted++; //for local checking
@@ -354,8 +332,7 @@ public class RestoreFilesWindow extends JDialog {
 						}
 					}
 				}
-				ModManager.debugLogger.writeMessage("Deleted all DLC folders (if there were any)");
-				completed++;
+				ModManager.debugLogger.writeMessage("Deleted all Custom DLC folders (if there were any)");
 				publish(Integer.toString(completed));
 				return true;
 			} else {
@@ -386,11 +363,11 @@ public class RestoreFilesWindow extends JDialog {
 			}
 			if (bghDB == null) {
 				//cannot continue
-				JOptionPane.showMessageDialog(null,
-						"<html>The game repair database failed to load.<br>"
+				JOptionPane
+						.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
 								+ "Only one connection to the local database is allowed at a time.<br>"
-								+ "Please make sure you only have one instance of Mod Manager running.</html>",
-						"Database Failure", JOptionPane.ERROR_MESSAGE);
+								+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure",
+								JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 			HashMap<String, String> dlcFolderMap = ModType.getHeaderFolderMap();
@@ -409,11 +386,10 @@ public class RestoreFilesWindow extends JDialog {
 						RepairFileInfo rfi = bghDB.getFileInfo(relative);
 						boolean restoreAnyways = false;
 						if (rfi == null) {
-							int reply = JOptionPane.showOptionDialog(null,
-									"<html>The file:<br>" + relative + "<br>is not in the repair database. "
-											+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
-									"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-									new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
+							int reply = JOptionPane.showOptionDialog(null, "<html>The file:<br>" + relative + "<br>is not in the repair database. "
+									+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
+									"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {
+											"Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
 							switch (reply) {
 							case JOptionPane.CANCEL_OPTION:
 								return false;
@@ -428,13 +404,21 @@ public class RestoreFilesWindow extends JDialog {
 							//verify the file
 							if (backup.length() != rfi.filesize) {
 								//MISMATCH!
-								int reply = JOptionPane.showOptionDialog(null,
-										"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>" + backup.length()
-												+ " bytes (backup) vs " + rfi.filesize + " bytes (database)<br><br>"
-												+ "This file could be corrupted or modified since the database was created.<br>"
-												+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
-										"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-										new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
+								int reply = JOptionPane
+										.showOptionDialog(
+												null,
+												"<html>The filesize of the file:<br>"
+														+ relative
+														+ "<br>does not match the one stored in the repair game database.<br>"
+														+ backup.length()
+														+ " bytes (backup) vs "
+														+ rfi.filesize
+														+ " bytes (database)<br><br>"
+														+ "This file could be corrupted or modified since the database was created.<br>"
+														+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
+												"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+												new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" },
+												"default");
 								switch (reply) {
 								case JOptionPane.CANCEL_OPTION:
 									return false;
@@ -450,13 +434,20 @@ public class RestoreFilesWindow extends JDialog {
 						if (!restoreAnyways) {
 							//this is outside of the previous if statement as the previous one could set the restoreAnyways variable again.
 							try {
-								if (!MD5Checksum.getMD5Checksum(backup.getAbsolutePath()).equals(rfi.md5)) {
-									int reply = JOptionPane.showOptionDialog(null,
-											"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
-													+ "This file has changed since the database was created.<br>"
-													+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
-											"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-											new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
+								String hash = MD5Checksum.getMD5Checksum(backup.getAbsolutePath());
+								if (!hash.equals(rfi.md5)) {
+									ModManager.debugLogger.writeError("Hash of backup failed: DB Lists: " + rfi.md5 + ", Backup file has: " + hash);
+									int reply = JOptionPane
+											.showOptionDialog(
+													null,
+													"<html>The hash of the file:<br>"
+															+ relative
+															+ "<br>does not match the one stored in the repair game database.<br>"
+															+ "The backup file has changed since the database was created.<br>"
+															+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
+													"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+													new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" },
+													"default");
 									switch (reply) {
 									case JOptionPane.CANCEL_OPTION:
 										return false;
@@ -478,7 +469,8 @@ public class RestoreFilesWindow extends JDialog {
 						ModManager.debugLogger.writeMessage("Restoring " + relative);
 						try {
 							publish(taskTitle + ": Restoring " + backup.getName());
-							Files.copy(Paths.get(backup.toString()), Paths.get(ModManager.appendSlash(me3dir) + relative), StandardCopyOption.REPLACE_EXISTING);
+							Files.copy(Paths.get(backup.toString()), Paths.get(ModManager.appendSlash(me3dir) + relative),
+									StandardCopyOption.REPLACE_EXISTING);
 						} catch (IOException e) {
 							return false;
 						}
@@ -503,17 +495,17 @@ public class RestoreFilesWindow extends JDialog {
 				bghDB = new BasegameHashDB(null, new File(BioGameDir).getParent(), false);
 			} catch (SQLException e) {
 				while (e.getNextException() != null) {
-					ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.",e);
+					ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.", e);
 					e = e.getNextException();
 				}
 			}
 			if (bghDB == null) {
 				//cannot continue
-				JOptionPane.showMessageDialog(null,
-						"<html>The game repair database failed to load.<br>"
+				JOptionPane
+						.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
 								+ "Only one connection to the local database is allowed at a time.<br>"
-								+ "Please make sure you only have one instance of Mod Manager running.</html>",
-						"Database Failure", JOptionPane.ERROR_MESSAGE);
+								+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure",
+								JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
@@ -539,11 +531,10 @@ public class RestoreFilesWindow extends JDialog {
 					RepairFileInfo rfi = bghDB.getFileInfo(relative);
 					boolean restoreAnyways = false;
 					if (rfi == null) {
-						int reply = JOptionPane.showOptionDialog(null,
-								"<html>The file:<br>" + relative + "<br>is not in the repair database. "
-										+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
-								"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-								new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
+						int reply = JOptionPane.showOptionDialog(null, "<html>The file:<br>" + relative + "<br>is not in the repair database. "
+								+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
+								"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {
+										"Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
 						switch (reply) {
 						case JOptionPane.CANCEL_OPTION:
 							return false;
@@ -558,13 +549,13 @@ public class RestoreFilesWindow extends JDialog {
 						//verify the file
 						if (backup.length() != rfi.filesize) {
 							//MISMATCH!
-							int reply = JOptionPane.showOptionDialog(null,
-									"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>" + backup.length()
-											+ " bytes (backup) vs " + rfi.filesize + " bytes (database)<br><br>"
-											+ "This file could be corrupted or modified since the database was created.<br>"
-											+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
-									"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-									new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
+							int reply = JOptionPane.showOptionDialog(null, "<html>The filesize of the file:<br>" + relative
+									+ "<br>does not match the one stored in the repair game database.<br>" + backup.length() + " bytes (backup) vs "
+									+ rfi.filesize + " bytes (database)<br><br>"
+									+ "This file could be corrupted or modified since the database was created.<br>"
+									+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
+									"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {
+											"Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
 							switch (reply) {
 							case JOptionPane.CANCEL_OPTION:
 								return false;
@@ -580,13 +571,20 @@ public class RestoreFilesWindow extends JDialog {
 					if (!restoreAnyways) {
 						//this is outside of the previous if statement as the previous one could set the restoreAnyways variable again.
 						try {
-							if (!MD5Checksum.getMD5Checksum(backup.getAbsolutePath()).equals(rfi.md5)) {
-								int reply = JOptionPane.showOptionDialog(null,
-										"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
-												+ "This file has changed since the database was created.<br>"
-												+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
-										"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-										new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" }, "default");
+							String hash = MD5Checksum.getMD5Checksum(backup.getAbsolutePath());
+							if (!hash.equals(rfi.md5)) {
+								ModManager.debugLogger.writeError("Hash of backup failed: DB Lists: " + rfi.md5 + ", Backup file has: " + hash);
+								int reply = JOptionPane
+										.showOptionDialog(
+												null,
+												"<html>The hash of the file:<br>"
+														+ relative
+														+ "<br>does not match the one stored in the repair game database.<br>"
+														+ "This file has changed since the database was created.<br>"
+														+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
+												"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+												new String[] { "Restore this file", "Skip restoring this file", "Cancel basegame restore" },
+												"default");
 								switch (reply) {
 								case JOptionPane.CANCEL_OPTION:
 									return false;
@@ -608,7 +606,8 @@ public class RestoreFilesWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("Restoring " + relative);
 					try {
 						publish(taskTitle + ": Restoring " + backup.getName());
-						Files.copy(Paths.get(backup.toString()), Paths.get(ModManager.appendSlash(me3dir) + relative), StandardCopyOption.REPLACE_EXISTING);
+						Files.copy(Paths.get(backup.toString()), Paths.get(ModManager.appendSlash(me3dir) + relative),
+								StandardCopyOption.REPLACE_EXISTING);
 					} catch (IOException e) {
 						return false;
 					}
@@ -654,11 +653,11 @@ public class RestoreFilesWindow extends JDialog {
 				mainSfar = new File("DLC SFAR MISSING");
 			}
 
-			String mainSfarHash = "Error: Unable to hash";
+			//String mainSfarHash = "Error: Unable to hash";
 			if (mainSfar.exists()) {
 				// the sfar exists. 
 				//Check filesize first, its faster.
-				boolean sizeMatch = true; //default to true - falls back to hashing in the event something goes wrong.
+				boolean sizeMatch = false; //Default to false on size match
 				Long filesize = mainSfar.length();
 				if (!filesize.equals(sfarSizes.get(jobName)) && (!(isTestpatch && !filesize.equals(ModType.TESTPATCH_16_SIZE)))) {
 					sizeMatch = false;
@@ -667,29 +666,34 @@ public class RestoreFilesWindow extends JDialog {
 				}
 
 				if (sizeMatch) {
-					//We should hash it to check if it's original
-					try {
-						//publish(jobName + ": Known original hash: " + sfarHashes.get(jobName));
-						publish(jobName + ": Verifying DLC...");
-						mainSfarHash = MD5Checksum.getMD5Checksum(mainSfar.toString());
-						ModManager.debugLogger.writeMessage(jobName + ": Hash of Default.sfar is " + mainSfarHash);
-
-						if (mainSfarHash.equals(sfarHashes.get(jobName)) || mainSfarHash.equals(ModType.TESTPATCH_16_HASH)) {
-							// This DLC sfar matches the known original, we're good
-							ModManager.debugLogger.writeMessage(jobName + ": OK");
-
-							publish(jobName + ": DLC is OK");
-							return true;
-						} else {
-							ModManager.debugLogger.writeMessage(jobName + ": hash mismatch between known original and existing - marking for restore");
-							publish(jobName + ": DLC is modified [hash]");
-						}
-					} catch (Exception e) {
-						// it died somehow
-						ModManager.debugLogger.writeMessage(e.getMessage());
-						return false;
-					}
+					publish(jobName + ": DLC is OK");
+					ModManager.debugLogger.writeMessage(jobName + ": OK");
+					return true;
 				}
+
+				//if size is same we can assume it is original.
+				/*
+				 * if (sizeMatch) { //We should hash it to check if it's
+				 * original try { //publish(jobName + ": Known original hash: "
+				 * + sfarHashes.get(jobName)); publish(jobName +
+				 * ": Verifying DLC..."); mainSfarHash =
+				 * MD5Checksum.getMD5Checksum(mainSfar.toString());
+				 * ModManager.debugLogger.writeMessage(jobName +
+				 * ": Hash of Default.sfar is " + mainSfarHash);
+				 * 
+				 * if (mainSfarHash.equals(sfarHashes.get(jobName)) ||
+				 * mainSfarHash.equals(ModType.TESTPATCH_16_HASH)) { // This DLC
+				 * sfar matches the known original, we're good
+				 * ModManager.debugLogger.writeMessage(jobName + ": OK");
+				 * 
+				 * publish(jobName + ": DLC is OK"); return true; } else {
+				 * ModManager.debugLogger.writeMessage(jobName +
+				 * ": hash mismatch between known original and existing - marking for restore"
+				 * ); publish(jobName + ": DLC is modified [hash]"); } } catch
+				 * (Exception e) { // it died somehow
+				 * ModManager.debugLogger.writeMessage(e.getMessage()); return
+				 * false; } }
+				 */
 			} else {
 				ModManager.debugLogger.writeMessage(jobName + ": DLC file does not exist: " + mainSfar.toString());
 				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping.");
@@ -710,40 +714,52 @@ public class RestoreFilesWindow extends JDialog {
 			if (backupSfar == null) {
 				//no backup!
 				publish(jobName + ": No backup exists, cannot restore.");
-				JOptionPane.showMessageDialog(null,
-						"<html>No backup for " + jobName
-								+ " exists, you'll have to restore through Origin's Repair Game.<br>Select Tools>Backup DLC to avoid this issue after the game is restored.</html>",
-						"Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane
+						.showMessageDialog(
+								null,
+								"<html>No backup for "
+										+ jobName
+										+ " exists, you'll have to restore through Origin's Repair Game.<br>Select Tools>Backup DLC to avoid this issue after the game is restored.</html>",
+								"Error", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 
-			String backupSfarHash = "Error";
 			if (backupSfar.exists()) {
-				// the sfar exists. We should hash it to check if it's original
+				publish(jobName + ": Restoring backup...");
 				try {
-
-					publish(jobName + ": Verifying backup...");
-					backupSfarHash = MD5Checksum.getMD5Checksum(backupSfar.toString());
-					ModManager.debugLogger.writeMessage(jobName + ": backupSfar hash: " + backupSfarHash);
-					//publish(jobName + ": Hash of backup sfar is " + backupSfarHash);
-					if (backupSfarHash.equals(sfarHashes.get(jobName)) || backupSfarHash.equals(ModType.TESTPATCH_16_HASH)) {
-						// This DLC sfar matches the known original - let's copy it to Default.sfar
-						publish(jobName + ": Restoring backup...");
-						Files.copy(backupSfar.toPath(), mainSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
-						completed++;
-						publish(Integer.toString(completed));
-						return true;
-					} else {
-						// DLC is modified but we don't have a backup
-						ModManager.debugLogger.writeMessage(jobName + ": Backup hash doesn't match known original, unable to automatically restore");
-						return false;
-					}
+					Files.copy(backupSfar.toPath(), mainSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
 				} catch (Exception e) {
 					// it died somehow
 					ModManager.debugLogger.writeErrorWithException("Failure restoring backup SFAR:", e);
 					return false;
 				}
+				completed++;
+				publish(Integer.toString(completed));
+				return true;
 			}
+			/*
+			 * // the sfar exists. We should hash it to check if it's original
+			 * try {
+			 * 
+			 * publish(jobName + ": Verifying backup..."); backupSfarHash =
+			 * MD5Checksum.getMD5Checksum(backupSfar.toString());
+			 * ModManager.debugLogger.writeMessage(jobName +
+			 * ": backupSfar hash: " + backupSfarHash); //publish(jobName +
+			 * ": Hash of backup sfar is " + backupSfarHash); if
+			 * (backupSfarHash.equals(sfarHashes.get(jobName)) ||
+			 * backupSfarHash.equals(ModType.TESTPATCH_16_HASH)) { // This DLC
+			 * sfar matches the known original - let's copy it to Default.sfar
+			 * publish(jobName + ": Restoring backup...");
+			 * Files.copy(backupSfar.toPath(), mainSfar.toPath(),
+			 * StandardCopyOption.REPLACE_EXISTING); completed++;
+			 * publish(Integer.toString(completed)); return true; } else { //
+			 * DLC is modified but we don't have a backup
+			 * ModManager.debugLogger.writeMessage(jobName +
+			 * ": Backup hash doesn't match known original, unable to automatically restore"
+			 * ); return false; } } catch (Exception e) { // it died somehow
+			 * ModManager.debugLogger.writeErrorWithException(
+			 * "Failure restoring backup SFAR:", e); return false; } }
+			 */
 
 			return false;
 		}
