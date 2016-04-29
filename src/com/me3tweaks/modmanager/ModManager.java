@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -43,7 +45,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -57,6 +62,7 @@ import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.utilities.DebugLogger;
+import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
@@ -71,7 +77,7 @@ public class ModManager {
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
-															// version
+																// version
 	public static final double MODDESC_VERSION_SUPPORT = 4.1; // max supported
 																// cmmver in
 																// moddesc
@@ -96,7 +102,7 @@ public class ModManager {
 	public static boolean LOG_MOD_INIT = false;
 	public static boolean LOG_PATCH_INIT = false;
 	public static boolean PERFORM_DOT_NET_CHECK = true;
-	protected final static int COALESCED_MAGIC_NUMBER = 1836215654; 
+	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 
 	public static void main(String[] args) {
 		loadLogger();
@@ -174,7 +180,8 @@ public class ModManager {
 								PERFORM_DOT_NET_CHECK = false;
 							}
 						} catch (NumberFormatException e) {
-							ModManager.debugLogger.writeError("Number format exception reading the .NET enforcement check flag, defaulting to enabled");
+							ModManager.debugLogger
+									.writeError("Number format exception reading the .NET enforcement check flag, defaulting to enabled");
 						}
 					}
 					// Auto Update Check
@@ -392,7 +399,8 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage(getSystemInfo());
 			doFileSystemUpdate();
 			if (!validateNETFrameworkIsInstalled()) {
-				new NetFrameworkMissingWindow("Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly. ");
+				new NetFrameworkMissingWindow(
+						"Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly. ");
 			}
 			ModManager.debugLogger.writeMessage("========End of startup=========");
 		} catch (Throwable e) {
@@ -545,8 +553,6 @@ public class ModManager {
 				ModManager.debugLogger.writeException(e);
 			}
 		}
-		
-
 
 		// cleanup
 		File mod_info = new File(ModMakerCompilerWindow.DOWNLOADED_XML_FILENAME);
@@ -597,8 +603,7 @@ public class ModManager {
 			// files
 			for (int i = 0; i < subdirs.length; i++) {
 				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini");
-				 System.out.println("Searching for file: " +
-				 searchSubDirDesc);
+				System.out.println("Searching for file: " + searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
 					Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
 					if (validatingMod.isValidMod()) {
@@ -610,7 +615,7 @@ public class ModManager {
 			}
 		}
 
-		return new ModList(availableMods,failedMods);
+		return new ModList(availableMods, failedMods);
 	}
 
 	/*
@@ -826,18 +831,14 @@ public class ModManager {
 		File bink32_orig = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 
 		// File bink32 = new File("dlcpatcher/binkw32.dll");
-		/*if (bink32.exists()) {
-			// if we got here binkw32.dll should have failed the hash check
-			Path source = Paths.get(bink32.toString());
-			Path destination = Paths.get(bink32_orig.toString());
-			// create backup of original
-			try {
-				Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
-			} catch (IOException ex) {
-				ex.printStackTrace();
-				return false;
-			}
-		}*/
+		/*
+		 * if (bink32.exists()) { // if we got here binkw32.dll should have
+		 * failed the hash check Path source = Paths.get(bink32.toString());
+		 * Path destination = Paths.get(bink32_orig.toString()); // create
+		 * backup of original try { Files.copy(source, destination,
+		 * StandardCopyOption.REPLACE_EXISTING); } catch (IOException ex) {
+		 * ex.printStackTrace(); return false; } }
+		 */
 		try {
 			ModManager.ExportResource("/binkw23.dll", bink32_orig.toString());
 			ModManager.ExportResource("/binkw32.dll", bink32.toString());
@@ -909,7 +910,8 @@ public class ModManager {
 	 *         previously.
 	 */
 	public static String appendSlash(String string) {
-		if (string == null) return null;
+		if (string == null)
+			return null;
 		if (string.charAt(string.length() - 1) == File.separatorChar) {
 			return string;
 		} else {
@@ -967,11 +969,11 @@ public class ModManager {
 	public static String getDataDir() {
 		return appendSlash(System.getProperty("user.dir")) + "data/";
 	}
-	
+
 	public static String getGUITransplanterDir() {
 		return getDataDir() + "guitransplanter/";
 	}
-	
+
 	public static String getGUITransplanterCLI() {
 		return "E:\\Documents\\GitHubVisualStudio\\ME3-GUI-Transplanter\\ME3 GUI Transplanter\\Build\\Release\\Transplanter-CLI.exe";
 		//return getGUITransplanterDir() + "Transplanter-CLI.exe";
@@ -994,7 +996,7 @@ public class ModManager {
 		// file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-	
+
 	public static String getHelpDir() {
 		File file = new File(getDataDir() + "help/");
 		file.mkdirs();
@@ -1247,7 +1249,7 @@ public class ModManager {
 			sourceDestination.getParentFile().mkdirs();
 
 			// run ME3EXPLORER --decompress-pcc
-			ProcessResult pr = ModManager.decompressPCC(sourceSource,sourceDestination);
+			ProcessResult pr = ModManager.decompressPCC(sourceSource, sourceDestination);
 			ModManager.debugLogger.writeMessage("File decompressed to location, and ready? : " + sourceDestination.exists());
 			return sourceDestination.getAbsolutePath();
 			// END OF
@@ -1321,6 +1323,7 @@ public class ModManager {
 
 	/**
 	 * Decompresses the PCC to the listed destination, location can be the same.
+	 * 
 	 * @param sourceSource
 	 * @param sourceDestination
 	 * @return
@@ -1336,7 +1339,9 @@ public class ModManager {
 	}
 
 	/**
-	 * Compresses the listed PCC to the listed destination, both can be the same.
+	 * Compresses the listed PCC to the listed destination, both can be the
+	 * same.
+	 * 
 	 * @param sourceSource
 	 * @param sourceDestination
 	 * @return
@@ -1351,7 +1356,6 @@ public class ModManager {
 		return ModManager.runProcess(decompressProcessBuilder);
 	}
 
-	
 	/**
 	 * Copies a file from the game to the specified location. Decompresses a
 	 * basegame PCC if one is specified.
@@ -1548,6 +1552,32 @@ public class ModManager {
 		return validPatches;
 	}
 
+	/**
+	 * Checks for the binkw32 bypass.
+	 * 
+	 * @return true if bink23 exists and bink32 hash fails, false otherwise
+	 */
+	public static boolean checkIfBinkBypassIsInstalled(String biogameDir) {
+		File bgdir = new File(biogameDir);
+		if (!bgdir.exists()) {
+			return false;
+		}
+		File gamedir = bgdir.getParentFile();
+		ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
+		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
+		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
+		try {
+			String originalBink32MD5 = "128b560ef70e8085c507368da6f26fe6";
+			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
+			if (!binkhash.equals(originalBink32MD5) && bink23.exists()) {
+				return true;
+			}
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Exception while attempting to find DLC bypass (Binkw32).", e);
+		}
+		return false;
+	}
+
 	public static boolean hasKnownDLCBypass(String biogameDir) {
 		try {
 			String originalBink32MD5 = "128b560ef70e8085c507368da6f26fe6";
@@ -1651,7 +1681,7 @@ public class ModManager {
 			NET_FRAMEWORK_IS_INSTALLED = true;
 			return true;
 		}
-		
+
 		String os = System.getProperty("os.name");
 		if (os.contains("Windows")) {
 			int releaseNum = 0;
@@ -1725,21 +1755,21 @@ public class ModManager {
 				sb.append(arg);
 				sb.append(" ");
 			}
-			ModManager.debugLogger.writeMessage("runProcess(): "+sb.toString());
+			ModManager.debugLogger.writeMessage("runProcess(): " + sb.toString());
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
 			//handle stdout
-		    final StringWriter writer = new StringWriter();
+			final StringWriter writer = new StringWriter();
 			new Thread(new Runnable() {
-		        public void run() {
-		            try {
+				public void run() {
+					try {
 						IOUtils.copy(process.getInputStream(), writer);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-		        }
-		    }).start();
+				}
+			}).start();
 			int returncode = process.waitFor();
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
@@ -1751,11 +1781,12 @@ public class ModManager {
 	}
 
 	public static File getHelpFile() {
-		return new File(getHelpDir()+"localhelp.xml");
+		return new File(getHelpDir() + "localhelp.xml");
 	}
 
 	/**
 	 * Gets the GUI Transplant Directory (Transplanter-CLI, Transplanter-GUI)
+	 * 
 	 * @return
 	 */
 	public static String getTransplantDir() {
@@ -1765,5 +1796,167 @@ public class ModManager {
 
 	public static void loadLogger() {
 		debugLogger = new DebugLogger();
+	}
+
+	/**
+	 * Gets information about the game and puts it into a string
+	 * 
+	 * @param biogameDir
+	 * @return
+	 */
+	public static String getGameEnvironmentInfo(String biogameDir) {
+		StringBuilder sb = new StringBuilder();
+		File BIOGAMEFILE = new File(biogameDir);
+		if (!BIOGAMEFILE.exists()) {
+			return "INVALID BIOGAME DIRECTORY, CANNOT GET GAME INFORMATION.\n";
+		}
+		File GAMEDIR = BIOGAMEFILE.getParentFile();
+		sb.append("============== MASS EFFECT 3 GAME INFORMATION ==================\n");
+		sb.append("BIOGame Directory: " + biogameDir + "\n");
+		File executable = new File(GAMEDIR.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
+		int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
+
+		sb.append("Executable version: 1.0" + minorBuildNum + "\n");
+		sb.append("DLC Bypass installed: " + hasKnownDLCBypass(biogameDir) + "\n");
+		sb.append("Preferred bypass method: "
+				+ (checkIfBinkBypassIsInstalled(biogameDir) ? "Binkw32 Virtual Function Redirection" : "LauncherWV Process Thread Injection") + "\n");
+
+		sb.append("DLC Status:\n");
+		//get dlc status info
+		//add testpatch
+		HashMap<String, Long> sizesMap = ModType.getSizesMap();
+		File testpatchSfar = new File(ModManager.appendSlash(biogameDir) + File.separator + "Patches" + File.separator + "PCConsole" + File.separator
+				+ "Patch_001.sfar");
+		if (testpatchSfar.exists()) {
+			if (testpatchSfar.length() == sizesMap.get(ModType.TESTPATCH)) {
+				sb.append("TESTPATCH: Unmodified (1.05)\n");
+			} else if (testpatchSfar.length() == ModType.TESTPATCH_16_SIZE) {
+				sb.append("TESTPATCH: Unmodified (1.06)\n");
+			} else {
+				sb.append("TESTPATCH: Modified (unable to determine version)\n");
+			}
+		} else {
+			sb.append("TESTPATCH: Not Installed (!!)\n");
+		}
+
+		//iterate over DLC.
+		File mainDlcDir = new File(ModManager.appendSlash(biogameDir) + "DLC" + File.separator);
+		String[] directories = mainDlcDir.list(new FilenameFilter() {
+			@Override
+			public boolean accept(File current, String name) {
+				return new File(current, name).isDirectory();
+			}
+		});
+		HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
+		ArrayList<String> foundHeaders = new ArrayList<String>();
+		foundHeaders.add(ModType.BASEGAME);
+		foundHeaders.add(ModType.TESTPATCH);
+
+		for (String dir : directories) {
+			String dlcDirPath = ModManager.appendSlash(ModManager.appendSlash(biogameDir) + "DLC" + File.separator + dir);
+			ModManager.debugLogger.writeMessage("Scanning " + dlcDirPath);
+			if (ModType.isKnownDLCFolder(dir)) {
+				File mainSfar = new File(dlcDirPath + "CookedPCConsole\\Default.sfar");
+				if (mainSfar.exists()) {
+					//find the header (the lazy way)
+					String header = null;
+					for (Map.Entry<String, String> entry : nameMap.entrySet()) {
+						String localHeader = entry.getKey();
+						String foldername = entry.getValue();
+						if (FilenameUtils.getBaseName(dir).equalsIgnoreCase(foldername)) {
+							header = localHeader;
+							foundHeaders.add(header);
+							break;
+						}
+
+					}
+					assert header != null;
+
+					if (mainSfar.length() == sizesMap.get(header)) {
+						//vanilla
+						sb.append(header + ": Unmodified (SFAR)\n");
+						continue;
+					}
+					File externalTOC = new File(dlcDirPath + "PCConsoleTOC.bin");
+					if (externalTOC.exists()) {
+						//its unpacked
+						sb.append(header + ": Unpacked\n");
+						continue;
+					} else {
+						//its a modified SFAR
+						sb.append(header + ": Modified (SFAR)\n");
+						continue;
+					}
+				} else {
+					sb.append(dir + ": Invalid DLC\n");
+					continue; //not valid DLC
+				}
+			} else {
+				//unnofficial DLC
+				File externalTOC = new File(dlcDirPath + "PCConsoleTOC.bin");
+				if (externalTOC.exists()) {
+					sb.append(dir + ": INSTALLED AS CUSTOM DLC\n");
+					continue;
+				} else {
+					sb.append(dir + ": No SFAR or PCConsoleTOC files present in directory\n");
+				}
+			}
+		}
+		String[] officialHeaders = ModType.getHeaderNameArray();
+		for (String h : officialHeaders) {
+			if (!foundHeaders.contains(h)) {
+				sb.append(h + ": Not installed\n");
+			}
+		}
+
+		sb.append("=========== END OF MASS EFFECT 3 GAME INFORMATION============\n");
+		return sb.toString();
+	}
+
+	public static HashMap<String, String> getCustomDLCConflicts(String biogameDir) {
+		try {
+			//Iterate over DLC folders and find Mount.dlc files. Only DLC folders with these files will be considered.
+			File mainDlcDir = new File(ModManager.appendSlash(biogameDir) + "DLC" + File.separator);
+			String[] directories = mainDlcDir.list(new FilenameFilter() {
+				@Override
+				public boolean accept(File current, String name) {
+					return new File(current, name).isDirectory();
+				}
+			});
+
+			ArrayList<String> unpackedDLCFolders = new ArrayList<String>(); //need to sort, lowest to highest priority
+
+			for (String dir : directories) {
+				File mountfile = new File(ModManager.appendSlash(ModManager.appendSlash(biogameDir) + "DLC" + File.separator + dir) + File.separator
+						+ "CookedPCConsole" + File.separator + "Mount.dlc");
+				if (mountfile.exists()) {
+					unpackedDLCFolders.add(ModManager.appendSlash(ModManager.appendSlash(biogameDir) + "DLC" + File.separator + dir));
+				}
+			}
+
+			//Enumerate all files
+			HashMap<String, String> filemap = new HashMap<>();
+			HashMap<String, String> conflictmap = new HashMap<>();
+
+			for (String unpackedPath : unpackedDLCFolders) {
+				Collection<File> files = FileUtils.listFiles(new File(unpackedPath), new RegexFileFilter("^(.*?)"), DirectoryFileFilter.DIRECTORY);
+				for (File file : files) {
+					if (!FilenameUtils.getExtension(file.getAbsolutePath()).equals("pcc")) {
+						continue;
+					}
+					boolean keyExists = filemap.containsKey(FilenameUtils.getName(file.getAbsolutePath()));
+					if (keyExists) {
+						//conflict
+						conflictmap.put(FilenameUtils.getName(file.getAbsolutePath()), unpackedPath);
+					} else {
+						filemap.put(FilenameUtils.getName(file.getAbsolutePath()), unpackedPath);
+					}
+				}
+			}
+			return conflictmap;
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Error getting DLC conflict list:", e);
+		}
+		return new HashMap<>();
 	}
 }

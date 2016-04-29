@@ -62,7 +62,7 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("This version of Mod Manager requires ME3Explorer r"+ModManager.MIN_REQUIRED_ME3EXPLORER_REV+" or higher.");
+		introLabel = new JLabel("This version of Mod Manager requires ME3Explorer "+ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN+"."+ModManager.MIN_REQUIRED_ME3EXPLORER_MINOR+"."+ModManager.MIN_REQUIRED_ME3EXPLORER_REV+" or higher.");
 		statusLabel = new JLabel("Downloading new version...");
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);

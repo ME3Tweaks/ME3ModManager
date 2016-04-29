@@ -13,6 +13,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -27,6 +29,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -173,9 +176,23 @@ public class HelpMenu {
 							"You must enable logging via the File>Options menu before logs are generated.", "Logging disabled",
 							JOptionPane.ERROR_MESSAGE);
 				} else {
+					HashMap<String, String> conflicts = ModManager.getCustomDLCConflicts(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+					StringBuilder sb = new StringBuilder();
+					for(Map.Entry<String,String> entry : conflicts.entrySet()){
+						String key = entry.getKey();
+						String value = entry.getValue();
+						if (value.endsWith(File.separator)) {
+							value = value.substring(0,value.length() - 1);
+						}
+						value = FilenameUtils.getName(value);
+						sb.append(value+" has exclusive use of\t\t\t\t"+key);
+						sb.append("\n");
+					}
+					
+					String header = ModManager.getGameEnvironmentInfo(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 					String log = ModManager.debugLogger.getLog();
 					Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-					clpbrd.setContents(new StringSelection(log), null);
+					clpbrd.setContents(new StringSelection(/*sb.toString() + */header+log), null); //TODO IN BUILD 56
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Log copied to clipboard");
 				}
 			}
@@ -187,7 +204,7 @@ public class HelpMenu {
 						.showMessageDialog(
 								ModManagerWindow.ACTIVE_WINDOW,
 								"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>"
-										+ "Please email me if you have crashes or bugs. Feature requests should be posted to the forums.<br>"
+										+ "Please email me if you have crashes or bugs, or use the forums.<br>"
 										+ "If you have a crash or a bug I will need the debugging log.<br><br>How to create a debugging log:<br>"
 										+ "1. Close Mod Manager with debugging enabled, restart it, and reproduce your issue.<br>"
 										+ "2. Immediately after the issue occurs, go to Help>Copy log to clipboard.<br>"

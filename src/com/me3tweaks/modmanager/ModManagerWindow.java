@@ -2709,7 +2709,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void startGame(String CookedDir) {
 		File startingDir = new File(CookedDir);
 		ModManager.debugLogger.writeMessage("Starting game.");
-		boolean binkw32bypass = checkForBinkBypass(); // favor bink over WV
+		boolean binkw32bypass = ModManager.checkIfBinkBypassIsInstalled(fieldBiogameDir.getText()); // favor bink over WV
 		startingDir = new File(startingDir.getParent());
 		File executable = new File(startingDir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
 		//check ME3 version for 1.6
@@ -2766,34 +2766,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		ModManager.debugLogger.writeMessage("Path: " + executable.getAbsolutePath() + " - Exists? " + executable.exists());
 	}
 
-	/**
-	 * Checks for the binkw32 bypass. If its there it will skip the LauncherWV
-	 * check.
-	 * 
-	 * @return
-	 */
-	private boolean checkForBinkBypass() {
-		File bgdir = new File(fieldBiogameDir.getText());
-		if (!bgdir.exists()) {
-			return false;
-		}
-		File gamedir = bgdir.getParentFile();
-		ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
-		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
-		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
-		try {
-			String originalBink32MD5 = "128b560ef70e8085c507368da6f26fe6";
-			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
-			if (!binkhash.equals(originalBink32MD5) && bink23.exists()) {
-				return true;
-			}
-		} catch (Exception e) {
-			ModManager.debugLogger.writeErrorWithException("Exception while attempting to find DLC bypass (Binkw32).", e);
-			ModManager.debugLogger.writeMessage("Bink bypass was not found.");
-			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e));
-		}
-		return false;
-	}
+
 
 	/**
 	 * Creates a new Mod Maker Compiler dialog with the specified code. Called
