@@ -647,7 +647,7 @@ public class ModManager {
 	 * it's MD5 again the known original Coalesced.
 	 * 
 	 */
-	public static boolean checkDoOriginal(String origDir) {
+/*	public static boolean checkDoOriginal(String origDir) {
 		String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e"; // This
 																			// is
 																			// Patch
@@ -720,7 +720,7 @@ public class ModManager {
 		}
 		// Backup exists
 		return true;
-	}
+	}*/
 
 	/**
 	 * Export a resource embedded into a Jar file to the local file path.

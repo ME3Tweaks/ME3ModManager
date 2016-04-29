@@ -18,11 +18,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -56,6 +53,8 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import net.iharder.dnd.FileDrop;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -93,8 +92,6 @@ import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomAction
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
-
-import net.iharder.dnd.FileDrop;
 
 /**
  * Controls the main window for Mass Effect 3 Mod Manager.
@@ -955,7 +952,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.setJMenuBar(menuBar);
 		contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
 		this.add(contentPanel);
-		verifyBackupCoalesced();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: SetupWindow() has completed.");
 
 	}
@@ -1363,37 +1359,32 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		return menuBar;
 	}
 
-	private void verifyBackupCoalesced() {
-		File restoreTest = new File(ModManager.getDataDir() + "Coalesced.original");
-		if (!restoreTest.exists()) {
-			ModManager.debugLogger.writeMessage("Didn't find Coalesced.original - checking existing installed one, will copy if verified.");
-			// try to copy the current one
-			String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e";
-			File coalesced = new File(ModManager.appendSlash(fieldBiogameDir.getText().toString()) + "CookedPCConsole\\Coalesced.bin");
-			// Take the MD5 first to verify it.
-			if (coalesced.exists()) {
-				try {
-					if (patch3CoalescedHash.equals(MD5Checksum.getMD5Checksum(coalesced.toString()))) {
-						// back it up
-						Files.copy(coalesced.toPath(), restoreTest.toPath());
-						restoreRevertCoal.setEnabled(true);
-						ModManager.debugLogger.writeMessage("Backed up Coalesced.");
-					} else {
-						ModManager.debugLogger.writeMessage("Didn't back up coalecsed, hash mismatch.");
-						restoreRevertCoal.setEnabled(false);
-					}
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					ModManager.debugLogger.writeErrorWithException("I/O Exception while verifying backup coalesced.", e);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					ModManager.debugLogger.writeErrorWithException("General Exception while verifying backup coalesced.", e);
-				}
-			} else {
-				ModManager.debugLogger.writeMessage("Coalesced.bin was not found - unable to back up automatically");
-			}
-		}
-	}
+	/*
+	 * private void verifyBackupCoalesced() { File restoreTest = new
+	 * File(ModManager.getDataDir() + "Coalesced.original"); if
+	 * (!restoreTest.exists()) { ModManager.debugLogger.writeMessage(
+	 * "Didn't find Coalesced.original - checking existing installed one, will copy if verified."
+	 * ); // try to copy the current one String patch3CoalescedHash =
+	 * "540053c7f6eed78d92099cf37f239e8e"; File coalesced = new
+	 * File(ModManager.appendSlash(fieldBiogameDir.getText().toString()) +
+	 * "CookedPCConsole\\Coalesced.bin"); // Take the MD5 first to verify it. if
+	 * (coalesced.exists()) { try { if
+	 * (patch3CoalescedHash.equals(MD5Checksum.getMD5Checksum
+	 * (coalesced.toString()))) { // back it up Files.copy(coalesced.toPath(),
+	 * restoreTest.toPath()); restoreRevertCoal.setEnabled(true);
+	 * ModManager.debugLogger.writeMessage("Backed up Coalesced."); } else {
+	 * ModManager
+	 * .debugLogger.writeMessage("Didn't back up coalecsed, hash mismatch.");
+	 * restoreRevertCoal.setEnabled(false); } } catch (IOException e) { // TODO
+	 * Auto-generated catch block
+	 * ModManager.debugLogger.writeErrorWithException(
+	 * "I/O Exception while verifying backup coalesced.", e); } catch (Exception
+	 * e) { // TODO Auto-generated catch block
+	 * ModManager.debugLogger.writeErrorWithException
+	 * ("General Exception while verifying backup coalesced.", e); } } else {
+	 * ModManager.debugLogger.writeMessage(
+	 * "Coalesced.bin was not found - unable to back up automatically"); } } }
+	 */
 
 	public void actionPerformed(ActionEvent e) {
 		// too bad we can't do a switch statement on the object :(
@@ -2277,6 +2268,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				labelStatus.setVisible(true);
 			}
 			fieldBiogameDir.setText(dirChooser.getSelectedFile().toString());
+			validateBIOGameDir();
 		} else {
 			JOptionPane.showMessageDialog(null, "Coalesced.bin not found in " + dirChooser.getSelectedFile().toString(), "Error",
 					JOptionPane.ERROR_MESSAGE);
@@ -2404,48 +2396,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		Mod mod = modModel.get(modList.getSelectedIndex());
-		// Read mod
-		// Apply The Mod
-		// Update Coalesced (main game)
-		if (mod.modsCoal()) {
-			if (ModManager.checkDoOriginal(fieldBiogameDir.getText())) {
-				// check source file
-				File source = new File(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
-
-				if (!source.exists()) {
-					labelStatus.setText("Mod not installed");
-					labelStatus.setVisible(true);
-					JOptionPane
-							.showMessageDialog(
-									null,
-									"Coalesced.bin was not found in the Mod file's directory.\nIt might have moved, been deleted, or renamed.\nPlease check this mod's directory.",
-									"Coalesced not found", JOptionPane.ERROR_MESSAGE);
-
-					return false;
-				}
-
-				String destFile = coalesced.toString();
-				String sourceFile = ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin";
-				try {
-					Files.copy(Paths.get(sourceFile), Paths.get(destFile), StandardCopyOption.REPLACE_EXISTING);
-					if (mod.getJobs().length == 0) {
-						labelStatus.setText(mod.getModName() + " installed");
-					} else {
-						labelStatus.setText("Injecting files into DLC modules...");
-					}
-				} catch (IOException e) {
-					JOptionPane.showMessageDialog(null, "Copying Coalesced.bin failed. Stack trace:\n" + e.getMessage(),
-							"Error copying Coalesced.bin", JOptionPane.ERROR_MESSAGE);
-					labelStatus.setText("Mod failed to install");
-				}
-			} else {
-
-				labelStatus.setText("Mod not installed");
-				labelStatus.setVisible(true);
-				return false;
-			}
-		}
-
 		if (mod.getJobs().length > 0) {
 			checkBackedUp(mod);
 			new ModInstallWindow(this, mod.getJobs(), fieldBiogameDir.getText(), mod);
@@ -2765,8 +2715,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		ModManager.debugLogger.writeMessage("Path: " + executable.getAbsolutePath() + " - Exists? " + executable.exists());
 	}
-
-
 
 	/**
 	 * Creates a new Mod Maker Compiler dialog with the specified code. Called
