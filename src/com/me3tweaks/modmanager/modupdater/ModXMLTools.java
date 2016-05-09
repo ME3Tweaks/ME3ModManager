@@ -558,7 +558,7 @@ public class ModXMLTools {
 					}
 				}
 
-				// Check legacy Coalesced.bin
+/*				// Check legacy Coalesced.bin
 				if (mod.getCMMVer() < 3.0 && mod.modsCoal()) {
 					boolean existsOnServer = false;
 					for (ManifestModFile mf : serverFiles) {
@@ -572,7 +572,7 @@ public class ModXMLTools {
 						ModManager.debugLogger.writeMessage("Coalesced.bin is not in updated version of mod on server, marking for removal");
 						filesToRemove.add(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
 					}
-				}
+				}*/
 			}
 
 			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: "

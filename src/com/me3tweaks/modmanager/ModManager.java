@@ -71,9 +71,9 @@ public class ModManager {
 
 	public static final String VERSION = "4.2.2";
 	public static long BUILD_NUMBER = 55L;
-	public static final String BUILD_DATE = "4/27/2016";
+	public static final String BUILD_DATE = "4/29/2016";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
@@ -647,7 +647,7 @@ public class ModManager {
 	 * it's MD5 again the known original Coalesced.
 	 * 
 	 */
-	public static boolean checkDoOriginal(String origDir) {
+/*	public static boolean checkDoOriginal(String origDir) {
 		String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e"; // This
 																			// is
 																			// Patch
@@ -720,7 +720,7 @@ public class ModManager {
 		}
 		// Backup exists
 		return true;
-	}
+	}*/
 
 	/**
 	 * Export a resource embedded into a Jar file to the local file path.

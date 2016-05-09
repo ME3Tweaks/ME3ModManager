@@ -116,9 +116,9 @@ public class Mod implements Comparable<Mod> {
 	 * 
 	 * @return true if legacy coal install, false otherwise
 	 */
-	public boolean modsCoal() {
+/*	public boolean modsCoal() {
 		return modCoal;
-	}
+	}*/
 
 	/**
 	 * Parses the moddesc.ini file and validates it.
@@ -484,6 +484,8 @@ public class Mod implements Comparable<Mod> {
 					} else {
 						ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 					}
+					ModJob job = new ModJob();
+					job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
 					addTask(ModType.COAL, null);
 				}
 			} catch (NumberFormatException e) {
@@ -1618,8 +1620,9 @@ public class Mod implements Comparable<Mod> {
 	 * @return path to new file if found, null if it does't exist.
 	 */
 	public String getModTaskPath(String modulePath, String header) {
-		if (header.equals(ModType.COAL) && modsCoal()) {
-			return ModManager.appendSlash(modPath) + "Coalesced.bin";
+		if (header.equals(ModType.COAL)) {
+			header = ModType.BASEGAME;
+			modulePath = "\\BIOGame\\CookedPCConsole\\Coalesced.bin";
 		}
 		modulePath = modulePath.replaceAll("\\\\", "/");
 		if (!modulePath.startsWith("/")) {

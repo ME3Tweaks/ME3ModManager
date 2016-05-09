@@ -1041,10 +1041,11 @@ public class ModInstallWindow extends JDialog {
 					progressBar.setValue(fullJobCompletion);
 				}
 				try {
-					Integer.parseInt(update); // see if we got a number. if we
+					Double.parseDouble(update); // see if we got a number. if we
 					// did that means we should
 					// update the bar
 				} catch (NumberFormatException e) {
+					ModManager.debugLogger.writeMessage("Injection commander thread passed update to UI thread: "+update);
 					// this is not a progress update, it's a string update
 					addToQueue(update);
 				}

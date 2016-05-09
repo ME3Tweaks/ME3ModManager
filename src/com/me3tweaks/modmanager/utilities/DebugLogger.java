@@ -20,6 +20,7 @@ import com.me3tweaks.modmanager.ModManager;
  *
  */
 public class DebugLogger {
+	public final static String ERROR_PREFIX = "WARN/ERROR";
 	File logFile;
 	FileWriter fw;
 	int messagesBeforeFlush = 10;
@@ -104,7 +105,7 @@ public class DebugLogger {
 			try {
 				System.err.println("[L-E]: " + ExceptionUtils.getStackTrace(e));
 				if (fw != null) {
-					fw.write(ExceptionUtils.getStackTrace(e));
+					fw.write(ERROR_PREFIX + "" + ExceptionUtils.getStackTrace(e));
 					fw.write(System.getProperty("line.separator"));
 				}
 				currentMessages++;
@@ -125,7 +126,7 @@ public class DebugLogger {
 			try {
 				System.err.println("[L:E]: " + message);
 				if (fw != null) {
-					fw.write("WARN/ERROR: ");
+					fw.write(ERROR_PREFIX+": ");
 					fw.write(message);
 					fw.write(System.getProperty("line.separator"));
 				}
