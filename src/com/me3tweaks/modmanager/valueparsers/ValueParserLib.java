@@ -42,30 +42,24 @@ public class ValueParserLib {
 			int charIndex = 0;
 			int openBraces = 0;
 			while (workingStr.length() > 0) {
-				System.out.println(workingStr);
 				if (workingStr.charAt(charIndex) == '(') {
 					openBraces++;
 					charIndex++;
-					System.out.println("open brace, charindex: " + charIndex);
 					continue;
 				}
 				if (workingStr.charAt(charIndex) == ')') {
 					openBraces--;
-					System.out.println("close brace, ones left open: " + openBraces);
 					charIndex++;
 					if (openBraces == 0) {
 						//we finished one item
 						values.add(workingStr.substring(0, charIndex));
 						if (charIndex < workingStr.length()) {
 							workingStr = workingStr.substring(charIndex + 1);
-							System.out.println("Remaining workingStr: " + workingStr);
 						} else {
-							System.out.println("End of string");
 							break;
 						}
 						charIndex = 0;
 					} else if (openBraces < 0) {
-						System.out.println("Category Finished");
 						break;
 					}
 					continue;

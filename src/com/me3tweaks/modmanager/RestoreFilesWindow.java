@@ -295,31 +295,6 @@ public class RestoreFilesWindow extends JDialog {
 			return true;
 		}
 
-		/*
-		 * private boolean deleteUnpackedFilesUsingHeaders(String[] headers) {
-		 * completed = 0; ArrayList<String> filestodelete =
-		 * getUnpackedFilesList(headers); numjobs = filestodelete.size();
-		 * ModManager.debugLogger.writeMessage("===Deleting " + numjobs +
-		 * " unpacked files==="); for (String filepath : filestodelete) {
-		 * ModManager.debugLogger.writeMessage("Deleting " + filepath); publish(
-		 * "Deleting " + FilenameUtils.getName(filepath));
-		 * FileUtils.deleteQuietly(new File(filepath)); completed++;
-		 * publish(Integer.toString(completed)); }
-		 * ModManager.debugLogger.writeMessage(
-		 * "===Deleting the unpacked DLC backup folder==="); String me3dir =
-		 * (new File(RestoreFilesWindow.this.BioGameDir)).getParent(); String
-		 * dlcbackupfolder = ModManager.appendSlash(me3dir) +
-		 * "cmmbackup\\BIOGame\\DLC"; File dlcBackupDirectory = new
-		 * File(dlcbackupfolder); try {
-		 * FileUtils.deleteDirectory(dlcBackupDirectory);
-		 * ModManager.debugLogger.writeMessage("Deleted cmmbackup/biogame/dlc."
-		 * ); } catch (IOException e) { if (dlcBackupDirectory.exists()) {
-		 * ModManager.debugLogger.writeErrorWithException(
-		 * "Unable to delete unpacked backup directory that exists:", e); } }
-		 * 
-		 * ModManager.debugLogger.writeMessage("===End of unpacked deletion==="
-		 * ); return true; }
-		 */
 		private boolean restoreSFARsUsingHeaders(String[] dlcHeaders) {
 			int restoresCompleted = 0;
 			for (String header : dlcHeaders) {
@@ -357,7 +332,8 @@ public class RestoreFilesWindow extends JDialog {
 						}
 					}
 				}
-				ModManager.debugLogger.writeMessage("Deleted all DLC folders (if there were any)");
+
+				ModManager.debugLogger.writeMessage("Deleted all Custom DLC folders (if there were any)");
 				publish(Integer.toString(completed));
 				return true;
 			} else {

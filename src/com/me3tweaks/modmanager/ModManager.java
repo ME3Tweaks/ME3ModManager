@@ -69,16 +69,16 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.2.2";
-	public static long BUILD_NUMBER = 55L;
+	public static final String VERSION = "4.2.3";
+	public static long BUILD_NUMBER = 56L;
 	public static final String BUILD_DATE = "4/29/2016";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
 																// version
-	public static final double MODDESC_VERSION_SUPPORT = 4.1; // max supported
+	public static final double MODDESC_VERSION_SUPPORT = 4.2; // max supported
 																// cmmver in
 																// moddesc
 	public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
@@ -133,13 +133,14 @@ public class ModManager {
 			if (ModManager.IS_DEBUG) {
 				debugLogger.initialize();
 				logging = true;
-				debugLogger.writeMessage("Starting logger, this is a debug build. Auto updates enabled");
-				AUTO_UPDATE_MODS = true;
-			} else {
-				Wini settingsini;
-				try {
-					settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-					{
+				debugLogger.writeMessage("Starting logger, this is a debugging build.");
+			}
+
+			Wini settingsini;
+			try {
+				settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
+				{
+					if (!ModManager.IS_DEBUG) {
 						String logStr = settingsini.get("Settings", "logging_mode");
 						int logInt = 0;
 						if (logStr != null && !logStr.equals("")) {
@@ -165,198 +166,196 @@ public class ModManager {
 									+ ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
 						}
 					}
-					// .NET encforcement check
-					String netEnforcementStr = settingsini.get("Settings", "enforcedotnetrequirement");
-					int netEnforcementInt = 0;
-					if (netEnforcementStr != null && !netEnforcementStr.equals("")) {
-						try {
-							netEnforcementInt = Integer.parseInt(netEnforcementStr);
-							if (netEnforcementInt > 0) {
-								// logging is on
-								debugLogger.writeMessage(".NET enforcement check is ON");
-								PERFORM_DOT_NET_CHECK = true;
-							} else {
-								debugLogger.writeMessage(".NET enforcement check is OFF");
-								PERFORM_DOT_NET_CHECK = false;
-							}
-						} catch (NumberFormatException e) {
-							ModManager.debugLogger
-									.writeError("Number format exception reading the .NET enforcement check flag, defaulting to enabled");
+				}
+				// .NET encforcement check
+				String netEnforcementStr = settingsini.get("Settings", "enforcedotnetrequirement");
+				int netEnforcementInt = 0;
+				if (netEnforcementStr != null && !netEnforcementStr.equals("")) {
+					try {
+						netEnforcementInt = Integer.parseInt(netEnforcementStr);
+						if (netEnforcementInt > 0) {
+							// logging is on
+							debugLogger.writeMessage(".NET enforcement check is ON");
+							PERFORM_DOT_NET_CHECK = true;
+						} else {
+							debugLogger.writeMessage(".NET enforcement check is OFF");
+							PERFORM_DOT_NET_CHECK = false;
 						}
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeError("Number format exception reading the .NET enforcement check flag, defaulting to enabled");
 					}
-					// Auto Update Check
-					String updateStr = settingsini.get("Settings", "checkforupdates");
-					int updateInt = 0;
-					if (updateStr != null && !updateStr.equals("")) {
-						try {
-							updateInt = Integer.parseInt(updateStr);
-							if (updateInt > 0) {
-								// logging is on
-								debugLogger.writeMessage("Auto check for mod manager updates is enabled");
-								AUTO_UPDATE_MOD_MANAGER = true;
-							} else {
-								debugLogger.writeMessage("Auto check for mod manager updates is disabled");
-								AUTO_UPDATE_MOD_MANAGER = false;
-							}
-						} catch (NumberFormatException e) {
-							ModManager.debugLogger.writeError("Number format exception reading the update check flag, defaulting to enabled");
+				}
+				// Auto Update Check
+				String updateStr = settingsini.get("Settings", "checkforupdates");
+				int updateInt = 0;
+				if (updateStr != null && !updateStr.equals("")) {
+					try {
+						updateInt = Integer.parseInt(updateStr);
+						if (updateInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Auto check for mod manager updates is enabled");
+							AUTO_UPDATE_MOD_MANAGER = true;
+						} else {
+							debugLogger.writeMessage("Auto check for mod manager updates is disabled");
+							AUTO_UPDATE_MOD_MANAGER = false;
 						}
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeError("Number format exception reading the update check flag, defaulting to enabled");
 					}
-					String superDebugStr = settingsini.get("Settings", "superdebug");
-					if (superDebugStr != null && superDebugStr.equals("SUPERDEBUG")) {
-						debugLogger.writeMessage("Forcing SUPERDEBUG mode on");
-						IS_DEBUG = true;
-						debugLogger.initialize();
-						logging = true;
-						debugLogger.writeMessage("Starting logger. Mod Manager version" + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
-					}
-					String forcedVersion = settingsini.get("Settings", "forceversion");
-					if (forcedVersion != null && !forcedVersion.equals("")) {
-						debugLogger.writeMessage("Forcing Mod Manager to think it is build number " + forcedVersion);
-						BUILD_NUMBER = Long.parseLong(forcedVersion);
-					}
-					String autoupdate = settingsini.get("Settings", "autoupdatemods");
-					if (autoupdate != null && autoupdate.toLowerCase().equals("true")) {
-						debugLogger.writeMessage("Enabling mod auto-updates");
-						AUTO_UPDATE_MODS = true;
-					}
+				}
+				String superDebugStr = settingsini.get("Settings", "superdebug");
+				if (superDebugStr != null && superDebugStr.equals("SUPERDEBUG")) {
+					debugLogger.writeMessage("Forcing SUPERDEBUG mode on");
+					IS_DEBUG = true;
+					debugLogger.initialize();
+					logging = true;
+					debugLogger.writeMessage("Starting logger. Mod Manager version" + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
+				}
+				String forcedVersion = settingsini.get("Settings", "forceversion");
+				if (forcedVersion != null && !forcedVersion.equals("")) {
+					debugLogger.writeMessage("Forcing Mod Manager to think it is build number " + forcedVersion);
+					BUILD_NUMBER = Long.parseLong(forcedVersion);
+				}
+				String autoupdate = settingsini.get("Settings", "autoupdatemods");
+				if (autoupdate != null && autoupdate.toLowerCase().equals("true")) {
+					debugLogger.writeMessage("Enabling mod auto-updates");
+					AUTO_UPDATE_MODS = true;
+				}
 
-					if (AUTO_UPDATE_MODS == false) {
-						String askedbefore = settingsini.get("Settings", "declinedautoupdate");
-						if (askedbefore != null) {
-							debugLogger.writeMessage("User answered auto updates before");
-							ASKED_FOR_AUTO_UPDATE = true;
-						}
+				if (AUTO_UPDATE_MODS == false) {
+					String askedbefore = settingsini.get("Settings", "declinedautoupdate");
+					if (askedbefore != null) {
+						debugLogger.writeMessage("User answered auto updates before");
+						ASKED_FOR_AUTO_UPDATE = true;
 					}
+				}
 
-					// Autodownload ME3Explorer updates
-					String autoupdateme3explorerStr = settingsini.get("Settings", "autodownloadme3explorer");
-					int autoupdateme3explorerInt = 0;
-					if (autoupdateme3explorerStr != null && !autoupdateme3explorerStr.equals("")) {
-						try {
-							autoupdateme3explorerInt = Integer.parseInt(autoupdateme3explorerStr);
-							if (autoupdateme3explorerInt > 0) {
-								// logging is on
-								debugLogger.writeMessage("ME3Explorer updates are auto enabled");
-								AUTO_UPDATE_ME3EXPLORER = true;
-							} else {
-								debugLogger
-										.writeError("ME3Explorer updates are disabled - errors related to ME3EXplorer out of date ARE NOT SUPPORTED!");
-								AUTO_UPDATE_ME3EXPLORER = false;
-							}
-						} catch (NumberFormatException e) {
-							debugLogger.writeError("Number format exception reading the me3explorer update preference - turning on by default");
+				// Autodownload ME3Explorer updates
+				String autoupdateme3explorerStr = settingsini.get("Settings", "autodownloadme3explorer");
+				int autoupdateme3explorerInt = 0;
+				if (autoupdateme3explorerStr != null && !autoupdateme3explorerStr.equals("")) {
+					try {
+						autoupdateme3explorerInt = Integer.parseInt(autoupdateme3explorerStr);
+						if (autoupdateme3explorerInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("ME3Explorer updates are auto enabled");
 							AUTO_UPDATE_ME3EXPLORER = true;
+						} else {
+							debugLogger.writeError("ME3Explorer updates are disabled - errors related to ME3EXplorer out of date ARE NOT SUPPORTED!");
+							AUTO_UPDATE_ME3EXPLORER = false;
 						}
+					} catch (NumberFormatException e) {
+						debugLogger.writeError("Number format exception reading the me3explorer update preference - turning on by default");
+						AUTO_UPDATE_ME3EXPLORER = true;
 					}
+				}
 
-					// Autoinject keybinds
-					String keybindsStr = settingsini.get("Settings", "autoinjectkeybinds");
-					int keybindsInt = 0;
-					if (keybindsStr != null && !keybindsStr.equals("")) {
-						try {
-							keybindsInt = Integer.parseInt(keybindsStr);
-							if (keybindsInt > 0) {
-								// logging is on
-								debugLogger.writeMessage("Auto-Inject Keybinds are enabled");
-								AUTO_INJECT_KEYBINDS = true;
-							} else {
-								debugLogger.writeMessage("Auto-Inject Keybinds is disabled");
-								AUTO_INJECT_KEYBINDS = false;
-							}
-						} catch (NumberFormatException e) {
-							debugLogger.writeError("Number format exception reading the keybinds injection mode - autoinject mode disabled");
+				// Autoinject keybinds
+				String keybindsStr = settingsini.get("Settings", "autoinjectkeybinds");
+				int keybindsInt = 0;
+				if (keybindsStr != null && !keybindsStr.equals("")) {
+					try {
+						keybindsInt = Integer.parseInt(keybindsStr);
+						if (keybindsInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Auto-Inject Keybinds are enabled");
+							AUTO_INJECT_KEYBINDS = true;
+						} else {
+							debugLogger.writeMessage("Auto-Inject Keybinds is disabled");
 							AUTO_INJECT_KEYBINDS = false;
 						}
+					} catch (NumberFormatException e) {
+						debugLogger.writeError("Number format exception reading the keybinds injection mode - autoinject mode disabled");
+						AUTO_INJECT_KEYBINDS = false;
 					}
-					// Autoinject modmaker mixins
-					String autoinstallmixinsStr = settingsini.get("Settings", "autoinstallmixins");
-					int autoinstallmixinsInt = 0;
-					if (autoinstallmixinsStr != null && !autoinstallmixinsStr.equals("")) {
-						try {
-							autoinstallmixinsInt = Integer.parseInt(autoinstallmixinsStr);
-							if (autoinstallmixinsInt > 0) {
-								// logging is on
-								debugLogger.writeMessage("Auto-Install of Modmaker Mixins is enabled");
-								AUTO_APPLY_MODMAKER_MIXINS = true;
-							} else {
-								debugLogger.writeMessage("Auto-Install of Modmaker Mixins is disabled");
-								AUTO_APPLY_MODMAKER_MIXINS = false;
-							}
-						} catch (NumberFormatException e) {
-							debugLogger
-									.writeError("Number format exception reading the auto install of modmaker mixins mode - autoinstall mode disabled");
+				}
+				// Autoinject modmaker mixins
+				String autoinstallmixinsStr = settingsini.get("Settings", "autoinstallmixins");
+				int autoinstallmixinsInt = 0;
+				if (autoinstallmixinsStr != null && !autoinstallmixinsStr.equals("")) {
+					try {
+						autoinstallmixinsInt = Integer.parseInt(autoinstallmixinsStr);
+						if (autoinstallmixinsInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Auto-Install of Modmaker Mixins is enabled");
+							AUTO_APPLY_MODMAKER_MIXINS = true;
+						} else {
+							debugLogger.writeMessage("Auto-Install of Modmaker Mixins is disabled");
 							AUTO_APPLY_MODMAKER_MIXINS = false;
 						}
+					} catch (NumberFormatException e) {
+						debugLogger
+								.writeError("Number format exception reading the auto install of modmaker mixins mode - autoinstall mode disabled");
+						AUTO_APPLY_MODMAKER_MIXINS = false;
 					}
+				}
 
-					// last check date
-					String lastAutoCheck = settingsini.get("Settings", "lastautocheck");
-					if (lastAutoCheck != null) {
-						try {
-							LAST_AUTOUPDATE_CHECK = Long.parseLong(lastAutoCheck);
-						} catch (NumberFormatException e) {
-							debugLogger.writeError("Error: Number Format Exception in LAST_AUTOUPDATE_CHECK, skipping");
-						}
+				// last check date
+				String lastAutoCheck = settingsini.get("Settings", "lastautocheck");
+				if (lastAutoCheck != null) {
+					try {
+						LAST_AUTOUPDATE_CHECK = Long.parseLong(lastAutoCheck);
+					} catch (NumberFormatException e) {
+						debugLogger.writeError("Error: Number Format Exception in LAST_AUTOUPDATE_CHECK, skipping");
 					}
+				}
 
-					//update skip
-					String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
-					if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
-						try {
-							SKIP_UPDATES_UNTIL_BUILD = Integer.parseInt(showIfHigherThan);
-						} catch (NumberFormatException e) {
-							ModManager.debugLogger
-									.writeError("Number format exception reading the build number to skip to in settings. Defaulting to 0.");
-							SKIP_UPDATES_UNTIL_BUILD = 0;
-						}
+				//update skip
+				String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
+				if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
+					try {
+						SKIP_UPDATES_UNTIL_BUILD = Integer.parseInt(showIfHigherThan);
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger
+								.writeError("Number format exception reading the build number to skip to in settings. Defaulting to 0.");
+						SKIP_UPDATES_UNTIL_BUILD = 0;
 					}
+				}
 
-					// AutoTOC game files after install
-					String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
-					int autotocPostInstallInt = 0;
-					if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
-						try {
-							autotocPostInstallInt = Integer.parseInt(autotocPostInstallStr);
-							if (autotocPostInstallInt > 0) {
-								// logging is on
-								debugLogger.writeMessage("AutoTOC post install is enabled");
-								USE_GAME_TOCFILES_INSTEAD = true;
-							} else {
-								debugLogger.writeMessage("AutoTOC post install is disabled");
-								USE_GAME_TOCFILES_INSTEAD = false;
-							}
-						} catch (NumberFormatException e) {
-							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
+				// AutoTOC game files after install
+				String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
+				int autotocPostInstallInt = 0;
+				if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
+					try {
+						autotocPostInstallInt = Integer.parseInt(autotocPostInstallStr);
+						if (autotocPostInstallInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("AutoTOC post install is enabled");
+							USE_GAME_TOCFILES_INSTEAD = true;
+						} else {
+							debugLogger.writeMessage("AutoTOC post install is disabled");
 							USE_GAME_TOCFILES_INSTEAD = false;
 						}
+					} catch (NumberFormatException e) {
+						debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
+						USE_GAME_TOCFILES_INSTEAD = false;
 					}
+				}
 
-					// Log Mod Startup
-					String modstartupStr = settingsini.get("Settings", "logmodinit");
-					int modstartupInt = 0;
-					if (modstartupStr != null && !modstartupStr.equals("")) {
-						try {
-							modstartupInt = Integer.parseInt(modstartupStr);
-							if (modstartupInt > 0) {
-								// logging is on
-								debugLogger.writeMessage("Mod startup logging is enabled");
-								LOG_MOD_INIT = true;
-							} else {
-								debugLogger.writeMessage("Mod startup logging is disabled");
-								LOG_MOD_INIT = false;
-							}
-						} catch (NumberFormatException e) {
-							debugLogger.writeError("Number format exception reading the log mod init - setting to disabled");
+				// Log Mod Startup
+				String modstartupStr = settingsini.get("Settings", "logmodinit");
+				int modstartupInt = 0;
+				if (modstartupStr != null && !modstartupStr.equals("")) {
+					try {
+						modstartupInt = Integer.parseInt(modstartupStr);
+						if (modstartupInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Mod startup logging is enabled");
+							LOG_MOD_INIT = true;
+						} else {
+							debugLogger.writeMessage("Mod startup logging is disabled");
 							LOG_MOD_INIT = false;
 						}
+					} catch (NumberFormatException e) {
+						debugLogger.writeError("Number format exception reading the log mod init - setting to disabled");
+						LOG_MOD_INIT = false;
 					}
-
-				} catch (InvalidFileFormatException e) {
-					ModManager.debugLogger.writeErrorWithException("Invalid file format exception. Settings in this file will be ignored", e);
-				} catch (IOException e) {
-					System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 				}
+
+			} catch (InvalidFileFormatException e) {
+				ModManager.debugLogger.writeErrorWithException("Invalid file format exception. Settings in this file will be ignored", e);
+			} catch (IOException e) {
+				System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 			}
 
 			if (args.length > 1 && args[0].equals("--update-from")) {
@@ -647,80 +646,55 @@ public class ModManager {
 	 * it's MD5 again the known original Coalesced.
 	 * 
 	 */
-/*	public static boolean checkDoOriginal(String origDir) {
-		String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e"; // This
-																			// is
-																			// Patch
-																			// 3
-																			// Coalesced's
-																			// hash
-		File cOriginal = new File(ModManager.getDataDir() + "Coalesced.original");
-		if (cOriginal.exists() == false) {
-			// Attempt to copy an original
-			try {
-				String coalDirHash = MD5Checksum.getMD5Checksum(ModManager.appendSlash(origDir) + "CookedPCConsole\\Coalesced.bin");
-				ModManager.debugLogger.writeMessage("Patch 3 Coalesced Original Hash: " + coalDirHash);
-				ModManager.debugLogger.writeMessage("Current Patch 3 Coalesced Hash: " + patch3CoalescedHash);
-
-				if (!coalDirHash.equals(patch3CoalescedHash)) {
-					String[] YesNo = { "Yes", "No" };
-					int keepInstalling = JOptionPane
-							.showOptionDialog(
-									null,
-									"There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
-											+ coalDirHash
-											+ "\nPatch 3 Coalesced.bin's hash: "
-											+ patch3CoalescedHash
-											+ "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? ",
-									"Coalesced Backup Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]);
-					if (keepInstalling == 0)
-						return true;
-					return false;
-				} else {
-					// Make a backup of it
-					String destFile = ModManager.getDataDir() + "Coalesced.original";
-					String sourceFile = ModManager.appendSlash(origDir) + "Coalesced.bin";
-					String[] command = { "cmd.exe", "/c", "copy", "/Y", sourceFile, destFile };
-					try {
-						Process p = Runtime.getRuntime().exec(command);
-
-						// The InputStream we get from the Process reads from
-						// the standard output
-						// of the process (and also the standard error, by
-						// virtue of the line
-						// copyFiles.redirectErrorStream(true) ).
-						BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-						String line;
-						do {
-							line = reader.readLine();
-							if (line != null) {
-								ModManager.debugLogger.writeMessage(line);
-							}
-						} while (line != null);
-						reader.close();
-
-						p.waitFor();
-					} catch (IOException e) {
-						ModManager.debugLogger
-								.writeMessage("Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install.");
-						ModManager.debugLogger.writeMessage(e.getMessage());
-						return false;
-					} catch (InterruptedException e) {
-						ModManager.debugLogger.writeMessage("Backup of the original Coalesced was interupted. Aborting install.");
-						ModManager.debugLogger.writeMessage(e.getMessage());
-						return false;
-					}
-					return true;
-				}
-			} catch (Exception e) {
-				ModManager.debugLogger.writeMessage("Error occured while attempting to backup or hash the original Coalesced.");
-				ModManager.debugLogger.writeMessage(e.getMessage());
-				return false;
-			}
-		}
-		// Backup exists
-		return true;
-	}*/
+	/*
+	 * public static boolean checkDoOriginal(String origDir) { String
+	 * patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e"; // This // is
+	 * // Patch // 3 // Coalesced's // hash File cOriginal = new
+	 * File(ModManager.getDataDir() + "Coalesced.original"); if
+	 * (cOriginal.exists() == false) { // Attempt to copy an original try {
+	 * String coalDirHash =
+	 * MD5Checksum.getMD5Checksum(ModManager.appendSlash(origDir) +
+	 * "CookedPCConsole\\Coalesced.bin");
+	 * ModManager.debugLogger.writeMessage("Patch 3 Coalesced Original Hash: " +
+	 * coalDirHash);
+	 * ModManager.debugLogger.writeMessage("Current Patch 3 Coalesced Hash: " +
+	 * patch3CoalescedHash);
+	 * 
+	 * if (!coalDirHash.equals(patch3CoalescedHash)) { String[] YesNo = { "Yes",
+	 * "No" }; int keepInstalling = JOptionPane .showOptionDialog( null,
+	 * "There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
+	 * + coalDirHash + "\nPatch 3 Coalesced.bin's hash: " + patch3CoalescedHash
+	 * +
+	 * "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? "
+	 * , "Coalesced Backup Error", JOptionPane.YES_NO_OPTION,
+	 * JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]); if (keepInstalling
+	 * == 0) return true; return false; } else { // Make a backup of it String
+	 * destFile = ModManager.getDataDir() + "Coalesced.original"; String
+	 * sourceFile = ModManager.appendSlash(origDir) + "Coalesced.bin"; String[]
+	 * command = { "cmd.exe", "/c", "copy", "/Y", sourceFile, destFile }; try {
+	 * Process p = Runtime.getRuntime().exec(command);
+	 * 
+	 * // The InputStream we get from the Process reads from // the standard
+	 * output // of the process (and also the standard error, by // virtue of
+	 * the line // copyFiles.redirectErrorStream(true) ). BufferedReader reader
+	 * = new BufferedReader(new InputStreamReader(p.getInputStream())); String
+	 * line; do { line = reader.readLine(); if (line != null) {
+	 * ModManager.debugLogger.writeMessage(line); } } while (line != null);
+	 * reader.close();
+	 * 
+	 * p.waitFor(); } catch (IOException e) { ModManager.debugLogger
+	 * .writeMessage(
+	 * "Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install."
+	 * ); ModManager.debugLogger.writeMessage(e.getMessage()); return false; }
+	 * catch (InterruptedException e) { ModManager.debugLogger.writeMessage(
+	 * "Backup of the original Coalesced was interupted. Aborting install.");
+	 * ModManager.debugLogger.writeMessage(e.getMessage()); return false; }
+	 * return true; } } catch (Exception e) {
+	 * ModManager.debugLogger.writeMessage
+	 * ("Error occured while attempting to backup or hash the original Coalesced."
+	 * ); ModManager.debugLogger.writeMessage(e.getMessage()); return false; } }
+	 * // Backup exists return true; }
+	 */
 
 	/**
 	 * Export a resource embedded into a Jar file to the local file path.
@@ -819,23 +793,27 @@ public class ModManager {
 
 	public static boolean installBinkw32Bypass(String biogamedir) {
 		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer.");
-		
+
 		//Check to make sure ME3 1.05
 		File executable = new File(new File(biogamedir).getParent() + "\\Binaries\\Win32\\MassEffect3.exe");
 		if (!executable.exists()) {
-			ModManager.debugLogger.writeError("Unable to find game EXE at "+executable);
-			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to detect game executable version.\nInstall aborted.", "Mass Effect 3 1.06 detected",JOptionPane.ERROR_MESSAGE);
+			ModManager.debugLogger.writeError("Unable to find game EXE at " + executable);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to detect game executable version.\nInstall aborted.",
+					"Mass Effect 3 1.06 detected", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
-		
-		if (minorBuildNum != 5)
-		{
+
+		if (minorBuildNum != 5) {
 			ModManager.debugLogger.writeError("Binkw32 does not work with 1.06 version of ME3, aborting.");
-			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "The included binkw32.dll file does not support Mass Effect 3 1.06.\nDowngrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this.", "Mass Effect 3 1.06 detected",JOptionPane.ERROR_MESSAGE);
+			JOptionPane
+					.showMessageDialog(
+							ModManagerWindow.ACTIVE_WINDOW,
+							"The included binkw32.dll file does not support Mass Effect 3 1.06.\nDowngrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this.",
+							"Mass Effect 3 1.06 detected", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
-		
+
 		// extract and install binkw32.dll
 		// from
 		// http://stackoverflow.com/questions/7168747/java-creating-self-extracting-jar-that-can-extract-parts-of-itself-out-of-the-a

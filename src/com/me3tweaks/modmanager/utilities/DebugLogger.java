@@ -21,6 +21,7 @@ import com.me3tweaks.modmanager.ModManager;
  */
 public class DebugLogger {
 	public final static String ERROR_PREFIX = "WARN/ERROR";
+	public final static String EN_EXCEPTION_PREFIX = "\tat ";
 	File logFile;
 	FileWriter fw;
 	int messagesBeforeFlush = 10;

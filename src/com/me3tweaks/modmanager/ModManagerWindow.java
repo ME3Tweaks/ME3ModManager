@@ -18,11 +18,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -56,6 +53,8 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import net.iharder.dnd.FileDrop;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -94,8 +93,6 @@ import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomAction
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
-
-import net.iharder.dnd.FileDrop;
 
 /**
  * Controls the main window for Mass Effect 3 Mod Manager.
@@ -417,7 +414,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:" + main + "." + rev + ", required"
 							+ ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN + "." + ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+");
 					if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
-						//new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
+						new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
 					} else {
 						ModManager.debugLogger.writeError("ME3Explorer outdated but cannot download due to settings!");
 						JOptionPane
@@ -2272,6 +2269,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				labelStatus.setVisible(true);
 			}
 			fieldBiogameDir.setText(dirChooser.getSelectedFile().toString());
+			validateBIOGameDir();
 		} else {
 			JOptionPane.showMessageDialog(null, "Coalesced.bin not found in " + dirChooser.getSelectedFile().toString(), "Error",
 					JOptionPane.ERROR_MESSAGE);

@@ -12,6 +12,7 @@ import java.util.StringTokenizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.ini4j.BasicProfile;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -45,6 +46,7 @@ public class Mod implements Comparable<Mod> {
 	private ArrayList<ModDelta> modDeltas = new ArrayList<ModDelta>();
 	private String failedReason;
 	private String serverModFolder = "PUT_SERVER_PATH_HERE"; //only for mod devs
+	private ArrayList<AlternateFile> alternateFiles = new ArrayList<AlternateFile>();
 
 	public String getServerModFolder() {
 		return serverModFolder;
@@ -110,16 +112,6 @@ public class Mod implements Comparable<Mod> {
 		jobs = new ArrayList<ModJob>();
 		modifyString = "";
 	}
-
-	/**
-	 * Returns the legacy modcoal variable. This being true indicates a
-	 * Coalesced.bin file in the mod root should be installed in legacy mode.
-	 * 
-	 * @return true if legacy coal install, false otherwise
-	 */
-	/*
-	 * public boolean modsCoal() { return modCoal; }
-	 */
 
 	/**
 	 * Parses the moddesc.ini file and validates it.
@@ -204,10 +196,24 @@ public class Mod implements Comparable<Mod> {
 					return;
 				}
 			}
-			addTask(ModType.COAL, null);
+			File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
+			ModManager.debugLogger.writeMessageConditionally("Mod Manager 1.0 mod, verifying Coaleseced.bin location", ModManager.LOG_MOD_INIT);
+
+			if (!file.exists() && !ignoreLoadErrors) {
+				ModManager.debugLogger.writeMessageConditionally(modName
+						+ " doesn't have Coalesced.bin even though flag was set. Marking as invalid.", ModManager.LOG_MOD_INIT);
+				setFailedReason("Mod targets Mod Manager 1.x but the Coalesced.bin file in the mod folder doesn't exist. Place a Coalesced.bin file in the same folder as moddesc.ini or remove the modcoal descriptor.");
+
+				return;
+			} else {
+				ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
+			}
+			ModJob job = new ModJob();
+			job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
+			addTask(ModType.BASEGAME, job);
 
 			validMod = true;
-			generateModDisplayDescription(modCMMVer < 3.0);
+			generateModDisplayDescription();
 			ModManager.debugLogger.writeMessage("Finished reading moddesc.ini file for cmm 1.0 mod " + modName);
 			ModManager.debugLogger.writeMessageConditionally(modName + " targets CMM 1.0. Added coalesced swap job.", ModManager.LOG_MOD_INIT);
 			ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
@@ -217,6 +223,11 @@ public class Mod implements Comparable<Mod> {
 
 		if (modCMMVer > 3.0f && modCMMVer < 3.1f) {
 			modCMMVer = 3.0f;
+		}
+
+		//some mods shipped as 3.2
+		if (modCMMVer > 3.1f && modCMMVer < 4.0f) {
+			modCMMVer = 3.1;
 		}
 
 		modCMMVer = (double) Math.round(modCMMVer * 10) / 10;
@@ -501,6 +512,11 @@ public class Mod implements Comparable<Mod> {
 								+ "\n\nThis may not affect your specific ME3 enviroment, but the mod has been marked as invalid to avoid possible issues.");
 						return;
 					}
+					for (String alt : alts) {
+						AlternateFile af = new AlternateFile(alt);
+						ModManager.debugLogger.writeMessageConditionally("Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);
+						alternateFiles.add(af);
+					}
 				}
 			}
 		}
@@ -531,7 +547,7 @@ public class Mod implements Comparable<Mod> {
 					}
 					ModJob job = new ModJob();
 					job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
-					addTask(ModType.COAL, null);
+					addTask(ModType.BASEGAME, job);
 				}
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeMessageConditionally(
@@ -590,7 +606,7 @@ public class Mod implements Comparable<Mod> {
 		}
 
 		if (modCMMVer > ModManager.MODDESC_VERSION_SUPPORT) {
-			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version");
+			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version.");
 		}
 		//check for patches directory
 		if (modCMMVer >= 2 && !ignoreLoadErrors /*
@@ -642,7 +658,51 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 
-		generateModDisplayDescription(modCMMVer < 3.0);
+		//Verify alternates and apply automatic ones
+		if (alternateFiles != null) {
+			HashMap<String, ArrayList<String>> autoOriginalFiles = new HashMap<String, ArrayList<String>>(); //header to altfiles map
+			for (AlternateFile af : alternateFiles) {
+				if (af.isValidLocally()) {
+					//Verify pass
+					ModManager.debugLogger.writeMessageConditionally("This mod has " + modDeltas.size() + " deltas.", ModManager.LOG_MOD_INIT);
+					String condition = af.getCondition();
+					String modfile = af.getModFile();
+					String task = af.getTask();
+
+					if (!condition.equals(AlternateFile.CONDITION_MANUAL)) {
+						ArrayList<String> headerAlternates = autoOriginalFiles.get(task);
+						if (headerAlternates != null) {
+							if (headerAlternates.contains(modfile.toLowerCase())) {
+								//auto alts cannot apply to the same thing
+								ModManager.debugLogger.writeError("Automatic alternate files contains duplicate for same file: " + modfile);
+								setFailedReason("This mod specifies automatic conditional changes for the following file in more than 1 instance: "
+										+ modfile
+										+ "\n\nEach file in Mod Manager mods can only have 1 automatically applied conditional operation attached to it.");
+								return;
+							} else {
+								headerAlternates.add(modfile.toLowerCase());
+							}
+						} else {
+							ArrayList<String> alts = new ArrayList<>();
+							alts.add(modfile.toLowerCase());
+							autoOriginalFiles.put(task, alts);
+						}
+					}
+				} else {
+					ModManager.debugLogger.writeError("Invalid alternate file specified: " + af
+							+ ". Some pieces of required information may be missing.");
+					setFailedReason("This mod contains an invalid alternate file specification:\n" + af);
+					return;
+				}
+			}
+
+			for (AlternateFile af : alternateFiles) {
+				//Application pass
+
+			}
+		}
+
+		generateModDisplayDescription();
 		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for " + getModName());
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------END OF " + modName + "--------------------------",
 				ModManager.LOG_MOD_INIT);
@@ -676,11 +736,10 @@ public class Mod implements Comparable<Mod> {
 	 * @param newJob
 	 */
 	public void addTask(String name, ModJob newJob) {
-		if (name.equals(ModType.COAL)) {
-			modCoal = true;
-			updateModifyString(ModType.COAL);
-			return;
-		}
+		/*
+		 * if (name.equals(ModType.COAL)) { modCoal = true;
+		 * updateModifyString(ModType.COAL); return; }
+		 */
 		if (name.equals(ModType.CUSTOMDLC)) {
 			String appendStr = name + " (";
 			boolean first = true;
@@ -736,7 +795,7 @@ public class Mod implements Comparable<Mod> {
 		this.modDescription = desc;
 	}
 
-	public void generateModDisplayDescription(boolean markedLegacy) {
+	public void generateModDisplayDescription() {
 		modDisplayDescription = "This mod has no description in it's moddesc.ini file or there was an error reading the description of this mod.";
 		if (modDescFile == null) {
 			ModManager.debugLogger.writeMessage("Mod Desc file is null, unable to read description");
@@ -772,9 +831,7 @@ public class Mod implements Comparable<Mod> {
 			modDisplayDescription += "\nMod Version: " + modVersion;
 		}
 		// Add mod manager build version
-		if (markedLegacy) {
-			modDisplayDescription += "\nLegacy Mod";
-		}
+		modDisplayDescription += "\nTargets Mod Manager " + modCMMVer;
 
 		// Add modifier
 		modDisplayDescription += getModifyString();
@@ -1884,6 +1941,7 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	public void setFailedReason(String failedReason) {
+		setValidMod(false);
 		this.failedReason = failedReason;
 	}
 }

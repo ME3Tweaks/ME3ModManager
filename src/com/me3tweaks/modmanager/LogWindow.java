@@ -28,14 +28,13 @@ public class LogWindow extends JFrame {
 	public LogWindow() {
 		ModManager.debugLogger.writeMessage("Opening Logging Window");
 		setupWindow();
-		ModManager.debugLogger.writeMessage("Opening Logging Window");
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
 
 	public void setupWindow() {
 		setTitle("Mod Manager Debugging Log");
-		setPreferredSize(new Dimension(600, 480));
+		setPreferredSize(new Dimension(720, 480));
 		setIconImages(ModManager.ICONS);
 
 		JPanel mainPanel = new JPanel(new BorderLayout());
@@ -74,7 +73,7 @@ public class LogWindow extends JFrame {
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
 			System.out.println("Parsing log line "+line);
-			if (line.startsWith(DebugLogger.ERROR_PREFIX)) {
+			if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
 				appendToPane(logArea,line,Color.RED);
 			} else {
 				appendToPane(logArea,line,Color.BLACK);
