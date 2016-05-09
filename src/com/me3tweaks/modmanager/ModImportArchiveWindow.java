@@ -45,10 +45,13 @@ import com.me3tweaks.modmanager.utilities.SevenZipCompressedModInspector;
 
 import net.sf.sevenzipjbinding.SevenZip;
 
+/**
+ * Window that handles importing a mod into mod manager from zip 7z rar
+ * @author mgamerz
+ *
+ */
 public class ModImportArchiveWindow extends JDialog {
 
-	//private JCheckBoxList compressedModList;
-	//private DefaultListModel<JCheckBox> compressedModModel;
 	HashMap<JCheckBox, CompressedMod> checkMap = new HashMap<JCheckBox, CompressedMod>(); //crazy, I know...
 	private JButton importButton;
 	private JProgressBar progressBar;

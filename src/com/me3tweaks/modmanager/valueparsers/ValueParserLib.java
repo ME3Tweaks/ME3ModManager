@@ -2,7 +2,10 @@ package com.me3tweaks.modmanager.valueparsers;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Arrays;
 
+import com.me3tweaks.modmanager.valueparsers.biodifficulty.Stat;
 import com.me3tweaks.modmanager.valueparsers.mpstorepack.SlotPool;
 
 /**
@@ -14,23 +17,75 @@ import com.me3tweaks.modmanager.valueparsers.mpstorepack.SlotPool;
 public class ValueParserLib {
 
 	public static void main(String[] args) {
-		String input ="(PoolName=\"silverweapon\",Weight=0.55)";
-		SlotPool pool = new SlotPool(input);
-		System.out.println(pool.getPoolweight());
+		String input = "((test1";
+		System.out.println(getSplitValues(input).toString());
 	}
-	
-	public static double round(double value, int places) {
-	    if (places < 0) throw new IllegalArgumentException();
 
-	    BigDecimal bd = new BigDecimal(value);
-	    bd = bd.setScale(places, RoundingMode.HALF_UP);
-	    return bd.doubleValue();
+	public static double round(double value, int places) {
+		if (places < 0)
+			throw new IllegalArgumentException();
+
+		BigDecimal bd = new BigDecimal(value);
+		bd = bd.setScale(places, RoundingMode.HALF_UP);
+		return bd.doubleValue();
+	}
+
+	public static ArrayList<String> getSplitValues(String inputString) {
+		try {
+			ArrayList<String> values = new ArrayList<>();
+			String workingStr = inputString;
+
+			while (workingStr.length() > 2 && workingStr.charAt(1) == '(') {
+				workingStr = workingStr.substring(1);
+			}
+
+			int charIndex = 0;
+			int openBraces = 0;
+			while (workingStr.length() > 0) {
+				System.out.println(workingStr);
+				if (workingStr.charAt(charIndex) == '(') {
+					openBraces++;
+					charIndex++;
+					System.out.println("open brace, charindex: " + charIndex);
+					continue;
+				}
+				if (workingStr.charAt(charIndex) == ')') {
+					openBraces--;
+					System.out.println("close brace, ones left open: " + openBraces);
+					charIndex++;
+					if (openBraces == 0) {
+						//we finished one item
+						values.add(workingStr.substring(0, charIndex));
+						if (charIndex < workingStr.length()) {
+							workingStr = workingStr.substring(charIndex + 1);
+							System.out.println("Remaining workingStr: " + workingStr);
+						} else {
+							System.out.println("End of string");
+							break;
+						}
+						charIndex = 0;
+					} else if (openBraces < 0) {
+						System.out.println("Category Finished");
+						break;
+					}
+					continue;
+				}
+				//its none of the above 2
+				charIndex++;
+			}
+			//category finished.
+
+			return values;
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	public static String getStringProperty(String inputString, String propertyName, boolean isQuoted) {
 		int charIndex = inputString.indexOf(propertyName);
-		if (charIndex > 0 && (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"'
-				|| inputString.charAt(charIndex - 1) == ' ')) {
+		if (charIndex > 0
+				&& (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"' || inputString
+						.charAt(charIndex - 1) == ' ')) {
 			//at least one instance was found.
 			while (charIndex < inputString.length()) {
 				String workingStr = inputString.substring(charIndex + propertyName.length());
@@ -72,8 +127,9 @@ public class ValueParserLib {
 
 	public static int getIntProperty(String inputString, String propertyName) {
 		int charIndex = inputString.indexOf(propertyName);
-		if (charIndex > 0 && (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"'
-				|| inputString.charAt(charIndex - 1) == ' ')) {
+		if (charIndex > 0
+				&& (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"' || inputString
+						.charAt(charIndex - 1) == ' ')) {
 			//at least one instance was found.
 			while (charIndex < inputString.length()) {
 				String workingStr = inputString.substring(charIndex + propertyName.length());
@@ -106,8 +162,9 @@ public class ValueParserLib {
 
 	public static double getFloatProperty(String inputString, String propertyName) {
 		int charIndex = inputString.indexOf(propertyName);
-		if (charIndex > 0 && (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"'
-				|| inputString.charAt(charIndex - 1) == ' ')) {
+		if (charIndex > 0
+				&& (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"' || inputString
+						.charAt(charIndex - 1) == ' ')) {
 			//at least one instance was found.
 			while (charIndex < inputString.length()) {
 				String workingStr = inputString.substring(charIndex + propertyName.length());
@@ -277,8 +334,9 @@ public class ValueParserLib {
 
 	public static boolean getBooleanProperty(String inputString, String propertyName, boolean defaultVal) {
 		int charIndex = inputString.indexOf(propertyName);
-		if (charIndex > 0 && (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"'
-				|| inputString.charAt(charIndex - 1) == ' ')) {
+		if (charIndex > 0
+				&& (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"' || inputString
+						.charAt(charIndex - 1) == ' ')) {
 			//at least one instance was found.
 			while (charIndex < inputString.length()) {
 				String workingStr = inputString.substring(charIndex + propertyName.length());
