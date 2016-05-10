@@ -91,7 +91,7 @@ public class ModXMLTools {
 		rootElement.setAttribute("type", "classic");
 		rootElement.setAttribute("version", Double.toString(mod.getVersion()));
 		rootElement.setAttribute("updatecode", Integer.toString(mod.getClassicUpdateCode()));
-		rootElement.setAttribute("folder", "PUT_SERVER_FOLDER_HERE");
+		rootElement.setAttribute("folder", mod.getServerModFolder());
 		rootElement.setAttribute("manifesttype", "full");
 
 		for (ModJob job : mod.getJobs()) {

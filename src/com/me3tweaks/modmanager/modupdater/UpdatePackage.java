@@ -21,6 +21,15 @@ public class UpdatePackage {
 	private double version;
 	private boolean modmakerupdate;
 	private String serverModName;
+	private boolean requiresSideload = false;
+
+	public boolean isRequiresSideload() {
+		return requiresSideload;
+	}
+
+	public void setRequiresSideload(boolean requiresSideload) {
+		this.requiresSideload = requiresSideload;
+	}
 
 	public ArrayList<ManifestModFile> getFilesToDownload() {
 		return filesToDownload;

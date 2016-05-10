@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TlkFile name="DLC_CON_UIScaling_INT/DLC_CON_UIScaling_INT0.xml">
+	<Strings>
+		<String id="133700000">Mod Manager Starter Kit DLC</String>
+		<String id="133700001">DLC_CON_StarterKit</String>
+		<String id="133700002">en-us</String>
+		<String id="133700003">Male</String>
+		<String id="133700004">Female</String>
+	</Strings>
+</TlkFile>
