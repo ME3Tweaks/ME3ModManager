@@ -71,11 +71,25 @@ public class HintTextAreaUI extends BasicTextAreaUI implements FocusListener {
             } else {
                 g.setColor(comp.getForeground().brighter().brighter().brighter());              
             }
-            int padding = (comp.getHeight() - comp.getFont().getSize())/2;
-            g.drawString(hint, 2, comp.getHeight()-padding-1);          
+            //int padding = (comp.getHeight() - comp.getFont().getSize())/2;
+//            drawString(g,hint,2, comp.getHeight()-padding-1); comp.getFont().getSize()
+            drawString(g,hint,2,0); 
+
         }
     }
-
+    
+    /**
+     * Can draw newlines
+     * @param g
+     * @param text
+     * @param x
+     * @param y
+     */
+    void drawString(Graphics g, String text, int x, int y) {
+        for (String line : text.split("\n"))
+            g.drawString(line, x, y += g.getFontMetrics().getHeight());
+    }
+    
     @Override
     public void focusGained(FocusEvent e) {
         if(hideOnFocus) repaint();

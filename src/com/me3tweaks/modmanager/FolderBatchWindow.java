@@ -46,8 +46,8 @@ public class FolderBatchWindow extends JDialog {
 
 		c.gridy = 0;
 		if (droppedFile.isDirectory()) {
-			JLabel headerLabel = new JLabel(
-					"<html>You dropped a folder onto Mod Manager:<br>"+droppedFile+"<br>Select what operation to perform on the contents of this folder.<br>Hover over each button to see a description.</html>");
+			JLabel headerLabel = new JLabel("<html>You dropped a folder onto Mod Manager:<br>" + droppedFile
+					+ "<br>Select what operation to perform on the contents of this folder.<br>Hover over each button to see a description.</html>");
 			panel.add(headerLabel, c);
 
 			JButton compileAllTLK = new JButton("Compile all TLK XML Manifests");
@@ -74,6 +74,7 @@ public class FolderBatchWindow extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose COMPILE_TLK operation");
 					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK).execute();
+					dispose();
 				}
 			});
 
@@ -83,6 +84,7 @@ public class FolderBatchWindow extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPILE_TLK operation");
 					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_TLK).execute();
+					dispose();
 				}
 			});
 
@@ -92,6 +94,7 @@ public class FolderBatchWindow extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose COMPILE_COAL operation");
 					new BatchWorker(droppedFile, BatchWorker.COMPILE_COAL).execute();
+					dispose();
 				}
 			});
 
@@ -101,6 +104,7 @@ public class FolderBatchWindow extends JDialog {
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPILE_COAL operation");
 					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_COAL).execute();
+					dispose();
 				}
 			});
 
@@ -110,6 +114,7 @@ public class FolderBatchWindow extends JDialog {
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPRESS_PCC operation");
 					new BatchWorker(droppedFile, BatchWorker.DECOMPRESS_PCC).execute();
+					dispose();
 				}
 			});
 
@@ -119,6 +124,7 @@ public class FolderBatchWindow extends JDialog {
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose COMPRESS_PCC operation");
 					new BatchWorker(droppedFile, BatchWorker.COMPRESS_PCC).execute();
+					dispose();
 				}
 			});
 
@@ -128,6 +134,7 @@ public class FolderBatchWindow extends JDialog {
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose SIDELOAD_MODMAKER operation");
 					new BatchWorker(droppedFile, BatchWorker.SIDELOAD_MODMAKER).execute();
+					dispose();
 				}
 			});
 
@@ -150,8 +157,8 @@ public class FolderBatchWindow extends JDialog {
 			String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath());
 			switch (extension) {
 			case "xml":
-				JLabel headerLabel = new JLabel(
-						"<html>You dropped an XML file onto Mod Manager.<br>"+droppedFile+"<br>Select what operation to perform with this file.</html>");
+				JLabel headerLabel = new JLabel("<html>You dropped an XML file onto Mod Manager.<br>" + droppedFile
+						+ "<br>Select what operation to perform with this file.</html>");
 				panel.add(headerLabel, c);
 
 				JButton compileTLK = new JButton("Compile TLK (TLK Manifest (Tankmaster only))");
@@ -218,7 +225,7 @@ public class FolderBatchWindow extends JDialog {
 
 	}
 
-	class BatchWorker extends SwingWorker<Void, String> {
+	static class BatchWorker extends SwingWorker<Void, String> {
 
 		protected static final int COMPILE_TLK = 0;
 		protected static final int DECOMPILE_TLK = 1;
@@ -234,7 +241,6 @@ public class FolderBatchWindow extends JDialog {
 		public BatchWorker(File droppedFile, int operation) {
 			this.operation = operation;
 			this.folder = droppedFile;
-			dispose();
 		}
 
 		@Override
@@ -311,11 +317,14 @@ public class FolderBatchWindow extends JDialog {
 
 		@Override
 		protected void process(List<String> chunks) {
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(chunks.get(chunks.size() - 1));
+			if (ModManagerWindow.ACTIVE_WINDOW != null)
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(chunks.get(chunks.size() - 1));
 		}
+
 		@Override
-		protected void done(){
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Batch operation completed");
+		protected void done() {
+			if (ModManagerWindow.ACTIVE_WINDOW != null)
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Batch operation completed");
 		}
 	}
 }

@@ -31,7 +31,9 @@ public class Mod implements Comparable<Mod> {
 
 	File modDescFile;
 	boolean validMod = false, modCoal = false;
-	String modName, modDisplayDescription, modDescription, modPath, modifyString;
+	String modName, modDisplayDescription, modDescription;
+	private String modPath;
+	String modifyString;
 	public ArrayList<ModJob> jobs;
 	private String modAuthor;
 	private int modmakerCode = 0;
@@ -68,7 +70,7 @@ public class Mod implements Comparable<Mod> {
 		}
 		modifyString = "";
 		modDescFile = new File(filepath);
-		modPath = modDescFile.getParent();
+		setModPath(modDescFile.getParent());
 		jobs = new ArrayList<ModJob>();
 		try {
 			readDesc(new Wini(modDescFile));
@@ -189,14 +191,14 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeMessageConditionally("Modcmmver is less than 2, checking for coalesced.bin in folder (legacy)",
 					ModManager.LOG_MOD_INIT);
 			if (!ignoreLoadErrors) {
-				File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
+				File file = new File(ModManager.appendSlash(getModPath()) + "Coalesced.bin");
 				if (!file.exists() && !ignoreLoadErrors) {
 					ModManager.debugLogger.writeError(modName + " doesn't have Coalesced.bin and is marked as legacy, marking as invalid.");
 					setFailedReason("Mod is legacy (1.0), which requires a Coalesced.bin in the same folder as the moddesc.ini file. One is not present.");
 					return;
 				}
 			}
-			File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
+			File file = new File(ModManager.appendSlash(getModPath()) + "Coalesced.bin");
 			ModManager.debugLogger.writeMessageConditionally("Mod Manager 1.0 mod, verifying Coaleseced.bin location", ModManager.LOG_MOD_INIT);
 
 			if (!file.exists() && !ignoreLoadErrors) {
@@ -533,7 +535,7 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessageConditionally("Coalesced flag: " + modCoalFlag, ModManager.LOG_MOD_INIT);
 
 				if (modCoalFlag != 0) {
-					File file = new File(ModManager.appendSlash(modPath) + "Coalesced.bin");
+					File file = new File(ModManager.appendSlash(getModPath()) + "Coalesced.bin");
 					ModManager.debugLogger.writeMessageConditionally("Coalesced flag was set, verifying its location", ModManager.LOG_MOD_INIT);
 
 					if (!file.exists() && !ignoreLoadErrors) {
@@ -1138,7 +1140,7 @@ public class Mod implements Comparable<Mod> {
 			ini.put("ModInfo", "modname", modName);
 			ini.put("ModInfo", "moddev", modAuthor);
 			if (modDescription != null) {
-				ini.put("ModInfo", "moddesc", modDescription);
+				ini.put("ModInfo", "moddesc", ResourceUtils.convertNewlineToBr(modDescription));
 			}
 			if (modVersion != null) {
 				ini.put("ModInfo", "modver", modVersion);
@@ -1650,7 +1652,7 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	public String getDescFile() {
-		return modPath + File.separator + "moddesc.ini";
+		return getModPath() + File.separator + "moddesc.ini";
 	}
 
 	public double getCMMVer() {
@@ -1943,5 +1945,9 @@ public class Mod implements Comparable<Mod> {
 	public void setFailedReason(String failedReason) {
 		setValidMod(false);
 		this.failedReason = failedReason;
+	}
+
+	public void setModPath(String modPath) {
+		this.modPath = modPath;
 	}
 }
