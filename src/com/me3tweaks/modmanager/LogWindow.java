@@ -16,12 +16,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-import javax.swing.text.StyledDocument;
 
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListener;
@@ -29,6 +23,7 @@ import org.apache.commons.io.input.TailerListenerAdapter;
 
 import com.me3tweaks.modmanager.help.HelpMenu;
 import com.me3tweaks.modmanager.utilities.DebugLogger;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class LogWindow extends JFrame {
 
@@ -46,7 +41,7 @@ public class LogWindow extends JFrame {
 	private void setupTailer() {
 		TailerListener listener = new LogTailer();
 		File tailFile = new File(DebugLogger.LOGGING_FILENAME);
-		tailer = Tailer.create(tailFile, new LogTailer(), 500,true);
+		tailer = Tailer.create(tailFile, new LogTailer(), 500, true);
 	}
 
 	class LogTailer extends TailerListenerAdapter {
@@ -54,9 +49,9 @@ public class LogWindow extends JFrame {
 		public void handle(String line) {
 			System.out.println("TAILING!");
 			if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
-				appendToPane(logArea, line, Color.RED);
+				ResourceUtils.appendToPane(logArea, line, Color.RED);
 			} else {
-				appendToPane(logArea, line, Color.BLACK);
+				ResourceUtils.appendToPane(logArea, line, Color.BLACK);
 			}
 		}
 	}
@@ -117,30 +112,12 @@ public class LogWindow extends JFrame {
 			String line = scanner.nextLine();
 			System.out.println("Parsing log line " + line);
 			if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
-				appendToPane(logArea, line, Color.RED);
+				ResourceUtils.appendToPane(logArea, line, Color.RED);
 			} else {
-				appendToPane(logArea, line, Color.BLACK);
+				ResourceUtils.appendToPane(logArea, line, Color.BLACK);
 			}
 		}
 		logArea.setEditable(false);
 		scanner.close();
-	}
-
-	private void appendToPane(JTextPane tp, String msg, Color c) {
-		StyleContext sc = StyleContext.getDefaultStyleContext();
-	    AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
-	        StyleConstants.Foreground, c);
-
-	    int len = tp.getDocument().getLength(); // same value as
-	                       // getText().length();
-	    tp.setCaretPosition(len); // place caret at the end (with no selection)
-
-		StyledDocument doc = tp.getStyledDocument();
-		try {
-			doc.insertString(doc.getLength(),msg+"\n", aset);
-		} catch (BadLocationException e) {
-			e.printStackTrace();
-		}
-
 	}
 }

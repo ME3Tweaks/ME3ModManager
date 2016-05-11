@@ -1,10 +1,19 @@
 package com.me3tweaks.modmanager.utilities;
 
+import java.awt.Color;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
+
+import javax.swing.JTextPane;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -38,6 +47,29 @@ public class ResourceUtils {
 		int exp = (int) (Math.log(bytes) / Math.log(unit));
 		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
 		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+	}
+	
+	/**
+	 * Appends stylized text to a textpane
+	 * @param tp Textpane
+	 * @param msg Message to append. Will automatically place newline at end.
+	 * @param c Color of text.
+	 */
+	public static void appendToPane(JTextPane tp, String msg, Color c) {
+		StyleContext sc = StyleContext.getDefaultStyleContext();
+	    AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
+	        StyleConstants.Foreground, c);
+
+	    int len = tp.getDocument().getLength(); // same value as
+	                       // getText().length();
+	    tp.setCaretPosition(len); // place caret at the end (with no selection)
+
+		StyledDocument doc = tp.getStyledDocument();
+		try {
+			doc.insertString(doc.getLength(),msg+"\n", aset);
+		} catch (BadLocationException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**

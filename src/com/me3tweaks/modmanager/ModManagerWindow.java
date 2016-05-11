@@ -111,7 +111,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionExitDebugMode, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
-	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementModMaker, modManagementFailedMods, modManagementPatchLibary;
+	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementFailedMods,
+			modManagementPatchLibary;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
 			modutilsDeleteMod;
 	JMenuItem toolME3Explorer, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor, toolsMergeMod, toolME3Config;
@@ -1013,6 +1014,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementMenu = new JMenu("Mod Management");
 		modManagementModMaker = new JMenuItem("Download ME3Tweaks ModMaker Mod");
 		modManagementModMaker.setToolTipText("Allows you to download and compile ME3Tweaks ModMaker mods");
+		modManagementConflictDetector = new JMenuItem("Custom DLC Conflict Detector");
+		modManagementConflictDetector.setToolTipText("Scans installed custom DLC for file conflicts that may prevent them from working correctly");
 		modManagementCheckallmodsforupdate = new JMenuItem("Check eligible mods for updates");
 		modManagementCheckallmodsforupdate.setToolTipText("Checks eligible mods for updates on ME3Tweaks and prompts to download an update if one is available");
 		modManagementPatchLibary = new JMenuItem("MixIn Library");
@@ -1033,6 +1036,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		modManagementMenu.add(actionImportMenu);
 		modManagementMenu.add(modManagementModMaker);
+		modManagementMenu.add(modManagementConflictDetector);
 		modManagementMenu.add(modManagementCheckallmodsforupdate);
 		modManagementMenu.add(modManagementPatchLibary);
 		modManagementMenu.add(modManagementOpenModsFolder);
@@ -1145,6 +1149,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsAutoTOCGame.addActionListener(this);
 		modManagementModMaker.addActionListener(this);
+		modManagementConflictDetector.addActionListener(this);
 		toolsMergeMod.addActionListener(this);
 		modManagementCheckallmodsforupdate.addActionListener(this);
 		toolsUnpackDLC.addActionListener(this);
@@ -1406,11 +1411,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						JOptionPane.ERROR_MESSAGE);
 
 			}
+		} else if (e.getSource() == modManagementConflictDetector) {
+			if (validateBIOGameDir()) {
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Opening Custom DLC Conflict Detection Window");
+					updateApplyButton();
+					new CustomDLCConflictWindow();
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					ModManager.debugLogger.writeError("Custom DLC Conflict Window: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to fully use the conflict detection tool.");
+				}
+			} else {
+				labelStatus.setText("Conflict detector requires valid BIOGame directory");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == modManagementFailedMods) {
 			new FailedModsWindow();
-		} else
-
-		if (e.getSource() == backupBackupDLC) {
+		} else if (e.getSource() == backupBackupDLC) {
 			if (validateBIOGameDir()) {
 				backupDLC(fieldBiogameDir.getText());
 			} else {
