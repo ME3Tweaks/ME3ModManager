@@ -37,14 +37,13 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 
 	public ModImportDLCWindow(JFrame callingWindow, String biogameDir) {
     	ModManager.debugLogger.writeMessage("Opening ModImportWindow (DLC Import)");
-
 		this.biogameDir = biogameDir;
 		setupWindow(callingWindow);
 		setVisible(true);
 	}
 
 	private void setupWindow(JFrame callingWindow) {
-		setTitle("Imports installed mods into Mod Manager");
+		setTitle("Import installed mods into Mod Manager");
 		setMinimumSize(new Dimension(300, 300));
 		setIconImages(ModManager.ICONS);
 

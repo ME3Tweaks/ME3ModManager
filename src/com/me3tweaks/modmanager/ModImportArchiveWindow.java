@@ -63,6 +63,9 @@ public class ModImportArchiveWindow extends JDialog {
 	private DefaultTableModel compressedModModel;
 	private ArrayList<CompressedMod> compressedMods = new ArrayList<CompressedMod>();
 
+	/**
+	 * Standard, user triggered opening
+	 */
 	public ModImportArchiveWindow() {
 		try {
 			SevenZip.initSevenZipFromPlatformJAR();
@@ -77,6 +80,11 @@ public class ModImportArchiveWindow extends JDialog {
 		setVisible(true);
 	}
 
+	/**
+	 * Autoscan, user dropped file on mod manager ui
+	 * @param modManagerWindow calling window
+	 * @param file file dropped
+	 */
 	public ModImportArchiveWindow(ModManagerWindow modManagerWindow, String file) {
 		try {
 			SevenZip.initSevenZipFromPlatformJAR();
