@@ -22,8 +22,9 @@ public class UpdatePackage {
 	private boolean modmakerupdate;
 	private String serverModName;
 	private boolean requiresSideload = false;
+	private String sideloadURL;
 
-	public boolean isRequiresSideload() {
+	public boolean requiresSideload() {
 		return requiresSideload;
 	}
 
@@ -148,10 +149,20 @@ public class UpdatePackage {
 		for (ManifestModFile mf : filesToDownload) {
 			//use LZMA if it exists on the server.
 			long addSize = mf.getLzmasize() > 0 ? mf.getLzmasize() : mf.getSize();
-			System.out.println("Update file "+mf.getRelativePath()+" is "+addSize+ " bytes, useing the "+(mf.getLzmasize() > 0 ? "LZMA" : "DECOMPRESSED") + " method. Current update size is "+(size+addSize) +" ("+ResourceUtils.humanReadableByteCount(size+addSize,true)+")");
+			System.out.println("Update file " + mf.getRelativePath() + " is " + addSize + " bytes, useing the "
+					+ (mf.getLzmasize() > 0 ? "LZMA" : "DECOMPRESSED") + " method. Current update size is " + (size + addSize) + " ("
+					+ ResourceUtils.humanReadableByteCount(size + addSize, true) + ")");
 			size += addSize;
 		}
-		return ResourceUtils.humanReadableByteCount(size,true);
+		return ResourceUtils.humanReadableByteCount(size, true);
+	}
+
+	public void setSideloadURL(String sideloadURL) {
+		this.sideloadURL = sideloadURL;
+	}
+
+	public String getSideloadURL() {
+		return sideloadURL;
 	}
 
 }

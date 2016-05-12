@@ -103,7 +103,8 @@ public class ModManager {
 	public static boolean LOG_PATCH_INIT = false;
 	public static boolean PERFORM_DOT_NET_CHECK = true;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
-
+	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = {"DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared"};
+	public static final class Lock { } //threading wait() and notifyall();
 	public static void main(String[] args) {
 		loadLogger();
 		boolean emergencyMode = false;

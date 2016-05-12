@@ -1,7 +1,9 @@
 package com.me3tweaks.modmanager.modupdater;
 
 /**
- * This object contains info about a <sourcefile> entry in the server's manifest about a mod
+ * This object contains info about a <sourcefile> entry in the server's manifest
+ * about a mod
+ * 
  * @author mgamerz
  *
  */
@@ -11,6 +13,7 @@ public class ManifestModFile {
 	private long size;
 	private String lzmahash;
 	private long lzmasize;
+	private boolean sideloadOnly;
 
 	public ManifestModFile(String relativePath, String svrHash, long svrSize, String svrCompressedHash, long svrCompressedSize) {
 		super();
@@ -59,5 +62,13 @@ public class ManifestModFile {
 
 	public void setHash(String hash) {
 		this.hash = hash;
+	}
+
+	public boolean isSideloadOnly() {
+		return sideloadOnly;
+	}
+
+	public void setSideloadOnly(boolean sideloadOnly) {
+		this.sideloadOnly = sideloadOnly;
 	}
 }

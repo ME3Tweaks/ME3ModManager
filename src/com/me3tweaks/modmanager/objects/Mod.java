@@ -47,7 +47,8 @@ public class Mod implements Comparable<Mod> {
 	private ArrayList<Patch> requiredPatches = new ArrayList<Patch>();
 	private ArrayList<ModDelta> modDeltas = new ArrayList<ModDelta>();
 	private String failedReason;
-	private String serverModFolder = "PUT_SERVER_PATH_HERE"; //only for mod devs
+	public static String DEFAULT_SERVER_FOLDER = "PUT_SERVER_PATH_HERE";
+	private String serverModFolder = DEFAULT_SERVER_FOLDER; //only for mod devs
 	private ArrayList<AlternateFile> alternateFiles = new ArrayList<AlternateFile>();
 
 	public String getServerModFolder() {
@@ -369,7 +370,7 @@ public class Mod implements Comparable<Mod> {
 							ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
 							setFailedReason("Mod has a newfiles/replacefiles task in a header ("
 									+ modHeader
-									+ ") that encoutnered an error while building the list of source/targets. This likely means the source file does not exist: "
+									+ ") that encountered an error while building the list of source/targets. This likely means the source file does not exist: "
 									+ modFolderPath + ModManager.appendSlash(iniModDir) + newFile);
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
 									ModManager.LOG_MOD_INIT);
@@ -397,7 +398,7 @@ public class Mod implements Comparable<Mod> {
 									.writeError("[ADDFILE]Failed to add task for file addition (File likely does not exist), marking as invalid.");
 							setFailedReason("Mod has an addfiles/addfilestargets task in a header ("
 									+ modHeader
-									+ ") that encoutnered an error while building the list of source/targets. This likely means the source file does not exist: "
+									+ ") that encountered an error while building the list of source/targets. This likely means the source file does not exist: "
 									+ modFolderPath + ModManager.appendSlash(iniModDir) + addFile);
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------",
 									ModManager.LOG_MOD_INIT);

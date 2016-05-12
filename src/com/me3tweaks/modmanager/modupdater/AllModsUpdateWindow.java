@@ -308,7 +308,7 @@ public class AllModsUpdateWindow extends JDialog {
 				return;
 			}
 
-			if (upackages.size() <= 0) {
+			if (upackages == null || upackages.size() <= 0) {
 				if (AllModsUpdateWindow.this.showUI) {
 					JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.", "Mods up to date", JOptionPane.INFORMATION_MESSAGE);
 				} else {

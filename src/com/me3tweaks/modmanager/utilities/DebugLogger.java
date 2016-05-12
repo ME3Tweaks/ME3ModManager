@@ -90,8 +90,7 @@ public class DebugLogger {
 
 	class FlushTask extends TimerTask {
 		public void run() {
-			System.out.println("periodic flush");
-			currentMessages = 100;
+			currentMessages = messagesBeforeFlush+1;
 			checkIfFlushNeeded();
 		}
 	}

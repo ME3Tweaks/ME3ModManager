@@ -56,163 +56,8 @@ public class ModXMLTools {
 	static DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 	static DocumentBuilder docBuilder;
 
-	/**
-	 * Generates a XML representation of a mod for storing on ME3Tweaks.com
-	 * 
-	 * @param mod
-	 *            Mod to create XML for
-	 * @return XML string of mod
-	 */
-	public static String generateModXMLList(Mod mod) {
-		if (mod.getModMakerCode() > 0) {
-			System.err.println("ModMaker codes use the ID");
-			return "";
-		}
-
-		if (mod.getClassicUpdateCode() <= 0) {
-			System.err.println("Mod does not have a classic update code set");
-			return "";
-		}
-
-		if (mod.getVersion() <= 0) {
-			System.err.println("Mod must have a double/numeric version number");
-			return "";
-		}
-
-		try {
-			docBuilder = docFactory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		Document modDoc = docBuilder.newDocument();
-		Element rootElement = modDoc.createElement("mod");
-		rootElement.setAttribute("type", "classic");
-		rootElement.setAttribute("version", Double.toString(mod.getVersion()));
-		rootElement.setAttribute("updatecode", Integer.toString(mod.getClassicUpdateCode()));
-		rootElement.setAttribute("folder", mod.getServerModFolder());
-		rootElement.setAttribute("manifesttype", "full");
-
-		for (ModJob job : mod.getJobs()) {
-			for (String srcFile : job.getFilesToReplace()) {
-				Element fileElement = modDoc.createElement("sourcefile");
-				try {
-					fileElement.setAttribute("hash", MD5Checksum.getMD5Checksum(srcFile));
-					fileElement.setAttribute("size", Long.toString(new File(srcFile).length()));
-
-				} catch (DOMException e) {
-					e.printStackTrace();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				fileElement.setTextContent(ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator));
-				rootElement.appendChild(fileElement);
-			}
-		}
-		// add moddesc.ini
-		Element fileElement = modDoc.createElement("sourcefile");
-		File descFile = new File(mod.getDescFile());
-
-		try {
-			fileElement.setAttribute("hash", MD5Checksum.getMD5Checksum(mod.getDescFile()));
-			fileElement.setAttribute("size", Long.toString(descFile.length()));
-		} catch (DOMException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		fileElement.setTextContent(ResourceUtils.getRelativePath(mod.getDescFile(), mod.getModPath(), File.separator));
-		rootElement.appendChild(fileElement);
-
-		// add coalesced if legacy
-		if (mod.getCMMVer() <= 2.0) {
-			// add moddesc.ini
-			Element coalElement = modDoc.createElement("sourcefile");
-			String coalStr = mod.getModPath() + File.separator + "Coalesced.bin";
-			File coalFile = new File(coalStr);
-
-			try {
-				coalElement.setAttribute("hash", MD5Checksum.getMD5Checksum(coalStr));
-				coalElement.setAttribute("size", Long.toString(coalFile.length()));
-			} catch (DOMException e) {
-				e.printStackTrace();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			coalElement.setTextContent(ResourceUtils.getRelativePath(coalStr, mod.getModPath(), File.separator));
-			rootElement.appendChild(coalElement);
-		}
-
-		//add deltas
-		for (ModDelta delta : mod.getModDeltas()) {
-			Element element = modDoc.createElement("sourcefile");
-			File deltafile = new File(delta.getDeltaFilepath());
-
-			try {
-				element.setAttribute("hash", MD5Checksum.getMD5Checksum(delta.getDeltaFilepath()));
-				element.setAttribute("size", Long.toString(deltafile.length()));
-			} catch (DOMException e) {
-				e.printStackTrace();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			element.setTextContent(ResourceUtils.getRelativePath(delta.getDeltaFilepath(), mod.getModPath(), File.separator));
-			rootElement.appendChild(element);
-		}
-
-		modDoc.appendChild(rootElement);
-		return ModMakerCompilerWindow.docToString(modDoc);
-	}
-
 	public static void generateXMLFileList(Mod mod) {
 		new ManifestGeneratorUpdateCompressor(mod).execute();
-		/*
-		 * if (mod.getModMakerCode() > 0) {
-		 * System.err.println("ModMaker codes use the ID"); return ""; }
-		 * 
-		 * if (mod.getClassicUpdateCode() <= 0) {
-		 * System.err.println("Mod does not have a classic update code set");
-		 * return ""; }
-		 * 
-		 * if (mod.getVersion() <= 0) {
-		 * System.err.println("Mod must have a double/numeric version number");
-		 * return ""; }
-		 * 
-		 * try { docBuilder = docFactory.newDocumentBuilder(); } catch
-		 * (ParserConfigurationException e) { // TODO Auto-generated catch block
-		 * e.printStackTrace(); }
-		 * 
-		 * Document modDoc = docBuilder.newDocument(); Element rootElement =
-		 * modDoc.createElement("mod"); rootElement.setAttribute("type",
-		 * "classic"); rootElement.setAttribute("version",
-		 * Double.toString(mod.getVersion()));
-		 * rootElement.setAttribute("updatecode",
-		 * Integer.toString(mod.getClassicUpdateCode()));
-		 * rootElement.setAttribute("folder", "PUT_SERVER_FOLDER_HERE");
-		 * rootElement.setAttribute("manifesttype", "full");
-		 * 
-		 * Collection<File> files = FileUtils.listFiles(new
-		 * File(mod.getModPath()), TrueFileFilter.INSTANCE,
-		 * TrueFileFilter.INSTANCE); for (File file : files) { String srcFile =
-		 * file.getAbsolutePath(); Element fileElement =
-		 * modDoc.createElement("sourcefile"); try {
-		 * fileElement.setAttribute("hash",
-		 * MD5Checksum.getMD5Checksum(srcFile));
-		 * fileElement.setAttribute("size", Long.toString(new
-		 * File(srcFile).length()));
-		 * 
-		 * } catch (DOMException e) { e.printStackTrace(); } catch (Exception e)
-		 * { e.printStackTrace(); }
-		 * fileElement.setTextContent(ResourceUtils.getRelativePath(srcFile,
-		 * mod.getModPath(), File.separator));
-		 * rootElement.appendChild(fileElement); }
-		 * 
-		 * modDoc.appendChild(rootElement); return
-		 * ModMakerCompilerWindow.docToString(modDoc);
-		 */
 	}
 
 	private static class ManifestGeneratorUpdateCompressor extends SwingWorker<String, ThreadCommand> {
@@ -245,17 +90,77 @@ public class ModXMLTools {
 				publish(new ThreadCommand("Mod requires numeric version number", "ERROR"));
 				return "";
 			}
+			String foldername = mod.getServerModFolder();
+			if (mod.getServerModFolder().equals(Mod.DEFAULT_SERVER_FOLDER)) {
+				foldername = mod.getModName().replaceAll(" ", "").toLowerCase();
+			}
+			File manifestFile = new File(System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Manifests"
+					+ File.separator + foldername + ".xml");
 
-			Collection<File> files = FileUtils.listFiles(new File(mod.getModPath()), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+			//SIMULATE REVERSE UPDATE
+			//CHECK FOR FILE EXISTENCE IN MOD UPDATE FOLDER, LZMA HASHES.
+			//FILES THAT FAIL THIS WILL BE ADDED TO COLLECTION OF FILES TO UDPATE
+			Collection<File> newversionfiles = FileUtils.listFiles(new File(mod.getModPath()), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+			ArrayList<File> updatedfiles = new ArrayList<>();
+			UpdatePackage up = null;
+			if (manifestFile.exists()) {
+				//check local files against old manifest. Changes will be considered updates and will be added to the updates folder.
+				String oldmanifest = FileUtils.readFileToString(manifestFile);
+				Document doc = null;
+				try {
+					DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+					InputSource is = new InputSource();
+					is.setCharacterStream(new StringReader(oldmanifest));
+					doc = db.parse(is);
+					double modversion = mod.getVersion();
+					mod.setVersion(0.001);
+					publish(new ThreadCommand("Calculating what files to use in delta update", null));
+					up = checkForClassicUpdate(mod, doc);
+					mod.setVersion(modversion); //restore, since this is pointe
+					if (up != null) {
+						for (ManifestModFile mf : up.getFilesToDownload()) {
+							File f = new File(mod.getModPath() + File.separator + mf.getRelativePath());
+							assert f.exists();
+							updatedfiles.add(f);
+						}
+					} else {
+						//no update.
+						ModManager.debugLogger.writeMessage("No files to update. Exiting update service mod preparer thread.");
+						publish(new ThreadCommand("No changes detected from previous generated manifest", null));
+						return null;
+					}
+				} catch (Exception e) {
+					ModManager.debugLogger.writeErrorWithException("Error loading old manifest. Performing a full compression. Error: ", e);
+					for (File f : newversionfiles) {
+						updatedfiles.add(f);
+					}
+				}
+			} else {
+				for (File f : newversionfiles) {
+					updatedfiles.add(f);
+				}
+			}
+
 			//Compressing mod to /serverupdate
 
-			String compressedoutputfolder = System.getProperty("user.dir") + File.separator + "serverupdate" + File.separator;
-			File f = new File(compressedoutputfolder);
+			long startTime = System.currentTimeMillis();
+
+			String compressedfulloutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Full"
+					+ File.separator + foldername + File.separator;
+			String compressedupdateoutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator
+					+ "UpdateDelta" + File.separator + foldername + File.separator;
+
+			if (!manifestFile.exists()) {
+				compressedupdateoutputfolder = compressedfulloutputfolder; //don't use update folder
+			}
+
+			//COMPRESSING FILES................
+			File f = new File(compressedupdateoutputfolder);
 			FileUtils.deleteDirectory(f);
 			f.mkdirs();
-			int numFiles = files.size();
+			int numFiles = updatedfiles.size();
 			int processed = 1;
-			for (File file : files) {
+			for (File file : updatedfiles) {
 				if (FilenameUtils.getExtension(file.getAbsolutePath()).equals(".bak")) {
 					processed++;
 					continue;
@@ -263,14 +168,35 @@ public class ModXMLTools {
 				publish(new ThreadCommand("Compressing " + FilenameUtils.getBaseName(file.getAbsolutePath()), processed + "/" + numFiles));
 				String srcFile = file.getAbsolutePath();
 				String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
-				String outputFile = compressedoutputfolder + relativePath + ".lzma";
+				String outputFile = compressedupdateoutputfolder + relativePath + ".lzma";
 				new File(outputFile).getParentFile().mkdirs();
-				String[] procargs = { ModManager.getToolsDir() + "lzma.exe", "e", srcFile, outputFile, "-d26" };
+
+				String[] procargs = { ModManager.getToolsDir() + "lzma.exe", "e", srcFile, outputFile, "-d26",
+						"-mt" + Runtime.getRuntime().availableProcessors() };
 				ProcessBuilder p = new ProcessBuilder(procargs);
 				ModManager.runProcess(p);
 				processed++;
 			}
 
+			//Update the full distribution folder (assuming we are doing a delta build)
+			if (!compressedfulloutputfolder.equals(compressedupdateoutputfolder)) {
+				publish(new ThreadCommand("Applying delta to full server package", null));
+				for (File newfile : updatedfiles) {
+					//copy from update to full
+					ModManager.debugLogger.writeMessage("Copying updated file from update package to full server package: " + newfile);
+					String relativePath = ResourceUtils.getRelativePath(newfile.getAbsolutePath(), mod.getModPath(), File.separator);
+					File updatedfile = new File(compressedupdateoutputfolder + relativePath + ".lzma");
+					File oldfile = new File(compressedfulloutputfolder + relativePath + ".lzma");
+					FileUtils.deleteQuietly(oldfile);
+					FileUtils.copyFile(updatedfile, oldfile);
+				}
+				if (up != null) {
+					for (String delfile : up.getFilesToDelete()) {
+						ModManager.debugLogger.writeMessage("Deleting unnecessary file from full server package: " + delfile);
+						FileUtils.deleteQuietly(new File(compressedfulloutputfolder + delfile));
+					}
+				}
+			}
 			//Generating XML Manifest
 			try {
 				docBuilder = docFactory.newDocumentBuilder();
@@ -287,8 +213,9 @@ public class ModXMLTools {
 			rootElement.setAttribute("folder", mod.getServerModFolder());
 			rootElement.setAttribute("manifesttype", "full");
 			processed = 1;
-			for (File file : files) {
-				publish(new ThreadCommand("Creating mod manifest", processed + "/" + numFiles));
+			numFiles = newversionfiles.size();
+			for (File file : newversionfiles) {
+				publish(new ThreadCommand("Building full mod manifest", processed + "/" + numFiles));
 
 				String srcFile = file.getAbsolutePath();
 				String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
@@ -296,8 +223,8 @@ public class ModXMLTools {
 				try {
 					fileElement.setAttribute("hash", MD5Checksum.getMD5Checksum(srcFile));
 					fileElement.setAttribute("size", Long.toString(new File(srcFile).length()));
-					fileElement.setAttribute("lzmahash", MD5Checksum.getMD5Checksum(compressedoutputfolder + relativePath + ".lzma"));
-					fileElement.setAttribute("lzmasize", Long.toString(new File(compressedoutputfolder + relativePath + ".lzma").length()));
+					fileElement.setAttribute("lzmahash", MD5Checksum.getMD5Checksum(compressedfulloutputfolder + relativePath + ".lzma"));
+					fileElement.setAttribute("lzmasize", Long.toString(new File(compressedfulloutputfolder + relativePath + ".lzma").length()));
 				} catch (DOMException e) {
 					e.printStackTrace();
 				} catch (Exception e) {
@@ -308,17 +235,23 @@ public class ModXMLTools {
 				processed++;
 			}
 
+			long finishTime = System.currentTimeMillis();
+			ModManager.debugLogger.writeMessage("Manifest ready. Took " + ((finishTime - startTime) / 1000) + " seconds.");
+
 			modDoc.appendChild(rootElement);
 			Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-			clpbrd.setContents(new StringSelection(ModMakerCompilerWindow.docToString(modDoc)), null);
-			publish(new ThreadCommand("Manifest copied to clipboard, mod in /serverupdate.", "Done"));
+			String manifest = ModMakerCompilerWindow.docToString(modDoc);
+			manifestFile.getParentFile().mkdirs();
+			FileUtils.writeStringToFile(manifestFile, manifest);
+			clpbrd.setContents(new StringSelection(manifest), null);
+			publish(new ThreadCommand(mod.getModName() + " prepared for updater service", null));
 			return null;
 		}
 
 		@Override
 		protected void process(List<ThreadCommand> chunks) {
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(chunks.get(chunks.size() - 1).getCommand() + " ["
-					+ chunks.get(chunks.size() - 1).getMessage() + "]");
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(chunks.get(chunks.size() - 1).getCommand()
+					+ (chunks.get(chunks.size() - 1).getMessage() != null ? " [" + chunks.get(chunks.size() - 1).getMessage() + "]" : ""));
 		}
 
 		@Override
@@ -444,8 +377,11 @@ public class ModXMLTools {
 			try {
 				modElem = (Element) xPath.evaluate("/updatemanifest/mod[@updatecode=" + mod.getClassicUpdateCode() + "]", doc, XPathConstants.NODE);
 				if (modElem == null) {
-					ModManager.debugLogger.writeError("Mod not found in update manifest " + mod.getClassicUpdateCode() + " " + mod.getModName());
-					return null;
+					modElem = (Element) xPath.evaluate("/mod[@updatecode=" + mod.getClassicUpdateCode() + "]", doc, XPathConstants.NODE);
+					if (modElem == null) {
+						ModManager.debugLogger.writeError("Mod not found in update manifest " + mod.getClassicUpdateCode() + " " + mod.getModName());
+						return null;
+					}
 				}
 			} catch (XPathExpressionException e1) {
 				// TODO Auto-generated catch block
@@ -465,23 +401,29 @@ public class ModXMLTools {
 			ModManager.debugLogger.writeMessage("Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
 			// build manifest of files
 			ArrayList<ManifestModFile> serverFiles = new ArrayList<ManifestModFile>();
+			String sideloadURL = null;
+			try {
+				sideloadURL = xPath.evaluate("/sideloadurl", modElem);
+			} catch (XPathExpressionException e1) {
+				ModManager.debugLogger.writeErrorWithException("Error trying to find sideload url in manifest:", e1);
+			}
 			NodeList serverFileList = modElem.getElementsByTagName("sourcefile");
 			for (int j = 0; j < serverFileList.getLength(); j++) {
 				Element fileElem = (Element) serverFileList.item(j);
 				String svrHash = fileElem.getAttribute("hash");
 				long srvSize = Long.parseLong(fileElem.getAttribute("size"));
 				String svrCompressedHash = fileElem.getAttribute("lzmahash");
-				System.out.println("COMPRESSED HASH: "+svrCompressedHash);
 				long svrCompressedSize = -1;
 				try {
 					svrCompressedSize = Long.parseLong(fileElem.getAttribute("lzmasize"));
-					System.out.println("COMPRESSED SIZE: "+svrCompressedSize);
 				} catch (NumberFormatException e) {
 					//not stored on server as LZMA
-					System.err.println("Server manifest has no LZMA size (NFE)");
 				}
 
 				ManifestModFile metafile = new ManifestModFile(fileElem.getTextContent(), svrHash, srvSize, svrCompressedHash, svrCompressedSize);
+				if (fileElem.getAttribute("sideloadonly") != null && !fileElem.getAttribute("sideloadonly").equals("")) {
+					metafile.setSideloadOnly(true);
+				}
 				serverFiles.add(metafile);
 			}
 			String modpath = ModManager.appendSlash(mod.getModPath());
@@ -493,11 +435,13 @@ public class ModXMLTools {
 				String blacklisted = fileElem.getTextContent();
 				if (blacklisted.contains("..")) {
 					//Malicious attempt possible
-					ModManager.debugLogger.writeError("Server indicates a file with path .. is blacklisted. The file path indicated on the server is: "+blacklisted+"\nThis may be a malicious piece of data from the server. This file will be skipped");
+					ModManager.debugLogger
+							.writeError("Server indicates a file with path .. is blacklisted. The file path indicated on the server is: "
+									+ blacklisted + "\nThis may be a malicious piece of data from the server. This file will be skipped");
 					continue;
 				}
-				ModManager.debugLogger.writeError("Blacklisted file: "+blacklisted);
-				filesToRemove.add(modpath+blacklisted);
+				ModManager.debugLogger.writeError("Blacklisted file: " + blacklisted);
+				filesToRemove.add(modpath + blacklisted);
 			}
 
 			ModManager.debugLogger.writeMessage("Number of files in manifest: " + serverFiles.size());
@@ -557,22 +501,6 @@ public class ModXMLTools {
 						}
 					}
 				}
-
-/*				// Check legacy Coalesced.bin
-				if (mod.getCMMVer() < 3.0 && mod.modsCoal()) {
-					boolean existsOnServer = false;
-					for (ManifestModFile mf : serverFiles) {
-						if (mf.getRelativePath().toLowerCase().equals("Coalesced.bin")) {
-							existsOnServer = true;
-							continue;
-						}
-					}
-					if (!existsOnServer) {
-						// file needs to be removed
-						ModManager.debugLogger.writeMessage("Coalesced.bin is not in updated version of mod on server, marking for removal");
-						filesToRemove.add(ModManager.appendSlash(mod.getModPath()) + "Coalesced.bin");
-					}
-				}*/
 			}
 
 			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: "
@@ -581,7 +509,18 @@ public class ModXMLTools {
 				//server lists update, but local copy matches server
 				return null;
 			}
-			return new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
+			UpdatePackage up = new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
+			if (sideloadURL != null) {
+				up.setSideloadURL(sideloadURL);
+			}
+			for(ManifestModFile mf : newFiles) {
+				if (mf.isSideloadOnly()) {
+					//REQUIRES SIDELOAD!
+					ModManager.debugLogger.writeError("This mod has a file marked for update that the developer has specified as sideload-only. The URL for the sideloading is "+sideloadURL);
+					up.setRequiresSideload(true);
+				}
+			}
+			return up;
 
 		} else {
 			ModManager.debugLogger.writeMessage("Server returned a null document.");
@@ -589,7 +528,6 @@ public class ModXMLTools {
 		return null;
 
 	}// end classic update
-
 
 	private static Document getOnlineInfo(String updateURL, boolean modmakerMod, int updatecode) {
 		List<NameValuePair> params = new ArrayList<NameValuePair>();
