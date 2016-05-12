@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -24,7 +25,9 @@ import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -54,8 +57,6 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import net.iharder.dnd.FileDrop;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -78,7 +79,6 @@ import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModList;
-import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.RestoreMode;
 import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
@@ -94,6 +94,8 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
+import net.iharder.dnd.FileDrop;
+
 /**
  * Controls the main window for Mass Effect 3 Mod Manager.
  * 
@@ -103,6 +105,7 @@ import com.sun.jna.platform.win32.WinReg;
 @SuppressWarnings("serial")
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
 	public static ModManagerWindow ACTIVE_WINDOW;
+	public static ArrayList<Integer> forceUpdateOnReloadList = new ArrayList<Integer>();
 	boolean isUpdate;
 	public JTextField fieldBiogameDir;
 	JTextArea fieldDescription;
@@ -176,7 +179,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					"<html><div style=\"width:330px;\">Mod Manager's interface (post-startup) encountered a critical unknown error and was unable to start:<br>" + e.getMessage()
 							+ "<br>"
 							+ "<br>This has been logged to the me3cmm_last_run_log.txt file if you didn't explicitly turn logging off.<br>Please report this to femshep.</div></html>",
-					"Critical Interface Error", JOptionPane.ERROR_MESSAGE);
+					"Critical Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		validateBIOGameDir();
@@ -195,7 +198,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
-		//new GUITransplanterWindow(this);
 	}
 
 	/**
@@ -236,6 +238,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					JOptionPane.INFORMATION_MESSAGE);
 		}
 
+		//clear pending updates (done via sideload update)
+		for (Integer code : forceUpdateOnReloadList){
+			for (int i = 0; i < modModel.getSize(); i++) {
+				Mod mod = modModel.getElementAt(i);
+				if (mod.getClassicUpdateCode() == code) {
+					mod.setVersion(0.001);
+				}
+			}
+		}
+		
 		new NetworkThread().execute();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: Initialize() has completed.");
 	}
@@ -351,32 +363,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
 			}
 
-			/*
-			 * File guitransplanter = new File(ModManager.getTransplantDir() +
-			 * "Transplanter-CLI.exe"); if (!f7za.exists()) { publish(
-			 * "Downloading 7za Unzipper"); ModManager.debugLogger.writeMessage(
-			 * "7za.exe does not exist at the following path, downloading new copy: "
-			 * + f7za.getAbsolutePath()); String url =
-			 * "http://me3tweaks.com/modmanager/tools/7za.exe"; try { File
-			 * updateDir = new File(ModManager.getToolsDir());
-			 * updateDir.mkdirs(); FileUtils.copyURLToFile(new URL(url), new
-			 * File(ModManager.getToolsDir() + "7za.exe")); publish(
-			 * "Downloaded 7za Unzipper into tools directory");
-			 * ModManager.debugLogger.writeMessage(
-			 * "Downloaded missing 7za.exe file for updating Mod Manager");
-			 * 
-			 * } catch (IOException e) {
-			 * ModManager.debugLogger.writeErrorWithException (
-			 * "Error downloading 7za into tools folder", e); publish(
-			 * "Error downloading 7za"); } } else { ModManager.debugLogger
-			 * .writeMessage("7za.exe is present in tools/ directory"); }
-			 */
-
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
 				checkForUpdates();
 			}
 			checkForME3ExplorerUpdates();
-			if ((ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) || ModManager.AUTO_UPDATE_MODS) {
+			if (ModManager.AUTO_UPDATE_MODS || forceUpdateOnReloadList.size() > 0) {
 				checkForModUpdates();
 			}
 			return null;
@@ -418,24 +409,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		private void checkForModUpdates() {
-			//should not do this on background thread but... yaknow...
-			if (ModManager.AUTO_UPDATE_MODS == false && !ModManager.ASKED_FOR_AUTO_UPDATE) {
-				ModManager.debugLogger.writeMessage("Prompting user for auto-updates");
-				publish("NOTIFY_UPDATE_PROMPT");
-				while (ModManager.ASKED_FOR_AUTO_UPDATE == false) {
-					try {
-						Thread.sleep(200); //wait for prompt
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			} else {
-				ModManager.debugLogger.writeMessage("User has accepted mod updates or has been asked before");
-			}
-
 			//Check for updates
-			if (ModManager.AUTO_UPDATE_MODS) {
-				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS) {
+			if (ModManager.AUTO_UPDATE_MODS || forceUpdateOnReloadList.size() > 0) {
+				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0) {
 					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
 							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK) + " since the last help/mods update check.");
 					publish("Downloading latest help information");
@@ -456,29 +432,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (latest instanceof String) {
 					String update = (String) latest;
 					switch (update) {
-					case "NOTIFY_UPDATE_PROMPT":
-						//ask user
-						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, "Mod Manager can automatically keep your mods up to date\nwith ME3Tweaks, checking every "
-								+ ModManager.AUTO_CHECK_INTERVAL_DAYS + " days.\nTurn this feature on?", "Mod Auto Updates", JOptionPane.YES_NO_CANCEL_OPTION);
-						ModManager.ASKED_FOR_AUTO_UPDATE = true;
-						if (result != JOptionPane.CANCEL_OPTION) {
-							Wini ini;
-							try {
-								File settings = new File(ModManager.SETTINGS_FILENAME);
-								if (!settings.exists())
-									settings.createNewFile();
-								ini = new Wini(settings);
-								ini.put("Settings", "autoupdatemods", result == JOptionPane.YES_OPTION ? "true" : "false");
-								ini.put("Settings", "declinedautoupdate", result == JOptionPane.YES_OPTION ? "false" : "true");
-								ini.store();
-								ModManager.AUTO_UPDATE_MODS = (result == JOptionPane.YES_OPTION);
-							} catch (InvalidFileFormatException e) {
-								e.printStackTrace();
-							} catch (IOException e) {
-								ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
-							}
-						}
-						break;
 					case "UPDATE_HELP_MENU":
 						menuBar.remove(helpMenu);
 						menuBar.add(HelpMenu.constructHelpMenu());
@@ -494,6 +447,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		@Override
 		protected void done() {
+			forceUpdateOnReloadList.clear(); //remove pending updates
 			try {
 				get();
 			} catch (Exception e) {
@@ -533,15 +487,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 				if (latest instanceof UpdatePackage) {
 					UpdatePackage upackage = (UpdatePackage) latest;
-					String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
-					updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion()
-							+ (upackage.isModmakerupdate() ? "" : " (" + upackage.getUpdateSizeMB() + ")") + "\n";
-					updatetext += "Update this mod?";
-					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
-					if (result == JOptionPane.YES_OPTION) {
-						ModManager.debugLogger.writeMessage("Starting manual single-mod updater");
-						ModUpdateWindow muw = new ModUpdateWindow(upackage);
-						muw.startUpdate(ModManagerWindow.this);
+					if (upackage.requiresSideload()) {
+						JOptionPane.showMessageDialog(ModManagerWindow.this, upackage.getMod().getModName()+" has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "+upackage.getMod().getModName()+".", "Sideload update required", JOptionPane.WARNING_MESSAGE);
+						try {
+							ModManager.openWebpage(new URL(upackage.getSideloadURL()));
+						} catch (MalformedURLException e) {
+							ModManager.debugLogger.writeError("Invalid sideload URL: "+upackage.getSideloadURL());
+							JOptionPane.showMessageDialog(ModManagerWindow.this, upackage.getMod().getModName()+" specified an invalid URL for it's sideload upload:\n"+upackage.getSideloadURL(), "Invalid Sideload URL", JOptionPane.ERROR_MESSAGE);
+						}
+					} else {
+						String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
+						updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion()
+								+ (upackage.isModmakerupdate() ? "" : " (" + upackage.getUpdateSizeMB() + ")") + "\n";
+						updatetext += "Update this mod?";
+						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
+						if (result == JOptionPane.YES_OPTION) {
+							ModManager.debugLogger.writeMessage("Starting manual single-mod updater");
+							ModUpdateWindow muw = new ModUpdateWindow(upackage);
+							muw.startUpdate(ModManagerWindow.this);
+						}
 					}
 				}
 			}
@@ -2097,45 +2061,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	/**
-	 * Deletes the Custom DLC of this mod selected
-	 */
-	private void uninstallCustomDLC() {
-		if (validateBIOGameDir()) {
-			String dlcdir = ModManager.appendSlash(fieldBiogameDir.getText()) + "DLC" + File.separator;
-			Mod mod = modModel.get(modList.getSelectedIndex());
-			ModManager.debugLogger.writeMessage("Deleting custom content for mod: " + mod.getModName());
-			for (ModJob job : mod.jobs) {
-				if (job.getJobType() != ModJob.CUSTOMDLC) {
-					continue; // skip
-				}
-
-				for (String customDLCfolder : job.getDestFolders()) {
-					File custDLC = new File(dlcdir + customDLCfolder);
-					ModManager.debugLogger.writeMessage("Checking for custom content installed: " + custDLC.getAbsolutePath());
-
-					if (custDLC.exists()) {
-						try {
-							FileUtils.forceDelete(custDLC);
-							ModManager.debugLogger.writeMessage("Deleted custom DLC content " + custDLC.getAbsolutePath());
-						} catch (IOException e) {
-							ModManager.debugLogger.writeError("Couldn't delete custom DLC content " + custDLC.getAbsolutePath());
-							ModManager.debugLogger.writeException(e);
-						}
-					}
-				}
-			}
-			labelStatus.setText("Deleted custom DLC content");
-		}
-	}
-
-	/**
 	 * Shows the name/descip editor
 	 */
 	private void showInfoEditor() {
 		// TODO Auto-generated method stub
 		int selectedIndex = modList.getSelectedIndex();
 		if (selectedIndex < 0) {
-			return; // shouldn't be able to toc an unselected mod eh?
+			return;
 		}
 		// System.out.println("SELECTED VALUE: " + selectedValue);
 		Mod mod = modModel.get(selectedIndex);

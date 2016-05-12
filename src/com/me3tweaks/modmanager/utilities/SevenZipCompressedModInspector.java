@@ -19,6 +19,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.me3tweaks.modmanager.ModImportArchiveWindow;
 import com.me3tweaks.modmanager.ModImportArchiveWindow.ImportWorker;
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.CompressedMod;
 import com.me3tweaks.modmanager.objects.Mod;
 
@@ -252,6 +253,8 @@ public class SevenZipCompressedModInspector {
 					if (!deletesuccessful) {
 						ModManager.debugLogger.writeError("FAILED TO DELETE FOLDER: "+outputdir);
 					}
+				} else {
+					ModManagerWindow.forceUpdateOnReloadList.add(cm.getModDescMod().getClassicUpdateCode());
 				}
 
 			}

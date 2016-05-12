@@ -82,8 +82,7 @@ public class ModManager {
 																// cmmver in
 																// moddesc
 	public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
-	public static boolean AUTO_UPDATE_MODS = false;
-	public static boolean ASKED_FOR_AUTO_UPDATE = false;
+	public static boolean AUTO_UPDATE_MODS = true;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
 	public static final int MIN_REQUIRED_ME3EXPLORER_MAIN = 2;
@@ -218,17 +217,9 @@ public class ModManager {
 					BUILD_NUMBER = Long.parseLong(forcedVersion);
 				}
 				String autoupdate = settingsini.get("Settings", "autoupdatemods");
-				if (autoupdate != null && autoupdate.toLowerCase().equals("true")) {
-					debugLogger.writeMessage("Enabling mod auto-updates");
-					AUTO_UPDATE_MODS = true;
-				}
-
-				if (AUTO_UPDATE_MODS == false) {
-					String askedbefore = settingsini.get("Settings", "declinedautoupdate");
-					if (askedbefore != null) {
-						debugLogger.writeMessage("User answered auto updates before");
-						ASKED_FOR_AUTO_UPDATE = true;
-					}
+				if (autoupdate != null && autoupdate.toLowerCase().equals("false")) {
+					debugLogger.writeMessage("Disabling mod auto-updates");
+					AUTO_UPDATE_MODS = false;
 				}
 
 				// Autodownload ME3Explorer updates

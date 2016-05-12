@@ -91,8 +91,9 @@ public class ModInstallWindow extends JDialog {
 	 */
 	private void checkModCMMVersion(Mod mod) {
 		if (mod.getCMMVer() > ModManager.MODDESC_VERSION_SUPPORT) {
-			JOptionPane.showMessageDialog(callingWindow, "This mod specifies it requires a newer version of Mod Manager: " + mod.getCMMVer()
-					+ ".\nMod Manager will attempt to install the mod but it may not work.", "Outdated Mod Manager", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(callingWindow,
+					"This mod specifies it requires a newer version of Mod Manager: " + mod.getCMMVer() + ".\nMod Manager will attempt to install the mod but it may not work.",
+					"Outdated Mod Manager", JOptionPane.WARNING_MESSAGE);
 		}
 	}
 
@@ -110,8 +111,7 @@ public class ModInstallWindow extends JDialog {
 				if (me3exppath.equals("")) {
 					//me3explorer is missing
 					ModManager.debugLogger.writeError("Unable to find ME3Explorer, cancelling mod install");
-					JOptionPane.showMessageDialog(null,
-							"Installation of mods requires ME3Explorer in the data directory.\nMod installation cannot continue.",
+					JOptionPane.showMessageDialog(null, "Installation of mods requires ME3Explorer in the data directory.\nMod installation cannot continue.",
 							"Required Component Missing", JOptionPane.ERROR_MESSAGE);
 					return false;
 				}
@@ -149,8 +149,7 @@ public class ModInstallWindow extends JDialog {
 		}
 		sb.append("\nThese jobs will be skipped. Continue with the mod install?");
 		int result = JOptionPane.showConfirmDialog(callingWindow, sb.toString(), "Missing DLC", JOptionPane.WARNING_MESSAGE);
-		ModManager.debugLogger.writeMessage(result == JOptionPane.YES_OPTION ? "User continuing install even with missing DLC modules"
-				: "User canceled Mod Install");
+		ModManager.debugLogger.writeMessage(result == JOptionPane.YES_OPTION ? "User continuing install even with missing DLC modules" : "User canceled Mod Install");
 		return result == JOptionPane.YES_OPTION;
 	}
 
@@ -301,19 +300,16 @@ public class ModInstallWindow extends JDialog {
 				if (bghDB == null) {
 					//cannot continue
 					failedLoadingDB = true;
-					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
-							+ "Only one connection to the local database is allowed at a time.<br>"
-							+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure",
-							JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
+							+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
 					return true;
 				}
 
 			}
 			//check if DB exists
 			if (!bghDB.isBasegameTableCreated()) {
-				JOptionPane.showMessageDialog(ModInstallWindow.this,
-						"The game repair database has not been created.\nYou need to do so before installing mods.", "No Game Repair Database",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModInstallWindow.this, "The game repair database has not been created.\nYou need to do so before installing mods.",
+						"No Game Repair Database", JOptionPane.ERROR_MESSAGE);
 				return true; //open DB window
 			}
 
@@ -333,13 +329,10 @@ public class ModInstallWindow extends JDialog {
 						if (rfi == null) {
 							ModManager.debugLogger.writeMessage("File not in GameDB, showing prompt: " + relative);
 							// file is missing. Basegame DB likely hasn't been made
-							int reply = JOptionPane
-									.showConfirmDialog(
-											null,
-											"<html>"
-													+ relative
-													+ " is not in the game repair database.<br>In order to restore basegame files and unpacked DLC files this database needs to be created or updated.<br>Open the database window?</html>",
-											"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+							int reply = JOptionPane.showConfirmDialog(null,
+									"<html>" + relative
+											+ " is not in the game repair database.<br>In order to restore basegame files and unpacked DLC files this database needs to be created or updated.<br>Open the database window?</html>",
+									"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 							if (reply == JOptionPane.NO_OPTION) {
 								return false;
 							} else {
@@ -359,8 +352,7 @@ public class ModInstallWindow extends JDialog {
 						File unpackeddlcfile = new File(me3dir + fileToReplace);
 						if (!unpackeddlcfile.exists()) {
 							fileIsMissing = true;
-							ModManager.debugLogger.writeMessage("Game DB: unpacked DLC file not present. DLC is assumed to still be in SFAR: "
-									+ job.getJobName());
+							ModManager.debugLogger.writeMessage("Game DB: unpacked DLC file not present. DLC is assumed to still be in SFAR: " + job.getJobName());
 							break;
 						}
 					}
@@ -370,8 +362,7 @@ public class ModInstallWindow extends JDialog {
 						File unpackeddlcfile = new File(me3dir + removeFile);
 						if (!unpackeddlcfile.exists()) {
 							fileIsMissing = true;
-							ModManager.debugLogger.writeMessage("Game DB: unpacked DLC file not present. DLC is assumed to still be in SFAR: "
-									+ job.getJobName());
+							ModManager.debugLogger.writeMessage("Game DB: unpacked DLC file not present. DLC is assumed to still be in SFAR: " + job.getJobName());
 							break;
 						}
 					}
@@ -390,11 +381,9 @@ public class ModInstallWindow extends JDialog {
 						RepairFileInfo rfi = bghDB.getFileInfo(relative);
 						if (rfi == null) {
 							// file is missing. Basegame DB likely hasn't been made
-							int reply = JOptionPane
-									.showConfirmDialog(
-											null,
-											"<html>One or more of the files this mod is installing is not in the game repair database.<br>In order to restore game files this database needs to be created or updated.<br>Open the database window?</html>",
-											"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+							int reply = JOptionPane.showConfirmDialog(null,
+									"<html>One or more of the files this mod is installing is not in the game repair database.<br>In order to restore game files this database needs to be created or updated.<br>Open the database window?</html>",
+									"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 							if (reply == JOptionPane.NO_OPTION) {
 								return false;
 							} else {
@@ -558,8 +547,8 @@ public class ModInstallWindow extends JDialog {
 			File sfarFile = new File(sfarPath);
 			if (sfarFile.exists()) {
 				if (sfarName.equals("Patch_001.sfar") || sfarFile.length() >= knownsfarsize) {
-					ModManager.debugLogger
-							.writeMessage("SFAR is same or larger in bytes than the known original. Likely is the vanilla one, or has been modified, but not unpacked. Using the SFAR method: "
+					ModManager.debugLogger.writeMessage(
+							"SFAR is same or larger in bytes than the known original. Likely is the vanilla one, or has been modified, but not unpacked. Using the SFAR method: "
 									+ job.getJobName());
 					return processSFARDLCJob(job);
 				}
@@ -737,15 +726,11 @@ public class ModInstallWindow extends JDialog {
 				boolean justInstall = false;
 				boolean installAndUpdate = false;
 				if (rfi == null) {
-					int reply = JOptionPane
-							.showOptionDialog(
-									null,
-									"<html><div style=\"width: 400px\">The file:<br>"
-											+ relative
-											+ "<br>is not in the repair database. "
-											+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
-									"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {
-											"Add to DB and install", "Install file", "Cancel mod installation" }, "default");
+					int reply = JOptionPane.showOptionDialog(null,
+							"<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
+									+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
+							"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+							new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
 					switch (reply) {
 					case JOptionPane.CANCEL_OPTION:
 						installCancelled = true;
@@ -763,20 +748,13 @@ public class ModInstallWindow extends JDialog {
 				if (!justInstall && !installAndUpdate) {
 					if (unpacked.length() != rfi.filesize) {
 						// MISMATCH!
-						int reply = JOptionPane
-								.showOptionDialog(
-										null,
-										"<html>The filesize of the file:<br>"
-												+ relative
-												+ "<br>does not match the one stored in the repair game database.<br>"
-												+ unpacked.length()
-												+ " bytes (installed) vs "
-												+ rfi.filesize
-												+ " bytes (database)<br><br>"
-												+ "This file could be corrupted or modified since the database was created.<br>"
-												+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when you restore.<br></html>",
-										"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-										new String[] { "Backup and update DB", "Backup this file", "Cancel mod installation" }, "default");
+						int reply = JOptionPane.showOptionDialog(null,
+								"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>" + unpacked.length()
+										+ " bytes (installed) vs " + rfi.filesize + " bytes (database)<br><br>"
+										+ "This file could be corrupted or modified since the database was created.<br>"
+										+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when you restore.<br></html>",
+								"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+								new String[] { "Backup and update DB", "Backup this file", "Cancel mod installation" }, "default");
 						switch (reply) {
 						case JOptionPane.CANCEL_OPTION:
 							return false;
@@ -797,16 +775,12 @@ public class ModInstallWindow extends JDialog {
 					// again.
 					try {
 						if (!MD5Checksum.getMD5Checksum(unpacked.getAbsolutePath()).equals(rfi.md5)) {
-							int reply = JOptionPane
-									.showOptionDialog(
-											null,
-											"<html>The hash of the file:<br>"
-													+ relative
-													+ "<br>does not match the one stored in the repair game database.<br>"
-													+ "This file has changed since the database was created.<br>"
-													+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when restoring.<br></html>",
-											"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-											new String[] { "Backup and update DB", "Backup this file", "Cancel mod installation" }, "default");
+							int reply = JOptionPane.showOptionDialog(null,
+									"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
+											+ "This file has changed since the database was created.<br>"
+											+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when restoring.<br></html>",
+									"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+									new String[] { "Backup and update DB", "Backup this file", "Cancel mod installation" }, "default");
 							switch (reply) {
 							case JOptionPane.CANCEL_OPTION:
 								return false;
@@ -899,7 +873,7 @@ public class ModInstallWindow extends JDialog {
 				// p = Runtime.getRuntime().exec(command);
 				ProcessResult pr = ModManager.runProcess(pb);
 				returncode = pr.getReturnCode();
-				ModManager.debugLogger.writeMessage("Return code for process was 0: "+(returncode == 0));
+				ModManager.debugLogger.writeMessage("Return code for process was 0: " + (returncode == 0));
 				result = (returncode == 0) && result;
 			}
 
@@ -997,7 +971,7 @@ public class ModInstallWindow extends JDialog {
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
 			taskSteps = job.getFilesToReplaceTargets().size();
 			completedTaskSteps = 0;
-			ModManager.debugLogger.writeMessage("Number of files to install: "+taskSteps);
+			ModManager.debugLogger.writeMessage("Number of files to install: " + taskSteps);
 			for (int i = 0; i < job.getFilesToReplaceTargets().size(); i++) {
 				String target = job.getFilesToReplaceTargets().get(i);
 				String fileDestination = dlcdir + target;
@@ -1022,7 +996,7 @@ public class ModInstallWindow extends JDialog {
 				try {
 					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
 					ModManager.debugLogger.writeMessage("Writing custom DLC metadata file: " + metadatapath);
-					FileUtils.writeStringToFile(new File(metadatapath), mod.getModName());
+					FileUtils.writeStringToFile(new File(metadatapath), mod.getModName() + " " + mod.getVersion());
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Couldn't write custom dlc metadata file:", e);
 				}
@@ -1045,7 +1019,7 @@ public class ModInstallWindow extends JDialog {
 					// did that means we should
 					// update the bar
 				} catch (NumberFormatException e) {
-					ModManager.debugLogger.writeMessage("Injection commander thread passed update to UI thread: "+update);
+					ModManager.debugLogger.writeMessage("Injection commander thread passed update to UI thread: " + update);
 					// this is not a progress update, it's a string update
 					addToQueue(update);
 				}
@@ -1071,9 +1045,11 @@ public class ModInstallWindow extends JDialog {
 				if (numjobs != completed) {
 					// failed something
 					StringBuilder sb = new StringBuilder();
-					sb.append("Failed to process mod installation.\nSome parts of the install may have succeeded.\nCheck the log file by copying it to the clipboard in the help menu.");
+					sb.append(
+							"Failed to process mod installation.\nSome parts of the install may have succeeded.\nCheck the log file by copying it to the clipboard in the help menu.");
 					callingWindow.labelStatus.setText("Failed to install at least 1 part of mod");
-					ModManager.debugLogger.writeMessage(mod.getModName() + " failed to fully install. Jobs required to copmlete: "+numjobs+", while injectioncommander only reported "+completed);
+					ModManager.debugLogger.writeMessage(
+							mod.getModName() + " failed to fully install. Jobs required to copmlete: " + numjobs + ", while injectioncommander only reported " + completed);
 					JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
 				} else {
 					// we're good
@@ -1081,8 +1057,7 @@ public class ModInstallWindow extends JDialog {
 				}
 			} else {
 				if (!hasException) {
-					ModManager.debugLogger
-							.writeMessage("Installation canceled by user because game repair database update is required (or connection failed and auto canceled.");
+					ModManager.debugLogger.writeMessage("Installation canceled by user because game repair database update is required (or connection failed and auto canceled.");
 					if (bghDB != null) {
 						bghDB.shutdownDB();
 						bghDB = null;
@@ -1104,10 +1079,10 @@ public class ModInstallWindow extends JDialog {
 						}
 						if (bghDB == null) {
 							//cannot continue
-							JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
-									+ "Only one connection to the local database is allowed at a time.<br>"
-									+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure",
-									JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(null,
+									"<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
+											+ "Please make sure you only have one instance of Mod Manager running.</html>",
+									"Database Failure", JOptionPane.ERROR_MESSAGE);
 						}
 					}
 				} else {

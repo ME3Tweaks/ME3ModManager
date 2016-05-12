@@ -55,6 +55,7 @@ import net.sf.sevenzipjbinding.SevenZip;
 public class ModImportArchiveWindow extends JDialog {
 	private final Object lock = new Lock(); //threading wait() and notifyall();
 	public final static int IMPORT_AS_NEW_OPTION = 1;
+	public static final int IMPORT_AS_SIDELOAD_OPTION = 0;
 	private int sideloadresult;
 	HashMap<JCheckBox, CompressedMod> checkMap = new HashMap<JCheckBox, CompressedMod>(); //crazy, I know...
 	private JButton importButton;
@@ -378,6 +379,10 @@ public class ModImportArchiveWindow extends JDialog {
 						sideloadresult = JOptionPane.showOptionDialog(ModImportArchiveWindow.this, message, "Mod to import already exists",
 								JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, choices, choices[1]);
 						lock.notifyAll(); //wake up thread
+					}
+					if (sideloadresult == IMPORT_AS_SIDELOAD_OPTION) {
+						//when mod manager reloads, it will check for updates
+						ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = false;
 					}
 					break;
 				}

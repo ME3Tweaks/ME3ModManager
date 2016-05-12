@@ -212,7 +212,6 @@ public class OptionsWindow extends JDialog {
 					ini.put("Settings", "autoupdatemods", autoUpdateMods.isSelected() ? "true" : "false");
 					ini.put("Settings", "declinedautoupdate", autoUpdateMods.isSelected() ? "false" : "true");
 					ini.store();
-					ModManager.ASKED_FOR_AUTO_UPDATE = true;
 					ModManager.AUTO_UPDATE_MODS = autoUpdateMods.isSelected();
 				} catch (InvalidFileFormatException x) {
 					x.printStackTrace();

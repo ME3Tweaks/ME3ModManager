@@ -47,9 +47,9 @@ public class CustomDLCWindow extends JDialog {
 
 	private void setupWindow() {
 		setIconImages(ModManager.ICONS);
-		setTitle("Custom DLCs");
+		setTitle("Custom DLC Manager");
 		setModal(true);
-		setPreferredSize(new Dimension(640, 600));
+		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(300, 200));
 
 		mountList = new ArrayList<MountFile>();
