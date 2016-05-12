@@ -141,7 +141,6 @@ public class AllModsUpdateWindow extends JDialog {
 					return null;
 				}
 				if (upackage.requiresSideload()) {
-					publish(new ThreadCommand("SIDELOAD_REQUIRED", null, upackage));
 					numToGo--;
 				}
 
@@ -154,6 +153,7 @@ public class AllModsUpdateWindow extends JDialog {
 					completedUpdates.add(upackage);
 				}
 				while (muw.isShowing()) {
+					System.out.println("sleepin");
 					Thread.sleep(350);
 				}
 				publish(new ThreadCommand("NUM_REMAINING", null, --numToGo));
@@ -168,14 +168,44 @@ public class AllModsUpdateWindow extends JDialog {
 				String command = obj.getCommand();
 				switch (command) {
 				case "PROMPT_USER":
-					String updatetext = upackages.size() + " mod" + (upackages.size() == 1 ? " has" : "s have") + " available updates on ME3Tweaks:\n";
+					//show sideload notice
+					ArrayList<UpdatePackage> ignoredpackages = new ArrayList<>();
+					for (UpdatePackage upackage : upackages) {
+						if (upackage.requiresSideload()) {
+							ignoredpackages.add(upackage);
+							JOptionPane
+									.showMessageDialog(
+											AllModsUpdateWindow.this,
+											upackage.getMod().getModName()
+													+ " has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "
+													+ upackage.getMod().getModName() + ".", "Sideload update required", JOptionPane.WARNING_MESSAGE);
+							try {
+								ModManager.openWebpage(new URL(upackage.getSideloadURL()));
+							} catch (MalformedURLException e) {
+								ModManager.debugLogger.writeError("Invalid sideload URL: " + upackage.getSideloadURL());
+								JOptionPane.showMessageDialog(AllModsUpdateWindow.this, upackage.getMod().getModName()
+										+ " specified an invalid URL for it's sideload upload:\n" + upackage.getSideloadURL(),
+										"Invalid Sideload URL", JOptionPane.ERROR_MESSAGE);
+							}
+						}
+					}
+					upackages.removeAll(ignoredpackages);
+					if (upackages.size() <= 0) {
+						//abort updates since none are available
+						userChose = -1;
+						canceled = true;
+						return;
+					}
+					String updatetext = upackages.size() + " mod" + (upackages.size() == 1 ? " has" : "s have")
+							+ " available updates on ME3Tweaks:\n";
 					for (UpdatePackage upackage : upackages) {
 						ModManager.debugLogger.writeMessage("Preparing user prompt. Parsing upackage " + upackage.getServerModName());
 						updatetext += " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion()
 								+ (upackage.isModmakerupdate() ? "" : " (" + upackage.getUpdateSizeMB() + ")") + "\n";
 					}
 					updatetext += "Update these mods?";
-					int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
+					int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available",
+							JOptionPane.YES_NO_OPTION);
 					switch (result) {
 					case JOptionPane.YES_OPTION:
 						userChose = 1;
@@ -198,15 +228,8 @@ public class AllModsUpdateWindow extends JDialog {
 					Integer i = (Integer) obj.getData();
 					statusLabel.setText(i + " mod" + (i == 1 ? "" : "s") + " out of date");
 					break;
-				case "SIDELOAD_REQUIRED":
-					UpdatePackage sideloadpack = (UpdatePackage) obj.getData();
-					JOptionPane.showMessageDialog(AllModsUpdateWindow.this, sideloadpack.getMod().getModName()+" has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "+sideloadpack.getMod().getModName()+".", "Sideload update required", JOptionPane.WARNING_MESSAGE);
-					try {
-						ModManager.openWebpage(new URL(sideloadpack.getSideloadURL()));
-					} catch (MalformedURLException e) {
-						ModManager.debugLogger.writeError("Invalid sideload URL: "+sideloadpack.getSideloadURL());
-						JOptionPane.showMessageDialog(AllModsUpdateWindow.this, sideloadpack.getMod().getModName()+" specified an invalid URL for it's sideload upload:\n"+sideloadpack.getSideloadURL(), "Invalid Sideload URL", JOptionPane.ERROR_MESSAGE);
-					}
+				case "DISPOSE":
+					dispose();
 					break;
 				default:
 					operationLabel.setText("Checking " + command);
@@ -246,7 +269,8 @@ public class AllModsUpdateWindow extends JDialog {
 				} catch (InvalidFileFormatException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+					ModManager.debugLogger.writeErrorWithException(
+							"Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 				}
 			}
 
@@ -263,7 +287,8 @@ public class AllModsUpdateWindow extends JDialog {
 
 			if (upackages == null || upackages.size() <= 0) {
 				if (AllModsUpdateWindow.this.showUI) {
-					JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.", "Mods up to date", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.", "Mods up to date",
+							JOptionPane.INFORMATION_MESSAGE);
 				} else {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mods are up to date");
 				}
@@ -275,14 +300,17 @@ public class AllModsUpdateWindow extends JDialog {
 			}
 
 			if (completedUpdates.size() == 0) {
-				JOptionPane.showMessageDialog(callingWindow, "No mods successfully updated.\nCheck the debugging log for more info or contact FemShep for help.",
-						"Mods failed to update", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(callingWindow,
+						"No mods successfully updated.\nCheck the debugging log for more info or contact FemShep for help.", "Mods failed to update",
+						JOptionPane.ERROR_MESSAGE);
 			} else if (upackages.size() != completedUpdates.size()) {
 				//one error occured
-				JOptionPane.showMessageDialog(callingWindow, completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
-						+ " failed to update.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(callingWindow, completedUpdates.size() + " mod(s) successfully updated.\n"
+						+ (upackages.size() - completedUpdates.size()) + " failed to update.\nMod Manager will now reload mods.",
+						"Some mods were updated", JOptionPane.WARNING_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.", "Mods updated",
+				JOptionPane.showMessageDialog(callingWindow, upackages.size()
+						+ " mod(s) have been successfully updated.\nMod Manager will now reload mods.", "Mods updated",
 						JOptionPane.INFORMATION_MESSAGE);
 			}
 

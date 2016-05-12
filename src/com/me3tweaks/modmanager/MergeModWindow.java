@@ -229,7 +229,18 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 				if (s!=null && !s.equals("")) {
 					s = s.trim();
 					Mod merged = mod1.mergeWith(mod2,s);
-					merged.createNewMod();
+					Mod newMod = merged.createNewMod(mod2);
+					if (newMod.isValidMod()) {
+						JOptionPane.showMessageDialog(this, "<html>Merge successful.<br>Mod Manager will now reload mods.</html>", "Mods merged",
+								JOptionPane.INFORMATION_MESSAGE);
+					} else {
+						ModManager.debugLogger.writeError("MERGED MOD IS NOT VALID!");
+						JOptionPane
+								.showMessageDialog(
+										this,
+										"<html>Merge was unsuccessful.<br>The produced mod is not valid.<br>Mod merging is very complex and may have bugs.<br>Check the debugging log or contact femshep (with both mods)<br>for assistance.</html>",
+										"Mods not merged", JOptionPane.ERROR_MESSAGE);
+					}
 					dispose();
 					callingWindow.dispose();
 					new ModManagerWindow(false);

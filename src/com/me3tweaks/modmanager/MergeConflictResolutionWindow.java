@@ -652,7 +652,7 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 			ModManager.debugLogger.writeMessage("===End of conflict resolution==");
 
 			//create new mod
-			Mod newMod = merged.createNewMod();
+			Mod newMod = merged.createNewMod(mod2);
 			if (newMod.isValidMod()) {
 				JOptionPane.showMessageDialog(this, "<html>Merge successful.<br>Mod Manager will now reload mods.</html>", "Mods merged",
 						JOptionPane.INFORMATION_MESSAGE);

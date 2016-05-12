@@ -8,7 +8,7 @@ public class AlternateFile {
 	public static final String OPERATION_INSTALL = "OP_NOINSTALL"; //install a file
 	private String description;
 	private String operation;
-	
+
 	public AlternateFile(String altfileText) {
 		task = ValueParserLib.getStringProperty(altfileText, "ModTask", false);
 		modFile = ValueParserLib.getStringProperty(altfileText, "ModFile", false);
@@ -17,7 +17,7 @@ public class AlternateFile {
 		description = ValueParserLib.getStringProperty(altfileText, "Description", true);
 		operation = ValueParserLib.getStringProperty(altfileText, "ModOperation", false);
 	}
-	
+
 	public String getDescription() {
 		return description;
 	}
@@ -28,33 +28,42 @@ public class AlternateFile {
 
 	@Override
 	public String toString() {
-		return "AlternateFile [Applies to Task=" + task + ", Applies with condition=" + condition + ", Normal file mod uses=" + task + ", Alternate files to use=" + altFile + "]";
+		return "AlternateFile [Applies to Task=" + task + ", Applies with condition=" + condition + ", Normal file mod uses=" + task
+				+ ", Alternate files to use=" + altFile + "]";
 	}
 
 	public String getModFile() {
 		return modFile;
 	}
+
 	public void setModFile(String altFileFor) {
 		this.modFile = altFileFor;
 	}
+
 	public String getAltFile() {
 		return altFile;
 	}
+
 	public void setAltFile(String altFile) {
 		this.altFile = altFile;
 	}
+
 	public String getTask() {
 		return task;
 	}
+
 	public void setTask(String task) {
 		this.task = task;
 	}
+
 	public String getCondition() {
 		return condition;
 	}
+
 	public void setCondition(String condition) {
 		this.condition = condition;
 	}
+
 	public static final String CONDITION_MANUAL = "COND_MANUAL"; //user must choose alt
 	public static final String CONDITION_DLC_PRESENT = "COND_DLC_PRESENT"; //automatically choose alt if DLC listed is present
 	public static final String CONDITION_DLC_NOT_PRESENT = "COND_DLC_NOT_PRESENT"; //automatically choose if DLC is not present
@@ -63,15 +72,24 @@ public class AlternateFile {
 	private String altFile;
 	private String task;
 	private String condition;
-	
+
 	/**
-	 * Verifies this alternate file specification has all the required info to do its task
+	 * Verifies this alternate file specification has all the required info to
+	 * do its task
+	 * 
 	 * @return true if usable, false otherwise
 	 */
 	public boolean isValidLocally() {
-		
-		
-		
+
 		return false;
 	}
+
+	public String getOperation() {
+		return operation;
+	}
+
+	public void setOperation(String operation) {
+		this.operation = operation;
+	}
+
 }

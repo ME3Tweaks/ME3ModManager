@@ -102,8 +102,11 @@ public class ModManager {
 	public static boolean LOG_PATCH_INIT = false;
 	public static boolean PERFORM_DOT_NET_CHECK = true;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
-	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = {"DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared"};
-	public static final class Lock { } //threading wait() and notifyall();
+	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
+
+	public static final class Lock {
+	} //threading wait() and notifyall();
+
 	public static void main(String[] args) {
 		loadLogger();
 		boolean emergencyMode = false;
@@ -1945,5 +1948,26 @@ public class ModManager {
 			ModManager.debugLogger.writeErrorWithException("Error getting DLC conflict list:", e);
 		}
 		return new HashMap<>();
+	}
+
+	/**
+	 * Gets a list of DLC that begin with the name DLC_. The values are converted to uppercase.
+	 * @param biogamedir
+	 * @return list of foldernames that are considered by the game to be real DLC.
+	 */
+	public static ArrayList<String> getInstalledDLC(String biogamedir) {
+		File mainDlcDir = new File(ModManager.appendSlash(biogamedir) + "DLC/");
+		String[] directories = mainDlcDir.list(new FilenameFilter() {
+			@Override
+			public boolean accept(File current, String name) {
+				File f =  new File(current, name);
+				return f.isDirectory() && f.getName().startsWith("DLC_");
+			}
+		});
+		ArrayList<String> foldernames = new ArrayList<String>();
+		for (String folder : directories) {
+			foldernames.add(folder.toUpperCase());
+		}
+		return foldernames;
 	}
 }

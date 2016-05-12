@@ -84,15 +84,18 @@ public class SevenZipCompressedModInspector {
 			//
 			//System.out.println(index + " " + outputDirectory);
 			final String finaldir = outputDirectory;
+			final File path = new File(finaldir);
+			if (path.exists()) {
+				ModManager.debugLogger.writeMessage("Removing pre-existing file: " + path);
+				FileUtils.deleteQuietly(path); //prevents appending issuess
+			}
 
-			//System.out.println("Extracting: " + inArchive.getProperty(index, PropID.PATH));
 			return new ISequentialOutStream() {
 
 				public int write(byte[] data) throws SevenZipException {
 					ModManager.debugLogger.writeMessage("Decompressing chunk to " + finaldir);
 					FileOutputStream fos = null;
 					try {
-						File path = new File(finaldir);
 
 						if (!path.getParentFile().exists()) {
 							path.getParentFile().mkdirs();
