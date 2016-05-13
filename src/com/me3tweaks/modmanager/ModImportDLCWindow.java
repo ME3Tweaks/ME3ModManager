@@ -70,7 +70,8 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 				continue;
 			}
 			//add to list
-			if (dir.startsWith("DLC_")) {
+			File metacmm = new File(mainDlcDir + File.separator + dir + File.separator + "_metacmm.txt");
+			if (dir.startsWith("DLC_") && !metacmm.exists()) {
 				model.addElement(dir);
 			}
 		}
@@ -81,7 +82,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 		JPanel panel = new JPanel(new BorderLayout());
 
 		JLabel infoHeader = new JLabel(
-				"<html>Import already-installed mods into Mod Manager to<br>install or uninstall them quickly and easily.</html>");
+				"<html>Import already-installed mods into Mod Manager to<br>install or uninstall them quickly and easily.<br>Only mods not installed by Mod Manager are listed.</html>");
 		panel.add(infoHeader, BorderLayout.NORTH);
 
 		importButton = new JButton("Import");

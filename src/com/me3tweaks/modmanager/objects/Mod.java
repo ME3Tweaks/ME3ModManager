@@ -2015,7 +2015,7 @@ public class Mod implements Comparable<Mod> {
 			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
 
 			for (AlternateFile af : alternateFiles) {
-				System.out.println("alt file: " + af);
+				ModManager.debugLogger.writeMessage("Checking if Alt file applies: " + af);
 				String condition = af.getCondition();
 				String conditionaldlc = af.getConditionalDLC();
 				if (!installedDLC.contains(conditionaldlc)){

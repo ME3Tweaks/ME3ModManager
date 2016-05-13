@@ -437,12 +437,11 @@ public class ModInstallWindow extends JDialog {
 					Path originalpath = Paths.get(unpacked.toString());
 					if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.USE_GAME_TOCFILES_INSTEAD) {
 						try {
-							ModManager.debugLogger.writeMessage("Installing mod file: " + newFile);
 							publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 							Path newfilepath = Paths.get(newFile);
 							Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
 							completedTaskSteps++;
-							ModManager.debugLogger.writeMessage("Installed mod file: " + unpacked + " => " + newFile);
+							ModManager.debugLogger.writeMessage("Installed mod file: " + newFile + " => " + unpacked);
 						} catch (IOException e) {
 							ModManager.debugLogger.writeException(e);
 							return false;
@@ -481,7 +480,6 @@ public class ModInstallWindow extends JDialog {
 				File installFile = new File(me3dir + fileToAddTarget);
 				Path installPath = Paths.get(installFile.toString());
 				try {
-					ModManager.debugLogger.writeMessage("Installing mod file: " + fileToAdd);
 					publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(fileToAdd));
 					Path newfilepath = Paths.get(fileToAdd);
 					Files.copy(newfilepath, installPath, StandardCopyOption.REPLACE_EXISTING);
@@ -986,7 +984,7 @@ public class ModInstallWindow extends JDialog {
 					dest.mkdirs();
 					Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
 					completedTaskSteps++;
-					ModManager.debugLogger.writeMessage("Installed mod file: " + fileSource+ " => " + fileDestination);
+					ModManager.debugLogger.writeMessage("Installed mod file: " + fileSource + " => " + fileDestination);
 
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Installing custom dlc file failed:", e);

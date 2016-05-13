@@ -73,9 +73,11 @@ public class ImportEntryWindow extends JDialog {
 	private JCheckBox telemetryCheckbox;
 	private String dlcModName;
 	private int result = NO_ANSWER;
+	private JDialog callingWindow;
 
 	public ImportEntryWindow(JDialog modImportWindow, String importPath) {
 		this.importPath = importPath;
+		this.callingWindow = modImportWindow;
 		setupWindow(modImportWindow);
 		new DLCDataFetcher(importPath).execute();
 		setVisible(true);
@@ -350,6 +352,10 @@ public class ImportEntryWindow extends JDialog {
 			}
 			ModManager.debugLogger.writeMessage("Import of mod complete. Result code: " + result);
 			dispose();
+			if (result == OK) {
+				callingWindow.dispose();
+				new ModManagerWindow(false);
+			}
 		}
 	}
 

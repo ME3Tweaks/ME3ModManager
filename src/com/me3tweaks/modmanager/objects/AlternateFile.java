@@ -59,7 +59,7 @@ public class AlternateFile {
 
 	@Override
 	public String toString() {
-		return "AlternateFile [Applies to Task=" + conditionalDLC + ", Applies with condition=" + condition + ", Normal file mod uses=" + conditionalDLC
+		return "AlternateFile [Applies to Task=" + conditionalDLC + ", Applies with condition=" + condition + ", Operation="+operation+", Normal file mod uses=" + conditionalDLC
 				+ ", Alternate files to use=" + altFile + "]";
 	}
 
@@ -114,11 +114,15 @@ public class AlternateFile {
 			ArrayList<String> officialHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
 			if (!officialHeaders.contains(conditionalDLC)) {
 				File f = new File(modPath + conditionalDLC);
-				if (!f.exists() || !f.isDirectory()) {
-					ModManager.debugLogger.writeError("ConditionalDLC is not a Mod Manager header or custom DLC folder in this mod: " + conditionalDLC);
+				if (f.exists() && f.isDirectory()) {
+					ModManager.debugLogger.writeError("ConditionalDLC is listed as part of the custom dlc this mod will install: " + conditionalDLC +". On mod's first install this will have no effect, and on subsequent will change what is being installed.");
 					return false;
+				} else {
+					if (!conditionalDLC.startsWith("DLC_")) {
+						ModManager.debugLogger.writeError("ConditionalDLC is not an official header and does not start with DLC_: " + conditionalDLC +".");
+						return false;
+					}
 				}
-
 			}
 			File alternateFile = new File(modPath + altFile);
 			if (!alternateFile.exists()) {
