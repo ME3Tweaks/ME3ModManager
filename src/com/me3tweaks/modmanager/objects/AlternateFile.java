@@ -9,8 +9,8 @@ import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
 
 public class AlternateFile {
 	public static final String OPERATION_SUBSTITUTE = "OP_SUBSTITUTE"; //swap a file in a job
-	public static final String OPERATION_NOINSTALL = "OP_INSTALL"; //do not install a file
-	public static final String OPERATION_INSTALL = "OP_NOINSTALL"; //install a file
+	public static final String OPERATION_NOINSTALL = "OP_NOINSTALL"; //do not install a file
+	public static final String OPERATION_INSTALL = "OP_INSTALL"; //install a file
 	public static final String CONDITION_MANUAL = "COND_MANUAL"; //user must choose alt
 	public static final String CONDITION_DLC_PRESENT = "COND_DLC_PRESENT"; //automatically choose alt if DLC listed is present
 	public static final String CONDITION_DLC_NOT_PRESENT = "COND_DLC_NOT_PRESENT"; //automatically choose if DLC is not present
@@ -59,8 +59,8 @@ public class AlternateFile {
 
 	@Override
 	public String toString() {
-		return "AlternateFile [Applies to Task=" + conditionalDLC + ", Applies with condition=" + condition + ", Operation="+operation+", Normal file mod uses=" + conditionalDLC
-				+ ", Alternate files to use=" + altFile + "]";
+		return "AlternateFile [Applies to Task=" + conditionalDLC + ", Applies with condition=" + condition + ", Operation=" + operation + ", Normal file mod uses="
+				+ conditionalDLC + ", Alternate files to use=" + altFile + "]";
 	}
 
 	public String getModFile() {
@@ -115,23 +115,26 @@ public class AlternateFile {
 			if (!officialHeaders.contains(conditionalDLC)) {
 				File f = new File(modPath + conditionalDLC);
 				if (f.exists() && f.isDirectory()) {
-					ModManager.debugLogger.writeError("ConditionalDLC is listed as part of the custom dlc this mod will install: " + conditionalDLC +". On mod's first install this will have no effect, and on subsequent will change what is being installed.");
+					ModManager.debugLogger.writeError("ConditionalDLC is listed as part of the custom dlc this mod will install: " + conditionalDLC
+							+ ". On mod's first install this will have no effect, and on subsequent will change what is being installed.");
 					return false;
 				} else {
 					if (!conditionalDLC.startsWith("DLC_")) {
-						ModManager.debugLogger.writeError("ConditionalDLC is not an official header and does not start with DLC_: " + conditionalDLC +".");
+						ModManager.debugLogger.writeError("ConditionalDLC is not an official header and does not start with DLC_: " + conditionalDLC + ".");
 						return false;
 					}
 				}
 			}
 			File alternateFile = new File(modPath + altFile);
-			if (!alternateFile.exists()) {
+			if (!alternateFile.exists() && !operation.equals(OPERATION_NOINSTALL)) {
 				ModManager.debugLogger.writeError("Listed altfile doesn't exist: " + altFile);
 				return false;
 			}
 
 			File normalModFile = new File(modPath + modFile);
-			if (!normalModFile.exists()) {
+			boolean op = operation.equals(OPERATION_SUBSTITUTE);
+			boolean op2 = operation.equals(OPERATION_NOINSTALL);
+			if (!normalModFile.exists() && (operation.equals(OPERATION_SUBSTITUTE) || operation.equals(OPERATION_NOINSTALL))) {
 				ModManager.debugLogger.writeError("Listed modfile (normal mod file) doesn't exist: " + normalModFile);
 				return false;
 			}
