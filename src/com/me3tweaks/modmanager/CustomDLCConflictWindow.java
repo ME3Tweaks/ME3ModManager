@@ -1,7 +1,9 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -71,7 +73,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		ArrayList<String> installedDLCs = ModManager.getInstalledDLC(biogameDirectory);
 		ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 		for (String dlc : installedDLCs) {
-			File mountFile = new File(biogameDirectory + "DLC/" + dlc + File.separator + " CookedPCConsole/Mount.dlc");
+			File mountFile = new File(biogameDirectory + "DLC/" + dlc + File.separator + "CookedPCConsole/Mount.dlc");
 			if (!ModType.isKnownDLCFolder(dlc) && dlc.startsWith("DLC_") && mountFile.exists()) {
 				customDLCs.add(new CustomDLC(new MountFile(mountFile.getAbsolutePath()), dlc));
 			}
@@ -89,16 +91,16 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			//write values to table data
 			data[i][COL_FILENAME] = key;
-			data[i][COL_SUPERCEDING] = value.get(value.size());
+			data[i][COL_SUPERCEDING] = value.get(value.size()-1).getDlcName();
 			String superceeded = "";
-			for (int x = 0; x < value.size() - 2; x++) {
-				superceeded += value.get(x) + " ";
+			for (int x = 0; x <= value.size() - 2; x++) {
+				superceeded += value.get(x).getDlcName() + " ";
 			}
 
 			data[i][COL_SUPERCEDED] = superceeded;
 		}
 
-		String[] columnNames = { "Filename", "Superceding file", "Superceeded DLC" };
+		String[] columnNames = { "Filename", "Superceding DLC", "Superceeded DLC" };
 		DefaultTableModel model = new DefaultTableModel(data, columnNames);
 		JTable table = new JTable(model) {
 			public boolean isCellEditable(int row, int column) {
@@ -108,18 +110,27 @@ public class CustomDLCConflictWindow extends JDialog {
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+		table.getColumnModel().getColumn(COL_FILENAME).setCellRenderer(centerRenderer);
+		table.getColumnModel().getColumn(COL_SUPERCEDED).setCellRenderer(centerRenderer);
+		table.getColumnModel().getColumn(COL_SUPERCEDING).setCellRenderer(centerRenderer);
+
 		JScrollPane scrollpane = new JScrollPane(table);
 
 		JPanel panel = new JPanel(new BorderLayout());
 
-		String buttonText = "<html>Files listed below are Custom DLC files that have conflicts.<br>The Custom DLC with the highest mount priority will supercede others, and may cause the the superceded DLC to not work or cause game instability.<br>Click for info on how to toggle DLC in Mod Manager.</html>";
+		String buttonText = "<html><center>Files listed below are Custom DLC files that have conflicts.<br>The Custom DLC with the highest mount priority will supercede others, and may cause the the superceded DLC to not work or cause game instability.<br><u><font color='#000099'>Click for info on how to toggle DLC in Mod Manager.</u></font></center></html>";
 		String message = "<html>To toggle Custom DLCs in Mod Manager, make sure all Custom DLC has been imported into Mod Manager.<br>This can be done through the Mod Management > Import Mods > Import Custom DLC Mod.<br>Once imported, you can install it by simply applying the mod.<br>You can remove (disable) a mod by deleting it through the Custom DLC Manager, and then apply it again to enable it.</html>";
 		JButton infoLinkButton = new JButton();
 		infoLinkButton.setText(buttonText);
 		infoLinkButton.setHorizontalAlignment(SwingConstants.CENTER);
 		infoLinkButton.setBorderPainted(false);
-		infoLinkButton.setOpaque(false);
 		infoLinkButton.setBackground(UIManager.getColor("Panel.background"));
+		infoLinkButton.setFocusPainted(false);
+		infoLinkButton.setMargin(new Insets(0, 0, 0, 0));
+		infoLinkButton.setContentAreaFilled(false);
+		infoLinkButton.setBorderPainted(false);
+		infoLinkButton.setOpaque(false);
+		infoLinkButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
 		infoLinkButton.setToolTipText("Click for info on how to toggle Custom DLC mods in Mod Manager");
 		infoLinkButton.addActionListener(new ActionListener() {
 
@@ -157,20 +168,51 @@ public class CustomDLCConflictWindow extends JDialog {
 					if (result == JOptionPane.YES_OPTION) {
 						//generate
 						String modName = "MM GUI Compatibility";
-						while (modName != null && modName.equals("")) {
+						boolean nameIsBad = true;
+						while (nameIsBad) {
 							String whatTheUserEntered = JOptionPane.showInputDialog(CustomDLCConflictWindow.this,
-									"Enter a name for the compatibilty mod.\nAlphanumeric (spaces allowed) only, no more than 20 characters.");
+									"Enter a name for the compatibilty mod.\nAlphanumeric (spaces/underscore allowed) only, no more than 20 characters.");
+							if (whatTheUserEntered == null) {
+								return;
+							}
+							whatTheUserEntered = whatTheUserEntered.trim();
 							//space, and alphanumerics
 							boolean asciionly = whatTheUserEntered.chars().allMatch(
-									c -> c == 0x20 || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B)); //what the f is this?
+									c -> c == 0x20 || c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B)); //what the f is this?
 							if (!asciionly) {
+								ModManager.debugLogger.writeError("Name is not ascii alphanumeric only: "+whatTheUserEntered);
 								continue;
 							}
-							if (whatTheUserEntered.length() > 20) {
+							if (whatTheUserEntered.length() > 20 || whatTheUserEntered.length() < 1) {
+								ModManager.debugLogger.writeError("Name is empty or too long: "+whatTheUserEntered);
 								continue;
 							}
-							modName = whatTheUserEntered;
+							
+							//check if already exists
+							File patchFolder = new File(ModManager.getModsDir() + whatTheUserEntered);
+							if (patchFolder.exists() && patchFolder.isDirectory()) {
+								ModManager.debugLogger.writeError("Mod already exists, prompting user to overwrite: "+patchFolder);
+								int renameresult = JOptionPane.showOptionDialog(CustomDLCConflictWindow.this,
+										"A mod named "+whatTheUserEntered+" already exists in Mod Manager.", 
+										"Name conflict",
+										JOptionPane.OK_CANCEL_OPTION,
+										JOptionPane.QUESTION_MESSAGE,
+										null,
+										new String[]{"Delete existing mod", "Enter a new name"},
+										"default");
+								if (renameresult == JOptionPane.NO_OPTION) {
+									continue;
+								} else {
+									FileUtils.deleteQuietly(patchFolder);
+								}
+							}
+							
+							modName = whatTheUserEntered.trim();
+							nameIsBad = false;
 						}
+						guiProgressBar.setVisible(true);
+						guiProgressBar.setIndeterminate(true);
+						guiPatchButton.setVisible(false);
 						GUICompatGeneratorThread gcgt = new GUICompatGeneratorThread(modName, biogameDirectory, secondPriorityUIConflictFiles);
 						gcgt.execute();
 					}
@@ -180,8 +222,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			JPanel guiPatchPanel = new JPanel(new BorderLayout());
 			guiPatchPanel.add(guiPatchButton, BorderLayout.NORTH);
 			guiPatchPanel.add(guiProgressBar, BorderLayout.SOUTH);
-
-			panel.add(guiPatchButton, BorderLayout.SOUTH);
+			panel.add(guiPatchPanel, BorderLayout.SOUTH);
 		}
 		add(panel);
 		pack();
@@ -336,11 +377,11 @@ public class CustomDLCConflictWindow extends JDialog {
 		HashMap<CustomDLC, String> secondPriorityUIConflictFiles = new HashMap<>();
 		for (Map.Entry<String, ArrayList<CustomDLC>> entry : conflicts.entrySet()) {
 			ArrayList<CustomDLC> conflictingDLCs = entry.getValue();
-			CustomDLC str = conflictingDLCs.get(conflictingDLCs.size());
+			CustomDLC str = conflictingDLCs.get(conflictingDLCs.size() - 1);
 			if (knownGUImods.contains(str.getDlcName())) {
 				ModManager.debugLogger.writeMessage("GUI mod " + str + " superceeding: " + entry.getKey());
-				conflictingGUIMod = conflictingDLCs.get(conflictingDLCs.size()).getDlcName();
-				secondPriorityUIConflictFiles.put(conflictingDLCs.get(conflictingDLCs.size() - 1), entry.getKey());
+				conflictingGUIMod = conflictingDLCs.get(conflictingDLCs.size() - 1).getDlcName();
+				secondPriorityUIConflictFiles.put(conflictingDLCs.get(conflictingDLCs.size() - 2), entry.getKey());
 			}
 		}
 		if (secondPriorityUIConflictFiles.size() > 0) {

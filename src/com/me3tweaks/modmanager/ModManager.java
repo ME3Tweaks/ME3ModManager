@@ -2059,7 +2059,7 @@ public class ModManager {
 	 * @return true if extraction is OK, false if something went wrong
 	 */
 	private static boolean downloadGUILibrary(String dlcname) {
-		String url = "http://me3tweaks.com/modmanager/tools/" + dlcname + ".7z";
+		String url = "http://me3tweaks.com/modmanager/tools/uilibrary/" + dlcname + ".7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI library: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());
@@ -2087,7 +2087,7 @@ public class ModManager {
 			ProcessBuilder pb = new ProcessBuilder(command);
 			returncode = ModManager.runProcess(pb).getReturnCode();
 			ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (returncode == 0));
-			FileUtils.deleteQuietly(new File(ModManager.getTempDir() + "guilibrary.7z"));
+			//FileUtils.deleteQuietly(new File(ModManager.getTempDir() + "guilibrary.7z"));
 			return true;
 		} catch (IOException e) {
 			ModManager.debugLogger.writeErrorWithException("Error downloading GUI library:", e);
@@ -2101,6 +2101,6 @@ public class ModManager {
 	 * @return
 	 */
 	private static String getUILibraryPath() {
-		return getToolsDir() + "UILibrary/";
+		return getDataDir() + "UILibrary" + File.separator;
 	}
 }
