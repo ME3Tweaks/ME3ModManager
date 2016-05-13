@@ -223,6 +223,10 @@ public class ResourceUtils {
 	       (buffer[3]<< 0)&0x000000ff;
 	}
 
+	public static String normalizeFilePath(String absolutePath) {
+		return absolutePath.replaceAll("\\\\", "/");
+	}
+
 	/*
 	 * public static void main(final String[] args) throws IOException { try
 	 * 

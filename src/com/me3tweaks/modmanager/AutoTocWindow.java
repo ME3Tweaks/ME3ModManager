@@ -189,6 +189,10 @@ public class AutoTocWindow extends JDialog {
 			//get list of all files to update for the progress bar
 			for (ModJob job : mod.jobs) {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
+					if (mode == AutoTocWindow.INSTALLED_MODE) {
+						completed++;
+						continue; //skip, this is done AFTER mod has been installed, and will run outside of autotoc window.
+					}
 					for (String srcFolder : job.getSourceFolders()) {
 						ArrayList<String> commandBuilder = new ArrayList<String>();
 						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>

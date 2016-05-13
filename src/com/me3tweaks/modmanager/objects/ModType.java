@@ -67,6 +67,10 @@ public class ModType {
 		return foldernames;
 	}
 	
+	/**
+	 * Returns a hashmap of Mod Manager Headers => DLC folder names (from DLC folder, like DLC_CON_MP1)
+	 * @return hashmap of headers to folder names
+	 */
 	public static HashMap<String,String> getHeaderFolderMap() {
 		HashMap<String,String> foldernames = new HashMap<String,String>();
 		foldernames.put(MP1,"DLC_CON_MP1");

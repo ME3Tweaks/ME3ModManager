@@ -44,10 +44,27 @@ public class ModDelta {
 	}
 
 	/**
+	 * Copy constructor
+	 * @param delta Delta to copy
+	 */
+	public ModDelta(ModDelta delta) {
+		deltaFilepath = delta.deltaFilepath;
+		deltaDescription = delta.deltaDescription;
+		deltaName = delta.deltaName;
+		validDelta = delta.validDelta;
+
+		//can't clone without lots of work
+		dbFactory = delta.dbFactory;
+		dBuilder = delta.dBuilder;
+		doc = delta.doc;
+	}
+
+	/**
 	 * Generates metadata information about mod. Gets name, description, files
 	 * modified etc
 	 * 
-	 * @param file path to delta xml.
+	 * @param file
+	 *            path to delta xml.
 	 */
 	private void preprocessDelta(String file) {
 		File deltaFile = new File(file);
@@ -88,11 +105,10 @@ public class ModDelta {
 			deltaDescription = xPath.evaluate("/ModDelta/DeltaInfo/Description", doc.getDocumentElement());
 		} catch (XPathExpressionException e1) {
 			validDelta = false;
-			ModManager.debugLogger.writeErrorWithException(
-					"DeltaInfo paths were not found: /ModDelta/DeltaInfo requires a NAME and DESCRIPTION element.", e1);
+			ModManager.debugLogger.writeErrorWithException("DeltaInfo paths were not found: /ModDelta/DeltaInfo requires a NAME and DESCRIPTION element.", e1);
 			return;
 		}
-		
+
 		if (deltaName.toLowerCase().equals("original")) {
 			validDelta = false;
 			ModManager.debugLogger.writeError("A delta cannot use the name \"Original\". This delta is being marked as invalid");
@@ -100,19 +116,18 @@ public class ModDelta {
 			validDelta = true;
 		}
 	}
-	
+
 	public Document getDoc() {
 		return doc;
 	}
 
-	public void parseDelta(){
-		
+	public void parseDelta() {
+
 	}
 
 	@Override
 	public String toString() {
-		return "ModDelta [deltaFilepath=" + deltaFilepath + ", deltaDescription=" + deltaDescription + ", deltaName=" + deltaName + ", validDelta="
-				+ validDelta + "]";
+		return "ModDelta [deltaFilepath=" + deltaFilepath + ", deltaDescription=" + deltaDescription + ", deltaName=" + deltaName + ", validDelta=" + validDelta + "]";
 	}
 
 	public String getDeltaFilepath() {
