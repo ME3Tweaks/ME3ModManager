@@ -56,6 +56,7 @@ import org.w3c.dom.Document;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModList;
 import com.me3tweaks.modmanager.objects.ModType;
@@ -64,6 +65,7 @@ import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.utilities.DebugLogger;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
@@ -1903,64 +1905,85 @@ public class ModManager {
 		return sb.toString();
 	}
 
-	public static HashMap<String, String> getCustomDLCConflicts(String biogameDir) {
+	/**
+	 * Returns map of Custom DLC files mapped to a list of custom dlc they
+	 * appear in. If the list is longer than 1 element it means there is a
+	 * conflict. Only scans for PCC files.
+	 * 
+	 * @param customDLCs
+	 *            list of Custom DLCs to scan against
+	 * @param dlcdirectory
+	 *            DLC directory of ME3
+	 * @return map of conflicts, or null if exception occurs.
+	 */
+	public static HashMap<String, ArrayList<CustomDLC>> getCustomDLCConflicts(ArrayList<CustomDLC> customDLCs, String dlcdirectory) {
 		try {
-			//Iterate over DLC folders and find Mount.dlc files. Only DLC folders with these files will be considered.
-			File mainDlcDir = new File(ModManager.appendSlash(biogameDir) + "DLC" + File.separator);
-			String[] directories = mainDlcDir.list(new FilenameFilter() {
-				@Override
-				public boolean accept(File current, String name) {
-					return new File(current, name).isDirectory();
-				}
-			});
+			Collections.sort(customDLCs);
 
-			ArrayList<String> unpackedDLCFolders = new ArrayList<String>(); //need to sort, lowest to highest priority
-
-			for (String dir : directories) {
-				File mountfile = new File(ModManager.appendSlash(ModManager.appendSlash(biogameDir) + "DLC" + File.separator + dir) + File.separator
-						+ "CookedPCConsole" + File.separator + "Mount.dlc");
-				if (mountfile.exists()) {
-					unpackedDLCFolders.add(ModManager.appendSlash(ModManager.appendSlash(biogameDir) + "DLC" + File.separator + dir));
-				}
+			//prepare list of folders
+			HashMap<String, ArrayList<CustomDLC>> filesMap = new HashMap<>();
+			ArrayList<String> customDLCFolders = new ArrayList<String>();
+			for (CustomDLC dlc : customDLCs) {
+				customDLCFolders.add(dlcdirectory + dlc.getDlcName());
 			}
 
-			//Enumerate all files
-			HashMap<String, String> filemap = new HashMap<>();
-			HashMap<String, String> conflictmap = new HashMap<>();
-
-			for (String unpackedPath : unpackedDLCFolders) {
-				Collection<File> files = FileUtils.listFiles(new File(unpackedPath), new RegexFileFilter("^(.*?)"), DirectoryFileFilter.DIRECTORY);
+			//construct lists of what custom dlc each file appears in
+			for (CustomDLC custDLC : customDLCs) {
+				String dlcFolder = ResourceUtils.normalizeFilePath(dlcdirectory + custDLC.getDlcName() + File.separator);
+				Collection<File> files = FileUtils.listFiles(new File(dlcFolder), new RegexFileFilter("^(.*?)"), DirectoryFileFilter.DIRECTORY);
 				for (File file : files) {
 					if (!FilenameUtils.getExtension(file.getAbsolutePath()).equals("pcc")) {
 						continue;
 					}
-					boolean keyExists = filemap.containsKey(FilenameUtils.getName(file.getAbsolutePath()));
+					String filename = FilenameUtils.getName(file.getAbsolutePath());
+					ArrayList<CustomDLC> dlcFileAppearsIn = null;
+					boolean keyExists = filesMap.containsKey(filename);
 					if (keyExists) {
 						//conflict
-						conflictmap.put(FilenameUtils.getName(file.getAbsolutePath()), unpackedPath);
+						dlcFileAppearsIn = filesMap.get(filename);
+
 					} else {
-						filemap.put(FilenameUtils.getName(file.getAbsolutePath()), unpackedPath);
+						dlcFileAppearsIn = new ArrayList<>();
 					}
+					dlcFileAppearsIn.add(custDLC);
+					filesMap.put(filename, dlcFileAppearsIn);
 				}
 			}
-			return conflictmap;
+
+			//remove non-conflicts
+			ArrayList<String> keysToRemove = new ArrayList<String>();
+			for (Map.Entry<String, ArrayList<CustomDLC>> entry : filesMap.entrySet()) {
+				String key = entry.getKey();
+				ArrayList<CustomDLC> value = entry.getValue();
+				if (value.size() <= 1) {
+					//not a conflict
+					keysToRemove.add(key);
+				}
+			}
+			for (String key : keysToRemove) {
+				filesMap.remove(key);
+			}
+			return filesMap;
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Error getting DLC conflict list:", e);
 		}
-		return new HashMap<>();
+		return null;
 	}
 
 	/**
-	 * Gets a list of DLC that begin with the name DLC_. The values are converted to uppercase.
+	 * Gets a list of DLC that begin with the name DLC_. The values are
+	 * converted to uppercase.
+	 * 
 	 * @param biogamedir
-	 * @return list of foldernames that are considered by the game to be real DLC.
+	 * @return list of foldernames that are considered by the game to be real
+	 *         DLC.
 	 */
 	public static ArrayList<String> getInstalledDLC(String biogamedir) {
 		File mainDlcDir = new File(ModManager.appendSlash(biogamedir) + "DLC/");
 		String[] directories = mainDlcDir.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
-				File f =  new File(current, name);
+				File f = new File(current, name);
 				return f.isDirectory() && f.getName().startsWith("DLC_");
 			}
 		});
