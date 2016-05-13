@@ -967,8 +967,50 @@ public class ModManager {
 	}
 
 	public static String getGUITransplanterCLI() {
-		return "E:\\Documents\\GitHubVisualStudio\\ME3-GUI-Transplanter\\ME3 GUI Transplanter\\Build\\Release\\Transplanter-CLI.exe";
-		//return getGUITransplanterDir() + "Transplanter-CLI.exe";
+		String transplanterdir = getGUITransplanterDir() + "Transplanter-CLI.exe";
+		if (!(new File(transplanterdir).exists())) {
+			if (!downloadGUITransplanter()) {
+				return null;
+			}
+		}
+		return transplanterdir;
+	}
+
+	private static boolean downloadGUITransplanter() {
+		String url = "http://me3tweaks.com/modmanager/tools/GUITRANSPLANTER.7z";
+		ModManager.debugLogger.writeMessage("Downloading GUI Transplanter: " + url);
+		try {
+			File updateDir = new File(ModManager.getTempDir());
+			updateDir.mkdirs();
+			FileUtils.copyURLToFile(new URL(url), new File(ModManager.getTempDir() + "guitransplanter.7z"));
+			ModManager.debugLogger.writeMessage("library 7z downloaded.");
+
+			//run 7za on it
+			ArrayList<String> commandBuilder = new ArrayList<String>();
+			commandBuilder.add(ModManager.getToolsDir() + "7za.exe");
+			commandBuilder.add("-y"); //overwrite
+			commandBuilder.add("x"); //extract
+			commandBuilder.add(ModManager.getTempDir() + "guitransplanter.7z");//7z file
+			commandBuilder.add("-o" + getGUITransplanterDir()); //extraction path
+
+			// System.out.println("Building command");
+			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+			// Debug stuff
+			StringBuilder sb = new StringBuilder();
+			for (String arg : command) {
+				sb.append(arg + " ");
+			}
+			ModManager.debugLogger.writeMessage("Extracting GUI library...");
+			int returncode = 1;
+			ProcessBuilder pb = new ProcessBuilder(command);
+			returncode = ModManager.runProcess(pb).getReturnCode();
+			ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (returncode == 0));
+			FileUtils.deleteQuietly(new File(ModManager.getTempDir() + "guitransplanter.7z"));
+			return true;
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("Error downloading GUI Transplanter:", e);
+		}
+		return false;
 	}
 
 	public static String getTankMasterCompilerDir() {
@@ -1992,5 +2034,80 @@ public class ModManager {
 			foldernames.add(folder.toUpperCase());
 		}
 		return foldernames;
+	}
+
+	public static String getGUILibraryFor(String dlcname) {
+		String libraryPath = getUILibraryPath();
+		switch (dlcname) {
+		case "DLC_CON_XBX":
+			libraryPath += "XBX/";
+			break;
+		case "DLC_CON_UIScaling":
+			libraryPath += "UIScaling/";
+			break;
+		default:
+			ModManager.debugLogger.writeError("Unknown GUI Library: " + dlcname);
+			return null;
+		}
+
+		File libraryFolder = new File(libraryPath);
+		if (!libraryFolder.exists() || !libraryFolder.isDirectory()) {
+			downloadGUILibrary(dlcname);
+		}
+		return libraryPath;
+	}
+
+	/**
+	 * Downloads an extract a GUI library from ME3Tweaks using the provided
+	 * dlcname as a filename.
+	 * 
+	 * @param dlcname
+	 *            library to download
+	 * @return true if extraction is OK, false if something went wrong
+	 */
+	private static boolean downloadGUILibrary(String dlcname) {
+		String url = "http://me3tweaks.com/modmanager/tools/" + dlcname + ".7z";
+		ModManager.debugLogger.writeMessage("Downloading GUI library: " + url);
+		try {
+			File updateDir = new File(ModManager.getTempDir());
+			updateDir.mkdirs();
+			FileUtils.copyURLToFile(new URL(url), new File(ModManager.getTempDir() + "guilibrary.7z"));
+			ModManager.debugLogger.writeMessage("library 7z downloaded.");
+
+			//run 7za on it
+			ArrayList<String> commandBuilder = new ArrayList<String>();
+			commandBuilder.add(ModManager.getToolsDir() + "7za.exe");
+			commandBuilder.add("-y"); //overwrite
+			commandBuilder.add("x"); //extract
+			commandBuilder.add(ModManager.getTempDir() + "guilibrary.7z");//7z file
+			commandBuilder.add("-o" + ModManager.getUILibraryPath()); //extraction path
+
+			// System.out.println("Building command");
+			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+			// Debug stuff
+			StringBuilder sb = new StringBuilder();
+			for (String arg : command) {
+				sb.append(arg + " ");
+			}
+			ModManager.debugLogger.writeMessage("Extracting GUI library...");
+			int returncode = 1;
+			ProcessBuilder pb = new ProcessBuilder(command);
+			returncode = ModManager.runProcess(pb).getReturnCode();
+			ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (returncode == 0));
+			FileUtils.deleteQuietly(new File(ModManager.getTempDir() + "guilibrary.7z"));
+			return true;
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("Error downloading GUI library:", e);
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the path of the UI Library
+	 * 
+	 * @return
+	 */
+	private static String getUILibraryPath() {
+		return getToolsDir() + "UILibrary/";
 	}
 }

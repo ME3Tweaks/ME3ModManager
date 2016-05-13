@@ -30,6 +30,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.FolderBatchWindow.BatchWorker;
+import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
@@ -46,8 +47,6 @@ public class StarterKitWindow extends JDialog {
 	private JTextArea modDescription;
 	private DefaultComboBoxModel<MountFlag> flagModel;
 	private JComboBox<MountFlag> mountFlagsCombobox;
-	private JButton createButton;
-	private JProgressBar progressBar;
 
 	public static void main(String[] args) {
 		ModManager.debugLogger = new DebugLogger();
@@ -164,7 +163,9 @@ public class StarterKitWindow extends JDialog {
 		panel.add(new JScrollPane(modDescription, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), c);
 		c.gridy++;
 
-		createButton = new JButton("Generate Starter Kit");
+		JButton createButton = new JButton("Generate Starter Kit");
+		JProgressBar progressBar = new JProgressBar();
+
 		createButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -190,7 +191,7 @@ public class StarterKitWindow extends JDialog {
 				int mountpriorityval = Integer.parseInt(mountPriority.getText());
 
 				//create
-				StarterKitGenerator starterKit = new StarterKitGenerator();
+				StarterKitGenerator starterKit = new StarterKitGenerator(createButton, progressBar);
 				starterKit.setInternaldisplayname(internalDisplayName.getText());
 				starterKit.setModname(modName.getText());
 				starterKit.setModdev(modDeveloper.getText());
@@ -209,7 +210,8 @@ public class StarterKitWindow extends JDialog {
 		c.weighty = 0;
 		panel.add(createButton, c);
 		c.gridy++;
-		progressBar = new JProgressBar();
+
+		
 		progressBar.setVisible(false);
 		panel.add(progressBar, c);
 		add(panel);
@@ -239,7 +241,9 @@ public class StarterKitWindow extends JDialog {
 		}
 	}
 
-	class StarterKitGenerator extends SwingWorker<Void, Void> {
+	static class StarterKitGenerator extends SwingWorker<Void, Void> {
+		private String modname, moddev, moddesc, modsite, internaldlcname, internaldisplayname;
+		
 		public void setModname(String modname) {
 			this.modname = modname;
 		}
@@ -272,7 +276,6 @@ public class StarterKitWindow extends JDialog {
 			this.mountflag = mountflag;
 		}
 
-		private String modname, moddev, moddesc, modsite, internaldlcname, internaldisplayname;
 
 		public void setModdev(String moddev) {
 			this.moddev = moddev;
@@ -280,8 +283,14 @@ public class StarterKitWindow extends JDialog {
 
 		private int tlkid, mountpriority;
 		private MountFlag mountflag;
+		private JProgressBar progressBar;
+		private JButton createButton;
+		public final Object lock = new Lock(); //threading wait() and notifyall();
+		private Mod generatedMod;
 
-		public StarterKitGenerator() {
+		public StarterKitGenerator(JButton createButton, JProgressBar progressBar) {
+			this.createButton = createButton;
+			this.progressBar = progressBar;
 			createButton.setVisible(false);
 			progressBar.setVisible(true);
 			progressBar.setIndeterminate(true);
@@ -423,6 +432,7 @@ public class StarterKitWindow extends JDialog {
 				//Run autotoc on mod
 				new AutoTocWindow(startermod, AutoTocWindow.LOCALMOD_MODE, null);
 			}
+			generatedMod = startermod;
 			return null;
 		}
 
@@ -433,8 +443,16 @@ public class StarterKitWindow extends JDialog {
 			} catch (Throwable e) {
 				ModManager.debugLogger.writeErrorWithException("Failure creating starter kit:", e);
 			}
+			
+			synchronized (lock) {
+				lock.notifyAll(); //wake up thread
+			}
 			progressBar.setVisible(false);
 			createButton.setVisible(true);
+		}
+
+		public Mod getGeneratedMod() {
+			return generatedMod;
 		}
 	}
 

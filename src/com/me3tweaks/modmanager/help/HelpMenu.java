@@ -247,7 +247,7 @@ public class HelpMenu {
 	public static void copyLogToClipboard() {
 		String biogamedir = ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText();
 		String header = "Invalid BIOGame directory has been specified: " + biogamedir+"\n";
-		if (ModManagerWindow.validateBIOGameDir()) {
+/*		if (ModManagerWindow.validateBIOGameDir()) {
 			HashMap<String, String> conflicts = ModManager.getCustomDLCConflicts(biogamedir);
 			StringBuilder sb = new StringBuilder();
 			for (Map.Entry<String, String> entry : conflicts.entrySet()) {
@@ -261,10 +261,10 @@ public class HelpMenu {
 				sb.append("\n");
 			}
 			header = ModManager.getGameEnvironmentInfo(biogamedir);
-		}
+		}*/
 		String log = ModManager.debugLogger.getLog();
 		Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-		clpbrd.setContents(new StringSelection(header + log), null); //TODO IN BUILD 56
+		clpbrd.setContents(new StringSelection(/*header + */log), null); //TODO IN BUILD 56
 		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Log copied to clipboard");
 	}
 
