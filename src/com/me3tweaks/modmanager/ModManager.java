@@ -992,14 +992,7 @@ public class ModManager {
 			commandBuilder.add("x"); //extract
 			commandBuilder.add(ModManager.getTempDir() + "guitransplanter.7z");//7z file
 			commandBuilder.add("-o" + getGUITransplanterDir()); //extraction path
-
-			// System.out.println("Building command");
 			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-			// Debug stuff
-			StringBuilder sb = new StringBuilder();
-			for (String arg : command) {
-				sb.append(arg + " ");
-			}
 			ModManager.debugLogger.writeMessage("Extracting GUI library...");
 			int returncode = 1;
 			ProcessBuilder pb = new ProcessBuilder(command);
