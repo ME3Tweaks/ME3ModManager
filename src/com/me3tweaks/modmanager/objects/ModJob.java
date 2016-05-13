@@ -94,6 +94,10 @@ public class ModJob {
 		return (getJobType() == BASEGAME) ? "Basegame" : DLCFilePath;
 	}
 
+	/**
+	 * Gets the list of files that will be replacing the installed files
+	 * @return
+	 */
 	public ArrayList<String> getFilesToReplace() {
 		return newFiles;
 	}

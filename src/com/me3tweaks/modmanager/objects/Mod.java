@@ -1997,9 +1997,11 @@ public class Mod implements Comparable<Mod> {
 	 * @param biogamedir
 	 *            biogame directory
 	 */
-	public void applyAutomaticAlternates(String biogamedir) {
+	public boolean applyAutomaticAlternates(String biogamedir) {
 		if (alternateFiles.size() > 0) {
-			ModManager.debugLogger.writeMessage(getModName() + ": Applying automatic alternate files");
+			boolean altApplied = false;
+			ModManager.debugLogger.writeMessage(getModName()
+					+ ": Checking automatic alternate files list to see if applicable and will apply if conditions are right");
 			//get list of installed DLC
 			ArrayList<String> installedDLC = ModManager.getInstalledDLC(biogamedir);
 			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
@@ -2019,25 +2021,57 @@ public class Mod implements Comparable<Mod> {
 							//custom dlc task
 							job = getJobByModuleName(ModType.CUSTOMDLC);
 						}
-						switch (af.getOperation()) {
-						case AlternateFile.OPERATION_INSTALL:
-							//add file to task
-							break;
-						case AlternateFile.OPERATION_NOINSTALL:
-							break;
-						case AlternateFile.OPERATION_SUBSTITUTE:
-							break;
-						}
+						applyAlternateOperation(job, af);
+						altApplied = true;
 					}
 					break;
 				case AlternateFile.CONDITION_DLC_PRESENT:
 					if (installedDLC.contains(conditionvalue.toUpperCase())) {
-
+						ModJob job = null;
+						if (officialDLCHeaders.contains(conditionvalue)) {
+							//official DLC task
+							job = getJobByModuleName(conditionvalue);
+						} else {
+							//custom dlc task
+							job = getJobByModuleName(ModType.CUSTOMDLC);
+						}
+						applyAlternateOperation(job, af);
+						altApplied = true;
 					}
 					break;
 				}
-
 			}
+			return altApplied;
+		} else {
+			return false; //no operations performed
+		}
+	}
+
+	private void applyAlternateOperation(ModJob job, AlternateFile af) {
+		switch (af.getOperation()) {
+		case AlternateFile.OPERATION_INSTALL:
+			//add file to task
+			if (job.getFilesToReplace().contains(getModPath() + af.getAltFile())) {
+				return; //file to replace already exists, user may have already applied mod in session.
+			}
+			ModManager.debugLogger.writeMessage("Condition match, " + af.getModFile() + " will now install new file " + af.getAltFile());
+			job.getFilesToReplace().add(getModPath() + af.getAltFile());
+			job.getFilesToReplaceTargets().add(af.getModFile());
+			break;
+		case AlternateFile.OPERATION_NOINSTALL:
+			ModManager.debugLogger.writeMessage("Condition match, will no longer modify " + af.getModFile());
+			boolean ftr = job.getFilesToReplace().remove(getModPath() + af.getAltFile());
+			boolean ftrt = job.getFilesToReplaceTargets().remove(af.getModFile());
+			if (ftr ^ ftrt) {
+				ModManager.debugLogger
+						.writeError("Application of NO_INSTALL has caused mod to become invalid as one of the replace lists didn't contain the correct values, but the other one did.");
+			}
+			break;
+		case AlternateFile.OPERATION_SUBSTITUTE:
+			ModManager.debugLogger.writeMessage("Condition match, repointing " + af.getModFile() + " to use " + af.getAltFile());
+			int index = job.getFilesToReplaceTargets().indexOf(af.getModFile());
+			job.getFilesToReplace().set(index, getModPath() + af.getAltFile());
+			break;
 		}
 	}
 }

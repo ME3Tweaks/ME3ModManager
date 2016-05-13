@@ -242,7 +242,6 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 										"Mods not merged", JOptionPane.ERROR_MESSAGE);
 					}
 					dispose();
-					callingWindow.dispose();
 					new ModManagerWindow(false);
 				}
 				
