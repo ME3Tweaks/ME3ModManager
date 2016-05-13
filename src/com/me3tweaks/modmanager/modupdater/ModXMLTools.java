@@ -212,6 +212,9 @@ public class ModXMLTools {
 
 				publish(new ThreadCommand("Applying delta to full server package", null));
 				for (File newfile : updatedfiles) {
+					if (!newfile.exists()){
+						continue; //it was deleted in this package, existed in old one. reverse update made it look like this file was required for download
+					}
 					//copy from update to full
 					ModManager.debugLogger.writeMessage("Copying updated file from update package to full server package: " + newfile);
 					String relativePath = ResourceUtils.getRelativePath(newfile.getAbsolutePath(), mod.getModPath(), File.separator);
@@ -280,7 +283,7 @@ public class ModXMLTools {
 
 				String sideload7z = ModManager.appendSlash(new File(sideloadoutputfolder).getParent()) + foldername + "-sideload.7z";
 				FileUtils.deleteQuietly(new File(sideload7z));
-				String[] procargs = { "cmd", "/c", "start", ModManager.getToolsDir() + "7za", "a", "-r", "-mx9", "-mmt", sideload7z, sideloadoutputfolder };
+				String[] procargs = { "cmd", "/c", "start", "Building Sideload Package", ModManager.getToolsDir() + "7za", "a", "-r", "-mx9", "-mmt", sideload7z, sideloadoutputfolder };
 				ProcessBuilder p = new ProcessBuilder(procargs);
 				ModManager.runProcess(p);
 			}

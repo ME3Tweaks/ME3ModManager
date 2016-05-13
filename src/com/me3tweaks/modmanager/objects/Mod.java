@@ -502,7 +502,8 @@ public class Mod implements Comparable<Mod> {
 						for (File file : sourceFiles) {
 							String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
 							String destFilePath = ModManager.appendSlash(destFolder) + relativePath;
-							if (!(newJob.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath()), ResourceUtils.normalizeFilePath(destFilePath)) && !ignoreLoadErrors)) {
+							if (!(newJob.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath()), ResourceUtils.normalizeFilePath(destFilePath))
+									&& !ignoreLoadErrors)) {
 								setFailedReason("Mod specifies a CUSTOMDLC header, but a file in one of the source directories (" + sf
 										+ ") had a file that was unable to be added. This error should be encountered.");
 								ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
@@ -697,7 +698,7 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeMessage("Verifying automatic alternate files are valid for this mod");
 			HashMap<String, ArrayList<String>> autoOriginalFiles = new HashMap<String, ArrayList<String>>(); //header to altfiles map
 			for (AlternateFile af : alternateFiles) {
-				ModManager.debugLogger.writeMessage("Verifying "+af.getAltFile() + " on "+af.getCondition() + " of "+af.getConditionalDLC());
+				ModManager.debugLogger.writeMessage("Verifying " + af.getAltFile() + " on " + af.getCondition() + " of " + af.getConditionalDLC());
 				if (af.isValidLocally(modPath)) {
 					//Verify pass
 					ModManager.debugLogger.writeMessageConditionally("This mod has " + modDeltas.size() + " deltas.", ModManager.LOG_MOD_INIT);
@@ -859,7 +860,9 @@ public class Mod implements Comparable<Mod> {
 
 		// Add mod manager build version
 		modDisplayDescription += "\nTargets Mod Manager " + modCMMVer;
-
+		if (classicCode > 0 /*&& ModManager.IS_DEBUG*/) {
+			modDisplayDescription += "\nUpdate code: " + classicCode;
+		}
 		if (getSideloadOnlyTargets().size() > 0) {
 			modDisplayDescription += "\nFuture updates may require sideloading an update package";
 		}
@@ -2018,21 +2021,21 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessage("Checking if Alt file applies: " + af);
 				String condition = af.getCondition();
 				String conditionaldlc = af.getConditionalDLC();
-				if (!installedDLC.contains(conditionaldlc)){
+				if (!installedDLC.contains(conditionaldlc)) {
 					//check if its a header...
-					if (officialDLCHeaders.contains(conditionaldlc)){
+					if (officialDLCHeaders.contains(conditionaldlc)) {
 						//convert to dlc name
-						HashMap<String,String> headerFolderMap = ModType.getHeaderFolderMap();
+						HashMap<String, String> headerFolderMap = ModType.getHeaderFolderMap();
 						String fname = headerFolderMap.get(conditionaldlc);
 						if (fname != null) {
 							conditionaldlc = fname;
 						} else {
-							ModManager.debugLogger.writeError("[alt file application] Alt file specifies non-existent Custom DLC/Mod Manager Header: "+conditionaldlc);
+							ModManager.debugLogger.writeError("[alt file application] Alt file specifies non-existent Custom DLC/Mod Manager Header: " + conditionaldlc);
 							continue;
 						}
 					}
 				}
-				
+
 				switch (condition) {
 				case AlternateFile.CONDITION_DLC_NOT_PRESENT:
 					if (!installedDLC.contains(conditionaldlc.toUpperCase())) {

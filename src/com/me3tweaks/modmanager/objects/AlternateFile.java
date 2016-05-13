@@ -132,8 +132,6 @@ public class AlternateFile {
 			}
 
 			File normalModFile = new File(modPath + modFile);
-			boolean op = operation.equals(OPERATION_SUBSTITUTE);
-			boolean op2 = operation.equals(OPERATION_NOINSTALL);
 			if (!normalModFile.exists() && (operation.equals(OPERATION_SUBSTITUTE) || operation.equals(OPERATION_NOINSTALL))) {
 				ModManager.debugLogger.writeError("Listed modfile (normal mod file) doesn't exist: " + normalModFile);
 				return false;

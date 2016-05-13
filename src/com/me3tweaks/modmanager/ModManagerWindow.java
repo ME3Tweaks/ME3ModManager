@@ -152,6 +152,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JButton modlistFailedIndicatorLink;
 	private JPanel cookedDirPanel;
 	private JMenuItem toolsAutoTOCGame;
+	private JMenu restoreMenuAdvanced;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -239,7 +240,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		//clear pending updates (done via sideload update)
-		for (Integer code : forceUpdateOnReloadList){
+		for (Integer code : forceUpdateOnReloadList) {
 			for (int i = 0; i < modModel.getSize(); i++) {
 				Mod mod = modModel.getElementAt(i);
 				if (mod.getClassicUpdateCode() == code) {
@@ -247,7 +248,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 		}
-		
+
 		new NetworkThread().execute();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: Initialize() has completed.");
 	}
@@ -488,12 +489,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (latest instanceof UpdatePackage) {
 					UpdatePackage upackage = (UpdatePackage) latest;
 					if (upackage.requiresSideload()) {
-						JOptionPane.showMessageDialog(ModManagerWindow.this, upackage.getMod().getModName()+" has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "+upackage.getMod().getModName()+".", "Sideload update required", JOptionPane.WARNING_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.this,
+								upackage.getMod().getModName()
+										+ " has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "
+										+ upackage.getMod().getModName() + ".",
+								"Sideload update required", JOptionPane.WARNING_MESSAGE);
 						try {
 							ModManager.openWebpage(new URL(upackage.getSideloadURL()));
 						} catch (MalformedURLException e) {
-							ModManager.debugLogger.writeError("Invalid sideload URL: "+upackage.getSideloadURL());
-							JOptionPane.showMessageDialog(ModManagerWindow.this, upackage.getMod().getModName()+" specified an invalid URL for it's sideload upload:\n"+upackage.getSideloadURL(), "Invalid Sideload URL", JOptionPane.ERROR_MESSAGE);
+							ModManager.debugLogger.writeError("Invalid sideload URL: " + upackage.getSideloadURL());
+							JOptionPane.showMessageDialog(ModManagerWindow.this,
+									upackage.getMod().getModName() + " specified an invalid URL for it's sideload upload:\n" + upackage.getSideloadURL(), "Invalid Sideload URL",
+									JOptionPane.ERROR_MESSAGE);
 						}
 					} else {
 						String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
@@ -1167,6 +1174,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// RESTORE
 		restoreMenu = new JMenu("Restore");
+		restoreMenuAdvanced = new JMenu("Advanced Restore");
 
 		restoreSelective = new JMenuItem("Custom Restore");
 		restoreSelective.setToolTipText("Allows you to restore specific basegame, DLC, and unpacked files");
@@ -1206,13 +1214,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertSPDLC = new JMenuItem("Restore SP DLC SFARs");
 		restoreRevertSPDLC.setToolTipText("<html>Restores all SP DLCs.<br>This does not remove custom DLC modules.</html>");
 
-		restoreRevertSPBaseDLC = new JMenuItem("> Restore SP DLC SFARs + Basegame <");
+		restoreRevertSPBaseDLC = new JMenuItem("Restore SP DLC SFARs + Basegame");
 		restoreRevertSPBaseDLC.setToolTipText("<html>Restores all basegame files, and checks all SP DLC SFAR files.<br>This does not remove custom DLC modules.</html>");
 
 		restoreRevertMPDLC = new JMenuItem("Restore MP DLC SFARs");
 		restoreRevertMPDLC.setToolTipText("<html>Restores all MP DLC SFARs.<br>This does not remove custom DLC modules.</html>");
 
-		restoreRevertMPBaseDLC = new JMenuItem("> Restore MP DLC SFARs + Basegame <");
+		restoreRevertMPBaseDLC = new JMenuItem("Restore MP DLC SFARs + Basegame");
 		restoreRevertMPBaseDLC.setToolTipText(
 				"<html>Restores all basegame files, and checks all Multiplayer DLC files.<br>This does not remove custom DLC modules.<br>If you are doing multiplayer mods, you should use this to restore</html>");
 		restoreRevertCoal = new JMenuItem("Restore vanilla Coalesced.bin");
@@ -1234,25 +1242,29 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertMPBaseDLC.addActionListener(this);
 		restoreRevertCoal.addActionListener(this);
 
+		restoreMenuAdvanced.add(restoredeleteAllCustomDLC);
+		restoreMenuAdvanced.addSeparator();
+
+		restoreMenuAdvanced.add(restoreRevertBasegame);
+		restoreMenuAdvanced.add(restoreRevertUnpacked);
+		restoreMenuAdvanced.add(restoreRevertBasegameUnpacked);
+		restoreMenuAdvanced.add(restoreDeleteUnpacked);
+		restoreMenuAdvanced.addSeparator();
+
+		restoreMenuAdvanced.add(restoreVanillifyDLC);
+		restoreMenuAdvanced.add(restoreRevertAllDLC);
+		restoreMenuAdvanced.add(restoreRevertSPDLC);
+		restoreMenuAdvanced.add(restoreRevertMPDLC);
+
 		restoreMenu.add(restoreSelective);
 		restoreMenu.add(restoreCustomDLCManager);
 		restoreMenu.addSeparator();
+
 		restoreMenu.add(restoreRevertEverything);
-		restoreMenu.add(restoredeleteAllCustomDLC);
-		restoreMenu.addSeparator();
-		restoreMenu.add(restoreRevertBasegame);
-		restoreMenu.add(restoreRevertUnpacked);
-		restoreMenu.add(restoreRevertBasegameUnpacked);
-		restoreMenu.add(restoreDeleteUnpacked);
-		restoreMenu.addSeparator();
-		restoreMenu.add(restoreVanillifyDLC);
-		restoreMenu.add(restoreRevertAllDLC);
-		restoreMenu.add(restoreRevertMPDLC);
 		restoreMenu.add(restoreRevertMPBaseDLC);
-		restoreMenu.add(restoreRevertSPDLC);
 		restoreMenu.add(restoreRevertSPBaseDLC);
 		restoreMenu.addSeparator();
-		restoreMenu.add(restoreRevertCoal);
+		restoreMenu.add(restoreMenuAdvanced);
 		menuBar.add(restoreMenu);
 
 		//DEV
