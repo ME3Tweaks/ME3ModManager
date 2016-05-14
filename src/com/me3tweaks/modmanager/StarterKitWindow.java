@@ -34,6 +34,7 @@ import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.ui.HintTextAreaUI;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
@@ -47,12 +48,6 @@ public class StarterKitWindow extends JDialog {
 	private JTextArea modDescription;
 	private DefaultComboBoxModel<MountFlag> flagModel;
 	private JComboBox<MountFlag> mountFlagsCombobox;
-
-	public static void main(String[] args) {
-		ModManager.debugLogger = new DebugLogger();
-		ModManager.debugLogger.initialize();
-		new StarterKitWindow();
-	}
 
 	public StarterKitWindow() {
 		setupWindow();
@@ -109,8 +104,8 @@ public class StarterKitWindow extends JDialog {
 
 		mountFlagsCombobox.setModel(flagModel);
 		mountFlagsCombobox.setRenderer(new MountFlagCellRenderer());
-		mountFlagsCombobox
-				.setToolTipText("<html>Mount flags determine when this DLC is loaded and if it is required by save files.<br>Having a DLC load in MP will require all players to have the DLC installed or connections will be refused.</html>");
+		mountFlagsCombobox.setToolTipText(
+				"<html>Mount flags determine when this DLC is loaded and if it is required by save files.<br>Having a DLC load in MP will require all players to have the DLC installed or connections will be refused.</html>");
 
 		modName.setUI(new HintTextFieldUI("A Most Excellent Mod", true));
 		modDeveloper.setUI(new HintTextFieldUI("GatorZ", true));
@@ -119,21 +114,19 @@ public class StarterKitWindow extends JDialog {
 		internalDisplayName.setUI(new HintTextFieldUI("Excellent DLC Module", true));
 		internalTLKId.setUI(new HintTextFieldUI("13370000", true));
 		mountPriority.setUI(new HintTextFieldUI("4500", true));
-		modDescription
-				.setUI(new HintTextAreaUI(
-						"Mod description goes here.\nThis is what will appear in Mod Manager when the user selects your mod.\nThis is the moddesc attribute in moddesc.ini under [ModInfo].\nNewlines will be replaced with <br>."));
+		modDescription.setUI(new HintTextAreaUI(
+				"Mod description goes here.\nThis is what will appear in Mod Manager when the user selects your mod.\nThis is the moddesc attribute in moddesc.ini under [ModInfo].\nNewlines will be replaced with <br>."));
 		modName.setToolTipText("<html>Name of this mod that Mod Manager will display.<br>This is the moddesc modname value under [ModInfo]</html>");
-		modDeveloper
-				.setToolTipText("<html>Developer of this mod. Likely your modding scene alias.<br>This is the moddesc moddev value under [ModInfo]</html>");
-		modSite.setToolTipText("<html>Optional website that will show up in Mod Manager the user can click to get help, more info, etc about the mod.<br>This is the moddesc modsite value under [ModInfo]</html>");
-		internalDLCName
-				.setToolTipText("<html>The internal name for the DLC, after the standard DLC_CON.<br>The hint for this textbox would mean the DLC folder is named DLC_CON_ExcellentMod.</html>");
-		internalDisplayName
-				.setToolTipText("<html>Internal name for this DLC. If a DLC fails to load, the user may see this name at the main menu.</html>");
-		internalTLKId
-				.setToolTipText("<html>TLK ID to use for your generated TLK file.<br>A TLK file will be created for the main 6 languages<br>and the internal DLC name will be set on this one.<br>The mount file will point to this value.</html>");
-		mountPriority
-				.setToolTipText("<html>Mount priority of your mod. Official DLC ends around 3300.<br>Mods that have pcc files with the same name will only load the higher mount priority version.</html>");
+		modDeveloper.setToolTipText("<html>Developer of this mod. Likely your modding scene alias.<br>This is the moddesc moddev value under [ModInfo]</html>");
+		modSite.setToolTipText(
+				"<html>Optional website that will show up in Mod Manager the user can click to get help, more info, etc about the mod.<br>This is the moddesc modsite value under [ModInfo]</html>");
+		internalDLCName.setToolTipText(
+				"<html>The internal name for the DLC, after the standard DLC_CON.<br>The hint for this textbox would mean the DLC folder is named DLC_CON_ExcellentMod.</html>");
+		internalDisplayName.setToolTipText("<html>Internal name for this DLC. If a DLC fails to load, the user may see this name at the main menu.</html>");
+		internalTLKId.setToolTipText(
+				"<html>TLK ID to use for your generated TLK file.<br>A TLK file will be created for the main 6 languages<br>and the internal DLC name will be set on this one.<br>The mount file will point to this value.</html>");
+		mountPriority.setToolTipText(
+				"<html>Mount priority of your mod. Official DLC ends around 3300.<br>Mods that have pcc files with the same name will only load the higher mount priority version.</html>");
 
 		internalTLKId.setInputVerifier(new PositiveIntVerifier());
 		mountPriority.setInputVerifier(new PositiveIntVerifier());
@@ -173,8 +166,8 @@ public class StarterKitWindow extends JDialog {
 				String modpath = ModManager.getModsDir() + modName.getText();
 				File modpathfile = new File(modpath);
 				if (modpathfile.exists() && modpathfile.isDirectory()) {
-					int result = JOptionPane.showConfirmDialog(StarterKitWindow.this, "A mod named " + modName.getText()
-							+ " already exists.\nDelete this mod and create the starter kit in its place?", "Mod already exists",
+					int result = JOptionPane.showConfirmDialog(StarterKitWindow.this,
+							"A mod named " + modName.getText() + " already exists.\nDelete this mod and create the starter kit in its place?", "Mod already exists",
 							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					if (result == JOptionPane.CANCEL_OPTION) {
 						return;
@@ -211,7 +204,6 @@ public class StarterKitWindow extends JDialog {
 		panel.add(createButton, c);
 		c.gridy++;
 
-		
 		progressBar.setVisible(false);
 		panel.add(progressBar, c);
 		add(panel);
@@ -243,7 +235,7 @@ public class StarterKitWindow extends JDialog {
 
 	static class StarterKitGenerator extends SwingWorker<Void, Void> {
 		private String modname, moddev, moddesc, modsite, internaldlcname, internaldisplayname;
-		
+
 		public void setModname(String modname) {
 			this.modname = modname;
 		}
@@ -276,24 +268,23 @@ public class StarterKitWindow extends JDialog {
 			this.mountflag = mountflag;
 		}
 
-
 		public void setModdev(String moddev) {
 			this.moddev = moddev;
 		}
 
 		private int tlkid, mountpriority;
 		private MountFlag mountflag;
-		private JProgressBar progressBar;
-		private JButton createButton;
-		public final Object lock = new Lock(); //threading wait() and notifyall();
+		private JComponent progressBar;
+		private JComponent createButton;
 		private Mod generatedMod;
+		public final Object lock = new Lock(); //threading wait() and notifyall();
+		public boolean completed = false;
 
-		public StarterKitGenerator(JButton createButton, JProgressBar progressBar) {
+		public StarterKitGenerator(JComponent createButton, JComponent progressBar) {
 			this.createButton = createButton;
 			this.progressBar = progressBar;
 			createButton.setVisible(false);
 			progressBar.setVisible(true);
-			progressBar.setIndeterminate(true);
 			//pack();
 		}
 
@@ -365,31 +356,42 @@ public class StarterKitWindow extends JDialog {
 				FileUtils.writeStringToFile(new File(output), replaceOutput);
 			}
 			//Compile TLK.
-			new FolderBatchWindow.BatchWorker(cookedpcconsole, BatchWorker.COMPILE_TLK).execute();
-
+			FolderBatchWindow.BatchWorker bw = new FolderBatchWindow.BatchWorker(cookedpcconsole, BatchWorker.COMPILE_TLK);
+			bw.execute();
+			synchronized (bw.lock) {
+				while (!bw.completed) {
+					try {
+						bw.lock.wait();
+					} catch (InterruptedException ex) {
+						// TODO Auto-generated catch block
+						ModManager.debugLogger.writeErrorWithException("Unable to wait for for folder batch to finish:", ex);
+					}
+				}
+			}
+			ModManager.debugLogger.writeMessage("Folder batch worker has completed. Resuming StarterKitGenerator");
 			//while tlk is compiling do more work on .bin file.
 			CoalescedWindow.decompileCoalesced(coalpath);
 			File bioenginefile = new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "BioEngine.xml");
 			String bioengine = FileUtils.readFileToString(bioenginefile);
 			String newengine = bioengine.replaceAll("StarterKit", internaldlcname); //update bioengine
-			System.out.println("Same in/out? " + bioengine.equals(newengine));
 			boolean deleted = FileUtils.deleteQuietly(bioenginefile);
-			System.out.println("Deleted: " + deleted);
+
 			FileUtils.writeStringToFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "BioEngine.xml"), newengine); //writeback
 
 			//recompile and move up a dir
-			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_"
-					+ internaldlcname + ".xml");
+			ModManager.debugLogger.writeMessage("Recompiling Default_DLC_CON_" + internaldlcname + ".bin");
+			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname + ".xml");
 			FileUtils.deleteQuietly(new File(coalpath));
-			FileUtils.copyFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname
-					+ ".bin"), new File(coalpath));
+			ModManager.debugLogger.writeMessage("Moving Default_DLC_CON_" + internaldlcname + ".bin to "+coalpath);
+			FileUtils.moveFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname + ".bin"), new File(coalpath));
 
 			//update mount.dlc
-			MountFileEditorWindow.SaveMount(cookedPath + "Mount.dlc", Integer.toString(mountpriority), Integer.toString(tlkid), mountflag,
-					mountpriority);
+			ModManager.debugLogger.writeMessage("Updating Mount.dlc");
+			MountFileEditorWindow.SaveMount(cookedPath + "Mount.dlc", Integer.toString(tlkid), mountflag, mountpriority);
 
+			MountFile mf = new MountFile(cookedPath + "Mount.dlc");
 			//create workspace
-			Thread.sleep(5000); //debug for now
+			ModManager.debugLogger.writeMessage("Creating mod workspace");
 			String tlkpath = modpath + "WORKSPACE" + File.separator + "TLKs" + File.separator;
 			File tlkpathfile = new File(tlkpath);
 			tlkpathfile.mkdirs();
@@ -400,10 +402,13 @@ public class StarterKitWindow extends JDialog {
 			}
 
 			//move coaleseced folder
-			FileUtils.moveDirectory(new File(cookedPath + "Default_DLC_CON_" + internaldlcname), new File(modpath + "WORKSPACE" + File.separator
-					+ "Default_DLC_CON_" + internaldlcname));
+			ModManager.debugLogger.writeMessage("Moving Coalesced folder");
+			FileUtils.moveDirectory(new File(cookedPath + "Default_DLC_CON_" + internaldlcname),
+					new File(modpath + "WORKSPACE" + File.separator + "Default_DLC_CON_" + internaldlcname));
 
 			//Create moddesc.ini
+			ModManager.debugLogger.writeMessage("Creating moddesc.ini for " + modname);
+
 			Mod startermod = new Mod();
 			startermod.setModPath(modpath);
 			ModJob custdlcjob = new ModJob("DLC_CON_" + internaldlcname, ModType.CUSTOMDLC, "");
@@ -421,9 +426,11 @@ public class StarterKitWindow extends JDialog {
 			startermod.setModDescription(moddesc);
 			startermod.setSite(modsite);
 			startermod.setModName(modname);
+			startermod.setVersion(1.0);
 			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, 4.2));
 
 			//reload newly written mod.
+			ModManager.debugLogger.writeMessage("Loading moddesc.ini to verify mod is valid");
 			startermod = new Mod(modpath + "moddesc.ini");
 			if (!startermod.isValidMod()) {
 				//ERROR!
@@ -438,17 +445,17 @@ public class StarterKitWindow extends JDialog {
 
 		@Override
 		public void done() {
+			completed = true;
 			try {
 				get();
 			} catch (Throwable e) {
 				ModManager.debugLogger.writeErrorWithException("Failure creating starter kit:", e);
 			}
-			
+			progressBar.setVisible(false);
+			createButton.setVisible(true);
 			synchronized (lock) {
 				lock.notifyAll(); //wake up thread
 			}
-			progressBar.setVisible(false);
-			createButton.setVisible(true);
 		}
 
 		public Mod getGeneratedMod() {

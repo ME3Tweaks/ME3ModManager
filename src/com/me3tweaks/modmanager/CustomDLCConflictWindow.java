@@ -30,6 +30,7 @@ import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
@@ -41,6 +42,7 @@ import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 
 /**
  * Shows conflicts between custom dlc mods.
@@ -56,6 +58,8 @@ public class CustomDLCConflictWindow extends JDialog {
 	private JProgressBar guiProgressBar;
 	private JButton guiPatchButton;
 	private String conflictingGUIMod;
+	private JPanel progressPanel;
+	private JLabel statusText;
 
 	public CustomDLCConflictWindow() {
 		setupWindow();
@@ -66,6 +70,8 @@ public class CustomDLCConflictWindow extends JDialog {
 	private void setupWindow() {
 		setPreferredSize(new Dimension(500, 500));
 		setTitle("Custom DLC Conflicts");
+		setIconImages(ModManager.ICONS);
+		setModalityType(ModalityType.APPLICATION_MODAL);
 
 		// TODO Auto-generated method stub
 		//JTextPane tp = new JTextPane();
@@ -91,13 +97,14 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			//write values to table data
 			data[i][COL_FILENAME] = key;
-			data[i][COL_SUPERCEDING] = value.get(value.size()-1).getDlcName();
+			data[i][COL_SUPERCEDING] = value.get(value.size() - 1).getDlcName();
 			String superceeded = "";
 			for (int x = 0; x <= value.size() - 2; x++) {
 				superceeded += value.get(x).getDlcName() + " ";
 			}
 
 			data[i][COL_SUPERCEDED] = superceeded;
+			i++;
 		}
 
 		String[] columnNames = { "Filename", "Superceding DLC", "Superceeded DLC" };
@@ -136,35 +143,32 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, message, "Toggling Custom DLC in Mod Manager",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, message, "Toggling Custom DLC in Mod Manager", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 		panel.add(infoLinkButton, BorderLayout.NORTH);
 		panel.add(scrollpane, BorderLayout.CENTER);
 
-		HashMap<CustomDLC, String> secondPriorityUIConflictFiles = detectUIModConflicts(conflicts);
+		HashMap<String, CustomDLC> secondPriorityUIConflictFiles = detectUIModConflicts(conflicts);
 		if (secondPriorityUIConflictFiles != null) {
 			guiPatchButton = new JButton("UI mod is conflicting with other mods", UIManager.getIcon("OptionPane.warningIcon"));
-			guiPatchButton
-					.setToolTipText("<html>Mod Manager has detected that an installed GUI mod (SP Controller Support or Interface Scaling) is superceding other installed Custom DLCs.<br>Click for more info.</html>");
+			guiPatchButton.setToolTipText(
+					"<html>Mod Manager has detected that an installed GUI mod (SP Controller Support or Interface Scaling) is superceding other installed Custom DLCs.<br>Click for more info.</html>");
 
 			guiProgressBar = new JProgressBar();
-			guiProgressBar.setVisible(false);
-
+			guiProgressBar.setVisible(true);
+			guiProgressBar.setIndeterminate(true);
 			guiPatchButton.addActionListener(new ActionListener() {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					int result = JOptionPane.showConfirmDialog(CustomDLCConflictWindow.this,
-							"An interface mod is superceding other installed Custom DLC mods.\n"
-									+ "This will disable features of those mods, which may cause game instability.\n"
+							"An interface mod is superceding other installed Custom DLC mods.\n" + "This will disable features of those mods, which may cause game instability.\n"
 									+ "Mod Manager can generate a new mod that will use those superceding files with your interface\n"
 									+ "mod's UI files, which will fix this specific issue.\n\n"
 									+ "This generated mod will only apply to the current versions of the conflicting mods.\n"
-									+ "If you update any of them, you must uninstall the generated mod and regenerate it again.\n\n"
-									+ "Generate a GUI conflict compatibility mod?", "Generate a compatibilty mod", JOptionPane.YES_NO_OPTION,
-							JOptionPane.QUESTION_MESSAGE);
+									+ "If you update any of them, you must uninstall the generated mod and regenerate it again.\n\n" + "Generate a GUI conflict compatibility mod?",
+							"Generate a compatibilty mod", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {
 						//generate
 						String modName = "MM GUI Compatibility";
@@ -177,41 +181,35 @@ public class CustomDLCConflictWindow extends JDialog {
 							}
 							whatTheUserEntered = whatTheUserEntered.trim();
 							//space, and alphanumerics
-							boolean asciionly = whatTheUserEntered.chars().allMatch(
-									c -> c == 0x20 || c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B)); //what the f is this?
+							boolean asciionly = whatTheUserEntered.chars()
+									.allMatch(c -> c == 0x20 || c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B)); //what the f is this?
 							if (!asciionly) {
-								ModManager.debugLogger.writeError("Name is not ascii alphanumeric only: "+whatTheUserEntered);
+								ModManager.debugLogger.writeError("Name is not ascii alphanumeric only: " + whatTheUserEntered);
 								continue;
 							}
 							if (whatTheUserEntered.length() > 20 || whatTheUserEntered.length() < 1) {
-								ModManager.debugLogger.writeError("Name is empty or too long: "+whatTheUserEntered);
+								ModManager.debugLogger.writeError("Name is empty or too long: " + whatTheUserEntered);
 								continue;
 							}
-							
+
 							//check if already exists
 							File patchFolder = new File(ModManager.getModsDir() + whatTheUserEntered);
 							if (patchFolder.exists() && patchFolder.isDirectory()) {
-								ModManager.debugLogger.writeError("Mod already exists, prompting user to overwrite: "+patchFolder);
+								ModManager.debugLogger.writeError("Mod already exists, prompting user to overwrite: " + patchFolder);
 								int renameresult = JOptionPane.showOptionDialog(CustomDLCConflictWindow.this,
-										"A mod named "+whatTheUserEntered+" already exists in Mod Manager.", 
-										"Name conflict",
-										JOptionPane.OK_CANCEL_OPTION,
-										JOptionPane.QUESTION_MESSAGE,
-										null,
-										new String[]{"Delete existing mod", "Enter a new name"},
-										"default");
+										"A mod named " + whatTheUserEntered + " already exists in Mod Manager.", "Name conflict", JOptionPane.OK_CANCEL_OPTION,
+										JOptionPane.QUESTION_MESSAGE, null, new String[] { "Delete existing mod", "Enter a new name" }, "default");
 								if (renameresult == JOptionPane.NO_OPTION) {
 									continue;
 								} else {
 									FileUtils.deleteQuietly(patchFolder);
 								}
 							}
-							
+
 							modName = whatTheUserEntered.trim();
 							nameIsBad = false;
 						}
-						guiProgressBar.setVisible(true);
-						guiProgressBar.setIndeterminate(true);
+						progressPanel.setVisible(true);
 						guiPatchButton.setVisible(false);
 						GUICompatGeneratorThread gcgt = new GUICompatGeneratorThread(modName, biogameDirectory, secondPriorityUIConflictFiles);
 						gcgt.execute();
@@ -221,30 +219,37 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			JPanel guiPatchPanel = new JPanel(new BorderLayout());
 			guiPatchPanel.add(guiPatchButton, BorderLayout.NORTH);
-			guiPatchPanel.add(guiProgressBar, BorderLayout.SOUTH);
+
+			progressPanel = new JPanel(new BorderLayout());
+			statusText = new JLabel("Preparing to create compatibilty mod", SwingConstants.CENTER);
+			progressPanel.add(guiProgressBar, BorderLayout.NORTH);
+			progressPanel.add(statusText, BorderLayout.SOUTH);
+			progressPanel.setVisible(false);
+			guiPatchPanel.add(progressPanel, BorderLayout.SOUTH);
 			panel.add(guiPatchPanel, BorderLayout.SOUTH);
 		}
+		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(panel);
 		pack();
 	}
 
-	class GUICompatGeneratorThread extends SwingWorker<Void, Void> {
+	class GUICompatGeneratorThread extends SwingWorker<Void, ThreadCommand> {
 
-		private HashMap<CustomDLC, String> secondPriorityUIConflictFiles;
+		private HashMap<String, CustomDLC> secondPriorityUIConflictFiles;
 		private String modName;
 		private String biogameDirectory;
 
-		public GUICompatGeneratorThread(String modName, String biogameDirectory, HashMap<CustomDLC, String> secondPriorityUIConflictFiles) {
+		public GUICompatGeneratorThread(String modName, String biogameDirectory, HashMap<String, CustomDLC> secondPriorityUIConflictFiles2) {
 			this.modName = modName;
 			this.biogameDirectory = biogameDirectory;
-			this.secondPriorityUIConflictFiles = secondPriorityUIConflictFiles;
+			this.secondPriorityUIConflictFiles = secondPriorityUIConflictFiles2;
 		}
 
 		@Override
 		protected Void doInBackground() throws Exception {
 			String internalName = modName.toUpperCase().replaceAll(" ", "_");
 			ModManager.debugLogger.writeMessage("Compatibility pack will be named DLC_CON_" + internalName);
-			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, guiProgressBar);
+			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, progressPanel);
 			skg.setInternaldisplayname("GUI Compatibility Pack from MM " + ModManager.BUILD_NUMBER);
 			skg.setMountpriority(6000);
 			skg.setModdev("Mod Manager Build " + ModManager.BUILD_NUMBER);
@@ -253,7 +258,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			String desc = "User generated compatibility pack made to inject new interface files into the conflicting files from the following mods:\n";
 
 			TreeSet<String> conflictingDLC = new TreeSet<String>();
-			for (CustomDLC dlc : secondPriorityUIConflictFiles.keySet()) {
+			for (CustomDLC dlc : secondPriorityUIConflictFiles.values()) {
 				conflictingDLC.add(dlc.getDlcName());
 			}
 			for (String str : conflictingDLC) {
@@ -274,8 +279,10 @@ public class CustomDLCConflictWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Running StarterKitGenerator. Thread will suspend until that thread has completed");
 
 			skg.execute();
+			publish(new ThreadCommand("SET_STATUS_TEXT", "Generating Starter Kit for " + modName));
+
 			synchronized (skg.lock) {
-				while (guiProgressBar.isVisible()) {
+				while (!skg.completed) {
 					try {
 						skg.lock.wait();
 					} catch (InterruptedException ex) {
@@ -284,20 +291,19 @@ public class CustomDLCConflictWindow extends JDialog {
 					}
 				}
 			}
+			publish(new ThreadCommand("SET_PROGRESSBAR_VISIBLE"));
 			ModManager.debugLogger.writeMessage("StarterKit should have finished, resuming compat generator");
 			if (skg.getGeneratedMod().getModPath() == null) {
 				//something went wrong
-
+				ModManager.debugLogger.writeError("Generated mod path is null, something went wrong!");
 				return null;
 			}
-
+			publish(new ThreadCommand("SET_STATUS_TEXT", "Copying tier 2 files to new mod"));
 			//starter kit has finished. Copy files to it.
 			ArrayList<String> transplantFiles = new ArrayList<>();
-			for (Map.Entry<CustomDLC, String> resolutionFile : secondPriorityUIConflictFiles.entrySet()) {
-				String sourcePath = biogameDirectory + "DLC/" + resolutionFile.getKey().getDlcName() + "/CookedPCConsole/"
-						+ resolutionFile.getValue();
-				String copyTargetPath = skg.getGeneratedMod().getModPath() + "DLC_CON_" + internalName + "/CookedPCConsole/"
-						+ resolutionFile.getValue();
+			for (Map.Entry<String, CustomDLC> resolutionFile : secondPriorityUIConflictFiles.entrySet()) {
+				String sourcePath = biogameDirectory + "DLC/" + resolutionFile.getValue().getDlcName() + "/CookedPCConsole/" + resolutionFile.getKey();
+				String copyTargetPath = skg.getGeneratedMod().getModPath() + "DLC_CON_" + internalName + "/CookedPCConsole/" + resolutionFile.getKey();
 				try {
 					ModManager.debugLogger.writeMessage("Copying 2nd tier conflict file: " + sourcePath + " => " + copyTargetPath);
 					FileUtils.copyFile(new File(sourcePath), new File(copyTargetPath));
@@ -307,12 +313,15 @@ public class CustomDLCConflictWindow extends JDialog {
 				}
 			}
 
+			publish(new ThreadCommand("SET_STATUS_TEXT", "Locating GUI library"));
+
 			ModManager.debugLogger.writeMessage("Copy of 2nd tier fields completed. Locating GUI library");
 			String guilibrarypath = ModManager.getGUILibraryFor(conflictingGUIMod);
 			String transplanterpath = ModManager.getGUITransplanterCLI();
 
 			//Run ME3-GUI-Transplanter over CookedPCConsole files
 			for (String transplantFile : transplantFiles) {
+				publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanting SWFs into " + new File(transplantFile).getName()));
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(transplanterpath);
 				commandBuilder.add("--injectswf");
@@ -328,13 +337,14 @@ public class CustomDLCConflictWindow extends JDialog {
 			}
 
 			//Remove .bak files
-			List<File> files = (List<File>) FileUtils.listFiles(new File(skg.getGeneratedMod().getModPath() + "DLC_CON_" + internalName),
-					new String[] { "bak" }, true);
+			publish(new ThreadCommand("SET_STATUS_TEXT", "Deleting .bak files"));
+			List<File> files = (List<File>) FileUtils.listFiles(new File(skg.getGeneratedMod().getModPath() + "DLC_CON_" + internalName), new String[] { "bak" }, true);
 			for (File file : files) {
 				FileUtils.deleteQuietly(file);
 			}
 
 			//Run autotoc
+			publish(new ThreadCommand("SET_STATUS_TEXT", "Runing autotoc on new mod"));
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
@@ -353,12 +363,37 @@ public class CustomDLCConflictWindow extends JDialog {
 		}
 
 		@Override
+		protected void process(List<ThreadCommand> chunks) {
+			for (ThreadCommand tc : chunks) {
+				String command = tc.getCommand();
+				switch (command) {
+				case "SET_PROGRESSBAR_VISIBLE":
+					progressPanel.setVisible(true);
+					guiPatchButton.setVisible(false);
+					break;
+				case "SET_STATUS_TEXT":
+					statusText.setText(tc.getMessage());
+					break;
+				}
+			}
+		}
+
+		@Override
 		protected void done() {
 			try {
 				get();
 			} catch (Exception e) {
 				ModManager.debugLogger.writeException(e);
 			}
+			ModManager.debugLogger.writeMessage(modName + " created. Showing user directions on how to generate a new one.");
+			statusText.setText(modName + " has been created");
+			JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
+					"Compatibility mod has been created.\nApply " + modName
+							+ " to fix the UI overriding conflicts.\n\nIf you update any of your conflicting mods, uninstall this mod then generate a new compatibilty mod.\nGenerating a compatibiilty pack while "
+							+ modName + " is installed will likely crash the game when the new mod is applied.",
+					"Mod created", JOptionPane.INFORMATION_MESSAGE);
+			dispose();
+			new ModManagerWindow(false);
 		}
 	}
 
@@ -372,16 +407,16 @@ public class CustomDLCConflictWindow extends JDialog {
 	 * @return null if no UI mod conflicts, otherwise a map of the next
 	 *         superceeding Custom DLC mapped to its file.
 	 */
-	private HashMap<CustomDLC, String> detectUIModConflicts(HashMap<String, ArrayList<CustomDLC>> conflicts) {
+	private HashMap<String, CustomDLC> detectUIModConflicts(HashMap<String, ArrayList<CustomDLC>> conflicts) {
 		ArrayList<String> knownGUImods = new ArrayList<String>(Arrays.asList(ModManager.KNOWN_GUI_CUSTOMDLC_MODS));
-		HashMap<CustomDLC, String> secondPriorityUIConflictFiles = new HashMap<>();
+		HashMap<String, CustomDLC> secondPriorityUIConflictFiles = new HashMap<>();
 		for (Map.Entry<String, ArrayList<CustomDLC>> entry : conflicts.entrySet()) {
 			ArrayList<CustomDLC> conflictingDLCs = entry.getValue();
 			CustomDLC str = conflictingDLCs.get(conflictingDLCs.size() - 1);
 			if (knownGUImods.contains(str.getDlcName())) {
 				ModManager.debugLogger.writeMessage("GUI mod " + str + " superceeding: " + entry.getKey());
 				conflictingGUIMod = conflictingDLCs.get(conflictingDLCs.size() - 1).getDlcName();
-				secondPriorityUIConflictFiles.put(conflictingDLCs.get(conflictingDLCs.size() - 2), entry.getKey());
+				secondPriorityUIConflictFiles.put(entry.getKey(), conflictingDLCs.get(conflictingDLCs.size() - 2));
 			}
 		}
 		if (secondPriorityUIConflictFiles.size() > 0) {

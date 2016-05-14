@@ -22,12 +22,14 @@ import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
+import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 
 public class FolderBatchWindow extends JDialog {
 	File droppedFile;
+	private final Object lock = new Lock(); //threading wait() and notifyall();
 
 	public FolderBatchWindow(JFrame parentFrame, File file) {
 		droppedFile = file;
@@ -59,8 +61,7 @@ public class FolderBatchWindow extends JDialog {
 			JButton compressAllPcc = new JButton("Compress all PCC files");
 			JButton sideloadAllModMaker = new JButton("Sideload all ModMaker XML files");
 
-			compileAllTLK
-					.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
+			compileAllTLK.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
 			decompileAllTLK.setToolTipText("<html>Decompiles all TLK files using the TankMaster compiler tool included with Mod Manager.</html>");
 			decompileAllCoalesced
 					.setToolTipText("<html>Decompils all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
@@ -157,8 +158,8 @@ public class FolderBatchWindow extends JDialog {
 			String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath());
 			switch (extension) {
 			case "xml":
-				JLabel headerLabel = new JLabel("<html>You dropped an XML file onto Mod Manager.<br>" + droppedFile
-						+ "<br>Select what operation to perform with this file.</html>");
+				JLabel headerLabel = new JLabel(
+						"<html>You dropped an XML file onto Mod Manager.<br>" + droppedFile + "<br>Select what operation to perform with this file.</html>");
 				panel.add(headerLabel, c);
 
 				JButton compileTLK = new JButton("Compile TLK (TLK Manifest (Tankmaster only))");
@@ -237,6 +238,8 @@ public class FolderBatchWindow extends JDialog {
 
 		private int operation;
 		private File folder;
+		public final Object lock = new Lock(); //threading wait() and notifyall();
+		public boolean completed = false;
 
 		public BatchWorker(File droppedFile, int operation) {
 			this.operation = operation;
@@ -323,6 +326,10 @@ public class FolderBatchWindow extends JDialog {
 
 		@Override
 		protected void done() {
+			completed  = true;
+			synchronized (lock) {
+				lock.notifyAll();
+			}
 			if (ModManagerWindow.ACTIVE_WINDOW != null)
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Batch operation completed");
 		}

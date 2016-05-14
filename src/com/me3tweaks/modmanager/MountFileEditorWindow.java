@@ -281,8 +281,8 @@ public class MountFileEditorWindow extends JDialog {
 					String mountPriority = priorityField.getText();
 					String tlkId = tlkIdField.getText();
 					MountFlag flag = flagModel.getElementAt(mountFlagsCombobox.getSelectedIndex());
-					int priorityVal = Integer.reverseBytes(Integer.parseUnsignedInt(mountPriority));					
-					boolean saved = SaveMount(sInputField.getText(),mountPriority,tlkId,flag,priorityVal);
+					int priorityVal = Integer.parseUnsignedInt(mountPriority);					
+					boolean saved = SaveMount(sInputField.getText(),tlkId,flag,priorityVal);
 					if (saved) {
 						sStatus.setText("File saved.");
 					} else {
@@ -436,15 +436,16 @@ public class MountFileEditorWindow extends JDialog {
 		}
 	}
 
-	public static boolean SaveMount(String location, String mountPriority, String tlkId, MountFlag flag, int priorityVal) {
+	public static boolean SaveMount(String location, String tlkId, MountFlag flag, int priorityVal) {
 		String newData = DEFAULT_MOUNT_DATA;
 		byte[] data = DatatypeConverter.parseHexBinary(newData);
 
 		//MOUNT PRIORITY
-		priorityVal = (priorityVal >> 16) & 65535;
+		//priorityVal = (priorityVal >> 16) & 65535;
+		//priorityVal = ~priorityVal & 0x0000FFFF;
 		byte[] bytes = ByteBuffer.allocate(Integer.BYTES).putInt(priorityVal).array();
-		data[PRIORITY_OFFSET] = bytes[2]; //0 and 1 are data from size increase we don't need
-		data[PRIORITY_OFFSET + 1] = bytes[3];
+		data[PRIORITY_OFFSET] = bytes[3]; //0 and 1 are data from size increase we don't need
+		data[PRIORITY_OFFSET + 1] = bytes[2];
 
 		//TLK ID1 & 2
 		int tlkVal = Integer.reverseBytes(Integer.parseInt(tlkId));
@@ -466,11 +467,6 @@ public class MountFileEditorWindow extends JDialog {
 			ModManager.debugLogger.writeErrorWithException("Failed to save Mount.dlc file:", e);
 			return false;
 		}
-	}
-
-	public static void main(String[] args) {
-		MountFileEditorWindow.ISRUNNINGASMAIN = true;
-		new MountFileEditorWindow();
 	}
 
 	public static String getMountDescription(File mountFile) {
