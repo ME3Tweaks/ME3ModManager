@@ -4,12 +4,13 @@ import java.awt.Color;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextPane;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Element;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -39,6 +40,19 @@ public class ResourceUtils {
 			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
 		}
 	}
+	
+	/**
+	 * Returns line number where carot is in a component that has a carot
+	 * @param component component to find carot position of
+	 * @return line number
+	 */
+	public static int getLineAtCaret(JTextComponent component)
+    {
+         int caretPosition = component.getCaretPosition();
+         Element root = component.getDocument().getDefaultRootElement();
+
+         return root.getElementIndex( caretPosition ) + 1;
+    }
 
 	public static String humanReadableByteCount(long bytes, boolean si) {
 		int unit = si ? 1000 : 1024;

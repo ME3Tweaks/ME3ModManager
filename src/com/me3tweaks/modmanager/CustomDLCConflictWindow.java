@@ -175,7 +175,8 @@ public class CustomDLCConflictWindow extends JDialog {
 						boolean nameIsBad = true;
 						while (nameIsBad) {
 							String whatTheUserEntered = JOptionPane.showInputDialog(CustomDLCConflictWindow.this,
-									"Enter a name for the compatibilty mod.\nAlphanumeric (spaces/underscore allowed) only, no more than 20 characters.");
+									"Enter a name for the compatibilty mod.\nAlphanumeric (spaces/underscore allowed) only, no more than 20 characters.", "Enter mod name",
+									JOptionPane.QUESTION_MESSAGE);
 							if (whatTheUserEntered == null) {
 								return;
 							}
@@ -196,9 +197,10 @@ public class CustomDLCConflictWindow extends JDialog {
 							File patchFolder = new File(ModManager.getModsDir() + whatTheUserEntered);
 							if (patchFolder.exists() && patchFolder.isDirectory()) {
 								ModManager.debugLogger.writeError("Mod already exists, prompting user to overwrite: " + patchFolder);
+								String[] options = new String[] { "Delete existing mod", "Enter a new name" };
 								int renameresult = JOptionPane.showOptionDialog(CustomDLCConflictWindow.this,
 										"A mod named " + whatTheUserEntered + " already exists in Mod Manager.", "Name conflict", JOptionPane.OK_CANCEL_OPTION,
-										JOptionPane.QUESTION_MESSAGE, null, new String[] { "Delete existing mod", "Enter a new name" }, "default");
+										JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 								if (renameresult == JOptionPane.NO_OPTION) {
 									continue;
 								} else {
@@ -233,7 +235,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		pack();
 	}
 
-	class GUICompatGeneratorThread extends SwingWorker<Void, ThreadCommand> {
+	class GUICompatGeneratorThread extends SwingWorker<Boolean, ThreadCommand> {
 
 		private HashMap<String, CustomDLC> secondPriorityUIConflictFiles;
 		private String modName;
@@ -246,7 +248,18 @@ public class CustomDLCConflictWindow extends JDialog {
 		}
 
 		@Override
-		protected Void doInBackground() throws Exception {
+		protected Boolean doInBackground() throws Exception {
+			String guilibrarypath = ModManager.getGUILibraryFor(conflictingGUIMod);
+			String transplanterpath = ModManager.getGUITransplanterCLI();
+			if (guilibrarypath == null) {
+				publish(new ThreadCommand("MISSING_GUI_LIBRARY"));
+				return false;
+			}
+			if (transplanterpath == null) {
+				publish(new ThreadCommand("MISSING_TRANSPLANTER"));
+				return false;
+			}
+
 			String internalName = modName.toUpperCase().replaceAll(" ", "_");
 			ModManager.debugLogger.writeMessage("Compatibility pack will be named DLC_CON_" + internalName);
 			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, progressPanel);
@@ -286,7 +299,6 @@ public class CustomDLCConflictWindow extends JDialog {
 					try {
 						skg.lock.wait();
 					} catch (InterruptedException ex) {
-						// TODO Auto-generated catch block
 						ModManager.debugLogger.writeErrorWithException("Unable to wait for for starter kit to finish:", ex);
 					}
 				}
@@ -296,8 +308,10 @@ public class CustomDLCConflictWindow extends JDialog {
 			if (skg.getGeneratedMod().getModPath() == null) {
 				//something went wrong
 				ModManager.debugLogger.writeError("Generated mod path is null, something went wrong!");
-				return null;
+				publish(new ThreadCommand("ERROR_NO_STARTER_MOD"));
+				return false;
 			}
+
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Copying tier 2 files to new mod"));
 			//starter kit has finished. Copy files to it.
 			ArrayList<String> transplantFiles = new ArrayList<>();
@@ -310,14 +324,15 @@ public class CustomDLCConflictWindow extends JDialog {
 					transplantFiles.add(copyTargetPath);
 				} catch (IOException e1) {
 					ModManager.debugLogger.writeErrorWithException("ERROR COPYING FILE INTO COMPAT PACKAGE: ", e1);
+					FileUtils.deleteQuietly(new File(skg.getGeneratedMod().getModPath()));
+					publish(new ThreadCommand("ERROR_FILE_COPY_INTO_COMPAT"));
+					return false;
 				}
 			}
 
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Locating GUI library"));
 
 			ModManager.debugLogger.writeMessage("Copy of 2nd tier fields completed. Locating GUI library");
-			String guilibrarypath = ModManager.getGUILibraryFor(conflictingGUIMod);
-			String transplanterpath = ModManager.getGUITransplanterCLI();
 
 			//Run ME3-GUI-Transplanter over CookedPCConsole files
 			for (String transplantFile : transplantFiles) {
@@ -359,7 +374,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			if (returncode != 0 || pr.hadError()) {
 				ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error) running AutoTOC: " + returncode);
 			}
-			return null;
+			return true;
 		}
 
 		@Override
@@ -374,26 +389,52 @@ public class CustomDLCConflictWindow extends JDialog {
 				case "SET_STATUS_TEXT":
 					statusText.setText(tc.getMessage());
 					break;
+				case "MISSING_GUI_LIBRARY":
+					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
+							"Unable to aquire the required GUI library.\nMake sure you are online so Mod Manager can download it if necessary.", "Missing GUI Library",
+							JOptionPane.ERROR_MESSAGE);
+					break;
+				case "MISSING_TRANSPLANTER":
+					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
+							"Unable to aquire the required GUI transplanting tool.\nMake sure you are online so Mod Manager can download it if necessary.", "Missing GUI Library",
+							JOptionPane.ERROR_MESSAGE);
+					break;
+				case "ERROR_FILE_COPY_INTO_COMPAT":
+					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, "Error copying conflicting files into the new mod.", "Missing GUI Library",
+							JOptionPane.ERROR_MESSAGE);
+					break;
+				case "ERROR_NO_STARTER_MOD":
+					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, "Starter Kit failed to generate a mod.", "Starter Kit Generator failed", JOptionPane.ERROR_MESSAGE);
+					break;
 				}
 			}
 		}
 
 		@Override
 		protected void done() {
+			boolean successful = false;
 			try {
-				get();
+				successful = get();
 			} catch (Exception e) {
 				ModManager.debugLogger.writeException(e);
 			}
-			ModManager.debugLogger.writeMessage(modName + " created. Showing user directions on how to generate a new one.");
-			statusText.setText(modName + " has been created");
-			JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
-					"Compatibility mod has been created.\nApply " + modName
-							+ " to fix the UI overriding conflicts.\n\nIf you update any of your conflicting mods, uninstall this mod then generate a new compatibilty mod.\nGenerating a compatibiilty pack while "
-							+ modName + " is installed will likely crash the game when the new mod is applied.",
-					"Mod created", JOptionPane.INFORMATION_MESSAGE);
-			dispose();
-			new ModManagerWindow(false);
+			if (successful) {
+				ModManager.debugLogger.writeMessage(modName + " created. Showing user directions on how to generate a new one.");
+				statusText.setText(modName + " has been created");
+				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
+						"Compatibility mod has been created.\nApply " + modName
+								+ " to fix the UI overriding conflicts.\n\nIf you update any of your conflicting mods, uninstall this mod then generate a new compatibilty mod.\nGenerating a compatibiilty pack while "
+								+ modName + " is installed will likely crash the game when the new mod is applied.",
+						"Mod created", JOptionPane.INFORMATION_MESSAGE);
+				dispose();
+				new ModManagerWindow(false);
+			} else {
+				statusText.setText(modName + " was not created");
+				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
+						"An error occured while generating the compatibility mod.\nOpen the log viewer to find more detailed information.\n\nIf you continue to have issues, please contact FemShep (see the help menu) and attach the log to your message.",
+						"Mod not created", JOptionPane.ERROR_MESSAGE);
+				dispose();
+			}
 		}
 	}
 

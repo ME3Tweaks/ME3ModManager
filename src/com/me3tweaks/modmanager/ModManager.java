@@ -956,17 +956,21 @@ public class ModManager {
 	}
 
 	public static String getGUITransplanterCLI() {
-		String transplanterdir = getGUITransplanterDir() + "Transplanter-CLI.exe";
-		if (!(new File(transplanterdir).exists())) {
+		File transplanterexe = new File(getGUITransplanterDir() + "Transplanter-CLI.exe");
+		if (!transplanterexe.exists()) {
 			if (!downloadGUITransplanter()) {
 				return null;
 			}
 		}
-		return transplanterdir;
+		if (!transplanterexe.exists()) {
+			//still hasn't downloaded...
+			return null;
+		}
+		return transplanterexe.getAbsolutePath();
 	}
 
 	private static boolean downloadGUITransplanter() {
-		String url = "http://me3tweaks.com/modmanager/tools/GUITRANSPLANTER.7z";
+		String url = "http://me3tweaks.com/modmanager/toolsx/GUITRANSPLANTER.7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI Transplanter: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());
@@ -2027,6 +2031,9 @@ public class ModManager {
 		if (!libraryFolder.exists() || !libraryFolder.isDirectory()) {
 			downloadGUILibrary(dlcname);
 		}
+		if (!libraryFolder.exists()) {
+			return null;
+		}
 		return libraryPath;
 	}
 
@@ -2039,7 +2046,7 @@ public class ModManager {
 	 * @return true if extraction is OK, false if something went wrong
 	 */
 	private static boolean downloadGUILibrary(String dlcname) {
-		String url = "http://me3tweaks.com/modmanager/tools/uilibrary/" + dlcname.toUpperCase() + ".7z";
+		String url = "http://me3tweaks.com/modmanager/tools/uilibraryx/" + dlcname.toUpperCase() + ".7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI library: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());

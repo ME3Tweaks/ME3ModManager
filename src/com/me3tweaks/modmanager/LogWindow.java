@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.Element;
 
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListener;
@@ -29,6 +30,8 @@ public class LogWindow extends JFrame {
 
 	private JTextPane logArea;
 	private Tailer tailer;
+	private int caretline = 0;
+	private int caretpos = 0;
 
 	public LogWindow() {
 		ModManager.debugLogger.writeMessage("Opening Logging Window");
@@ -47,7 +50,6 @@ public class LogWindow extends JFrame {
 	class LogTailer extends TailerListenerAdapter {
 		@Override
 		public void handle(String line) {
-			System.out.println("TAILING!");
 			if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
 				ResourceUtils.appendToPane(logArea, line, Color.RED);
 			} else {
@@ -87,6 +89,25 @@ public class LogWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				HelpMenu.copyLogToClipboard();
+			}
+		});
+
+		findNextError.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String[] lines = logArea.getText().split("\\n");
+				for (int i = caretline; i < lines.length; i++) {
+					String line = lines[i];
+					if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
+						logArea.setCaretPosition(caretpos);
+						System.out.println("Set caret pos to "+caretpos);
+						caretpos += line.length();
+						caretline++;
+						break;
+					}
+					caretpos += line.length();
+					caretline++;
+				}
 			}
 		});
 
