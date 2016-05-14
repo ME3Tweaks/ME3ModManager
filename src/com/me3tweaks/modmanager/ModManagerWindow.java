@@ -938,7 +938,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionVisitMe.setToolTipText("Opens ME3Tweaks.com");
 
 		JMenu actionImportMenu = new JMenu("Import mod");
-		modManagementImportAlreadyInstalled = new JMenuItem("Import installed DLC mod");
+		modManagementImportAlreadyInstalled = new JMenuItem("Import installed Custom DLC mod");
 		modManagementImportAlreadyInstalled.setToolTipText("<html>Import an already installed DLC mod.<br>You can then manage that mod with Mod Manager.</html>");
 		modManagementImportFromArchive = new JMenuItem("Import mod from .7z/.rar/.zip");
 		modManagementImportFromArchive.setToolTipText(

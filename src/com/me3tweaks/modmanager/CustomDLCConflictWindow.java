@@ -126,7 +126,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		JPanel panel = new JPanel(new BorderLayout());
 
 		String buttonText = "<html><center>Files listed below are Custom DLC files that have conflicts.<br>The Custom DLC with the highest mount priority will supercede others, and may cause the the superceded DLC to not work or cause game instability.<br><u><font color='#000099'>Click for info on how to toggle DLC in Mod Manager.</u></font></center></html>";
-		String message = "<html>To toggle Custom DLCs in Mod Manager, make sure all Custom DLC has been imported into Mod Manager.<br>This can be done through the Mod Management > Import Mods > Import Custom DLC Mod.<br>Once imported, you can install it by simply applying the mod.<br>You can remove (disable) a mod by deleting it through the Custom DLC Manager, and then apply it again to enable it.</html>";
+		String message = "<html>To toggle Custom DLCs in Mod Manager, make sure all Custom DLC has been imported into Mod Manager.<br>This can be done through the Mod Management > Import Mods > Import installed Custom DLC mod.<br>Once imported, you can install it by simply applying the mod.<br>You can remove (disable) a mod by deleting it through the Custom DLC Manager, and then apply it again to enable it.</html>";
 		JButton infoLinkButton = new JButton();
 		infoLinkButton.setText(buttonText);
 		infoLinkButton.setHorizontalAlignment(SwingConstants.CENTER);
@@ -262,7 +262,7 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			String internalName = modName.toUpperCase().replaceAll(" ", "_");
 			ModManager.debugLogger.writeMessage("Compatibility pack will be named DLC_CON_" + internalName);
-			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, progressPanel);
+			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, progressPanel,CustomDLCConflictWindow.this);
 			skg.setInternaldisplayname("GUI Compatibility Pack from MM " + ModManager.BUILD_NUMBER);
 			skg.setMountpriority(6000);
 			skg.setModdev("Mod Manager Build " + ModManager.BUILD_NUMBER);

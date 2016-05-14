@@ -103,7 +103,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 			JScrollPane scroll = new JScrollPane(dlcModlist, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			cPanel.add(scroll, BorderLayout.CENTER);
 		} else {
-			cPanel.add(new JLabel("No custom DLC mods are installed", SwingConstants.CENTER));
+			cPanel.add(new JLabel("<html><center><font color='#700000'>No Non-Mod Manager<br>Custom DLC mods are installed</font></center></html>", SwingConstants.CENTER));
 		}
 
 		cPanel.setBorder(new TitledBorder(new EtchedBorder(), "Installed Custom DLC mods"));

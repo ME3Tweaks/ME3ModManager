@@ -1,8 +1,11 @@
 package com.me3tweaks.modmanager;
 
+import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -10,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.InputVerifier;
 import javax.swing.JButton;
@@ -23,6 +27,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
@@ -36,10 +41,12 @@ import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextAreaUI;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.MountFlagCellRenderer;
 import com.me3tweaks.modmanager.utilities.DebugLogger;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class StarterKitWindow extends JDialog {
 	JTextField modName, internalDisplayName, internalTLKId, mountPriority, internalDLCName;
@@ -169,7 +176,7 @@ public class StarterKitWindow extends JDialog {
 					int result = JOptionPane.showConfirmDialog(StarterKitWindow.this,
 							"A mod named " + modName.getText() + " already exists.\nDelete this mod and create the starter kit in its place?", "Mod already exists",
 							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-					if (result == JOptionPane.CANCEL_OPTION) {
+					if (result == JOptionPane.NO_OPTION) {
 						return;
 					} else {
 						try {
@@ -178,13 +185,14 @@ public class StarterKitWindow extends JDialog {
 							return;
 						}
 					}
+					System.out.println(result);
 				}
 				//validate...
 				int internaltlkidval = Integer.parseInt(internalTLKId.getText());
 				int mountpriorityval = Integer.parseInt(mountPriority.getText());
 
 				//create
-				StarterKitGenerator starterKit = new StarterKitGenerator(createButton, progressBar);
+				StarterKitGenerator starterKit = new StarterKitGenerator(createButton, progressBar, StarterKitWindow.this);
 				starterKit.setInternaldisplayname(internalDisplayName.getText());
 				starterKit.setModname(modName.getText());
 				starterKit.setModdev(modDeveloper.getText());
@@ -233,7 +241,7 @@ public class StarterKitWindow extends JDialog {
 		}
 	}
 
-	static class StarterKitGenerator extends SwingWorker<Void, Void> {
+	static class StarterKitGenerator extends SwingWorker<Boolean, ThreadCommand> {
 		private String modname, moddev, moddesc, modsite, internaldlcname, internaldisplayname;
 
 		public void setModname(String modname) {
@@ -279,17 +287,28 @@ public class StarterKitWindow extends JDialog {
 		private Mod generatedMod;
 		public final Object lock = new Lock(); //threading wait() and notifyall();
 		public boolean completed = false;
+		private StarterKitProgressDialog dialog;
+		private JDialog callingDialog;
 
-		public StarterKitGenerator(JComponent createButton, JComponent progressBar) {
+		public StarterKitGenerator(JComponent createButton, JComponent progressBar, JDialog callingDialog) {
 			this.createButton = createButton;
 			this.progressBar = progressBar;
-			createButton.setVisible(false);
-			progressBar.setVisible(true);
-			//pack();
+			this.callingDialog = callingDialog;
+			if (createButton != null) {
+				createButton.setVisible(false);
+			}
+			if (progressBar != null) {
+				progressBar.setVisible(true);
+			}
+			dialog = new StarterKitProgressDialog(callingDialog, "Starter Kit Generator", new Dimension(350, 80));
+			dialog.progressBar.setIndeterminate(true);
+			dialog.infoLabel.setText("Extracting resources");
 		}
 
 		@Override
-		protected Void doInBackground() throws Exception {
+		protected Boolean doInBackground() throws Exception {
+			publish(new ThreadCommand("SET_DIALOG_VISIBLE"));
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Extracting default resources"));
 			String modpath = ModManager.getModsDir() + modname + File.separator;
 
 			//create mod dir
@@ -309,7 +328,7 @@ public class StarterKitWindow extends JDialog {
 			String[] langs = { "INT", "DEU", "ESN", "FRA", "POL", "RUS" };
 
 			for (String lang : langs) {
-				System.out.println("Processing " + lang);
+				publish(new ThreadCommand("SET_DIALOG_TEXT", "Updating TLK for " + lang));
 				String output = cookedPath + "DLC_CON_" + internaldlcname + "_" + lang + ".xml";
 				ModManager.ExportResource("/StarterKitTLK.xml", output);
 				String replaceOutput = FileUtils.readFileToString(new File(output));
@@ -356,7 +375,9 @@ public class StarterKitWindow extends JDialog {
 				FileUtils.writeStringToFile(new File(output), replaceOutput);
 			}
 			//Compile TLK.
-			FolderBatchWindow.BatchWorker bw = new FolderBatchWindow.BatchWorker(cookedpcconsole, BatchWorker.COMPILE_TLK);
+			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 25));
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Compiling TLKs..."));
+			FolderBatchWindow.BatchWorker bw = new FolderBatchWindow.BatchWorker(cookedpcconsole, BatchWorker.COMPILE_TLK, dialog);
 			bw.execute();
 			synchronized (bw.lock) {
 				while (!bw.completed) {
@@ -370,6 +391,8 @@ public class StarterKitWindow extends JDialog {
 			}
 			ModManager.debugLogger.writeMessage("Folder batch worker has completed. Resuming StarterKitGenerator");
 			//while tlk is compiling do more work on .bin file.
+			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 50));
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Compiling Default_DLC_CON_" + internaldlcname));
 			CoalescedWindow.decompileCoalesced(coalpath);
 			File bioenginefile = new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "BioEngine.xml");
 			String bioengine = FileUtils.readFileToString(bioenginefile);
@@ -379,19 +402,25 @@ public class StarterKitWindow extends JDialog {
 			FileUtils.writeStringToFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "BioEngine.xml"), newengine); //writeback
 
 			//recompile and move up a dir
+			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 60));
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Moving Default_DLC_CON_" + internaldlcname));
 			ModManager.debugLogger.writeMessage("Recompiling Default_DLC_CON_" + internaldlcname + ".bin");
 			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname + ".xml");
 			FileUtils.deleteQuietly(new File(coalpath));
-			ModManager.debugLogger.writeMessage("Moving Default_DLC_CON_" + internaldlcname + ".bin to "+coalpath);
+			ModManager.debugLogger.writeMessage("Moving Default_DLC_CON_" + internaldlcname + ".bin to " + coalpath);
 			FileUtils.moveFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname + ".bin"), new File(coalpath));
 
 			//update mount.dlc
+			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 70));
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Updating Mount.dlc"));
 			ModManager.debugLogger.writeMessage("Updating Mount.dlc");
 			MountFileEditorWindow.SaveMount(cookedPath + "Mount.dlc", Integer.toString(tlkid), mountflag, mountpriority);
 
 			MountFile mf = new MountFile(cookedPath + "Mount.dlc");
 			//create workspace
 			ModManager.debugLogger.writeMessage("Creating mod workspace");
+			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 75));
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Configuring mod workspace"));
 			String tlkpath = modpath + "WORKSPACE" + File.separator + "TLKs" + File.separator;
 			File tlkpathfile = new File(tlkpath);
 			tlkpathfile.mkdirs();
@@ -408,6 +437,8 @@ public class StarterKitWindow extends JDialog {
 
 			//Create moddesc.ini
 			ModManager.debugLogger.writeMessage("Creating moddesc.ini for " + modname);
+			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 95));
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Generating new Mod Manager mod"));
 
 			Mod startermod = new Mod();
 			startermod.setModPath(modpath);
@@ -435,26 +466,74 @@ public class StarterKitWindow extends JDialog {
 			if (!startermod.isValidMod()) {
 				//ERROR!
 				ModManager.debugLogger.writeError("Failed to produce valid starter kit mod");
+				return false;
 			} else {
 				//Run autotoc on mod
+				publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 98));
+				publish(new ThreadCommand("SET_DIALOG_TEXT", "Running AutoTOC on mod"));
 				new AutoTocWindow(startermod, AutoTocWindow.LOCALMOD_MODE, null);
 			}
 			generatedMod = startermod;
-			return null;
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Mod created."));
+			return true;
+		}
+
+		@Override
+		protected void process(List<ThreadCommand> chunks) {
+			for (ThreadCommand tc : chunks) {
+				String command = tc.getCommand();
+				switch (command) {
+				case "SET_DIALOG_VISIBLE":
+					dialog.setVisible(true);
+					break;
+				case "SET_DIALOG_TEXT":
+					dialog.infoLabel.setText(tc.getMessage());
+					break;
+				case "SET_DIALOG_PROGRESS":
+					int value = (int) tc.getData();
+					dialog.progressBar.setIndeterminate(value <= 0);
+					dialog.progressBar.setValue(value);
+					break;
+				default:
+					ModManager.debugLogger.writeError("Unknown thread command in starter kit generator: " + tc.getCommand());
+					break;
+				}
+			}
 		}
 
 		@Override
 		public void done() {
 			completed = true;
+			boolean OK = false;
 			try {
-				get();
+				OK = get();
 			} catch (Throwable e) {
 				ModManager.debugLogger.writeErrorWithException("Failure creating starter kit:", e);
 			}
-			progressBar.setVisible(false);
-			createButton.setVisible(true);
+			if (createButton != null) {
+				createButton.setVisible(true);
+			}
+			if (progressBar != null) {
+				progressBar.setVisible(false);
+			}
+			dialog.dispose();
 			synchronized (lock) {
 				lock.notifyAll(); //wake up thread
+			}
+			if (callingDialog instanceof StarterKitWindow) {
+				if (OK) {
+					JOptionPane.showMessageDialog(callingDialog,
+							modname + " has been created.\nPlace files into the mod's DLC_CON_" + internaldlcname
+									+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
+							modname + " created", JOptionPane.INFORMATION_MESSAGE);
+					callingDialog.dispose();
+					ResourceUtils.openDir(generatedMod.getModPath());
+					new ModManagerWindow(false);
+				} else {
+					JOptionPane.showMessageDialog(callingDialog,
+							modname + " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the log attached.",
+							modname + " not created", JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		}
 
@@ -463,4 +542,33 @@ public class StarterKitWindow extends JDialog {
 		}
 	}
 
+	static class StarterKitProgressDialog extends JDialog {
+
+		JLabel infoLabel;
+		JProgressBar progressBar;
+
+		public StarterKitProgressDialog(JDialog callingDialog, String title, Dimension size) {
+			setupDialog(callingDialog, title, size);
+		}
+
+		private void setupDialog(JDialog dialog, String title, Dimension size) {
+			JPanel aboutPanel = new JPanel(new BorderLayout());
+			infoLabel = new JLabel("<html>Placeholder text</html>", SwingConstants.CENTER);
+			aboutPanel.add(infoLabel, BorderLayout.NORTH);
+			progressBar = new JProgressBar(0, 100);
+			progressBar.setStringPainted(true);
+			progressBar.setIndeterminate(false);
+			aboutPanel.add(progressBar, BorderLayout.CENTER);
+			aboutPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+			this.getContentPane().add(aboutPanel);
+			this.setTitle(title);
+			this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+			this.setResizable(false);
+			this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+			this.setIconImages(ModManager.ICONS);
+			this.setPreferredSize(size);
+			this.pack();
+			this.setLocationRelativeTo(dialog);
+		}
+	}
 }

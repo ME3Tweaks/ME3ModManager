@@ -23,6 +23,7 @@ import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
+import com.me3tweaks.modmanager.StarterKitWindow.StarterKitProgressDialog;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.objects.ProcessResult;
@@ -74,7 +75,7 @@ public class FolderBatchWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose COMPILE_TLK operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK).execute();
+					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK, null).execute();
 					dispose();
 				}
 			});
@@ -84,7 +85,7 @@ public class FolderBatchWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPILE_TLK operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_TLK).execute();
+					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_TLK, null).execute();
 					dispose();
 				}
 			});
@@ -94,7 +95,7 @@ public class FolderBatchWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose COMPILE_COAL operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPILE_COAL).execute();
+					new BatchWorker(droppedFile, BatchWorker.COMPILE_COAL, null).execute();
 					dispose();
 				}
 			});
@@ -104,7 +105,7 @@ public class FolderBatchWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPILE_COAL operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_COAL).execute();
+					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_COAL, null).execute();
 					dispose();
 				}
 			});
@@ -114,7 +115,7 @@ public class FolderBatchWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPRESS_PCC operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPRESS_PCC).execute();
+					new BatchWorker(droppedFile, BatchWorker.DECOMPRESS_PCC, null).execute();
 					dispose();
 				}
 			});
@@ -124,7 +125,7 @@ public class FolderBatchWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose COMPRESS_PCC operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPRESS_PCC).execute();
+					new BatchWorker(droppedFile, BatchWorker.COMPRESS_PCC, null).execute();
 					dispose();
 				}
 			});
@@ -134,7 +135,7 @@ public class FolderBatchWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose SIDELOAD_MODMAKER operation");
-					new BatchWorker(droppedFile, BatchWorker.SIDELOAD_MODMAKER).execute();
+					new BatchWorker(droppedFile, BatchWorker.SIDELOAD_MODMAKER, null).execute();
 					dispose();
 				}
 			});
@@ -240,10 +241,12 @@ public class FolderBatchWindow extends JDialog {
 		private File folder;
 		public final Object lock = new Lock(); //threading wait() and notifyall();
 		public boolean completed = false;
+		private StarterKitProgressDialog dialog;
 
-		public BatchWorker(File droppedFile, int operation) {
+		public BatchWorker(File droppedFile, int operation, StarterKitProgressDialog dialog) {
 			this.operation = operation;
 			this.folder = droppedFile;
+			this.dialog = dialog; //can be null.
 		}
 
 		@Override
@@ -320,13 +323,15 @@ public class FolderBatchWindow extends JDialog {
 
 		@Override
 		protected void process(List<String> chunks) {
-			if (ModManagerWindow.ACTIVE_WINDOW != null)
+			if (dialog != null) {
+				dialog.infoLabel.setText(chunks.get(chunks.size() - 1));
+			} else if (ModManagerWindow.ACTIVE_WINDOW != null)
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(chunks.get(chunks.size() - 1));
 		}
 
 		@Override
 		protected void done() {
-			completed  = true;
+			completed = true;
 			synchronized (lock) {
 				lock.notifyAll();
 			}
