@@ -177,7 +177,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				for (Patch p : failedpatches) {
 					rstr += " - " + p.getPatchName() + "\n";
 				}
-				rstr += "Check the debugging log to see why.";
+				rstr += "Check the Mod Manager log to see why.";
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, rstr, "MixIns Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
@@ -342,7 +342,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				for (Patch p : failedpatches) {
 					str += " - " + p.getPatchName() + "\n";
 				}
-				str += "Check the debugging log to see why.";
+				str += "Check the Mod Manager log to see why.";
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, str, "MixIns Error", JOptionPane.ERROR_MESSAGE);
 			}
 			dispose();

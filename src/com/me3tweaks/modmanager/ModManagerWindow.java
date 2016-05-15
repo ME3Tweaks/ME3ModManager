@@ -133,7 +133,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	final String selectAModDescription = "Select a mod on the left to view its description.";
 	DefaultListModel<Mod> modModel;
 	private ArrayList<Patch> patchList;
-	private JMenuItem modutilsUpdateXMLGenerator;
+	private JMenuItem moddevUpdateXMLGenerator;
 	private JMenuItem modManagementCheckallmodsforupdate;
 	private JMenuItem restoreRevertUnpacked;
 	private JMenuItem restoreRevertBasegameUnpacked;
@@ -504,8 +504,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						}
 					} else {
 						String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
-						updatetext += "Version " + upackage.getMod().getVersion() + " => " + upackage.getVersion()
-								+ (upackage.isModmakerupdate() ? "" : " (" + upackage.getUpdateSizeMB() + ")") + "\n";
+						updatetext += AllModsUpdateWindow.getVersionUpdateString(upackage);
+
 						updatetext += "Update this mod?";
 						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
 						if (result == JOptionPane.YES_OPTION) {
@@ -1036,9 +1036,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			modutilsInstallCustomKeybinds.setToolTipText("<html>Replace BioInput.xml in the BASEGAME Coalesced file</html>");
 		}
 
-		modutilsUpdateXMLGenerator = new JMenuItem("[ME3Tweaks] Prepare mod for updater service");
-		modutilsUpdateXMLGenerator.setToolTipText("Compresses mod files for storage on ME3Tweaks and generates a mod manifest. Copies to clipboard when complete.");
-		modutilsUpdateXMLGenerator.addActionListener(this);
+		moddevUpdateXMLGenerator = new JMenuItem("Prepare mod for ME3Tweaks Updater Service");
+		moddevUpdateXMLGenerator.setToolTipText("No mod is currently selected");
+		moddevUpdateXMLGenerator.setEnabled(false);
+		moddevUpdateXMLGenerator.addActionListener(this);
 		modutilsInfoEditor = new JMenuItem("Edit name/description");
 		modutilsInfoEditor.addActionListener(this);
 		modutilsInfoEditor.setToolTipText("Rename this mod and change the description shown in the descriptions window");
@@ -1128,6 +1129,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementPatchLibary.addActionListener(this);
 		toolsMountdlcEditor.addActionListener(this);
 
+		//DEV
+		devMenu = new JMenu("Mod Development");
+		modDevStarterKit = new JMenuItem("Generate a Custom DLC Starter Kit");
+		modDevStarterKit.addActionListener(this);
+		modDevStarterKit.setToolTipText("Generate a barebones Custom DLC mod that is immediately ready to use");
+		devMenu.add(modDevStarterKit);
+		devMenu.add(moddevUpdateXMLGenerator);
+		devMenu.add(toolTankmasterCoalFolder);
+		devMenu.add(toolTankmasterCoalUI);
+		devMenu.add(toolTankmasterTLK);
+
 		toolsOpenME3Dir.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
@@ -1145,6 +1157,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolME3Config);
 		toolsMenu.add(toolME3Explorer);
+		toolsMenu.add(devMenu);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsInstallLauncherWV);
 		toolsMenu.add(toolsInstallBinkw32);
@@ -1267,16 +1280,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreMenu.add(restoreMenuAdvanced);
 		menuBar.add(restoreMenu);
 
-		//DEV
-		devMenu = new JMenu("Mod Development");
-		modDevStarterKit = new JMenuItem("Custom DLC Starter Kit");
-		modDevStarterKit.addActionListener(this);
-		modDevStarterKit.setToolTipText("Generate a barebones Custom DLC mod that is immediately ready to use");
-		devMenu.add(modDevStarterKit);
-		devMenu.add(modutilsUpdateXMLGenerator);
-		devMenu.add(toolTankmasterCoalFolder);
-		devMenu.add(toolTankmasterCoalUI);
-		devMenu.add(toolTankmasterTLK);
 		//DEBUG ONLY - MODMAKER SQL
 		sqlMenu = new JMenu("ModMaker SQL");
 		sqlWavelistParser = new JMenuItem("Wavelist Parser");
@@ -1305,7 +1308,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (ModManager.IS_DEBUG) {
 			devMenu.add(sqlMenu);
 		}
-		toolsMenu.add(devMenu);
 
 		helpMenu = HelpMenu.constructHelpMenu();
 		menuBar.add(helpMenu);
@@ -1942,7 +1944,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
 			}
-		} else if (e.getSource() == modutilsUpdateXMLGenerator) {
+		} else if (e.getSource() == moddevUpdateXMLGenerator) {
 			ModManager.debugLogger.writeMessage("Generating Manifest...");
 			ModXMLTools.generateXMLFileList(modModel.getElementAt(modList.getSelectedIndex()));
 		} else if (e.getSource() == sqlDifficultyParser) {
@@ -2335,6 +2337,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				fieldDescription.setText(selectAModDescription);
 				modMenu.setEnabled(false);
 				modMenu.setToolTipText("Select a mod to enable this menu");
+				moddevUpdateXMLGenerator.setText("Prepare mod for ME3Tweaks Updater Service");
+				moddevUpdateXMLGenerator.setToolTipText("No mod is currently selected");
+				moddevUpdateXMLGenerator.setEnabled(false);
 			} else {
 				Mod selectedMod = modModel.get(modList.getSelectedIndex());
 				modMenu.setToolTipText(null);
@@ -2356,11 +2361,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					modutilsCheckforupdate.setText("Check for updates");
 					modutilsCheckforupdate.setToolTipText("Checks for updates to this mod from ME3Tweaks");
 					modutilsRestoreMod.setVisible(true);
+					if (selectedMod.getModMakerCode() > 0) {
+						moddevUpdateXMLGenerator.setEnabled(false);
+						moddevUpdateXMLGenerator.setToolTipText("ModMaker mods will update when a new revision is published on ME3Tweaks ModMaker");
+						moddevUpdateXMLGenerator.setText("Prepare " + selectedMod.getModName() + " for ME3Tweaks Updater Service");
+					} else {
+						moddevUpdateXMLGenerator.setEnabled(true);
+						moddevUpdateXMLGenerator.setText("Prepare " + selectedMod.getModName() + " for ME3Tweaks Updater Service");
+						moddevUpdateXMLGenerator.setToolTipText("Compresses mod files for storage on ME3Tweaks and generates a mod manifest. Copies to clipboard when complete.");
+
+					}
 				} else {
 					modutilsRestoreMod.setVisible(false);
 
 					modutilsCheckforupdate.setEnabled(false);
 					modutilsCheckforupdate.setText("Mod not eligible for updates");
+					moddevUpdateXMLGenerator.setEnabled(false);
+					moddevUpdateXMLGenerator.setToolTipText(selectedMod.getModName() + " does not have a ME3Tweaks update code");
+					moddevUpdateXMLGenerator.setText("Cannot prepare " + selectedMod.getModName() + " for ME3Tweaks Updater Service");
 					modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 				}
 

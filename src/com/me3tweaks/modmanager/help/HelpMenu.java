@@ -202,14 +202,15 @@ public class HelpMenu {
 								ModManagerWindow.ACTIVE_WINDOW,
 								"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>"
 										+ "Please email me if you have crashes or bugs, or use the forums.<br>"
-										+ "If you have a crash or a bug I will need the debugging log.<br><br>How to create a debugging log:<br>"
-										+ "1. Close Mod Manager with debugging enabled, restart it, and reproduce your issue.<br>"
-										+ "2. Immediately after the issue occurs, go to Help>Copy log to clipboard.<br>"
+										+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
+										+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
+										+ "2. Immediately after the issue occurs, go to Help > Copy log to clipboard.<br>"
 										+ "3. Paste your log into a text file (.txt). I will not open other extensions. Use notepad.<br>"
-										+ "4. In your email, give me a description of the problem and the steps you took to produce it. I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
+										+ "4. In your email, give me a description of the problem and the steps you took to produce it.<br>  "
+										+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
 										+ "5. Attach your log to the email and send it.<br><br>"
 										+ "Please do not do any other operations as it makes the logs harder to read.<br>"
-										+ "If you submit a crash/bug report without a debugging log there is very little I can do to help you.<br>"
+										+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
 										+ "Please note that I only speak English.<br><br>"
 										+ "You can email me at femshep@me3tweaks.com.</div></html>", "Contacting FemShep",
 								JOptionPane.INFORMATION_MESSAGE);

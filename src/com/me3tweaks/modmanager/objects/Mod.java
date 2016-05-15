@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.ini4j.BasicProfile;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -30,7 +31,7 @@ public class Mod implements Comparable<Mod> {
 	public static final String VARIANT_FOLDER = "VARIANTS";
 	public static final String DEFAULT_SERVER_FOLDER = "PUT_SERVER_PATH_HERE";
 	File modDescFile;
-	boolean validMod = false; /* modCoal = false; */
+	boolean validMod = false;
 	String modName, modDisplayDescription, modDescription;
 	private String modPath;
 	String modifyString;
@@ -51,6 +52,7 @@ public class Mod implements Comparable<Mod> {
 	private ArrayList<AlternateFile> alternateFiles = new ArrayList<AlternateFile>();
 	private ArrayList<String> sideloadOnlyTargets = new ArrayList<>();
 	private String sideloadURL;
+	private ArrayList<String> blacklistedFiles = new ArrayList<>();
 
 	public String getServerModFolder() {
 		return serverModFolder;
@@ -555,8 +557,18 @@ public class Mod implements Comparable<Mod> {
 					while (sideloadTok.hasMoreTokens()) {
 						String sideloadonlyfile = sideloadTok.nextToken();
 						sideloadonlyfile = sideloadonlyfile.replaceAll("\\\\", "/");
-						ModManager.debugLogger.writeMessageConditionally("Sideload only file: " + sideloadonlyfile, ModManager.LOG_MOD_INIT);
+						ModManager.debugLogger.writeMessageConditionally("Sideload only file for manifest: " + sideloadonlyfile, ModManager.LOG_MOD_INIT);
 						sideloadOnlyTargets.add(sideloadonlyfile);
+					}
+				}
+				String blacklisted = modini.get("UPDATES", "blacklistedfiles");
+				if (blacklisted != null) {
+					StringTokenizer blacklistedTok = new StringTokenizer(blacklisted, ";");
+					while (blacklistedTok.hasMoreTokens()) {
+						String blacklistedfile = blacklistedTok.nextToken();
+						blacklistedfile = blacklistedfile.replaceAll("\\\\", "/");
+						ModManager.debugLogger.writeMessageConditionally("Blacklisted file for manifests: " + blacklistedfile, ModManager.LOG_MOD_INIT);
+						getBlacklistedFiles() .add(blacklistedfile);
 					}
 				}
 			}
@@ -2100,5 +2112,13 @@ public class Mod implements Comparable<Mod> {
 			job.getFilesToReplace().set(index, getModPath() + af.getAltFile());
 			break;
 		}
+	}
+
+	public ArrayList<String> getBlacklistedFiles() {
+		return blacklistedFiles;
+	}
+
+	public void setBlacklistedFiles(ArrayList<String> blacklistedFiles) {
+		this.blacklistedFiles = blacklistedFiles;
 	}
 }

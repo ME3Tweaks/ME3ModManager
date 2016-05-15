@@ -16,6 +16,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -34,16 +35,9 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
-import net.sf.sevenzipjbinding.ExtractOperationResult;
-import net.sf.sevenzipjbinding.IInArchive;
-import net.sf.sevenzipjbinding.ISequentialOutStream;
-import net.sf.sevenzipjbinding.SevenZip;
-import net.sf.sevenzipjbinding.SevenZipException;
-import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
-
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FalseFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
@@ -52,6 +46,15 @@ import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
+
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IInArchive;
+import net.sf.sevenzipjbinding.ISequentialOutStream;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 @SuppressWarnings("serial")
 public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
@@ -452,23 +455,28 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		public void executeUpdate() {
 			ModManager.debugLogger.writeMessage("Applying downloaded update " + saveDirectory + " => " + upackage.getMod().getModPath());
 			File updateDirectory = new File(saveDirectory);
-			try {
-				FileUtils.copyDirectory(updateDirectory, new File(upackage.getMod().getModPath()));
-				ModManager.debugLogger.writeMessage("Installed new files");
-			} catch (IOException e) {
-				ModManager.debugLogger.writeError("Unable to copy update directory over the source");
-				ModManager.debugLogger.writeException(e);
+			File modPath = new File(upackage.getMod().getModPath());
+			if (upackage.getFilesToDownload().size() > 0) {
+				try {
+					FileUtils.copyDirectory(updateDirectory, modPath);
+					ModManager.debugLogger.writeMessage("Copied new files");
+				} catch (IOException e) {
+					ModManager.debugLogger.writeError("Unable to copy update directory over the source");
+					ModManager.debugLogger.writeException(e);
+					error = true;
+				}
 			}
 
 			for (String str : upackage.getFilesToDelete()) {
 				ModManager.debugLogger.writeMessage("Deleting unused file: " + str);
 				File file = new File(str);
-				file.delete();
+				FileUtils.deleteQuietly(file);
 			}
 			ModManager.debugLogger.writeMessage("Update applied, verifying mod...");
 			Mod verifyingMod = new Mod(upackage.getMod().getDescFile());
 			if (!verifyingMod.isValidMod()) {
 				ModManager.debugLogger.writeError("UPDATE HAS CAUSED MOD TO BECOME INVALID!");
+				error = true;
 			}
 
 			try {
@@ -486,13 +494,12 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		 */
 		@Override
 		protected void done() {
-			// TODO: Install update through the update script
 			dispose();
 			if (amuw == null && !error) {
 				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nMod Manager will now reload mods.", "Update successful",
 						JOptionPane.INFORMATION_MESSAGE);
 			} else if (amuw == null) {
-				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " failed to update. The debugging log will have more information.", "Updated failed",
+				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " failed to update. The Mod Manager log will have more information.", "Updated failed",
 						JOptionPane.ERROR_MESSAGE);
 			}
 		}

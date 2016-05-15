@@ -262,7 +262,7 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			String internalName = modName.toUpperCase().replaceAll(" ", "_");
 			ModManager.debugLogger.writeMessage("Compatibility pack will be named DLC_CON_" + internalName);
-			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, progressPanel,CustomDLCConflictWindow.this);
+			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, progressPanel, CustomDLCConflictWindow.this);
 			skg.setInternaldisplayname("GUI Compatibility Pack from MM " + ModManager.BUILD_NUMBER);
 			skg.setMountpriority(6000);
 			skg.setModdev("Mod Manager Build " + ModManager.BUILD_NUMBER);
@@ -335,8 +335,10 @@ public class CustomDLCConflictWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Copy of 2nd tier fields completed. Locating GUI library");
 
 			//Run ME3-GUI-Transplanter over CookedPCConsole files
+			double i = 0;
 			for (String transplantFile : transplantFiles) {
 				publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanting SWFs into " + new File(transplantFile).getName()));
+				publish(new ThreadCommand("SET_PROGRESS", null, i / transplantFiles.size()));
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(transplanterpath);
 				commandBuilder.add("--injectswf");
@@ -349,6 +351,7 @@ public class CustomDLCConflictWindow extends JDialog {
 				int returncode = 1;
 				ProcessBuilder pb = new ProcessBuilder(command);
 				returncode = ModManager.runProcess(pb).getReturnCode();
+				i += 1;
 			}
 
 			//Remove .bak files
@@ -360,6 +363,7 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			//Run autotoc
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Runing autotoc on new mod"));
+			publish(new ThreadCommand("SET_PROGRESS", null, 1.0));
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
@@ -405,6 +409,13 @@ public class CustomDLCConflictWindow extends JDialog {
 					break;
 				case "ERROR_NO_STARTER_MOD":
 					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, "Starter Kit failed to generate a mod.", "Starter Kit Generator failed", JOptionPane.ERROR_MESSAGE);
+					break;
+				case "SET_PROGRESS":
+					guiProgressBar.setIndeterminate(false);
+					Double val = (double) tc.getData();
+					val *= 100;
+					System.out.println("PROGRESS IS " + val);
+					guiProgressBar.setValue(val.intValue());
 					break;
 				}
 			}

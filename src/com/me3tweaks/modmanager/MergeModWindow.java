@@ -238,7 +238,7 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 						JOptionPane
 								.showMessageDialog(
 										this,
-										"<html>Merge was unsuccessful.<br>The produced mod is not valid.<br>Mod merging is very complex and may have bugs.<br>Check the debugging log or contact femshep (with both mods)<br>for assistance.</html>",
+										"<html>Merge was unsuccessful.<br>The produced mod is not valid.<br>Mod merging is very complex and may have bugs.<br>Check the Mod Manager log or contact femshep (with both mods)<br>for assistance.</html>",
 										"Mods not merged", JOptionPane.ERROR_MESSAGE);
 					}
 					dispose();

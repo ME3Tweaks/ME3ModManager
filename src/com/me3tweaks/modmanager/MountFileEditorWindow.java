@@ -286,7 +286,7 @@ public class MountFileEditorWindow extends JDialog {
 					if (saved) {
 						sStatus.setText("File saved.");
 					} else {
-						sStatus.setText("Unable to save .dlc file. Check the debugging logs.");
+						sStatus.setText("Unable to save .dlc file. Check the Mod Manager logs.");
 					}
 				}
 			}

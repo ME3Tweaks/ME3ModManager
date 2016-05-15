@@ -180,7 +180,7 @@ public class PatchApplicationWindow extends JDialog {
 							//not fixable
 							switch (reason) {
 								case Patch.APPLY_FAILED_MODDESC_NOT_UPDATED:
-									JOptionPane.showMessageDialog(PatchApplicationWindow.this, patch.getPatchName()+" failed to apply because the moddesc.ini file was not updated.\nThis is an error in Mod Manager, please report it with a debugging log.", "MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
+									JOptionPane.showMessageDialog(PatchApplicationWindow.this, patch.getPatchName()+" failed to apply because the moddesc.ini file was not updated.\nThis is an error in Mod Manager, please report it with a Mod Manager log.", "MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
 									break;
 								case Patch.APPLY_FAILED_NO_SOURCE_FILE:
 									JOptionPane.showMessageDialog(PatchApplicationWindow.this, patch.getPatchName()+" failed to apply because a source file could not be aquired.\nThis typically means the MixIn descriptor is not correct, please report this to FemShep.", "MixIn failed to apply", JOptionPane.ERROR_MESSAGE);

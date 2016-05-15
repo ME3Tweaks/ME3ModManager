@@ -66,7 +66,7 @@ public class LogWindow extends JFrame {
 	}
 
 	public void setupWindow() {
-		setTitle("Mod Manager Debugging Log");
+		setTitle("Mod Manager Mod Manager log");
 		setPreferredSize(new Dimension(720, 480));
 		setIconImages(ModManager.ICONS);
 		addWindowListener(new java.awt.event.WindowAdapter() {

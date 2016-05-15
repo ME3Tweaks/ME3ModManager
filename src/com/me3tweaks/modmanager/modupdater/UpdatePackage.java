@@ -149,8 +149,8 @@ public class UpdatePackage {
 		for (ManifestModFile mf : filesToDownload) {
 			//use LZMA if it exists on the server.
 			long addSize = mf.getLzmasize() > 0 ? mf.getLzmasize() : mf.getSize();
-			System.out.println("Update file " + mf.getRelativePath() + " is " + addSize + " bytes, useing the "
-					+ (mf.getLzmasize() > 0 ? "LZMA" : "DECOMPRESSED") + " method. Current update size is " + (size + addSize) + " ("
+			System.out.println("Update file " + mf.getRelativePath() + " is " + addSize + " bytes, using the "
+					+ (mf.getLzmasize() > 0 ? "LZMA" : "DECOMPRESSED") + " download method. Current update size is " + (size + addSize) + " ("
 					+ ResourceUtils.humanReadableByteCount(size + addSize, true) + ")");
 			size += addSize;
 		}
