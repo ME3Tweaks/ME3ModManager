@@ -44,6 +44,27 @@ public class Patch implements Comparable<Patch> {
 		patchPath = descriptorPath;
 	}
 
+	/**
+	 * Copy constructor
+	 * 
+	 * @param patch patch to copy
+	 */
+	public Patch(Patch patch) {
+		targetPath = patch.targetPath;
+		targetModule = patch.targetModule;
+		patchPath = patch.patchPath;
+		isValid = patch.isValid;
+		finalizer = patch.finalizer;
+		patchName = patch.patchName;
+		patchDescription = patch.patchDescription;
+		patchFolderPath = patch.patchFolderPath;
+		targetSize = patch.targetSize;
+		patchVersion = patch.patchVersion;
+		patchCMMVer = patch.patchCMMVer;
+		patchAuthor = patch.patchAuthor;
+		me3tweaksid = patch.me3tweaksid;
+	}
+
 	private void readPatch(String path) {
 		File patchDescIni = new File(path);
 		if (!patchDescIni.exists()) {
@@ -61,65 +82,65 @@ public class Patch implements Comparable<Patch> {
 			try {
 				String idstr = patchini.get("PatchInfo", "me3tweaksid");
 				me3tweaksid = Integer.parseInt(idstr);
-				ModManager.debugLogger.writeMessageConditionally("Patch ID on ME3Tweaks: " + me3tweaksid,ModManager.LOG_PATCH_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Patch ID on ME3Tweaks: " + me3tweaksid, ModManager.LOG_PATCH_INIT);
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeError("me3tweaksid is not an integer, setting to 0");
 			}
 
-			ModManager.debugLogger.writeMessageConditionally("------PATCH--------------Reading Patch " + patchName + "-----------------",ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("------PATCH--------------Reading Patch " + patchName + "-----------------", ModManager.LOG_PATCH_INIT);
 			File patchFile = new File(patchFolderPath + "patch.jsf");
 			if (!patchFile.exists()) {
 				ModManager.debugLogger.writeError("Patch.jsf is missing, patch is invalid");
-				ModManager.debugLogger.writeMessageConditionally("------PATCH--------------End of " + patchName + "-----------------",ModManager.LOG_PATCH_INIT);
+				ModManager.debugLogger.writeMessageConditionally("------PATCH--------------End of " + patchName + "-----------------", ModManager.LOG_PATCH_INIT);
 				isValid = false;
 				return;
 			}
 
-			ModManager.debugLogger.writeMessageConditionally("Patch Folder: " + patchFolderPath,ModManager.LOG_PATCH_INIT);
-			ModManager.debugLogger.writeMessageConditionally("Patch Name: " + patchName,ModManager.LOG_PATCH_INIT);
-			ModManager.debugLogger.writeMessageConditionally("Patch Description: " + patchDescription,ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch Folder: " + patchFolderPath, ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch Name: " + patchName, ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch Description: " + patchDescription, ModManager.LOG_PATCH_INIT);
 			// Check if this mod has been made for Mod Manager 2.0 or legacy mode
 			patchCMMVer = 3.2f;
 			patchVersion = 1;
 			try {
 				patchCMMVer = Float.parseFloat(patchini.get("ModManager", "cmmver"));
 				patchCMMVer = (double) Math.round(patchCMMVer * 10) / 10; //tenth rounding;
-				ModManager.debugLogger.writeMessageConditionally("Patch Targets Mod Manager: " + patchCMMVer,ModManager.LOG_PATCH_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Patch Targets Mod Manager: " + patchCMMVer, ModManager.LOG_PATCH_INIT);
 				patchAuthor = patchini.get("PatchInfo", "patchdev");
-				ModManager.debugLogger.writeMessageConditionally("Patch Developer (if any) " + patchAuthor,ModManager.LOG_PATCH_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Patch Developer (if any) " + patchAuthor, ModManager.LOG_PATCH_INIT);
 				String strPatchVersion = patchini.get("PatchInfo", "patchver");
 				if (strPatchVersion != null) {
 					patchVersion = Float.parseFloat(strPatchVersion);
 					patchVersion = (double) Math.round(patchVersion * 10) / 10; //tenth rounding
-					ModManager.debugLogger.writeMessageConditionally("Patch Version: " + patchVersion,ModManager.LOG_PATCH_INIT);
+					ModManager.debugLogger.writeMessageConditionally("Patch Version: " + patchVersion, ModManager.LOG_PATCH_INIT);
 				} else {
 					patchVersion = 1.0;
-					ModManager.debugLogger.writeMessageConditionally("Patch Version: Not specified, defaulting to 1.0",ModManager.LOG_PATCH_INIT);
+					ModManager.debugLogger.writeMessageConditionally("Patch Version: Not specified, defaulting to 1.0", ModManager.LOG_PATCH_INIT);
 				}
 			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeMessageConditionally("Didn't read a target version (cmmver) in the descriptor file. Targetting 4.0.",ModManager.LOG_PATCH_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Didn't read a target version (cmmver) in the descriptor file. Targetting 4.0.", ModManager.LOG_PATCH_INIT);
 				patchCMMVer = 3.2f;
 				ModManager.debugLogger.writeException(e);
 			}
-			
+
 			String finalizerStr = patchini.get("PatchInfo", "finalizer");
-			if (finalizerStr != null && finalizerStr.toLowerCase().equals("true")){
+			if (finalizerStr != null && finalizerStr.toLowerCase().equals("true")) {
 				finalizer = true;
-				ModManager.debugLogger.writeMessageConditionally("Patch is marked as finalizer",ModManager.LOG_PATCH_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Patch is marked as finalizer", ModManager.LOG_PATCH_INIT);
 			}
 
 			targetModule = patchini.get("PatchInfo", "targetmodule");
 			targetPath = patchini.get("PatchInfo", "targetfile");
 			targetSize = Long.parseLong(patchini.get("PatchInfo", "targetsize"));
-			ModManager.debugLogger.writeMessageConditionally("Patch Targets Module: " + targetModule,ModManager.LOG_PATCH_INIT);
-			ModManager.debugLogger.writeMessageConditionally("Patch Targets File in module: " + targetPath,ModManager.LOG_PATCH_INIT);
-			ModManager.debugLogger.writeMessageConditionally("Patch only works with files of size: " + targetSize,ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch Targets Module: " + targetModule, ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch Targets File in module: " + targetPath, ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Patch only works with files of size: " + targetSize, ModManager.LOG_PATCH_INIT);
 
 			if (targetPath == null || targetModule == null || targetPath.equals("") || targetModule.equals("")) {
-				ModManager.debugLogger.writeMessageConditionally("Invalid patch, targetfile or targetmodule was empty or missing",ModManager.LOG_PATCH_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Invalid patch, targetfile or targetmodule was empty or missing", ModManager.LOG_PATCH_INIT);
 				isValid = false;
 			} else if (targetSize <= 0) {
-				ModManager.debugLogger.writeMessageConditionally("Invalid patch, target size of file to patch has to be bigger than 0",ModManager.LOG_PATCH_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Invalid patch, target size of file to patch has to be bigger than 0", ModManager.LOG_PATCH_INIT);
 				isValid = false;
 			} else if (targetPath.endsWith("Coalesced.bin")) {
 				ModManager.debugLogger.writeError("Invalid patch, patches do not work with Coalesced.bin");
@@ -127,7 +148,7 @@ public class Patch implements Comparable<Patch> {
 			} else {
 				isValid = true;
 			}
-			ModManager.debugLogger.writeMessageConditionally("Finished loading patchdesc.ini for "+getPatchName(),ModManager.LOG_PATCH_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Finished loading patchdesc.ini for " + getPatchName(), ModManager.LOG_PATCH_INIT);
 		} catch (InvalidFileFormatException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeException(e);
@@ -139,7 +160,7 @@ public class Patch implements Comparable<Patch> {
 			ModManager.debugLogger.writeException(e);
 			isValid = false;
 		}
-		ModManager.debugLogger.writeMessageConditionally("------PATCH--------------END OF " + patchName + "-------------------------",ModManager.LOG_PATCH_INIT);
+		ModManager.debugLogger.writeMessageConditionally("------PATCH--------------END OF " + patchName + "-------------------------", ModManager.LOG_PATCH_INIT);
 	}
 
 	public boolean isFinalizer() {
@@ -180,7 +201,9 @@ public class Patch implements Comparable<Patch> {
 	}
 
 	/**
-	 * Gets the source file that would be used if this patch was applied to the specified mod
+	 * Gets the source file that would be used if this patch was applied to the
+	 * specified mod
+	 * 
 	 * @param mod
 	 * @return null if no source (error), path otherwise
 	 */
@@ -287,7 +310,7 @@ public class Patch implements Comparable<Patch> {
 					if (targetModule.equals(ModType.BASEGAME)) {
 						job = new ModJob();
 					} else {
-						job = new ModJob(ModType.getDLCPath(targetModule), targetModule,null);
+						job = new ModJob(ModType.getDLCPath(targetModule), targetModule, null);
 					}
 					File modulefolder = new File(ModManager.appendSlash(mod.getModPath() + standardFolder));
 					modulefolder.mkdirs();
@@ -490,17 +513,16 @@ public class Patch implements Comparable<Patch> {
 		sb.append("\t\"" + patchName + "\",\n");
 		sb.append("\tnull\n");
 		sb.append(");");
-		File copyTo = new File("server/"+serverfolder+"/patch.jsf");
+		File copyTo = new File("server/" + serverfolder + "/patch.jsf");
 		File dirHeader = copyTo.getParentFile();
 		dirHeader.mkdirs();
-		if (ModManager.IS_DEBUG){
-			/*try {
-				FileUtils.copyFile(new File(patchFolderPath + "patch.jsf"), copyTo);
-				System.out.println("Copied to "+copyTo.getAbsolutePath());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}*/
+		if (ModManager.IS_DEBUG) {
+			/*
+			 * try { FileUtils.copyFile(new File(patchFolderPath + "patch.jsf"),
+			 * copyTo); System.out.println("Copied to "
+			 * +copyTo.getAbsolutePath()); } catch (IOException e) { // TODO
+			 * Auto-generated catch block e.printStackTrace(); }
+			 */
 		}
 		return sb.toString();
 	}

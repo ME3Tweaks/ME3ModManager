@@ -1,10 +1,20 @@
 package com.me3tweaks.modmanager.utilities;
 
+import java.awt.Color;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.regex.Pattern;
+
+import javax.swing.JTextPane;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Element;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -30,6 +40,19 @@ public class ResourceUtils {
 			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
 		}
 	}
+	
+	/**
+	 * Returns line number where carot is in a component that has a carot
+	 * @param component component to find carot position of
+	 * @return line number
+	 */
+	public static int getLineAtCaret(JTextComponent component)
+    {
+         int caretPosition = component.getCaretPosition();
+         Element root = component.getDocument().getDefaultRootElement();
+
+         return root.getElementIndex( caretPosition ) + 1;
+    }
 
 	public static String humanReadableByteCount(long bytes, boolean si) {
 		int unit = si ? 1000 : 1024;
@@ -38,6 +61,29 @@ public class ResourceUtils {
 		int exp = (int) (Math.log(bytes) / Math.log(unit));
 		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
 		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+	}
+	
+	/**
+	 * Appends stylized text to a textpane
+	 * @param tp Textpane
+	 * @param msg Message to append. Will automatically place newline at end.
+	 * @param c Color of text.
+	 */
+	public static void appendToPane(JTextPane tp, String msg, Color c) {
+		StyleContext sc = StyleContext.getDefaultStyleContext();
+	    AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
+	        StyleConstants.Foreground, c);
+
+	    int len = tp.getDocument().getLength(); // same value as
+	                       // getText().length();
+	    tp.setCaretPosition(len); // place caret at the end (with no selection)
+
+		StyledDocument doc = tp.getStyledDocument();
+		try {
+			doc.insertString(doc.getLength(),msg+"\n", aset);
+		} catch (BadLocationException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -189,6 +235,10 @@ public class ResourceUtils {
 	       (buffer[1]<<16)&0x00ff0000|
 	       (buffer[2]<< 8)&0x0000ff00|
 	       (buffer[3]<< 0)&0x000000ff;
+	}
+
+	public static String normalizeFilePath(String absolutePath) {
+		return absolutePath.replaceAll("\\\\", "/");
 	}
 
 	/*

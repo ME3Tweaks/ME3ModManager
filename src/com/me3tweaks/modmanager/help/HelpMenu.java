@@ -43,6 +43,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.AboutWindow;
+import com.me3tweaks.modmanager.LogWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.HelpMenuItem;
@@ -75,7 +76,8 @@ public class HelpMenu {
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
 			FileUtils.writeStringToFile(ModManager.getHelpFile(), responseString);
-			ModManager.debugLogger.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getHelpFile().exists());
+			ModManager.debugLogger
+					.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getHelpFile().exists());
 			//Parse, download resources
 			DocumentBuilder db;
 			try {
@@ -110,7 +112,7 @@ public class HelpMenu {
 	 */
 	public static JMenu constructHelpMenu() {
 		JMenu helpMenu = new JMenu("Help");
-		JMenuItem helpPost, helpForums, helpAbout, helpGetLog, helpEmailFemShep;
+		JMenuItem helpPost, helpForums, helpAbout, helpLogViewer, helpGetLog, helpEmailFemShep;
 
 		helpPost = new JMenuItem("View FAQ");
 		helpPost.setToolTipText("Opens the Mod Manager FAQ");
@@ -122,6 +124,9 @@ public class HelpMenu {
 		helpGetLog = new JMenuItem("Copy log to clipboard");
 		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
 
+		helpLogViewer = new JMenuItem("View Mod Manager log");
+		helpLogViewer.setToolTipText("<html>View the current session log</html>");
+
 		helpEmailFemShep = new JMenuItem("Contact FemShep");
 		helpEmailFemShep.setToolTipText("<html>Contact FemShep via email</html>");
 
@@ -129,6 +134,7 @@ public class HelpMenu {
 		helpMenu.add(helpForums);
 		HelpMenu.insertLocalHelpMenus(helpMenu);
 		helpMenu.addSeparator();
+		helpMenu.add(helpLogViewer);
 		helpMenu.add(helpGetLog);
 		helpMenu.add(helpEmailFemShep);
 		helpMenu.addSeparator();
@@ -169,6 +175,14 @@ public class HelpMenu {
 			}
 		});
 
+		helpLogViewer.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				new LogWindow();
+			}
+		});
+
 		helpGetLog.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!ModManager.logging) {
@@ -176,24 +190,7 @@ public class HelpMenu {
 							"You must enable logging via the File>Options menu before logs are generated.", "Logging disabled",
 							JOptionPane.ERROR_MESSAGE);
 				} else {
-					HashMap<String, String> conflicts = ModManager.getCustomDLCConflicts(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
-					StringBuilder sb = new StringBuilder();
-					for(Map.Entry<String,String> entry : conflicts.entrySet()){
-						String key = entry.getKey();
-						String value = entry.getValue();
-						if (value.endsWith(File.separator)) {
-							value = value.substring(0,value.length() - 1);
-						}
-						value = FilenameUtils.getName(value);
-						sb.append(value+" has exclusive use of\t\t\t\t"+key);
-						sb.append("\n");
-					}
-					
-					String header = ModManager.getGameEnvironmentInfo(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
-					String log = ModManager.debugLogger.getLog();
-					Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-					clpbrd.setContents(new StringSelection(/*sb.toString() + */header+log), null); //TODO IN BUILD 56
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Log copied to clipboard");
+					copyLogToClipboard();
 				}
 			}
 		});
@@ -205,14 +202,15 @@ public class HelpMenu {
 								ModManagerWindow.ACTIVE_WINDOW,
 								"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>"
 										+ "Please email me if you have crashes or bugs, or use the forums.<br>"
-										+ "If you have a crash or a bug I will need the debugging log.<br><br>How to create a debugging log:<br>"
-										+ "1. Close Mod Manager with debugging enabled, restart it, and reproduce your issue.<br>"
-										+ "2. Immediately after the issue occurs, go to Help>Copy log to clipboard.<br>"
+										+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
+										+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
+										+ "2. Immediately after the issue occurs, go to Help > Copy log to clipboard.<br>"
 										+ "3. Paste your log into a text file (.txt). I will not open other extensions. Use notepad.<br>"
-										+ "4. In your email, give me a description of the problem and the steps you took to produce it. I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
+										+ "4. In your email, give me a description of the problem and the steps you took to produce it.<br>  "
+										+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
 										+ "5. Attach your log to the email and send it.<br><br>"
 										+ "Please do not do any other operations as it makes the logs harder to read.<br>"
-										+ "If you submit a crash/bug report without a debugging log there is very little I can do to help you.<br>"
+										+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
 										+ "Please note that I only speak English.<br><br>"
 										+ "You can email me at femshep@me3tweaks.com.</div></html>", "Contacting FemShep",
 								JOptionPane.INFORMATION_MESSAGE);
@@ -245,6 +243,30 @@ public class HelpMenu {
 		});
 
 		return helpMenu;
+	}
+
+	public static void copyLogToClipboard() {
+		String biogamedir = ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText();
+		String header = "Invalid BIOGame directory has been specified: " + biogamedir+"\n";
+/*		if (ModManagerWindow.validateBIOGameDir()) {
+			HashMap<String, String> conflicts = ModManager.getCustomDLCConflicts(biogamedir);
+			StringBuilder sb = new StringBuilder();
+			for (Map.Entry<String, String> entry : conflicts.entrySet()) {
+				String key = entry.getKey();
+				String value = entry.getValue();
+				if (value.endsWith(File.separator)) {
+					value = value.substring(0, value.length() - 1);
+				}
+				value = FilenameUtils.getName(value);
+				sb.append(value + " has exclusive use of\t\t\t\t" + key);
+				sb.append("\n");
+			}
+			header = ModManager.getGameEnvironmentInfo(biogamedir);
+		}*/
+		String log = ModManager.debugLogger.getLog();
+		Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
+		clpbrd.setContents(new StringSelection(/*header + */log), null); //TODO IN BUILD 56
+		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Log copied to clipboard");
 	}
 
 	private static void insertLocalHelpMenus(JMenu helpMenu) {

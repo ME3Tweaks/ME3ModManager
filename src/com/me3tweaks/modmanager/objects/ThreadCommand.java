@@ -17,10 +17,12 @@ public class ThreadCommand {
 		this.message = message;
 	}
 	public ThreadCommand(String command, String message, Object data) {
-		super();
 		this.command = command;
 		this.message = message;
 		this.data = data;
+	}
+	public ThreadCommand(String command) {
+		this.command = command;
 	}
 	public String getCommand() {
 		return command;

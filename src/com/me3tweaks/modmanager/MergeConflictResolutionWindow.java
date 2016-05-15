@@ -652,7 +652,7 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 			ModManager.debugLogger.writeMessage("===End of conflict resolution==");
 
 			//create new mod
-			Mod newMod = merged.createNewMod();
+			Mod newMod = merged.createNewMod(mod2);
 			if (newMod.isValidMod()) {
 				JOptionPane.showMessageDialog(this, "<html>Merge successful.<br>Mod Manager will now reload mods.</html>", "Mods merged",
 						JOptionPane.INFORMATION_MESSAGE);
@@ -662,7 +662,7 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 				JOptionPane
 						.showMessageDialog(
 								this,
-								"<html>Merge was unsuccessful.<br>The produced mod is not valid.<br>Check the debugging log or contact femshep (with both mods)<br>for assistance.</html>",
+								"<html>Merge was unsuccessful.<br>The produced mod is not valid.<br>Check the Mod Manager log or contact femshep (with both mods)<br>for assistance.</html>",
 								"Mods not merged", JOptionPane.ERROR_MESSAGE);
 				dispose();
 				callingWindow.dispose();

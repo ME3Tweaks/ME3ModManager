@@ -16,6 +16,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -34,16 +35,9 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
-import net.sf.sevenzipjbinding.ExtractOperationResult;
-import net.sf.sevenzipjbinding.IInArchive;
-import net.sf.sevenzipjbinding.ISequentialOutStream;
-import net.sf.sevenzipjbinding.SevenZip;
-import net.sf.sevenzipjbinding.SevenZipException;
-import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
-
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FalseFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
@@ -52,6 +46,15 @@ import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
+
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IInArchive;
+import net.sf.sevenzipjbinding.ISequentialOutStream;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 @SuppressWarnings("serial")
 public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
@@ -181,206 +184,6 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 	 * @author www.codejava.net
 	 * 
 	 */
-	class XDownloadTask extends SwingWorker<Void, Object> {
-		private static final int BUFFER_SIZE = 4096;
-		private String saveDirectory;
-		private UpdatePackage upackage;
-		private int numFilesToDownload;
-		private int numProcessed;
-		private long bytesDownloaded;
-		private long totalBytes;
-		private AllModsUpdateWindow amuw;
-
-		/**
-		 * Creates a single mod update task (updating a singular mod)
-		 * 
-		 * @param upackage
-		 */
-		public XDownloadTask(UpdatePackage upackage) {
-			String modpath = upackage.getMod().getModPath();
-			String updateFolder = ResourceUtils.getRelativePath(modpath, ModManager.getModsDir(), File.separator);
-			this.saveDirectory = "update" + File.separator + updateFolder;
-			this.upackage = upackage;
-			numFilesToDownload = upackage.getFilesToDownload().size();
-			for (ManifestModFile mf : upackage.getFilesToDownload()) {
-				totalBytes += mf.getLzmasize() > 0 ? mf.getLzmasize() : mf.getSize();
-			}
-			statusLabel.setText("0/" + upackage.getFilesToDownload().size() + " files downloaded");
-			ModManager.debugLogger.writeMessage("Created a download task");
-		}
-
-		public boolean wasSuccessful() {
-			return !error;
-		}
-
-		/**
-		 * Creates a multi-mod update task (updating a single mod in sequence)
-		 * 
-		 * @param upackage
-		 *            update package
-		 * @param amuw
-		 *            multi-mod task window
-		 */
-		public XDownloadTask(UpdatePackage upackage, AllModsUpdateWindow amuw) {
-			String modpath = upackage.getMod().getModPath();
-			String updateFolder = ResourceUtils.getRelativePath(modpath, ModManager.getModsDir(), File.separator);
-			this.saveDirectory = ModManager.getTempDir() + updateFolder;
-			this.upackage = upackage;
-			this.amuw = amuw;
-			numFilesToDownload = upackage.getFilesToDownload().size();
-			for (ManifestModFile mf : upackage.getFilesToDownload()) {
-				totalBytes += mf.getLzmasize() > 0 ? mf.getLzmasize() : mf.getSize();
-			}
-			statusLabel.setText("0/" + upackage.getFilesToDownload().size() + " files downloaded");
-			ModManager.debugLogger.writeMessage("Created an all mods download task");
-		}
-
-		/**
-		 * Executed in background thread
-		 */
-		@Override
-		protected Void doInBackground() throws Exception {
-			// Iterate through files to download and put them in the update
-			// folder
-			ModManager.debugLogger.writeMessage("Downloading update from server source: " + downloadSource);
-			/* try */{
-				HTTPDownloadUtil util = new HTTPDownloadUtil();
-				for (ManifestModFile mf : upackage.getFilesToDownload()) {
-					if (!error && !isCancelled()) {
-						String relPath = mf.getRelativePath();
-						if (mf.getLzmasize() > 0) {
-							relPath += ".lzma";
-						}
-						String saveFilePath = saveDirectory + File.separator + relPath;
-
-						File saveFile = new File(saveFilePath);
-						new File(saveFile.getParent()).mkdirs();
-						String link = downloadSource + upackage.getServerFolderName() + "/" + relPath;
-						ModManager.debugLogger.writeMessage("Downloading file: " + link);
-
-						util.downloadFile(link);
-						InputStream inputStream = util.getInputStream();
-						// opens an output stream to save into file
-						FileOutputStream outputStream = new FileOutputStream(saveFilePath);
-
-						byte[] buffer = new byte[BUFFER_SIZE];
-						int bytesRead = -1;
-						int percentCompleted = 0;
-
-						while ((bytesRead = inputStream.read(buffer)) != -1) {
-							outputStream.write(buffer, 0, bytesRead);
-							bytesDownloaded += bytesRead;
-							percentCompleted = (int) (bytesDownloaded * 100 / totalBytes);
-							//						percentCompleted = (int) (bytesDownloaded * 100 / totalBytes);
-
-							System.out.println(bytesDownloaded * 100 + "/" + totalBytes + " = " + percentCompleted);
-							percentCompleted = Math.min(percentCompleted, 100);
-							setProgress(percentCompleted);
-						}
-
-						outputStream.close();
-						if (mf.getLzmasize() > 0) {
-							File downloadedLZMAFile = new File(saveFilePath);
-							//check downloaded file
-							if (mf.getLzmasize() != downloadedLZMAFile.length()) {
-								ModManager.debugLogger.writeError("Downloaded LZMA file size is wrong: EXPECTED:\n" + mf.getLzmasize() + ", GOT:"
-										+ downloadedLZMAFile.length());
-								error = true;
-								//cancel(true);
-								throw new IOException("Downloaded file does not match listed size in manifest:\n" + saveFilePath);
-							}
-							String downloadedChecksum = MD5Checksum.getMD5Checksum(saveFilePath);
-							if (!mf.getLzmahash().equals(downloadedChecksum)) {
-								ModManager.debugLogger.writeError("Downloaded LZMA file hash check failed:\nEXPECTED: " + mf.getLzmahash() + "\nGOT:"
-										+ downloadedChecksum);
-								error = true;
-								//cancel(true);
-								throw new IOException("Downloaded file failed hash check:\n" + saveFilePath);
-							}
-
-							//decompress LZMA file
-							/*
-							 * if (!decompressAllCompressedFiles(saveDirectory))
-							 * { error = true; //cancel(true); throw new
-							 * IOException(
-							 * "Error decompressing one of the update files. Check the log to see more info."
-							 * ); }
-							 */
-						}
-						publish(++numProcessed);
-					}
-				}
-				util.disconnect();
-				if (isCancelled() && !error) {
-					executeUpdate();
-				}
-			}/*
-			 * catch (IOException ex) { publish(new
-			 * ThreadCommand(ThreadCommand.COMMAND_ERROR,
-			 * "Error downloading file:\n" + ex.getMessage()));
-			 * ModManager.debugLogger
-			 * .writeErrorWithException("IOException while updating mod.", ex);
-			 * setProgress(0); error = true; cancel(true); }
-			 */
-			return null;
-		}
-
-		public void executeUpdate() {
-			ModManager.debugLogger.writeMessage("Applying downloaded update " + saveDirectory + " => " + upackage.getMod().getModPath());
-			File updateDirectory = new File(saveDirectory);
-			try {
-				FileUtils.copyDirectory(updateDirectory, new File(upackage.getMod().getModPath()));
-				ModManager.debugLogger.writeMessage("Installed new files");
-			} catch (IOException e) {
-				ModManager.debugLogger.writeError("Unable to copy update directory over the source");
-				ModManager.debugLogger.writeException(e);
-			}
-
-			for (String str : upackage.getFilesToDelete()) {
-				ModManager.debugLogger.writeMessage("Deleting obsolete/blacklisted file: " + str);
-				File file = new File(str);
-				file.delete();
-			}
-			ModManager.debugLogger.writeMessage("Update applied, cleaning up");
-
-			try {
-				FileUtils.deleteDirectory(updateDirectory);
-			} catch (IOException e) {
-				ModManager.debugLogger.writeError("Unable to delete update directory");
-				ModManager.debugLogger.writeException(e);
-			}
-
-			ModManager.debugLogger.writeMessage("Mod cleaned up, install finished");
-		}
-
-		/**
-		 * Executed in Swing's event dispatching thread
-		 */
-		@Override
-		protected void done() {
-			// TODO: Install update through the update script
-			try {
-				get();
-			} catch (Exception e) {
-				ModManager.debugLogger.writeErrorWithException("UPDATE FAILED:", e);
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Error occured while updating:\n" + e.getMessage(), "Updater Error",
-						JOptionPane.ERROR_MESSAGE);
-			}
-
-			dispose();
-			if (amuw == null && error != true) {
-				JOptionPane.showMessageDialog(null, upackage.getMod().getModName()
-						+ " has been successfully updated.\nMod Manager will now reload mods.");
-			}
-		}
-	}
-
-	/**
-	 * Execute file download in a background thread and update the progress.
-	 * 
-	 * @author www.codejava.net
-	 * 
-	 */
 	class MultithreadDownloadTask extends SwingWorker<Void, Object> {
 		private static final int BUFFER_SIZE = 4096;
 		private String saveDirectory;
@@ -390,6 +193,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		private long bytesDownloaded; //may have race condition
 		private long totalBytes;
 		private AllModsUpdateWindow amuw;
+		private ExecutorService downloadExecutor;
 
 		public MultithreadDownloadTask(UpdatePackage upackage) {
 			String modpath = upackage.getMod().getModPath();
@@ -433,7 +237,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			}
 
 			ModManager.debugLogger.writeMessage("Downloading update from server source: " + downloadSource);
-			ExecutorService downloadExecutor = Executors.newFixedThreadPool(4);
+			downloadExecutor = Executors.newFixedThreadPool(4);
 			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
 			for (ManifestModFile mf : upackage.getFilesToDownload()) {
 				if (mf.getLzmasize() > 0 && !SevenZip.isInitializedSuccessfully()) {
@@ -462,14 +266,6 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			}
 			return null;
 		}
-
-		/*
-		 * public boolean decompressAllCompressedFiles(String directory) {
-		 * Collection<File> files = FileUtils.listFiles(new File(directory), new
-		 * SuffixFileFilter(".lzma"), TrueFileFilter.INSTANCE); for (File file :
-		 * files) { if (!decompressLZMAFile(file.getAbsolutePath())) { return
-		 * false; //error } } return true; }
-		 */
 
 		private boolean decompressLZMAFile(String lzmaFile, String expectedHash) {
 			RandomAccessFile randomAccessFile = null;
@@ -533,7 +329,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 							ModManager.debugLogger.writeMessage("Decompression complete.");
 							if (expectedHash != null) {
 								String hash = MD5Checksum.getMD5Checksum(decompressedFileLocation);
-								if (expectedHash.equals(hash)){
+								if (expectedHash.equals(hash)) {
 									throw new Exception("Hash check failed for decompressed file");
 								}
 							}
@@ -584,7 +380,6 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 			@Override
 			public Boolean call() throws Exception {
-				// TODO Auto-generated method stub
 				String relPath = null;
 				try {
 					relPath = mf.getRelativePath();
@@ -607,44 +402,44 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 					int bytesRead = -1;
 					int percentCompleted = 0;
 
-					while ((bytesRead = inputStream.read(buffer)) != -1) {
+					while ((bytesRead = inputStream.read(buffer)) != -1 && !Thread.currentThread().isInterrupted()) {
 						outputStream.write(buffer, 0, bytesRead);
 						bytesDownloaded += bytesRead;
 						percentCompleted = (int) (bytesDownloaded * 100 / totalBytes);
 						setProgress(percentCompleted);
 					}
 					outputStream.close();
-					ModManager.debugLogger.writeMessage("Downloaded file: " + baseurl + relPath + ", saved to disk as "
-							+ new File(saveFilePath).length() + " bytes");
-					if (mf.getLzmasize() > 0) {
-						File downloadedLZMAFile = new File(saveFilePath);
-						//check downloaded file
-						if (mf.getLzmasize() != downloadedLZMAFile.length()) {
-							ModManager.debugLogger.writeError("Downloaded LZMA file size is wrong: EXPECTED:\n" + mf.getLzmasize() + ", GOT:"
-									+ downloadedLZMAFile.length());
-							error = true;
-							//cancel(true);
-							throw new IOException("Downloaded file does not match listed size in manifest:\n" + saveFilePath);
-						}
-						String downloadedChecksum = MD5Checksum.getMD5Checksum(saveFilePath);
-						if (!mf.getLzmahash().equals(downloadedChecksum)) {
-							ModManager.debugLogger.writeError("Downloaded LZMA file hash check failed:\nEXPECTED: " + mf.getLzmahash() + "\nGOT:"
-									+ downloadedChecksum);
-							error = true;
-							//cancel(true);
-							throw new IOException("Downloaded file failed hash check:\n" + saveFilePath);
+					if (!Thread.currentThread().isInterrupted()) {
+						ModManager.debugLogger.writeMessage("Downloaded file: " + baseurl + relPath + ", saved to disk as " + new File(saveFilePath).length() + " bytes");
+						if (mf.getLzmasize() > 0) {
+							File downloadedLZMAFile = new File(saveFilePath);
+							//check downloaded file
+							if (mf.getLzmasize() != downloadedLZMAFile.length()) {
+								ModManager.debugLogger.writeError("Downloaded LZMA file size is wrong: EXPECTED:\n" + mf.getLzmasize() + ", GOT:" + downloadedLZMAFile.length());
+								error = true;
+								downloadExecutor.shutdownNow();
+								throw new IOException("Downloaded file does not match listed size in manifest:\n" + saveFilePath);
+							}
+							String downloadedChecksum = MD5Checksum.getMD5Checksum(saveFilePath);
+							if (!mf.getLzmahash().equals(downloadedChecksum)) {
+								ModManager.debugLogger.writeError("Downloaded LZMA file hash check failed:\nEXPECTED: " + mf.getLzmahash() + "\nGOT:" + downloadedChecksum);
+								error = true;
+								downloadExecutor.shutdownNow();
+								throw new IOException("Downloaded file failed hash check:\n" + saveFilePath);
+							}
+
+							//decompress LZMA file
+							if (!decompressLZMAFile(saveFilePath, mf.getLzmahash())) {
+								error = true;
+								downloadExecutor.shutdownNow();
+								throw new IOException("Error decompressing: " + saveFilePath + "\nCheck the log to see more info.");
+							}
 						}
 
-						//decompress LZMA file
-						if (!decompressLZMAFile(saveFilePath,mf.getLzmahash())) {
-							error = true;
-							//cancel(true);
-							throw new IOException("Error decompressing: " + saveFilePath + "\nCheck the log to see more info.");
-						}
+						publish(++numProcessed);
+						return true;
 					}
-
-					publish(++numProcessed);
-					return true;
+					return false;
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Failed to download file " + (baseurl + relPath) + ":", e);
 					return false;
@@ -660,25 +455,30 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		public void executeUpdate() {
 			ModManager.debugLogger.writeMessage("Applying downloaded update " + saveDirectory + " => " + upackage.getMod().getModPath());
 			File updateDirectory = new File(saveDirectory);
-			try {
-				FileUtils.copyDirectory(updateDirectory, new File(upackage.getMod().getModPath()));
-				ModManager.debugLogger.writeMessage("Installed new files");
-			} catch (IOException e) {
-				ModManager.debugLogger.writeError("Unable to copy update directory over the source");
-				ModManager.debugLogger.writeException(e);
+			File modPath = new File(upackage.getMod().getModPath());
+			if (upackage.getFilesToDownload().size() > 0) {
+				try {
+					FileUtils.copyDirectory(updateDirectory, modPath);
+					ModManager.debugLogger.writeMessage("Copied new files");
+				} catch (IOException e) {
+					ModManager.debugLogger.writeError("Unable to copy update directory over the source");
+					ModManager.debugLogger.writeException(e);
+					error = true;
+				}
 			}
 
 			for (String str : upackage.getFilesToDelete()) {
 				ModManager.debugLogger.writeMessage("Deleting unused file: " + str);
 				File file = new File(str);
-				file.delete();
+				FileUtils.deleteQuietly(file);
 			}
 			ModManager.debugLogger.writeMessage("Update applied, verifying mod...");
 			Mod verifyingMod = new Mod(upackage.getMod().getDescFile());
 			if (!verifyingMod.isValidMod()) {
 				ModManager.debugLogger.writeError("UPDATE HAS CAUSED MOD TO BECOME INVALID!");
+				error = true;
 			}
-			
+
 			try {
 				FileUtils.deleteDirectory(updateDirectory);
 			} catch (IOException e) {
@@ -694,14 +494,13 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		 */
 		@Override
 		protected void done() {
-			// TODO: Install update through the update script
 			dispose();
 			if (amuw == null && !error) {
-				JOptionPane.showMessageDialog(null, upackage.getMod().getModName()
-						+ " has been successfully updated.\nMod Manager will now reload mods.", "Update successful", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nMod Manager will now reload mods.", "Update successful",
+						JOptionPane.INFORMATION_MESSAGE);
 			} else if (amuw == null) {
-				JOptionPane.showMessageDialog(null, upackage.getMod().getModName()
-						+ " failed to update. The debugging log will have more information.", "Updated failed", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " failed to update. The Mod Manager log will have more information.", "Updated failed",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}

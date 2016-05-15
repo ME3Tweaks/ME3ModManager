@@ -332,6 +332,7 @@ public class RestoreFilesWindow extends JDialog {
 						}
 					}
 				}
+
 				ModManager.debugLogger.writeMessage("Deleted all Custom DLC folders (if there were any)");
 				publish(Integer.toString(completed));
 				return true;

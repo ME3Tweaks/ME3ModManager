@@ -211,21 +211,21 @@ public class ModMakerCompilerWindow extends JDialog {
 				running = false;
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the debugging log for more info (in the help menu).",
+						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				new ModManagerWindow(false);
 			} catch (IOException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the debugging log for more info (in the help menu).",
+						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				new ModManagerWindow(false);
 			} catch (ParserConfigurationException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the debugging log for more info (in the help menu).",
+						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 
 				new ModManagerWindow(false);
@@ -233,14 +233,14 @@ public class ModMakerCompilerWindow extends JDialog {
 				running = false;
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the debugging log for more info (in the help menu).",
+						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				new ModManagerWindow(false);
 			} catch (Exception e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the debugging log for more info (in the help menu).",
+						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				dispose();
 				//new ModManagerWindow(false);

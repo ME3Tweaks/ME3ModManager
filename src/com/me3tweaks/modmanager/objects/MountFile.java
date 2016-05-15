@@ -126,6 +126,10 @@ public class MountFile implements Comparable<MountFile> {
 		this.validMount = validMount;
 	}
 
+	/**
+	 * Loads Mountfile properties from an existing mount file
+	 * @param path mount file to load
+	 */
 	public MountFile(String path) {
 		if (!(new File(path).exists())) {
 			return;

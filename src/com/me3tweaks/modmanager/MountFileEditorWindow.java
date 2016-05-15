@@ -278,7 +278,16 @@ public class MountFileEditorWindow extends JDialog {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (validateInputs()) {
-					saveMount(sInputField.getText());
+					String mountPriority = priorityField.getText();
+					String tlkId = tlkIdField.getText();
+					MountFlag flag = flagModel.getElementAt(mountFlagsCombobox.getSelectedIndex());
+					int priorityVal = Integer.parseUnsignedInt(mountPriority);					
+					boolean saved = SaveMount(sInputField.getText(),tlkId,flag,priorityVal);
+					if (saved) {
+						sStatus.setText("File saved.");
+					} else {
+						sStatus.setText("Unable to save .dlc file. Check the Mod Manager logs.");
+					}
 				}
 			}
 		});
@@ -427,21 +436,16 @@ public class MountFileEditorWindow extends JDialog {
 		}
 	}
 
-	private void saveMount(String location) {
-		String mountPriority = priorityField.getText();
-		String tlkId = tlkIdField.getText();
-		MountFlag flag = flagModel.getElementAt(mountFlagsCombobox.getSelectedIndex());
-
+	public static boolean SaveMount(String location, String tlkId, MountFlag flag, int priorityVal) {
 		String newData = DEFAULT_MOUNT_DATA;
 		byte[] data = DatatypeConverter.parseHexBinary(newData);
-		System.out.println(DatatypeConverter.printHexBinary(data));
 
 		//MOUNT PRIORITY
-		int priorityVal = Integer.reverseBytes(Integer.parseUnsignedInt(mountPriority));
-		priorityVal = (priorityVal >> 16) & 65535;
+		//priorityVal = (priorityVal >> 16) & 65535;
+		//priorityVal = ~priorityVal & 0x0000FFFF;
 		byte[] bytes = ByteBuffer.allocate(Integer.BYTES).putInt(priorityVal).array();
-		data[PRIORITY_OFFSET] = bytes[2]; //0 and 1 are data from size increase we don't need
-		data[PRIORITY_OFFSET + 1] = bytes[3];
+		data[PRIORITY_OFFSET] = bytes[3]; //0 and 1 are data from size increase we don't need
+		data[PRIORITY_OFFSET + 1] = bytes[2];
 
 		//TLK ID1 & 2
 		int tlkVal = Integer.reverseBytes(Integer.parseInt(tlkId));
@@ -458,16 +462,11 @@ public class MountFileEditorWindow extends JDialog {
 		System.out.println(DatatypeConverter.printHexBinary(data));
 		try {
 			FileUtils.writeByteArrayToFile(new File(location), data);
-			sStatus.setText("File saved.");
+			return true;
 		} catch (IOException e) {
 			ModManager.debugLogger.writeErrorWithException("Failed to save Mount.dlc file:", e);
-			sStatus.setText("Unable to save .dlc file. Check the debugging logs.");
+			return false;
 		}
-	}
-
-	public static void main(String[] args) {
-		MountFileEditorWindow.ISRUNNINGASMAIN = true;
-		new MountFileEditorWindow();
 	}
 
 	public static String getMountDescription(File mountFile) {

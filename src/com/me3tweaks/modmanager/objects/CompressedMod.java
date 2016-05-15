@@ -10,7 +10,14 @@ public class CompressedMod {
 	public long filesize = 0;
 	public ArrayList<String> fileList = new ArrayList<>();
 	private String descLocationInArchive;
+	private String manifestLocationInArchive;
 	
+	public String getManifestLocationInArchive() {
+		return manifestLocationInArchive;
+	}
+	public void setManifestLocationInArchive(String manifestLocationInArchive) {
+		this.manifestLocationInArchive = manifestLocationInArchive;
+	}
 	public long getFilesize() {
 		return filesize;
 	}

@@ -36,28 +36,27 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 	protected boolean reloadWhenClosed;
 
 	public ModImportDLCWindow(JFrame callingWindow, String biogameDir) {
-    	ModManager.debugLogger.writeMessage("Opening ModImportWindow (DLC Import)");
-
+		ModManager.debugLogger.writeMessage("Opening ModImportWindow (DLC Import)");
 		this.biogameDir = biogameDir;
 		setupWindow(callingWindow);
 		setVisible(true);
 	}
 
 	private void setupWindow(JFrame callingWindow) {
-		setTitle("Imports installed mods into Mod Manager");
+		setTitle("Import installed mods into Mod Manager");
 		setMinimumSize(new Dimension(300, 300));
 		setIconImages(ModManager.ICONS);
 
 		addWindowListener(new WindowAdapter() {
-		    @Override
-		    public void windowClosing(WindowEvent e) {
-		    	ModManager.debugLogger.writeMessage("Closing ModImportWindow. Should we reload? "+reloadWhenClosed);
-		        if (reloadWhenClosed) {
-		        	ModManagerWindow.ACTIVE_WINDOW = new ModManagerWindow(false); //reload
-		        }
-		    }
+			@Override
+			public void windowClosing(WindowEvent e) {
+				ModManager.debugLogger.writeMessage("Closing ModImportWindow. Should we reload? " + reloadWhenClosed);
+				if (reloadWhenClosed) {
+					ModManagerWindow.ACTIVE_WINDOW = new ModManagerWindow(false); //reload
+				}
+			}
 		});
-		
+
 		File mainDlcDir = new File(ModManager.appendSlash(biogameDir) + "DLC" + File.separator);
 		String[] directories = mainDlcDir.list(new FilenameFilter() {
 			@Override
@@ -71,27 +70,30 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 				continue;
 			}
 			//add to list
-			model.addElement(dir);
+			File metacmm = new File(mainDlcDir + File.separator + dir + File.separator + "_metacmm.txt");
+			if (dir.startsWith("DLC_") && !metacmm.exists()) {
+				model.addElement(dir);
+			}
 		}
-		
+
 		dlcModlist.addListSelectionListener(this);
 		dlcModlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 		JPanel panel = new JPanel(new BorderLayout());
 
 		JLabel infoHeader = new JLabel(
-				"<html>Import already-installed mods into Mod Manager to<br>install or uninstall them quickly and easily.</html>");
+				"<html>Import already-installed mods into Mod Manager to<br>install or uninstall them quickly and easily.<br>Only mods not installed by Mod Manager are listed.</html>");
 		panel.add(infoHeader, BorderLayout.NORTH);
 
 		importButton = new JButton("Import");
 		importButton.setEnabled(false);
 		importButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String folder = mainDlcDir.getAbsolutePath() + File.separator + model.get(dlcModlist.getSelectedIndex());
 				ImportEntryWindow iew = new ImportEntryWindow(ModImportDLCWindow.this, folder);
-				if (iew.getResult() == ImportEntryWindow.OK){
+				if (iew.getResult() == ImportEntryWindow.OK) {
 					reloadWhenClosed = true;
 				}
 			}
@@ -101,9 +103,9 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 			JScrollPane scroll = new JScrollPane(dlcModlist, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			cPanel.add(scroll, BorderLayout.CENTER);
 		} else {
-			cPanel.add(new JLabel("No custom DLC mods are installed", SwingConstants.CENTER));
+			cPanel.add(new JLabel("<html><center><font color='#700000'>No Non-Mod Manager<br>Custom DLC mods are installed</font></center></html>", SwingConstants.CENTER));
 		}
-		
+
 		cPanel.setBorder(new TitledBorder(new EtchedBorder(), "Installed Custom DLC mods"));
 		panel.add(cPanel, BorderLayout.CENTER);
 
@@ -113,7 +115,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 		pack();
 		setLocationRelativeTo(callingWindow);
 	}
-	
+
 	@Override
 	public void valueChanged(ListSelectionEvent listChange) {
 		if (listChange.getValueIsAdjusting() == false) {

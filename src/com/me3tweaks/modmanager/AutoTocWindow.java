@@ -189,6 +189,10 @@ public class AutoTocWindow extends JDialog {
 			//get list of all files to update for the progress bar
 			for (ModJob job : mod.jobs) {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
+					if (mode == AutoTocWindow.INSTALLED_MODE) {
+						completed++;
+						continue; //skip, this is done AFTER mod has been installed, and will run outside of autotoc window.
+					}
 					for (String srcFolder : job.getSourceFolders()) {
 						ArrayList<String> commandBuilder = new ArrayList<String>();
 						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
@@ -212,8 +216,7 @@ public class AutoTocWindow extends JDialog {
 							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
 						} else {
 							completed++;
-							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: "
-									+ (numtoc - completed));
+							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
 							publish(Integer.toString(completed));
 						}
 					}
@@ -232,14 +235,13 @@ public class AutoTocWindow extends JDialog {
 					}
 				} else {
 					//get TOC file.
-					String tocPath = ModManager.getGameFile(ModType.getTOCPathFromHeader(job.getJobName()), job.getJobName(), ModManager.getTempDir()
-							+ job.getJobName() + "_PCConsoleTOC.bin");
+					String tocPath = ModManager.getGameFile(ModType.getTOCPathFromHeader(job.getJobName()), job.getJobName(),
+							ModManager.getTempDir() + job.getJobName() + "_PCConsoleTOC.bin");
 					if (tocPath != null) {
 						updatedGameTOCs.put(job.getJobName(), tocPath);
 						hasTOC = true;
 					} else {
-						ModManager.debugLogger.writeError("Unable to get module's PCConsoleTOC file: " + job.getJobName()
-								+ ". This update will be skipped.");
+						ModManager.debugLogger.writeError("Unable to get module's PCConsoleTOC file: " + job.getJobName() + ". This update will be skipped.");
 					}
 				}
 
@@ -324,8 +326,7 @@ public class AutoTocWindow extends JDialog {
 							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
 						} else {
 							completed += batchJob.getNameSizePairs().size();
-							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: "
-									+ (numtoc - completed));
+							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
 							publish(Integer.toString(completed));
 						}
 					}
@@ -360,8 +361,7 @@ public class AutoTocWindow extends JDialog {
 			}
 
 			if (numtoc != completed) {
-				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, "
-						+ completed + " completed");
+				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, " + completed + " completed");
 				if (ModManagerWindow.ACTIVE_WINDOW != null) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("AutoTOC had an error (check logs)");
 				}
@@ -399,7 +399,7 @@ public class AutoTocWindow extends JDialog {
 
 		private void calculateTasksToDo(String biogameDir) {
 			//add basegame
-			File basegameToc = new File(ModManager.appendSlash(biogameDir)  + File.separator + "PCConsoleTOC.bin");
+			File basegameToc = new File(ModManager.appendSlash(biogameDir) + File.separator + "PCConsoleTOC.bin");
 			if (basegameToc.exists()) {
 				unpackedPaths.add(basegameToc.getAbsolutePath());
 				System.out.println(basegameToc);
@@ -407,7 +407,7 @@ public class AutoTocWindow extends JDialog {
 
 			//add testpatch
 			HashMap<String, Long> sizesMap = ModType.getSizesMap();
-			File testpatchSfar = new File(ModManager.appendSlash(biogameDir) + File.separator +"Patches" + File.separator +"PCConsole"+ File.separator+"Patch_001.sfar");
+			File testpatchSfar = new File(ModManager.appendSlash(biogameDir) + File.separator + "Patches" + File.separator + "PCConsole" + File.separator + "Patch_001.sfar");
 			if (testpatchSfar.exists() && (testpatchSfar.length() != sizesMap.get(ModType.TESTPATCH) && testpatchSfar.length() != ModType.TESTPATCH_16_SIZE)) {
 				sfarPaths.add(testpatchSfar.getAbsolutePath());
 			}
@@ -423,37 +423,39 @@ public class AutoTocWindow extends JDialog {
 			});
 			HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
 			for (String dir : directories) {
-				if (ModType.isKnownDLCFolder(dir)) {
-					File mainSfar = new File(biogameDir + File.separator + "DLC" + File.separator + dir + File.separator+ "CookedPCConsole\\Default.sfar");
+				if (dir.startsWith("DLC_")) {
+					System.out.println(dir);
+					boolean isKnownDLC = ModType.isKnownDLCFolder(dir);
+					File mainSfar = new File(biogameDir + File.separator + "DLC" + File.separator + dir + File.separator + "CookedPCConsole\\Default.sfar");
 					if (mainSfar.exists()) {
 						//find the header (the lazy way)
-						String header = null;
-						for (Map.Entry<String, String> entry : nameMap.entrySet()) {
-							String localHeader = entry.getKey();
-							String foldername = entry.getValue();
-							if (FilenameUtils.getBaseName(dir).equalsIgnoreCase(foldername)) {
-								header = localHeader;
-								break;
+						if (isKnownDLC) {
+							String header = null;
+							for (Map.Entry<String, String> entry : nameMap.entrySet()) {
+								String localHeader = entry.getKey();
+								String foldername = entry.getValue();
+								if (FilenameUtils.getBaseName(dir).equalsIgnoreCase(foldername)) {
+									header = localHeader;
+									break;
+								}
 							}
-
+							if (mainSfar.length() == sizesMap.get(header)) {
+								//vanilla
+								ModManager.debugLogger.writeMessage("Skipping vanilla SFAR: " + mainSfar);
+								continue;
+							}
 						}
-						assert header != null;
 
-						if (mainSfar.length() == sizesMap.get(header)) {
-							//vanilla
-							ModManager.debugLogger.writeMessage("Skipping vanilla SFAR: "+mainSfar);
-							continue;
-						}
-						File externalTOC = new File(dir + "PCConsoleTOC.bin");
-						if (externalTOC.exists()) {
+						File externalTOC = new File(biogameDir + "/DLC/" + dir + "/PCConsoleTOC.bin");
+						if (externalTOC.exists() || !isKnownDLC) {
 							//its unpacked
-							ModManager.debugLogger.writeMessage("Found external toc file, adding to unpacked list: "+externalTOC);
-
+							ModManager.debugLogger.writeMessage("Found external toc file (or is custom dlc), adding to unpacked list: " + externalTOC);
 							unpackedPaths.add(externalTOC.getAbsolutePath());
 							continue;
 						} else {
 							//its a modified SFAR
-							ModManager.debugLogger.writeMessage("SFAR size is not vanilla, adding to sfar list: "+mainSfar);
+							ModManager.debugLogger
+									.writeMessage("No external PCConsoleTOC.bin, and SFAR size is not vanilla (or is custom dlc), adding to sfar list to autotoc: " + mainSfar);
 							sfarPaths.add(mainSfar.getAbsolutePath());
 							continue;
 						}
@@ -550,8 +552,8 @@ public class AutoTocWindow extends JDialog {
 			}
 
 			if (numtoc != completed) {
-				ModManager.debugLogger.writeError("Game-Wide AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, "
-						+ completed + " completed");
+				ModManager.debugLogger
+						.writeError("Game-Wide AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, " + completed + " completed");
 				if (ModManagerWindow.ACTIVE_WINDOW != null) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Game AutoTOC had an error (check logs)");
 				}

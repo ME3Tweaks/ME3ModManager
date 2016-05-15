@@ -7,10 +7,11 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,21 +29,28 @@ import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
@@ -65,10 +73,13 @@ public class ImportEntryWindow extends JDialog {
 	private JCheckBox telemetryCheckbox;
 	private String dlcModName;
 	private int result = NO_ANSWER;
+	private JDialog callingWindow;
 
 	public ImportEntryWindow(JDialog modImportWindow, String importPath) {
 		this.importPath = importPath;
+		this.callingWindow = modImportWindow;
 		setupWindow(modImportWindow);
+		new DLCDataFetcher(importPath).execute();
 		setVisible(true);
 	}
 
@@ -80,7 +91,7 @@ public class ImportEntryWindow extends JDialog {
 		setIconImages(ModManager.ICONS);
 		dlcModName = FilenameUtils.getBaseName(importPath);
 		setTitle("Importing " + dlcModName);
-		setMinimumSize(new Dimension(275, 350));
+		setMinimumSize(new Dimension(400, 350));
 		setModalityType(Dialog.ModalityType.DOCUMENT_MODAL);
 
 		JPanel panel = new JPanel(new GridBagLayout());
@@ -182,6 +193,57 @@ public class ImportEntryWindow extends JDialog {
 		setLocationRelativeTo(callingDialog);
 	}
 
+	class DLCDataFetcher extends SwingWorker<Void, Void> {
+
+		String foldername;
+		String modinfo;
+
+		public DLCDataFetcher(String importPath) {
+			foldername = new File(importPath).getName();
+		}
+
+		@Override
+		protected Void doInBackground() throws Exception {
+			modinfo = IOUtils.toString(new URL("https://me3tweaks.com/mods/dlc_mods/dlcinforequest?dlc_folder_name=" + foldername));
+			return null;
+		}
+
+		@Override
+		public void done() {
+			if (modinfo != null) {
+				//parse doc...
+				System.out.println(modinfo);
+				try {
+					DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+					ModManager.debugLogger.writeMessage("Downloaded data for " + foldername + " from ME3Tweaks.");
+					DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+					Document doc = dBuilder.parse(new InputSource(new ByteArrayInputStream(modinfo.getBytes("utf-8"))));
+
+					XPathFactory xPathfactory = XPathFactory.newInstance();
+					XPath xpath = xPathfactory.newXPath();
+					String modname = xpath.evaluate("/ME3TweaksDLCData/ModName", doc);
+					String moddev = xpath.evaluate("/ME3TweaksDLCData/ModDev", doc);
+					String modsite = xpath.evaluate("/ME3TweaksDLCData/ModSite", doc);
+					String moddesc = xpath.evaluate("/ME3TweaksDLCData/ModDesc", doc);
+
+					modNameField.setText(modname);
+					modAuthorField.setText(moddev);
+					modSiteField.setText(modsite);
+					modDescField.setText(moddesc);
+					if (!modname.equals("") && !moddev.equals("")) {
+						telemetryCheckbox.setEnabled(false);
+						telemetryCheckbox.setSelected(false);
+						telemetryCheckbox.setText("Info for this mod already on ME3Tweaks");
+					}
+				} catch (XPathExpressionException | ParserConfigurationException | SAXException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+
 	class ImportWorker extends SwingWorker<Void, Void> {
 		private String modDesc;
 		private String modAuthor;
@@ -235,7 +297,7 @@ public class ImportEntryWindow extends JDialog {
 					urib.setParameters(params);
 					HttpClient httpClient = HttpClientBuilder.create().build();
 					URI uri = urib.build();
-					System.out.println("Sending telemetry via GET: "+uri.toString());
+					System.out.println("Sending telemetry via GET: " + uri.toString());
 					//Execute and get the response.
 					HttpGet get = new HttpGet(uri);
 					HttpResponse response = httpClient.execute(get);
@@ -290,6 +352,10 @@ public class ImportEntryWindow extends JDialog {
 			}
 			ModManager.debugLogger.writeMessage("Import of mod complete. Result code: " + result);
 			dispose();
+			if (result == OK) {
+				callingWindow.dispose();
+				new ModManagerWindow(false);
+			}
 		}
 	}
 
@@ -302,8 +368,8 @@ public class ImportEntryWindow extends JDialog {
 					"Illegal characters in name", JOptionPane.ERROR_MESSAGE);
 			return false;
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, "This OS cannot make a folder with the mod name you specified, please change it.",
-					"Could not create mod folder", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "This OS cannot make a folder with the mod name you specified, please change it.", "Could not create mod folder",
+					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		return true;

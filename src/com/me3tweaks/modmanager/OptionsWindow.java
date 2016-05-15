@@ -51,7 +51,7 @@ public class OptionsWindow extends JDialog {
 		JPanel optionsPanel = new JPanel();
 		optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.PAGE_AXIS));
 
-		loggingMode = new JCheckBox("Write debugging log to file");
+		loggingMode = new JCheckBox("Write Mod Manager log to file");
 		loggingMode
 				.setToolTipText("<html>Turning this on will write a session log to me3cmm_last_run_log.txt next to ME3CMM.exe.<br>This log can be used by FemShep to help diagnose issues with Mod Manager.<br>It will also tell you why mods aren't loading and other things.</html>");
 		loggingMode.setSelected(ModManager.logging);
@@ -212,7 +212,6 @@ public class OptionsWindow extends JDialog {
 					ini.put("Settings", "autoupdatemods", autoUpdateMods.isSelected() ? "true" : "false");
 					ini.put("Settings", "declinedautoupdate", autoUpdateMods.isSelected() ? "false" : "true");
 					ini.store();
-					ModManager.ASKED_FOR_AUTO_UPDATE = true;
 					ModManager.AUTO_UPDATE_MODS = autoUpdateMods.isSelected();
 				} catch (InvalidFileFormatException x) {
 					x.printStackTrace();

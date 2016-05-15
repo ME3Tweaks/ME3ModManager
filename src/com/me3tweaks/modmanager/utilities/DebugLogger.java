@@ -1,11 +1,14 @@
 package com.me3tweaks.modmanager.utilities;
 
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -20,12 +23,15 @@ import com.me3tweaks.modmanager.ModManager;
  *
  */
 public class DebugLogger {
+	public final static String ERROR_PREFIX = "WARN/ERROR";
+	public final static String EN_EXCEPTION_PREFIX = "\tat ";
 	File logFile;
 	FileWriter fw;
 	int messagesBeforeFlush = 10;
 	int currentMessages = 0;
 	public final static String LOGGING_FILENAME = "me3cmm_last_run_log.txt";
 	private boolean initialized = false;
+	private Timer timer;
 
 	public DebugLogger() {
 
@@ -57,6 +63,7 @@ public class DebugLogger {
 						Date date = new Date();
 						writeMessage("Logger shutting down. Time: " + dateFormat.format(date));
 						fw.close();
+						timer.cancel();
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						System.out.println("Cannot close filewriter. Giving up.");
@@ -65,6 +72,9 @@ public class DebugLogger {
 				}
 			});
 			initialized = true;
+			//schedule flush every 5 seconds
+			timer = new Timer();
+			timer.scheduleAtFixedRate(new FlushTask(), 5000, 5000);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			logFile = null;
@@ -76,6 +86,13 @@ public class DebugLogger {
 
 	public boolean isInitialized() {
 		return initialized;
+	}
+
+	class FlushTask extends TimerTask {
+		public void run() {
+			currentMessages = messagesBeforeFlush+1;
+			checkIfFlushNeeded();
+		}
 	}
 
 	public synchronized void writeMessage(String message) {
@@ -104,7 +121,7 @@ public class DebugLogger {
 			try {
 				System.err.println("[L-E]: " + ExceptionUtils.getStackTrace(e));
 				if (fw != null) {
-					fw.write(ExceptionUtils.getStackTrace(e));
+					fw.write(ERROR_PREFIX + "" + ExceptionUtils.getStackTrace(e));
 					fw.write(System.getProperty("line.separator"));
 				}
 				currentMessages++;
@@ -125,7 +142,7 @@ public class DebugLogger {
 			try {
 				System.err.println("[L:E]: " + message);
 				if (fw != null) {
-					fw.write("WARN/ERROR: ");
+					fw.write(ERROR_PREFIX + ": ");
 					fw.write(message);
 					fw.write(System.getProperty("line.separator"));
 				}

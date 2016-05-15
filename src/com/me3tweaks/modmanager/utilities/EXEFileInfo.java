@@ -49,7 +49,6 @@ import com.sun.jna.ptr.PointerByReference;
 			int v2 = (lplpBufStructure.dwFileVersionMS).intValue() & 0xffff;
 			int v3 = (lplpBufStructure.dwFileVersionLS).intValue() >> 16;
 			int v4 = (lplpBufStructure.dwFileVersionLS).intValue() & 0xffff;
-			ModManager.debugLogger.writeMessage(path+" Version: " + v1 + "." + v2 + "." + v3 + "." + v4);
 			return new int[] { v1, v2, v3, v4 };
 		}
 	}
