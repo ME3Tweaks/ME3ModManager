@@ -217,14 +217,14 @@ public class StarterKitWindow extends JDialog {
 		add(panel);
 
 		//DEBUG ONLY
-		modName.setText("Starter Kit Testing");
+/*		modName.setText("Starter Kit Testing");
 		internalDisplayName.setText("Starter Kit Testing");
 		internalTLKId.setText("6700000");
 		mountPriority.setText("4505");
 		internalDLCName.setText("StartKitTest");
 		modDeveloper.setText("Gatomade");
 		modSite.setText("http://example.com");
-		modDescription.setText("This is what a mod description looks like.\nIt has multiple lines.\nOf txt.");
+		modDescription.setText("This is what a mod description looks like.\nIt has multiple lines.\nOf txt.");*/
 		pack();
 	}
 
