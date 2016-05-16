@@ -499,6 +499,13 @@ public class Mod implements Comparable<Mod> {
 						return;
 					}
 
+					if (!destFolder.startsWith("DLC_")) {
+						setFailedReason(
+								"Mod specifies a CUSTOMDLC destination folder that doesn't start with DLC_. When installing this mod, this will do nothing because Mass Effect 3 will not load any DLC that does not start with DLC_." + destFolder);
+						ModManager.debugLogger.writeError("Custom DLC target folder doesn't start with DLC_: " + destFolder);
+						return;
+					}
+
 					if (sf.exists()) { //ignore errors is not present here.
 						List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 						for (File file : sourceFiles) {
@@ -568,7 +575,7 @@ public class Mod implements Comparable<Mod> {
 						String blacklistedfile = blacklistedTok.nextToken();
 						blacklistedfile = blacklistedfile.replaceAll("\\\\", "/");
 						ModManager.debugLogger.writeMessageConditionally("Blacklisted file for manifests: " + blacklistedfile, ModManager.LOG_MOD_INIT);
-						getBlacklistedFiles() .add(blacklistedfile);
+						getBlacklistedFiles().add(blacklistedfile);
 					}
 				}
 			}
@@ -872,7 +879,7 @@ public class Mod implements Comparable<Mod> {
 
 		// Add mod manager build version
 		modDisplayDescription += "\nTargets Mod Manager " + modCMMVer;
-		if (classicCode > 0 /*&& ModManager.IS_DEBUG*/) {
+		if (classicCode > 0 /* && ModManager.IS_DEBUG */) {
 			modDisplayDescription += "\nUpdate code: " + classicCode;
 		}
 		if (getSideloadOnlyTargets().size() > 0) {

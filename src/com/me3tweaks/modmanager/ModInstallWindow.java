@@ -966,8 +966,15 @@ public class ModInstallWindow extends JDialog {
 		 */
 		private boolean processCustomDLCJob(ModJob job) {
 			ModManager.debugLogger.writeMessage("===Processing a customdlc job===");
-
+			ArrayList<String> destfolders = job.getDestFolders();
 			File dlcdir = new File(ModManager.appendSlash(bioGameDir) + "DLC" + File.separator);
+			for (String folder : destfolders) {
+				File dlcFolder = new File(dlcdir + File.separator + folder);
+				if (dlcFolder.exists() && dlcFolder.isDirectory()) {
+					ModManager.debugLogger.writeMessage("Deleting existing CustomDLC folder: "+dlcFolder);
+					FileUtils.deleteQuietly(dlcFolder);
+				}
+			}
 			taskSteps = job.getFilesToReplaceTargets().size();
 			completedTaskSteps = 0;
 			ModManager.debugLogger.writeMessage("Number of files to install: " + taskSteps);

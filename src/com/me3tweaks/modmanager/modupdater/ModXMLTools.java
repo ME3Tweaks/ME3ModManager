@@ -289,7 +289,7 @@ public class ModXMLTools {
 				File moddesc = new File(mod.getModPath() + "moddesc.ini");
 				//DECREMENT VERSION SO SERVER VERSION APPEARS AS UPDATE.
 				Wini ini = new Wini(moddesc);
-				ini.put("ModInfo", "modver", Math.max(0.001, mod.getVersion() - 0.001));
+				ini.put("ModInfo", "modver", Math.max(0.001, Math.floor((mod.getVersion() - 0.01) * 100) / 100));
 				ini.store(new File(sideloadoutputfolder + "moddesc.ini"));
 
 				String sideload7z = ModManager.appendSlash(new File(sideloadoutputfolder).getParent()) + foldername + "-sideload.7z";
@@ -541,7 +541,7 @@ public class ModXMLTools {
 					continue;
 				}
 				File blacklistedlocalfile = new File(modpath + blacklisted);
-				System.out.println("Checking for blacklisted file: "+blacklistedlocalfile+" exits? "+blacklistedlocalfile.exists());
+				System.out.println("Checking for blacklisted file: " + blacklistedlocalfile + " exits? " + blacklistedlocalfile.exists());
 
 				if (blacklistedlocalfile.exists()) {
 					ModManager.debugLogger.writeMessage("Blacklisted file exists and will be deleted: " + blacklisted);
