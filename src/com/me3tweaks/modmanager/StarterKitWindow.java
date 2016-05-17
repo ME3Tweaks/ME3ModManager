@@ -135,7 +135,7 @@ public class StarterKitWindow extends JDialog {
 		mountPriority.setToolTipText(
 				"<html>Mount priority of your mod. Official DLC ends around 3300.<br>Mods that have pcc files with the same name will only load the higher mount priority version.</html>");
 
-		internalTLKId.setInputVerifier(new PositiveIntVerifier());
+		internalTLKId.setInputVerifier(new PositiveTLKIntVerifier());
 		mountPriority.setInputVerifier(new PositiveIntVerifier());
 
 		c.gridy = 0;
@@ -235,6 +235,19 @@ public class StarterKitWindow extends JDialog {
 			try {
 				int value = Integer.parseInt(text);
 				return (value > 0 && value < 20000);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		}
+	}
+	
+	class PositiveTLKIntVerifier extends InputVerifier {
+		@Override
+		public boolean verify(JComponent input) {
+			String text = ((JTextField) input).getText();
+			try {
+				int value = Integer.parseInt(text);
+				return (value > 0 && value < Integer.MAX_VALUE / 2);
 			} catch (NumberFormatException e) {
 				return false;
 			}

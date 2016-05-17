@@ -40,19 +40,20 @@ public class ResourceUtils {
 			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
 		}
 	}
-	
+
 	/**
 	 * Returns line number where carot is in a component that has a carot
-	 * @param component component to find carot position of
+	 * 
+	 * @param component
+	 *            component to find carot position of
 	 * @return line number
 	 */
-	public static int getLineAtCaret(JTextComponent component)
-    {
-         int caretPosition = component.getCaretPosition();
-         Element root = component.getDocument().getDefaultRootElement();
+	public static int getLineAtCaret(JTextComponent component) {
+		int caretPosition = component.getCaretPosition();
+		Element root = component.getDocument().getDefaultRootElement();
 
-         return root.getElementIndex( caretPosition ) + 1;
-    }
+		return root.getElementIndex(caretPosition) + 1;
+	}
 
 	public static String humanReadableByteCount(long bytes, boolean si) {
 		int unit = si ? 1000 : 1024;
@@ -62,25 +63,28 @@ public class ResourceUtils {
 		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
 		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
-	
+
 	/**
 	 * Appends stylized text to a textpane
-	 * @param tp Textpane
-	 * @param msg Message to append. Will automatically place newline at end.
-	 * @param c Color of text.
+	 * 
+	 * @param tp
+	 *            Textpane
+	 * @param msg
+	 *            Message to append. Will automatically place newline at end.
+	 * @param c
+	 *            Color of text.
 	 */
 	public static void appendToPane(JTextPane tp, String msg, Color c) {
 		StyleContext sc = StyleContext.getDefaultStyleContext();
-	    AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
-	        StyleConstants.Foreground, c);
+		AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
 
-	    int len = tp.getDocument().getLength(); // same value as
-	                       // getText().length();
-	    tp.setCaretPosition(len); // place caret at the end (with no selection)
+		int len = tp.getDocument().getLength(); // same value as
+		// getText().length();
+		tp.setCaretPosition(len); // place caret at the end (with no selection)
 
 		StyledDocument doc = tp.getStyledDocument();
 		try {
-			doc.insertString(doc.getLength(),msg+"\n", aset);
+			doc.insertString(doc.getLength(), msg + "\n", aset);
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}
@@ -231,14 +235,14 @@ public class ResourceUtils {
 		if (buffer.length != 4) {
 			return -1;
 		}
-		return (buffer[0]<<24)&0xff000000|
-	       (buffer[1]<<16)&0x00ff0000|
-	       (buffer[2]<< 8)&0x0000ff00|
-	       (buffer[3]<< 0)&0x000000ff;
+		return (buffer[0] << 24) & 0xff000000 | (buffer[1] << 16) & 0x00ff0000 | (buffer[2] << 8) & 0x0000ff00 | (buffer[3] << 0) & 0x000000ff;
 	}
 
-	public static String normalizeFilePath(String absolutePath) {
-		return absolutePath.replaceAll("\\\\", "/");
+	public static String normalizeFilePath(String absolutePath, boolean backslash) {
+		if (!backslash) {
+			return absolutePath.replaceAll("\\\\", "/");
+		}
+		return absolutePath.replaceAll("/", "\\\\");
 	}
 
 	/*

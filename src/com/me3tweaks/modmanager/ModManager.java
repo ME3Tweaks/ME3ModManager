@@ -970,7 +970,7 @@ public class ModManager {
 	}
 
 	private static boolean downloadGUITransplanter() {
-		String url = "http://me3tweaks.com/modmanager/toolsx/GUITRANSPLANTER.7z";
+		String url = "http://me3tweaks.com/modmanager/tools/GUITRANSPLANTER.7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI Transplanter: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());
@@ -1777,6 +1777,7 @@ public class ModManager {
 				public void run() {
 					try {
 						IOUtils.copy(process.getInputStream(), writer);
+						IOUtils.copy(process.getErrorStream(), writer);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -1786,6 +1787,8 @@ public class ModManager {
 			int returncode = process.waitFor();
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
+			ModManager.debugLogger.writeMessage("Process output: "+writer.toString());
+			writer.close();
 			return new ProcessResult(returncode, null);
 		} catch (IOException | InterruptedException e) {
 			ModManager.debugLogger.writeErrorWithException("Process exception occured:", e);
@@ -1948,7 +1951,7 @@ public class ModManager {
 
 			//construct lists of what custom dlc each file appears in
 			for (CustomDLC custDLC : customDLCs) {
-				String dlcFolder = ResourceUtils.normalizeFilePath(dlcdirectory + custDLC.getDlcName() + File.separator);
+				String dlcFolder = ResourceUtils.normalizeFilePath(dlcdirectory + custDLC.getDlcName() + File.separator, true);
 				Collection<File> files = FileUtils.listFiles(new File(dlcFolder), new RegexFileFilter("^(.*?)"), DirectoryFileFilter.DIRECTORY);
 				for (File file : files) {
 					if (!FilenameUtils.getExtension(file.getAbsolutePath()).equals("pcc")) {
@@ -2046,7 +2049,7 @@ public class ModManager {
 	 * @return true if extraction is OK, false if something went wrong
 	 */
 	private static boolean downloadGUILibrary(String dlcname) {
-		String url = "http://me3tweaks.com/modmanager/tools/uilibraryx/" + dlcname.toUpperCase() + ".7z";
+		String url = "http://me3tweaks.com/modmanager/tools/uilibrary/" + dlcname.toUpperCase() + ".7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI library: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());

@@ -43,6 +43,7 @@ import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /**
  * Shows conflicts between custom dlc mods.
@@ -343,9 +344,9 @@ public class CustomDLCConflictWindow extends JDialog {
 				commandBuilder.add(transplanterpath);
 				commandBuilder.add("--injectswf");
 				commandBuilder.add("--inputfolder");
-				commandBuilder.add(guilibrarypath);
+				commandBuilder.add(ResourceUtils.normalizeFilePath(guilibrarypath,true));
 				commandBuilder.add("--targetfile");
-				commandBuilder.add(transplantFile);
+				commandBuilder.add(ResourceUtils.normalizeFilePath(transplantFile,true));
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 				ModManager.debugLogger.writeMessage("Injecting SWFs into " + transplantFile);
 				int returncode = 1;

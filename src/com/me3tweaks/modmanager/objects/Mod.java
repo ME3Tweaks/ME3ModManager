@@ -511,7 +511,7 @@ public class Mod implements Comparable<Mod> {
 						for (File file : sourceFiles) {
 							String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
 							String destFilePath = ModManager.appendSlash(destFolder) + relativePath;
-							if (!(newJob.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath()), ResourceUtils.normalizeFilePath(destFilePath))
+							if (!(newJob.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(),false), ResourceUtils.normalizeFilePath(destFilePath,false))
 									&& !ignoreLoadErrors)) {
 								setFailedReason("Mod specifies a CUSTOMDLC header, but a file in one of the source directories (" + sf
 										+ ") had a file that was unable to be added. This error should be encountered.");
