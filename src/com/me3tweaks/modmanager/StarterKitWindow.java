@@ -1,15 +1,19 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Window;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +24,9 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
+import javax.swing.JLayer;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -30,9 +36,12 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.LayerUI;
+import javax.swing.text.NumberFormatter;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 
 import com.me3tweaks.modmanager.FolderBatchWindow.BatchWorker;
 import com.me3tweaks.modmanager.ModManager.Lock;
@@ -45,11 +54,11 @@ import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextAreaUI;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.MountFlagCellRenderer;
-import com.me3tweaks.modmanager.utilities.DebugLogger;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class StarterKitWindow extends JDialog {
-	JTextField modName, internalDisplayName, internalTLKId, mountPriority, internalDLCName;
+	JTextField modName, internalDisplayName;
+	JFormattedTextField internalTLKId, mountPriority, internalDLCName;
 	private JTextField modDeveloper;
 	private JTextField modSite;
 	private JTextArea modDescription;
@@ -66,6 +75,25 @@ public class StarterKitWindow extends JDialog {
 		setTitle("Custom DLC Starter Kit Builder");
 		setPreferredSize(new Dimension(500, 500));
 		setIconImages(ModManager.ICONS);
+		LayerUI<JFormattedTextField> layerUI = new ValidationLayerUI();
+
+		//format spec
+		NumberFormat tlkFormat = NumberFormat.getInstance();
+		tlkFormat.setGroupingUsed(false);
+		NumberFormatter formatter = new NumberFormatter(tlkFormat);
+		formatter.setValueClass(Integer.class);
+		formatter.setMinimum(0);
+		formatter.setMaximum(Integer.MAX_VALUE / 2);
+		formatter.setCommitsOnValidEdit(true);
+
+		NumberFormat mountFormat = NumberFormat.getInstance();
+		mountFormat.setGroupingUsed(false);
+		NumberFormatter mountformatter = new NumberFormatter(mountFormat);
+		mountformatter.setValueClass(Short.class);
+		mountformatter.setMinimum(1);
+		mountformatter.setMaximum(Short.MAX_VALUE);
+		mountformatter.setCommitsOnValidEdit(true);
+
 		JPanel panel = new JPanel(new GridBagLayout());
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		GridBagConstraints c = new GridBagConstraints();
@@ -95,10 +123,10 @@ public class StarterKitWindow extends JDialog {
 		modName = new JTextField();
 		modDeveloper = new JTextField();
 		modSite = new JTextField();
-		internalDLCName = new JTextField();
+		internalDLCName = new JFormattedTextField();
 		internalDisplayName = new JTextField();
-		internalTLKId = new JTextField();
-		mountPriority = new JTextField();
+		internalTLKId = new JFormattedTextField(tlkFormat);
+		mountPriority = new JFormattedTextField(mountFormat);
 		modDescription = new JTextArea();
 		mountFlagsCombobox = new JComboBox<MountFlag>();
 		flagModel = new DefaultComboBoxModel<MountFlag>();
@@ -111,8 +139,8 @@ public class StarterKitWindow extends JDialog {
 
 		mountFlagsCombobox.setModel(flagModel);
 		mountFlagsCombobox.setRenderer(new MountFlagCellRenderer());
-		mountFlagsCombobox.setToolTipText(
-				"<html>Mount flags determine when this DLC is loaded and if it is required by save files.<br>Having a DLC load in MP will require all players to have the DLC installed or connections will be refused.</html>");
+		mountFlagsCombobox
+				.setToolTipText("<html>Mount flags determine when this DLC is loaded and if it is required by save files.<br>Having a DLC load in MP will require all players to have the DLC installed or connections will be refused.</html>");
 
 		modName.setUI(new HintTextFieldUI("A Most Excellent Mod", true));
 		modDeveloper.setUI(new HintTextFieldUI("GatorZ", true));
@@ -121,22 +149,21 @@ public class StarterKitWindow extends JDialog {
 		internalDisplayName.setUI(new HintTextFieldUI("Excellent DLC Module", true));
 		internalTLKId.setUI(new HintTextFieldUI("13370000", true));
 		mountPriority.setUI(new HintTextFieldUI("4500", true));
-		modDescription.setUI(new HintTextAreaUI(
-				"Mod description goes here.\nThis is what will appear in Mod Manager when the user selects your mod.\nThis is the moddesc attribute in moddesc.ini under [ModInfo].\nNewlines will be replaced with <br>."));
+		modDescription
+				.setUI(new HintTextAreaUI(
+						"Mod description goes here.\nThis is what will appear in Mod Manager when the user selects your mod.\nThis is the moddesc attribute in moddesc.ini under [ModInfo].\nNewlines will be replaced with <br>."));
 		modName.setToolTipText("<html>Name of this mod that Mod Manager will display.<br>This is the moddesc modname value under [ModInfo]</html>");
-		modDeveloper.setToolTipText("<html>Developer of this mod. Likely your modding scene alias.<br>This is the moddesc moddev value under [ModInfo]</html>");
-		modSite.setToolTipText(
-				"<html>Optional website that will show up in Mod Manager the user can click to get help, more info, etc about the mod.<br>This is the moddesc modsite value under [ModInfo]</html>");
-		internalDLCName.setToolTipText(
-				"<html>The internal name for the DLC, after the standard DLC_CON.<br>The hint for this textbox would mean the DLC folder is named DLC_CON_ExcellentMod.</html>");
-		internalDisplayName.setToolTipText("<html>Internal name for this DLC. If a DLC fails to load, the user may see this name at the main menu.</html>");
-		internalTLKId.setToolTipText(
-				"<html>TLK ID to use for your generated TLK file.<br>A TLK file will be created for the main 6 languages<br>and the internal DLC name will be set on this one.<br>The mount file will point to this value.</html>");
-		mountPriority.setToolTipText(
-				"<html>Mount priority of your mod. Official DLC ends around 3300.<br>Mods that have pcc files with the same name will only load the higher mount priority version.</html>");
-
-		internalTLKId.setInputVerifier(new PositiveTLKIntVerifier());
-		mountPriority.setInputVerifier(new PositiveIntVerifier());
+		modDeveloper
+				.setToolTipText("<html>Developer of this mod. Likely your modding scene alias.<br>This is the moddesc moddev value under [ModInfo]</html>");
+		modSite.setToolTipText("<html>Optional website that will show up in Mod Manager the user can click to get help, more info, etc about the mod.<br>This is the moddesc modsite value under [ModInfo]</html>");
+		internalDLCName
+				.setToolTipText("<html>The internal name for the DLC, after the standard DLC_CON.<br>The hint for this textbox would mean the DLC folder is named DLC_CON_ExcellentMod.</html>");
+		internalDisplayName
+				.setToolTipText("<html>Internal name for this DLC. If a DLC fails to load, the user may see this name at the main menu.</html>");
+		internalTLKId
+				.setToolTipText("<html>TLK ID to use for your generated TLK file.<br>A TLK file will be created for the main 6 languages<br>and the internal DLC name will be set on this one.<br>The mount file will point to this value.</html>");
+		mountPriority
+				.setToolTipText("<html>Mount priority of your mod. Official DLC ends around 3300.<br>Mods that have pcc files with the same name will only load the higher mount priority version.</html>");
 
 		c.gridy = 0;
 		c.gridx = fieldColumn;
@@ -150,9 +177,9 @@ public class StarterKitWindow extends JDialog {
 		c.gridy++;
 		panel.add(internalDisplayName, c);
 		c.gridy++;
-		panel.add(internalTLKId, c);
+		panel.add(new JLayer<JFormattedTextField>(internalTLKId, layerUI), c);
 		c.gridy++;
-		panel.add(mountPriority, c);
+		panel.add(new JLayer<JFormattedTextField>(mountPriority, layerUI), c);
 		c.gridy++;
 		panel.add(mountFlagsCombobox, c);
 		c.gridy++;
@@ -170,41 +197,46 @@ public class StarterKitWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String modpath = ModManager.getModsDir() + modName.getText();
-				File modpathfile = new File(modpath);
-				if (modpathfile.exists() && modpathfile.isDirectory()) {
-					int result = JOptionPane.showConfirmDialog(StarterKitWindow.this,
-							"A mod named " + modName.getText() + " already exists.\nDelete this mod and create the starter kit in its place?", "Mod already exists",
-							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-					if (result == JOptionPane.NO_OPTION) {
-						return;
-					} else {
-						try {
-							FileUtils.deleteDirectory(modpathfile);
-						} catch (IOException e1) {
+				if (validateFields()) {
+					String modpath = ModManager.getModsDir() + modName.getText();
+					File modpathfile = new File(modpath);
+					if (modpathfile.exists() && modpathfile.isDirectory()) {
+						int result = JOptionPane.showConfirmDialog(StarterKitWindow.this, "A mod named " + modName.getText()
+								+ " already exists.\nDelete this mod and create the starter kit in its place?", "Mod already exists",
+								JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+						if (result == JOptionPane.NO_OPTION) {
 							return;
+						} else {
+							try {
+								FileUtils.deleteDirectory(modpathfile);
+							} catch (IOException e1) {
+								return;
+							}
 						}
+						System.out.println(result);
 					}
-					System.out.println(result);
-				}
-				//validate...
-				int internaltlkidval = Integer.parseInt(internalTLKId.getText());
-				int mountpriorityval = Integer.parseInt(mountPriority.getText());
+					//validate...
+					int internaltlkidval = Integer.parseInt(internalTLKId.getText().trim());
+					int mountpriorityval = Integer.parseInt(mountPriority.getText().trim());
 
-				//create
-				StarterKitGenerator starterKit = new StarterKitGenerator(createButton, progressBar, StarterKitWindow.this);
-				starterKit.setInternaldisplayname(internalDisplayName.getText());
-				starterKit.setModname(modName.getText());
-				starterKit.setModdev(modDeveloper.getText());
-				starterKit.setModsite(modSite.getText());
-				starterKit.setModdesc(modDescription.getText());
-				starterKit.setInternaldisplayname(internalDisplayName.getText());
-				starterKit.setInternaldlcname(internalDLCName.getText());
-				starterKit.setMountflag(flagModel.getElementAt(mountFlagsCombobox.getSelectedIndex()));
-				starterKit.setMountpriority(mountpriorityval);
-				starterKit.setTlkid(internaltlkidval);
-				ModManager.debugLogger.writeMessage("Executing StarterKit Generator");
-				starterKit.execute();
+					//create
+					StarterKitGenerator starterKit = new StarterKitGenerator(createButton, progressBar, StarterKitWindow.this);
+					starterKit.setModname(modName.getText().trim());
+					starterKit.setModdev(modDeveloper.getText().trim());
+					starterKit.setModsite(modSite.getText().trim());
+					String moddesc = modDescription.getText().trim();
+					if (moddesc.length() <= 0) {
+						moddesc = "This mod was generated by Mod Manager Custom DLC Starter Kit.";
+					}
+					starterKit.setModdesc(moddesc);
+					starterKit.setInternaldisplayname(internalDisplayName.getText().trim());
+					starterKit.setInternaldlcname(internalDLCName.getText().trim());
+					starterKit.setMountflag(flagModel.getElementAt(mountFlagsCombobox.getSelectedIndex()));
+					starterKit.setMountpriority(mountpriorityval);
+					starterKit.setTlkid(internaltlkidval);
+					ModManager.debugLogger.writeMessage("Executing StarterKit Generator");
+					starterKit.execute();
+				}
 			}
 		});
 		c.gridx = 0;
@@ -217,41 +249,95 @@ public class StarterKitWindow extends JDialog {
 		add(panel);
 
 		//DEBUG ONLY
-/*		modName.setText("Starter Kit Testing");
-		internalDisplayName.setText("Starter Kit Testing");
-		internalTLKId.setText("6700000");
-		mountPriority.setText("4505");
-		internalDLCName.setText("StartKitTest");
-		modDeveloper.setText("Gatomade");
-		modSite.setText("http://example.com");
-		modDescription.setText("This is what a mod description looks like.\nIt has multiple lines.\nOf txt.");*/
+		/*
+		 * modName.setText("Starter Kit Testing");
+		 * internalDisplayName.setText("Starter Kit Testing");
+		 * internalTLKId.setText("6700000"); mountPriority.setText("4505");
+		 * internalDLCName.setText("StartKitTest");
+		 * modDeveloper.setText("Gatomade");
+		 * modSite.setText("http://example.com"); modDescription.setText(
+		 * "This is what a mod description looks like.\nIt has multiple lines.\nOf txt."
+		 * );
+		 */
 		pack();
 	}
 
-	class PositiveIntVerifier extends InputVerifier {
-		@Override
-		public boolean verify(JComponent input) {
-			String text = ((JTextField) input).getText();
-			try {
-				int value = Integer.parseInt(text);
-				return (value > 0 && value < 20000);
-			} catch (NumberFormatException e) {
+	private boolean validateFields() {
+		String modname = modName.getText().trim();
+		if (modname.length() <= 0) {
+			showErrorMessage("Invalid mod name. The mod name must be at least 1 alphanumeric character.");
+			return false;
+		}
+
+		//ASCII only check
+		if (!modname.chars().allMatch(c -> c == 0x20 || c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B))) {
+			showErrorMessage("Invalid Mod Name. Only spaces, underscores and alphanumeric characters are allowed. (Windows restriction)");
+			return false;
+		}
+
+		String modDev = modDeveloper.getText().trim();
+		if (modDev.length() <= 0) {
+			showErrorMessage("Invalid mod developer name. Enter the name you want to Mod Manager to show as the developer.");
+			return false;
+		}
+
+		String modsite = modSite.getText().trim();
+		if (!modsite.equals("")) {
+			String[] schemes = { "http", "https" }; // DEFAULT schemes = "http", "https", "ftp"
+			UrlValidator urlValidator = new UrlValidator(schemes);
+			if (!urlValidator.isValid(modsite)) {
+				showErrorMessage("Invalid mod site. This is the clickable link at the bottom of Mod Manager mod descriptions in the right side pane.\nThe specified URL is not valid.");
 				return false;
 			}
 		}
+
+		String intDispName = internalDisplayName.getText().trim();
+		if (intDispName.length() <= 0 || intDispName.length() > 75) {
+			showErrorMessage("Invalid Internal Name. Valid lengths are between 1 and 75 characters.");
+			return false;
+		}
+
+		//Internal DLC Name
+		String intDLCName = internalDLCName.getText().trim();
+		if (intDLCName.length() < 1 || intDLCName.length() > 20) {
+			showErrorMessage("Invalid Internal DLC Name. Length must be between 1 and 20 characters.\nThis is the part that comes after DLC_CON_, e.g. DNA for DLC_CON_DNA.");
+			return false;
+		}
+
+		//ASCII only check
+		if (!intDLCName.chars().allMatch(c -> c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B))) {
+			showErrorMessage("Invalid Internal DLC Name. Only underscore and alphanumeric characters are allowed by the game.");
+			return false;
+		}
+
+		//Internal TLK ID
+		String intTLKId = internalTLKId.getText().trim();
+		try {
+			int s = Integer.parseInt(intTLKId);
+			if (s < 1 || s > Integer.MAX_VALUE / 2) {
+				throw new NumberFormatException();
+			}
+		} catch (NumberFormatException e) {
+			showErrorMessage("Invalid Internal TLK ID. Value must be between 1 and " + Integer.MAX_VALUE / 2 + ".");
+			return false;
+		}
+
+		//Mount Priority
+		String priorityString = mountPriority.getText().trim();
+		try {
+			short s = Short.parseShort(priorityString);
+			if (s < 1 || s > 32767) {
+				throw new NumberFormatException();
+			}
+		} catch (NumberFormatException e) {
+			showErrorMessage("Invalid Mount Priority. Value must be between 1 and " + Short.MAX_VALUE + ".");
+			return false;
+		}
+		return true;
 	}
-	
-	class PositiveTLKIntVerifier extends InputVerifier {
-		@Override
-		public boolean verify(JComponent input) {
-			String text = ((JTextField) input).getText();
-			try {
-				int value = Integer.parseInt(text);
-				return (value > 0 && value < Integer.MAX_VALUE / 2);
-			} catch (NumberFormatException e) {
-				return false;
-			}
-		}
+
+	private void showErrorMessage(String string) {
+		JOptionPane.showMessageDialog(this, string, "Invalid value", JOptionPane.ERROR_MESSAGE);
 	}
 
 	static class StarterKitGenerator extends SwingWorker<Boolean, ThreadCommand> {
@@ -418,10 +504,12 @@ public class StarterKitWindow extends JDialog {
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 60));
 			publish(new ThreadCommand("SET_DIALOG_TEXT", "Moving Default_DLC_CON_" + internaldlcname));
 			ModManager.debugLogger.writeMessage("Recompiling Default_DLC_CON_" + internaldlcname + ".bin");
-			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname + ".xml");
+			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_"
+					+ internaldlcname + ".xml");
 			FileUtils.deleteQuietly(new File(coalpath));
 			ModManager.debugLogger.writeMessage("Moving Default_DLC_CON_" + internaldlcname + ".bin to " + coalpath);
-			FileUtils.moveFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname + ".bin"), new File(coalpath));
+			FileUtils.moveFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname
+					+ ".bin"), new File(coalpath));
 
 			//update mount.dlc
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 70));
@@ -445,8 +533,8 @@ public class StarterKitWindow extends JDialog {
 
 			//move coaleseced folder
 			ModManager.debugLogger.writeMessage("Moving Coalesced folder");
-			FileUtils.moveDirectory(new File(cookedPath + "Default_DLC_CON_" + internaldlcname),
-					new File(modpath + "WORKSPACE" + File.separator + "Default_DLC_CON_" + internaldlcname));
+			FileUtils.moveDirectory(new File(cookedPath + "Default_DLC_CON_" + internaldlcname), new File(modpath + "WORKSPACE" + File.separator
+					+ "Default_DLC_CON_" + internaldlcname));
 
 			//Create moddesc.ini
 			ModManager.debugLogger.writeMessage("Creating moddesc.ini for " + modname);
@@ -535,17 +623,24 @@ public class StarterKitWindow extends JDialog {
 			}
 			if (callingDialog instanceof StarterKitWindow) {
 				if (OK) {
-					JOptionPane.showMessageDialog(callingDialog,
-							modname + " has been created.\nPlace files into the mod's DLC_CON_" + internaldlcname
-									+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
-							modname + " created", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane
+							.showMessageDialog(
+									callingDialog,
+									modname
+											+ " has been created.\nPlace files into the mod's DLC_CON_"
+											+ internaldlcname
+											+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
+									modname + " created", JOptionPane.INFORMATION_MESSAGE);
 					callingDialog.dispose();
 					ResourceUtils.openDir(generatedMod.getModPath());
 					new ModManagerWindow(false);
 				} else {
-					JOptionPane.showMessageDialog(callingDialog,
-							modname + " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the log attached.",
-							modname + " not created", JOptionPane.ERROR_MESSAGE);
+					JOptionPane
+							.showMessageDialog(
+									callingDialog,
+									modname
+											+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the log attached.",
+									modname + " not created", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		}
@@ -582,6 +677,35 @@ public class StarterKitWindow extends JDialog {
 			this.setPreferredSize(size);
 			this.pack();
 			this.setLocationRelativeTo(dialog);
+		}
+	}
+
+	class ValidationLayerUI extends LayerUI<JFormattedTextField> {
+		@Override
+		public void paint(Graphics g, JComponent c) {
+			super.paint(g, c);
+
+			JLayer jlayer = (JLayer) c;
+			JFormattedTextField ftf = (JFormattedTextField) jlayer.getView();
+			if (!ftf.isEditValid()) {
+				Graphics2D g2 = (Graphics2D) g.create();
+
+				// Paint the red X.
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				int w = c.getWidth();
+				int h = c.getHeight();
+				int s = 8;
+				int pad = 4;
+				int x = w - pad - s;
+				int y = (h - s) / 2;
+				g2.setPaint(Color.red);
+				g2.fillRect(x, y, s + 1, s + 1);
+				g2.setPaint(Color.white);
+				g2.drawLine(x, y, x + s, y + s);
+				g2.drawLine(x, y + s, x + s, y);
+
+				g2.dispose();
+			}
 		}
 	}
 }
