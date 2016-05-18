@@ -90,6 +90,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_ME3EXPLORER_MAIN = 2;
 	public static final int MIN_REQUIRED_ME3EXPLORER_MINOR = 0;
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 3;
+	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 6; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
@@ -955,14 +956,14 @@ public class ModManager {
 		return getToolsDir() + "GUITransplanter/";
 	}
 
-	public static String getGUITransplanterCLI() {
+	public static String getGUITransplanterCLI(boolean download) {
 		File transplanterexe = new File(getGUITransplanterDir() + "Transplanter-CLI.exe");
-		if (!transplanterexe.exists()) {
+		if (!transplanterexe.exists() && download) {
 			if (!downloadGUITransplanter()) {
 				return null;
 			}
 		}
-		if (!transplanterexe.exists()) {
+		if (!transplanterexe.exists() && download) {
 			//still hasn't downloaded...
 			return null;
 		}
@@ -2016,7 +2017,14 @@ public class ModManager {
 		return foldernames;
 	}
 
-	public static String getGUILibraryFor(String dlcname) {
+	
+	/**
+	 * Gets the path to the GUI library specified by the DLC name
+	 * @param dlcname DLC to get library for
+	 * @param download Download library if library not found. If set to false, this will return the library path, if true it will return null if the library can't be downloaded.
+	 * @return library path or null if download is true and library can't be downloaded
+	 */
+	public static String getGUILibraryFor(String dlcname, boolean download) {
 		String libraryPath = getUILibraryPath();
 		switch (dlcname) {
 		case "DLC_CON_XBX":
@@ -2031,10 +2039,10 @@ public class ModManager {
 		}
 
 		File libraryFolder = new File(libraryPath);
-		if (!libraryFolder.exists() || !libraryFolder.isDirectory()) {
+		if (!libraryFolder.exists() && download || !libraryFolder.isDirectory() && download) {
 			downloadGUILibrary(dlcname);
 		}
-		if (!libraryFolder.exists()) {
+		if (!libraryFolder.exists() && download) {
 			return null;
 		}
 		return libraryPath;

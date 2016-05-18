@@ -250,8 +250,8 @@ public class CustomDLCConflictWindow extends JDialog {
 
 		@Override
 		protected Boolean doInBackground() throws Exception {
-			String guilibrarypath = ModManager.getGUILibraryFor(conflictingGUIMod);
-			String transplanterpath = ModManager.getGUITransplanterCLI();
+			String guilibrarypath = ModManager.getGUILibraryFor(conflictingGUIMod,true);
+			String transplanterpath = ModManager.getGUITransplanterCLI(true);
 			if (guilibrarypath == null) {
 				publish(new ThreadCommand("MISSING_GUI_LIBRARY"));
 				return false;

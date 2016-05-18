@@ -373,6 +373,53 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			return null;
 		}
+		
+		/**
+		 * Parses additional info out of the latest server json related to GUI
+		 * library info
+		 * 
+		 * @param serversJSON
+		 */
+		private void checkForGUIupdates(JSONObject serversJSON) {
+			Object obj = serversJSON.get("latest_guitransplanter");
+			long latestGUITransplanter = ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD;
+			if (obj != null) {
+				if (obj instanceof Long) {
+					latestGUITransplanter = (long) obj;
+					String cliPath = ModManager.getGUITransplanterCLI(false);
+					//update GUI Transplanter
+					File cli = new File(cliPath);
+					if (cli.exists()) {
+						int build = EXEFileInfo.getRevisionOfProgram(cliPath);
+						if (build < latestGUITransplanter) {
+							//download
+							publish("Downloading update for GUI Transplanter");
+							ModManager.debugLogger.writeMessage("GUI Transplanter is out of date from server. Local " + build + " vs server " + latestGUITransplanter);
+							File transplanterFolder = cli.getParentFile();
+							FileUtils.deleteQuietly(transplanterFolder);
+							ModManager.debugLogger.writeMessage("Downloading new GUI Transplanter");
+							String newcli = ModManager.getGUITransplanterCLI(true);
+							if (newcli != null) {
+								int newbuild = EXEFileInfo.getRevisionOfProgram(cliPath);
+								if (newbuild == latestGUITransplanter) {
+									ModManager.debugLogger.writeMessage("Downloaded latest GUI Transplanter build: " + newbuild);
+									publish("Updated GUI Transplanter");
+								} else {
+									ModManager.debugLogger.writeError("Failed to download proper updated build. Instead we downloaded: " + newbuild);
+									publish("Failed to download new GUI Transplanter");
+								}
+							} else {
+								ModManager.debugLogger.writeError("Failed to download GUI Transplanter");
+								publish("Failed to download new GUI Transplanter");
+							}
+						}
+					}
+				}
+			}
+
+			String uiLibPath = ModManager.getGUILibraryFor("DLC_CON_UIScaling", false);
+			String xbxLibPath = ModManager.getGUILibraryFor("DLC_CON_XBX", false);
+		}
 
 		private void checkForME3ExplorerUpdates() {
 			String me3explorer = ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe";
@@ -537,11 +584,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (ModManager.IS_DEBUG) {
 				update_check_link = "http://webdev-c9-mgamerz.c9.io/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 			} else {
-				update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
+				update_check_link = "https://me3tweaks.com/modmanager/updatecheck-testing?currentversion=" + ModManager.BUILD_NUMBER;
 			}
 			String serverJSON = null;
 			try {
 				serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
+				System.out.println(update_check_link);
 			} catch (Exception e) {
 				ModManager.debugLogger.writeError("Error checking for updates:");
 				ModManager.debugLogger.writeException(e);
@@ -584,6 +632,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("No updates, at latest version. (or could not contact update server.)");
 				labelStatus.setText("No Mod Manager updates available");
 				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+				checkForGUIupdates(latest_object);
 				return null;
 			}
 
@@ -593,6 +642,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("No updates, at latest version.");
 				labelStatus.setText("Mod Manager is up to date");
 				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+				checkForGUIupdates(latest_object);
 				return null;
 			}
 
@@ -640,6 +690,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				labelStatus.setVisible(true);
 				labelStatus.setText("No updates available");
 			}
+			checkForGUIupdates(latest_object);
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeErrorWithException("Error parsing server response:", e);
