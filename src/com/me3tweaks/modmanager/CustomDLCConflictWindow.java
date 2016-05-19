@@ -33,6 +33,7 @@ import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -45,6 +46,7 @@ import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.ui.MultiLineTableCell;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -72,7 +74,7 @@ public class CustomDLCConflictWindow extends JDialog {
 	}
 
 	private void setupWindow() {
-		setPreferredSize(new Dimension(500, 500));
+		setPreferredSize(new Dimension(600, 500));
 		setTitle("Custom DLC Conflicts");
 		setIconImages(ModManager.ICONS);
 		setModalityType(ModalityType.APPLICATION_MODAL);
@@ -101,10 +103,10 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			//write values to table data
 			data[i][COL_FILENAME] = key;
-			data[i][COL_SUPERCEDING] = value.get(value.size() - 1).getDlcName();
+			data[i][COL_SUPERCEDING] = value.get(value.size() - 1).getDlcName() + " (" + value.get(value.size() - 1).getMountFile().getMountPriority() + ")";
 			String superceeded = "";
 			for (int x = 0; x <= value.size() - 2; x++) {
-				superceeded += value.get(x).getDlcName() + " ";
+				superceeded += value.get(x).getDlcName() + " (" + value.get(x).getMountFile().getMountPriority() + ")\n";
 			}
 
 			data[i][COL_SUPERCEDED] = superceeded;
@@ -113,9 +115,18 @@ public class CustomDLCConflictWindow extends JDialog {
 
 		String[] columnNames = { "Filename", "Superceding DLC", "Superceeded DLC" };
 		DefaultTableModel model = new DefaultTableModel(data, columnNames);
+		final MultiLineTableCell mltc = new MultiLineTableCell();
 		JTable table = new JTable(model) {
 			public boolean isCellEditable(int row, int column) {
 				return false;
+			}
+
+			public TableCellRenderer getCellRenderer(int row, int column) {
+				if (column == COL_SUPERCEDED) {
+					return mltc;
+				} else {
+					return super.getCellRenderer(row, column);
+				}
 			}
 		};
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -126,7 +137,6 @@ public class CustomDLCConflictWindow extends JDialog {
 		table.getColumnModel().getColumn(COL_SUPERCEDING).setCellRenderer(centerRenderer);
 
 		JScrollPane scrollpane = new JScrollPane(table);
-
 		JPanel panel = new JPanel(new BorderLayout());
 
 		String buttonText = "<html><center>Files listed below are Custom DLC files that have conflicts.<br>The Custom DLC with the highest mount priority will supercede others, and may cause the the superceded DLC to not work or cause game instability.<br><u><font color='#000099'>Click for info on how to toggle DLC in Mod Manager.</u></font></center></html>";
