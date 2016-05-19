@@ -35,7 +35,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
+import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.StarterKitWindow.StarterKitGenerator;
 import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.ModType;
@@ -43,6 +45,7 @@ import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /**
@@ -241,6 +244,8 @@ public class CustomDLCConflictWindow extends JDialog {
 		private HashMap<String, CustomDLC> secondPriorityUIConflictFiles;
 		private String modName;
 		private String biogameDirectory;
+		private Lock lock = new ModManager.Lock();
+		private boolean userAcceptedFirstFailMessage = false;
 
 		public GUICompatGeneratorThread(String modName, String biogameDirectory, HashMap<String, CustomDLC> secondPriorityUIConflictFiles2) {
 			this.modName = modName;
@@ -250,7 +255,7 @@ public class CustomDLCConflictWindow extends JDialog {
 
 		@Override
 		protected Boolean doInBackground() throws Exception {
-			String guilibrarypath = ModManager.getGUILibraryFor(conflictingGUIMod,true);
+			String guilibrarypath = ModManager.getGUILibraryFor(conflictingGUIMod, true);
 			String transplanterpath = ModManager.getGUITransplanterCLI(true);
 			if (guilibrarypath == null) {
 				publish(new ThreadCommand("MISSING_GUI_LIBRARY"));
@@ -259,6 +264,14 @@ public class CustomDLCConflictWindow extends JDialog {
 			if (transplanterpath == null) {
 				publish(new ThreadCommand("MISSING_TRANSPLANTER"));
 				return false;
+			} else {
+				//check version
+				int version = EXEFileInfo.getRevisionOfProgram(transplanterpath);
+				if (version < ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD) {
+					publish(new ThreadCommand("OUTDATED_TRANSPLANTER", Integer.toString(version)));
+					return false;
+				}
+
 			}
 
 			String internalName = modName.toUpperCase().replaceAll(" ", "_");
@@ -344,14 +357,28 @@ public class CustomDLCConflictWindow extends JDialog {
 				commandBuilder.add(transplanterpath);
 				commandBuilder.add("--injectswf");
 				commandBuilder.add("--inputfolder");
-				commandBuilder.add(ResourceUtils.normalizeFilePath(guilibrarypath,true));
+				commandBuilder.add(ResourceUtils.normalizeFilePath(guilibrarypath, true));
 				commandBuilder.add("--targetfile");
-				commandBuilder.add(ResourceUtils.normalizeFilePath(transplantFile,true));
+				commandBuilder.add(ResourceUtils.normalizeFilePath(transplantFile, true));
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 				ModManager.debugLogger.writeMessage("Injecting SWFs into " + transplantFile);
 				int returncode = 1;
 				ProcessBuilder pb = new ProcessBuilder(command);
 				returncode = ModManager.runProcess(pb).getReturnCode();
+				if (returncode != 0) {
+					//ERROR!
+					ModManager.debugLogger.writeError("GUI Transplanter returned non zero code, PCC failed to verify. Aborting");
+					publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanted PCC failed to verify"));
+					publish(new ThreadCommand("ERROR_PCC_VERIFY_FAILED", FilenameUtils.getName(transplantFile)));
+					ModManager.debugLogger.writeError("UI Mod Compat Builder has encountered a critical error. Performing cleanup procedures.");
+					FileUtils.deleteQuietly(new File(skg.getGeneratedMod().getModPath()));
+					synchronized (lock) {
+						while (!userAcceptedFirstFailMessage) {
+							lock.wait();
+						}
+					}
+					return false;
+				}
 				i += 1;
 			}
 
@@ -404,6 +431,24 @@ public class CustomDLCConflictWindow extends JDialog {
 							"Unable to aquire the required GUI transplanting tool.\nMake sure you are online so Mod Manager can download it if necessary.", "Missing GUI Library",
 							JOptionPane.ERROR_MESSAGE);
 					break;
+				case "OUTDATED_TRANSPLANTER":
+					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
+							"To build GUI compatibility packages, you need to have GUI Transplanter 1.0.0." + ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD
+									+ " or higher.\nYour local version is 1.0.0." + tc.getMessage()
+									+ ".\nMod Manager will automatically update this tool as it checks for updates at startup.",
+							"Outdated GUI Transplanter", JOptionPane.ERROR_MESSAGE);
+					break;
+				case "ERROR_PCC_VERIFY_FAILED":
+					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
+							"PCC failed to verify while transplanting: " + tc.getMessage()
+									+ "\nInstalling this mod with this file would crash your game when it loaded.\nBuilding this compatibility pack has been aborted.",
+							"PCC failed to verify", JOptionPane.ERROR_MESSAGE);
+					userAcceptedFirstFailMessage = true;
+					synchronized (lock) {
+						lock.notifyAll();
+					}
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Unable to build GUI compatibility mod");
+					break;
 				case "ERROR_FILE_COPY_INTO_COMPAT":
 					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, "Error copying conflicting files into the new mod.", "Missing GUI Library",
 							JOptionPane.ERROR_MESSAGE);
@@ -443,7 +488,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			} else {
 				statusText.setText(modName + " was not created");
 				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
-						"An error occured while generating the compatibility mod.\nOpen the log viewer to find more detailed information.\n\nIf you continue to have issues, please contact FemShep (see the help menu) and attach the log to your message.",
+						"An error occured while generating the compatibility mod.\nOpen the log viewer to find more detailed information.\n\nIf you continue to have issues, please contact FemShep (see the help menu)\nand attach the log to your message.",
 						"Mod not created", JOptionPane.ERROR_MESSAGE);
 				dispose();
 			}
