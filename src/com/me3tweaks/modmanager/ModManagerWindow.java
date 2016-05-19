@@ -25,9 +25,7 @@ import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -57,6 +55,8 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import net.iharder.dnd.FileDrop;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -81,6 +81,7 @@ import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModList;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.RestoreMode;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
@@ -93,8 +94,6 @@ import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomAction
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
-
-import net.iharder.dnd.FileDrop;
 
 /**
  * Controls the main window for Mass Effect 3 Mod Manager.
@@ -261,25 +260,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @author Michael
 	 *
 	 */
-	class NetworkThread extends SwingWorker<Void, Object> {
+	class NetworkThread extends SwingWorker<Void, ThreadCommand> {
 
 		@Override
 		public Void doInBackground() {
 			File f7za = new File(ModManager.getToolsDir() + "7za.exe");
 			if (!f7za.exists()) {
-				publish("Downloading 7za Unzipper");
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7za Unzipper"));
 				ModManager.debugLogger.writeMessage("7za.exe does not exist at the following path, downloading new copy: " + f7za.getAbsolutePath());
 				String url = "http://me3tweaks.com/modmanager/tools/7za.exe";
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
 					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7za.exe"));
-					publish("Downloaded 7za Unzipper into tools directory");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 7za Unzipper into tools directory"));
 					ModManager.debugLogger.writeMessage("Downloaded missing 7za.exe file for updating Mod Manager");
 
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Error downloading 7za into tools folder", e);
-					publish("Error downloading 7za");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7za"));
 				}
 			} else {
 				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
@@ -287,19 +286,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			File lzma = new File(ModManager.getToolsDir() + "lzma.exe");
 			if (!lzma.exists()) {
-				publish("Downloading LZMA tool");
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading LZMA tool"));
 				ModManager.debugLogger.writeMessage("lzma.exe does not exist at the following path, downloading new copy: " + lzma.getAbsolutePath());
 				String url = "http://me3tweaks.com/modmanager/tools/lzma.exe";
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
 					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "lzma.exe"));
-					publish("Downloaded lzma.exe into tools directory");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded lzma.exe into tools directory"));
 					ModManager.debugLogger.writeMessage("Downloaded missing lzma.exe file for preparing mod updates");
 
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Error downloading lzma into tools folder", e);
-					publish("Error downloading lzma");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading lzma"));
 				}
 			} else {
 				ModManager.debugLogger.writeMessage("lzma.exe is present in tools/ directory");
@@ -310,7 +309,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			File tmtlk = new File(ModManager.getTankMasterTLKDir() + "MassEffect3.TlkEditor.exe");
 
 			if (!tmtlk.exists() || !tmc.exists()) {
-				publish("Downloading Tankmaster Tools");
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading Tankmaster Tools"));
 				ModManager.debugLogger.writeMessage("Tankmaster's TLK/COALESCE tools are missing, downloading new copy: " + tmtlk.getAbsolutePath());
 				String url = "http://me3tweaks.com/modmanager/tools/tankmastertools.7z";
 				try {
@@ -351,14 +350,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 					ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (p != null && returncode == 0));
 					if (returncode == 0) {
-						publish("Downloaded Tankmaster Tools into data directory");
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded Tankmaster Tools into data directory"));
 					} else {
-						publish("Unknown error downloading Tankmaster tools");
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Unknown error downloading Tankmaster tools"));
 					}
 					FileUtils.deleteQuietly(new File(ModManager.getTempDir() + "tankmastertools.7z"));
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Error downloading 7za into tools folder", e);
-					publish("Error downloading 7za for updating");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7za for updating"));
 				}
 			} else {
 				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
@@ -378,7 +377,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			String me3explorer = ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe";
 			File f = new File(me3explorer);
 			if (!f.exists()) {
-				ModManager.debugLogger.writeMessage("ME3Explorer is missing. Downloading from ME3TWeaks.");
+				ModManager.debugLogger.writeMessage("ME3Explorer is missing. Downloading from ME3Tweaks.");
 				if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
 					new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
 				} else {
@@ -415,12 +414,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0) {
 					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
 							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK) + " since the last help/mods update check.");
-					publish("Downloading latest help information");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest help information"));
 					HelpMenu.getOnlineHelp();
-					publish("UPDATE_HELP_MENU");
-					publish("Updated help files from server");
+					publish(new ThreadCommand("UPDATE_HELP_MENU"));
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated help files from server"));
 					if (modModel.getSize() > 0) {
-						publish("Checking for updates to mods");
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Checking for updates to mods"));
 						checkAllModsForUpdates(false);
 					}
 				}
@@ -428,21 +427,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		@Override
-		protected void process(List<Object> chunks) {
-			for (Object latest : chunks) {
-				if (latest instanceof String) {
-					String update = (String) latest;
-					switch (update) {
-					case "UPDATE_HELP_MENU":
-						menuBar.remove(helpMenu);
-						menuBar.add(HelpMenu.constructHelpMenu());
-						break;
-					default:
-						labelStatus.setText(update);
-						break;
-					}
-
+		protected void process(List<ThreadCommand> chunks) {
+			for (ThreadCommand latest : chunks) {
+				switch (latest.getCommand()) {
+				case "UPDATE_HELP_MENU":
+					menuBar.remove(helpMenu);
+					menuBar.add(HelpMenu.constructHelpMenu());
+					break;
+				case "SHOW_UPDATE_WINDOW":
+					new UpdateAvailableWindow((JSONObject) latest.getData(), ModManagerWindow.this);
+					break;
+				case "SET_STATUSBAR_TEXT":
+					labelStatus.setText(latest.getMessage());
+					break;
 				}
+
 			}
 		}
 
@@ -455,6 +454,260 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeErrorWithException("Exception in the network thread: ", e);
 			}
 		}
+
+		private Void checkForUpdates() {
+			labelStatus.setText("Checking for Mod Manager updates");
+			ModManager.debugLogger.writeMessage("Checking for update...");
+			// Check for update
+			try {
+				String update_check_link;
+				if (ModManager.IS_DEBUG) {
+					update_check_link = "http://webdev-c9-mgamerz.c9.io/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
+				} else {
+					update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
+				}
+				String serverJSON = null;
+				try {
+					serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
+					System.out.println(update_check_link);
+				} catch (Exception e) {
+					ModManager.debugLogger.writeError("Error checking for updates:");
+					ModManager.debugLogger.writeException(e);
+					labelStatus.setText("Error checking for update (check logs)");
+					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+					return null;
+				}
+				if (serverJSON == null) {
+					ModManager.debugLogger.writeError("No response from server");
+					labelStatus.setText("Updater: No response from server");
+					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+					return null;
+				}
+
+				JSONParser parser = new JSONParser();
+				JSONObject latest_object = (JSONObject) parser.parse(serverJSON);
+				String buildHash = (String) latest_object.get("build_md5");
+				boolean hashMismatch = false;
+				if (new File("ME3CMM.exe").exists()) {
+					try {
+						String currentHash = MD5Checksum.getMD5Checksum("ME3CMM.exe");
+						if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
+							//hash mismatch
+							hashMismatch = true;
+							ModManager.debugLogger.writeMessage("Local hash (" + currentHash + ") does not match server hash (" + buildHash + ")");
+						} else {
+							ModManager.debugLogger.writeMessage("Local hash matches server hash: " + buildHash);
+						}
+					} catch (Exception e1) {
+						ModManager.debugLogger.writeErrorWithException("Unable to hash ME3CMM.exe:", e1);
+					}
+				} else {
+					ModManager.debugLogger.writeMessage("Skipping hash check for updates. Likely running in IDE or some other wizardry");
+				}
+
+				long latest_build = (long) latest_object.get("latest_build_number");
+				if (latest_build < ModManager.BUILD_NUMBER) {
+					//build is newer than current
+					labelStatus.setVisible(true);
+					ModManager.debugLogger.writeMessage("No updates, at latest version. (or could not contact update server.)");
+					labelStatus.setText("No Mod Manager updates available");
+					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+					checkForGUIupdates(latest_object);
+					return null;
+				}
+
+				if (latest_build == ModManager.BUILD_NUMBER && !hashMismatch) {
+					//build is same as server version
+					labelStatus.setVisible(true);
+					ModManager.debugLogger.writeMessage("No updates, at latest version.");
+					labelStatus.setText("Mod Manager is up to date");
+					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+					checkForGUIupdates(latest_object);
+					return null;
+				}
+
+				ModManager.debugLogger
+						.writeMessage("Update check: Local:" + ModManager.BUILD_NUMBER + " Latest: " + latest_build + ", is less? " + (ModManager.BUILD_NUMBER < latest_build));
+
+				boolean showUpdate = true;
+				// make sure the user hasn't declined this one.
+				Wini settingsini;
+				try {
+					settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
+					String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
+					long build_check = ModManager.BUILD_NUMBER;
+					if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
+						try {
+							build_check = Integer.parseInt(showIfHigherThan);
+							if (latest_build > build_check) {
+								// update is newer than one stored in ini, show the
+								// dialog.
+								ModManager.debugLogger.writeMessage("Advertising build " + latest_build);
+								showUpdate = true;
+							} else {
+								ModManager.debugLogger.writeMessage("User isn't seeing updates until build " + build_check);
+								// don't show it.
+								showUpdate = false;
+							}
+						} catch (NumberFormatException e) {
+							ModManager.debugLogger.writeMessage("Number format exception reading the build number updateon in the ini. Showing the dialog.");
+						}
+					}
+				} catch (InvalidFileFormatException e) {
+					ModManager.debugLogger.writeErrorWithException("Invalid INI! Did the user modify it by hand?", e);
+					e.printStackTrace();
+				} catch (IOException e) {
+					ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
+				}
+
+				if (showUpdate) {
+					// An update is available!
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Mod Manager update available"));
+					publish(new ThreadCommand("SHOW_UPDATE_WINDOW", null, latest_object));
+					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+				} else {
+					labelStatus.setVisible(true);
+					labelStatus.setText("No updates available");
+				}
+				checkForGUIupdates(latest_object);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				ModManager.debugLogger.writeErrorWithException("Error parsing server response:", e);
+			}
+			ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+			return null;
+		}
+
+		/**
+		 * Parses additional info out of the latest server json related to GUI
+		 * library info
+		 * 
+		 * @param serversJSON
+		 */
+		private void checkForGUIupdates(JSONObject serversJSON) {
+			Object obj = serversJSON.get("latest_guitransplanter");
+			long latestGUITransplanter = ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD;
+			if (obj != null) {
+				latestGUITransplanter = Long.parseLong((String) obj);
+				String cliPath = ModManager.getGUITransplanterCLI(false);
+				//update GUI Transplanter
+				File cli = new File(cliPath);
+				if (cli.exists()) {
+					ModManager.debugLogger.writeMessage("Checking for updates for GUI Transplanter.");
+					int build = EXEFileInfo.getRevisionOfProgram(cliPath);
+					ModManager.debugLogger.writeMessage("The local build of GUI Transplanter is currently 1.0.0." + build + ".");
+					if (build < latestGUITransplanter) {
+						//download
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading update for GUI Transplanter"));
+						ModManager.debugLogger.writeMessage("GUI Transplanter is out of date from server. Local " + build + " vs server " + latestGUITransplanter);
+						File transplanterFolder = cli.getParentFile();
+						FileUtils.deleteQuietly(transplanterFolder);
+						ModManager.debugLogger.writeMessage("Downloading new GUI Transplanter");
+						String newcli = ModManager.getGUITransplanterCLI(true);
+						if (newcli != null) {
+							int newbuild = EXEFileInfo.getRevisionOfProgram(cliPath);
+							if (newbuild == latestGUITransplanter) {
+								ModManager.debugLogger.writeMessage("Downloaded latest GUI Transplanter build: " + newbuild);
+								publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated GUI Transplanter"));
+							} else {
+								ModManager.debugLogger.writeError("Failed to download proper updated build. Instead we downloaded: " + newbuild);
+								publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to download new GUI Transplanter"));
+							}
+						} else {
+							ModManager.debugLogger.writeError("Failed to download GUI Transplanter");
+							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to download new GUI Transplanter"));
+						}
+					} else {
+						ModManager.debugLogger.writeMessage("GUI Transplanter is up to date (1.0.0." + build + ")");
+					}
+				} else {
+					ModManager.debugLogger.writeMessage("No GUI Transplanter tool downloaded, skipping update check for it");
+				}
+			}
+
+			String uiLibPath = ModManager.getGUILibraryFor("DLC_CON_UIScaling", false);
+			{
+				File uiLibVersionFile = new File(uiLibPath + "libraryversion.txt");
+				ModManager.debugLogger.writeMessage("Checking for UISCALING GUI library version file at " + uiLibVersionFile);
+				if (uiLibVersionFile.exists()) {
+					try {
+						String uilibverstr = FileUtils.readFileToString(uiLibVersionFile);
+						double libver = Double.parseDouble(uilibverstr);
+						ModManager.debugLogger.writeMessage("Local UISCALING library version: " + libver);
+						obj = serversJSON.get("latest_uiscaling_guilibrary");
+						if (obj != null) {
+							double serverver = Double.parseDouble((String) obj);
+							if (libver < serverver) {
+								ModManager.debugLogger.writeMessage("UIScaling Library is out of date, updating...");
+								FileUtils.deleteQuietly(new File(uiLibPath));
+								publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updating Interface Scaling Mod GUI library"));
+								String newLib = ModManager.getGUILibraryFor("DLC_CON_UIScaling", true);
+								if (newLib != null) {
+									String newlibverstr = FileUtils.readFileToString(uiLibVersionFile);
+									double newlibver = Double.parseDouble(newlibverstr);
+									if (newlibver == serverver) {
+										ModManager.debugLogger.writeMessage("Downloaded latest Interface Scaling Mod GUI Library: " + newlibver);
+										publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated Interface Scaling Mod GUI library"));
+									} else {
+										ModManager.debugLogger.writeError("Failed to download proper updated GUI Library. Instead we downloaded: " + newlibver);
+										publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to download new GUI Library"));
+									}
+								}
+							} else {
+								ModManager.debugLogger.writeMessage("Local UISCALING library is up to date");
+							}
+						}
+					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("Error reading local settings:", e);
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeErrorWithException("Error parsing version numbers:", e);
+					}
+				} else {
+					ModManager.debugLogger.writeMessage("No UIScaling GUI Library, skipping update check for it");
+				}
+			}
+
+			String xbxLibPath = ModManager.getGUILibraryFor("DLC_CON_XBX", false);
+			File xbxLibVersionFile = new File(xbxLibPath + "libraryversion.txt");
+			ModManager.debugLogger.writeMessage("Checking for XBX GUI library version file at " + xbxLibVersionFile);
+			if (xbxLibVersionFile.exists()) {
+				try {
+					String xbxlibverstr = FileUtils.readFileToString(xbxLibVersionFile);
+					double libver = Double.parseDouble(xbxlibverstr);
+					ModManager.debugLogger.writeMessage("Local XBX library version: " + libver);
+					obj = serversJSON.get("latest_xbx_guilibrary");
+					if (obj != null) {
+						double serverver = Double.parseDouble((String) obj);
+						if (libver < serverver) {
+							ModManager.debugLogger.writeMessage("XBX Library is out of date, updating...");
+							FileUtils.deleteQuietly(new File(uiLibPath));
+							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updating SP Controller Support GUI library"));
+							String newLib = ModManager.getGUILibraryFor("DLC_CON_XBX", true);
+							if (newLib != null) {
+								String newlibverstr = FileUtils.readFileToString(xbxLibVersionFile);
+								double newlibver = Double.parseDouble(newlibverstr);
+								if (newlibver == serverver) {
+									ModManager.debugLogger.writeMessage("Downloaded latest SP Controller Support GUI Library: " + newlibver);
+									publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated SP Controller Support GUI library"));
+								} else {
+									ModManager.debugLogger.writeError("Failed to download proper updated GUI Library. Instead we downloaded: " + newlibver);
+									publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to download new GUI Library"));
+								}
+							}
+						} else {
+							ModManager.debugLogger.writeMessage("Local XBX library is up to date");
+						}
+					}
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Error reading local settings:", e);
+				} catch (NumberFormatException e) {
+					ModManager.debugLogger.writeErrorWithException("Error parsing version numbers:", e);
+				}
+			} else {
+				ModManager.debugLogger.writeMessage("No XBX GUI Library, skipping update check for it");
+			}
+		}
+
 	}
 
 	class SingleModUpdateCheckThread extends SwingWorker<Void, Object> {
@@ -526,126 +779,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeErrorWithException("Exception in the single mod update thread: ", e);
 			}
 		}
-	}
 
-	private Void checkForUpdates() {
-		labelStatus.setText("Checking for Mod Manager updates");
-		ModManager.debugLogger.writeMessage("Checking for update...");
-		// Check for update
-		try {
-			String update_check_link;
-			if (ModManager.IS_DEBUG) {
-				update_check_link = "http://webdev-c9-mgamerz.c9.io/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
-			} else {
-				update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
-			}
-			String serverJSON = null;
-			try {
-				serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
-			} catch (Exception e) {
-				ModManager.debugLogger.writeError("Error checking for updates:");
-				ModManager.debugLogger.writeException(e);
-				labelStatus.setText("Error checking for update (check logs)");
-				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-				return null;
-			}
-			if (serverJSON == null) {
-				ModManager.debugLogger.writeError("No response from server");
-				labelStatus.setText("Updater: No response from server");
-				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-				return null;
-			}
-
-			JSONParser parser = new JSONParser();
-			JSONObject latest_object = (JSONObject) parser.parse(serverJSON);
-			String buildHash = (String) latest_object.get("build_md5");
-			boolean hashMismatch = false;
-			if (new File("ME3CMM.exe").exists()) {
-				try {
-					String currentHash = MD5Checksum.getMD5Checksum("ME3CMM.exe");
-					if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
-						//hash mismatch
-						hashMismatch = true;
-						ModManager.debugLogger.writeMessage("Local hash (" + currentHash + ") does not match server hash (" + buildHash + ")");
-					} else {
-						ModManager.debugLogger.writeMessage("Local hash matches server hash: " + buildHash);
-					}
-				} catch (Exception e1) {
-					ModManager.debugLogger.writeErrorWithException("Unable to hash ME3CMM.exe:", e1);
-				}
-			} else {
-				ModManager.debugLogger.writeMessage("Skipping hash check for updates. Likely running in IDE or some other wizardry");
-			}
-
-			long latest_build = (long) latest_object.get("latest_build_number");
-			if (latest_build < ModManager.BUILD_NUMBER) {
-				//build is newer than current
-				labelStatus.setVisible(true);
-				ModManager.debugLogger.writeMessage("No updates, at latest version. (or could not contact update server.)");
-				labelStatus.setText("No Mod Manager updates available");
-				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-				return null;
-			}
-
-			if (latest_build == ModManager.BUILD_NUMBER && !hashMismatch) {
-				//build is same as server version
-				labelStatus.setVisible(true);
-				ModManager.debugLogger.writeMessage("No updates, at latest version.");
-				labelStatus.setText("Mod Manager is up to date");
-				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-				return null;
-			}
-
-			ModManager.debugLogger
-					.writeMessage("Update check: Local:" + ModManager.BUILD_NUMBER + " Latest: " + latest_build + ", is less? " + (ModManager.BUILD_NUMBER < latest_build));
-
-			boolean showUpdate = true;
-			// make sure the user hasn't declined this one.
-			Wini settingsini;
-			try {
-				settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-				String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
-				long build_check = ModManager.BUILD_NUMBER;
-				if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
-					try {
-						build_check = Integer.parseInt(showIfHigherThan);
-						if (latest_build > build_check) {
-							// update is newer than one stored in ini, show the
-							// dialog.
-							ModManager.debugLogger.writeMessage("Advertising build " + latest_build);
-							showUpdate = true;
-						} else {
-							ModManager.debugLogger.writeMessage("User isn't seeing updates until build " + build_check);
-							// don't show it.
-							showUpdate = false;
-						}
-					} catch (NumberFormatException e) {
-						ModManager.debugLogger.writeMessage("Number format exception reading the build number updateon in the ini. Showing the dialog.");
-					}
-				}
-			} catch (InvalidFileFormatException e) {
-				ModManager.debugLogger.writeErrorWithException("Invalid INI! Did the user modify it by hand?", e);
-				e.printStackTrace();
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
-			}
-
-			if (showUpdate) {
-				// An update is available!
-				labelStatus.setVisible(true);
-				labelStatus.setText("Update available");
-				new UpdateAvailableWindow(latest_object, this);
-				ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-			} else {
-				labelStatus.setVisible(true);
-				labelStatus.setText("No updates available");
-			}
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			ModManager.debugLogger.writeErrorWithException("Error parsing server response:", e);
-		}
-		ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-		return null;
 	}
 
 	/**
