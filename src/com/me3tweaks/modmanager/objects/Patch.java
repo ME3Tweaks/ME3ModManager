@@ -103,6 +103,7 @@ public class Patch implements Comparable<Patch> {
 				isValid = false;
 				return;
 			}
+			patchPath = patchFile.getAbsolutePath();
 
 			ModManager.debugLogger.writeMessageConditionally("Patch Folder: " + patchFolderPath, ModManager.LOG_PATCH_INIT);
 			ModManager.debugLogger.writeMessageConditionally("Patch Name: " + patchName, ModManager.LOG_PATCH_INIT);
@@ -364,7 +365,7 @@ public class Patch implements Comparable<Patch> {
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getToolsDir() + "jptch.exe");
 			commandBuilder.add(stagingFile.getAbsolutePath());
-			commandBuilder.add(getPatchFolderPath() + "patch.jsf");
+			commandBuilder.add(patchPath);
 			commandBuilder.add(modSourceFile);
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {

@@ -197,7 +197,7 @@ public class AllModsUpdateWindow extends JDialog {
 					}
 					String updatetext = upackages.size() + " mod" + (upackages.size() == 1 ? " has" : "s have") + " available updates on ME3Tweaks:\n";
 					for (UpdatePackage upackage : upackages) {
-						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName()+ ", Preparing user prompt.");
+						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + ", Preparing user prompt.");
 						updatetext += getVersionUpdateString(upackage);
 					}
 					updatetext += "Update these mods?";
@@ -318,18 +318,29 @@ public class AllModsUpdateWindow extends JDialog {
 	}
 
 	/**
-	 * Returns a standard Verision X => new Version (size, num files deleted) string
-	 * @param upackage update package
+	 * Returns a standard Verision X => new Version (size, num files deleted)
+	 * string
+	 * 
+	 * @param upackage
+	 *            update package
 	 * @return nice string
 	 */
 	public static String getVersionUpdateString(UpdatePackage upackage) {
-		int numFilesToDelete = upackage.getFilesToDelete().size();
+		if (upackage.getMod().getModMakerCode() > 0) {
+			//modmaker mod
+			return " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion() + " (ModMaker mod)\n";
+		} else {
+			//classic
+			int numFilesToDelete = 0;
+			if (upackage.getFilesToDelete() != null) {
+				numFilesToDelete = upackage.getFilesToDelete().size();
+			}
 
-		String updateSizeMB = upackage.getUpdateSizeMB();
-		String filesToDeleteStr = numFilesToDelete > 0 ? ", " + numFilesToDelete + " item" + (numFilesToDelete != 1 ? "s" : "") + " to delete" : "";
+			String updateSizeMB = upackage.getUpdateSizeMB();
+			String filesToDeleteStr = numFilesToDelete > 0 ? ", " + numFilesToDelete + " item" + (numFilesToDelete != 1 ? "s" : "") + " to delete" : "";
 
-		String updatetext = " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion()
-				+ (upackage.isModmakerupdate() ? "" : " (" + updateSizeMB + " download" + filesToDeleteStr + ")") + "\n";
-		return updatetext;
+			return " - " + upackage.getMod().getModName() + " " + upackage.getMod().getVersion() + " => " + upackage.getVersion()
+					+ (upackage.isModmakerupdate() ? "" : " (" + updateSizeMB + " download" + filesToDeleteStr + ")") + "\n";
+		}
 	}
 }
