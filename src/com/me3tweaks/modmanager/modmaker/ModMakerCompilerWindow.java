@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager.modmaker;
 
 import java.awt.BorderLayout;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -44,6 +45,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -66,6 +68,7 @@ import com.me3tweaks.modmanager.valueparsers.possessionwaves.Difficulty;
 import com.me3tweaks.modmanager.valueparsers.sharedassignment.SharedDifficulty;
 import com.me3tweaks.modmanager.valueparsers.waveclass.WaveClass;
 import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
+import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
 
 @SuppressWarnings("serial")
 public class ModMakerCompilerWindow extends JDialog {
@@ -84,18 +87,19 @@ public class ModMakerCompilerWindow extends JDialog {
 	JProgressBar overallProgress, currentStepProgress;
 	private Mod mod;
 	private ArrayList<String> requiredMixinIds = new ArrayList<String>();
+	private ArrayList<DynamicPatch> dynamicMixins = new ArrayList<DynamicPatch>();
 
 	/**
 	 * Starts a modmaker session for a user-selected download
 	 * 
 	 * @param code
-	 *            code to download (if not an integer, use sideload method, which assumes the value is a filepath to an xml file.)
+	 *            code to download (if not an integer, use sideload method,
+	 *            which assumes the value is a filepath to an xml file.)
 	 * @param languages
 	 *            languages to compile
 	 */
 	public ModMakerCompilerWindow(String code, ArrayList<String> languages) {
 		this.code = code;
-
 		this.languages = languages;
 		setupWindow();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
@@ -210,38 +214,33 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (MalformedURLException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
-						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while preparing to compile the mod:\n" + e.getMessage()
+						+ "\nCheck the Mod Manager log for more info (in the help menu).", "Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				new ModManagerWindow(false);
 			} catch (IOException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
-						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while preparing to compile the mod:\n" + e.getMessage()
+						+ "\nCheck the Mod Manager log for more info (in the help menu).", "Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				new ModManagerWindow(false);
 			} catch (ParserConfigurationException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
-						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while preparing to compile the mod:\n" + e.getMessage()
+						+ "\nCheck the Mod Manager log for more info (in the help menu).", "Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 
 				new ModManagerWindow(false);
 			} catch (SAXException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
-						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while preparing to compile the mod:\n" + e.getMessage()
+						+ "\nCheck the Mod Manager log for more info (in the help menu).", "Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				new ModManagerWindow(false);
 			} catch (Exception e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
-						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while preparing to compile the mod:\n" + e.getMessage()
+						+ "\nCheck the Mod Manager log for more info (in the help menu).", "Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				dispose();
 				//new ModManagerWindow(false);
 			}
@@ -303,25 +302,44 @@ public class ModMakerCompilerWindow extends JDialog {
 			modMakerVersion = Double.parseDouble(modModMakerVersion);
 			if (modMakerVersion > ModManager.MODMAKER_VERSION_SUPPORT) {
 				//ERROR! We can't compile this version.
-				ModManager.debugLogger.writeMessage("FATAL ERROR: This version of mod manager does not support this version of modmaker.");
-				ModManager.debugLogger.writeMessage("FATAL ERROR: This version supports up to ModMaker version: " + ModManager.MODMAKER_VERSION_SUPPORT);
-				ModManager.debugLogger.writeMessage("FATAL ERROR: This mod was built with ModMaker version: " + modModMakerVersion);
-				publish(new ThreadCommand("ERROR",
+				ModManager.debugLogger
+						.writeError("This version of mod manager does not support the server version of ModMaker that was used to compile this mod delta.");
+				ModManager.debugLogger
+						.writeError("FATAL ERROR: This version supports up to ModMaker version: " + ModManager.MODMAKER_VERSION_SUPPORT);
+				ModManager.debugLogger.writeError("FATAL ERROR: This mod was built with ModMaker version: " + modModMakerVersion);
+				publish(new ThreadCommand(
+						"ERROR",
 						"<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>"));
 				error = true;
 				return;
 			}
 
-			//Get required mixins
+			//Get required mixins and dynamic mixins
 			NodeList mixinNodeList = doc.getElementsByTagName("MixInData");
 			if (mixinNodeList.getLength() > 0) {
 				Element mixinsElement = (Element) mixinNodeList.item(0);
-				NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
-				for (int j = 0; j < mixinsNodeList.getLength(); j++) {
-					Node mixinNode = mixinsNodeList.item(j);
-					if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
-						requiredMixinIds.add(mixinNode.getTextContent());
-						ModManager.debugLogger.writeMessage("Mod recommends mixin with id " + mixinNode.getTextContent());
+				{
+					NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
+					for (int j = 0; j < mixinsNodeList.getLength(); j++) {
+						Node mixinNode = mixinsNodeList.item(j);
+						if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
+							requiredMixinIds.add(mixinNode.getTextContent());
+							ModManager.debugLogger.writeMessage("Mod recommends mixin with id " + mixinNode.getTextContent());
+						}
+					}
+				}
+				NodeList dynamicmixinsNodeList = mixinsElement.getElementsByTagName("DynamicMixIn");
+				for (int j = 0; j < dynamicmixinsNodeList.getLength(); j++) {
+					Node dynamicmixinNode = dynamicmixinsNodeList.item(j);
+					if (dynamicmixinNode.getNodeType() == Node.ELEMENT_NODE) {
+						DynamicPatch dp;
+						try {
+							dp = new DynamicPatch(dynamicmixinNode);
+							dynamicMixins.add(dp);
+							ModManager.debugLogger.writeMessage("Mod contains dynamic mixin: " + dp.getFinalPatch().getPatchName());
+						} catch (Base64DecodingException | DOMException | IOException e) {
+							ModManager.debugLogger.writeErrorWithException("Error preparing dynamic mixin, skipping:" , e);
+						}
 					}
 				}
 			}
@@ -505,11 +523,11 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		new DecompilerWorker(requiredCoals, currentStepProgress).execute();
 	} /*
-		 * 
-		 * /** Decompiles a coalesced into .xml files using tankmaster's tools.
-		 * 
-		 * @author Michael
-		 */
+	 * 
+	 * /** Decompiles a coalesced into .xml files using tankmaster's tools.
+	 * 
+	 * @author Michael
+	 */
 
 	class DecompilerWorker extends SwingWorker<Void, Integer> {
 		private ArrayList<String> coalsToDecompile;
@@ -573,9 +591,10 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeMessage("Error occured in DecompilerWorker():");
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while decompiling coalesced files:\n" + e.getMessage() + "\n\nYou should report this to FemShep via the Forums link in the help menu.",
-						"Compiling Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane
+						.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while decompiling coalesced files:\n" + e.getMessage()
+								+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error",
+								JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -616,11 +635,11 @@ public class ModMakerCompilerWindow extends JDialog {
 				//ProcessBuilder compileProcessBuilder = new ProcessBuilder(
 				//		compilerPath, "--xml2bin", path + "\\coalesceds\\"
 				//				+ FilenameUtils.removeExtension(coal)+".xml");
-				ProcessBuilder compileProcessBuilder = new ProcessBuilder(compilerPath,
-						path + "\\coalesceds\\" + FilenameUtils.removeExtension(coal) + "\\" + FilenameUtils.removeExtension(coal) + ".xml", "--mode=ToBin");
+				ProcessBuilder compileProcessBuilder = new ProcessBuilder(compilerPath, path + "\\coalesceds\\" + FilenameUtils.removeExtension(coal)
+						+ "\\" + FilenameUtils.removeExtension(coal) + ".xml", "--mode=ToBin");
 				//log it
-				ModManager.debugLogger.writeMessage("Executing compile command: " + compilerPath + " " + path + "\\coalesceds\\" + FilenameUtils.removeExtension(coal) + "\\"
-						+ FilenameUtils.removeExtension(coal) + ".xml --mode=ToBin");
+				ModManager.debugLogger.writeMessage("Executing compile command: " + compilerPath + " " + path + "\\coalesceds\\"
+						+ FilenameUtils.removeExtension(coal) + "\\" + FilenameUtils.removeExtension(coal) + ".xml --mode=ToBin");
 				compileProcessBuilder.redirectErrorStream(true);
 				compileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 				Process compileProcess = compileProcessBuilder.start();
@@ -647,8 +666,10 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeMessage("Error occured in CompilerWorker():");
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to recompile modified coalesced xml files into a coalesced.bin file:\n"
-						+ e.getMessage() + "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
+						"An error occured while trying to recompile modified coalesced xml files into a coalesced.bin file:\n" + e.getMessage()
+								+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error",
+						JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -688,8 +709,10 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (!ModManager.hasPristineCoalesced(coal, ME3TweaksUtils.FILENAME)) {
 						ME3TweaksUtils.downloadPristineCoalesced(coal, ME3TweaksUtils.FILENAME);
 					}
-					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(coal, ME3TweaksUtils.FILENAME)), new File(ModManager.getCompilingDir() + "coalesceds/" + coal));
-					ModManager.debugLogger.writeMessage("Copied pristine coalesced of " + coal + " to: " + (new File("coalesceds/" + coal)).getAbsolutePath());
+					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(coal, ME3TweaksUtils.FILENAME)),
+							new File(ModManager.getCompilingDir() + "coalesceds/" + coal));
+					ModManager.debugLogger.writeMessage("Copied pristine coalesced of " + coal + " to: "
+							+ (new File("coalesceds/" + coal)).getAbsolutePath());
 					coalsCompeted++;
 					this.publish(coalsCompeted);
 				} catch (IOException e) {
@@ -717,8 +740,10 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeMessage("Error occured in CoalDownloadWorker():");
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to download pristine Coalesced files from ME3Tweaks:\n" + e.getMessage()
-						+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
+						"An error occured while trying to download pristine Coalesced files from ME3Tweaks:\n" + e.getMessage()
+								+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error",
+						JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -771,7 +796,8 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (coalNode.getNodeType() == Node.ELEMENT_NODE) {
 					String intCoalName = coalNode.getNodeName(); //get the coal name so we can figure out what folder to look in.
 					ModManager.debugLogger.writeMessage("Read coalecesed ID: " + intCoalName);
-					ModManager.debugLogger.writeMessage("---------------------MODMAKER COMPILER START OF " + intCoalName + "-------------------------");
+					ModManager.debugLogger.writeMessage("---------------------MODMAKER COMPILER START OF " + intCoalName
+							+ "-------------------------");
 
 					String foldername = FilenameUtils.removeExtension(ME3TweaksUtils.internalNameToCoalFilename(intCoalName));
 					NodeList filesNodeList = coalNode.getChildNodes();
@@ -781,9 +807,10 @@ public class ModMakerCompilerWindow extends JDialog {
 							//we now have a file ID such as biogame.
 							//We need to load that XML file now.
 							String iniFileName = fileNode.getNodeName() + ".xml";
-							ModManager.debugLogger
-									.writeMessage("Loading Coalesced XML fragment into memory: " + ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
-							Document iniFile = dbFactory.newDocumentBuilder().parse("file:///" + ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
+							ModManager.debugLogger.writeMessage("Loading Coalesced XML fragment into memory: " + ModManager.getCompilingDir()
+									+ "coalesceds\\" + foldername + "\\" + iniFileName);
+							Document iniFile = dbFactory.newDocumentBuilder().parse(
+									"file:///" + ModManager.getCompilingDir() + "coalesceds\\" + foldername + "\\" + iniFileName);
 							iniFile.getDocumentElement().normalize();
 							ModManager.debugLogger.writeMessage("Loaded " + iniFile.getDocumentURI() + " into memory.");
 							//ModManager.printDocument(iniFile, System.out);
@@ -932,9 +959,9 @@ public class ModMakerCompilerWindow extends JDialog {
 										}
 										if (!pathfound) {
 											dispose();
-											JOptionPane.showMessageDialog(null,
-													"<html>Could not find the path " + path + " to property.<br>Module: " + intCoalName + "<br>File: " + iniFileName + "</html>",
-													"Compiling Error", JOptionPane.ERROR_MESSAGE);
+											JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " to property.<br>Module: "
+													+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error",
+													JOptionPane.ERROR_MESSAGE);
 											error = true;
 											return null;
 										}
@@ -943,9 +970,8 @@ public class ModMakerCompilerWindow extends JDialog {
 										//we didn't find what we wanted...
 										dispose();
 										error = true;
-										JOptionPane.showMessageDialog(null,
-												"<html>Could not find the path " + path + " to property.<br>Module: " + intCoalName + "<br>File: " + iniFileName + "</html>",
-												"Compiling Error", JOptionPane.ERROR_MESSAGE);
+										JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " to property.<br>Module: "
+												+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 										return null;
 									}
 									if (operation.equals("addition")) {
@@ -1011,8 +1037,8 @@ public class ModMakerCompilerWindow extends JDialog {
 												if (itemToModify.getAttribute("type").equals(matchontype)) {
 													//potential array value candidate...
 													boolean match = false;
-													ModManager.debugLogger
-															.writeMessage("Found type candidate (" + matchontype + ") for arrayreplace: " + itemToModify.getTextContent());
+													ModManager.debugLogger.writeMessage("Found type candidate (" + matchontype
+															+ ") for arrayreplace: " + itemToModify.getTextContent());
 													switch (arrayType) {
 													//Must use individual matching algorithms so we can figure out if something matches.
 													case "exactvalue": {
@@ -1116,12 +1142,15 @@ public class ModMakerCompilerWindow extends JDialog {
 													}
 														break;
 													default:
-														ModManager.debugLogger.writeError(
-																"ERROR: Unknown matching algorithm: " + arrayType + ". does this client need updated? Aborting this stat update.");
-														JOptionPane.showMessageDialog(null,
-																"<html>Unknown matching algorithm from ME3Tweaks: " + arrayType
-																		+ ".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
-																"Compiling Error", JOptionPane.ERROR_MESSAGE);
+														ModManager.debugLogger.writeError("ERROR: Unknown matching algorithm: " + arrayType
+																+ ". does this client need updated? Aborting this stat update.");
+														JOptionPane
+																.showMessageDialog(
+																		null,
+																		"<html>Unknown matching algorithm from ME3Tweaks: "
+																				+ arrayType
+																				+ ".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
+																		"Compiling Error", JOptionPane.ERROR_MESSAGE);
 														break;
 													} //end matching algorithm switch
 													if (match) {
@@ -1140,10 +1169,13 @@ public class ModMakerCompilerWindow extends JDialog {
 														default:
 															ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm: " + arrayType
 																	+ " does this client need updated? Aborting this stat update.");
-															JOptionPane.showMessageDialog(null,
-																	"<html>Unknown operation from ME3Tweaks: " + operation
-																			+ ".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
-																	"Compiling Error", JOptionPane.ERROR_MESSAGE);
+															JOptionPane
+																	.showMessageDialog(
+																			null,
+																			"<html>Unknown operation from ME3Tweaks: "
+																					+ operation
+																					+ ".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
+																			"Compiling Error", JOptionPane.ERROR_MESSAGE);
 															break;
 														} //end operation [switch]
 														break;
@@ -1217,8 +1249,9 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to merge mod delta into coalesced files:\n" + e.getMessage()
-						+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to merge mod delta into coalesced files:\n"
+						+ e.getMessage() + "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error",
+						JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -1296,8 +1329,8 @@ public class ModMakerCompilerWindow extends JDialog {
 
 						String compilerPath = ModManager.getTankMasterTLKDir() + "MassEffect3.TlkEditor.exe";
 						commandBuilder.add(compilerPath);
-						commandBuilder
-								.add(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + "CookedPCConsole\\" + tlkShortNameToFileName(tlkType));
+						commandBuilder.add(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + "CookedPCConsole\\"
+								+ tlkShortNameToFileName(tlkType));
 						commandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString()) + "BIOGame_" + tlkType + ".xml");
 						commandBuilder.add("--mode");
 						commandBuilder.add("ToXml");
@@ -1341,8 +1374,8 @@ public class ModMakerCompilerWindow extends JDialog {
 								if (!indexMap.containsKey(index)) {
 									//load the required XML file into memory, store its nodelist
 									ModManager.debugLogger.writeMessage("Loading TLK XML (index " + index + ") " + tlkType + " into memory.");
-									String tlkIndexedFrag = ModManager.appendSlash(tlkdir.getAbsolutePath().toString()) + "BIOGame_" + tlkType + "\\" + "BIOGame_" + tlkType + index
-											+ ".xml"; //tankmaster's compiler splits it into files.
+									String tlkIndexedFrag = ModManager.appendSlash(tlkdir.getAbsolutePath().toString()) + "BIOGame_" + tlkType + "\\"
+											+ "BIOGame_" + tlkType + index + ".xml"; //tankmaster's compiler splits it into files.
 									DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 									Document tlkXMLFile = dBuilder.parse("file:///" + tlkIndexedFrag);
 									tlkXMLFile.getDocumentElement().normalize();
@@ -1450,8 +1483,10 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeError("Error occured in TLKWorker():");
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to decompile the TLK (translations) file:\n" + e.getMessage()
-						+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
+						"An error occured while trying to decompile the TLK (translations) file:\n" + e.getMessage()
+								+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error",
+						JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -1527,14 +1562,16 @@ public class ModMakerCompilerWindow extends JDialog {
 					ModManager.debugLogger.writeError("ERROR! Didn't move " + reqcoal + " to the proper mod element directory. Could already exist.");
 				}
 				//copy pcconsoletoc
-				File tocFile = new File(ModManager.getCompilingDir() + "toc\\" + ME3TweaksUtils.coalFilenameToInternalName(reqcoal) + "\\PCConsoleTOC.bin");
+				File tocFile = new File(ModManager.getCompilingDir() + "toc\\" + ME3TweaksUtils.coalFilenameToInternalName(reqcoal)
+						+ "\\PCConsoleTOC.bin");
 				File destToc = new File(compCoalDir + "\\PCConsoleTOC.bin");
 				destToc.delete();
 				ModManager.debugLogger.writeMessage("Moving TOC file: " + tocFile.getAbsolutePath() + " to " + destToc.getAbsolutePath());
 				if (tocFile.renameTo(destToc)) {
 					ModManager.debugLogger.writeMessage("Moved " + reqcoal + " TOC to proper mod element directory");
 				} else {
-					ModManager.debugLogger.writeError("ERROR! Didn't move " + reqcoal + " TOC to the proper mod element directory. Could already exist.");
+					ModManager.debugLogger.writeError("ERROR! Didn't move " + reqcoal
+							+ " TOC to the proper mod element directory. Could already exist.");
 				}
 
 				//copy tlk
@@ -1545,15 +1582,18 @@ public class ModMakerCompilerWindow extends JDialog {
 					for (String tlkFilename : tlkFiles) {
 						File compiledTLKFile = new File(ModManager.getCompilingDir() + "tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
 						if (!compiledTLKFile.exists()) {
-							ModManager.debugLogger.writeMessage("TLK file " + compiledTLKFile + " is missing, might not have been selected for compilation. skipping.");
+							ModManager.debugLogger.writeMessage("TLK file " + compiledTLKFile
+									+ " is missing, might not have been selected for compilation. skipping.");
 							continue;
 						}
 						File destTLKFile = new File(compCoalDir + "\\BIOGame_" + tlkFilename + ".tlk");
-						ModManager.debugLogger.writeMessage("Moving TLK file: " + compiledTLKFile.getAbsolutePath() + " to " + destTLKFile.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("Moving TLK file: " + compiledTLKFile.getAbsolutePath() + " to "
+								+ destTLKFile.getAbsolutePath());
 						if (compiledTLKFile.renameTo(destTLKFile)) {
 							ModManager.debugLogger.writeMessage("Moved " + compiledTLKFile + " TLK to BASEGAME directory");
 						} else {
-							ModManager.debugLogger.writeError("Didn't move " + compiledTLKFile + " TLK to the BASEGAME directory. Could already exist.");
+							ModManager.debugLogger.writeError("Didn't move " + compiledTLKFile
+									+ " TLK to the BASEGAME directory. Could already exist.");
 						}
 					}
 				}
@@ -1616,25 +1656,29 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (languages.size() > 0 && !requiredCoals.contains("Coalesced.bin")) {
 				File compCoalDir = new File(moddir.toString() + "\\" + ME3TweaksUtils.coalFilenameToInternalName("Coalesced.bin")); //MP4, PATCH2 folders in mod package
 				compCoalDir.mkdirs();
-				ini.put(ME3TweaksUtils.coalFilenameToHeaderName("Coalesced.bin"), "moddir", ME3TweaksUtils.coalFilenameToInternalName("Coalesced.bin"));
+				ini.put(ME3TweaksUtils.coalFilenameToHeaderName("Coalesced.bin"), "moddir",
+						ME3TweaksUtils.coalFilenameToInternalName("Coalesced.bin"));
 
 				//MOVE THE TLK FILES
 				for (String tlkFilename : languages) {
 					File compiledTLKFile = new File(ModManager.getCompilingDir() + "tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
 					if (!compiledTLKFile.exists()) {
-						ModManager.debugLogger.writeMessage("TLK file " + compiledTLKFile + " is missing, might not have been selected for compilation. skipping.");
+						ModManager.debugLogger.writeMessage("TLK file " + compiledTLKFile
+								+ " is missing, might not have been selected for compilation. skipping.");
 						continue;
 					}
 					File destTLKFile = new File(compCoalDir + "\\BIOGame_" + tlkFilename + ".tlk");
 					if (compiledTLKFile.renameTo(destTLKFile)) {
 						ModManager.debugLogger.writeMessage("Moved " + compiledTLKFile + " TLK to BASEGAME directory");
 					} else {
-						ModManager.debugLogger.writeMessage("Didn't move " + compiledTLKFile + " TLK to the BASEGAME directory. Could already exist.");
+						ModManager.debugLogger
+								.writeMessage("Didn't move " + compiledTLKFile + " TLK to the BASEGAME directory. Could already exist.");
 					}
 				}
 
 				//MOVE PCCONSOLETOC.bin
-				File tocFile = new File(ModManager.getCompilingDir() + "toc\\" + ME3TweaksUtils.coalFilenameToInternalName("Coalesced.bin") + "\\PCConsoleTOC.bin");
+				File tocFile = new File(ModManager.getCompilingDir() + "toc\\" + ME3TweaksUtils.coalFilenameToInternalName("Coalesced.bin")
+						+ "\\PCConsoleTOC.bin");
 				File destToc = new File(compCoalDir + "\\PCConsoleTOC.bin");
 				destToc.delete();
 				if (tocFile.renameTo(destToc)) {
@@ -1692,9 +1736,12 @@ public class ModMakerCompilerWindow extends JDialog {
 			//SOMETHING WENT WRONG!
 			ModManager.debugLogger.writeMessage("Mod failed validation. Setting error flag to true.");
 			error = true;
-			JOptionPane.showMessageDialog(this,
-					modName + " was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure debugging is enabled in Help>About.\nContact FemShep if you need help via the forums.",
-					"Mod Not Created", JOptionPane.ERROR_MESSAGE);
+			JOptionPane
+					.showMessageDialog(
+							this,
+							modName
+									+ " was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure debugging is enabled in Help>About.\nContact FemShep if you need help via the forums.",
+							"Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
 		/*
 		 * File file = new File(DOWNLOADED_XML_FILENAME); file.delete();
@@ -1710,8 +1757,8 @@ public class ModMakerCompilerWindow extends JDialog {
 				try {
 					FileUtils.deleteDirectory(new File(mod.getModPath()));
 				} catch (IOException e) {
-					JOptionPane.showMessageDialog(this, "The old version of this mod could not be deleted.\nBoth versions will remain.", "Could not delete old mod",
-							JOptionPane.WARNING_MESSAGE);
+					JOptionPane.showMessageDialog(this, "The old version of this mod could not be deleted.\nBoth versions will remain.",
+							"Could not delete old mod", JOptionPane.WARNING_MESSAGE);
 					ModManager.debugLogger.writeError("Unable to delete old-named directory");
 					ModManager.debugLogger.writeException(e);
 				}
@@ -1723,7 +1770,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (requiredMixinIds.size() > 0) {
 				currentOperationLabel.setText("Preparing MixIns");
 				ModManager.debugLogger.writeMessage("Mod delta recommends MixIns, running PatchLibraryWindow()");
-				new PatchLibraryWindow(this, requiredMixinIds, newMod);
+				new PatchLibraryWindow(this, requiredMixinIds, dynamicMixins, newMod);
 			}
 			finishModMaker(newMod);
 		} else {
@@ -1788,7 +1835,8 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (!ModManager.hasPristineTOC(toc, ME3TweaksUtils.FILENAME)) {
 						ME3TweaksUtils.downloadPristineTOC(toc, ME3TweaksUtils.FILENAME);
 					}
-					File destTOC = new File(ModManager.getCompilingDir() + "toc/" + ME3TweaksUtils.coalFilenameToInternalName(toc) + "/PCConsoleTOC.bin"); //head should be same as standard folder
+					File destTOC = new File(ModManager.getCompilingDir() + "toc/" + ME3TweaksUtils.coalFilenameToInternalName(toc)
+							+ "/PCConsoleTOC.bin"); //head should be same as standard folder
 					FileUtils.copyFile(new File(ModManager.getPristineTOC(toc, ME3TweaksUtils.FILENAME)), destTOC);
 					ModManager.debugLogger.writeMessage("Copied pristine TOC of COALESCED DLC(" + toc + ") to: " + destTOC.getAbsolutePath());
 					tocsCompleted++;
@@ -1811,7 +1859,8 @@ public class ModMakerCompilerWindow extends JDialog {
 
 			progress.setIndeterminate(false);
 			if (numtoc > numCompleted.get(0)) {
-				currentOperationLabel.setText("Downloading " + ME3TweaksUtils.coalFilenameToInternalName(tocsToDownload.get(numCompleted.get(0))) + "/PCConsoleTOC.bin");
+				currentOperationLabel.setText("Downloading " + ME3TweaksUtils.coalFilenameToInternalName(tocsToDownload.get(numCompleted.get(0)))
+						+ "/PCConsoleTOC.bin");
 			}
 			progress.setValue((int) (100 / (numtoc / (float) numCompleted.get(0))));
 		}
@@ -1823,8 +1872,9 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeMessage("Error occured in TOCDownloadWorker():");
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to download the TOC files for the mod:\n" + e.getMessage()
-						+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to download the TOC files for the mod:\n"
+						+ e.getMessage() + "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error",
+						JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
