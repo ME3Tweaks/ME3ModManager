@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -59,8 +60,9 @@ public class TLKTool {
 	}
 
 	public static void main(String[] args) throws Exception {
+		parseJPatchString("a7a3fe0028efd0a7a600001644a7a3fe002c3b4c");
 		//replacementScan();
-		compileTLK("E:\\MPTLK\\mp5");
+		//compileTLK("E:\\MPTLK\\mp5");
 		//decompileTLK("E:\\MPTLK\\mp5");
 		//comparisonScan();
 		//initialScanTankmaster();
@@ -71,6 +73,53 @@ public class TLKTool {
 		//compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
 		//String folderpath = "C:\\Users\\\Desktop\\tlk\\BIOGame_ITA\\";
 		//combineIntoSingleFile(folderpath);
+	}
+
+	private static void parseJPatchString(String string) {
+		final char ESC = 0xA7;
+		final char EQL = 0xA3;
+		final char MOD = 0xA6;
+		byte[] data = DatatypeConverter.parseHexBinary(string);
+		int bytepos = 0;
+		int twoprev = 0;
+		int prev = 0;
+		int current = 0;
+		boolean readingdata = false;
+		int op = -1;
+		for (byte b : data) {
+			int val = b & 0xFF;
+			twoprev = prev;
+			prev = current;
+			current = val;
+			
+			if (current == ESC) {
+				System.out.println("Read ESC at "+bytepos);
+			}
+			
+			if (readingdata) {
+				switch(op) {
+				case MOD:
+					//read until end
+					break;
+				}
+			}
+			
+			if (current == MOD && prev == ESC && twoprev != ESC) {
+				System.out.println("Read OP MOD at "+bytepos);
+				readingdata = true;
+				bytepos++;
+				continue;
+			}
+			if (current == EQL && prev == ESC && twoprev != ESC) {
+				System.out.println("Read OP EQL at "+bytepos);
+				readingdata = true;
+				bytepos++;
+				continue;
+			}
+			
+			
+			bytepos++;
+		}
 	}
 
 	/**
