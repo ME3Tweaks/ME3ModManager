@@ -162,7 +162,7 @@ public class ModXMLTools {
 							updatedfiles.add(f);
 						}
 						for (String str : up.getFilesToDelete()) {
-							File f = new File(mod.getModPath() + File.separator + str);
+							File f = new File(str);
 							if (f.exists()) {
 								//reverse - new files have been added
 								updatedfiles.add(f);
@@ -177,7 +177,7 @@ public class ModXMLTools {
 				} catch (Exception e) {
 					ModManager.debugLogger.writeErrorWithException("Error loading old manifest. Performing a full compression. Error: ", e);
 					for (File f : newversionfiles) {
-						updatedfiles.add(f);
+						updatedfiles.add(f); //variants check
 					}
 				}
 			} else {
@@ -226,6 +226,8 @@ public class ModXMLTools {
 				ModManager.runProcess(p);
 				processed++;
 			}
+			
+			
 
 			//Update the full distribution folder (assuming we are doing a delta build)
 			if (!compressedfulloutputfolder.equals(compressedupdateoutputfolder)) {
@@ -246,8 +248,18 @@ public class ModXMLTools {
 				}
 				if (up != null) {
 					for (String delfile : up.getFilesToDelete()) {
-						ModManager.debugLogger.writeMessage("Deleting unnecessary file from full server package: " + delfile);
-						FileUtils.deleteQuietly(new File(compressedfulloutputfolder + delfile));
+						File newfile = new File(compressedfulloutputfolder + delfile);
+						if (newfile.exists()) {
+							/*
+							 * ModManager.debugLogger.writeMessage(
+							 * "Deleting unnecessary file from full server package: "
+							 * + delfile); FileUtils.deleteQuietly(new
+							 * File(compressedfulloutputfolder + delfile));
+							 * FileUtils.copyFile(new File(delfile), new
+							 * File(compressedfulloutputfolder + delfile));
+							 */
+							System.out.println("Update package says to delete existing file: " + delfile);
+						}
 					}
 				}
 			}
