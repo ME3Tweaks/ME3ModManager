@@ -40,10 +40,10 @@ public class Patch implements Comparable<Patch> {
 	private String patchAuthor;
 	private int me3tweaksid;
 
-	public Patch(String descriptorPath) {
+	public Patch(String descriptorPath, String patchPath) {
 		ModManager.debugLogger.writeMessage("Loading patch: " + descriptorPath);
 		readPatch(descriptorPath);
-		setPatchPath(descriptorPath);
+		setPatchPath(patchPath);
 	}
 
 	/**
@@ -209,7 +209,7 @@ public class Patch implements Comparable<Patch> {
 			return null;
 		}
 		ModManager.debugLogger.writeMessage("Reloading imported patch");
-		return new Patch(destinationDir + File.separator + "patchdesc.ini");
+		return new Patch(destinationDir + File.separator + "patchdesc.ini", destinationDir + File.separator + "patch.jsf");
 	}
 
 	/**
@@ -370,7 +370,7 @@ public class Patch implements Comparable<Patch> {
 			File sourceFile = new File(modSourceFile);
 			if (sourceFile.length() != targetSize) {
 				ModManager.debugLogger
-						.writeError("Source file is the wrong size! This patch only applies to files of size "+targetSize+ " but the file is "+sourceFile.length());
+						.writeError("Source file is the wrong size! This patch only applies to files of size " + targetSize + " but the file is " + sourceFile.length());
 				return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
 			}
 			//rename file (so patch doesn't continuously recalculate itself)
@@ -409,7 +409,7 @@ public class Patch implements Comparable<Patch> {
 				return APPLY_FAILED_SIZE_CHANGED;
 			}
 
-			ModManager.debugLogger.writeMessage("File has been patched. Output size is "+sourceFile.length());
+			ModManager.debugLogger.writeMessage("File has been patched. Output size is " + sourceFile.length());
 			return APPLY_SUCCESS;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

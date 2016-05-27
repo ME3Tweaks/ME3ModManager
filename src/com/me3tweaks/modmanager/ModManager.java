@@ -1557,7 +1557,7 @@ public class ModManager {
 				// System.out.println("Searching for file: " +
 				// searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
-					Patch validatingPatch = new Patch(searchSubDirDesc.getAbsolutePath());
+					Patch validatingPatch = new Patch(searchSubDirDesc.getAbsolutePath(), ModManager.appendSlash(subdirs[i].toString()) + "patch.jsf");
 					if (validatingPatch.isValid()) {
 						validPatches.add(validatingPatch);
 					}

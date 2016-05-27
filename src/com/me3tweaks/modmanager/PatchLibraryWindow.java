@@ -467,7 +467,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					String patchDesc = Patch.generatePatchDesc(pack);
 					FileUtils.writeStringToFile(new File(targetFolderStr + "patchdesc.ini"), patchDesc);
 
-					Patch p = new Patch(targetFolderStr + "patchdesc.ini");
+					Patch p = new Patch(targetFolderStr + "patchdesc.ini",targetFolderStr + "patch.jsf");
 					publish(new ThreadCommand("REMOVE_LOCAL_LIST_PATCH", null, p));
 					publish(new ThreadCommand("ADD_PATCH", null, p));
 				}

@@ -678,7 +678,7 @@ public class Mod implements Comparable<Mod> {
 					if (!patchDesc.exists()) {
 						continue;
 					}
-					Patch subPatch = new Patch(patchDesc.getAbsolutePath());
+					Patch subPatch = new Patch(patchDesc.getAbsolutePath(),ModManager.appendSlash(path) + "patch.jsf");
 					if (subPatch.isValid()) {
 						ModManager.debugLogger.writeMessageConditionally("Valid patch: " + subPatch.getPatchName() + ", importing to library and processing",
 								ModManager.LOG_MOD_INIT);
