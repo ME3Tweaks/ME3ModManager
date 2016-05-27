@@ -830,6 +830,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						case "rar":
 							new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
 							break;
+						case "pcc":
 						case "xml":
 							new FolderBatchWindow(ModManagerWindow.this, files[0]);
 							break;
@@ -839,6 +840,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						case "tlk":
 							TLKTool.decompileTLK(files[0]);
 							break;
+							
 						case "bin":
 							//read magic at beginning to find out what type of file this is
 							try {
