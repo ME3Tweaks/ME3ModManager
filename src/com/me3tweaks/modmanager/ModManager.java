@@ -75,7 +75,7 @@ public class ModManager {
 	public static long BUILD_NUMBER = 57L;
 	public static final String BUILD_DATE = "5/27/2016";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.1; // max modmaker
@@ -1058,6 +1058,10 @@ public class ModManager {
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * Returns the mixinlibrary folder.
+	 * @return ME3CMM/mixinlibrary/
+	 */
 	public static String getPatchesDir() {
 		File file = new File(getDataDir() + "mixinlibrary/");
 		file.mkdirs();
@@ -1682,6 +1686,10 @@ public class ModManager {
 		}
 	}
 
+	/**
+	 * Returns directory that contains folders of patches
+	 * @return /mixinlibrary/patches/
+	 */
 	public static String getPatchLibraryDir() {
 		return getPatchesDir() + "patches/";
 	}
