@@ -297,10 +297,13 @@ public class CustomDLCConflictWindow extends JDialog {
 		}
 
 		protected void done() {
+			guiProgressBar.setVisible(false);
 			if (secondPriorityUIConflictFiles != null) {
-				guiProgressBar.setVisible(false);
 				guiPatchButton.setVisible(true);
 				statusText.setText("A GUI mod conflicts with " + secondPriorityUIConflictFiles.entrySet().size() + " files");
+			} else {
+				guiPatchButton.setVisible(false);
+				statusText.setText("No GUI mod file conflicts");
 			}
 
 		}
@@ -518,6 +521,7 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			skg.execute();
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Generating Starter Kit for " + modName));
+			publish(new ThreadCommand("SET_PROGRESSBAR_VISIBLE"));
 
 			synchronized (skg.lock) {
 				while (!skg.completed) {
