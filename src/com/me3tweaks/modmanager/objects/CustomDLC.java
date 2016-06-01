@@ -1,5 +1,9 @@
 package com.me3tweaks.modmanager.objects;
 
+import java.util.Arrays;
+
+import com.me3tweaks.modmanager.ModManager;
+
 public class CustomDLC implements Comparable<CustomDLC> {
 	@Override
 	public String toString() {
@@ -34,5 +38,9 @@ public class CustomDLC implements Comparable<CustomDLC> {
 	@Override
 	public int compareTo(CustomDLC o) {
 		return new Integer(mountFile.getMountPriority()).compareTo(o.getMountFile().getMountPriority());
+	}
+	
+	public boolean isGUIMod() {
+		return Arrays.asList(ModManager.KNOWN_GUI_CUSTOMDLC_MODS).contains(dlcName);
 	}
 }
