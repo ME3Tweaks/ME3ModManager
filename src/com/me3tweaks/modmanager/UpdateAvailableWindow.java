@@ -39,7 +39,7 @@ import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 @SuppressWarnings("serial")
 public class UpdateAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
-	String downloadLink, updateScriptLink,manualLink, changelogLink;
+	String downloadLink, downloadLink2, updateScriptLink,manualLink, changelogLink;
 	boolean error = false;
 	String version;
 	long build;
@@ -55,10 +55,11 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		build = (long) updateInfo.get("latest_build_number");
 		version = (String) updateInfo.get("latest_version_hr");
 		downloadLink = (String) updateInfo.get("download_link");
+		downloadLink2 = (String) updateInfo.get("download_link2");
 		manualLink = (String) updateInfo.get("manual_link");
 		changelogLink = (String) updateInfo.get("changelog_link");
 		if (manualLink == null) {
-			manualLink = downloadLink;
+			manualLink = downloadLink2 == null ? downloadLink : downloadLink2;
 		}
 
 		this.setTitle("Update Available");
@@ -210,12 +211,12 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 
 	        	//Download update
 	            HTTPDownloadUtil util = new HTTPDownloadUtil();
-	            util.downloadFile(downloadLink);
+	            util.downloadFile(downloadLink2 == null ? downloadLink : downloadLink2);
 	             
 	            // set file information on the GUI
 	            setStatusText("Downloading update...");
 	             
-	            String saveFilePath = saveDirectory + File.separator + util.getFileName();
+	            String saveFilePath = saveDirectory + File.separator + "ME3CMM.7z";
 	 
 	            InputStream inputStream = util.getInputStream();
 	            // opens an output stream to save into file
