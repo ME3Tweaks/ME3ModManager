@@ -5,6 +5,7 @@ import java.awt.Dialog;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,7 +35,7 @@ public class AutoTocWindow extends JDialog {
 	JProgressBar progressBar;
 	//Mod mod;
 	JCheckBox loggingMode;
-	int maxBatchSize = 10;
+	private final int maxBatchSize = 10;
 	public int mode = LOCALMOD_MODE;
 	private HashMap<String, String> updatedGameTOCs;
 	public static final int LOCALMOD_MODE = 0;
@@ -176,6 +177,17 @@ public class AutoTocWindow extends JDialog {
 						} else {
 							//increment number of files to update
 							numtoc++;
+							ModManager.debugLogger.writeMessage("Number of files in TOC: "+numtoc+", replace "+file);
+						}
+					}
+					for (String file : job.addFiles) {
+						String filename = FilenameUtils.getName(file);
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin") || filename.equalsIgnoreCase("Mount.dlc")) {
+							continue;
+						} else {
+							//increment number of files to update
+							numtoc++;
+							ModManager.debugLogger.writeMessage("Number of files in TOC: "+numtoc);
 						}
 					}
 				}
@@ -250,10 +262,9 @@ public class AutoTocWindow extends JDialog {
 					ArrayList<TocBatchDescriptor> batchJobs = new ArrayList<TocBatchDescriptor>();
 					int numJobsInCurrentBatch = 0;
 					String modulePath = null;
-					boolean moreThan1batch = false;
 					//add first job
 					TocBatchDescriptor tbd = new TocBatchDescriptor();
-					batchJobs.add(tbd);
+					//batchJobs.add(tbd);
 
 					//break into batches
 					for (String newFile : job.newFiles) {
@@ -264,11 +275,10 @@ public class AutoTocWindow extends JDialog {
 						modulePath = FilenameUtils.getFullPath(newFile);
 						tbd.addNameSizePair(filename, (new File(newFile)).length());
 						numJobsInCurrentBatch++;
-						if (numJobsInCurrentBatch > maxBatchSize) {
+						if (numJobsInCurrentBatch >= maxBatchSize) {
 							batchJobs.add(tbd);
 							tbd = new TocBatchDescriptor();
 							numJobsInCurrentBatch = 0;
-							moreThan1batch = true;
 						}
 					}
 
@@ -281,15 +291,14 @@ public class AutoTocWindow extends JDialog {
 						modulePath = FilenameUtils.getFullPath(addFile);
 						tbd.addNameSizePair(filename, (new File(addFile)).length());
 						numJobsInCurrentBatch++;
-						if (numJobsInCurrentBatch > maxBatchSize) {
+						if (numJobsInCurrentBatch >= maxBatchSize) {
 							batchJobs.add(tbd);
 							tbd = new TocBatchDescriptor();
 							numJobsInCurrentBatch = 0;
-							moreThan1batch = true;
 						}
 					}
 
-					if (moreThan1batch && numJobsInCurrentBatch > 0) {
+					if (numJobsInCurrentBatch > 0) {
 						batchJobs.add(tbd); //enter last batch task
 					}
 
@@ -312,12 +321,14 @@ public class AutoTocWindow extends JDialog {
 						}
 						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 
-						//for logging
-						StringBuilder sb = new StringBuilder();
-						for (String arg : command) {
-							sb.append(arg + " ");
+						ModManager.debugLogger.writeMessage("Performing a batch TOC update on the following files:");
+						String str = "";
+						for (SimpleEntry<String, Long> nsp : batchJob.getNameSizePairs()){
+							str += nsp.getKey()+" "+nsp.getValue();
+							str += "\n";
 						}
-						ModManager.debugLogger.writeMessage("Performing a batch TOC update with command: " + sb.toString());
+						ModManager.debugLogger.writeMessage(str);
+
 						int returncode = 1;
 						ProcessBuilder pb = new ProcessBuilder(command);
 						ProcessResult pr = ModManager.runProcess(pb);
@@ -325,8 +336,9 @@ public class AutoTocWindow extends JDialog {
 						if (returncode != 0 || pr.hadError()) {
 							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
 						} else {
-							completed += batchJob.getNameSizePairs().size();
-							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
+							int numcompleteinbatch = batchJob.getNameSizePairs().size();;
+							completed += numcompleteinbatch;
+							ModManager.debugLogger.writeMessage("Batch tasks done: "+numcompleteinbatch+", Number of all completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
 							publish(Integer.toString(completed));
 						}
 					}

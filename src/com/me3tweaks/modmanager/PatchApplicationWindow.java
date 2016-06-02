@@ -19,6 +19,8 @@ import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FileUtils;
 
+import com.me3tweaks.modmanager.ModManager.Lock;
+import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.PatchModBundle;
@@ -34,13 +36,13 @@ public class PatchApplicationWindow extends JDialog {
 	private ArrayList<Patch> failedPatches;
 	private Mod mod;
 	private PatchApplicationTask pat;
+	public final Object lock = new Lock(); //threading wait() and notifyall();
 
 	public PatchApplicationWindow(JDialog callingDialog, ArrayList<Patch> patches, Mod mod) {
 		ModManager.debugLogger.writeMessage("Starting mix-in applier.");
 		this.callingDialog = callingDialog;
 		this.mod = mod;
 		this.patches = prioritizePatches(patches);
-
 		setupWindow();
 		pat = new PatchApplicationTask();
 		pat.execute();
@@ -49,8 +51,10 @@ public class PatchApplicationWindow extends JDialog {
 
 	/**
 	 * Prioritizes non-finalizers before finalizers
-	 * @param patches non-sorted patch list
-	 * @return  arraylist of non-finalizers then finalizers
+	 * 
+	 * @param patches
+	 *            non-sorted patch list
+	 * @return arraylist of non-finalizers then finalizers
 	 */
 	private ArrayList<Patch> prioritizePatches(ArrayList<Patch> patches) {
 		ArrayList<Patch> sortedList = new ArrayList<Patch>();
@@ -60,7 +64,7 @@ public class PatchApplicationWindow extends JDialog {
 			}
 			sortedList.add(patch);
 		}
-		
+
 		//run again, this time only adding finalizers
 		for (Patch patch : patches) {
 			if (!patch.isFinalizer()) {
@@ -102,15 +106,10 @@ public class PatchApplicationWindow extends JDialog {
 		}
 		JPanel panel = new JPanel(new BorderLayout());
 
-		operationLabel = new JLabel("Applying mixins to " + mod.getModName());
+		operationLabel = new JLabel("Applying mixins to " + mod.getModName() + "[0/0]");
 		statusLabel = new JLabel("Applying: ");
-
 		panel.add(operationLabel, BorderLayout.NORTH);
 		panel.add(statusLabel, BorderLayout.SOUTH);
-		// updatePanel.add(actionPanel);
-		// updatePanel.add(sizeLabel);
-
-		// aboutPanel.add(loggingMode, BorderLayout.SOUTH);
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		this.getContentPane().add(panel);
 
@@ -123,25 +122,29 @@ public class PatchApplicationWindow extends JDialog {
 				}
 			}
 		});
+
 	}
 
 	class PatchApplicationTask extends SwingWorker<Void, Object> {
 		int numToGo = 0;
 		boolean canceled = false;
+
 		/**
 		 * Executed in background thread
 		 */
 		@Override
 		protected Void doInBackground() throws Exception {
-
+			int numcompleted = 0;
 			for (Patch patch : patches) {
 				if (!isCancelled()) {
+					publish(new ThreadCommand("UPDATE_OPERATION_LABEL", null, numcompleted));
 					publish(patch.getPatchName());
 					int applyResult = patch.applyPatch(mod);
 					if (applyResult != Patch.APPLY_SUCCESS) {
 						failedPatches.add(patch);
-						publish(new ThreadCommand("PATCH_FAILED",Integer.toString(applyResult),new PatchModBundle(patch, mod)));
+						publish(new ThreadCommand("PATCH_FAILED", Integer.toString(applyResult), new PatchModBundle(patch, mod)));
 					}
+					numcompleted++;
 				}
 			}
 			return null;
@@ -160,6 +163,9 @@ public class PatchApplicationWindow extends JDialog {
 					ThreadCommand tc = (ThreadCommand) obj;
 					boolean isSecondFailure = false;
 					switch (tc.getCommand()) {
+					case "UPDATE_OPERATION_LABEL":
+						operationLabel.setText("Applying mixins to " + mod.getModName() + " [" + (int) tc.getData() + "/" + patches.size() + "]");
+						break;
 					case "PATCH_FAILED_AGAIN":
 						isSecondFailure = true;
 					case "PATCH_FAILED":
@@ -168,29 +174,46 @@ public class PatchApplicationWindow extends JDialog {
 						Mod mod = bundle.getMod();
 						Patch patch = (Patch) bundle.getPatch();
 						if (reason == Patch.APPLY_FAILED_SOURCE_FILE_WRONG_SIZE) {
-							if (isSecondFailure){
-								JOptionPane.showMessageDialog(PatchApplicationWindow.this, patch.getPatchName()+" failed to apply even after deleting the extracted copy.\nThe file installed in the game does not work with this MixIn because the file sizes are different.", "MixIn cannot be installed", JOptionPane.ERROR_MESSAGE);
+							if (isSecondFailure) {
+								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
+										patch.getPatchName()
+												+ " failed to apply even after deleting the extracted copy.\nThe file installed in the game does not work with this MixIn because the file sizes are different.",
+										"MixIn cannot be installed", JOptionPane.ERROR_MESSAGE);
 							} else {
-								int result = JOptionPane.showConfirmDialog(PatchApplicationWindow.this, patch.getPatchName()+" failed to apply because the source file to patch was not the right size.\nThis means the file was likely modified in the game directory before it was extracted for patching or had a finalizer applied to it.\n\nMod Manager can delete this file and try to extract a new copy on the next application of this MixIn.\nIf this fails, make sure you restore to vanilla before applying this MixIn again.\n\nDelete source file? Files in the game are not modified by this operation.", "MixIn failed to apply", JOptionPane.YES_NO_OPTION);
-								if (result == JOptionPane.YES_OPTION){
+								int result = JOptionPane.showConfirmDialog(PatchApplicationWindow.this,
+										patch.getPatchName()
+												+ " failed to apply because the source file to patch was not the right size.\nThis means the file was likely modified in the game directory before it was extracted for patching or had a finalizer applied to it.\n\nMod Manager can delete this file and try to extract a new copy on the next application of this MixIn.\nIf this fails, make sure you restore to vanilla before applying this MixIn again.\n\nDelete source file? Files in the game are not modified by this operation.",
+										"MixIn failed to apply", JOptionPane.YES_NO_OPTION);
+								if (result == JOptionPane.YES_OPTION) {
 									FileUtils.deleteQuietly(new File(patch.getSourceFilePath(mod)));
 								}
 							}
 						} else {
 							//not fixable
 							switch (reason) {
-								case Patch.APPLY_FAILED_MODDESC_NOT_UPDATED:
-									JOptionPane.showMessageDialog(PatchApplicationWindow.this, patch.getPatchName()+" failed to apply because the moddesc.ini file was not updated.\nThis is an error in Mod Manager, please report it with a Mod Manager log.", "MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
-									break;
-								case Patch.APPLY_FAILED_NO_SOURCE_FILE:
-									JOptionPane.showMessageDialog(PatchApplicationWindow.this, patch.getPatchName()+" failed to apply because a source file could not be aquired.\nThis typically means the MixIn descriptor is not correct, please report this to FemShep.", "MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
-									break;
-								case Patch.APPLY_FAILED_OTHERERROR:
-									JOptionPane.showMessageDialog(PatchApplicationWindow.this, patch.getPatchName()+" failed to apply because a generic error occured. Report this to FemShep if you keep having this issue.", "MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
-									break;
-								case Patch.APPLY_FAILED_SIZE_CHANGED:
-									JOptionPane.showMessageDialog(PatchApplicationWindow.this, patch.getPatchName()+" was applied but the filesize of the output file changed,\nbut this MixIn was not marked as a finalizer.", "MixIn incorrectly marked", JOptionPane.ERROR_MESSAGE);
-									break;							}
+							case Patch.APPLY_FAILED_MODDESC_NOT_UPDATED:
+								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
+										patch.getPatchName()
+												+ " failed to apply because the moddesc.ini file was not updated.\nThis is an error in Mod Manager, please report it with a Mod Manager log.",
+										"MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
+								break;
+							case Patch.APPLY_FAILED_NO_SOURCE_FILE:
+								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
+										patch.getPatchName()
+												+ " failed to apply because a source file could not be aquired.\nThis typically means the MixIn descriptor is not correct, please report this to FemShep.",
+										"MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
+								break;
+							case Patch.APPLY_FAILED_OTHERERROR:
+								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
+										patch.getPatchName() + " failed to apply because a generic error occured. Report this to FemShep if you keep having this issue.",
+										"MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
+								break;
+							case Patch.APPLY_FAILED_SIZE_CHANGED:
+								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
+										patch.getPatchName() + " was applied but the filesize of the output file changed,\nbut this MixIn was not marked as a finalizer.",
+										"MixIn incorrectly marked", JOptionPane.ERROR_MESSAGE);
+								break;
+							}
 						}
 					}
 				}

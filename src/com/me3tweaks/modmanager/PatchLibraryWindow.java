@@ -71,7 +71,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		ModManager.debugLogger.writeMessage("Loading mixin library interface");
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(), false).execute();
+		new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), false).execute();
 		setVisible(true);
 	}
 
@@ -114,11 +114,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		this.automated_mod = mod;
 		this.dynamicMixIns = dynamicMixIns;
 		if (hasMissingMixIn) {
-			new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(), true).execute();
+			new ME3TweaksLibraryUpdater(callingDialog,ModManagerWindow.ACTIVE_WINDOW.getPatchList(), true).execute();
 			setupAutomatedWindow(callingDialog);
 			setVisible(true);
 		} else {
-			advertiseInstalls(automated_requiredMixinIds, automated_mod);
+			advertiseInstalls(callingDialog, automated_requiredMixinIds, automated_mod);
 			dispose();
 		}
 	}
@@ -141,7 +141,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		this.setLocationRelativeTo(callingDialog);
 	}
 
-	private void advertiseInstalls(ArrayList<Integer> mixinIds, Mod mod) {
+	private void advertiseInstalls(JDialog callingDialog, ArrayList<Integer> mixinIds, Mod mod) {
 		//Build patch array, build prompt text
 		String str = "This mod wants to apply the following MixIns from ME3Tweaks:";
 		ArrayList<Patch> patches = new ArrayList<Patch>();
@@ -186,7 +186,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			if (!mod.isValidMod()) {
 				return; // this shouldn't be reachable anyways
 			}
-			PatchApplicationWindow paw = new PatchApplicationWindow(this, patches, mod);
+			PatchApplicationWindow paw = new PatchApplicationWindow(callingDialog, patches, mod);
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() > 0) {
 				String rstr = "The following MixIns failed to apply:\n";
@@ -352,8 +352,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() <= 0) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mixins were applied.", "MixIns applied",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mixins were applied.", "MixIns applied", JOptionPane.INFORMATION_MESSAGE);
 			} else {
 				String str = "The following MixIns failed to apply:\n";
 				for (Patch p : failedpatches) {
@@ -373,10 +372,12 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		boolean modmakerMode;
 		boolean atLeast1New = false;
 		ArrayList<Patch> patches;
+		private JDialog callingDialog;
 
-		public ME3TweaksLibraryUpdater(ArrayList<Patch> patches, boolean isInModMakerMode) {
+		public ME3TweaksLibraryUpdater(JDialog callingDialog, ArrayList<Patch> patches, boolean isInModMakerMode) {
 			this.modmakerMode = isInModMakerMode;
 			this.patches = patches;
+			this.callingDialog = callingDialog;
 		}
 
 		@Override
@@ -434,8 +435,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						}
 
 						if (localpatch.getPatchVersion() < serverpack.getPatchver()) {
-							ModManager.debugLogger.writeMessage("Local MixIn " + serverpack.getPatchname()
-									+ " is out of date, adding to download queue");
+							ModManager.debugLogger.writeMessage("Local MixIn " + serverpack.getPatchname() + " is out of date, adding to download queue");
 							continue;
 						}
 
@@ -445,8 +445,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						break;
 					}
 					if (needsDownloaded) {
-						ModManager.debugLogger.writeMessage("Server MixIn " + serverpack.getPatchname()
-								+ " is not present locally, adding to download queue");
+						ModManager.debugLogger.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally, adding to download queue");
 						packsToDownload.add(serverpack);
 					}
 				}
@@ -467,7 +466,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					String patchDesc = Patch.generatePatchDesc(pack);
 					FileUtils.writeStringToFile(new File(targetFolderStr + "patchdesc.ini"), patchDesc);
 
-					Patch p = new Patch(targetFolderStr + "patchdesc.ini",targetFolderStr + "patch.jsf");
+					Patch p = new Patch(targetFolderStr + "patchdesc.ini", targetFolderStr + "patch.jsf");
 					publish(new ThreadCommand("REMOVE_LOCAL_LIST_PATCH", null, p));
 					publish(new ThreadCommand("ADD_PATCH", null, p));
 				}
@@ -536,7 +535,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					JOptionPane.showMessageDialog(null, errorStr, "Missing MixIns", JOptionPane.WARNING_MESSAGE);
 				}
 				dispose();
-				advertiseInstalls(automated_requiredMixinIds, automated_mod);
+				advertiseInstalls(callingDialog, automated_requiredMixinIds, automated_mod);
 			}
 		}
 
@@ -574,6 +573,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				this.minVersion = 1;
 			}
 		}
+	}
+
+	public Object getApplyLock() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

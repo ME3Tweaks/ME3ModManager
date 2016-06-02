@@ -56,6 +56,7 @@ import org.xml.sax.SAXException;
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.KeybindsInjectionWindow;
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
@@ -1777,7 +1778,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (requiredMixinIds.size() > 0 || dynamicMixins.size() > 0) {
 				currentOperationLabel.setText("Preparing MixIns");
 				ModManager.debugLogger.writeMessage("Mod delta recommends MixIns, running PatchLibraryWindow()");
-				new PatchLibraryWindow(this, requiredMixinIds, dynamicMixins, newMod);
+				PatchLibraryWindow plw = new PatchLibraryWindow(this,requiredMixinIds, dynamicMixins, newMod);
 				for (DynamicPatch dp : dynamicMixins) {
 					FileUtils.deleteQuietly(dp.getOutputfile());
 				}
@@ -1938,5 +1939,9 @@ public class ModMakerCompilerWindow extends JDialog {
 		default:
 			return null;
 		}
+	}
+
+	public JLabel getCurrentTaskLabel() {
+		return currentOperationLabel;
 	}
 }
