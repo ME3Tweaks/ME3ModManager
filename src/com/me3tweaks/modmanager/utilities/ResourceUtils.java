@@ -2,8 +2,13 @@ package com.me3tweaks.modmanager.utilities;
 
 import java.awt.Color;
 import java.awt.Desktop;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextPane;
@@ -16,9 +21,19 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.ModManager;
+
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IInArchive;
+import net.sf.sevenzipjbinding.ISequentialOutStream;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 /**
  * Contains generic methods for basic tasks
@@ -39,6 +54,104 @@ public class ResourceUtils {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
 		}
+	}
+
+	public static boolean decompressLZMAFile(String lzmaFile, String expectedHash) {
+		RandomAccessFile randomAccessFile = null;
+		String decompressedFileLocation = lzmaFile.substring(0, lzmaFile.length() - 5);
+		ModManager.debugLogger.writeMessage("Decompressing LZMA file: " + lzmaFile);
+		IInArchive inArchive = null;
+		try {
+			randomAccessFile = new RandomAccessFile(lzmaFile, "r");
+			inArchive = SevenZip.openInArchive(null, // autodetect archive type
+					new RandomAccessFileInStream(randomAccessFile));
+
+			// Getting simple interface of the archive inArchive
+			ISimpleInArchive simpleInArchive = inArchive.getSimpleInterface();
+
+			for (ISimpleInArchiveItem item : simpleInArchive.getArchiveItems()) {
+				if (!item.isFolder()) {
+					ExtractOperationResult result;
+
+					result = item.extractSlow(new ISequentialOutStream() {
+						public int write(byte[] data) throws SevenZipException {
+							FileOutputStream fos = null;
+							try {
+								File path = new File(decompressedFileLocation);
+
+								if (!path.getParentFile().exists()) {
+									path.getParentFile().mkdirs();
+								}
+
+								if (!path.exists()) {
+									path.createNewFile();
+								}
+								fos = new FileOutputStream(path, true);
+								fos.write(data);
+							} catch (SevenZipException e) {
+								ByteArrayOutputStream baos = new ByteArrayOutputStream();
+								PrintStream ps = new PrintStream(baos);
+								e.printStackTrace(ps);
+								try {
+									ModManager.debugLogger.writeError("Error while decompressing LZMA: " + baos.toString("utf-8"));
+								} catch (UnsupportedEncodingException e1) {
+									//this shouldn't happen.
+								}
+							} catch (IOException e) {
+								ModManager.debugLogger.writeErrorWithException("IOException while extracting " + lzmaFile, e);
+								e.printStackTrace();
+							} finally {
+								try {
+									if (fos != null) {
+										fos.flush();
+										fos.close();
+									}
+								} catch (IOException e) {
+									ModManager.debugLogger.writeErrorWithException("Could not close FileOutputStream", e);
+								}
+							}
+							return data.length; // Return amount of consumed data
+						}
+					});
+
+					if (result == ExtractOperationResult.OK) {
+						ModManager.debugLogger.writeMessage("Decompression complete.");
+						if (expectedHash != null) {
+							String hash = MD5Checksum.getMD5Checksum(decompressedFileLocation);
+							if (expectedHash.equals(hash)) {
+								throw new Exception("Hash check failed for decompressed file");
+							}
+						}
+						return true;
+					} else {
+						ModManager.debugLogger.writeError("Error extracting item: " + result);
+						return false;
+					}
+				}
+			}
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Error occured decompressing LZMA file:", e);
+		} finally {
+			if (inArchive != null) {
+				try {
+					inArchive.close();
+				} catch (SevenZipException e) {
+					System.err.println("Error closing archive: " + e);
+				}
+			}
+			if (randomAccessFile != null) {
+				try {
+					randomAccessFile.close();
+				} catch (IOException e) {
+					System.err.println("Error closing file: " + e);
+				}
+			}
+			boolean deleted = FileUtils.deleteQuietly(new File(lzmaFile));
+			if (!deleted) {
+				System.err.println("Unable to delete compressed file after decompression attempt");
+			}
+		}
+		return false;
 	}
 
 	/**

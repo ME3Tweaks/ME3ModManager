@@ -62,7 +62,8 @@ public class FolderBatchWindow extends JDialog {
 			JButton compressAllPcc = new JButton("Compress all PCC files");
 			JButton sideloadAllModMaker = new JButton("Sideload all ModMaker XML files");
 
-			compileAllTLK.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
+			compileAllTLK
+					.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
 			decompileAllTLK.setToolTipText("<html>Decompiles all TLK files using the TankMaster compiler tool included with Mod Manager.</html>");
 			decompileAllCoalesced
 					.setToolTipText("<html>Decompils all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
@@ -158,9 +159,64 @@ public class FolderBatchWindow extends JDialog {
 		} else {
 			String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath());
 			switch (extension) {
+			case "pcc": {
+				JLabel headerLabel = new JLabel("<html>You dropped an PCC file onto Mod Manager.<br>" + droppedFile
+						+ "<br>Select what operation to perform with this file.</html>");
+				panel.add(headerLabel, c);
+
+				JButton decompressPCC = new JButton("Decompress PCC");
+				JButton compressPCC = new JButton("Compress PCC");
+
+				decompressPCC.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						String name = FilenameUtils.getName(droppedFile.getAbsolutePath());
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Decompressing " + name);
+						ProcessResult pr = ModManager.decompressPCC(droppedFile, droppedFile);
+						if (pr.getReturnCode() == 0) {
+							ModManager.debugLogger.writeMessage("Deompressed " + name);
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Decompressed " + name);
+						} else {
+							ModManager.debugLogger.writeMessage("Failed to decompress " + name + "(" + pr.getReturnCode() + ")");
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to decompress " + name + "(" + pr.getReturnCode() + ")");
+
+						}
+						dispose();
+					}
+				});
+
+				compressPCC.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						String name = FilenameUtils.getName(droppedFile.getAbsolutePath());
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compressing " + name);
+						ProcessResult pr = ModManager.compressPCC(droppedFile, droppedFile);
+						if (pr.getReturnCode() == 0) {
+							ModManager.debugLogger.writeMessage("Compressed " + name);
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compressed " + name);
+						} else {
+							ModManager.debugLogger.writeMessage("Failed to compressed " + name + "(" + pr.getReturnCode() + ")");
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to compress " + name + "(" + pr.getReturnCode() + ")");
+
+						}
+						dispose();
+					}
+				});
+
+				c.gridy++;
+				panel.add(decompressPCC, c);
+				c.gridy++;
+
+				panel.add(compressPCC, c);
+				c.gridy++;
+
+				break;
+			}
 			case "xml":
-				JLabel headerLabel = new JLabel(
-						"<html>You dropped an XML file onto Mod Manager.<br>" + droppedFile + "<br>Select what operation to perform with this file.</html>");
+				JLabel headerLabel = new JLabel("<html>You dropped an XML file onto Mod Manager.<br>" + droppedFile
+						+ "<br>Select what operation to perform with this file.</html>");
 				panel.add(headerLabel, c);
 
 				JButton compileTLK = new JButton("Compile TLK (TLK Manifest (Tankmaster only))");

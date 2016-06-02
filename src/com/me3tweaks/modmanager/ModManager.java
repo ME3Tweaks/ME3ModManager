@@ -71,14 +71,14 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.2.3";
-	public static long BUILD_NUMBER = 56L;
-	public static final String BUILD_DATE = "5/14/2016";
+	public static final String VERSION = "4.2.4";
+	public static long BUILD_NUMBER = 57L;
+	public static final String BUILD_DATE = "6/1/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
-	public static final double MODMAKER_VERSION_SUPPORT = 2.0; // max modmaker
+	public static final double MODMAKER_VERSION_SUPPORT = 2.1; // max modmaker
 																// version
 	public static final double MODDESC_VERSION_SUPPORT = 4.2; // max supported
 																// cmmver in
@@ -89,8 +89,8 @@ public class ModManager {
 	public static long LAST_AUTOUPDATE_CHECK;
 	public static final int MIN_REQUIRED_ME3EXPLORER_MAIN = 2;
 	public static final int MIN_REQUIRED_ME3EXPLORER_MINOR = 0;
-	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 3;
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 6; //1.0.0.X
+	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 6;
+	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 7; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
 	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
@@ -956,6 +956,13 @@ public class ModManager {
 		return getToolsDir() + "GUITransplanter/";
 	}
 
+	/**
+	 * Downloads Transplanter if not already downloaded. Returns path if
+	 * downloaded, null if not found locally after download attempt.
+	 * 
+	 * @param download
+	 * @return
+	 */
 	public static String getGUITransplanterCLI(boolean download) {
 		File transplanterexe = new File(getGUITransplanterDir() + "Transplanter-CLI.exe");
 		if (!transplanterexe.exists() && download) {
@@ -1058,6 +1065,11 @@ public class ModManager {
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * Returns the mixinlibrary folder.
+	 * 
+	 * @return ME3CMM/mixinlibrary/
+	 */
 	public static String getPatchesDir() {
 		File file = new File(getDataDir() + "mixinlibrary/");
 		file.mkdirs();
@@ -1557,7 +1569,7 @@ public class ModManager {
 				// System.out.println("Searching for file: " +
 				// searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
-					Patch validatingPatch = new Patch(searchSubDirDesc.getAbsolutePath());
+					Patch validatingPatch = new Patch(searchSubDirDesc.getAbsolutePath(), ModManager.appendSlash(subdirs[i].toString()) + "patch.jsf");
 					if (validatingPatch.isValid()) {
 						validPatches.add(validatingPatch);
 					}
@@ -1682,6 +1694,11 @@ public class ModManager {
 		}
 	}
 
+	/**
+	 * Returns directory that contains folders of patches
+	 * 
+	 * @return /mixinlibrary/patches/
+	 */
 	public static String getPatchLibraryDir() {
 		return getPatchesDir() + "patches/";
 	}
@@ -1788,7 +1805,7 @@ public class ModManager {
 			int returncode = process.waitFor();
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
-			ModManager.debugLogger.writeMessage("Process output: "+writer.toString());
+			ModManager.debugLogger.writeMessage("Process output: " + writer.toString());
 			writer.close();
 			return new ProcessResult(returncode, null);
 		} catch (IOException | InterruptedException e) {
@@ -1972,20 +1989,6 @@ public class ModManager {
 					filesMap.put(filename, dlcFileAppearsIn);
 				}
 			}
-
-			//remove non-conflicts
-			ArrayList<String> keysToRemove = new ArrayList<String>();
-			for (Map.Entry<String, ArrayList<CustomDLC>> entry : filesMap.entrySet()) {
-				String key = entry.getKey();
-				ArrayList<CustomDLC> value = entry.getValue();
-				if (value.size() <= 1) {
-					//not a conflict
-					keysToRemove.add(key);
-				}
-			}
-			for (String key : keysToRemove) {
-				filesMap.remove(key);
-			}
 			return filesMap;
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Error getting DLC conflict list:", e);
@@ -2017,12 +2020,17 @@ public class ModManager {
 		return foldernames;
 	}
 
-	
 	/**
 	 * Gets the path to the GUI library specified by the DLC name
-	 * @param dlcname DLC to get library for
-	 * @param download Download library if library not found. If set to false, this will return the library path, if true it will return null if the library can't be downloaded.
-	 * @return library path or null if download is true and library can't be downloaded
+	 * 
+	 * @param dlcname
+	 *            DLC to get library for
+	 * @param download
+	 *            Download library if library not found. If set to false, this
+	 *            will return the library path, if true it will return null if
+	 *            the library can't be downloaded.
+	 * @return library path or null if download is true and library can't be
+	 *         downloaded
 	 */
 	public static String getGUILibraryFor(String dlcname, boolean download) {
 		String libraryPath = getUILibraryPath();
@@ -2100,5 +2108,25 @@ public class ModManager {
 	 */
 	private static String getUILibraryPath() {
 		return getDataDir() + "UILibrary" + File.separator;
+	}
+
+	/**
+	 * Returns true if DLC_CON_XBX, DLC_CON_UIScaling, or
+	 * DLC_CON_UIScaling_Shared is present in the DLC directory.
+	 * 
+	 * @param biogameDirectory
+	 *            biogame dir
+	 * @return true if folder exists, false otherwise
+	 */
+	public static boolean isGUIModInstalled(String biogameDirectory) {
+		String dlcfolder = appendSlash(biogameDirectory) + "DLC/";
+		for (String dlc : KNOWN_GUI_CUSTOMDLC_MODS) {
+			File f = new File(dlcfolder + dlc);
+			ModManager.debugLogger.writeMessage("Scanning for UI mod: " + f);
+			if (f.exists() && f.isDirectory()) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

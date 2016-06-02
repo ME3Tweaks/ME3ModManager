@@ -40,6 +40,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import com.me3tweaks.modmanager.modmaker.DynamicPatch;
 import com.me3tweaks.modmanager.objects.ME3TweaksPatchPackage;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.Patch;
@@ -64,12 +65,13 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	private ArrayList<Integer> automated_requiredMixinIds;
 	private Mod automated_mod;
 	private boolean downloaded;
+	private ArrayList<DynamicPatch> dynamicMixIns;
 
 	public PatchLibraryWindow() {
 		ModManager.debugLogger.writeMessage("Loading mixin library interface");
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(), false).execute();
+		new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), false).execute();
 		setVisible(true);
 	}
 
@@ -78,9 +80,10 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	 * checked for being in the local library. If they aren't in the library, it
 	 * attempts to download them from me3tweaks.com's library.
 	 * 
-	 * @param requiredMixinIds me3tweaks patch ids
+	 * @param requiredMixinIds
+	 *            me3tweaks patch ids
 	 */
-	public PatchLibraryWindow(JDialog callingDialog, ArrayList<String> requiredMixinIds, Mod mod) {
+	public PatchLibraryWindow(JDialog callingDialog, ArrayList<String> requiredMixinIds, ArrayList<DynamicPatch> dynamicMixIns, Mod mod) {
 		setModalityType(ModalityType.APPLICATION_MODAL);
 		ArrayList<ModmakerMixinIdentifier> modmakerIds = new ArrayList<ModmakerMixinIdentifier>();
 		ArrayList<Integer> requiredIds = new ArrayList<Integer>();
@@ -88,7 +91,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		for (String requiredID : requiredMixinIds) {
 			modmakerIds.add(new ModmakerMixinIdentifier(requiredID));
 		}
-		
+
 		ModManager.debugLogger.writeMessage("Loading mixin library in automated mode");
 		boolean hasMissingMixIn = false;
 		for (ModmakerMixinIdentifier modmakermixin : modmakerIds) {
@@ -109,13 +112,13 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		}
 		this.automated_requiredMixinIds = requiredIds;
 		this.automated_mod = mod;
-
+		this.dynamicMixIns = dynamicMixIns;
 		if (hasMissingMixIn) {
-			new ME3TweaksLibraryUpdater(ModManagerWindow.ACTIVE_WINDOW.getPatchList(), true).execute();
+			new ME3TweaksLibraryUpdater(callingDialog,ModManagerWindow.ACTIVE_WINDOW.getPatchList(), true).execute();
 			setupAutomatedWindow(callingDialog);
 			setVisible(true);
 		} else {
-			advertiseInstalls(automated_requiredMixinIds, automated_mod);
+			advertiseInstalls(callingDialog, automated_requiredMixinIds, automated_mod);
 			dispose();
 		}
 	}
@@ -138,7 +141,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		this.setLocationRelativeTo(callingDialog);
 	}
 
-	private void advertiseInstalls(ArrayList<Integer> mixinIds, Mod mod) {
+	private void advertiseInstalls(JDialog callingDialog, ArrayList<Integer> mixinIds, Mod mod) {
 		//Build patch array, build prompt text
 		String str = "This mod wants to apply the following MixIns from ME3Tweaks:";
 		ArrayList<Patch> patches = new ArrayList<Patch>();
@@ -151,14 +154,27 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				}
 			}
 		}
+
+		for (DynamicPatch p : dynamicMixIns) {
+			str += "\n - " + p.getFinalPatch().getPatchName();
+			patches.add(p.getFinalPatch());
+		}
+
 		str += "\n\nApply these MixIns to the mod?\n\nYou can automatically accept MixIns through the Options panel.";
 		//show prompt
 		ModManager.debugLogger.writeMessage("Prompting user for install of mixins");
 
 		int response = JOptionPane.NO_OPTION;
 		if (!ModManager.AUTO_APPLY_MODMAKER_MIXINS) {
-			response = JOptionPane.showConfirmDialog(null, str, "Recommended MixIns", JOptionPane.YES_NO_OPTION);
-			
+			JTextArea textArea = new JTextArea(str);
+			JScrollPane scrollPane = new JScrollPane(textArea);
+			textArea.setLineWrap(true);
+			textArea.setWrapStyleWord(true);
+			scrollPane.setPreferredSize(new Dimension(500, 500));
+			textArea.setCaretPosition(0);
+			textArea.setEditable(false);
+			response = JOptionPane.showConfirmDialog(null, scrollPane, "Recommended MixIns", JOptionPane.YES_NO_OPTION);
+
 		} else {
 			response = JOptionPane.YES_OPTION;
 			ModManager.debugLogger.writeMessage("User has auto install mixins option set.");
@@ -170,7 +186,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			if (!mod.isValidMod()) {
 				return; // this shouldn't be reachable anyways
 			}
-			PatchApplicationWindow paw = new PatchApplicationWindow(this, patches, mod);
+			PatchApplicationWindow paw = new PatchApplicationWindow(callingDialog, patches, mod);
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() > 0) {
 				String rstr = "The following MixIns failed to apply:\n";
@@ -305,7 +321,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			} else {
 				description += "---------------------------------\n";
 			}
-			description += patch.getPatchName() +" v"+patch.getPatchVersion();
+			description += patch.getPatchName() + " v" + patch.getPatchVersion();
 			description += "\n\n";
 			description += patch.getPatchDescription();
 			description += "\n\n";
@@ -356,10 +372,12 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		boolean modmakerMode;
 		boolean atLeast1New = false;
 		ArrayList<Patch> patches;
+		private JDialog callingDialog;
 
-		public ME3TweaksLibraryUpdater(ArrayList<Patch> patches, boolean isInModMakerMode) {
+		public ME3TweaksLibraryUpdater(JDialog callingDialog, ArrayList<Patch> patches, boolean isInModMakerMode) {
 			this.modmakerMode = isInModMakerMode;
 			this.patches = patches;
+			this.callingDialog = callingDialog;
 		}
 
 		@Override
@@ -448,7 +466,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					String patchDesc = Patch.generatePatchDesc(pack);
 					FileUtils.writeStringToFile(new File(targetFolderStr + "patchdesc.ini"), patchDesc);
 
-					Patch p = new Patch(targetFolderStr + "patchdesc.ini");
+					Patch p = new Patch(targetFolderStr + "patchdesc.ini", targetFolderStr + "patch.jsf");
 					publish(new ThreadCommand("REMOVE_LOCAL_LIST_PATCH", null, p));
 					publish(new ThreadCommand("ADD_PATCH", null, p));
 				}
@@ -474,7 +492,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					//Remove all existing patches with ID being updated
 					if (tc.getCommand().equals("REMOVE_LOCAL_LIST_PATCH")) {
 						for (int i = 0; i < patchModel.getSize(); i++) {
-							if (patchModel.getElementAt(i).getMe3tweaksid() == p.getMe3tweaksid()){
+							if (patchModel.getElementAt(i).getMe3tweaksid() == p.getMe3tweaksid()) {
 								patchModel.remove(i);
 							}
 						}
@@ -517,12 +535,12 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					JOptionPane.showMessageDialog(null, errorStr, "Missing MixIns", JOptionPane.WARNING_MESSAGE);
 				}
 				dispose();
-				advertiseInstalls(automated_requiredMixinIds, automated_mod);
+				advertiseInstalls(callingDialog, automated_requiredMixinIds, automated_mod);
 			}
 		}
 
 	}
-	
+
 	private class ModmakerMixinIdentifier {
 		public int getMinVersion() {
 			return minVersion;
@@ -544,10 +562,10 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		private int mixinid;
 
 		public ModmakerMixinIdentifier(String modmakerString) {
-			if (modmakerString.contains("v")){
+			if (modmakerString.contains("v")) {
 				int endIDIndex = modmakerString.indexOf('v');
 				String id = modmakerString.substring(0, endIDIndex);
-				String version = modmakerString.substring(endIDIndex+1, modmakerString.length());
+				String version = modmakerString.substring(endIDIndex + 1, modmakerString.length());
 				this.mixinid = Integer.parseInt(id);
 				this.minVersion = Integer.parseInt(version);
 			} else {
@@ -555,6 +573,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				this.minVersion = 1;
 			}
 		}
+	}
+
+	public Object getApplyLock() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

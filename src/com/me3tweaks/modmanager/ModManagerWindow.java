@@ -114,7 +114,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionExitDebugMode, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementFailedMods,
-			modManagementPatchLibary;
+			modManagementPatchLibary,modManagementClearPatchLibraryCache;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
 			modutilsDeleteMod;
 	JMenuItem toolME3Explorer, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor, toolsMergeMod, toolME3Config;
@@ -830,6 +830,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						case "rar":
 							new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
 							break;
+						case "pcc":
 						case "xml":
 							new FolderBatchWindow(ModManagerWindow.this, files[0]);
 							break;
@@ -839,6 +840,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						case "tlk":
 							TLKTool.decompileTLK(files[0]);
 							break;
+							
 						case "bin":
 							//read magic at beginning to find out what type of file this is
 							try {
@@ -1127,6 +1129,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementPatchLibary.setToolTipText("Add premade mixins to mods using patches in your patch library");
 		modManagementOpenModsFolder = new JMenuItem("Open mods/ folder");
 		modManagementOpenModsFolder.setToolTipText("Opens the mods/ folder so you can inspect and add/remove mods");
+		modManagementClearPatchLibraryCache = new JMenuItem("Clear MixIn cache");
+		modManagementClearPatchLibraryCache.setToolTipText("<html>Clears the decompressed MixIn library cache.<br>This will make Mod Manager fetch the original files again as MixIns require them.<br>Use this if MixIns are having issues.</html>");
 
 		int numFailedMods = getInvalidMods().size();
 		modManagementFailedMods = new JMenuItem(numFailedMods + " mod" + (numFailedMods != 1 ? "s" : "") + " failed to load");
@@ -1145,8 +1149,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementMenu.add(modManagementCheckallmodsforupdate);
 		modManagementMenu.add(modManagementPatchLibary);
 		modManagementMenu.add(modManagementOpenModsFolder);
+		modManagementMenu.addSeparator();
+		modManagementMenu.add(modManagementClearPatchLibraryCache);
 		menuBar.add(modManagementMenu);
 
+		modManagementClearPatchLibraryCache.addActionListener(this);
 		modManagementOpenModsFolder.addActionListener(this);
 		modManagementFailedMods.addActionListener(this);
 		modManagementImportFromArchive.addActionListener(this);
@@ -1848,6 +1855,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ResourceUtils.openDir(ModManager.getTankMasterCompilerDir());
 		} else if (e.getSource() == modManagementOpenModsFolder) {
 			ResourceUtils.openDir(ModManager.getModsDir());
+		} else if (e.getSource() == modManagementClearPatchLibraryCache) {
+			File libraryDir = new File(ModManager.getPatchesDir()+"source");
+			if (libraryDir.exists() ){
+				boolean deleted =FileUtils.deleteQuietly(libraryDir);
+				labelStatus.setText("MixIn cache deleted");
+				ModManager.debugLogger.writeMessage("Deleted mixin cache "+libraryDir+ ": "+deleted);
+			} else {
+				ModManager.debugLogger.writeMessage("No mixin cache: "+libraryDir);
+				labelStatus.setText("No MixIn cache to delete");
+			}
 		} else if (e.getSource() == toolTankmasterTLK) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
@@ -2006,6 +2023,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (mod.getModMakerCode() <= 0 || validateBIOGameDir()) {
 				if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Running (restore mode) single mod update check on " + mod.getModName());
+					mod = new Mod(mod); //create clone
 					mod.setVersion(0.001);
 					new SingleModUpdateCheckThread(mod).execute();
 				} else {

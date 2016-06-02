@@ -29,7 +29,9 @@ public class Patch implements Comparable<Patch> {
 	public static final int APPLY_FAILED_MODDESC_NOT_UPDATED = 1;
 	public static final int APPLY_FAILED_SOURCE_FILE_WRONG_SIZE = 2;
 	public static final int APPLY_FAILED_NO_SOURCE_FILE = 3;
-	String targetPath, targetModule, patchPath;
+	public static final int APPLY_FAILED_SIZE_CHANGED = 4;
+	String targetPath, targetModule;
+	private String patchPath;
 	boolean isValid = false, finalizer = false;
 
 	String patchName, patchDescription, patchFolderPath;
@@ -38,21 +40,22 @@ public class Patch implements Comparable<Patch> {
 	private String patchAuthor;
 	private int me3tweaksid;
 
-	public Patch(String descriptorPath) {
+	public Patch(String descriptorPath, String patchPath) {
 		ModManager.debugLogger.writeMessage("Loading patch: " + descriptorPath);
 		readPatch(descriptorPath);
-		patchPath = descriptorPath;
+		setPatchPath(patchPath);
 	}
 
 	/**
 	 * Copy constructor
 	 * 
-	 * @param patch patch to copy
+	 * @param patch
+	 *            patch to copy
 	 */
 	public Patch(Patch patch) {
 		targetPath = patch.targetPath;
 		targetModule = patch.targetModule;
-		patchPath = patch.patchPath;
+		setPatchPath(patch.getPatchPath());
 		isValid = patch.isValid;
 		finalizer = patch.finalizer;
 		patchName = patch.patchName;
@@ -61,8 +64,16 @@ public class Patch implements Comparable<Patch> {
 		targetSize = patch.targetSize;
 		patchVersion = patch.patchVersion;
 		patchCMMVer = patch.patchCMMVer;
-		patchAuthor = patch.patchAuthor;
-		me3tweaksid = patch.me3tweaksid;
+		setPatchAuthor(patch.getPatchAuthor());
+		setMe3tweaksid(patch.getMe3tweaksid());
+	}
+
+	/**
+	 * Empty constructor, only use if you are planning to manually add all
+	 * required fields.
+	 */
+	public Patch() {
+
 	}
 
 	private void readPatch(String path) {
@@ -81,8 +92,8 @@ public class Patch implements Comparable<Patch> {
 			patchName = patchini.get("PatchInfo", "patchname");
 			try {
 				String idstr = patchini.get("PatchInfo", "me3tweaksid");
-				me3tweaksid = Integer.parseInt(idstr);
-				ModManager.debugLogger.writeMessageConditionally("Patch ID on ME3Tweaks: " + me3tweaksid, ModManager.LOG_PATCH_INIT);
+				setMe3tweaksid(Integer.parseInt(idstr));
+				ModManager.debugLogger.writeMessageConditionally("Patch ID on ME3Tweaks: " + getMe3tweaksid(), ModManager.LOG_PATCH_INIT);
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeError("me3tweaksid is not an integer, setting to 0");
 			}
@@ -95,6 +106,7 @@ public class Patch implements Comparable<Patch> {
 				isValid = false;
 				return;
 			}
+			patchPath = patchFile.getAbsolutePath();
 
 			ModManager.debugLogger.writeMessageConditionally("Patch Folder: " + patchFolderPath, ModManager.LOG_PATCH_INIT);
 			ModManager.debugLogger.writeMessageConditionally("Patch Name: " + patchName, ModManager.LOG_PATCH_INIT);
@@ -106,8 +118,8 @@ public class Patch implements Comparable<Patch> {
 				patchCMMVer = Float.parseFloat(patchini.get("ModManager", "cmmver"));
 				patchCMMVer = (double) Math.round(patchCMMVer * 10) / 10; //tenth rounding;
 				ModManager.debugLogger.writeMessageConditionally("Patch Targets Mod Manager: " + patchCMMVer, ModManager.LOG_PATCH_INIT);
-				patchAuthor = patchini.get("PatchInfo", "patchdev");
-				ModManager.debugLogger.writeMessageConditionally("Patch Developer (if any) " + patchAuthor, ModManager.LOG_PATCH_INIT);
+				setPatchAuthor(patchini.get("PatchInfo", "patchdev"));
+				ModManager.debugLogger.writeMessageConditionally("Patch Developer (if any) " + getPatchAuthor(), ModManager.LOG_PATCH_INIT);
 				String strPatchVersion = patchini.get("PatchInfo", "patchver");
 				if (strPatchVersion != null) {
 					patchVersion = Float.parseFloat(strPatchVersion);
@@ -197,7 +209,7 @@ public class Patch implements Comparable<Patch> {
 			return null;
 		}
 		ModManager.debugLogger.writeMessage("Reloading imported patch");
-		return new Patch(destinationDir + File.separator + "patchdesc.ini");
+		return new Patch(destinationDir + File.separator + "patchdesc.ini", destinationDir + File.separator + "patch.jsf");
 	}
 
 	/**
@@ -213,8 +225,18 @@ public class Patch implements Comparable<Patch> {
 			ModManager.debugLogger.writeMessage(mod.getModName() + " does not appear to modify " + targetPath + " in module " + targetModule + ", performing file fetch");
 			//we need to check if its in the patch library's source folder
 			modSourceFile = ModManager.getPatchSource(targetPath, targetModule);
+			File mf = new File(modSourceFile);
+			if (mf.length() != targetSize) {
+				ModManager.debugLogger.writeError("Fetched file is the wrong size! Need: " + targetSize + " but we got " + mf.length());
+				return null;
+			}
 			return modSourceFile;
 		} else {
+			File mf = new File(modSourceFile);
+			if (mf.length() != targetSize) {
+				ModManager.debugLogger.writeError("Fetched file is the wrong size! Need: " + targetSize + " but we got " + mf.length());
+				return null;
+			}
 			return modSourceFile;
 		}
 	}
@@ -345,36 +367,49 @@ public class Patch implements Comparable<Patch> {
 						.writeError("Source file should have been copied to mod directory already. ModDesc.ini however is missing a newfiles/replacefiles task in the job.");
 				return APPLY_FAILED_MODDESC_NOT_UPDATED;
 			}
+			File sourceFile = new File(modSourceFile);
+			if (sourceFile.length() != targetSize) {
+				ModManager.debugLogger
+						.writeError("Source file is the wrong size! This patch only applies to files of size " + targetSize + " but the file is " + sourceFile.length());
+				return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
+			}
 			//rename file (so patch doesn't continuously recalculate itself)
 			File stagingFile = new File(ModManager.getTempDir() + "patch_staging"); //this file is used as base, and then patch puts file back in original place
 			ModManager.debugLogger.writeMessage("Staging source file: " + modSourceFile + " => " + stagingFile.getAbsolutePath());
 
 			stagingFile.delete();
-			FileUtils.moveFile(new File(modSourceFile), stagingFile);
+			FileUtils.moveFile(sourceFile, stagingFile);
 
 			//apply patch
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getToolsDir() + "jptch.exe");
 			commandBuilder.add(stagingFile.getAbsolutePath());
-			commandBuilder.add(getPatchFolderPath() + "patch.jsf");
+			commandBuilder.add(patchPath);
 			commandBuilder.add(modSourceFile);
 			StringBuilder sb = new StringBuilder();
 			for (String arg : commandBuilder) {
 				sb.append("\"" + arg + "\" ");
 			}
 
-			ModManager.debugLogger.writeMessage("Executing JPATCH patch command: " + sb.toString());
 			ProcessBuilder patchProcessBuilder = new ProcessBuilder(commandBuilder);
 			ProcessResult result = ModManager.runProcess(patchProcessBuilder);
+			stagingFile.delete();
 			if (result.hadError()) {
-				ModManager.debugLogger.writeMessage("Error occured while attempting to apply patch.");
+				ModManager.debugLogger.writeError("Error occured while attempting to apply patch.");
+				ModManager.debugLogger.writeException(result.getError());
 				return APPLY_FAILED_OTHERERROR;
 			}
 			if (result.getReturnCode() != 0) {
 				return APPLY_FAILED_OTHERERROR;
 			}
-			stagingFile.delete();
-			ModManager.debugLogger.writeMessage("File has been patched.");
+
+			File outfile = new File(modSourceFile);
+			if (!finalizer && outfile.length() != targetSize) {
+				//filesize has changed but this is not a finalizer
+				return APPLY_FAILED_SIZE_CHANGED;
+			}
+
+			ModManager.debugLogger.writeMessage("File has been patched. Output size is " + sourceFile.length());
 			return APPLY_SUCCESS;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -495,7 +530,7 @@ public class Patch implements Comparable<Patch> {
 		sb.append("INSERT INTO mixinlibrary VALUES (\n\tnull,\n");
 		sb.append("\t\"" + patchName + "\",\n");
 		sb.append("\t\"" + patchDescription + "\",\n");
-		sb.append("\t\"" + ((patchAuthor == null) ? "FemShep" : patchAuthor) + "\",\n");
+		sb.append("\t\"" + ((getPatchAuthor() == null) ? "FemShep" : getPatchAuthor()) + "\",\n");
 		sb.append("\t" + patchVersion + ",\n");
 		if (patchCMMVer < 4.0) {
 			patchCMMVer = 4.0;
@@ -529,5 +564,21 @@ public class Patch implements Comparable<Patch> {
 
 	public int getMe3tweaksid() {
 		return me3tweaksid;
+	}
+
+	public void setPatchAuthor(String patchAuthor) {
+		this.patchAuthor = patchAuthor;
+	}
+
+	public void setMe3tweaksid(int me3tweaksid) {
+		this.me3tweaksid = me3tweaksid;
+	}
+
+	public String getPatchPath() {
+		return patchPath;
+	}
+
+	public void setPatchPath(String patchPath) {
+		this.patchPath = patchPath;
 	}
 }

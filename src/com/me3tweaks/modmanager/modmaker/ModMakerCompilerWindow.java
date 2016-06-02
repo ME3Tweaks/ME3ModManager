@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +45,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -54,11 +56,13 @@ import org.xml.sax.SAXException;
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.KeybindsInjectionWindow;
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
 import com.me3tweaks.modmanager.valueparsers.enemytype.EnemyType;
 import com.me3tweaks.modmanager.valueparsers.id.ID;
@@ -84,18 +88,19 @@ public class ModMakerCompilerWindow extends JDialog {
 	JProgressBar overallProgress, currentStepProgress;
 	private Mod mod;
 	private ArrayList<String> requiredMixinIds = new ArrayList<String>();
+	private ArrayList<DynamicPatch> dynamicMixins = new ArrayList<DynamicPatch>();
 
 	/**
 	 * Starts a modmaker session for a user-selected download
 	 * 
 	 * @param code
-	 *            code to download (if not an integer, use sideload method, which assumes the value is a filepath to an xml file.)
+	 *            code to download (if not an integer, use sideload method,
+	 *            which assumes the value is a filepath to an xml file.)
 	 * @param languages
 	 *            languages to compile
 	 */
 	public ModMakerCompilerWindow(String code, ArrayList<String> languages) {
 		this.code = code;
-
 		this.languages = languages;
 		setupWindow();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
@@ -167,15 +172,18 @@ public class ModMakerCompilerWindow extends JDialog {
 				//nothing
 			}
 			String link = null;
+			String lzmalink = null;
 			if (mmcode > 0) {
 				//Download
 				ModManager.debugLogger.writeMessage("================DOWNLOADING MOD INFORMATION==============");
+				//ATTEMPT LZMA
 				if (ModManager.IS_DEBUG) {
 					link = "http://webdev-c9-mgamerz.c9.io/modmaker/download.php?id=" + code;
 				} else {
 					link = "https://me3tweaks.com/modmaker/download.php?id=" + code;
 				}
-				ModManager.debugLogger.writeMessage("Fetching mod from " + link);
+				lzmalink = link + "&method=lzma";
+				ModManager.debugLogger.writeMessage("Fetching mod from " + lzmalink);
 			} else {
 				//Sideload
 				ModManager.debugLogger.writeMessage("================SKIP DOWNLOAD, USING SIDELOAD METHOD==============");
@@ -184,7 +192,37 @@ public class ModMakerCompilerWindow extends JDialog {
 			try {
 				String modDelta = null;
 				if (mmcode > 0) {
-					modDelta = IOUtils.toString(new URL(link));
+					try {
+						String downloadedfile = ModManager.getTempDir()+code+".xml";
+						File lzmafile = new File(downloadedfile+".lzma");
+						publish(new ThreadCommand("UPDATE_INFO", "<html>Downloading mod delta from ME3Tweaks</html>"));
+						FileUtils.copyURLToFile(new URL(lzmalink), lzmafile);
+						publish(new ThreadCommand("UPDATE_INFO", "<html>Decompressing mod delta</html>"));
+						if (ResourceUtils.decompressLZMAFile(lzmafile.getAbsolutePath(), null)) {
+							//decompressed OK
+							modDelta = FileUtils.readFileToString(new File(downloadedfile));
+							FileUtils.deleteQuietly(new File(downloadedfile));
+							FileUtils.deleteQuietly(lzmafile);
+						} else {
+							FileUtils.deleteQuietly(new File(downloadedfile));
+							FileUtils.deleteQuietly(lzmafile);
+							throw new IOException("Failed to decompress LZMA file, falling back...");
+						}
+					} catch (IOException e) {
+						FileUtils.deleteQuietly(new File(ModManager.getTempDir()+code+".xml"));
+						FileUtils.deleteQuietly(new File(ModManager.getTempDir()+code+".xml.lzma"));
+						try {
+							ModManager.debugLogger.writeMessage("I/O Exception using LZMA link, falling back to decompressed link...");
+							publish(new ThreadCommand("UPDATE_INFO", "<html>Downloading mod delta from ME3Tweaks</html>"));
+							modDelta = IOUtils.toString(new URL(link), StandardCharsets.UTF_8);
+						} catch (IOException ex) {
+							ModManager.debugLogger.writeErrorWithException("I/O Exception using LZMA and fallback links, giving up. ", ex);
+							dispose();
+							publish(new ThreadCommand("ERROR", "<html>Unable to download ME3Tweaks ModMaker mod:<br>" + ex.getMessage() + "</html>"));
+							running = false;
+							return;
+						}
+					}
 				} else {
 					//load sideload
 					modDelta = FileUtils.readFileToString(new File(code));
@@ -192,6 +230,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				//File downloaded = new File(DOWNLOADED_XML_FILENAME);
 				//downloaded.delete();
 				//FileUtils.copyURLToFile(new URL(link), downloaded);
+				publish(new ThreadCommand("UPDATE_INFO", "<html>Parsing Mod Delta</html>"));
 				ModManager.debugLogger.writeMessage("Mod delta downloaded to memory");
 				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 				ModManager.debugLogger.writeMessage("Loading mod delta into document into memory.");
@@ -303,25 +342,41 @@ public class ModMakerCompilerWindow extends JDialog {
 			modMakerVersion = Double.parseDouble(modModMakerVersion);
 			if (modMakerVersion > ModManager.MODMAKER_VERSION_SUPPORT) {
 				//ERROR! We can't compile this version.
-				ModManager.debugLogger.writeMessage("FATAL ERROR: This version of mod manager does not support this version of modmaker.");
-				ModManager.debugLogger.writeMessage("FATAL ERROR: This version supports up to ModMaker version: " + ModManager.MODMAKER_VERSION_SUPPORT);
-				ModManager.debugLogger.writeMessage("FATAL ERROR: This mod was built with ModMaker version: " + modModMakerVersion);
+				ModManager.debugLogger.writeError("This version of mod manager does not support the server version of ModMaker that was used to compile this mod delta.");
+				ModManager.debugLogger.writeError("FATAL ERROR: This version supports up to ModMaker version: " + ModManager.MODMAKER_VERSION_SUPPORT);
+				ModManager.debugLogger.writeError("FATAL ERROR: This mod was built with ModMaker version: " + modModMakerVersion);
 				publish(new ThreadCommand("ERROR",
 						"<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>"));
 				error = true;
 				return;
 			}
 
-			//Get required mixins
+			//Get required mixins and dynamic mixins
 			NodeList mixinNodeList = doc.getElementsByTagName("MixInData");
 			if (mixinNodeList.getLength() > 0) {
 				Element mixinsElement = (Element) mixinNodeList.item(0);
-				NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
-				for (int j = 0; j < mixinsNodeList.getLength(); j++) {
-					Node mixinNode = mixinsNodeList.item(j);
-					if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
-						requiredMixinIds.add(mixinNode.getTextContent());
-						ModManager.debugLogger.writeMessage("Mod recommends mixin with id " + mixinNode.getTextContent());
+				{
+					NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
+					for (int j = 0; j < mixinsNodeList.getLength(); j++) {
+						Node mixinNode = mixinsNodeList.item(j);
+						if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
+							requiredMixinIds.add(mixinNode.getTextContent());
+							ModManager.debugLogger.writeMessage("Mod recommends mixin with id " + mixinNode.getTextContent());
+						}
+					}
+				}
+				NodeList dynamicmixinsNodeList = mixinsElement.getElementsByTagName("DynamicMixIn");
+				for (int j = 0; j < dynamicmixinsNodeList.getLength(); j++) {
+					Node dynamicmixinNode = dynamicmixinsNodeList.item(j);
+					if (dynamicmixinNode.getNodeType() == Node.ELEMENT_NODE) {
+						DynamicPatch dp;
+						try {
+							dp = new DynamicPatch(dynamicmixinNode);
+							dynamicMixins.add(dp);
+							ModManager.debugLogger.writeMessage("Mod contains dynamic mixin: " + dp.getFinalPatch().getPatchName());
+						} catch (DOMException | IOException e) {
+							ModManager.debugLogger.writeErrorWithException("Error preparing dynamic mixin, skipping:", e);
+						}
 					}
 				}
 			}
@@ -1720,10 +1775,13 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		if (!error) {
 			//PROCESS MIXINS
-			if (requiredMixinIds.size() > 0) {
+			if (requiredMixinIds.size() > 0 || dynamicMixins.size() > 0) {
 				currentOperationLabel.setText("Preparing MixIns");
 				ModManager.debugLogger.writeMessage("Mod delta recommends MixIns, running PatchLibraryWindow()");
-				new PatchLibraryWindow(this, requiredMixinIds, newMod);
+				PatchLibraryWindow plw = new PatchLibraryWindow(this,requiredMixinIds, dynamicMixins, newMod);
+				for (DynamicPatch dp : dynamicMixins) {
+					FileUtils.deleteQuietly(dp.getOutputfile());
+				}
 			}
 			finishModMaker(newMod);
 		} else {
@@ -1881,5 +1939,9 @@ public class ModMakerCompilerWindow extends JDialog {
 		default:
 			return null;
 		}
+	}
+
+	public JLabel getCurrentTaskLabel() {
+		return currentOperationLabel;
 	}
 }

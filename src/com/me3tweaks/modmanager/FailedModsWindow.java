@@ -116,6 +116,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				Mod mod = failedModsModel.get(failedModList.getSelectedIndex());
+				mod = new Mod(mod); //make clone
 				if (mod.getModMakerCode() <= 0 || ModManagerWindow.validateBIOGameDir()) {
 					if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
 						ModManager.debugLogger.writeMessage("Running (restore mode) for failed mod " + mod.getModName());
