@@ -333,17 +333,17 @@ public class CustomDLCConflictWindow extends JDialog {
 				nonguimodfiles.put(entry.getKey(), entry.getValue());
 			}
 			numFilesToScan = nonguimodfiles.size();
-			ExecutorService downloadExecutor = Executors.newFixedThreadPool(4);
+			ExecutorService guiscanExecutor = Executors.newFixedThreadPool(4);
 			ArrayList<Future<GUIScanResult>> futures = new ArrayList<Future<GUIScanResult>>();
 			//submit jobs
 			for (Map.Entry<String, ArrayList<CustomDLC>> entry : nonguimodfiles.entrySet()) {
 				GUIScanTask gst = new GUIScanTask(entry.getKey(), entry.getValue());
-				futures.add(downloadExecutor.submit(gst));
+				futures.add(guiscanExecutor.submit(gst));
 			}
-			downloadExecutor.shutdown();
+			guiscanExecutor.shutdown();
 			HashMap<String, ArrayList<CustomDLC>> returnconflictfiles = new HashMap<>();
 			try {
-				downloadExecutor.awaitTermination(5, TimeUnit.MINUTES);
+				guiscanExecutor.awaitTermination(5, TimeUnit.MINUTES);
 				for (Future<GUIScanResult> f : futures) {
 					GUIScanResult result = f.get();
 					if (result == null) {

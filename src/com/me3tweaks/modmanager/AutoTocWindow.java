@@ -6,6 +6,13 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,11 +30,17 @@ import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FilenameUtils;
 
+import com.me3tweaks.modmanager.CustomDLCConflictWindow.CustomDLCGUIScanner.GUIScanResult;
+import com.me3tweaks.modmanager.CustomDLCConflictWindow.CustomDLCGUIScanner.GUIScanTask;
+import com.me3tweaks.modmanager.ModInstallWindow.InjectionCommander.JobTask;
+import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.objects.TocBatchDescriptor;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class AutoTocWindow extends JDialog {
@@ -127,8 +140,14 @@ public class AutoTocWindow extends JDialog {
 		return updatedGameTOCs;
 	}
 
+	/**
+	 * Standard Mod-based AutoTOC
+	 * 
+	 * @author Mgamerz
+	 *
+	 */
 	class TOCWorker extends SwingWorker<Boolean, String> {
-		int completed = 0;
+		AtomicInteger completed = new AtomicInteger(0);
 		int numtoc = 0;
 		String me3explorer;
 		Mod mod;
@@ -146,64 +165,21 @@ public class AutoTocWindow extends JDialog {
 			progressBar.setValue(0);
 			me3explorer = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory(true)) + "ME3Explorer.exe";
 			ModManager.debugLogger.writeMessage("Starting the AutoTOC worker. Number of toc updates to do: " + numtoc);
-			ModManager.debugLogger.writeMessage("Using ME3Explorer from: " + me3explorer);
 		}
 
-		private void calculateNumberOfUpdates(ArrayList<ModJob> jobs) {
-			for (ModJob job : jobs) {
-				if (job.getJobType() == ModJob.CUSTOMDLC) {
-					numtoc += job.getSourceFolders().size();
-					continue;
-				}
-				boolean hasTOC = false;
-				if (mode == LOCALMOD_MODE) {
-					//find out if it has a toc file
-					for (String file : job.newFiles) {
-						String filename = FilenameUtils.getName(file);
-						if (filename.equals("PCConsoleTOC.bin")) {
-							hasTOC = true;
-							break;
-						}
-					}
-				} else {
-					hasTOC = true; //force game toc
-				}
+		class TOCTask implements Callable<Boolean> {
+			private ModJob job;
 
-				if (hasTOC) { //calc files
-					for (String file : job.newFiles) {
-						String filename = FilenameUtils.getName(file);
-						if (filename.equalsIgnoreCase("PCConsoleTOC.bin") || filename.equalsIgnoreCase("Mount.dlc")) {
-							continue;
-						} else {
-							//increment number of files to update
-							numtoc++;
-							ModManager.debugLogger.writeMessage("Number of files in TOC: "+numtoc+", replace "+file);
-						}
-					}
-					for (String file : job.addFiles) {
-						String filename = FilenameUtils.getName(file);
-						if (filename.equalsIgnoreCase("PCConsoleTOC.bin") || filename.equalsIgnoreCase("Mount.dlc")) {
-							continue;
-						} else {
-							//increment number of files to update
-							numtoc++;
-							ModManager.debugLogger.writeMessage("Number of files in TOC: "+numtoc);
-						}
-					}
-				}
+			public TOCTask(ModJob job) {
+				this.job = job;
 			}
-		}
 
-		@Override
-		public Boolean doInBackground() {
-			ModManager.debugLogger.writeMessage("AutoTOC background thread has started.");
-
-			//get list of all files to update for the progress bar
-			for (ModJob job : mod.jobs) {
+			@Override
+			public Boolean call() throws Exception {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
 					if (mode == AutoTocWindow.INSTALLED_MODE) {
-						completed++;
-						continue; //skip, this is done AFTER mod has been installed, and will run outside of autotoc window.
+						completed.incrementAndGet();
+						return true; //skip, this is done AFTER mod has been installed, and will run outside of autotoc window.
 					}
 					for (String srcFolder : job.getSourceFolders()) {
 						ArrayList<String> commandBuilder = new ArrayList<String>();
@@ -227,12 +203,12 @@ public class AutoTocWindow extends JDialog {
 						if (returncode != 0 || pr.hadError()) {
 							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
 						} else {
-							completed++;
-							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
-							publish(Integer.toString(completed));
+							completed.incrementAndGet();
+							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed.get()));
+							publish(Integer.toString(completed.get()));
 						}
 					}
-					continue;
+					return true;
 				}
 				ModManager.debugLogger.writeMessage("======AutoTOC job on module " + job.getJobName() + "=======");
 				boolean hasTOC = false;
@@ -267,6 +243,7 @@ public class AutoTocWindow extends JDialog {
 					//batchJobs.add(tbd);
 
 					//break into batches
+					ModManager.debugLogger.writeMessage("Number of files in this job: "+(job.newFiles.size() + job.addFiles.size()-1));
 					for (String newFile : job.newFiles) {
 						String filename = FilenameUtils.getName(newFile);
 						if (filename.equals("PCConsoleTOC.bin")) {
@@ -323,8 +300,8 @@ public class AutoTocWindow extends JDialog {
 
 						ModManager.debugLogger.writeMessage("Performing a batch TOC update on the following files:");
 						String str = "";
-						for (SimpleEntry<String, Long> nsp : batchJob.getNameSizePairs()){
-							str += nsp.getKey()+" "+nsp.getValue();
+						for (SimpleEntry<String, Long> nsp : batchJob.getNameSizePairs()) {
+							str += nsp.getKey() + " " + nsp.getValue();
 							str += "\n";
 						}
 						ModManager.debugLogger.writeMessage(str);
@@ -335,14 +312,94 @@ public class AutoTocWindow extends JDialog {
 						returncode = pr.getReturnCode();
 						if (returncode != 0 || pr.hadError()) {
 							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
+							return false;
 						} else {
-							int numcompleteinbatch = batchJob.getNameSizePairs().size();;
-							completed += numcompleteinbatch;
-							ModManager.debugLogger.writeMessage("Batch tasks done: "+numcompleteinbatch+", Number of all completed tasks: " + completed + ", num left to do: " + (numtoc - completed));
-							publish(Integer.toString(completed));
+							int numcompleteinbatch = batchJob.getNameSizePairs().size();
+							
+							completed.addAndGet(numcompleteinbatch);
+							ModManager.debugLogger.writeMessage(
+									"Batch tasks done: " + numcompleteinbatch + ", Number of all completed tasks: " + completed + ", num left to do: " + (numtoc - completed.get()));
+							publish(Integer.toString(completed.get()));
+						}
+					}
+					return true;
+				}
+				return false;
+			}
+		}
+
+		private void calculateNumberOfUpdates(ArrayList<ModJob> jobs) {
+			for (ModJob job : jobs) {
+				if (job.getJobType() == ModJob.CUSTOMDLC) {
+					numtoc += job.getSourceFolders().size();
+					continue;
+				}
+				boolean hasTOC = false;
+				if (mode == LOCALMOD_MODE) {
+					//find out if it has a toc file
+					for (String file : job.newFiles) {
+						String filename = FilenameUtils.getName(file);
+						if (filename.equals("PCConsoleTOC.bin")) {
+							hasTOC = true;
+							break;
+						}
+					}
+				} else {
+					hasTOC = true; //force game toc
+				}
+
+				if (hasTOC) { //calc files
+					for (String file : job.newFiles) {
+						String filename = FilenameUtils.getName(file);
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin") || filename.equalsIgnoreCase("Mount.dlc")) {
+							continue;
+						} else {
+							//increment number of files to update
+							numtoc++;
+							ModManager.debugLogger.writeMessage("Number of files in TOC: " + numtoc + ", replace " + file);
+						}
+					}
+					for (String file : job.addFiles) {
+						String filename = FilenameUtils.getName(file);
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin") || filename.equalsIgnoreCase("Mount.dlc")) {
+							continue;
+						} else {
+							//increment number of files to update
+							numtoc++;
+							ModManager.debugLogger.writeMessage("Number of files in TOC: " + numtoc);
 						}
 					}
 				}
+			}
+		}
+
+		@Override
+		public Boolean doInBackground() {
+			ModManager.debugLogger.writeMessage("AutoTOC background thread has started.");
+			ExecutorService autotocExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
+			for (ModJob job : mod.jobs) {
+				//submit jobs
+				TOCTask jtask = new TOCTask(job);
+				futures.add(autotocExecutor.submit(jtask));
+			}
+			autotocExecutor.shutdown();
+			try {
+				autotocExecutor.awaitTermination(5, TimeUnit.MINUTES);
+				for (Future<Boolean> f : futures) {
+					boolean b = f.get();
+					if (!b) {
+						ModManager.debugLogger.writeError("A job failed to toc...");
+						//throw some sort of error here...
+					}
+				}
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE TOCING FILES: ", e);
+				return null;
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("UNKNOWN EXCEPTION OCCURED: ", e);
+				return null;
 			}
 			return true;
 		}
@@ -354,7 +411,7 @@ public class AutoTocWindow extends JDialog {
 				try {
 					Integer.parseInt(update); // see if we got a number. if we did that means we should update the bar
 					if (numtoc != 0) {
-						progressBar.setValue((int) (((float) completed / numtoc) * 100));
+						progressBar.setValue((int) (((double) completed.get() / numtoc) * 100));
 					}
 				} catch (NumberFormatException e) {
 					// this is not a progress update, it's a string update
@@ -372,8 +429,8 @@ public class AutoTocWindow extends JDialog {
 				ModManager.debugLogger.writeErrorWithException("AutoTOC prematurely ended:", e);
 			}
 
-			if (numtoc != completed) {
-				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, " + completed + " completed");
+			if (numtoc != completed.get()) {
+				ModManager.debugLogger.writeError("AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, " + completed.get() + " completed");
 				if (ModManagerWindow.ACTIVE_WINDOW != null) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("AutoTOC had an error (check logs)");
 				}
@@ -391,10 +448,10 @@ public class AutoTocWindow extends JDialog {
 	}
 
 	class GameWideTOCWorker extends SwingWorker<Boolean, String> {
-		int completed = 0;
+		AtomicInteger completed = new AtomicInteger(0);
 		int numtoc = 0;
 		String me3explorer;
-		ArrayList<String> unpackedPaths = new ArrayList<>(), sfarPaths = new ArrayList<>();
+		ArrayList<String> unpackedTOCPaths = new ArrayList<>(), sfarPaths = new ArrayList<>();
 
 		/**
 		 * Tocworker constructor for game-wide tocing
@@ -413,7 +470,7 @@ public class AutoTocWindow extends JDialog {
 			//add basegame
 			File basegameToc = new File(ModManager.appendSlash(biogameDir) + File.separator + "PCConsoleTOC.bin");
 			if (basegameToc.exists()) {
-				unpackedPaths.add(basegameToc.getAbsolutePath());
+				unpackedTOCPaths.add(basegameToc.getAbsolutePath());
 				System.out.println(basegameToc);
 			}
 
@@ -462,7 +519,7 @@ public class AutoTocWindow extends JDialog {
 						if (externalTOC.exists() || !isKnownDLC) {
 							//its unpacked
 							ModManager.debugLogger.writeMessage("Found external toc file (or is custom dlc), adding to unpacked list: " + externalTOC);
-							unpackedPaths.add(externalTOC.getAbsolutePath());
+							unpackedTOCPaths.add(externalTOC.getAbsolutePath());
 							continue;
 						} else {
 							//its a modified SFAR
@@ -478,64 +535,96 @@ public class AutoTocWindow extends JDialog {
 					//unnofficial DLC
 					File externalTOC = new File(dir + "PCConsoleTOC.bin");
 					if (externalTOC.exists()) {
-						unpackedPaths.add(externalTOC.getAbsolutePath());
+						unpackedTOCPaths.add(externalTOC.getAbsolutePath());
 						continue;
 					}
 				}
 			}
-			numtoc = unpackedPaths.size() + sfarPaths.size();
+			numtoc = unpackedTOCPaths.size() + sfarPaths.size();
 		}
 
 		@Override
 		public Boolean doInBackground() {
-			ModManager.debugLogger.writeMessage("Game-Wide AutoTOC background thread has started.");
-			System.out.println(unpackedPaths.toString());
-			System.out.println(sfarPaths.toString());
-
-			for (String unpackedFolder : unpackedPaths) {
-				System.out.println(unpackedFolder);
-				ArrayList<String> commandBuilder = new ArrayList<String>();
-				// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-				commandBuilder.add(me3explorer);
-				commandBuilder.add("-autotoc");
-				commandBuilder.add(new File(unpackedFolder).getParent());
-				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-
-				//for logging
-				int returncode = 1;
-				ProcessBuilder pb = new ProcessBuilder(command);
-				ProcessResult pr = ModManager.runProcess(pb);
-				returncode = pr.getReturnCode();
-				if (returncode != 0 || pr.hadError()) {
-					ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
-				} else {
-					completed++;
-					publish(Integer.toString(completed));
-				}
+			ModManager.debugLogger.writeMessage("Game-Wide AutoTOC background thread has started, using " + Runtime.getRuntime().availableProcessors() + " threads.");
+			ExecutorService gametocExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			ArrayList<Future<ProcessResult>> futures = new ArrayList<Future<ProcessResult>>();
+			//submit jobs
+			for (String unpackedFolder : unpackedTOCPaths) {
+				TOCTask ttask = new TOCTask(new File(unpackedFolder).getParent(), false);
+				futures.add(gametocExecutor.submit(ttask));
 			}
 
 			//SFARS
 			for (String sfarPath : sfarPaths) {
-				ArrayList<String> commandBuilder = new ArrayList<String>();
-				// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-				commandBuilder.add(me3explorer);
-				commandBuilder.add("-sfarautotoc");
-				commandBuilder.add(sfarPath);
-				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+				TOCTask ttask = new TOCTask(sfarPath, true);
+				futures.add(gametocExecutor.submit(ttask));
+			}
+			gametocExecutor.shutdown();
+			try {
+				gametocExecutor.awaitTermination(5, TimeUnit.MINUTES);
+				for (Future<ProcessResult> f : futures) {
+					ProcessResult pr = f.get();
+					int returncode = pr.getReturnCode();
+					if (returncode != 0 || pr.hadError()) {
+						ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
+						//throw some sort of error here...
+					}
+				}
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE TOCING ITEM: ", e);
+				return null;
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("UNKNOWN EXCEPTION OCCURED: ", e);
+				return null;
+			}
 
-				//for logging
-				int returncode = 1;
-				ProcessBuilder pb = new ProcessBuilder(command);
-				ProcessResult pr = ModManager.runProcess(pb);
-				returncode = pr.getReturnCode();
-				if (returncode != 0 || pr.hadError()) {
-					ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
+			return true;
+		}
+
+		class TOCTask implements Callable<ProcessResult> {
+			private String filepath;
+			private boolean SFAR;
+
+			public TOCTask(String filepath, boolean SFAR) {
+				this.filepath = filepath;
+				this.SFAR = SFAR;
+			}
+
+			@Override
+			public ProcessResult call() throws Exception {
+				if (SFAR) {
+					ArrayList<String> commandBuilder = new ArrayList<String>();
+					// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+					commandBuilder.add(me3explorer);
+					commandBuilder.add("-sfarautotoc");
+					commandBuilder.add(filepath);
+					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+
+					ProcessBuilder pb = new ProcessBuilder(command);
+					ProcessResult pr = ModManager.runProcess(pb);
+					if (pr.getReturnCode() == 0) {
+						completed.incrementAndGet();
+						publish(Integer.toString(completed.get()));
+					}
+					return pr;
 				} else {
-					completed++;
-					publish(Integer.toString(completed));
+					ArrayList<String> commandBuilder = new ArrayList<String>();
+					// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+					commandBuilder.add(me3explorer);
+					commandBuilder.add("-autotoc");
+					commandBuilder.add(filepath);
+					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+
+					ProcessBuilder pb = new ProcessBuilder(command);
+
+					ProcessResult pr = ModManager.runProcess(pb);
+					if (pr.getReturnCode() == 0) {
+						completed.incrementAndGet();
+						publish(Integer.toString(completed.get()));
+					}
+					return pr;
 				}
 			}
-			return true;
 		}
 
 		@Override
@@ -545,7 +634,7 @@ public class AutoTocWindow extends JDialog {
 				try {
 					Integer.parseInt(update); // see if we got a number. if we did that means we should update the bar
 					if (numtoc != 0) {
-						progressBar.setValue((int) (((float) completed / numtoc) * 100));
+						progressBar.setValue((int) (((float) completed.get() / numtoc) * 100));
 					}
 				} catch (NumberFormatException e) {
 					// this is not a progress update, it's a string update
@@ -563,7 +652,7 @@ public class AutoTocWindow extends JDialog {
 				ModManager.debugLogger.writeErrorWithException("Game-Wide AutoTOC prematurely ended:", e);
 			}
 
-			if (numtoc != completed) {
+			if (numtoc != completed.get()) {
 				ModManager.debugLogger
 						.writeError("Game-Wide AutoToc DONE: Number of tasks DOES NOT EQUAL number of completed: " + numtoc + " total tasks, " + completed + " completed");
 				if (ModManagerWindow.ACTIVE_WINDOW != null) {
