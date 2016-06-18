@@ -641,11 +641,11 @@ public class RestoreFilesWindow extends JDialog {
 			File mainSfar = null;
 			boolean isTestpatch = false;
 			if (defaultSfar.exists()) {
-				mainSfar = new File(fullDLCDirectory + "Default.sfar");
+				mainSfar = defaultSfar;
 			} else {
 				if (testpatchSfar.exists()) {
 					isTestpatch = true;
-					mainSfar = new File(fullDLCDirectory + "Patch_001.sfar");
+					mainSfar = testpatchSfar;
 				}
 			}
 
@@ -658,9 +658,10 @@ public class RestoreFilesWindow extends JDialog {
 			if (mainSfar.exists()) {
 				// the sfar exists. 
 				//Check filesize first, its faster.
-				boolean sizeMatch = false; //Default to false on size match
 				Long filesize = mainSfar.length();
-				if (!filesize.equals(sfarSizes.get(jobName)) && (!(isTestpatch && !filesize.equals(ModType.TESTPATCH_16_SIZE)))) {
+
+				boolean sizeMatch = filesize.equals(sfarSizes.get(jobName));
+				if (!sizeMatch && (!(isTestpatch && !filesize.equals(ModType.TESTPATCH_16_SIZE)))) {
 					sizeMatch = false;
 					ModManager.debugLogger.writeMessage(jobName + ": size mismatch between known original and existing - marking for restore");
 					publish(jobName + ": DLC is modified [size]");
@@ -671,30 +672,6 @@ public class RestoreFilesWindow extends JDialog {
 					ModManager.debugLogger.writeMessage(jobName + ": OK");
 					return true;
 				}
-
-				//if size is same we can assume it is original.
-				/*
-				 * if (sizeMatch) { //We should hash it to check if it's
-				 * original try { //publish(jobName + ": Known original hash: "
-				 * + sfarHashes.get(jobName)); publish(jobName +
-				 * ": Verifying DLC..."); mainSfarHash =
-				 * MD5Checksum.getMD5Checksum(mainSfar.toString());
-				 * ModManager.debugLogger.writeMessage(jobName +
-				 * ": Hash of Default.sfar is " + mainSfarHash);
-				 * 
-				 * if (mainSfarHash.equals(sfarHashes.get(jobName)) ||
-				 * mainSfarHash.equals(ModType.TESTPATCH_16_HASH)) { // This DLC
-				 * sfar matches the known original, we're good
-				 * ModManager.debugLogger.writeMessage(jobName + ": OK");
-				 * 
-				 * publish(jobName + ": DLC is OK"); return true; } else {
-				 * ModManager.debugLogger.writeMessage(jobName +
-				 * ": hash mismatch between known original and existing - marking for restore"
-				 * ); publish(jobName + ": DLC is modified [hash]"); } } catch
-				 * (Exception e) { // it died somehow
-				 * ModManager.debugLogger.writeMessage(e.getMessage()); return
-				 * false; } }
-				 */
 			} else {
 				ModManager.debugLogger.writeMessage(jobName + ": DLC file does not exist: " + mainSfar.toString());
 				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping.");
@@ -738,29 +715,6 @@ public class RestoreFilesWindow extends JDialog {
 				publish(Integer.toString(completed));
 				return true;
 			}
-			/*
-			 * // the sfar exists. We should hash it to check if it's original
-			 * try {
-			 * 
-			 * publish(jobName + ": Verifying backup..."); backupSfarHash =
-			 * MD5Checksum.getMD5Checksum(backupSfar.toString());
-			 * ModManager.debugLogger.writeMessage(jobName +
-			 * ": backupSfar hash: " + backupSfarHash); //publish(jobName +
-			 * ": Hash of backup sfar is " + backupSfarHash); if
-			 * (backupSfarHash.equals(sfarHashes.get(jobName)) ||
-			 * backupSfarHash.equals(ModType.TESTPATCH_16_HASH)) { // This DLC
-			 * sfar matches the known original - let's copy it to Default.sfar
-			 * publish(jobName + ": Restoring backup...");
-			 * Files.copy(backupSfar.toPath(), mainSfar.toPath(),
-			 * StandardCopyOption.REPLACE_EXISTING); completed++;
-			 * publish(Integer.toString(completed)); return true; } else { //
-			 * DLC is modified but we don't have a backup
-			 * ModManager.debugLogger.writeMessage(jobName +
-			 * ": Backup hash doesn't match known original, unable to automatically restore"
-			 * ); return false; } } catch (Exception e) { // it died somehow
-			 * ModManager.debugLogger.writeErrorWithException(
-			 * "Failure restoring backup SFAR:", e); return false; } }
-			 */
 
 			return false;
 		}
