@@ -114,10 +114,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
 	JMenuItem actionExitDebugMode, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementFailedMods,
-			modManagementPatchLibary,modManagementClearPatchLibraryCache;
+			modManagementPatchLibary, modManagementClearPatchLibraryCache;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
 			modutilsDeleteMod;
-	JMenuItem toolME3Explorer, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsUninstallBinkw32, toolsMountdlcEditor, toolsMergeMod, toolME3Config;
+	JMenuItem toolME3Explorer, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32, toolsMountdlcEditor, toolsMergeMod,
+			toolME3Config;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
@@ -840,7 +841,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						case "tlk":
 							TLKTool.decompileTLK(files[0]);
 							break;
-							
+
 						case "bin":
 							//read magic at beginning to find out what type of file this is
 							try {
@@ -1130,7 +1131,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementOpenModsFolder = new JMenuItem("Open mods/ folder");
 		modManagementOpenModsFolder.setToolTipText("Opens the mods/ folder so you can inspect and add/remove mods");
 		modManagementClearPatchLibraryCache = new JMenuItem("Clear MixIn cache");
-		modManagementClearPatchLibraryCache.setToolTipText("<html>Clears the decompressed MixIn library cache.<br>This will make Mod Manager fetch the original files again as MixIns require them.<br>Use this if MixIns are having issues.</html>");
+		modManagementClearPatchLibraryCache.setToolTipText(
+				"<html>Clears the decompressed MixIn library cache.<br>This will make Mod Manager fetch the original files again as MixIns require them.<br>Use this if MixIns are having issues.</html>");
 
 		int numFailedMods = getInvalidMods().size();
 		modManagementFailedMods = new JMenuItem(numFailedMods + " mod" + (numFailedMods != 1 ? "s" : "") + " failed to load");
@@ -1248,6 +1250,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
 		toolsInstallBinkw32.setToolTipText(
 				"<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This modifies your game and is erased when doing an Origin Repair</html>");
+		toolsInstallBinkw32asi = new JMenuItem("Install Binkw32 DLC Bypass (ASI version)");
+		toolsInstallBinkw32asi.setToolTipText(
+				"<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This version allows loading of advanced ASI mods that allow 3rd party code to run on your machine.<br>This modifies your game and is erased when doing an Origin Repair</html>");
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		toolsUninstallBinkw32.setToolTipText("<html>Removes the Binkw32.dll startup patcher, reverting the original file</html>");
 
@@ -1283,6 +1288,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsOpenME3Dir.addActionListener(this);
 		toolsInstallBinkw32.addActionListener(this);
+		toolsInstallBinkw32asi.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
 		toolME3Config.addActionListener(this);
 		toolME3Explorer.addActionListener(this);
@@ -1302,6 +1308,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsInstallLauncherWV);
 		toolsMenu.add(toolsInstallBinkw32);
+		toolsMenu.add(toolsInstallBinkw32asi);
 		toolsMenu.add(toolsUninstallBinkw32);
 		menuBar.add(toolsMenu);
 
@@ -1856,13 +1863,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == modManagementOpenModsFolder) {
 			ResourceUtils.openDir(ModManager.getModsDir());
 		} else if (e.getSource() == modManagementClearPatchLibraryCache) {
-			File libraryDir = new File(ModManager.getPatchesDir()+"source");
-			if (libraryDir.exists() ){
-				boolean deleted =FileUtils.deleteQuietly(libraryDir);
+			File libraryDir = new File(ModManager.getPatchesDir() + "source");
+			if (libraryDir.exists()) {
+				boolean deleted = FileUtils.deleteQuietly(libraryDir);
 				labelStatus.setText("MixIn cache deleted");
-				ModManager.debugLogger.writeMessage("Deleted mixin cache "+libraryDir+ ": "+deleted);
+				ModManager.debugLogger.writeMessage("Deleted mixin cache " + libraryDir + ": " + deleted);
 			} else {
-				ModManager.debugLogger.writeMessage("No mixin cache: "+libraryDir);
+				ModManager.debugLogger.writeMessage("No mixin cache: " + libraryDir);
 				labelStatus.setText("No MixIn cache to delete");
 			}
 		} else if (e.getSource() == toolTankmasterTLK) {
@@ -2125,16 +2132,32 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
 						JOptionPane.ERROR_MESSAGE);
 			}
-		} else if (e.getSource() == toolsInstallBinkw32) {
+		} else if (e.getSource() == toolsInstallBinkw32asi) {
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Installing manual Binkw32 bypass.");
-				installBinkw32Bypass();
+				int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
+						"<html><div style='width: 300px'>Installing the ASI version of binkw32.dll bypass will load .asi files and run 3rd party code. Any .asi file in the same folder as MassEffect3.exe and within a subfolder named asi will be loaded at game startup. The code in these asi files will then be run like any program on your computer.<br><br>Ensure you trust the developer you download and install ASI mods from.<br><br>If you have no idea what this means, you should use the default non-asi binkw32.dll bypass option.<br><br>Install the ASI version of binkw32 bypass?</div></html>",
+						"Potential security risk", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+				if (result == JOptionPane.YES_OPTION) {
+					ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
+					installBinkw32Bypass(true);
+				}
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
 				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
 						JOptionPane.ERROR_MESSAGE);
 			}
+		} else if (e.getSource() == toolsInstallBinkw32) {
+			if (validateBIOGameDir()) {
+				ModManager.debugLogger.writeMessage("Installing manual Binkw32 bypass.");
+				installBinkw32Bypass(false);
+			} else {
+				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
+			}
+
 		} else if (e.getSource() == toolsUninstallBinkw32) {
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Uninstalling manual binkw32 bypass.");
@@ -2792,19 +2815,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		return false;
 	}
 
-	private boolean installBinkw32Bypass() {
+	private boolean installBinkw32Bypass(boolean asi) {
 		if (validateBIOGameDir()) {
-			boolean result = ModManager.installBinkw32Bypass(fieldBiogameDir.getText());
+			boolean result = ModManager.installBinkw32Bypass(fieldBiogameDir.getText(), asi);
 			if (result) {
 				// ok
-				labelStatus.setText("Binkw32 installed. DLC will always authorize.");
+				labelStatus.setText("Binkw32" + (asi ? " (ASI)" : "") + " installed. DLC will always authorize.");
 			} else {
-				labelStatus.setText("FAILURE: Binkw32 bypass not installed!");
+				labelStatus.setText("FAILURE: Binkw32" + (asi ? " (ASI)" : "") + " not installed!");
 			}
 			return result;
 		}
-		JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot install Binkw32.dll DLC bypass.\nFix the BioGame directory before continuing.",
-				"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+		JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot install Binkw32" + (asi ? " (ASI)" : "")
+				+ ".dll DLC bypass.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 		return false;
 	}
 

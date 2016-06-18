@@ -13,7 +13,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -26,7 +32,6 @@ import javax.swing.border.EmptyBorder;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
@@ -183,7 +188,7 @@ public class ModInstallWindow extends JDialog {
 	 *
 	 */
 	class InjectionCommander extends SwingWorker<Boolean, String> {
-		double completed = 0;
+		AtomicInteger completed = new AtomicInteger(0);
 		double numjobs = 0;
 		double taskSteps = 0;
 		double completedTaskSteps = 0;
@@ -237,7 +242,48 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			ModManager.debugLogger.writeMessage("Processing jobs in mod queue.");
+			ExecutorService modinstallExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
 			for (ModJob job : jobs) {
+				//submit jobs
+				JobTask jtask = new JobTask(job);
+				futures.add(modinstallExecutor.submit(jtask));
+			}
+			modinstallExecutor.shutdown();
+			try {
+				modinstallExecutor.awaitTermination(5, TimeUnit.MINUTES);
+				for (Future<Boolean> f : futures) {
+					boolean b = f.get();
+					if (!b) {
+						ModManager.debugLogger.writeError("A task failed.");
+						//throw some sort of error here...
+					}
+				}
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE INSTALLING MOD: ", e);
+				return null;
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("UNKNOWN EXCEPTION OCCURED: ", e);
+				return null;
+			} finally {
+				if (alternativeTOCFiles != null) {
+					for (String tempFile : alternativeTOCFiles.values()) {
+						FileUtils.deleteQuietly(new File(tempFile));
+					}
+				}
+			}
+			return true;
+		}
+
+		class JobTask implements Callable<Boolean> {
+			private ModJob job;
+
+			public JobTask(ModJob job) {
+				this.job = job;
+			}
+
+			@Override
+			public Boolean call() throws Exception {
 				if (installCancelled) {
 					if (alternativeTOCFiles != null) {
 						for (String tempFile : alternativeTOCFiles.values()) {
@@ -258,21 +304,18 @@ public class ModInstallWindow extends JDialog {
 					result = processCustomDLCJob(job);
 					break;
 				}
+				//end of each callable...
 				if (result) {
-					completed++;
+					completed.incrementAndGet();
 					ModManager.debugLogger.writeMessage("Successfully finished mod job.");
 				} else {
 					ModManager.debugLogger.writeMessage("Mod job failed: " + job.getDLCFilePath());
 					failedJobs.add(job.getDLCFilePath());
 				}
-				publish(Double.toString(completed));
+				publish(Integer.toString(completed.get()));
+				return result;
 			}
-			if (alternativeTOCFiles != null) {
-				for (String tempFile : alternativeTOCFiles.values()) {
-					FileUtils.deleteQuietly(new File(tempFile));
-				}
-			}
-			return true;
+
 		}
 
 		/**
@@ -460,22 +503,6 @@ public class ModInstallWindow extends JDialog {
 			for (int i = 0; i < numFilesToAdd; i++) {
 				String fileToAddTarget = filesToAddTargets.get(i);
 				String fileToAdd = filesToAdd.get(i);
-				//cant use alternative toc with add files for now. If needed this can be added
-				/*
-				 * if (fileToAdd.endsWith("PCConsoleTOC.bin") &&
-				 * alternativeTOCFiles != null &&
-				 * alternativeTOCFiles.containsKey(job.getJobName())) {
-				 * ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: "
-				 * + alternativeTOCFiles.get(job.getJobName())); fileToAdd =
-				 * alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE
-				 * TOC }
-				 * 
-				 * 
-				 * boolean shouldContinue = checkBackupAndHash(me3dir,
-				 * fileToAddTarget, job); if (!shouldContinue) {
-				 * installCancelled = true; return false; }
-				 */
-
 				// install file.
 				File installFile = new File(me3dir + fileToAddTarget);
 				Path installPath = Paths.get(installFile.toString());
@@ -971,7 +998,7 @@ public class ModInstallWindow extends JDialog {
 			for (String folder : destfolders) {
 				File dlcFolder = new File(dlcdir + File.separator + folder);
 				if (dlcFolder.exists() && dlcFolder.isDirectory()) {
-					ModManager.debugLogger.writeMessage("Deleting existing CustomDLC folder: "+dlcFolder);
+					ModManager.debugLogger.writeMessage("Deleting existing CustomDLC folder: " + dlcFolder);
 					FileUtils.deleteQuietly(dlcFolder);
 				}
 			}
@@ -1033,7 +1060,7 @@ public class ModInstallWindow extends JDialog {
 		protected void process(List<String> updates) {
 			for (String update : updates) {
 				if (numjobs != 0) {
-					int fullJobCompletion = (int) ((completed / numjobs) * 100);
+					int fullJobCompletion = (int) (((double) completed.get() / numjobs) * 100);
 					if (taskSteps != 0) {
 						fullJobCompletion += (int) (((completedTaskSteps / taskSteps) * 100) / numjobs);
 					}
@@ -1066,7 +1093,7 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			if (success) {
-				if (numjobs != completed) {
+				if (numjobs != completed.get()) {
 					// failed something
 					StringBuilder sb = new StringBuilder();
 					sb.append(
