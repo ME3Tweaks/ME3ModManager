@@ -1135,7 +1135,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementMenu = new JMenu("Mod Management");
 		modManagementModMaker = new JMenuItem("Download ME3Tweaks ModMaker Mod");
 		modManagementModMaker.setToolTipText("Allows you to download and compile ME3Tweaks ModMaker mods");
-		modManagementASI = new JMenuItem("Manager ASI Code Injection mods");
+		modManagementASI = new JMenuItem("Manage ASI Code Injection mods");
 		modManagementASI.setToolTipText("Manage installed ASI mods that can modify the MassEffect3.exe process while running");
 		modManagementConflictDetector = new JMenuItem("Custom DLC Conflict Detector");
 		modManagementConflictDetector.setToolTipText("Scans installed custom DLC for file conflicts that may prevent them from working correctly");

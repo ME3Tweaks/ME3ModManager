@@ -34,7 +34,7 @@ public class ASIModWindow extends JDialog {
 	protected static final int COL_ASIFILENAME = 0;
 	protected static final int COL_HASH = 1;
 	protected static final int COL_DESCRIPTION = 2;
-	public static final int COL_UNINSTALL = 3;
+	public static final int COL_ACTION = 3;
 	private String gamedir;
 	private File asiDir;
 
@@ -69,14 +69,14 @@ public class ASIModWindow extends JDialog {
 		JLabel infoLabel = new JLabel("<html>Installed ASI Mods</html>",SwingConstants.CENTER);
 		panel.add(infoLabel, BorderLayout.NORTH);
 
-		int datasize = 0;
 		//TABLE
-		Object[][] data = new Object[datasize][3];
+		Object[][] data = new Object[files.length][4];
 		for (int i = 0; i < files.length; i++) {
 			String asifile = files[i];
-			data[i][COL_ASIFILENAME] = FilenameUtils.getName(asifile);
+			String filepath = ModManager.appendSlash(asiDir.getAbsolutePath()) + asifile;
+			data[i][COL_ASIFILENAME] = asifile;
 			try {
-				data[i][COL_HASH] = MD5Checksum.getMD5Checksum(asifile);
+				data[i][COL_HASH] = MD5Checksum.getMD5Checksum(filepath);
 			} catch (Exception e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -84,7 +84,7 @@ public class ASIModWindow extends JDialog {
 
 			}
 			data[i][COL_DESCRIPTION] = "Loading...";
-			data[i][COL_UNINSTALL] = "Uninstall";
+			data[i][COL_ACTION] = "Uninstall";
 		}
 
 		Action delete = new AbstractAction() {
@@ -102,15 +102,15 @@ public class ASIModWindow extends JDialog {
 		DefaultTableModel model = new DefaultTableModel(data, columnNames);
 		JTable table = new JTable(model) {
 			public boolean isCellEditable(int row, int column) {
-				return column == COL_UNINSTALL;
+				return column == COL_ACTION;
 			}
 		};
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-		ButtonColumn buttonColumn = new ButtonColumn(table, delete, COL_UNINSTALL);
+		ButtonColumn buttonColumn = new ButtonColumn(table, delete, COL_ACTION);
 		
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment( JLabel.CENTER );
-		table.getColumnModel().getColumn(COL_UNINSTALL).setCellRenderer(centerRenderer);
+		table.getColumnModel().getColumn(COL_ACTION).setCellRenderer(centerRenderer);
 		
 		JScrollPane scrollpane = new JScrollPane(table);
 		panel.add(scrollpane, BorderLayout.CENTER);
