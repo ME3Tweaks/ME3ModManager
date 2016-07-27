@@ -51,8 +51,8 @@ import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 public class HelpMenu {
 
-	public final static String HELP_LINK = "http://me3tweaks.com/modmanager/help/latesthelp.xml";
-	public final static String HELP_RESOURCES_LINK = "http://me3tweaks.com/modmanager/help/resources/";
+	public final static String HELP_LINK = "https://me3tweaks.com/modmanager/help/latesthelp.xml";
+	public final static String HELP_RESOURCES_LINK = "https://me3tweaks.com/modmanager/help/resources/";
 
 	private static XPath xpath = XPathFactory.newInstance().newXPath();
 	private static XPathExpression helpItemExpr;
@@ -390,7 +390,6 @@ public class HelpMenu {
 						} catch (IOException e1) {
 							ModManager.debugLogger.writeErrorWithException("Exception downloading help file:", e1);
 						}
-
 					} else {
 						if (!resourceHash.equals("")) {
 							try {

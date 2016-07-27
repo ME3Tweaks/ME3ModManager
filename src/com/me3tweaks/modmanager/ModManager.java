@@ -1021,6 +1021,16 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
+	
+	/**
+	 * Returns data/asimods/
+	 * @return
+	 */
+	public static String getASICache() {
+		File file = new File(getDataDir() + "asimods/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
 
 	/**
 	 * Gets ME3Explorer directory, with slash on the end
@@ -2119,5 +2129,9 @@ public class ModManager {
 			}
 		}
 		return false;
+	}
+
+	public static File getASIManifestFile() {
+		return new File(getASICache() + "manifest.xml");
 	}
 }
