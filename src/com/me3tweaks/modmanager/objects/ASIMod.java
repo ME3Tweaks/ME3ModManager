@@ -12,15 +12,18 @@ import org.w3c.dom.Element;
  * @author Mgamerz
  *
  */
-public class ASIMod {
+public class ASIMod implements Comparable<ASIMod> {
+	@Override
+	public String toString() {
+		return name;
+	}
+
 	private String name, installName, author, description;
 	private String downloadURL, hash, sourceCode;
 	private double version = 0;
-	private int updateGroup;
 	private static XPath xpath = XPathFactory.newInstance().newXPath();
 
-	public ASIMod(Element modVer, int updateGroup) throws XPathExpressionException {
-		this.updateGroup = updateGroup;
+	public ASIMod(Element modVer) throws XPathExpressionException {
 		name = xpath.evaluate("name", modVer);
 		installName = xpath.evaluate("installedname", modVer);
 		author = xpath.evaluate("author", modVer);
@@ -64,12 +67,12 @@ public class ASIMod {
 		return version;
 	}
 
-	public int getUpdateGroup() {
-		return updateGroup;
+	@Override
+	public int compareTo(ASIMod other) {
+		if (version < other.getVersion())
+			return -1;
+		if (version > other.getVersion())
+			return 1;
+		return 0;
 	}
-
-	public static XPath getXpath() {
-		return xpath;
-	}
-
 }

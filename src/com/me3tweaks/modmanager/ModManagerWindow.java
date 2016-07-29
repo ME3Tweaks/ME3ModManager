@@ -840,6 +840,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
 							break;
 						case "pcc":
+						case "asi":
 						case "xml":
 							new FolderBatchWindow(ModManagerWindow.this, files[0]);
 							break;
@@ -878,6 +879,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							} finally {
 
 							}
+							break;
+						default:
+							labelStatus.setText("Extension not supported for Drag and Drop: "+extension);
 							break;
 						}
 					}

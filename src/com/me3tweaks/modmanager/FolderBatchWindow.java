@@ -4,6 +4,7 @@ import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
@@ -30,13 +32,16 @@ import com.me3tweaks.modmanager.objects.ProcessResult;
 
 public class FolderBatchWindow extends JDialog {
 	File droppedFile;
+	boolean show = true;
 	private final Object lock = new Lock(); //threading wait() and notifyall();
 
 	public FolderBatchWindow(JFrame parentFrame, File file) {
 		droppedFile = file;
 		setupWindow();
 		setLocationRelativeTo(parentFrame);
-		setVisible(true);
+		if (show) {
+			setVisible(true);
+		}
 	}
 
 	private void setupWindow() {
@@ -62,8 +67,7 @@ public class FolderBatchWindow extends JDialog {
 			JButton compressAllPcc = new JButton("Compress all PCC files");
 			JButton sideloadAllModMaker = new JButton("Sideload all ModMaker XML files");
 
-			compileAllTLK
-					.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
+			compileAllTLK.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
 			decompileAllTLK.setToolTipText("<html>Decompiles all TLK files using the TankMaster compiler tool included with Mod Manager.</html>");
 			decompileAllCoalesced
 					.setToolTipText("<html>Decompils all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
@@ -160,8 +164,8 @@ public class FolderBatchWindow extends JDialog {
 			String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath());
 			switch (extension) {
 			case "pcc": {
-				JLabel headerLabel = new JLabel("<html>You dropped an PCC file onto Mod Manager.<br>" + droppedFile
-						+ "<br>Select what operation to perform with this file.</html>");
+				JLabel headerLabel = new JLabel(
+						"<html>You dropped an PCC file onto Mod Manager.<br>" + droppedFile + "<br>Select what operation to perform with this file.</html>");
 				panel.add(headerLabel, c);
 
 				JButton decompressPCC = new JButton("Decompress PCC");
@@ -214,9 +218,9 @@ public class FolderBatchWindow extends JDialog {
 
 				break;
 			}
-			case "xml":
-				JLabel headerLabel = new JLabel("<html>You dropped an XML file onto Mod Manager.<br>" + droppedFile
-						+ "<br>Select what operation to perform with this file.</html>");
+			case "xml": {
+				JLabel headerLabel = new JLabel(
+						"<html>You dropped an XML file onto Mod Manager.<br>" + droppedFile + "<br>Select what operation to perform with this file.</html>");
 				panel.add(headerLabel, c);
 
 				JButton compileTLK = new JButton("Compile TLK (TLK Manifest (Tankmaster only))");
@@ -274,6 +278,45 @@ public class FolderBatchWindow extends JDialog {
 
 				panel.add(sideloadModMaker, c);
 				c.gridy++;
+				break;
+			}
+			case "asi":
+				//install ASI file
+				if (!ModManagerWindow.validateBIOGameDir()) {
+					JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nASI mods can only be installed if the BIOGame directory is valid.",
+							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+					show = false;
+					break;
+				}
+
+				JLabel headerLabel = new JLabel("<html>You dropped an ASI file onto Mod Manager.<br>" + droppedFile
+						+ "<br>Be sure you trust the author before you install this<br>as it can run arbitrary code.</html>");
+				panel.add(headerLabel, c);
+				JButton compileTLK = new JButton("Install ASI Mod");
+				compileTLK.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						String copyDest = ModManager.appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent()) + "Binaries/win32/asi/"
+								+ droppedFile.getName();
+						try {
+							FileUtils.copyFile(droppedFile, new File(copyDest));
+							ModManager.debugLogger.writeMessage("Installed dropped ASI File: "+droppedFile+" to "+copyDest);
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Installed "+droppedFile.getName());
+						} catch (IOException e1) {
+							ModManager.debugLogger.writeErrorWithException("ASI Mod install failed "+copyDest+":", e1);
+							JOptionPane.showMessageDialog(null, "Unable to install ASI mod.\nYou may need to run Mod Manager as an administrator.", "Installation Failure",
+									JOptionPane.ERROR_MESSAGE);
+						}
+						dispose();
+					}
+				});
+
+				c.gridy++;
+				panel.add(compileTLK, c);
+				c.gridy++;
+
+				break;
 			}
 
 		}
