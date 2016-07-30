@@ -510,6 +510,9 @@ public class ModInstallWindow extends JDialog {
 					publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(fileToAdd));
 					Path newfilepath = Paths.get(fileToAdd);
 					Files.copy(newfilepath, installPath, StandardCopyOption.REPLACE_EXISTING);
+					if (job.getAddFilesReadOnlyTargets().contains(fileToAddTarget)) {
+						installFile.setReadOnly();
+					}
 					completedTaskSteps++;
 					ModManager.debugLogger.writeMessage("Installed mod file: " + fileToAdd + " => " + installFile);
 				} catch (IOException e) {
@@ -662,6 +665,9 @@ public class ModInstallWindow extends JDialog {
 					publish(job.getJobName() + ": Adding new file " + FilenameUtils.getName(addFile));
 					Path newfilepath = Paths.get(addFile);
 					Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
+					if (job.getAddFilesReadOnlyTargets().contains(addFileTarget)) {
+						unpacked.setReadOnly();
+					}
 					completedTaskSteps++;
 					ModManager.debugLogger.writeMessage("Added mod file: " + addFile);
 				} catch (IOException e) {

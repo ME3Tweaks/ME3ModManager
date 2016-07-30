@@ -32,6 +32,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -76,6 +77,7 @@ public class ASIModWindow extends JDialog {
 	private XPath xpath = XPathFactory.newInstance().newXPath();
 	private ArrayList<ASIUpdateGroup> updategroups;
 	private ArrayList<InstalledASIMod> installedASIs;
+	private JTable table;
 
 	public ASIModWindow(String gamedir) {
 		ModManager.debugLogger.writeMessage("Opening ASI window.");
@@ -141,17 +143,6 @@ public class ASIModWindow extends JDialog {
 			data[i][COL_DESCRIPTION] = mod.getDescription();
 			data[i][COL_ACTION] = "<html><center>" + headingtext + "</center></html>";
 		}
-		/*
-		 * for (int i = 0; i < files.length; i++) { String asifile = files[i];
-		 * String filepath = ModManager.appendSlash(asiDir.getAbsolutePath()) +
-		 * asifile; data[i][COL_ASIFILENAME] = asifile; try { data[i][COL_HASH]
-		 * = MD5Checksum.getMD5Checksum(filepath); } catch (Exception e1) { //
-		 * TODO Auto-generated catch block e1.printStackTrace();
-		 * data[i][COL_HASH] = "Hash failure";
-		 * 
-		 * } data[i][COL_DESCRIPTION] = "Loading..."; data[i][COL_ACTION] =
-		 * "Uninstall"; }
-		 */
 
 		Action actionButtonClick = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
@@ -162,15 +153,14 @@ public class ASIModWindow extends JDialog {
 				//FileUtils.deleteQuietly(new File(path));
 				//Object breakpoint = table.getModel();
 				//((DefaultTableModel) table.getModel()).removeRow(modelRow);
-				;
-				ASIActionDialog aad = new ASIActionDialog(ASIModWindow.this, (ASIMod) table.getModel().getValueAt(modelRow, COL_ASIFILENAME));
+				new ASIActionDialog(ASIModWindow.this, (ASIMod) table.getModel().getValueAt(modelRow, COL_ASIFILENAME));
 			}
 		};
 		String[] columnNames = { "ASI Mod", "Description", "Actions" };
 		DefaultTableModel model = new DefaultTableModel(data, columnNames);
 		final MultiLineTableCell mltc = new MultiLineTableCell();
 
-		JTable table = new JTable(model) {
+		table = new JTable(model) {
 			public boolean isCellEditable(int row, int column) {
 				return column == COL_ACTION;
 			}
@@ -305,6 +295,9 @@ public class ASIModWindow extends JDialog {
 						currentGroup.addVersion(mod);
 					}
 				}
+				if (currentGroup != null) {
+					currentGroup.sortVersions();
+				}
 			} catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException | NullPointerException e) {
 				ModManager.debugLogger.writeErrorWithException("Error loading asi manifest file:", e);
 				manifestLoaded = false;
@@ -395,9 +388,7 @@ public class ASIModWindow extends JDialog {
 			c.gridx = 0;
 			JButton installButton = new JButton("Install ASI Mod");
 			JButton uninstallButton = new JButton("Uninstall ASI Mod");
-
 			InstalledASIMod installedMod = getInstalledModByHash(mod.getHash());
-			System.out.println("BREAK");
 			if (installedMod != null) {
 				//already installed
 				panel.add(uninstallButton, c);
@@ -405,6 +396,45 @@ public class ASIModWindow extends JDialog {
 				//todo: check for updates.
 				panel.add(installButton, c);
 			}
+
+			installButton.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					new ASIModInstaller(mod).execute();
+					dispose();
+				}
+			});
+
+			uninstallButton.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					InstalledASIMod im = getInstalledModByHash(mod.getHash());
+					if (im != null) {
+						ModManager.debugLogger.writeMessage("Deleting installed ASI mod: " + im.getInstalledPath());
+						File installedFile = new File(im.getInstalledPath());
+						FileUtils.deleteQuietly(installedFile);
+						TableModel model = table.getModel();
+						for (int i = 0; i < model.getRowCount(); i++) {
+							ASIMod m = (ASIMod) model.getValueAt(i, COL_ASIFILENAME);
+							if (m == mod) {
+								if (installedFile.exists()) {
+									ModManager.debugLogger.writeMessage("Failed to delete installed ASI mod: " + im.getInstalledPath());
+									model.setValueAt("<html><center>Installed, Failed to uninstall</center></html>", i, COL_ACTION);
+								} else {
+									ModManager.debugLogger.writeMessage("Deleted installed ASI mod: " + im.getInstalledPath());
+									model.setValueAt("<html><center>Not Installed</center></html>", i, COL_ACTION);
+
+								}
+								break;
+							}
+						}
+						loadInstalledASIMods();
+						dispose();
+					}
+				}
+			});
 
 			c.gridy++;
 
@@ -444,28 +474,70 @@ public class ASIModWindow extends JDialog {
 			columnModel.getColumn(column).setPreferredWidth(width);
 		}
 	}
-	
-	class ASIModInstaller extends SwingWorker<Void, Void> {
+
+	class ASIModInstaller extends SwingWorker<Boolean, Void> {
 		private ASIMod mod;
 
 		public ASIModInstaller(ASIMod mod) {
 			this.mod = mod;
-		}
-		
-		@Override
-		protected Void doInBackground() throws Exception {
-			try {
-				ModManager.debugLogger.writeMessage("Downloading ASI from URL: "+mod.getDownloadURL());
-				FileUtils.copyURLToFile(new URL(mod.getDownloadURL()), new File(ModManager.appendSlash(asiDir.getAbsolutePath())+mod.getInstallName()+"-v"+mod.getVersion()+".asi"));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeErrorWithException("Error fetching ASI file from URL: "+mod.getDownloadURL(), e);
+			TableModel model = table.getModel();
+			for (int i = 0; i < model.getRowCount(); i++) {
+				ASIMod m = (ASIMod) model.getValueAt(i, COL_ASIFILENAME);
+				if (m == mod) {
+					model.setValueAt("<html><center>Installing...</center></html>", i, COL_ACTION);
+					break;
+				}
 			}
-			
-			return null;
 		}
+
+		@Override
+		protected Boolean doInBackground() throws Exception {
+			try {
+				ModManager.debugLogger.writeMessage("Downloading ASI from URL: " + mod.getDownloadURL());
+				File dest = new File(ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
+				FileUtils.deleteQuietly(dest);
+				FileUtils.copyURLToFile(new URL(mod.getDownloadURL()), dest);
+				ModManager.debugLogger.writeMessage("Checksumming downloaded file: " + dest);
+				String checksum = MD5Checksum.getMD5Checksum(dest.getAbsolutePath());
+				if (!checksum.equals(mod.getHash())) {
+					FileUtils.deleteQuietly(dest);
+					ModManager.debugLogger.writeError("HASH FAILURE: DOWNLOADED " + checksum + ", requires " + mod.getHash());
+					return false;
+				}
+				ModManager.debugLogger.writeMessage("Checksum OK");
+				ModManager.debugLogger.writeMessage("ASI mod " + mod.getName() + " v" + mod.getVersion() + " was installed");
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException("Error fetching ASI file from URL: " + mod.getDownloadURL(), e);
+				return false;
+			}
+
+			return true;
+		}
+
 		@Override
 		public void done() {
 			//TODO: RELOAD TABLE INFO?
+			try {
+				loadInstalledASIMods();
+				boolean retval = get();
+				//OK
+				TableModel model = table.getModel();
+				for (int i = 0; i < model.getRowCount(); i++) {
+					ASIMod m = (ASIMod) model.getValueAt(i, COL_ASIFILENAME);
+					if (m == mod) {
+						if (retval) {
+							model.setValueAt("<html><center>Installed, up to date</center></html>", i, COL_ACTION);
+							return;
+						} else {
+							//NOT GOOD
+							model.setValueAt("<html><center>"+ASIActionColumn.ERROR_STR+": Install failed<br>Check Mod Manager logs</center></html>", i, COL_ACTION);
+						}
+					}
+				}
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Uncaught ASI mod download execution exeception: ", e);
+				return;
+			}
 		}
 	}
 }

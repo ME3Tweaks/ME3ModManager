@@ -28,7 +28,7 @@ public class ASIMod implements Comparable<ASIMod> {
 		installName = xpath.evaluate("installedname", modVer);
 		author = xpath.evaluate("author", modVer);
 		description = xpath.evaluate("description", modVer);
-		downloadURL = xpath.evaluate("downloadURL", modVer);
+		downloadURL = xpath.evaluate("downloadlink", modVer);
 		hash = xpath.evaluate("hash", modVer);
 		sourceCode = xpath.evaluate("sourcecode", modVer);
 		String strversion = xpath.evaluate("version", modVer);
@@ -69,9 +69,9 @@ public class ASIMod implements Comparable<ASIMod> {
 
 	@Override
 	public int compareTo(ASIMod other) {
-		if (version < other.getVersion())
-			return -1;
 		if (version > other.getVersion())
+			return -1;
+		if (version < other.getVersion())
 			return 1;
 		return 0;
 	}

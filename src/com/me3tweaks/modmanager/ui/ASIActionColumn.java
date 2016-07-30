@@ -21,14 +21,24 @@ import javax.swing.table.*;
  *
  */
 public class ASIActionColumn extends AbstractCellEditor implements TableCellRenderer, TableCellEditor, ActionListener, MouseListener {
+	private static final Color NOT_INSTALLED_COL = new Color(156, 161, 230);
+	public static final String NOT_INSTALLED_STR = "Not Installed";
+	private static final Color OUTDATED_COL = new Color(222, 230, 156);
+	public static final String OUTDATED_STR = "outdated";
+	private static final Color UP_TO_DATE_COL = new Color(168, 207, 155);
+	public static final String UP_TO_DATE_STR = "up to date";
+	private static final Color ERROR_COL = new Color(247, 124, 124);
+	public static final String ERROR_STR = "Error";
+	public static final String UNKNOWN_STR = "Unknown ASI";
+
 	private JTable table;
 	private Action action;
 	private int mnemonic;
 	private Border originalBorder;
 	private Border focusBorder;
 
-	private JButton renderButton;
-	private JButton editButton;
+	private JGradientButton renderButton;
+	private JGradientButton editButton;
 	private Object editorValue;
 	private boolean isButtonColumnEditor;
 	private DefaultTableCellRenderer defaultCell;
@@ -50,8 +60,8 @@ public class ASIActionColumn extends AbstractCellEditor implements TableCellRend
 		this.action = action;
 		defaultCell = new DefaultTableCellRenderer();
 		defaultCell.setHorizontalAlignment(JLabel.CENTER);
-		renderButton = new JButton();
-		editButton = new JButton();
+		renderButton = new JGradientButton();
+		editButton = new JGradientButton();
 		editButton.setFocusPainted(false);
 		editButton.addActionListener(this);
 		originalBorder = editButton.getBorder();
@@ -128,20 +138,40 @@ public class ASIActionColumn extends AbstractCellEditor implements TableCellRend
 		if (value == null) {
 			return defaultCell;
 		}
-		if (value instanceof String && ((String) value).equals("NO BACKUP")) {
-			defaultCell.setText("NO BACKUP");
-			defaultCell.setBackground(SelectiveRestoreTableCellRenderer.badColor);
-			return defaultCell;
-		} else {
+		if (value instanceof String) {
 			defaultCell.setText("");
 			defaultCell.setBackground(null);
 		}
 		if (isSelected) {
 			renderButton.setForeground(table.getSelectionForeground());
-			renderButton.setBackground(table.getSelectionBackground());
+			if (value.toString().toLowerCase().contains(UP_TO_DATE_STR.toLowerCase())) {
+				renderButton.setBackground(UP_TO_DATE_COL.darker());
+			} else if (value.toString().toLowerCase().contains(OUTDATED_STR.toLowerCase())) {
+				renderButton.setBackground(OUTDATED_COL.darker());
+			} else if (value.toString().toLowerCase().contains(NOT_INSTALLED_STR.toLowerCase())) {
+				renderButton.setBackground(NOT_INSTALLED_COL.darker());
+			} else if (value.toString().toLowerCase().contains(ERROR_STR.toLowerCase())) {
+				renderButton.setBackground(ERROR_COL.darker());
+			} else if (value.toString().toLowerCase().contains(UNKNOWN_STR.toLowerCase())) {
+				renderButton.setBackground(ERROR_COL.darker());
+			} else {
+				renderButton.setBackground(UIManager.getColor("Button.background"));
+			}
 		} else {
 			renderButton.setForeground(table.getForeground());
-			renderButton.setBackground(UIManager.getColor("Button.background"));
+			if (value.toString().toLowerCase().contains(UP_TO_DATE_STR.toLowerCase())) {
+				renderButton.setBackground(UP_TO_DATE_COL);
+			} else if (value.toString().toLowerCase().contains(OUTDATED_STR.toLowerCase())) {
+				renderButton.setBackground(OUTDATED_COL);
+			} else if (value.toString().toLowerCase().contains(NOT_INSTALLED_STR.toLowerCase())) {
+				renderButton.setBackground(NOT_INSTALLED_COL);
+			} else if (value.toString().toLowerCase().contains(ERROR_STR.toLowerCase())) {
+				renderButton.setBackground(ERROR_COL);
+			} else if (value.toString().toLowerCase().contains(UNKNOWN_STR.toLowerCase())) {
+				renderButton.setBackground(ERROR_COL);
+			} else {
+				renderButton.setBackground(UIManager.getColor("Button.background"));
+			}
 		}
 
 		if (hasFocus) {
@@ -203,5 +233,24 @@ public class ASIActionColumn extends AbstractCellEditor implements TableCellRend
 	}
 
 	public void mouseExited(MouseEvent e) {
+	}
+
+	private final class JGradientButton extends JButton {
+		private JGradientButton() {
+			super();
+			setContentAreaFilled(false);
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setPaint(new GradientPaint(new Point(0, 0), getBackground(), new Point(0, getHeight() / 3), Color.WHITE));
+			g2.fillRect(0, 0, getWidth(), getHeight() / 3);
+			g2.setPaint(new GradientPaint(new Point(0, getHeight() / 3), Color.WHITE, new Point(0, getHeight()), getBackground()));
+			g2.fillRect(0, getHeight() / 3, getWidth(), getHeight());
+			g2.dispose();
+
+			super.paintComponent(g);
+		}
 	}
 }
