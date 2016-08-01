@@ -4,9 +4,11 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -18,7 +20,6 @@ import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -144,6 +145,20 @@ public class ASIModWindow extends JDialog {
 			data[i][COL_ACTION] = "<html><center>" + headingtext + "</center></html>";
 		}
 
+		String[] columnNames = { "ASI Mod", "Description", "Actions" };
+		DefaultTableModel model = new DefaultTableModel(data, columnNames);
+		for (int i = 0; i < installedASIs.size(); i++) {
+			InstalledASIMod mod = installedASIs.get(i);
+			if (getManifestModByHash(mod.getHash()) == null) {
+				//String filepath = ModManager.appendSlash(asiDir.getAbsolutePath()) + asifile;
+				Object[] row = new Object[3];
+				row[COL_ASIFILENAME] = mod;
+				row[COL_DESCRIPTION] = "Manually installed ASI. This ASI has not been verified by ME3Tweaks. If you wish to have it verifed, please visit the forums.";
+				row[COL_ACTION] = "<html><center>Manually Installed</center></html>";
+				model.addRow(row);
+			}
+		}
+
 		Action actionButtonClick = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				JTable table = (JTable) e.getSource();
@@ -153,11 +168,14 @@ public class ASIModWindow extends JDialog {
 				//FileUtils.deleteQuietly(new File(path));
 				//Object breakpoint = table.getModel();
 				//((DefaultTableModel) table.getModel()).removeRow(modelRow);
-				new ASIActionDialog(ASIModWindow.this, (ASIMod) table.getModel().getValueAt(modelRow, COL_ASIFILENAME));
+				Object val = table.getModel().getValueAt(modelRow, COL_ASIFILENAME);
+				if (val instanceof ASIMod) {
+					new ASIActionDialog(ASIModWindow.this, (ASIMod) val);
+				} else if (val instanceof InstalledASIMod) {
+					new ASIActionDialog(ASIModWindow.this, (InstalledASIMod) val);
+				}
 			}
 		};
-		String[] columnNames = { "ASI Mod", "Description", "Actions" };
-		DefaultTableModel model = new DefaultTableModel(data, columnNames);
 		final MultiLineTableCell mltc = new MultiLineTableCell();
 
 		table = new JTable(model) {
@@ -368,6 +386,7 @@ public class ASIModWindow extends JDialog {
 	 */
 	class ASIActionDialog extends JDialog {
 		private ASIMod mod;
+		private InstalledASIMod installedmod;
 
 		public ASIActionDialog(JDialog parentFrame, ASIMod mod) {
 			this.mod = mod;
@@ -376,25 +395,108 @@ public class ASIModWindow extends JDialog {
 			setVisible(true);
 		}
 
+		public ASIActionDialog(JDialog parentFrame, InstalledASIMod mod) {
+			this.installedmod = mod;
+			setupWindow();
+			setLocationRelativeTo(parentFrame);
+			setVisible(true);
+		}
+
 		private void setupWindow() {
-			setTitle(mod.getName() + " Actions");
+			if (mod != null) {
+				setTitle(mod.getName() + " Actions");
+			} else {
+				setTitle(installedmod.getFilename() + " Actions");
+
+			}
 			setIconImages(ModManager.ICONS);
 			setModal(true);
 
 			JPanel panel = new JPanel();
-			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			panel.setLayout(new GridBagLayout());
+			panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 			GridBagConstraints c = new GridBagConstraints();
 			c.gridy = 0;
 			c.gridx = 0;
+			c.weightx = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+
+			JLabel nameLabel = new JLabel("PLACEHOLDER", SwingConstants.CENTER);
+			if (mod != null) {
+				nameLabel.setText(mod.getName() + " by " + mod.getAuthor());
+			} else {
+				nameLabel.setText(installedmod.getFilename() + " (Manually installed)");
+			}
+			JLabel installStatus = new JLabel("Install status",SwingConstants.RIGHT);
+			JLabel serverStatus = new JLabel("Server status");
+
+			c.gridwidth = 2;
+			c.anchor = GridBagConstraints.NORTH;
+			panel.add(nameLabel, c);
+			c.gridy++;
+			c.gridwidth = 1;
+			panel.add(serverStatus, c);
+
+			c.gridx = 1;
+			panel.add(installStatus, c);
+
+			c.gridx = 0;
+			c.gridy++;
+			
+			
+
+			JButton sourceCode = new JButton("View source code");
+			sourceCode.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					try {
+						ModManager.openWebpage(new URL(mod.getSourceCode()));
+						ASIActionDialog.this.dispose();
+					} catch (MalformedURLException e1) {
+						ModManager.debugLogger.writeErrorWithException("Invalid source code URL " + mod.getSourceCode(), e1);
+						JOptionPane.showMessageDialog(null, "<html>The specified source code URL is not valid:<br>" + mod.getSourceCode(), "Invalid Source Code Link",
+								JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			});
+
+			if (mod == null) {
+				sourceCode.setEnabled(false);
+				sourceCode.setToolTipText("This mod is not in the server manifest from ME3Tweaks. Source code is not available.");
+			}
+
+			panel.add(sourceCode, c);
+			
+			c.gridx = 1;
 			JButton installButton = new JButton("Install ASI Mod");
 			JButton uninstallButton = new JButton("Uninstall ASI Mod");
-			InstalledASIMod installedMod = getInstalledModByHash(mod.getHash());
-			if (installedMod != null) {
-				//already installed
-				panel.add(uninstallButton, c);
+
+			if (mod != null) {
+				serverStatus.setText("Server version: " + mod.getVersion());
+				InstalledASIMod installedMod = getInstalledModByHash(mod.getHash());
+
+				if (installedMod != null) {
+					//already installed
+					panel.add(uninstallButton, c);
+					installStatus.setText("Installed Version: " + getManifestModByHash(installedMod.getHash()).getVersion());
+				} else {
+					//todo: check for updates.
+					//find if outdated
+					installedMod = findOutdatedInstalledModByManifestMod(mod);
+					if (installedMod != null) {
+						installButton.setText("Update ASI Mod");
+						installStatus.setText("Installed Version: " + getManifestModByHash(installedMod.getHash()).getVersion());
+					} else {
+						installStatus.setText("Not installed");
+					}
+					panel.add(installButton, c);
+				}
 			} else {
-				//todo: check for updates.
-				panel.add(installButton, c);
+				panel.add(uninstallButton, c);
+				installStatus.setText("Installed, not verified");
+				serverStatus.setText("Not on server");
 			}
 
 			installButton.addActionListener(new ActionListener() {
@@ -437,25 +539,7 @@ public class ASIModWindow extends JDialog {
 			});
 
 			c.gridy++;
-
-			JButton sourceCode = new JButton("View source code");
-			sourceCode.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					try {
-						ModManager.openWebpage(new URL(mod.getSourceCode()));
-						ASIActionDialog.this.dispose();
-					} catch (MalformedURLException e1) {
-						ModManager.debugLogger.writeErrorWithException("Invalid source code URL " + mod.getSourceCode(), e1);
-						JOptionPane.showMessageDialog(null, "<html>The specified source code URL is not valid:<br>" + mod.getSourceCode(), "Invalid Source Code Link",
-								JOptionPane.ERROR_MESSAGE);
-					}
-				}
-			});
-
-			panel.add(sourceCode, c);
-			c.gridy++;
+			c.gridx = 0;
 
 			add(panel);
 			pack();
@@ -475,7 +559,11 @@ public class ASIModWindow extends JDialog {
 		}
 	}
 
-	class ASIModInstaller extends SwingWorker<Boolean, Void> {
+	class ASIModInstaller extends SwingWorker<Integer, Void> {
+		private static final int FAIL_OTHER = 100;
+		private static final int SUCCESS_OK = 0;
+		private static final int FAIL_SERVER_404 = 1;
+		private static final int FAIL_BAD_HASH = 2;
 		private ASIMod mod;
 
 		public ASIModInstaller(ASIMod mod) {
@@ -491,7 +579,7 @@ public class ASIModWindow extends JDialog {
 		}
 
 		@Override
-		protected Boolean doInBackground() throws Exception {
+		protected Integer doInBackground() throws Exception {
 			try {
 				ModManager.debugLogger.writeMessage("Downloading ASI from URL: " + mod.getDownloadURL());
 				File dest = new File(ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
@@ -502,16 +590,19 @@ public class ASIModWindow extends JDialog {
 				if (!checksum.equals(mod.getHash())) {
 					FileUtils.deleteQuietly(dest);
 					ModManager.debugLogger.writeError("HASH FAILURE: DOWNLOADED " + checksum + ", requires " + mod.getHash());
-					return false;
+					return FAIL_BAD_HASH;
 				}
 				ModManager.debugLogger.writeMessage("Checksum OK");
 				ModManager.debugLogger.writeMessage("ASI mod " + mod.getName() + " v" + mod.getVersion() + " was installed");
+			} catch (FileNotFoundException e) {
+				ModManager.debugLogger.writeErrorWithException("Error fetching ASI file from URL: " + mod.getDownloadURL(), e);
+				return FAIL_SERVER_404;
 			} catch (IOException e) {
 				ModManager.debugLogger.writeErrorWithException("Error fetching ASI file from URL: " + mod.getDownloadURL(), e);
-				return false;
+				return FAIL_OTHER;
 			}
 
-			return true;
+			return SUCCESS_OK;
 		}
 
 		@Override
@@ -519,18 +610,30 @@ public class ASIModWindow extends JDialog {
 			//TODO: RELOAD TABLE INFO?
 			try {
 				loadInstalledASIMods();
-				boolean retval = get();
+				int retval = get();
 				//OK
 				TableModel model = table.getModel();
 				for (int i = 0; i < model.getRowCount(); i++) {
 					ASIMod m = (ASIMod) model.getValueAt(i, COL_ASIFILENAME);
 					if (m == mod) {
-						if (retval) {
+						if (retval == SUCCESS_OK) {
 							model.setValueAt("<html><center>Installed, up to date</center></html>", i, COL_ACTION);
 							return;
 						} else {
 							//NOT GOOD
-							model.setValueAt("<html><center>"+ASIActionColumn.ERROR_STR+": Install failed<br>Check Mod Manager logs</center></html>", i, COL_ACTION);
+							String reason = "Install failed";
+							switch (retval) {
+							case FAIL_BAD_HASH:
+								reason = "Hash Check Failed";
+								break;
+							case FAIL_SERVER_404:
+								reason = "Server 404";
+								break;
+							case FAIL_OTHER:
+								reason = "Install Failed";
+								break;
+							}
+							model.setValueAt("<html><center>" + ASIActionColumn.ERROR_STR + ": " + reason + "<br>Check Mod Manager logs</center></html>", i, COL_ACTION);
 						}
 					}
 				}

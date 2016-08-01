@@ -1,6 +1,11 @@
 package com.me3tweaks.modmanager.objects;
 
 public class InstalledASIMod {
+	@Override
+	public String toString() {
+		return filename;
+	}
+
 	private String installedPath, filename, hash;
 
 	public String getInstalledPath() {
