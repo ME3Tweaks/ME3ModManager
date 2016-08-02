@@ -71,9 +71,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.3 TRANSAM617 EDITION";
-	public static long BUILD_NUMBER = 58L;
-	public static final String BUILD_DATE = "7/31/2016";
+	public static final String VERSION = "4.3 Soaktest";
+	public static long BUILD_NUMBER = 59L;
+	public static final String BUILD_DATE = "8/1/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -92,7 +92,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 6;
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 7; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
-	public static boolean POST_INSTALL_AUTOTOC_INSTEAD = false;
+	public static boolean POST_INSTALL_AUTOTOC_INSTEAD = true;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
