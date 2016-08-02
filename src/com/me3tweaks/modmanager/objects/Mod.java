@@ -296,6 +296,8 @@ public class Mod implements Comparable<Mod> {
 				//NEW FILES (Mod Manager 4.1+)
 				String addFileIni = modini.get(modHeader, "addfiles");
 				String addFileTargetIni = modini.get(modHeader, "addfilestargets");
+				String addReadOnlyFileTargetIni = modini.get(modHeader, "addfilesreadonlytargets");
+
 				//REMOVE FILES (Mod Manager 4.1+)
 				String removeFileTargetIni = modini.get(modHeader, "removefilestargets");
 				String requirementText = null;
@@ -335,6 +337,7 @@ public class Mod implements Comparable<Mod> {
 				//Mod Manager 4.1+ ADD/REMOVE/JOBDESCRIPTIONS
 				StringTokenizer addStrok = null;
 				StringTokenizer addTargetStrok = null;
+				StringTokenizer addTargetReadOnlyStrok = null;
 				StringTokenizer removeStrok = null;
 				if (modCMMVer >= 4.1) {
 					//check for add/remove pairs
@@ -356,6 +359,10 @@ public class Mod implements Comparable<Mod> {
 									"Mod has a header (" + modHeader + ") that has an addfiles task, but the number of source files and the number of targets do not match.");
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 							return;
+						}
+						if (modCMMVer >= 4.3) {
+							//READ ONLY DESIGNATION
+							addTargetReadOnlyStrok = new StringTokenizer(addReadOnlyFileTargetIni, ";");
 						}
 					}
 
@@ -427,6 +434,19 @@ public class Mod implements Comparable<Mod> {
 									+ ModManager.appendSlash(iniModDir) + addFile);
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 							return;
+						}
+					}
+					if (modCMMVer >= 4.3) {
+						//READ ONLY DESIGNATION
+						while (addTargetReadOnlyStrok.hasMoreTokens()) {
+							String readonlytarget = addTargetReadOnlyStrok.nextToken();
+							if (!newJob.getFilesToAddTargets().contains(readonlytarget)){
+								ModManager.debugLogger.writeError("[ADDFILE-READONLY]Failed to set a file to be marked as read only on install - Cannot mark file read-only if its not in the addfiles list: "+readonlytarget);
+								setFailedReason("Mod has designated files to install should be marked read-only (so end user won't modify them). A designation does not match any files in the addfilestargets list: "+readonlytarget);
+								ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
+								return;
+							}
+							newJob.addNewFileReadOnlyTask(readonlytarget);
 						}
 					}
 				}

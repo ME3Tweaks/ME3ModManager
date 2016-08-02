@@ -316,7 +316,6 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		System.out.println("action");
 		if (e.getSource() == submit) {
 			// parse it.
 			String input_text = input.getText();
@@ -739,6 +738,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 	}
 
 	private void generateLoadPHP() {
+		System.out.println("Generating load");
 		String input_text = input.getText();
 		StringBuilder sb = new StringBuilder();
 		try { //Load document
@@ -830,6 +830,7 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 			output.setText(sb.toString());
 		} catch (Exception e) {
 			Category cat;
+			System.out.println("ERR");
 			try {
 				cat = new Category(input_text);
 			} catch (Exception ex) {

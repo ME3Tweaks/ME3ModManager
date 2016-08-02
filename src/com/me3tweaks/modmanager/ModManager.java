@@ -71,16 +71,16 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.2.5";
-	public static long BUILD_NUMBER = 58L;
-	public static final String BUILD_DATE = "6/18/2016";
+	public static final String VERSION = "4.3 Soaktest";
+	public static long BUILD_NUMBER = 59L;
+	public static final String BUILD_DATE = "8/1/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.1; // max modmaker
 																// version
-	public static final double MODDESC_VERSION_SUPPORT = 4.2; // max supported
+	public static final double MODDESC_VERSION_SUPPORT = 4.3; // max supported
 																// cmmver in
 																// moddesc
 	public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
@@ -92,7 +92,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 6;
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 7; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
-	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
+	public static boolean POST_INSTALL_AUTOTOC_INSTEAD = true;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
@@ -316,14 +316,14 @@ public class ModManager {
 						if (autotocPostInstallInt > 0) {
 							// logging is on
 							debugLogger.writeMessage("AutoTOC post install is enabled");
-							USE_GAME_TOCFILES_INSTEAD = true;
+							POST_INSTALL_AUTOTOC_INSTEAD = true;
 						} else {
 							debugLogger.writeMessage("AutoTOC post install is disabled");
-							USE_GAME_TOCFILES_INSTEAD = false;
+							POST_INSTALL_AUTOTOC_INSTEAD = false;
 						}
 					} catch (NumberFormatException e) {
 						debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
-						USE_GAME_TOCFILES_INSTEAD = false;
+						POST_INSTALL_AUTOTOC_INSTEAD = false;
 					}
 				}
 
@@ -1018,6 +1018,16 @@ public class ModManager {
 
 	public static String getHelpDir() {
 		File file = new File(getDataDir() + "help/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+	
+	/**
+	 * Returns data/asimods/
+	 * @return
+	 */
+	public static String getASICache() {
+		File file = new File(getDataDir() + "asimods/");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
@@ -2119,5 +2129,9 @@ public class ModManager {
 			}
 		}
 		return false;
+	}
+
+	public static File getASIManifestFile() {
+		return new File(getASICache() + "manifest.xml");
 	}
 }

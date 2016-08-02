@@ -33,6 +33,7 @@ public class ModJob {
 	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
 	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFilesTargets;
 	private String sourceDir;
+	private ArrayList<String> addFilesReadOnlyTargets;
 
 	/**
 	 * Holds many parameters that are required to inject files into a DLC Sfar
@@ -51,6 +52,7 @@ public class ModJob {
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
+		setAddFilesReadOnlyTargets(new ArrayList<String>());
 	}
 
 	public ArrayList<String> getFilesToAdd() {
@@ -94,6 +96,7 @@ public class ModJob {
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
+		setAddFilesReadOnlyTargets(new ArrayList<String>());
 	}
 
 	/**
@@ -126,6 +129,7 @@ public class ModJob {
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
+		setAddFilesReadOnlyTargets(new ArrayList<String>());
 
 		for (String str : job.newFiles) {
 			newFiles.add(str);
@@ -141,6 +145,9 @@ public class ModJob {
 		}
 		for (String str : job.removeFilesTargets) {
 			removeFilesTargets.add(str);
+		}
+		for (String str : job.getAddFilesReadOnlyTargets()) {
+			getAddFilesReadOnlyTargets().add(str);
 		}
 
 		sourceDir = job.sourceDir;
@@ -370,5 +377,17 @@ public class ModJob {
 
 	public String getSourceDir() {
 		return sourceDir;
+	}
+
+	public void addNewFileReadOnlyTask(String readonlytarget) {
+		getAddFilesReadOnlyTargets().add(readonlytarget);
+	}
+
+	public ArrayList<String> getAddFilesReadOnlyTargets() {
+		return addFilesReadOnlyTargets;
+	}
+
+	public void setAddFilesReadOnlyTargets(ArrayList<String> addFilesReadOnlyTargets) {
+		this.addFilesReadOnlyTargets = addFilesReadOnlyTargets;
 	}
 }

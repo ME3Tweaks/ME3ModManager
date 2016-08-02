@@ -57,7 +57,6 @@ public class ModInstallWindow extends JDialog {
 	String consoleQueue[];
 	String currentText;
 	JProgressBar progressBar;
-	HashMap<String, String> alternativeTOCFiles;
 	ModManagerWindow callingWindow;
 	public final static String CUSTOMDLC_METADATA_FILE = "_metacmm.txt";
 
@@ -211,12 +210,6 @@ public class ModInstallWindow extends JDialog {
 			this.jobs = this.mod.getJobs();
 			numjobs = jobs.length;
 			failedJobs = new ArrayList<String>();
-			if (ModManager.USE_GAME_TOCFILES_INSTEAD) {
-				ModManager.debugLogger.writeMessage("Pre-tocing game files before injection thread starts.");
-				AutoTocWindow atw = new AutoTocWindow(this.mod, AutoTocWindow.INSTALLED_MODE, bioGameDir);
-				alternativeTOCFiles = atw.getUpdatedGameTOCs();
-				ModManager.debugLogger.writeMessage("PreTOC finished.");
-			}
 			ModManager.debugLogger.writeMessage("========Installing " + this.mod.getModName() + "========");
 			ModManager.debugLogger.writeMessage("Starting the InjectionCommander thread. Number of jobs to do: " + numjobs);
 		}
@@ -265,12 +258,6 @@ public class ModInstallWindow extends JDialog {
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("UNKNOWN EXCEPTION OCCURED: ", e);
 				return null;
-			} finally {
-				if (alternativeTOCFiles != null) {
-					for (String tempFile : alternativeTOCFiles.values()) {
-						FileUtils.deleteQuietly(new File(tempFile));
-					}
-				}
 			}
 			return true;
 		}
@@ -285,11 +272,6 @@ public class ModInstallWindow extends JDialog {
 			@Override
 			public Boolean call() throws Exception {
 				if (installCancelled) {
-					if (alternativeTOCFiles != null) {
-						for (String tempFile : alternativeTOCFiles.values()) {
-							FileUtils.deleteQuietly(new File(tempFile));
-						}
-					}
 					return false;
 				}
 				boolean result = false;
@@ -464,10 +446,6 @@ public class ModInstallWindow extends JDialog {
 				for (int i = 0; i < numFilesToReplace; i++) {
 					String fileToReplace = filesToReplace.get(i);
 					String newFile = newFiles.get(i);
-					if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
-						ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
-						newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
-					}
 
 					boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
 					if (!shouldContinue) {
@@ -478,7 +456,7 @@ public class ModInstallWindow extends JDialog {
 					// install file.
 					File unpacked = new File(me3dir + fileToReplace);
 					Path originalpath = Paths.get(unpacked.toString());
-					if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.USE_GAME_TOCFILES_INSTEAD) {
+					if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
 						try {
 							publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 							Path newfilepath = Paths.get(newFile);
@@ -509,7 +487,14 @@ public class ModInstallWindow extends JDialog {
 				try {
 					publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(fileToAdd));
 					Path newfilepath = Paths.get(fileToAdd);
+					if (installFile.exists()) {
+						installFile.delete();
+					}
 					Files.copy(newfilepath, installPath, StandardCopyOption.REPLACE_EXISTING);
+					if (job.getAddFilesReadOnlyTargets().contains(fileToAddTarget)) {
+						installFile.setReadOnly();
+						ModManager.debugLogger.writeMessage("Set read only: "+installFile);
+					}
 					completedTaskSteps++;
 					ModManager.debugLogger.writeMessage("Installed mod file: " + fileToAdd + " => " + installFile);
 				} catch (IOException e) {
@@ -614,10 +599,6 @@ public class ModInstallWindow extends JDialog {
 			for (int i = 0; i < numFilesToReplace; i++) {
 				String fileToReplace = filesToReplace.get(i);
 				String newFile = newFiles.get(i);
-				if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
-					ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
-					newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
-				}
 
 				boolean shouldContinue = checkBackupAndHash(me3dir, fileToReplace, job);
 				if (!shouldContinue) {
@@ -628,7 +609,7 @@ public class ModInstallWindow extends JDialog {
 				// install file.
 				File unpacked = new File(me3dir + fileToReplace);
 				Path originalpath = Paths.get(unpacked.toString());
-				if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.USE_GAME_TOCFILES_INSTEAD) {
+				if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
 
 					try {
 						Path newfilepath = Paths.get(newFile);
@@ -661,7 +642,14 @@ public class ModInstallWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("Adding new mod file: " + addFile);
 					publish(job.getJobName() + ": Adding new file " + FilenameUtils.getName(addFile));
 					Path newfilepath = Paths.get(addFile);
+					if (unpacked.exists()) {
+						unpacked.delete();
+					}
 					Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
+					if (job.getAddFilesReadOnlyTargets().contains(addFileTarget)) {
+						unpacked.setReadOnly();
+						ModManager.debugLogger.writeMessage("Set read-only: " + unpacked);
+					}
 					completedTaskSteps++;
 					ModManager.debugLogger.writeMessage("Added mod file: " + addFile);
 				} catch (IOException e) {
@@ -878,10 +866,6 @@ public class ModInstallWindow extends JDialog {
 				for (int i = 0; i < filesToReplace.size(); i++) {
 					commandBuilder.add(filesToReplace.get(i));
 					String newFile = newFiles.get(i);
-					if (newFile.endsWith("PCConsoleTOC.bin") && alternativeTOCFiles != null && alternativeTOCFiles.containsKey(job.getJobName())) {
-						ModManager.debugLogger.writeMessage("USING ALTERNATIVE TOC: " + alternativeTOCFiles.get(job.getJobName()));
-						newFile = alternativeTOCFiles.get(job.getJobName()); //USE ALTERNATIVE TOC
-					}
 					commandBuilder.add(newFile);
 				}
 
@@ -1090,6 +1074,11 @@ public class ModInstallWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeException(e);
 				hasException = true;
+			}
+			
+			if (ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+				ModManager.debugLogger.writeMessage("Running Game-Wide AutoTOC after mod install");
+				new AutoTocWindow(bioGameDir);
 			}
 
 			if (success) {
