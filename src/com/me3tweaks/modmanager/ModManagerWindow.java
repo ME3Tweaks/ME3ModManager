@@ -423,7 +423,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest help information"));
 					HelpMenu.getOnlineHelp();
 					publish(new ThreadCommand("UPDATE_HELP_MENU"));
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated help files from server"));
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading ASI list from ME3Tweaks"));
+					ASIModWindow.getOnlineASIManifest();
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated ASI mod list"));
 					if (modModel.getSize() > 0) {
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Checking for updates to mods"));
 						checkAllModsForUpdates(false);

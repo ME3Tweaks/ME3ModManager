@@ -92,7 +92,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 6;
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 7; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
-	public static boolean USE_GAME_TOCFILES_INSTEAD = false;
+	public static boolean POST_INSTALL_AUTOTOC_INSTEAD = false;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
@@ -316,14 +316,14 @@ public class ModManager {
 						if (autotocPostInstallInt > 0) {
 							// logging is on
 							debugLogger.writeMessage("AutoTOC post install is enabled");
-							USE_GAME_TOCFILES_INSTEAD = true;
+							POST_INSTALL_AUTOTOC_INSTEAD = true;
 						} else {
 							debugLogger.writeMessage("AutoTOC post install is disabled");
-							USE_GAME_TOCFILES_INSTEAD = false;
+							POST_INSTALL_AUTOTOC_INSTEAD = false;
 						}
 					} catch (NumberFormatException e) {
 						debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
-						USE_GAME_TOCFILES_INSTEAD = false;
+						POST_INSTALL_AUTOTOC_INSTEAD = false;
 					}
 				}
 

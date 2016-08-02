@@ -361,7 +361,7 @@ public class ASIModWindow extends JDialog {
 	/**
 	 * Contacts ME3Tweaks and fetches the latest ASI mod info.
 	 */
-	public static void getOnlineASIManifest() {
+	public static boolean getOnlineASIManifest() {
 		URIBuilder urib;
 		String responseString = null;
 		try {
@@ -373,9 +373,11 @@ public class ASIModWindow extends JDialog {
 			responseString = new BasicResponseHandler().handleResponse(response);
 			FileUtils.writeStringToFile(ModManager.getASIManifestFile(), responseString);
 			ModManager.debugLogger.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getASIManifestFile().exists());
+			return true;
 		} catch (IOException | URISyntaxException e) {
 			ModManager.debugLogger.writeErrorWithException("Error fetching latest asi mod manifest file:", e);
 		}
+		return false;
 	}
 
 	/**
@@ -428,7 +430,7 @@ public class ASIModWindow extends JDialog {
 			} else {
 				nameLabel.setText(installedmod.getFilename() + " (Manually installed)");
 			}
-			JLabel installStatus = new JLabel("Install status",SwingConstants.RIGHT);
+			JLabel installStatus = new JLabel("Install status", SwingConstants.RIGHT);
 			JLabel serverStatus = new JLabel("Server status");
 
 			c.gridwidth = 2;
@@ -443,8 +445,6 @@ public class ASIModWindow extends JDialog {
 
 			c.gridx = 0;
 			c.gridy++;
-			
-			
 
 			JButton sourceCode = new JButton("View source code");
 			sourceCode.addActionListener(new ActionListener() {
@@ -468,7 +468,7 @@ public class ASIModWindow extends JDialog {
 			}
 
 			panel.add(sourceCode, c);
-			
+
 			c.gridx = 1;
 			JButton installButton = new JButton("Install ASI Mod");
 			JButton uninstallButton = new JButton("Uninstall ASI Mod");
@@ -512,24 +512,43 @@ public class ASIModWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					InstalledASIMod im = getInstalledModByHash(mod.getHash());
+					InstalledASIMod im = installedmod;
+					if (im == null) {
+						im = getInstalledModByHash(mod.getHash());
+					}
 					if (im != null) {
 						ModManager.debugLogger.writeMessage("Deleting installed ASI mod: " + im.getInstalledPath());
 						File installedFile = new File(im.getInstalledPath());
 						FileUtils.deleteQuietly(installedFile);
 						TableModel model = table.getModel();
 						for (int i = 0; i < model.getRowCount(); i++) {
-							ASIMod m = (ASIMod) model.getValueAt(i, COL_ASIFILENAME);
-							if (m == mod) {
-								if (installedFile.exists()) {
-									ModManager.debugLogger.writeMessage("Failed to delete installed ASI mod: " + im.getInstalledPath());
-									model.setValueAt("<html><center>Installed, Failed to uninstall</center></html>", i, COL_ACTION);
-								} else {
-									ModManager.debugLogger.writeMessage("Deleted installed ASI mod: " + im.getInstalledPath());
-									model.setValueAt("<html><center>Not Installed</center></html>", i, COL_ACTION);
+							Object modobj = model.getValueAt(i, COL_ASIFILENAME);
+							if (mod != null && modobj instanceof ASIMod) {
+								ASIMod m = (ASIMod) modobj;
+								if (m == mod) {
+									if (installedFile.exists()) {
+										ModManager.debugLogger.writeMessage("Failed to delete installed ASI mod: " + im.getInstalledPath());
+										model.setValueAt("<html><center>Installed, Failed to uninstall</center></html>", i, COL_ACTION);
+									} else {
+										ModManager.debugLogger.writeMessage("Deleted installed ASI mod: " + im.getInstalledPath());
+										model.setValueAt("<html><center>Not Installed</center></html>", i, COL_ACTION);
 
+									}
+									break;
 								}
-								break;
+							} else if (installedmod != null && modobj instanceof InstalledASIMod) {
+								InstalledASIMod m = (InstalledASIMod) model.getValueAt(i, COL_ASIFILENAME);
+								if (m == installedmod) {
+									if (installedFile.exists()) {
+										ModManager.debugLogger.writeMessage("Failed to delete installed ASI mod: " + im.getInstalledPath());
+										model.setValueAt("<html><center>Installed, Failed to uninstall</center></html>", i, COL_ACTION);
+									} else {
+										ModManager.debugLogger.writeMessage("Deleted installed ASI mod: " + im.getInstalledPath());
+										//model.setValueAt("<html><center>Not Installed</center></html>", i, COL_ACTION);
+										((DefaultTableModel)model).removeRow(i);
+									}
+									break;
+								}
 							}
 						}
 						loadInstalledASIMods();

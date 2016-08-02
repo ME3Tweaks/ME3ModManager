@@ -31,7 +31,7 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoApplyMixins;
 	private JCheckBox autoUpdateME3Explorer;
 	private JCheckBox skipUpdate;
-	private JCheckBox autoTocUnpackedOnInstall;
+	private JCheckBox autoTocPostInstall;
 	private AbstractButton logModInit;
 	private JCheckBox logPatchInit;
 
@@ -279,12 +279,12 @@ public class OptionsWindow extends JDialog {
 			});
 		}
 
-		autoTocUnpackedOnInstall = new JCheckBox(
-				"<html><div style=\"width: 300px\">Update and use game's PCConsoleTOC files instead of mod's when installing*</div></html>");
-		autoTocUnpackedOnInstall
-				.setToolTipText("<html>Prior to installing a mod, Mod Manager will update the installed PCConsoleTOC files for the new mod's files and skip using the one's included in the mod.<br>Mixing mods outside of Mod Manager is not supported by FemShep. This option is provided as a convenience to ME3Explorer users.</html>");
-		autoTocUnpackedOnInstall.setSelected(ModManager.USE_GAME_TOCFILES_INSTEAD);
-		autoTocUnpackedOnInstall.addActionListener(new ActionListener() {
+		autoTocPostInstall = new JCheckBox(
+				"<html><div style=\"width: 300px\">Run AutoTOC on game after mod install</div></html>");
+		autoTocPostInstall
+				.setToolTipText("<html>Runs AutoTOC on the game after a mod install to help prevent game crashes</html>");
+		autoTocPostInstall.setSelected(ModManager.POST_INSTALL_AUTOTOC_INSTEAD);
+		autoTocPostInstall.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini;
 				try {
@@ -292,22 +292,9 @@ public class OptionsWindow extends JDialog {
 					if (!settings.exists())
 						settings.createNewFile();
 					ini = new Wini(settings);
-					ModManager.debugLogger.writeMessage("User changing run autotoc post install to " + autoTocUnpackedOnInstall.isSelected());
-					ini.put("Settings", "runautotocpostinstall", autoTocUnpackedOnInstall.isSelected() ? "1" : "0");
-					ModManager.USE_GAME_TOCFILES_INSTEAD = autoTocUnpackedOnInstall.isSelected();
-					if (ModManager.USE_GAME_TOCFILES_INSTEAD) {
-						JOptionPane
-								.showMessageDialog(
-										OptionsWindow.this,
-										"<html><div style=\"width: 300px\">Turning this on makes AutoTOC run before a mod installs, updating the installed PCConsoleTOC files with the correct sizes of the new files the mod is installing.<br>"
-												+ "Using this will make mods take longer to install.<br>"
-												+ "This will allow you to mix Mod Manager mods with non Mod Manager mods to some degree.<br><br>"
-												+ "Mixing mods this way is not officially supported and this option is simply a convenience for ME3Explorer users.<br><br>"
-												+ "If you use only Mod Manager mods, you should use the Mod Merging Utility, as it is supported and mods will install faster.<br><br>"
-												+ "This is an advanced, experimental feature. You should only turn this on if you know what you are doing.</div></html>",
-										"Partially unsupported", JOptionPane.WARNING_MESSAGE);
-
-					}
+					ModManager.debugLogger.writeMessage("User changing run autotoc post install to " + autoTocPostInstall.isSelected());
+					ini.put("Settings", "runautotocpostinstall", autoTocPostInstall.isSelected() ? "1" : "0");
+					ModManager.POST_INSTALL_AUTOTOC_INSTEAD = autoTocPostInstall.isSelected();
 					ini.store();
 				} catch (InvalidFileFormatException ex) {
 					ex.printStackTrace();
@@ -372,7 +359,7 @@ public class OptionsWindow extends JDialog {
 		
 		optionsPanel.add(autoApplyMixins);
 		optionsPanel.add(autoInjectKeybindsModMaker);
-		optionsPanel.add(autoTocUnpackedOnInstall);
+		optionsPanel.add(autoTocPostInstall);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(autoUpdateModManager);
 		if (skipUpdate != null) {
