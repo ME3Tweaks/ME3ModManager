@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -71,9 +72,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.3 Soaktest";
+	public static final String VERSION = "4.3";
 	public static long BUILD_NUMBER = 59L;
-	public static final String BUILD_DATE = "8/1/2016";
+	public static final String BUILD_DATE = "8/3/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -776,34 +777,38 @@ public class ModManager {
 		return true;
 	}
 
-	public static boolean installBinkw32Bypass(String biogamedir, boolean asi) {
-		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer. Using the ASI version: " + asi);
-
+	public static int checkforME3105(String biogamedir) {
 		//Check to make sure ME3 1.05
 		File executable = new File(new File(biogamedir).getParent() + "\\Binaries\\Win32\\MassEffect3.exe");
 		if (!executable.exists()) {
 			ModManager.debugLogger.writeError("Unable to find game EXE at " + executable);
-			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to detect game executable version.\nInstall aborted.", "Mass Effect 3 1.06 detected",
-					JOptionPane.ERROR_MESSAGE);
-			return false;
+			return -1;
 		}
-		int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
+		return EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
+	}
 
-		if (minorBuildNum != 5) {
-			ModManager.debugLogger.writeError("Binkw32 does not work with 1.06 version of ME3, aborting.");
-			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-					"The included binkw32.dll files in Mod Manager do not support any version of Mass Effect 3 except 1.05.\n" + (minorBuildNum == 6
-							? "Downgrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this."
-							: "Upgrade your game to use 1.05."),
-					"Unsupported ME3 version", JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
+	public static boolean installBinkw32Bypass(String biogamedir, boolean asi) {
+		ModManager.debugLogger.writeMessage("Installing binkw32.dll DLC authorizer. Using the ASI version: " + asi);
 
 		// extract and install binkw32.dll
 		// from
 		// http://stackoverflow.com/questions/7168747/java-creating-self-extracting-jar-that-can-extract-parts-of-itself-out-of-the-a
 
 		File bgdir = new File(biogamedir);
+		int exebuild = checkforME3105(biogamedir);
+		if (exebuild <= -1) {
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to detect game executable version.\nInstall aborted.", "Mass Effect 3 EXE not detected",
+					JOptionPane.ERROR_MESSAGE);
+			return false;
+		} else if (exebuild != 5) {
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"Binkw32 bypass does not support any version of Mass Effect 3 except 1.05.\n" + (exebuild == 6
+							? "Downgrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this."
+							: "Upgrade your game to use 1.05. Pirated editions of the game are not supported."),
+					"Unsupported ME3 version", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
 		File gamedir = bgdir.getParentFile();
 		ModManager.debugLogger.writeMessage("Set binkw32.dll game folder to: " + gamedir.toString());
 		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
@@ -819,11 +824,12 @@ public class ModManager {
 		} catch (Exception e1) {
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
 			if (isAdmin()) {
-				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32"+(asi ? "_asi": "")+".dll out of ME3CMM.exe.\nPlease report this to FemShep.", "binkw32"+(asi ? "_asi": "")+".dll error",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nPlease report this to FemShep.",
+						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32"+(asi ? "_asi": "")+".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
-						"binkw32"+(asi ? "_asi": "")+".dll error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null,
+						"An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			}
 			return false;
 		}
@@ -1021,9 +1027,10 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-	
+
 	/**
 	 * Returns data/asimods/
+	 * 
 	 * @return
 	 */
 	public static String getASICache() {
@@ -1599,6 +1606,34 @@ public class ModManager {
 			String originalBink32MD5 = "128b560ef70e8085c507368da6f26fe6";
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (!binkhash.equals(originalBink32MD5) && bink23.exists()) {
+				return true;
+			}
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Exception while attempting to find DLC bypass (Binkw32).", e);
+		}
+		return false;
+	}
+
+	/**
+	 * Checks for the ASI binkw32 bypass.
+	 * 
+	 * @return true if bink23 exists and bink32 hash matches known ASI version,
+	 *         false otherwise
+	 */
+	public static boolean checkIfASIBinkBypassIsInstalled(String biogameDir) {
+		File bgdir = new File(biogameDir);
+		if (!bgdir.exists()) {
+			return false;
+		}
+		File gamedir = bgdir.getParentFile();
+		ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
+		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
+		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
+		try {
+			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d" };
+			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
+			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
+			if (asihashlist.contains(binkhash) && bink23.exists()) {
 				return true;
 			}
 		} catch (Exception e) {
