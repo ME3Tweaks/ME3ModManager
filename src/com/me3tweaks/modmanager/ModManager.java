@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -1599,6 +1600,33 @@ public class ModManager {
 			String originalBink32MD5 = "128b560ef70e8085c507368da6f26fe6";
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (!binkhash.equals(originalBink32MD5) && bink23.exists()) {
+				return true;
+			}
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Exception while attempting to find DLC bypass (Binkw32).", e);
+		}
+		return false;
+	}
+	
+	/**
+	 * Checks for the ASI binkw32 bypass.
+	 * 
+	 * @return true if bink23 exists and bink32 hash matches known ASI version, false otherwise
+	 */
+	public static boolean checkIfASIBinkBypassIsInstalled(String biogameDir) {
+		File bgdir = new File(biogameDir);
+		if (!bgdir.exists()) {
+			return false;
+		}
+		File gamedir = bgdir.getParentFile();
+		ModManager.debugLogger.writeMessage("Game directory: " + gamedir.toString());
+		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
+		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
+		try {
+			String[] asiBinkHashes = {"65eb0d2e5c3ccb1cdab5e48d1a9d598d"};
+			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
+			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
+			if (asihashlist.contains(binkhash) && bink23.exists()) {
 				return true;
 			}
 		} catch (Exception e) {

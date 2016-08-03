@@ -1569,8 +1569,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == modManagementASI) {
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
+				ModManager.debugLogger.writeMessage("Opening ASI Management Window");
 				updateApplyButton();
+				if (ModManager.checkIfASIBinkBypassIsInstalled(fieldBiogameDir.getText()) == false) {
+					JOptionPane.showMessageDialog(null, "ASI loader not installed.\nASI mods won't load without using the ASI version of binkw32.\nYou can install this from the tools menu.",
+							"ASI loader not installed", JOptionPane.WARNING_MESSAGE);
+				}
 				new ASIModWindow(new File(fieldBiogameDir.getText()).getParent());
 			} else {
 				updateApplyButton();
