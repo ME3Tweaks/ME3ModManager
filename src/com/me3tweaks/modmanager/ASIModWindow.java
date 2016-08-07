@@ -601,7 +601,8 @@ public class ASIModWindow extends JDialog {
 		protected Integer doInBackground() throws Exception {
 			try {
 				ModManager.debugLogger.writeMessage("Downloading ASI from URL: " + mod.getDownloadURL());
-				File dest = new File(ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
+				//File dest = new File(ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
+				File dest = new File(ModManager.getTempDir() + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
 				FileUtils.deleteQuietly(dest);
 				FileUtils.copyURLToFile(new URL(mod.getDownloadURL()), dest);
 				ModManager.debugLogger.writeMessage("Checksumming downloaded file: " + dest);
@@ -612,6 +613,24 @@ public class ASIModWindow extends JDialog {
 					return FAIL_BAD_HASH;
 				}
 				ModManager.debugLogger.writeMessage("Checksum OK");
+				ASIUpdateGroup updategroup = null;
+				for (ASIUpdateGroup gp : updategroups) {
+					if (gp.getModVersions().contains(mod)) {
+						updategroup = gp;
+						break;
+					}
+				}
+				
+				for (InstalledASIMod im : installedASIs) {
+					if (updategroup.containsModWithHash(im.getHash())) {
+						im.deleteMod();
+					}
+				}
+				
+				//install ASI
+				File installdest = new File(ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
+				FileUtils.deleteQuietly(installdest);
+				FileUtils.copyFile(dest, installdest);
 				ModManager.debugLogger.writeMessage("ASI mod " + mod.getName() + " v" + mod.getVersion() + " was installed");
 			} catch (FileNotFoundException e) {
 				ModManager.debugLogger.writeErrorWithException("Error fetching ASI file from URL: " + mod.getDownloadURL(), e);

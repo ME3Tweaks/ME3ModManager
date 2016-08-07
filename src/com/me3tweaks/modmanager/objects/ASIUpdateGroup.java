@@ -33,4 +33,12 @@ public class ASIUpdateGroup {
 	public void sortVersions() {
 		Collections.sort(modVersions);
 	}
+	public boolean containsModWithHash(String hash) {
+		for (ASIMod mod : getModVersions()) {
+			if (mod.getHash().equals(hash)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
