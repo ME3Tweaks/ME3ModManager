@@ -1,5 +1,11 @@
 package com.me3tweaks.modmanager.objects;
 
+import java.io.File;
+
+import org.apache.commons.io.FileUtils;
+
+import com.me3tweaks.modmanager.ModManager;
+
 public class InstalledASIMod {
 	@Override
 	public String toString() {
@@ -30,5 +36,10 @@ public class InstalledASIMod {
 
 	public void setHash(String hash) {
 		this.hash = hash;
+	}
+
+	public void deleteMod() {
+		FileUtils.deleteQuietly(new File(installedPath));
+		ModManager.debugLogger.writeMessage("Installed mod deleted "+installedPath);
 	}
 }
