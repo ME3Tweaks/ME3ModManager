@@ -186,6 +186,8 @@ public class ME3TweaksUtils {
 			return "CITADEL";
 		case "Default_DLC_EXP_Pack003_Base.bin":
 			return "CITADEL_BASE";
+		case "ServerCoalesced.bin":
+			return "BALANCE_CHANGES";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => INTERNAL " + coalName);
 			return null;
@@ -230,6 +232,8 @@ public class ME3TweaksUtils {
 			return "CITADEL";
 		case "Default_DLC_EXP_Pack003_Base.bin":
 			return "CITADEL_BASE";
+		case "ServerCoalesced.bin":
+			return "BALANCE_CHANGES";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: FILENAME => HEADER " + coalName);
 			return null;
@@ -383,6 +387,8 @@ public class ME3TweaksUtils {
 			return "Default_DLC_EXP_Pack003.bin";
 		case "CITADEL_BASE":
 			return "Default_DLC_EXP_Pack003_Base.bin";
+		case "BALANCE_CHANGES":
+			return "ServerCoalesced.bin";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => FILENAME " + header);
 			return null;
@@ -436,6 +442,8 @@ public class ME3TweaksUtils {
 			return "Default_DLC_EXP_Pack003.bin";
 		case "CITADEL_BASE":
 			return "Default_DLC_EXP_Pack003_Base.bin";
+		case "BALANCE_CHANGES":
+			return "ServerCoalesced.bin";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: NO MATCH INTERNAL => FILENAME: " + internal);
 			return null;
@@ -486,6 +494,8 @@ public class ME3TweaksUtils {
 			return "CITADEL";
 		case "CITADEL_BASE":
 			return "CITADEL_BASE";
+		case "BALANCE_CHANGES":
+			return "BALANCE_CHANGES";
 		default:
 			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: INTERNAL => HEADER " + internal);
 			return null;
@@ -595,7 +605,6 @@ public class ME3TweaksUtils {
 			return "/BIOGame/DLC/DLC_EXP_Pack003/PCConsoleTOC.bin";
 		case "Default_DLC_EXP_Pack003_Base.bin":
 			return "/BIOGame/DLC/DLC_EXP_Pack003_Base/PCConsoleTOC.bin";
-
 		default:
 			ModManager.debugLogger.writeMessage("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: " + coalName);
 			return null;

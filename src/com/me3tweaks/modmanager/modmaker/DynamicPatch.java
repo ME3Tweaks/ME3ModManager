@@ -54,12 +54,17 @@ public class DynamicPatch {
 		finalPatch.setPatchCMMVer(ModManager.MODDESC_VERSION_SUPPORT);
 		finalPatch.setPatchAuthor("ME3Tweaks ModMaker Dynamic MixIn");
 		finalPatch.setMe3tweaksid(0);
+		finalPatch.setIsDynamic(true);
 	}
 
 	public File getOutputfile() {
 		return outputfile;
 	}
 
+	/**
+	 * Returns a mixin defined from a dynamic mixin from me3tweaks modmaker
+	 * @return standard mixin object
+	 */
 	public Patch getFinalPatch() {
 		return finalPatch;
 	}

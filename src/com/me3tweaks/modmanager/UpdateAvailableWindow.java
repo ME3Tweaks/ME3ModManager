@@ -401,6 +401,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			ProcessBuilder pb = new ProcessBuilder(command);
 			pb.start();
 			ModManager.debugLogger.writeMessage("Upgrading to build "+build+", shutting down.");
+			ModManager.MOD_MANAGER_UPDATE_READY = true; //do not delete temp
 			System.exit(0);
 		} catch (IOException e) {
 			ModManager.debugLogger.writeErrorWithException("FAILED TO RUN AUTO UPDATER:",e);
@@ -414,7 +415,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	 */
 	private boolean buildUpdateScript(){
 		StringBuilder sb = new StringBuilder();
-		sb.append("::Update script for Mod Manager 4.1 (Build "+build+")");
+		sb.append("::Update script for Mod Manager "+ModManager.VERSION+" (Build "+build+")");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("@echo off");

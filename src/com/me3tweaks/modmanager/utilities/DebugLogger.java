@@ -59,6 +59,16 @@ public class DebugLogger {
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				public void run() {
 					try {
+						writeMessage("Mod Manager is closing");
+						//Cleanup temp dir
+						if (!ModManager.MOD_MANAGER_UPDATE_READY) {
+							File tempFolder = new File(ModManager.getTempDir());
+							if(tempFolder.isDirectory() && tempFolder.list().length > 0){
+								FileUtils.cleanDirectory(tempFolder);
+								ModManager.debugLogger.writeMessage("Temp folder is not empty, cleaning up...");
+							}
+						}
+						
 						DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 						Date date = new Date();
 						writeMessage("Logger shutting down. Time: " + dateFormat.format(date));

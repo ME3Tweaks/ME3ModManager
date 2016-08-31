@@ -62,6 +62,7 @@ import com.me3tweaks.modmanager.objects.ASIUpdateGroup;
 import com.me3tweaks.modmanager.objects.InstalledASIMod;
 import com.me3tweaks.modmanager.ui.ASIActionColumn;
 import com.me3tweaks.modmanager.ui.MultiLineTableCell;
+import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 public class ASIModWindow extends JDialog {
@@ -82,8 +83,8 @@ public class ASIModWindow extends JDialog {
 
 	public ASIModWindow(String gamedir) {
 		ModManager.debugLogger.writeMessage("Opening ASI window.");
-		this.gamedir = gamedir;
-		String asidir = ModManager.appendSlash(gamedir) + "Binaries/win32/asi";
+		this.gamedir = ModManager.appendSlash(gamedir);
+		String asidir = gamedir + "Binaries/win32/asi";
 		asiDir = new File(asidir);
 		if (!asiDir.exists()) {
 			asiDir.mkdirs();
@@ -93,9 +94,13 @@ public class ASIModWindow extends JDialog {
 		setVisible(true);
 	}
 
+	public ASIModWindow() {
+		// TODO Auto-generated constructor stub
+	}
+
 	private void setupWindow() {
 		setIconImages(ModManager.ICONS);
-		setTitle("ASI Manager");
+		setTitle("ASI Mod Manager");
 		setModal(true);
 		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(300, 200));
@@ -106,21 +111,25 @@ public class ASIModWindow extends JDialog {
 
 		JPanel panel = new JPanel(new BorderLayout());
 		JLabel infoLabel = new JLabel("<html>ASI Mod Management</html>", SwingConstants.CENTER);
-		JButton updateLocalManifest = new JButton("Download latest ASI manifest");
-		updateLocalManifest.addActionListener(new ActionListener() {
+
+		Action installbinkasi = new AbstractAction() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				updateLocalManifest.setText("Fetching...");
-				updateLocalManifest.setEnabled(false);
-				getOnlineASIManifest();
-				dispose();
-				new ASIModWindow(gamedir);
+				ModManagerWindow.ACTIVE_WINDOW.toolsInstallBinkw32asi.doClick();
 			}
-		});
+		};
+
+		JLabel binkw32 = new JLabel("Binkw32 ASI loader installed");
+		if (!ModManager.checkIfASIBinkBypassIsInstalled(gamedir + "BioGame\\")) {
+			binkw32 = new SwingLink("Binkw32 ASI loader not installed. Click to install...",
+					"ASI mods will not load without the binkw32 ASI loader. You can install ASI mods but they won't do anything without this loader.", installbinkasi);
+		}
+		binkw32.setHorizontalAlignment(JLabel.CENTER);
+
 		JPanel topPanel = new JPanel(new BorderLayout());
 		topPanel.add(infoLabel, BorderLayout.NORTH);
-		topPanel.add(updateLocalManifest, BorderLayout.SOUTH);
+		topPanel.add(binkw32, BorderLayout.CENTER);
 		panel.add(topPanel, BorderLayout.NORTH);
 
 		//TABLE
@@ -203,10 +212,27 @@ public class ASIModWindow extends JDialog {
 		JScrollPane scrollpane = new JScrollPane(table);
 		panel.add(scrollpane, BorderLayout.CENTER);
 
+		JPanel bottomPanel = new JPanel(new BorderLayout());
 		JLabel mpLabel = new JLabel(
 				"<html><div style=\"text-align: center;\">ASI mods can run arbitrary code and should be used with caution.<br>ASI mods that are installable here are verified by ME3Tweaks.</div></html>",
 				SwingConstants.CENTER);
-		panel.add(mpLabel, BorderLayout.SOUTH);
+		bottomPanel.add(mpLabel, BorderLayout.SOUTH);
+
+		JButton updateLocalManifest = new JButton("Download latest ASI manifest");
+		updateLocalManifest.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				updateLocalManifest.setText("Fetching...");
+				updateLocalManifest.setEnabled(false);
+				getOnlineASIManifest();
+				dispose();
+				new ASIModWindow(gamedir);
+			}
+		});
+		bottomPanel.add(updateLocalManifest, BorderLayout.CENTER);
+
+		panel.add(bottomPanel, BorderLayout.SOUTH);
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(panel);
 		pack();
@@ -409,7 +435,6 @@ public class ASIModWindow extends JDialog {
 				setTitle(mod.getName() + " Actions");
 			} else {
 				setTitle(installedmod.getFilename() + " Actions");
-
 			}
 			setIconImages(ModManager.ICONS);
 			setModal(true);
@@ -430,6 +455,7 @@ public class ASIModWindow extends JDialog {
 			} else {
 				nameLabel.setText(installedmod.getFilename() + " (Manually installed)");
 			}
+
 			JLabel installStatus = new JLabel("Install status", SwingConstants.RIGHT);
 			JLabel serverStatus = new JLabel("Server status");
 
@@ -437,6 +463,17 @@ public class ASIModWindow extends JDialog {
 			c.anchor = GridBagConstraints.NORTH;
 			panel.add(nameLabel, c);
 			c.gridy++;
+			if (mod != null) {
+				ASIUpdateGroup ug = findManifestModUpdateGroup(mod);
+				if (ug == null) {
+					ModManager.debugLogger.writeError("Did not find update group for manifest mod. That shouldn't happen..");
+				}
+				String group = "Update Group " + (ug != null ? ug.getGroupID() : "[Error]");
+				JLabel updateGroup = new JLabel(group, SwingConstants.CENTER);
+				panel.add(updateGroup, c);
+				c.gridy++;
+			}
+
 			c.gridwidth = 1;
 			panel.add(serverStatus, c);
 
@@ -444,6 +481,17 @@ public class ASIModWindow extends JDialog {
 			panel.add(installStatus, c);
 
 			c.gridx = 0;
+			c.gridy++;
+
+			String description = "This ASI mod is not listed in the ME3Tweaks ASI mod manifest. You will not be able to download this from ASI Mod Management if you delete it.";
+			if (mod != null) {
+				description = mod.getDescription();
+			}
+			JLabel descriptionLabel = new JLabel("<html><div style=\"width: 300px\">" + description + "</div></html>");
+			c.gridwidth = 2;
+			panel.add(descriptionLabel, c);
+
+			c.gridwidth = 1;
 			c.gridy++;
 
 			JButton sourceCode = new JButton("View source code");
@@ -545,7 +593,7 @@ public class ASIModWindow extends JDialog {
 									} else {
 										ModManager.debugLogger.writeMessage("Deleted installed ASI mod: " + im.getInstalledPath());
 										//model.setValueAt("<html><center>Not Installed</center></html>", i, COL_ACTION);
-										((DefaultTableModel)model).removeRow(i);
+										((DefaultTableModel) model).removeRow(i);
 									}
 									break;
 								}
@@ -576,6 +624,17 @@ public class ASIModWindow extends JDialog {
 			}
 			columnModel.getColumn(column).setPreferredWidth(width);
 		}
+	}
+
+	public ASIUpdateGroup findManifestModUpdateGroup(ASIMod mod) {
+		if (mod != null) {
+			for (ASIUpdateGroup g : updategroups) {
+				if (g.getModVersions().contains(mod)) {
+					return g;
+				}
+			}
+		}
+		return null;
 	}
 
 	class ASIModInstaller extends SwingWorker<Integer, Void> {
@@ -620,13 +679,13 @@ public class ASIModWindow extends JDialog {
 						break;
 					}
 				}
-				
+
 				for (InstalledASIMod im : installedASIs) {
 					if (updategroup.containsModWithHash(im.getHash())) {
 						im.deleteMod();
 					}
 				}
-				
+
 				//install ASI
 				File installdest = new File(ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
 				FileUtils.deleteQuietly(installdest);
@@ -680,5 +739,38 @@ public class ASIModWindow extends JDialog {
 				return;
 			}
 		}
+	}
+
+	public static boolean IsASIModGroupInstalled(int group) {
+		ASIModWindow amw = new ASIModWindow();
+		amw.gamedir = new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent();
+		String asidir = ModManager.appendSlash(amw.gamedir) + "Binaries/win32/asi";
+		amw.asiDir = new File(asidir);
+		if (!amw.asiDir.exists()) {
+			amw.asiDir.mkdirs();
+		}
+		amw.loadLocalManifest(true);
+		amw.loadInstalledASIMods();
+
+		ASIUpdateGroup ug = null;
+		for (ASIUpdateGroup g : amw.updategroups) {
+			if (g.getGroupID() == group) {
+				ug = g;
+				break;
+			}
+		}
+
+		if (ug != null) {
+			for (int i = 0; i < amw.installedASIs.size(); i++) {
+				InstalledASIMod mod = amw.installedASIs.get(i);
+				ASIMod manifestmod = amw.getManifestModByHash(mod.getHash());
+				if (ug.getModVersions().contains(manifestmod)) {
+					return true;
+				}
+			}
+		} else {
+			ModManager.debugLogger.writeError("Update group is not present in the manifest: " + group + ". An ASI mod in this group cannot exist. Please report this to femshep.");
+		}
+		return false;
 	}
 }

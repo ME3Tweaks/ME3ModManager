@@ -27,7 +27,7 @@ public class ModType {
 	public static final String GUN01 = "FIREFIGHT";
 	public static final String GUN02 = "GROUNDSIDE";
 	public static final String CUSTOMDLC = "CUSTOMDLC";
-	public static final String BINI = "LIVEBALANCE";
+	public static final String BINI = "BALANCE_CHANGES";
 	public static final String DH1 = "GENESIS2";
 	public static final String COLLECTORSEDITION = "COLLECTORS_EDITION";
 	public static final String TESTPATCH_16_HASH = "9f7811a54c7f3bc21f5de7600a1ce721";
@@ -39,6 +39,10 @@ public class ModType {
 				GUN02, DH1, COLLECTORSEDITION };
 	}
 
+	public static String[] getLoadingHeaderNameArray() {
+		return new String[] { BASEGAME, MP1, MP2, MP3, MP4, MP5, PATCH1, PATCH2, TESTPATCH, HEN_PR, END, EXP1, EXP2, EXP3, EXP3B, APP01, GUN01,
+				GUN02, DH1, COLLECTORSEDITION, BINI };
+	}
 	/**
 	 * Gets the list of standard folders in the DLC folder. Includes the __metadata directory.
 	 * @return Arraylist of strings of things like DLC_CON_MP1 etc. Does not include DLC_TESTPATCH.
@@ -109,6 +113,8 @@ public class ModType {
 		switch (modType) {
 		case BASEGAME:
 			return "CookedPCConsole";
+		case BINI: 
+			return "..\\Binaries\\win32\\asi";
 		case MP1:
 			return "DLC\\DLC_CON_MP1\\CookedPCConsole"; //Resurgence
 		case MP2:

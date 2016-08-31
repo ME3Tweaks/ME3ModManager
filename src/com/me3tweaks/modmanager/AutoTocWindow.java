@@ -176,6 +176,9 @@ public class AutoTocWindow extends JDialog {
 
 			@Override
 			public Boolean call() throws Exception {
+				if (job.getJobType() == ModJob.BALANCE_CHANGES) {
+					return true; //no toc
+				}
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
 					if (mode == AutoTocWindow.INSTALLED_MODE) {
 						completed.incrementAndGet();
@@ -195,22 +198,22 @@ public class AutoTocWindow extends JDialog {
 						for (String arg : command) {
 							sb.append(arg + " ");
 						}
-						ModManager.debugLogger.writeMessage("Performing a CUSTOM DLC TOC update with command: " + sb.toString());
+						ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Performing a CUSTOM DLC TOC update with command: " + sb.toString());
 						int returncode = 1;
 						ProcessBuilder pb = new ProcessBuilder(command);
 						ProcessResult pr = ModManager.runProcess(pb);
 						returncode = pr.getReturnCode();
 						if (returncode != 0 || pr.hadError()) {
-							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
+							ModManager.debugLogger.writeError("["+job.getJobName()+"]ME3Explorer returned a non 0 code (or threw error): " + returncode);
 						} else {
 							completed.incrementAndGet();
-							ModManager.debugLogger.writeMessage("Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed.get()));
+							ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed.get()));
 							publish(Integer.toString(completed.get()));
 						}
 					}
 					return true;
 				}
-				ModManager.debugLogger.writeMessage("======AutoTOC job on module " + job.getJobName() + "=======");
+				ModManager.debugLogger.writeMessage("["+job.getJobName()+"]======AutoTOC job on module " + job.getJobName() + "=======");
 				boolean hasTOC = false;
 				if (mode == LOCALMOD_MODE) {
 					//see if has toc file
@@ -229,7 +232,7 @@ public class AutoTocWindow extends JDialog {
 						updatedGameTOCs.put(job.getJobName(), tocPath);
 						hasTOC = true;
 					} else {
-						ModManager.debugLogger.writeError("Unable to get module's PCConsoleTOC file: " + job.getJobName() + ". This update will be skipped.");
+						ModManager.debugLogger.writeError("["+job.getJobName()+"]Unable to get module's PCConsoleTOC file: " + job.getJobName() + ". This update will be skipped.");
 					}
 				}
 
@@ -243,7 +246,7 @@ public class AutoTocWindow extends JDialog {
 					//batchJobs.add(tbd);
 
 					//break into batches
-					ModManager.debugLogger.writeMessage("Number of files in this job: "+(job.newFiles.size() + job.addFiles.size()-1));
+					ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Number of files in this job: "+(job.newFiles.size() + job.addFiles.size()-1));
 					for (String newFile : job.newFiles) {
 						String filename = FilenameUtils.getName(newFile);
 						if (filename.equals("PCConsoleTOC.bin")) {
@@ -283,7 +286,7 @@ public class AutoTocWindow extends JDialog {
 					String tocPath = modulePath + "PCConsoleTOC.bin";
 					if (updatedGameTOCs.containsKey(job.getJobName())) {
 						tocPath = updatedGameTOCs.get(job.getJobName());
-						ModManager.debugLogger.writeMessage("TOCing Alternative File: " + tocPath);
+						ModManager.debugLogger.writeMessage("["+job.getJobName()+"]TOCing Alternative File: " + tocPath);
 					}
 					//feed jobs into me3explorer for processing
 					for (TocBatchDescriptor batchJob : batchJobs) {
@@ -298,7 +301,7 @@ public class AutoTocWindow extends JDialog {
 						}
 						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 
-						ModManager.debugLogger.writeMessage("Performing a batch TOC update on the following files:");
+						ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Performing a batch TOC update on the following files:");
 						String str = "";
 						for (SimpleEntry<String, Long> nsp : batchJob.getNameSizePairs()) {
 							str += nsp.getKey() + " " + nsp.getValue();
@@ -311,19 +314,20 @@ public class AutoTocWindow extends JDialog {
 						ProcessResult pr = ModManager.runProcess(pb);
 						returncode = pr.getReturnCode();
 						if (returncode != 0 || pr.hadError()) {
-							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error): " + returncode);
+							ModManager.debugLogger.writeError("["+job.getJobName()+"]ME3Explorer returned a non 0 code (or threw error): " + returncode);
 							return false;
 						} else {
 							int numcompleteinbatch = batchJob.getNameSizePairs().size();
 							
 							completed.addAndGet(numcompleteinbatch);
 							ModManager.debugLogger.writeMessage(
-									"Batch tasks done: " + numcompleteinbatch + ", Number of all completed tasks: " + completed + ", num left to do: " + (numtoc - completed.get()));
+									"["+job.getJobName()+"]Batch tasks done: " + numcompleteinbatch + ", Number of all completed tasks: " + completed + ", num left to do: " + (numtoc - completed.get()));
 							publish(Integer.toString(completed.get()));
 						}
 					}
 					return true;
 				}
+				
 				return false;
 			}
 		}

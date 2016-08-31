@@ -278,10 +278,11 @@ public class Mod implements Comparable<Mod> {
 		modCMMVer = (double) Math.round(modCMMVer * 10) / 10;
 
 		ModManager.debugLogger.writeMessageConditionally("Mod Manager version read: " + modCMMVer, ModManager.LOG_MOD_INIT);
-		ModManager.debugLogger.writeMessageConditionally("Checking for DLC headers in the ini file.", ModManager.LOG_MOD_INIT);
+		ModManager.debugLogger.writeMessageConditionally("Checking for JOB headers in the ini file.", ModManager.LOG_MOD_INIT);
 
 		// It's a 2.0 or above mod. Check for mod tags in the desc file
-		String[] modIniHeaders = ModType.getHeaderNameArray();
+		String[] modIniHeaders = ModType.getLoadingHeaderNameArray();
+		
 		for (String modHeader : modIniHeaders) {
 			// Check for each mod. If it exists, add the task
 			String iniModDir = modini.get(modHeader, "moddir");
@@ -381,6 +382,10 @@ public class Mod implements Comparable<Mod> {
 				ModJob newJob;
 				if (modCMMVer >= 3 && modHeader.equals(ModType.BASEGAME)) {
 					newJob = new ModJob();
+				} else if (modCMMVer >= 4.3 && modHeader.equals(ModType.BINI)) {
+					newJob = new ModJob();
+					newJob.setJobName(ModType.BINI);
+					newJob.setJobType(ModJob.BALANCE_CHANGES);
 				} else {
 					// DLC Job
 					newJob = new ModJob(ModType.getDLCPath(modHeader), modHeader, requirementText);
@@ -400,6 +405,12 @@ public class Mod implements Comparable<Mod> {
 									+ newFile + " vs " + getSfarFilename(oldFile) + ". These filenames currently must be the same. This restriction may be lifted in the future.");
 							ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs " + getSfarFilename(oldFile));
 							return; // The names of the files don't match
+						}
+						
+						if (oldFile.contains("..")){
+							setFailedReason("Mod has a task in a header (" + modHeader + ") that attempts to replace files using a parent directory indicator (\\..\\). This is a security risk to the system. Mods will not load with these paths.");
+							ModManager.debugLogger.writeError("[REPLACEFILE]SECURITY RISK! Task is attempting to replacing file using parent directory indicator .. . Mod has been disabled");
+							return; // Security mitigation
 						}
 
 						// Add the file swap to task job - if this method returns
@@ -1404,6 +1415,8 @@ public class Mod implements Comparable<Mod> {
 			return "GENESIS2";
 		case "CUSTOMDLC":
 			return "CUSTOMDLC";
+		case "BALANCE_CHANGES":
+			return "BALANCE_CHANGES";
 		default:
 			return "UNKNOWN_DEFAULT_FOLDER";
 		}

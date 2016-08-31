@@ -40,6 +40,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.modmaker.DynamicPatch;
 import com.me3tweaks.modmanager.objects.ME3TweaksPatchPackage;
 import com.me3tweaks.modmanager.objects.Mod;
@@ -56,6 +57,9 @@ import com.me3tweaks.modmanager.ui.PatchCellRenderer;
  *
  */
 public class PatchLibraryWindow extends JDialog implements ListSelectionListener, ActionListener {
+	public static final int AUTOUPDATE_MODE = 2;
+	public static final int MODMAKER_MODE = 1;
+	public static final int MANUAL_MODE = 0;
 	DefaultListModel<Patch> patchModel;
 	private JList<Patch> patchList;
 	private JTextArea patchDesc;
@@ -66,13 +70,31 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	private Mod automated_mod;
 	private boolean downloaded;
 	private ArrayList<DynamicPatch> dynamicMixIns;
+	private final Object lock = new Lock(); //threading wait() and notifyall();
+	private int numberofupdatedmixins = -1;
 
-	public PatchLibraryWindow() {
-		ModManager.debugLogger.writeMessage("Loading mixin library interface");
-		setupWindow();
-		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), false).execute();
-		setVisible(true);
+	public PatchLibraryWindow(int mode) {
+		if (mode == MANUAL_MODE) {
+			ModManager.debugLogger.writeMessage("Loading mixin library interface");
+			setupWindow();
+			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+			new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), PatchLibraryWindow.MANUAL_MODE).execute();
+			setVisible(true);
+		} else if (mode == AUTOUPDATE_MODE) {
+			synchronized (lock) {
+				while (numberofupdatedmixins == -1) {
+					try {
+						ModManager.debugLogger.writeMessage("Loading mixin library in automated mode, waiting for it to finish");
+						new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), PatchLibraryWindow.AUTOUPDATE_MODE).execute();
+						lock.wait();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						ModManager.debugLogger.writeErrorWithException("Unable to wait for MixIns update lock:", e);
+					}
+				}
+			}
+
+		}
 	}
 
 	/**
@@ -114,7 +136,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		this.automated_mod = mod;
 		this.dynamicMixIns = dynamicMixIns;
 		if (hasMissingMixIn) {
-			new ME3TweaksLibraryUpdater(callingDialog,ModManagerWindow.ACTIVE_WINDOW.getPatchList(), true).execute();
+			new ME3TweaksLibraryUpdater(callingDialog, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), PatchLibraryWindow.MODMAKER_MODE).execute();
 			setupAutomatedWindow(callingDialog);
 			setVisible(true);
 		} else {
@@ -158,6 +180,32 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		for (DynamicPatch p : dynamicMixIns) {
 			str += "\n - " + p.getFinalPatch().getPatchName();
 			patches.add(p.getFinalPatch());
+		}
+
+		if (ModManager.MODMAKER_CONTROLLER_MOD_ADDINS) {
+			ModManager.debugLogger.writeMessage("User has enabled controller mod addins for modmaker mods");
+			Patch addpatch = null;
+			for (Patch p : patches) {
+				if (addpatch == null) {
+					if (p.getTargetPath().equals("/BIOGame/CookedPCConsole/SFXGame.pcc")) {
+						//Add Patch for camera turning
+						for (Patch x : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
+							if (x.getMe3tweaksid() == 1533) {
+								addpatch = x;
+								ModManager.debugLogger.writeMessage("Added patch 1533 to compilation");
+								break;
+							} else {
+								System.out.println("Skip patch "+x.getMe3tweaksid());
+							}
+						}
+					}
+				}
+			}
+			if (addpatch == null) {
+				ModManager.debugLogger.writeMessage("SFXgame not modified. no controller add-ins required");
+			} else {
+				patches.add(addpatch);
+			}
 		}
 
 		str += "\n\nApply these MixIns to the mod?\n\nYou can automatically accept MixIns through the Options panel.";
@@ -370,12 +418,25 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 		Document doc;
 		boolean modmakerMode;
+		boolean autoupdateMode;
 		boolean atLeast1New = false;
 		ArrayList<Patch> patches;
 		private JDialog callingDialog;
+		private int numChanged = 0;
 
-		public ME3TweaksLibraryUpdater(JDialog callingDialog, ArrayList<Patch> patches, boolean isInModMakerMode) {
-			this.modmakerMode = isInModMakerMode;
+		/**
+		 * 
+		 * @param callingDialog
+		 *            calling dialog. Can be null.
+		 * @param patches
+		 *            list of current patches
+		 * @param mode
+		 *            autoupdateMode = 1, modmakerMode = 0
+		 */
+		public ME3TweaksLibraryUpdater(JDialog callingDialog, ArrayList<Patch> patches, int mode) {
+			this.modmakerMode = (mode == MODMAKER_MODE);
+			this.autoupdateMode = (mode == AUTOUPDATE_MODE);
+			//if neither are true it will default to manual mode
 			this.patches = patches;
 			this.callingDialog = callingDialog;
 		}
@@ -452,6 +513,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 
 				// download new packs
 				for (ME3TweaksPatchPackage pack : packsToDownload) {
+					numChanged = packsToDownload.size();
 					atLeast1New = true;
 					ModManager.debugLogger.writeMessage("Downloading MixIn patch: " + pack.getPatchurl());
 
@@ -479,7 +541,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		public void process(List<ThreadCommand> chunks) {
 
 			for (ThreadCommand tc : chunks) {
-				if (!modmakerMode) {
+				if (!modmakerMode && !autoupdateMode) {
 					Patch p = (Patch) tc.getData();
 					//Add new patch to list
 					if (tc.getCommand().equals("ADD_PATCH")) {
@@ -536,6 +598,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				}
 				dispose();
 				advertiseInstalls(callingDialog, automated_requiredMixinIds, automated_mod);
+			} else if (autoupdateMode) {
+				synchronized (lock) {
+					numberofupdatedmixins = numChanged;
+					lock.notifyAll(); //wake up thread
+				}
 			}
 		}
 
@@ -578,6 +645,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	public Object getApplyLock() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public static String getLatestMixIns() {
+		PatchLibraryWindow plw = new PatchLibraryWindow(AUTOUPDATE_MODE);
+		return "Updated " + plw.numberofupdatedmixins + " MixIn" + (plw.numberofupdatedmixins != 1 ? "s" : "");
 	}
 
 }

@@ -153,6 +153,7 @@ public class RestoreFilesWindow extends JDialog {
 					return processDeleteUnpackedFiles(customTaskHeader);
 				case RestoreMode.ALL:
 					numjobs = ModType.getHeaderNameArray().length + 3;
+					wipeBalanceChanges();
 					publish("Deleting custom DLC, restoring basegame/unpacked files,SFARs, unpacked content");
 					return removeCustomDLC() && processRestoreBasegame(false, false) && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray())
 							&& processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
@@ -171,10 +172,12 @@ public class RestoreFilesWindow extends JDialog {
 				case RestoreMode.UNPACKEDBASEGAME:
 					numjobs = 1;
 					publish("Restoring basegame and unpacked DLC files");
+					wipeBalanceChanges();
 					return processRestoreBasegame(false, false);
 				case RestoreMode.VANILLIFYDLC:
 					numjobs = 2 + ModType.getDLCHeaderNameArray().length;
 					publish("Attempting to return DLC to vanilla state");
+					wipeBalanceChanges();
 					return removeCustomDLC() && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray())
 							&& processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
 				case RestoreMode.ALLDLC:
@@ -188,10 +191,12 @@ public class RestoreFilesWindow extends JDialog {
 				case RestoreMode.MP:
 					numjobs = ModType.getMPHeaderNameArray().length;
 					publish("Restoring MP SFARs");
+					wipeBalanceChanges();
 					return restoreSFARsUsingHeaders(ModType.getMPHeaderNameArray());
 				case RestoreMode.MPBASE:
 					numjobs = ModType.getMPHeaderNameArray().length + 1;
 					publish("Restoring MP SFARs and basegame files");
+					wipeBalanceChanges();
 					return processRestoreBasegame(false, true) && restoreSFARsUsingHeaders(ModType.getMPHeaderNameArray());
 				case RestoreMode.SPBASE:
 					numjobs = ModType.getSPHeaderNameArray().length + 1;
@@ -201,6 +206,10 @@ public class RestoreFilesWindow extends JDialog {
 					//numjobs calculated in the procedure
 					publish("Deleting unpacked files");
 					return processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
+				case RestoreMode.BALANCE_CHANGES:
+					publish("Deleting ServerCoalesced.bin");
+					wipeBalanceChanges();
+					return true;
 				default:
 					return false;
 				}
@@ -338,6 +347,19 @@ public class RestoreFilesWindow extends JDialog {
 				return true;
 			} else {
 				return false;
+			}
+		}
+		
+		/**
+		 * Deletes ServerCoalesced.bin from ME3/Binaries/win32/ServerCoalesced.bin
+		 */
+		private void wipeBalanceChanges() {
+			File bcf = new File((new File(BioGameDir).getParent()) + "/Binaries/win32/asi/ServerCoalesced.bin");
+			if (bcf.exists()) {
+				FileUtils.deleteQuietly(bcf);
+				ModManager.debugLogger.writeMessage("Deleted ServerCoalesced.bin");
+			} else {
+				ModManager.debugLogger.writeMessage("No ServerCoalesced.bin. Nothing to delete");
 			}
 		}
 
@@ -781,6 +803,9 @@ public class RestoreFilesWindow extends JDialog {
 			case RestoreMode.VANILLIFYDLC:
 				status = "Vanillified DLC";
 				break;
+			case RestoreMode.BALANCE_CHANGES:
+				status = "Uninstalled balance changes override file";
+				break;
 			}
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(status);
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setVisible(true);
@@ -816,5 +841,4 @@ public class RestoreFilesWindow extends JDialog {
 		// Log.i(Launch.APPTAG, "DebugView\n"+this.toString());
 		consoleArea.setText(getConsoleString());
 	}
-
 }

@@ -59,6 +59,7 @@ public class SelectiveRestoreWindow extends JDialog {
 	JButton backupButton;
 	JButton basegameRestoreButton;
 	JButton basegameFolderButton;
+	JButton serverCoalescedButton;
 	private Object[][] dlcTableData;
 	private String[] headerArray;
 	private JTable table;
@@ -97,11 +98,11 @@ public class SelectiveRestoreWindow extends JDialog {
 		//TABLE
 		Action restoreSfar = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
-				
+
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String header = (String) table.getModel().getValueAt(modelRow, COL_HUMNAME);
-				ModManager.debugLogger.writeMessage("==RESTORE SFAR CLICKED: "+header+"==");
+				ModManager.debugLogger.writeMessage("==RESTORE SFAR CLICKED: " + header + "==");
 				new RestoreFilesWindow(BioGameDir, header, RestoreMode.SFAR_HEADER_RESTORE);
 				updateTable();
 			}
@@ -111,7 +112,7 @@ public class SelectiveRestoreWindow extends JDialog {
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String header = (String) table.getModel().getValueAt(modelRow, COL_HUMNAME);
-				ModManager.debugLogger.writeMessage("==RESTORE UNPACKED CLICKED: "+header+"==");
+				ModManager.debugLogger.writeMessage("==RESTORE UNPACKED CLICKED: " + header + "==");
 				new RestoreFilesWindow(BioGameDir, header, RestoreMode.UNPACKED_HEADER_RESTORE);
 				updateTable();
 			}
@@ -121,18 +122,17 @@ public class SelectiveRestoreWindow extends JDialog {
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String header = (String) table.getModel().getValueAt(modelRow, COL_HUMNAME);
-				int result = JOptionPane.showConfirmDialog(SelectiveRestoreWindow.this, "Delete unpacked files for " + header
-						+ "?\nThis will additionally delete any unpacked backups Mod Manager has made of these files.", "Delete Unpacked Files",
-						JOptionPane.WARNING_MESSAGE);
+				int result = JOptionPane.showConfirmDialog(SelectiveRestoreWindow.this,
+						"Delete unpacked files for " + header + "?\nThis will additionally delete any unpacked backups Mod Manager has made of these files.",
+						"Delete Unpacked Files", JOptionPane.WARNING_MESSAGE);
 				if (result == JOptionPane.YES_OPTION) {
-					ModManager.debugLogger.writeMessage("==DELETE UNPACKED CLICKED: "+header+"==");
+					ModManager.debugLogger.writeMessage("==DELETE UNPACKED CLICKED: " + header + "==");
 					new RestoreFilesWindow(BioGameDir, header, RestoreMode.UNPACKED_HEADER_DELETE);
 					updateTable();
 				}
 			}
 		};
-		String[] columnNames = { "DLC Name", "Internal Name", "Installed", "Backed Up", "SFAR Status", "Restore SFAR", "Restore Unpacked",
-				"Delete Unpacked" };
+		String[] columnNames = { "DLC Name", "Internal Name", "Installed", "Backed Up", "SFAR Status", "Restore SFAR", "Restore Unpacked", "Delete Unpacked" };
 		DefaultTableModel model = new DefaultTableModel(dlcTableData, columnNames);
 		table = new JTable(model) {
 			public boolean isCellEditable(int row, int column) {
@@ -164,20 +164,42 @@ public class SelectiveRestoreWindow extends JDialog {
 		basegameFolderButton.setToolTipText("<html>Opens the Mod Manager file backup folder</html>");
 
 		basegameRestoreButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				new RestoreFilesWindow(BioGameDir, RestoreMode.BASEGAME);
 			}
 		});
+
+		serverCoalescedButton = new JButton("Delete local balance changes");
+		if (ModManager.areBalanceChangesInstalled(BioGameDir)) {
+			serverCoalescedButton.setToolTipText("<html>Deletes the local balance changes file. Game will use the official server one.</html>");
+			serverCoalescedButton.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					new RestoreFilesWindow(BioGameDir, RestoreMode.BALANCE_CHANGES);
+					if (ModManager.areBalanceChangesInstalled(BioGameDir)) {
+						serverCoalescedButton.setEnabled(true);
+						serverCoalescedButton.setToolTipText("<html>Deletes the local balance changes file. Game will use the official server one.</html>");
+					} else {
+						serverCoalescedButton.setEnabled(false);
+						serverCoalescedButton.setToolTipText("<html>No balance change override file is installed.</html>");
+					}
+				}
+			});
+		} else {
+			serverCoalescedButton.setEnabled(false);
+			serverCoalescedButton.setToolTipText("<html>No balance change override file is installed.</html>");
+		}
 		basegameFolderButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				ResourceUtils.openDir(ModManager.appendSlash(new File(BioGameDir).getParent()) + "cmmbackup\\BIOGame\\");
 			}
 		});
-		
+
 		//CALCULATE NUM BACKED UP BASEGAME FILES
 		String me3dir = (new File(BioGameDir)).getParent();
 		String basegamebackupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\BIOGame\\";
@@ -188,18 +210,18 @@ public class SelectiveRestoreWindow extends JDialog {
 		if (backupdir.exists()) {
 			Collection<File> backupfiles = FileUtils.listFiles(backupdir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 			for (File f : backupfiles) {
-				if (f.getAbsolutePath().toLowerCase().startsWith(blacklist.toLowerCase())){
+				if (f.getAbsolutePath().toLowerCase().startsWith(blacklist.toLowerCase())) {
 					continue;
 				}
 				numfiles++;
 			}
-			basegameRestoreButton.setText("Restore "+numfiles+" basegame file"+((numfiles != 1) ? "s":""));
+			basegameRestoreButton.setText("Restore " + numfiles + " basegame file" + ((numfiles != 1) ? "s" : ""));
 			if (numfiles < 1) {
 				basegameRestoreButton.setText("No basegame files backed up yet");
 				basegameRestoreButton.setEnabled(false);
 				basegameRestoreButton.setToolTipText("<html>Mod Manager has not backed up any files that mods have modified yet.</html>");
 			} else {
-				basegameRestoreButton.setText("Restore "+numfiles+" basegame file"+((numfiles != 1) ? "s":""));
+				basegameRestoreButton.setText("Restore " + numfiles + " basegame file" + ((numfiles != 1) ? "s" : ""));
 				basegameRestoreButton.setEnabled(true);
 				basegameRestoreButton.setToolTipText("<html>Mod Manager has backed up basegame files as mods were installed.<br>Click this button to restore them.</html>");
 			}
@@ -210,8 +232,10 @@ public class SelectiveRestoreWindow extends JDialog {
 		}
 
 		basegamePanel.add(Box.createHorizontalGlue());
+		basegamePanel.add(serverCoalescedButton);
+		basegamePanel.add(Box.createRigidArea(new Dimension(15, 15)));
 		basegamePanel.add(basegameRestoreButton);
-		basegamePanel.add(Box.createRigidArea(new Dimension(15,15)));
+		basegamePanel.add(Box.createRigidArea(new Dimension(15, 15)));
 
 		basegamePanel.add(basegameFolderButton);
 		basegamePanel.add(Box.createHorizontalGlue());
