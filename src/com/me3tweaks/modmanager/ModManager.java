@@ -72,9 +72,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.3.1";
+	public static final String VERSION = "4.3.1 SoakTest";
 	public static long BUILD_NUMBER = 60L;
-	public static final String BUILD_DATE = "8/7/2016";
+	public static final String BUILD_DATE = "8/31/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -310,26 +310,27 @@ public class ModManager {
 					}
 				}
 				{
-				// AutoTOC game files after install
-				String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
-				int autotocPostInstallInt = 0;
-				if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
-					try {
-						autotocPostInstallInt = Integer.parseInt(autotocPostInstallStr);
-						if (autotocPostInstallInt > 0) {
-							// logging is on
-							debugLogger.writeMessage("AutoTOC post install is enabled");
-							POST_INSTALL_AUTOTOC_INSTEAD = true;
-						} else {
-							debugLogger.writeMessage("AutoTOC post install is disabled");
+					// AutoTOC game files after install
+					String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
+					int autotocPostInstallInt = 0;
+					if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
+						try {
+							autotocPostInstallInt = Integer.parseInt(autotocPostInstallStr);
+							if (autotocPostInstallInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("AutoTOC post install is enabled");
+								POST_INSTALL_AUTOTOC_INSTEAD = true;
+							} else {
+								debugLogger.writeMessage("AutoTOC post install is disabled");
+								POST_INSTALL_AUTOTOC_INSTEAD = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
 							POST_INSTALL_AUTOTOC_INSTEAD = false;
 						}
-					} catch (NumberFormatException e) {
-						debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
-						POST_INSTALL_AUTOTOC_INSTEAD = false;
 					}
-				}}
-				
+				}
+
 				// AutoTOC game files after install
 				String controllerModUserStr = settingsini.get("Settings", "controllermoduser");
 				int controllerModUserInt = 0;
@@ -346,7 +347,7 @@ public class ModManager {
 						}
 					} catch (NumberFormatException e) {
 						debugLogger.writeError("Number format exception reading the controller mod user flag - defaulting to disabled");
-						MODMAKER_CONTROLLER_MOD_ADDINS  = false;
+						MODMAKER_CONTROLLER_MOD_ADDINS = false;
 					}
 				}
 
@@ -418,11 +419,13 @@ public class ModManager {
 				new NetFrameworkMissingWindow(
 						"Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly. ");
 			}
-			
+
 			if (checkIfCMMPatchIsTooLong()) {
-				JOptionPane.showMessageDialog(null, "Mod Manager has detected that it running from a location with a long filepath.\nMod Manager caches files using their relative game directory path.\nYou may consider moving Mod Manager higher up this file system's hierarchy\nto avoid issues with Windows path limitations.", "Windows Path Limitation Warning", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(null,
+						"Mod Manager has detected that it running from a location with a long filepath.\nMod Manager caches files using their relative game directory path.\nYou may consider moving Mod Manager higher up this file system's hierarchy\nto avoid issues with Windows path limitations.",
+						"Windows Path Limitation Warning", JOptionPane.WARNING_MESSAGE);
 			}
-			
+
 			ModManager.debugLogger.writeMessage("========End of startup=========");
 		} catch (Throwable e) {
 			Wini ini;
@@ -1219,12 +1222,12 @@ public class ModManager {
 			sourceDestination.getParentFile().mkdirs();
 
 			// run ME3EXPLORER --decompress-pcc
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching "+sourceDestination.getName());
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
 			ProcessResult pr = ModManager.decompressPCC(sourceSource, sourceDestination);
 			if (pr.getReturnCode() == 0) {
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached "+sourceDestination.getName());
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
 			} else {
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file "+sourceDestination.getName());
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
 			}
 			ModManager.debugLogger.writeMessage("File decompressed to location, and ready? : " + sourceDestination.exists());
 			return sourceDestination.getAbsolutePath();
@@ -1279,8 +1282,8 @@ public class ModManager {
 			// patchProcessBuilder.redirectErrorStream(true);
 			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 			Process extractionProcess;
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching "+sourceDestination.getName());
-			
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
+
 			try {
 				extractionProcess = extractionProcessBuilder.start();
 				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
@@ -1290,9 +1293,9 @@ public class ModManager {
 				int result = extractionProcess.waitFor();
 				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
 				if (result == 0) {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached "+sourceDestination.getName());
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
 				} else {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file "+sourceDestination.getName());
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
 				}
 				return sourceDestination.getAbsolutePath();
 			} catch (IOException e) {
@@ -1567,10 +1570,10 @@ public class ModManager {
 	 *         false otherwise
 	 */
 	public static boolean checkIfASIBinkBypassIsInstalled(String biogameDir) {
-		ModManager.debugLogger.writeMessage("Checking for ASI Binkw32 ASI with biogame location: "+biogameDir);
+		ModManager.debugLogger.writeMessage("Checking for ASI Binkw32 ASI with biogame location: " + biogameDir);
 		File bgdir = new File(biogameDir);
 		if (!bgdir.exists()) {
-			ModManager.debugLogger.writeMessage("Biogame dir does not exist: "+biogameDir);
+			ModManager.debugLogger.writeMessage("Biogame dir does not exist: " + biogameDir);
 			return false;
 		}
 		File gamedir = bgdir.getParentFile();
@@ -1583,6 +1586,12 @@ public class ModManager {
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (asihashlist.contains(binkhash) && bink23.exists()) {
 				ModManager.debugLogger.writeMessage("Binkw32 ASI is installed");
+				//Add zlib if not present to bring old installs up to date
+				File zlib = new File(gamedir.toString() + "\\Binaries\\Win32\\zlib1.dll");
+				if (!zlib.exists()) {
+					ModManager.debugLogger.writeMessage("Installing zlib.dll to bring old ASI bypass installation up to date");
+					ModManager.ExportResource("/zlib1.dll", zlib.toString());
+				}
 				return true;
 			}
 		} catch (Exception e) {
@@ -2120,7 +2129,7 @@ public class ModManager {
 	public static File getASIManifestFile() {
 		return new File(getASICache() + "manifest.xml");
 	}
-	
+
 	public static boolean checkIfCMMPatchIsTooLong() {
 		return System.getProperty("user.dir").length() > 120;
 	}

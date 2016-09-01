@@ -84,7 +84,7 @@ public class ASIModWindow extends JDialog {
 	public ASIModWindow(String gamedir) {
 		ModManager.debugLogger.writeMessage("Opening ASI window.");
 		this.gamedir = ModManager.appendSlash(gamedir);
-		String asidir = gamedir + "Binaries/win32/asi";
+		String asidir = this.gamedir + "Binaries/win32/asi";
 		asiDir = new File(asidir);
 		if (!asiDir.exists()) {
 			asiDir.mkdirs();
@@ -284,6 +284,7 @@ public class ASIModWindow extends JDialog {
 			try {
 				iam.setHash(MD5Checksum.getMD5Checksum(ModManager.appendSlash(asiDir.getAbsolutePath()) + installed));
 				installedASIs.add(iam);
+				ModManager.debugLogger.writeMessage("Detected installed ASI mod: " + iam.toLogString());
 			} catch (Exception e1) {
 				ModManager.debugLogger.writeErrorWithException("ASI mod is installed but unable to get hash: " + installed, e1);
 			}
@@ -689,6 +690,7 @@ public class ASIModWindow extends JDialog {
 				//install ASI
 				File installdest = new File(ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
 				FileUtils.deleteQuietly(installdest);
+				ModManager.debugLogger.writeMessage("Installing ASI mod " + dest + " => " + installdest);
 				FileUtils.copyFile(dest, installdest);
 				ModManager.debugLogger.writeMessage("ASI mod " + mod.getName() + " v" + mod.getVersion() + " was installed");
 			} catch (FileNotFoundException e) {

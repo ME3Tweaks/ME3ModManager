@@ -12,6 +12,10 @@ public class InstalledASIMod {
 		return filename;
 	}
 
+	public String toLogString() {
+		return "InstalledASIMod [installedPath=" + installedPath + ", filename=" + filename + ", hash=" + hash + "]";
+	}
+
 	private String installedPath, filename, hash;
 
 	public String getInstalledPath() {
