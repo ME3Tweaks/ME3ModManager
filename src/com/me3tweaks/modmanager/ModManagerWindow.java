@@ -1587,7 +1587,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				updateApplyButton();
 				if (ModManager.checkIfASIBinkBypassIsInstalled(fieldBiogameDir.getText()) == false) {
 					JOptionPane.showMessageDialog(null,
-							"ASI loader not installed.\nASI mods won't load without using the ASI version of binkw32.\nYou can install this from the tools menu.",
+							"ASI loader not installed.\nASI mods won't load without using the ASI version of binkw32.\nYou can install this from the tools menu or the ASI Mod Management window.",
 							"ASI loader not installed", JOptionPane.WARNING_MESSAGE);
 				}
 

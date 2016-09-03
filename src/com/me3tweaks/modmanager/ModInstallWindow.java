@@ -1141,9 +1141,22 @@ public class ModInstallWindow extends JDialog {
 					callingWindow.labelStatus.setText(" " + mod.getModName() + " installed");
 					for (ModJob job : jobs) {
 						if (job.getJobType() == ModJob.BALANCE_CHANGES) {
-							if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
-								ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
-								int result = JOptionPane.showConfirmDialog(ModInstallWindow.this, "This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?","ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+							if (ModManager.checkIfASIBinkBypassIsInstalled(bioGameDir)) {
+								if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
+									ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
+									int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
+											"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
+											"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+									if (result == JOptionPane.YES_OPTION) {
+										new ASIModWindow(new File(bioGameDir).getParent());
+									}
+								}
+							} else {
+								//loader not in
+								ModManager.debugLogger.writeMessage("ASI loader not installed. Advertising install");
+								int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
+										"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the binkw32 ASI loader installed as well as the Balance Changes Replacer ASI.\nOpen the ASI management window to install these?",
+										"ASI Loader + ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 								if (result == JOptionPane.YES_OPTION) {
 									new ASIModWindow(new File(bioGameDir).getParent());
 								}

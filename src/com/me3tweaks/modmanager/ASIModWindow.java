@@ -117,6 +117,8 @@ public class ASIModWindow extends JDialog {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				ModManagerWindow.ACTIVE_WINDOW.toolsInstallBinkw32asi.doClick();
+				dispose();
+				new ASIModWindow(gamedir);
 			}
 		};
 

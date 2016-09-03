@@ -53,6 +53,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.me3tweaks.modmanager.ASIModWindow;
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.KeybindsInjectionWindow;
 import com.me3tweaks.modmanager.ModManager;
@@ -61,6 +62,8 @@ import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
+import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
@@ -1865,6 +1868,19 @@ public class ModMakerCompilerWindow extends JDialog {
 		dispose();
 		if (mod == null) {
 			//updater supresses this window
+			for (ModJob job : newMod.jobs) {
+				if (job.getJobName().equals(ModType.BINI)){
+					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())) {
+						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
+							//loader installed, no balance changes replacer
+							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > Manage ASI Code Injection Mods.</div></html>", "Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+						}
+					} else {
+						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > Manage ASI Code Injection Mods.</div></html>", "ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+					}
+					break;
+				}
+			}
 			JOptionPane.showMessageDialog(this, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
 			new ModManagerWindow(false);
 		}
