@@ -285,6 +285,9 @@ public class ModInstallWindow extends JDialog {
 				case ModJob.CUSTOMDLC:
 					result = processCustomDLCJob(job);
 					break;
+				case ModJob.BALANCE_CHANGES:
+					result = processBalanceChangesJob(job);
+					break;
 				}
 				//end of each callable...
 				if (result) {
@@ -297,7 +300,6 @@ public class ModInstallWindow extends JDialog {
 				publish(Integer.toString(completed.get()));
 				return result;
 			}
-
 		}
 
 		/**
@@ -342,6 +344,10 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			for (ModJob job : jobs) {
+				if (job.getJobType() == ModJob.BALANCE_CHANGES) {
+					ModManager.debugLogger.writeMessage("Skipping GRDB check for balance changes job");
+					continue;
+				}
 				publish("Checking GDB: " + job.getJobName());
 				if (job.getJobType() == ModJob.BASEGAME) {
 					//BGDB files are required
@@ -493,7 +499,7 @@ public class ModInstallWindow extends JDialog {
 					Files.copy(newfilepath, installPath, StandardCopyOption.REPLACE_EXISTING);
 					if (job.getAddFilesReadOnlyTargets().contains(fileToAddTarget)) {
 						installFile.setReadOnly();
-						ModManager.debugLogger.writeMessage("Set read only: "+installFile);
+						ModManager.debugLogger.writeMessage("Set read only: " + installFile);
 					}
 					completedTaskSteps++;
 					ModManager.debugLogger.writeMessage("Installed mod file: " + fileToAdd + " => " + installFile);
@@ -520,6 +526,45 @@ public class ModInstallWindow extends JDialog {
 				FileUtils.deleteQuietly(unpacked);
 				completedTaskSteps++;
 				ModManager.debugLogger.writeMessage("Deleted game file: " + unpacked);
+			}
+			return true;
+		}
+
+		private boolean processBalanceChangesJob(ModJob job) {
+			ModManager.debugLogger.writeMessage("===Processing a balance changes job===");
+			completedTaskSteps = 0;
+			taskSteps = job.getFilesToReplace().size() + job.getFilesToAdd().size() + job.getFilesToRemoveTargets().size();
+			publish("Processing balance changes files...");
+			File bgdir = new File(ModManager.appendSlash(bioGameDir));
+			String me3dir = ModManager.appendSlash(bgdir.getParent());
+
+			// Prep replacement job
+			{
+				ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
+				ArrayList<String> newFiles = job.getFilesToReplace();
+				int numFilesToReplace = filesToReplace.size();
+				ModManager.debugLogger.writeMessage("Number of files to replace in the basegame (balance changes): " + numFilesToReplace);
+				for (int i = 0; i < numFilesToReplace; i++) {
+					String fileToReplace = filesToReplace.get(i);
+					String newFile = newFiles.get(i);
+
+					// install file.
+					File unpacked = new File(me3dir + fileToReplace);
+					Path originalpath = Paths.get(unpacked.toString());
+					try {
+						publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
+						Path newfilepath = Paths.get(newFile);
+						if (!unpacked.getParentFile().exists()) {
+							unpacked.getParentFile().mkdirs();
+						}
+						Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
+						completedTaskSteps++;
+						ModManager.debugLogger.writeMessage("Installed mod file: " + newFile + " => " + unpacked);
+					} catch (IOException e) {
+						ModManager.debugLogger.writeException(e);
+						return false;
+					}
+				}
 			}
 			return true;
 		}
@@ -1075,7 +1120,7 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeException(e);
 				hasException = true;
 			}
-			
+
 			if (ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
 				ModManager.debugLogger.writeMessage("Running Game-Wide AutoTOC after mod install");
 				new AutoTocWindow(bioGameDir);
@@ -1094,6 +1139,30 @@ public class ModInstallWindow extends JDialog {
 				} else {
 					// we're good
 					callingWindow.labelStatus.setText(" " + mod.getModName() + " installed");
+					for (ModJob job : jobs) {
+						if (job.getJobType() == ModJob.BALANCE_CHANGES) {
+							if (ModManager.checkIfASIBinkBypassIsInstalled(bioGameDir)) {
+								if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
+									ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
+									int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
+											"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
+											"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+									if (result == JOptionPane.YES_OPTION) {
+										new ASIModWindow(new File(bioGameDir).getParent());
+									}
+								}
+							} else {
+								//loader not in
+								ModManager.debugLogger.writeMessage("ASI loader not installed. Advertising install");
+								int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
+										"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the binkw32 ASI loader installed as well as the Balance Changes Replacer ASI.\nOpen the ASI management window to install these?",
+										"ASI Loader + ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+								if (result == JOptionPane.YES_OPTION) {
+									new ASIModWindow(new File(bioGameDir).getParent());
+								}
+							}
+						}
+					}
 				}
 			} else {
 				if (!hasException) {

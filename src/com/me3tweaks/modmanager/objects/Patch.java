@@ -39,6 +39,7 @@ public class Patch implements Comparable<Patch> {
 	double patchVersion, patchCMMVer;
 	private String patchAuthor;
 	private int me3tweaksid;
+	private boolean isDynamic = false;
 
 	public Patch(String descriptorPath, String patchPath) {
 		ModManager.debugLogger.writeMessage("Loading patch: " + descriptorPath);
@@ -580,5 +581,13 @@ public class Patch implements Comparable<Patch> {
 
 	public void setPatchPath(String patchPath) {
 		this.patchPath = patchPath;
+	}
+
+	public void setIsDynamic(boolean b) {
+		this.isDynamic = b;
+	}
+	
+	public boolean isDynamic() {
+		return this.isDynamic;
 	}
 }

@@ -17,7 +17,8 @@ public class RestoreMode {
 	public static final int REMOVECUSTOMDLC = 8;
 	public static final int ALLDLC = 9;
 	public static final int REMOVEUNPACKEDITEMS = 10;
-	
+	public static final int BALANCE_CHANGES = 11;
+
 	public static final int MP1SFAR = 11;
 	public static final int MP2SFAR = 12;
 	public static final int MP3SFAR = 13;

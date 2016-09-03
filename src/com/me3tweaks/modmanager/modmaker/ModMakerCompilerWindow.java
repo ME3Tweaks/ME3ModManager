@@ -53,6 +53,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.me3tweaks.modmanager.ASIModWindow;
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.KeybindsInjectionWindow;
 import com.me3tweaks.modmanager.ModManager;
@@ -61,6 +62,8 @@ import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
+import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
@@ -193,8 +196,8 @@ public class ModMakerCompilerWindow extends JDialog {
 				String modDelta = null;
 				if (mmcode > 0) {
 					try {
-						String downloadedfile = ModManager.getTempDir()+code+".xml";
-						File lzmafile = new File(downloadedfile+".lzma");
+						String downloadedfile = ModManager.getTempDir() + code + ".xml";
+						File lzmafile = new File(downloadedfile + ".lzma");
 						publish(new ThreadCommand("UPDATE_INFO", "<html>Downloading mod delta from ME3Tweaks</html>"));
 						FileUtils.copyURLToFile(new URL(lzmalink), lzmafile);
 						publish(new ThreadCommand("UPDATE_INFO", "<html>Decompressing mod delta</html>"));
@@ -209,8 +212,8 @@ public class ModMakerCompilerWindow extends JDialog {
 							throw new IOException("Failed to decompress LZMA file, falling back...");
 						}
 					} catch (IOException e) {
-						FileUtils.deleteQuietly(new File(ModManager.getTempDir()+code+".xml"));
-						FileUtils.deleteQuietly(new File(ModManager.getTempDir()+code+".xml.lzma"));
+						FileUtils.deleteQuietly(new File(ModManager.getTempDir() + code + ".xml"));
+						FileUtils.deleteQuietly(new File(ModManager.getTempDir() + code + ".xml.lzma"));
 						try {
 							ModManager.debugLogger.writeMessage("I/O Exception using LZMA link, falling back to decompressed link...");
 							publish(new ThreadCommand("UPDATE_INFO", "<html>Downloading mod delta from ME3Tweaks</html>"));
@@ -516,6 +519,8 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "/BIOGame/DLC/DLC_EXP_Pack003/CookedPCConsole/Default_DLC_EXP_Pack003.bin";
 		case "Default_DLC_EXP_Pack003_Base.bin":
 			return "/BIOGame/DLC/DLC_EXP_Pack003_Base/CookedPCConsole/Default_DLC_EXP_Pack003_Base.bin";
+		case "ServerCoalesced.bin":
+			return "\\Binaries\\win32\\asi\\ServerCoalesced.bin";
 		default:
 			ModManager.debugLogger.writeMessage("ERROR: UNRECOGNIZED COAL FILE: " + coalName);
 			return null;
@@ -739,18 +744,19 @@ public class ModMakerCompilerWindow extends JDialog {
 		protected Void doInBackground() throws Exception {
 			int coalsCompeted = 0;
 			for (String coal : coalsToDownload) {
-				try {
-					if (!ModManager.hasPristineCoalesced(coal, ME3TweaksUtils.FILENAME)) {
-						ME3TweaksUtils.downloadPristineCoalesced(coal, ME3TweaksUtils.FILENAME);
-					}
-					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(coal, ME3TweaksUtils.FILENAME)), new File(ModManager.getCompilingDir() + "coalesceds/" + coal));
-					ModManager.debugLogger.writeMessage("Copied pristine coalesced of " + coal + " to: " + (new File("coalesceds/" + coal)).getAbsolutePath());
-					coalsCompeted++;
-					this.publish(coalsCompeted);
-				} catch (IOException e) {
-					ModManager.debugLogger.writeMessage("Failed to download coalesced file due to IO Exception.");
-					ModManager.debugLogger.writeException(e);
+				//try {
+				if (!ModManager.hasPristineCoalesced(coal, ME3TweaksUtils.FILENAME)) {
+					ME3TweaksUtils.downloadPristineCoalesced(coal, ME3TweaksUtils.FILENAME);
 				}
+				FileUtils.copyFile(new File(ModManager.getPristineCoalesced(coal, ME3TweaksUtils.FILENAME)), new File(ModManager.getCompilingDir() + "coalesceds/" + coal));
+				ModManager.debugLogger.writeMessage("Copied pristine coalesced of " + coal + " to: " + (new File("coalesceds/" + coal)).getAbsolutePath());
+				coalsCompeted++;
+				this.publish(coalsCompeted);
+				//} catch (IOException e) {
+				//	ModManager.debugLogger.writeMessage("Failed to download coalesced file due to IO Exception.");
+				//	ModManager.debugLogger.writeException(e);
+				//	error = true;
+				//}
 			}
 			return null;
 		}
@@ -772,16 +778,20 @@ public class ModMakerCompilerWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeMessage("Error occured in CoalDownloadWorker():");
 				ModManager.debugLogger.writeException(e);
-				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to download pristine Coalesced files from ME3Tweaks:\n" + e.getMessage()
-						+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
+						"An error occured while trying to download pristine Coalesced files from ME3Tweaks:\n" + e.getMessage()
+								+ "\n\nYou should report this to FemShep via the Forums link in the help menu.\nInclude a Mod Manager log from this session.",
+						"Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				error = true;
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("ModMaker mod failed to compile");
 				return;
 			}
 			if (error) {
 				dispose();
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("ModMaker mod failed to compile");
 				return;
 			}
 			ModManager.debugLogger.writeMessage("Required coalesceds downloaded");
@@ -796,9 +806,11 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * merges the contents of the downloaded mod into all of the decompiled json
 	 * files.
 	 */
-	class MergeWorker extends SwingWorker<Void, Integer> {
+	class MergeWorker extends SwingWorker<Void, ThreadCommand> {
 		boolean error = false;
 		JProgressBar progress;
+		int coalsMerged = 0;
+		int numCoalSections = 1;
 
 		public MergeWorker(JProgressBar progress) {
 			ModManager.debugLogger.writeMessage("=============MERGEWORKER=============");
@@ -819,6 +831,14 @@ public class ModMakerCompilerWindow extends JDialog {
 			 */
 
 			NodeList coalNodeList = dataElement.getChildNodes();
+			for (int i = 0; i < coalNodeList.getLength(); i++) {
+				//coalNode is a node containing the coalesced module, such as <MP1> or <BASEGAME>
+				Node coalNode = coalNodeList.item(i);
+				if (coalNode.getNodeType() == Node.ELEMENT_NODE) {
+					numCoalSections++;
+				}
+			}
+
 			//Iterate over the coalesceds.
 			for (int i = 0; i < coalNodeList.getLength(); i++) {
 				//coalNode is a node containing the coalesced module, such as <MP1> or <BASEGAME>
@@ -833,6 +853,8 @@ public class ModMakerCompilerWindow extends JDialog {
 					for (int j = 0; j < filesNodeList.getLength(); j++) {
 						Node fileNode = filesNodeList.item(j);
 						if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
+							publish(new ThreadCommand("MERGING_FILE",coalNode.getNodeName()+" "+fileNode.getNodeName()));
+
 							//we now have a file ID such as biogame.
 							//We need to load that XML file now.
 							String iniFileName = fileNode.getNodeName() + ".xml";
@@ -960,6 +982,14 @@ public class ModMakerCompilerWindow extends JDialog {
 
 									//first tokenize the path...
 									String path = property.getAttribute("path");
+									if (path.equals("")) {
+										//will never find.
+										dispose();
+										JOptionPane.showMessageDialog(null, "<html>Unable to compile mod.<br>Path for property is empty: " + newPropName + ".<br>Module: "
+												+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+										error = true;
+										return null;
+									}
 									StringTokenizer drillTokenizer = new StringTokenizer(path, "&"); // - splits this in the event we need to drill down. Spaces are valid it seems in the path.
 									Element drilled = null;
 									NodeList drilledList = SectionList;
@@ -987,9 +1017,8 @@ public class ModMakerCompilerWindow extends JDialog {
 										}
 										if (!pathfound) {
 											dispose();
-											JOptionPane.showMessageDialog(null,
-													"<html>Could not find the path " + path + " to property.<br>Module: " + intCoalName + "<br>File: " + iniFileName + "</html>",
-													"Compiling Error", JOptionPane.ERROR_MESSAGE);
+											JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: "
+													+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 											error = true;
 											return null;
 										}
@@ -998,9 +1027,8 @@ public class ModMakerCompilerWindow extends JDialog {
 										//we didn't find what we wanted...
 										dispose();
 										error = true;
-										JOptionPane.showMessageDialog(null,
-												"<html>Could not find the path " + path + " to property.<br>Module: " + intCoalName + "<br>File: " + iniFileName + "</html>",
-												"Compiling Error", JOptionPane.ERROR_MESSAGE);
+										JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: " + intCoalName
+												+ "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 										return null;
 									}
 									if (operation.equals("addition")) {
@@ -1242,7 +1270,7 @@ public class ModMakerCompilerWindow extends JDialog {
 											sb.append("</html>");
 
 											JOptionPane.showMessageDialog(null, sb.toString(), "Compiling Error", JOptionPane.ERROR_MESSAGE);
-											ModManager.debugLogger.writeMessage(sb.toString());
+											ModManager.debugLogger.writeError(sb.toString());
 										}
 									}
 								}
@@ -1259,10 +1287,33 @@ public class ModMakerCompilerWindow extends JDialog {
 							transformer.transform(input, output);
 						}
 					}
+					coalsMerged++;
+					System.err.println((coalsMerged / (numCoalSections * 1.0)) * 100);
+					publish(new ThreadCommand("MERGE_TASK_COMPLETED"));
 				}
 			}
 
 			return null;
+		}
+
+		@Override
+		protected void process(List<ThreadCommand> commands) {
+			for (ThreadCommand tc : commands) {
+				switch (tc.getCommand()) {
+				case "MERGE_TASK_COMPLETED":
+					if (coalsMerged != 0) {
+						System.err.println((coalsMerged / (float) numCoalSections) * 100);
+						progress.setValue((int) Math.ceil(((coalsMerged / (numCoalSections * 1.0)) * 100)));
+					} else {
+						progress.setValue(0);
+					}
+					break;
+				case "MERGING_FILE":
+					String currentoperation = tc.getMessage();
+					currentOperationLabel.setText("Merging "+currentoperation);
+					break;
+				}
+			}
 		}
 
 		protected void done() {
@@ -1277,10 +1328,13 @@ public class ModMakerCompilerWindow extends JDialog {
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				dispose();
+				error = true;
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("ModMaker mod failed to compile");
 				return;
 			}
 			if (error) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("ModMaker mod failed to compile");
 				dispose();
 				return;
 			}
@@ -1555,7 +1609,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 			ModManager.debugLogger.writeMessage("Creating in-memory moddesc.ini");
 			ini = new Wini(moddesc);
-			ini.put("ModManager", "cmmver", 4.1);
+			ini.put("ModManager", "cmmver", 4.3);
 			ini.put("ModInfo", "modname", modName);
 			ini.put("ModInfo", "moddev", modDev);
 			ini.put("ModInfo", "moddesc", modDescription + "<br>Created with ME3Tweaks ModMaker.");
@@ -1582,14 +1636,18 @@ public class ModMakerCompilerWindow extends JDialog {
 					ModManager.debugLogger.writeError("ERROR! Didn't move " + reqcoal + " to the proper mod element directory. Could already exist.");
 				}
 				//copy pcconsoletoc
-				File tocFile = new File(ModManager.getCompilingDir() + "toc\\" + ME3TweaksUtils.coalFilenameToInternalName(reqcoal) + "\\PCConsoleTOC.bin");
-				File destToc = new File(compCoalDir + "\\PCConsoleTOC.bin");
-				destToc.delete();
-				ModManager.debugLogger.writeMessage("Moving TOC file: " + tocFile.getAbsolutePath() + " to " + destToc.getAbsolutePath());
-				if (tocFile.renameTo(destToc)) {
-					ModManager.debugLogger.writeMessage("Moved " + reqcoal + " TOC to proper mod element directory");
+				if (!reqcoal.equals("ServerCoalesced.bin")) {
+					File tocFile = new File(ModManager.getCompilingDir() + "toc\\" + ME3TweaksUtils.coalFilenameToInternalName(reqcoal) + "\\PCConsoleTOC.bin");
+					File destToc = new File(compCoalDir + "\\PCConsoleTOC.bin");
+					destToc.delete();
+					ModManager.debugLogger.writeMessage("Moving TOC file: " + tocFile.getAbsolutePath() + " to " + destToc.getAbsolutePath());
+					if (tocFile.renameTo(destToc)) {
+						ModManager.debugLogger.writeMessage("Moved " + reqcoal + " TOC to proper mod element directory");
+					} else {
+						ModManager.debugLogger.writeError("ERROR! Didn't move " + reqcoal + " TOC to the proper mod element directory. Could already exist.");
+					}
 				} else {
-					ModManager.debugLogger.writeError("ERROR! Didn't move " + reqcoal + " TOC to the proper mod element directory. Could already exist.");
+					ModManager.debugLogger.writeMessage("Skipping BALANCE_CHANGES PCConsoleTOC.bin");
 				}
 
 				//copy tlk
@@ -1614,6 +1672,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				}
 
 				boolean basegame = reqcoal.equals("Coalesced.bin");
+				boolean balance = reqcoal.equals("ServerCoalesced.bin");
 				ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "moddir", ME3TweaksUtils.coalFilenameToInternalName(reqcoal));
 
 				//build descriptors
@@ -1649,6 +1708,9 @@ public class ModMakerCompilerWindow extends JDialog {
 					replacesb.append(ME3TweaksUtils.coalFileNameToDLCTOCDir(reqcoal));
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "newfiles", newsb.toString());
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles", replacesb.toString());
+				} else if (balance) {
+					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "newfiles", reqcoal + "");
+					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles", coalFileNameToDLCDir(reqcoal));
 				} else {
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "newfiles", reqcoal + ";PCConsoleTOC.bin");
 					ini.put(ME3TweaksUtils.coalFilenameToHeaderName(reqcoal), "replacefiles",
@@ -1748,7 +1810,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Mod failed validation. Setting error flag to true.");
 			error = true;
 			JOptionPane.showMessageDialog(this,
-					modName + " was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure debugging is enabled in Help>About.\nContact FemShep if you need help via the forums.",
+					modName + " was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure mod startup logging is enabled in the options menu.\nContact FemShep if you need help via the forums.",
 					"Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
 		/*
@@ -1778,7 +1840,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (requiredMixinIds.size() > 0 || dynamicMixins.size() > 0) {
 				currentOperationLabel.setText("Preparing MixIns");
 				ModManager.debugLogger.writeMessage("Mod delta recommends MixIns, running PatchLibraryWindow()");
-				PatchLibraryWindow plw = new PatchLibraryWindow(this,requiredMixinIds, dynamicMixins, newMod);
+				PatchLibraryWindow plw = new PatchLibraryWindow(this, requiredMixinIds, dynamicMixins, newMod);
 				for (DynamicPatch dp : dynamicMixins) {
 					FileUtils.deleteQuietly(dp.getOutputfile());
 				}
@@ -1806,6 +1868,19 @@ public class ModMakerCompilerWindow extends JDialog {
 		dispose();
 		if (mod == null) {
 			//updater supresses this window
+			for (ModJob job : newMod.jobs) {
+				if (job.getJobName().equals(ModType.BINI)){
+					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())) {
+						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
+							//loader installed, no balance changes replacer
+							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > Manage ASI Code Injection Mods.</div></html>", "Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+						}
+					} else {
+						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > Manage ASI Code Injection Mods.</div></html>", "ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+					}
+					break;
+				}
+			}
 			JOptionPane.showMessageDialog(this, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
 			new ModManagerWindow(false);
 		}
@@ -1828,6 +1903,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			if (languages.size() > 0 && !this.tocsToDownload.contains("Coalesced.bin")) {
 				this.tocsToDownload.add("Coalesced.bin");
 			}
+			this.tocsToDownload.remove("ServerCoalesced.bin");
 			this.numtoc = this.tocsToDownload.size();
 			this.progress = progress;
 			if (numtoc > 0) {

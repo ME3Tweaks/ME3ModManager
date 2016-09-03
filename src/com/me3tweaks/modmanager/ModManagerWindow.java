@@ -190,6 +190,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			ModManager.debugLogger.writeMessage("Mod Manager GUI: Now setting visible.");
 			try {
+				boolean asiinstalled = ASIModWindow.IsASIModGroupInstalled(5);
+				System.out.println("UG5 installed: " + asiinstalled);
 				this.setVisible(true);
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
@@ -423,7 +425,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish(new ThreadCommand("UPDATE_HELP_MENU"));
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading ASI list from ME3Tweaks"));
 					ASIModWindow.getOnlineASIManifest();
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated ASI mod list"));
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest MixIns"));
+					String updateStr = PatchLibraryWindow.getLatestMixIns();
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", updateStr));
 					if (modModel.getSize() > 0) {
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Checking for updates to mods"));
 						checkAllModsForUpdates(false);
@@ -822,76 +826,83 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		new FileDrop(contentPanel, new FileDrop.Listener() {
 			public void filesDropped(java.io.File[] files) {
 				// only works with first file
-				if (files.length > 0 && files[0].exists()) {
-					ModManager.debugLogger.writeMessage("File was dropped onto Mod Manager Window: " + files[0]);
+				if (validateBIOGameDir()) {
+					if (files.length > 0 && files[0].exists()) {
+						ModManager.debugLogger.writeMessage("File was dropped onto Mod Manager Window: " + files[0]);
 
-					if (files[0].isDirectory()) {
-						// prompt
-						new FolderBatchWindow(ModManagerWindow.this, files[0]);
-					}
-					if (files[0].isFile()) {
-						String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
-						switch (extension) {
-						case "7z":
-						case "zip":
-						case "rar":
-							new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
-							break;
-						case "pcc":
-						case "asi":
-							int exebuild = ModManager.checkforME3105(fieldBiogameDir.getText());
-							if (exebuild != 5) {
-								labelStatus.setText("ASI mods don't work with Mass Effect 3 1.0" + exebuild);
-								break;
-							}
-							if (!ModManager.checkIfASIBinkBypassIsInstalled(fieldBiogameDir.getText())) {
-								labelStatus.setText("Binkw32 ASI loader not installed");
-								break;
-							}
-						case "xml":
+						if (files[0].isDirectory()) {
+							// prompt
 							new FolderBatchWindow(ModManagerWindow.this, files[0]);
-							break;
-						case "dlc":
-							new MountFileEditorWindow(files[0].toString());
-							break;
-						case "tlk":
-							TLKTool.decompileTLK(files[0]);
-							break;
-
-						case "bin":
-							// read magic at beginning to find out what type of
-							// file this is
-							try {
-								byte[] buffer = new byte[4];
-								InputStream is = new FileInputStream(files[0]);
-								if (is.read(buffer) != buffer.length) {
-									// do something
-								}
-								int magic = ResourceUtils.byteArrayToInt(buffer);
-								switch (magic) {
-								case ModManager.COALESCED_MAGIC_NUMBER:
-									new CoalescedWindow(files[0], false);
+						}
+						if (files[0].isFile()) {
+							String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
+							switch (extension) {
+							case "7z":
+							case "zip":
+							case "rar":
+								new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
+								break;
+							case "pcc":
+							case "asi":
+								int exebuild = ModManager.checkforME3105(fieldBiogameDir.getText());
+								if (exebuild != 5) {
+									labelStatus.setText("ASI mods don't work with Mass Effect 3 1.0" + exebuild);
 									break;
 								}
+								if (!ModManager.checkIfASIBinkBypassIsInstalled(fieldBiogameDir.getText())) {
+									labelStatus.setText("Binkw32 ASI loader not installed");
+									break;
+								}
+							case "xml":
+								new FolderBatchWindow(ModManagerWindow.this, files[0]);
+								break;
+							case "dlc":
+								new MountFileEditorWindow(files[0].toString());
+								break;
+							case "tlk":
+								TLKTool.decompileTLK(files[0]);
+								break;
 
-								is.close();
+							case "bin":
+								// read magic at beginning to find out what type of
+								// file this is
+								try {
+									byte[] buffer = new byte[4];
+									InputStream is = new FileInputStream(files[0]);
+									if (is.read(buffer) != buffer.length) {
+										// do something
+									}
+									int magic = ResourceUtils.byteArrayToInt(buffer);
+									switch (magic) {
+									case ModManager.COALESCED_MAGIC_NUMBER:
+										new CoalescedWindow(files[0], false);
+										break;
+									}
 
-								/*
-								 * switch (magic) { default:
-								 * System.out.println("uh"); }
-								 */
-							} catch (IOException e) {
-								e.printStackTrace();
-								// this shouldn't be possible
-							} finally {
+									is.close();
 
+									/*
+									 * switch (magic) { default:
+									 * System.out.println("uh"); }
+									 */
+								} catch (IOException e) {
+									e.printStackTrace();
+									// this shouldn't be possible
+								} finally {
+
+								}
+								break;
+							default:
+								labelStatus.setText("Extension not supported for Drag and Drop: " + extension);
+								break;
 							}
-							break;
-						default:
-							labelStatus.setText("Extension not supported for Drag and Drop: " + extension);
-							break;
 						}
 					}
+				} else {
+					labelStatus.setText("Drag and Drop requires a valid BioGame directory");
+					labelStatus.setVisible(true);
+					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory to use drag and drop features.",
+							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -1576,7 +1587,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				updateApplyButton();
 				if (ModManager.checkIfASIBinkBypassIsInstalled(fieldBiogameDir.getText()) == false) {
 					JOptionPane.showMessageDialog(null,
-							"ASI loader not installed.\nASI mods won't load without using the ASI version of binkw32.\nYou can install this from the tools menu.",
+							"ASI loader not installed.\nASI mods won't load without using the ASI version of binkw32.\nYou can install this from the tools menu or the ASI Mod Management window.",
 							"ASI loader not installed", JOptionPane.WARNING_MESSAGE);
 				}
 
@@ -2128,7 +2139,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Opening patch library window.");
 					updateApplyButton();
-					new PatchLibraryWindow();
+					new PatchLibraryWindow(PatchLibraryWindow.MANUAL_MODE);
 				} else {
 					updateApplyButton();
 					labelStatus.setText(".NET Framework 4.5 or higher is missing");
@@ -2194,12 +2205,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == toolsInstallBinkw32asi) {
 			if (validateBIOGameDir()) {
-				int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
-						"<html><div style='width: 300px'>Installing the ASI version of binkw32.dll bypass will load .asi files and run 3rd party code. Any .asi file in the same folder as MassEffect3.exe and within a subfolder named asi will be loaded at game startup. The code in these asi files will then be run like any program on your computer.<br><br>Ensure you trust the developer you download and install ASI mods from.<br><br>If you have no idea what this means, you should use the default non-asi binkw32.dll bypass option.<br><br>Install the ASI version of binkw32 bypass?</div></html>",
-						"Potential security risk", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-				if (result == JOptionPane.YES_OPTION) {
-					ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
-					installBinkw32Bypass(true);
+				if (validateVC2012()) {
+					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
+							"<html><div style='width: 300px'>Installing the ASI version of binkw32.dll bypass will load .asi files and run 3rd party code. Any .asi file in the same folder as MassEffect3.exe and within a subfolder named asi will be loaded at game startup. The code in these asi files will then be run like any program on your computer.<br><br>Ensure you trust the developer you download and install ASI mods from.<br><br>If you have no idea what this means, you should use the default non-asi binkw32.dll bypass option.<br><br>Install the ASI version of binkw32 bypass?</div></html>",
+							"Potential security risk", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+					if (result == JOptionPane.YES_OPTION) {
+						ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
+						installBinkw32Bypass(true);
+					}
+				} else {
+					labelStatus.setText("Binkw32 ASI Bypass requires Visual C++ 2012 x86");
+					labelStatus.setVisible(true);
+					JOptionPane.showMessageDialog(null,
+							"The Binkw32 ASI Bypass requires Visual C++ 2012 x86 redistributable.\nIf you are sure you have this installed, turn off the .NET version check in Mod Manager options.",
+							"ASI loader requires VC2012 x86", JOptionPane.ERROR_MESSAGE);
+					try {
+						ModManager.openWebpage(new URL("https://www.microsoft.com/en-us/download/details.aspx?id=30679"));
+					} catch (MalformedURLException e1) {
+						ModManager.debugLogger.writeErrorWithException("Unable to open VC++ download page:", e1);
+					}
 				}
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
@@ -2229,6 +2253,29 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						JOptionPane.ERROR_MESSAGE);
 			}
 		}
+	}
+
+	private boolean validateVC2012() {
+		if (!ModManager.PERFORM_DOT_NET_CHECK) {
+			return true;
+		}
+		try {
+			String x86VC2012 = "SOFTWARE\\Classes\\Installer\\Dependencies\\{33d1fd90-4274-48a1-9bc1-97e33d9c2d6f}";
+			String installDir = null;
+			ModManager.debugLogger.writeMessage("Scanning registry for Visual C++ 2012 x86");
+			installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, x86VC2012, "Version");
+
+			if (installDir == null) {
+				return false;
+			}
+
+			if (installDir.equals("11.0.61030.0")) {
+				return true;
+			}
+		} catch (Throwable e) {
+			ModManager.debugLogger.writeErrorWithException("Error occured while attempting to get VC2012 installation status! Could be the JNA crash.", e);
+		}
+		return false;
 	}
 
 	private void checkAllModsForUpdates(boolean isManualCheck) {

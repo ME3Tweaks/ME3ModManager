@@ -144,6 +144,9 @@ public class PatchApplicationWindow extends JDialog {
 						failedPatches.add(patch);
 						publish(new ThreadCommand("PATCH_FAILED", Integer.toString(applyResult), new PatchModBundle(patch, mod)));
 					}
+					if (patch.isDynamic()) {
+						FileUtils.deleteQuietly(new File(patch.getPatchPath()));
+					}
 					numcompleted++;
 				}
 			}

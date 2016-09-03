@@ -34,6 +34,7 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoTocPostInstall;
 	private AbstractButton logModInit;
 	private JCheckBox logPatchInit;
+	private JCheckBox autoFixControllerModMaker;
 
 	public OptionsWindow(JFrame callingWindow) {
 		setupWindow();
@@ -137,6 +138,33 @@ public class OptionsWindow extends JDialog {
 						ini.put("Settings", "autoinjectkeybinds", "0");
 					}
 					ModManager.AUTO_INJECT_KEYBINDS = autoInjectKeybindsModMaker.isSelected();
+					ini.store();
+				} catch (InvalidFileFormatException error) {
+					error.printStackTrace();
+				} catch (IOException error) {
+					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				}
+			}
+		});
+		
+		autoFixControllerModMaker = new JCheckBox("Auto-inject controller mod fixes into ModMaker mods");
+		autoFixControllerModMaker
+				.setToolTipText("<html>A few mixins will cause a file conflict with the controller mods if two mods are installed over each other.<br>Turn this option on if you are a controller mod user and it will apply the camera turning mixins to any ModMaker mod that modifies SFXGame.</html>");
+		autoFixControllerModMaker.setSelected(ModManager.MODMAKER_CONTROLLER_MOD_ADDINS);
+		autoFixControllerModMaker.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Wini ini;
+				try {
+					File settings = new File(ModManager.SETTINGS_FILENAME);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					if (autoFixControllerModMaker.isSelected()) {
+						ini.put("Settings", "controllermoduser", "1");
+					} else {
+						ini.put("Settings", "controllermoduser", "0");
+					}
+					ModManager.MODMAKER_CONTROLLER_MOD_ADDINS = autoFixControllerModMaker.isSelected();
 					ini.store();
 				} catch (InvalidFileFormatException error) {
 					error.printStackTrace();
@@ -359,6 +387,8 @@ public class OptionsWindow extends JDialog {
 		
 		optionsPanel.add(autoApplyMixins);
 		optionsPanel.add(autoInjectKeybindsModMaker);
+		optionsPanel.add(autoFixControllerModMaker);
+		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(autoTocPostInstall);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(autoUpdateModManager);

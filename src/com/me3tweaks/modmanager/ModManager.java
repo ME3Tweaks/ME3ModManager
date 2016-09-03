@@ -72,18 +72,19 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.3";
-	public static long BUILD_NUMBER = 59L;
-	public static final String BUILD_DATE = "8/7/2016";
+	public static final String VERSION = "4.3.1";
+	public static long BUILD_NUMBER = 60L;
+	public static final String BUILD_DATE = "9/2/2016";
 	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static boolean logging = false;
-	public static final double MODMAKER_VERSION_SUPPORT = 2.1; // max modmaker
+	public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
 																// version
 	public static final double MODDESC_VERSION_SUPPORT = 4.3; // max supported
 																// cmmver in
 																// moddesc
+	public static boolean MOD_MANAGER_UPDATE_READY = false; //if true, don't delete temp
 	public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
 	public static boolean AUTO_UPDATE_MODS = true;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
@@ -105,6 +106,7 @@ public class ModManager {
 	public static boolean LOG_MOD_INIT = false;
 	public static boolean LOG_PATCH_INIT = false;
 	public static boolean PERFORM_DOT_NET_CHECK = true;
+	public static boolean MODMAKER_CONTROLLER_MOD_ADDINS = false;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 
@@ -307,24 +309,45 @@ public class ModManager {
 						SKIP_UPDATES_UNTIL_BUILD = 0;
 					}
 				}
-
-				// AutoTOC game files after install
-				String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
-				int autotocPostInstallInt = 0;
-				if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
-					try {
-						autotocPostInstallInt = Integer.parseInt(autotocPostInstallStr);
-						if (autotocPostInstallInt > 0) {
-							// logging is on
-							debugLogger.writeMessage("AutoTOC post install is enabled");
-							POST_INSTALL_AUTOTOC_INSTEAD = true;
-						} else {
-							debugLogger.writeMessage("AutoTOC post install is disabled");
+				{
+					// AutoTOC game files after install
+					String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
+					int autotocPostInstallInt = 0;
+					if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
+						try {
+							autotocPostInstallInt = Integer.parseInt(autotocPostInstallStr);
+							if (autotocPostInstallInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("AutoTOC post install is enabled");
+								POST_INSTALL_AUTOTOC_INSTEAD = true;
+							} else {
+								debugLogger.writeMessage("AutoTOC post install is disabled");
+								POST_INSTALL_AUTOTOC_INSTEAD = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
 							POST_INSTALL_AUTOTOC_INSTEAD = false;
 						}
+					}
+				}
+
+				// AutoTOC game files after install
+				String controllerModUserStr = settingsini.get("Settings", "controllermoduser");
+				int controllerModUserInt = 0;
+				if (controllerModUserStr != null && !controllerModUserStr.equals("")) {
+					try {
+						controllerModUserInt = Integer.parseInt(controllerModUserStr);
+						if (controllerModUserInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("ModMaker Controller Mod add-ins enabled");
+							MODMAKER_CONTROLLER_MOD_ADDINS = true;
+						} else {
+							debugLogger.writeMessage("ModMaker Controller Mod add-ins disabled");
+							MODMAKER_CONTROLLER_MOD_ADDINS = false;
+						}
 					} catch (NumberFormatException e) {
-						debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
-						POST_INSTALL_AUTOTOC_INSTEAD = false;
+						debugLogger.writeError("Number format exception reading the controller mod user flag - defaulting to disabled");
+						MODMAKER_CONTROLLER_MOD_ADDINS = false;
 					}
 				}
 
@@ -396,6 +419,13 @@ public class ModManager {
 				new NetFrameworkMissingWindow(
 						"Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly. ");
 			}
+
+			if (checkIfCMMPatchIsTooLong()) {
+				JOptionPane.showMessageDialog(null,
+						"Mod Manager has detected that it running from a location with a long filepath.\nMod Manager caches files using their relative game directory path.\nYou may consider moving Mod Manager higher up this file system's hierarchy\nto avoid issues with Windows path limitations.",
+						"Windows Path Limitation Warning", JOptionPane.WARNING_MESSAGE);
+			}
+
 			ModManager.debugLogger.writeMessage("========End of startup=========");
 		} catch (Throwable e) {
 			Wini ini;
@@ -612,84 +642,6 @@ public class ModManager {
 		return new ModList(availableMods, failedMods);
 	}
 
-	/*
-	 * public static ArrayList<Mod> getCMM3ModsFromDirectory() { File fileDir =
-	 * new File(getModsDir()); // This filter only returns directories
-	 * FileFilter fileFilter = new FileFilter() { public boolean accept(File
-	 * file) { return file.isDirectory(); } }; File[] subdirs =
-	 * fileDir.listFiles(fileFilter);
-	 * 
-	 * //Got a list of subdirs. Now loop them to find all moddesc.ini files
-	 * ArrayList<Mod> availableMod = new ArrayList<Mod>(); for (int i = 0; i <
-	 * subdirs.length; i++) { File searchSubDirDesc = new
-	 * File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini"); if
-	 * (searchSubDirDesc.exists()) { Mod validatingMod = new
-	 * Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) +
-	 * "moddesc.ini"); if (validatingMod.isValidMod() && validatingMod.modCMMVer
-	 * >= 3) { availableMod.add(validatingMod); } } }
-	 * 
-	 * 
-	 * for (Mod i:availableMod){
-	 * ModManagerWindow.listDescriptors.put(i.getModName(),i); }
-	 * 
-	 * return availableMod; }
-	 */
-
-	/**
-	 * Checks for a file called Coalesced.original. If it exists, it will exit
-	 * this method, otherwise it will backup the current Coalesced and check
-	 * it's MD5 again the known original Coalesced.
-	 * 
-	 */
-	/*
-	 * public static boolean checkDoOriginal(String origDir) { String
-	 * patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e"; // This // is
-	 * // Patch // 3 // Coalesced's // hash File cOriginal = new
-	 * File(ModManager.getDataDir() + "Coalesced.original"); if
-	 * (cOriginal.exists() == false) { // Attempt to copy an original try {
-	 * String coalDirHash =
-	 * MD5Checksum.getMD5Checksum(ModManager.appendSlash(origDir) +
-	 * "CookedPCConsole\\Coalesced.bin"); ModManager.debugLogger.writeMessage(
-	 * "Patch 3 Coalesced Original Hash: " + coalDirHash);
-	 * ModManager.debugLogger.writeMessage("Current Patch 3 Coalesced Hash: " +
-	 * patch3CoalescedHash);
-	 * 
-	 * if (!coalDirHash.equals(patch3CoalescedHash)) { String[] YesNo = { "Yes",
-	 * "No" }; int keepInstalling = JOptionPane .showOptionDialog( null,
-	 * "There is no backup of your original Coalesced yet.\nThe hash of the Coalesced in the directory you specified does not match the known hash for Patch 3's Coalesced.bin.\nYour Coalesced.bin's hash: "
-	 * + coalDirHash + "\nPatch 3 Coalesced.bin's hash: " + patch3CoalescedHash
-	 * +
-	 * "\nYou can continue, but you might lose access to your original Coalesced.\nYou can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq if you need to restore your original.\nContinue installing this mod? "
-	 * , "Coalesced Backup Error", JOptionPane.YES_NO_OPTION,
-	 * JOptionPane.WARNING_MESSAGE, null, YesNo, YesNo[1]); if (keepInstalling
-	 * == 0) return true; return false; } else { // Make a backup of it String
-	 * destFile = ModManager.getDataDir() + "Coalesced.original"; String
-	 * sourceFile = ModManager.appendSlash(origDir) + "Coalesced.bin"; String[]
-	 * command = { "cmd.exe", "/c", "copy", "/Y", sourceFile, destFile }; try {
-	 * Process p = Runtime.getRuntime().exec(command);
-	 * 
-	 * // The InputStream we get from the Process reads from // the standard
-	 * output // of the process (and also the standard error, by // virtue of
-	 * the line // copyFiles.redirectErrorStream(true) ). BufferedReader reader
-	 * = new BufferedReader(new InputStreamReader(p.getInputStream())); String
-	 * line; do { line = reader.readLine(); if (line != null) {
-	 * ModManager.debugLogger.writeMessage(line); } } while (line != null);
-	 * reader.close();
-	 * 
-	 * p.waitFor(); } catch (IOException e) { ModManager.debugLogger
-	 * .writeMessage(
-	 * "Error backing up the original Coalesced. Hash matched but we had an I/O exception. Aborting install."
-	 * ); ModManager.debugLogger.writeMessage(e.getMessage()); return false; }
-	 * catch (InterruptedException e) { ModManager.debugLogger.writeMessage(
-	 * "Backup of the original Coalesced was interupted. Aborting install.");
-	 * ModManager.debugLogger.writeMessage(e.getMessage()); return false; }
-	 * return true; } } catch (Exception e) {
-	 * ModManager.debugLogger.writeMessage (
-	 * "Error occured while attempting to backup or hash the original Coalesced."
-	 * ); ModManager.debugLogger.writeMessage(e.getMessage()); return false; } }
-	 * // Backup exists return true; }
-	 */
-
 	/**
 	 * Export a resource embedded into a Jar file to the local file path.
 	 *
@@ -704,25 +656,7 @@ public class ModManager {
 		OutputStream resStreamOut = null;
 		String jarFolder;
 		try {
-			stream = ModManager.class.getResourceAsStream(resourceName);// note
-																		// that
-																		// each
-																		// / is
-																		// a
-																		// directory
-																		// down
-																		// in
-																		// the
-																		// "jar
-																		// tree"
-																		// been
-																		// the
-																		// jar
-																		// the
-																		// root
-																		// of
-																		// the
-																		// tree
+			stream = ModManager.class.getResourceAsStream(resourceName);
 			if (stream == null) {
 				throw new Exception("Cannot get resource \"" + resourceName + "\" from Jar file.");
 			}
@@ -818,6 +752,8 @@ public class ModManager {
 			ModManager.ExportResource("/binkw23.dll", bink32_orig.toString());
 			if (asi) {
 				ModManager.ExportResource("/binkw32_asi.dll", bink32.toString());
+				File zlib = new File(gamedir.toString() + "\\Binaries\\Win32\\zlib1.dll");
+				ModManager.ExportResource("/zlib1.dll", zlib.toString());
 			} else {
 				ModManager.ExportResource("/binkw32.dll", bink32.toString());
 			}
@@ -1286,7 +1222,13 @@ public class ModManager {
 			sourceDestination.getParentFile().mkdirs();
 
 			// run ME3EXPLORER --decompress-pcc
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
 			ProcessResult pr = ModManager.decompressPCC(sourceSource, sourceDestination);
+			if (pr.getReturnCode() == 0) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
+			} else {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+			}
 			ModManager.debugLogger.writeMessage("File decompressed to location, and ready? : " + sourceDestination.exists());
 			return sourceDestination.getAbsolutePath();
 			// END OF
@@ -1340,6 +1282,8 @@ public class ModManager {
 			// patchProcessBuilder.redirectErrorStream(true);
 			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 			Process extractionProcess;
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
+
 			try {
 				extractionProcess = extractionProcessBuilder.start();
 				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
@@ -1348,6 +1292,11 @@ public class ModManager {
 					System.out.println(line);
 				int result = extractionProcess.waitFor();
 				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
+				if (result == 0) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
+				} else {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+				}
 				return sourceDestination.getAbsolutePath();
 			} catch (IOException e) {
 				ModManager.debugLogger.writeException(e);
@@ -1621,8 +1570,10 @@ public class ModManager {
 	 *         false otherwise
 	 */
 	public static boolean checkIfASIBinkBypassIsInstalled(String biogameDir) {
+		ModManager.debugLogger.writeMessage("Checking for ASI Binkw32 ASI with biogame location: " + biogameDir);
 		File bgdir = new File(biogameDir);
 		if (!bgdir.exists()) {
+			ModManager.debugLogger.writeMessage("Biogame dir does not exist: " + biogameDir);
 			return false;
 		}
 		File gamedir = bgdir.getParentFile();
@@ -1634,11 +1585,20 @@ public class ModManager {
 			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (asihashlist.contains(binkhash) && bink23.exists()) {
+				ModManager.debugLogger.writeMessage("Binkw32 ASI is installed");
+				//Add zlib if not present to bring old installs up to date
+				File zlib = new File(gamedir.toString() + "\\Binaries\\Win32\\zlib1.dll");
+				if (!zlib.exists()) {
+					ModManager.debugLogger.writeMessage("Installing zlib.dll to bring old ASI bypass installation up to date");
+					ModManager.ExportResource("/zlib1.dll", zlib.toString());
+				}
 				return true;
 			}
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Exception while attempting to find DLC bypass (Binkw32).", e);
 		}
+		ModManager.debugLogger.writeMessage("Binkw32 ASI is not installed");
+
 		return false;
 	}
 
@@ -2168,5 +2128,14 @@ public class ModManager {
 
 	public static File getASIManifestFile() {
 		return new File(getASICache() + "manifest.xml");
+	}
+
+	public static boolean checkIfCMMPatchIsTooLong() {
+		return System.getProperty("user.dir").length() > 120;
+	}
+
+	public static boolean areBalanceChangesInstalled(String bioGameDir) {
+		File bcf = new File((new File(bioGameDir).getParent()) + "/Binaries/win32/asi/ServerCoalesced.bin");
+		return bcf.exists();
 	}
 }

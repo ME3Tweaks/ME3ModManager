@@ -20,6 +20,7 @@ public class ModJob {
 	public static final int BASEGAME = 1;
 	public static final int DLC = 0;
 	public static final int CUSTOMDLC = 2;
+	public static final int BALANCE_CHANGES = 3;
 	@Override
 	public String toString() {
 		return "ModJob [jobName=" + jobName + "]";
