@@ -475,7 +475,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					pack.setTargetmodule(mixinElement.getElementsByTagName("targetmodule").item(0).getTextContent());
 					pack.setTargetfile(mixinElement.getElementsByTagName("targetfile").item(0).getTextContent());
 					pack.setTargetsize(Long.parseLong(mixinElement.getElementsByTagName("targetsize").item(0).getTextContent()));
-					pack.setFinalizer((mixinElement.getElementsByTagName("finalizer").item(0).getTextContent().equals(1)) ? true : false);
+					pack.setFinalizer((mixinElement.getElementsByTagName("finalizer").item(0).getTextContent().equals("1")) ? true : false);
 					pack.setPatchurl(mixinElement.getElementsByTagName("patchurl").item(0).getTextContent());
 					pack.setFolder(mixinElement.getElementsByTagName("folder").item(0).getTextContent());
 					pack.setMe3tweaksid(Integer.parseInt(mixinElement.getElementsByTagName("me3tweaksid").item(0).getTextContent()));

@@ -55,14 +55,11 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import net.iharder.dnd.FileDrop;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.derby.impl.sql.execute.DeferredConstraintsMemory.CheckInfo;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
@@ -95,6 +92,8 @@ import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomAction
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
+
+import net.iharder.dnd.FileDrop;
 
 /**
  * Controls the main window for Mass Effect 3 Mod Manager.
@@ -691,7 +690,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						double serverver = Double.parseDouble((String) obj);
 						if (libver < serverver) {
 							ModManager.debugLogger.writeMessage("XBX Library is out of date, updating...");
-							FileUtils.deleteQuietly(new File(uiLibPath));
+							FileUtils.deleteQuietly(new File(xbxLibPath));
 							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updating SP Controller Support GUI library"));
 							String newLib = ModManager.getGUILibraryFor("DLC_CON_XBX", true);
 							if (newLib != null) {
