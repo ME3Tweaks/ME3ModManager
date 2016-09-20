@@ -8,12 +8,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.SortedSet;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.ini4j.BasicProfile;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -50,6 +51,7 @@ public class Mod implements Comparable<Mod> {
 	private String failedReason;
 	private String serverModFolder = DEFAULT_SERVER_FOLDER; //only for mod devs
 	private ArrayList<AlternateFile> alternateFiles = new ArrayList<AlternateFile>();
+	private ArrayList<AlternateCustomDLC> alternateCustomDLC = new ArrayList<AlternateCustomDLC>();
 	private ArrayList<String> sideloadOnlyTargets = new ArrayList<>();
 	private String sideloadURL;
 	private ArrayList<String> blacklistedFiles = new ArrayList<>();
@@ -282,7 +284,7 @@ public class Mod implements Comparable<Mod> {
 
 		// It's a 2.0 or above mod. Check for mod tags in the desc file
 		String[] modIniHeaders = ModType.getLoadingHeaderNameArray();
-		
+
 		for (String modHeader : modIniHeaders) {
 			// Check for each mod. If it exists, add the task
 			String iniModDir = modini.get(modHeader, "moddir");
@@ -361,7 +363,7 @@ public class Mod implements Comparable<Mod> {
 							ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 							return;
 						}
-						if (modCMMVer >= 4.3) {
+						if (modCMMVer >= 4.3 && addReadOnlyFileTargetIni != null) {
 							//READ ONLY DESIGNATION
 							addTargetReadOnlyStrok = new StringTokenizer(addReadOnlyFileTargetIni, ";");
 						}
@@ -406,10 +408,12 @@ public class Mod implements Comparable<Mod> {
 							ModManager.debugLogger.writeError("[REPLACEFILE]Filenames failed to match, mod marked as invalid: " + newFile + " vs " + getSfarFilename(oldFile));
 							return; // The names of the files don't match
 						}
-						
-						if (oldFile.contains("..")){
-							setFailedReason("Mod has a task in a header (" + modHeader + ") that attempts to replace files using a parent directory indicator (\\..\\). This is a security risk to the system. Mods will not load with these paths.");
-							ModManager.debugLogger.writeError("[REPLACEFILE]SECURITY RISK! Task is attempting to replacing file using parent directory indicator .. . Mod has been disabled");
+
+						if (oldFile.contains("..")) {
+							setFailedReason("Mod has a task in a header (" + modHeader
+									+ ") that attempts to replace files using a parent directory indicator (\\..\\). This is a security risk to the system. Mods will not load with these paths.");
+							ModManager.debugLogger
+									.writeError("[REPLACEFILE]SECURITY RISK! Task is attempting to replacing file using parent directory indicator .. . Mod has been disabled");
 							return; // Security mitigation
 						}
 
@@ -428,6 +432,7 @@ public class Mod implements Comparable<Mod> {
 					while (addStrok.hasMoreTokens()) {
 						String addFile = addStrok.nextToken();
 						String targetFile = addTargetStrok.nextToken();
+						System.out.println("Add file target: " + targetFile);
 						if (!addFile.equals(getSfarFilename(targetFile))) {
 							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs " + getSfarFilename(targetFile));
 							setFailedReason("Mod specifies an addfile/addfiles target task in (" + modHeader + "), but the filenames for source vs targets doesn't match: "
@@ -447,13 +452,21 @@ public class Mod implements Comparable<Mod> {
 							return;
 						}
 					}
-					if (modCMMVer >= 4.3) {
+					if (modCMMVer >= 4.3 && addTargetReadOnlyStrok != null) {
 						//READ ONLY DESIGNATION
 						while (addTargetReadOnlyStrok.hasMoreTokens()) {
 							String readonlytarget = addTargetReadOnlyStrok.nextToken();
-							if (!newJob.getFilesToAddTargets().contains(readonlytarget)){
-								ModManager.debugLogger.writeError("[ADDFILE-READONLY]Failed to set a file to be marked as read only on install - Cannot mark file read-only if its not in the addfiles list: "+readonlytarget);
-								setFailedReason("Mod has designated files to install should be marked read-only (so end user won't modify them). A designation does not match any files in the addfilestargets list: "+readonlytarget);
+							if (!readonlytarget.startsWith("\\")) {
+								//prepend \ so it matches the one stored in modjob
+								readonlytarget = "\\" + readonlytarget;
+							}
+							if (!newJob.getFilesToAddTargets().contains(readonlytarget)) {
+								ModManager.debugLogger.writeError(
+										"[ADDFILE-READONLY]Failed to set a file to be marked as read only on install - Cannot mark file read-only if its not in the addfiles list: "
+												+ readonlytarget);
+								setFailedReason(
+										"Mod has designated files to install should be marked read-only (so end user won't modify them). A designation does not match any files in the addfilestargets list: "
+												+ readonlytarget);
 								ModManager.debugLogger.writeMessageConditionally("-----MOD------------END OF " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 								return;
 							}
@@ -532,7 +545,8 @@ public class Mod implements Comparable<Mod> {
 
 					if (!destFolder.startsWith("DLC_")) {
 						setFailedReason(
-								"Mod specifies a CUSTOMDLC destination folder that doesn't start with DLC_. When installing this mod, this will do nothing because Mass Effect 3 will not load any DLC that does not start with DLC_." + destFolder);
+								"Mod specifies a CUSTOMDLC destination folder that doesn't start with DLC_. When installing this mod, this will do nothing because Mass Effect 3 will not load any DLC that does not start with DLC_."
+										+ destFolder);
 						ModManager.debugLogger.writeError("Custom DLC target folder doesn't start with DLC_: " + destFolder);
 						return;
 					}
@@ -542,10 +556,10 @@ public class Mod implements Comparable<Mod> {
 						for (File file : sourceFiles) {
 							String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
 							String destFilePath = ModManager.appendSlash(destFolder) + relativePath;
-							if (!(newJob.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(),false), ResourceUtils.normalizeFilePath(destFilePath,false))
+							if (!(newJob.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false))
 									&& !ignoreLoadErrors)) {
 								setFailedReason("Mod specifies a CUSTOMDLC header, but a file in one of the source directories (" + sf
-										+ ") had a file that was unable to be added. This error should be encountered.");
+										+ ") had a file that was unable to be added. This error should not be encountered.");
 								ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
 								return;
 							}
@@ -607,6 +621,27 @@ public class Mod implements Comparable<Mod> {
 						blacklistedfile = blacklistedfile.replaceAll("\\\\", "/");
 						ModManager.debugLogger.writeMessageConditionally("Blacklisted file for manifests: " + blacklistedfile, ModManager.LOG_MOD_INIT);
 						getBlacklistedFiles().add(blacklistedfile);
+					}
+				}
+			}
+			if (modCMMVer >= 4.32) {
+				System.out.println("Mod Manager Version >= 4.32, looking for altdlc header");
+				String altText = modini.get("CUSTOMDLC", "altdlc");
+				if (altText != null && !altText.equals("")) {
+					ArrayList<String> alts = ValueParserLib.getSplitValues(altText);
+					if (alts == null) {
+						//error
+						ModManager.debugLogger.writeError("Alternate CustomDLC was specified, but the value couldn't be parsed. It's likely invalid: " + altText);
+						setFailedReason(
+								"The moddesc indicates there should Custom DLC added, removed, or modified depending on certain game conditions, but it failed to parse. The [CUSTOMDLC] altdlc text that failed to parse was :"
+										+ altText + "\n\nThis may not affect your specific ME3 enviroment, but the mod has been marked as invalid to avoid possible issues.");
+						return;
+					}
+					for (String alt : alts) {
+						System.err.println(alt);
+						AlternateCustomDLC altdlc = new AlternateCustomDLC(alt);
+						ModManager.debugLogger.writeMessageConditionally("Alternate CustomDLC specified: " + alt.toString(), ModManager.LOG_MOD_INIT);
+						alternateCustomDLC.add(altdlc);
 					}
 				}
 			}
@@ -709,7 +744,7 @@ public class Mod implements Comparable<Mod> {
 					if (!patchDesc.exists()) {
 						continue;
 					}
-					Patch subPatch = new Patch(patchDesc.getAbsolutePath(),ModManager.appendSlash(path) + "patch.jsf");
+					Patch subPatch = new Patch(patchDesc.getAbsolutePath(), ModManager.appendSlash(path) + "patch.jsf");
 					if (subPatch.isValid()) {
 						ModManager.debugLogger.writeMessageConditionally("Valid patch: " + subPatch.getPatchName() + ", importing to library and processing",
 								ModManager.LOG_MOD_INIT);
@@ -743,6 +778,19 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 
+		//Apply Alternate CustomDLC
+		if (alternateCustomDLC.size() > 0) {
+			if (ModManagerWindow.validateBIOGameDir()) {
+				addCustomDLCAlternates(ModManagerWindow.GetBioGameDir());
+			} else {
+				ModManager.debugLogger.writeError(
+						"Alternate Custom DLC cannot be applied to this mod as the biogame directory is not currently valid. User needs to set it and reload mod manager");
+				setFailedReason(
+						"This mod requires a valid biogame directory due to using alternate custom dlc. Without a valid biogame directory, this mod will not know what parts are required on install. Fix the biogame directory and reload mod manager.");
+				return;
+			}
+		}
+
 		//Verify alternates and apply automatic ones
 		if (alternateFiles != null) {
 			ModManager.debugLogger.writeMessage("Verifying automatic alternate files are valid for this mod");
@@ -751,7 +799,7 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessage("Verifying " + af.getAltFile() + " on " + af.getCondition() + " of " + af.getConditionalDLC());
 				if (af.isValidLocally(modPath)) {
 					//Verify pass
-					ModManager.debugLogger.writeMessageConditionally("This mod has " + modDeltas.size() + " deltas.", ModManager.LOG_MOD_INIT);
+					//ModManager.debugLogger.writeMessageConditionally("This mod has " + modDeltas.size() + " deltas.", ModManager.LOG_MOD_INIT);
 					String condition = af.getCondition();
 					String modfile = af.getModFile();
 					String task = af.getConditionalDLC();
@@ -779,11 +827,6 @@ public class Mod implements Comparable<Mod> {
 					setFailedReason("This mod contains an invalid alternate file specification:\n" + af);
 					return;
 				}
-			}
-
-			for (AlternateFile af : alternateFiles) {
-				//Application pass
-
 			}
 		}
 
@@ -824,19 +867,7 @@ public class Mod implements Comparable<Mod> {
 		 * if (name.equals(ModType.COAL)) { modCoal = true;
 		 * updateModifyString(ModType.COAL); return; }
 		 */
-		if (name.equals(ModType.CUSTOMDLC)) {
-			String appendStr = name + " (";
-			boolean first = true;
-			for (String destFolder : newJob.getDestFolders()) {
-				if (!first) {
-					appendStr += ",";
-					first = false;
-				}
-				appendStr += destFolder;
-			}
-			appendStr += ")";
-			updateModifyString(appendStr);
-		} else {
+		if (!name.equals(ModType.CUSTOMDLC)) {
 			updateModifyString(name);
 		}
 		jobs.add(newJob);
@@ -910,6 +941,9 @@ public class Mod implements Comparable<Mod> {
 
 		// Add mod manager build version
 		modDisplayDescription += "\nTargets Mod Manager " + modCMMVer;
+		if (modCMMVer > ModManager.MODDESC_VERSION_SUPPORT) {
+			modDisplayDescription += ", which is not fully supported by this version of Mod Manager. Update Mod Manager for full support.";
+		}
 		if (classicCode > 0 /* && ModManager.IS_DEBUG */) {
 			modDisplayDescription += "\nUpdate code: " + classicCode;
 		}
@@ -966,6 +1000,29 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	public String getModifyString() {
+		for (ModJob job : jobs) {
+			if (job.getJobName().equals(ModType.CUSTOMDLC)) {
+				String appendStr = " CUSTOMDLC (";
+				if (modifyString.equals("")) {
+					appendStr = "\nModifies: " + appendStr;
+				} else {
+					appendStr = "," + appendStr;
+				}
+				boolean first = true;
+				TreeSet<String> ss = new TreeSet<String>(job.getDestFolders());
+				for (String destFolder : ss) {
+					if (first) {
+						first = false;
+					} else {
+						appendStr += ", ";
+					}
+					appendStr += destFolder;
+				}
+				appendStr += ")";
+				modifyString += appendStr;
+				break;
+			}
+		}
 		if (!modifyString.equals("")) {
 			modifyString += "\n";
 		}
@@ -2056,6 +2113,160 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	/**
+	 * Processes alternate DLC specifications and will add them into this mod as
+	 * necessary
+	 * 
+	 * @return true if all were added OK. False if any failed.
+	 */
+	public boolean addCustomDLCAlternates(String biogamedir) {
+		if (alternateFiles.size() > 0 && ModManagerWindow.validateBIOGameDir()) {
+			boolean altApplied = false;
+			ModManager.debugLogger.writeMessage(getModName() + ": Checking automatic alternate custom dlc list to see if applicable and will apply if conditions are right");
+			//get list of installed DLC
+			ArrayList<String> installedDLC = ModManager.getInstalledDLC(biogamedir);
+			HashMap<String, String> headerFolderMap = ModType.getHeaderFolderMap();
+			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
+
+			for (AlternateCustomDLC altdlc : alternateCustomDLC) {
+				ModManager.debugLogger.writeMessage("Checking if Alternate DLC applies: " + altdlc);
+				String condition = altdlc.getCondition();
+				String conditionaldlc = altdlc.getConditionalDLC();
+				ArrayList<String> conditionaldlcs = altdlc.getConditionalDLCList();
+				if (conditionaldlcs != null && conditionaldlcs.size() > 0) {
+					//MULTI DLC
+					ArrayList<String> remappedHeaders = new ArrayList<String>();
+					for (String dlcpart : conditionaldlcs) { //for all dlc in the list
+						if (!installedDLC.contains(dlcpart)) { //if installed dlc does not contain this (e.g. CITADEL vs DLC_EXP_Pack003)
+							//check if its an official dlc header...
+							if (officialDLCHeaders.contains(dlcpart)) {
+								//convert to dlc folder name
+								String fname = headerFolderMap.get(dlcpart);
+								if (fname != null) {
+									remappedHeaders.add(fname.toUpperCase()); //Remap CITADEL To DLC_EXP_Pack003, etc.
+								} else {
+									//remappedHeaders.add(dlcpart);
+									ModManager.debugLogger
+											.writeError("[alt dlc application] Alt dlc specifies non-existent Custom DLC/Mod Manager Header, this shouldn't really be possible. "
+													+ conditionaldlc);
+								}
+							}
+						} else {
+							remappedHeaders.add(dlcpart.toUpperCase());
+						}
+					}
+
+					switch (condition) {
+					case AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT:
+						if (!installedDLC.containsAll(remappedHeaders)) {
+							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as at least one DLC in condition is present: " + altdlc);
+							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
+							applyAlternateDLCOperation(job, altdlc);
+							altApplied = true;
+
+						} else {
+							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc);
+						}
+						break;
+					case AlternateCustomDLC.CONDITION_ANY_DLC_NOT_PRESENT:
+						if (!installedDLC.containsAll(remappedHeaders)) {
+							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as at least one DLC in condition are not present: " + altdlc);
+							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
+							applyAlternateDLCOperation(job, altdlc);
+							altApplied = true;
+						} else {
+							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc);
+						}
+						break;
+					default:
+						ModManager.debugLogger.writeError("Unknown CustomDLC condition: " + condition);
+						break;
+					}
+				} else {
+					//SINGLE DLC
+					if (!installedDLC.contains(conditionaldlc)) {
+						//check if its an official dlc header...
+						if (officialDLCHeaders.contains(conditionaldlc)) {
+							//convert to dlc folder name
+							String fname = headerFolderMap.get(conditionaldlc);
+							if (fname != null) {
+								conditionaldlc = fname;
+							} else {
+								ModManager.debugLogger.writeError("[alt dlc application] Alt dlc specifies non-existent Custom DLC/Mod Manager Header: " + conditionaldlc);
+								continue;
+							}
+						}
+					}
+					ModManager.debugLogger.writeMessage("Checking condition...");
+					switch (condition) {
+					case AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT:
+						if (!installedDLC.contains(conditionaldlc.toUpperCase())) {
+							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is not present");
+							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
+							applyAlternateDLCOperation(job, altdlc);
+							altApplied = true;
+						} else {
+							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is present");
+						}
+						break;
+					case AlternateCustomDLC.CONDITION_DLC_PRESENT:
+						if (installedDLC.contains(conditionaldlc.toUpperCase())) {
+							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is present");
+							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
+							applyAlternateDLCOperation(job, altdlc);
+							altApplied = true;
+						} else {
+							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is not present");
+						}
+						break;
+					}
+				}
+			}
+			return altApplied;
+		} else {
+			return false; //no operations performed
+		}
+	}
+
+	private void applyAlternateDLCOperation(ModJob job, AlternateCustomDLC altdlc) {
+		File sf = new File(getModPath() + altdlc.getAltDLC());
+		String destdlc = altdlc.getDestDLC();
+		switch (altdlc.getOperation()) {
+		case AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER:
+			ModManager.debugLogger.writeMessage("Condition match, adding additional layer for DLC folder: " + altdlc.getDestDLC());
+			job.getSourceFolders().add(altdlc.getAltDLC());
+			job.getDestFolders().add(altdlc.getDestDLC());
+			List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+			for (File file : sourceFiles) {
+				String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
+				String destFilePath = ModManager.appendSlash(destdlc) + relativePath;
+				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false))
+						&& !ignoreLoadErrors)) {
+					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc+". The issue occured when attempting to add the file "+file+" to the mod.");
+					ModManager.debugLogger.writeError("Failed to add file to replace with ALTERNATE CUSTOM DLC (File likely does not exist), marking as invalid.");
+					return;
+				}
+			}
+			break;
+		case AlternateCustomDLC.OPERATION_ADD_CUSTOMDLC_JOB:
+			ModManager.debugLogger.writeMessage("Condition match, adding custom DLC folder: " + altdlc.getDestDLC());
+			job.getSourceFolders().add(altdlc.getAltDLC());
+			job.getDestFolders().add(altdlc.getDestDLC());
+			List<File> addsourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+			for (File file : addsourceFiles) {
+				String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
+				String destFilePath = ModManager.appendSlash(destdlc) + relativePath;
+				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false))
+						&& !ignoreLoadErrors)) {
+					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc+". The issue occured when attempting to add the file in an additional DLC to the mod: "+file+".");
+					ModManager.debugLogger.writeError("Failed to add file to replace with ADD ALTERNATE CUSTOM DLC (File likely does not exist), marking as invalid.");
+					return;
+				}
+			}
+			break;
+		}
+	}
+
+	/**
 	 * Applies automatic alternate files to this mod
 	 * 
 	 * @param biogamedir
@@ -2099,7 +2310,7 @@ public class Mod implements Comparable<Mod> {
 							//custom dlc task
 							job = getJobByModuleName(ModType.CUSTOMDLC);
 						}
-						applyAlternateOperation(job, af);
+						applyAlternateFileOperation(job, af);
 						altApplied = true;
 					}
 					break;
@@ -2113,7 +2324,7 @@ public class Mod implements Comparable<Mod> {
 							//custom dlc task
 							job = getJobByModuleName(ModType.CUSTOMDLC);
 						}
-						applyAlternateOperation(job, af);
+						applyAlternateFileOperation(job, af);
 						altApplied = true;
 					}
 					break;
@@ -2125,8 +2336,7 @@ public class Mod implements Comparable<Mod> {
 		}
 	}
 
-	private void applyAlternateOperation(ModJob job, AlternateFile af) {
-		System.out.println("break");
+	private void applyAlternateFileOperation(ModJob job, AlternateFile af) {
 		switch (af.getOperation()) {
 		case AlternateFile.OPERATION_INSTALL:
 			//add file to task

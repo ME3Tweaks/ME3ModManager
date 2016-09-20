@@ -88,13 +88,13 @@ public class CustomDLCWindow extends JDialog {
 			File sfarFile = new File(pcConsole+"Default.sfar");
 			MountFile mount = new MountFile(mountFile.getAbsolutePath());
 			ModManager.debugLogger.writeMessage("Found mount file: "+mount);
+			mount.setAssociatedDLCName(dir);
 			if (!mountFile.exists()){
 				mount.setReason("No Mount.dlc file");
 			} else if (!sfarFile.exists()){
 				mount.setReason("No SFAR");
 			} else {
 				//String mount = MountFileEditorWindow.getMountDescription(mountFile);
-				mount.setAssociatedDLCName(dir);
 				mount.setAssociatedModName(dlcName);
 			}
 			mountList.add(mount);

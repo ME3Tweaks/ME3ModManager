@@ -55,14 +55,11 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import net.iharder.dnd.FileDrop;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.derby.impl.sql.execute.DeferredConstraintsMemory.CheckInfo;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
@@ -96,6 +93,8 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
+import net.iharder.dnd.FileDrop;
+
 /**
  * Controls the main window for Mass Effect 3 Mod Manager.
  * 
@@ -106,6 +105,7 @@ import com.sun.jna.platform.win32.WinReg;
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
 	public static ModManagerWindow ACTIVE_WINDOW;
 	public static ArrayList<Integer> forceUpdateOnReloadList = new ArrayList<Integer>();
+	private static String PRELOADED_BIOGAME_DIR;
 	boolean isUpdate;
 	public JTextField fieldBiogameDir;
 	JTextArea fieldDescription;
@@ -154,6 +154,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JPanel cookedDirPanel;
 	private JMenuItem toolsAutoTOCGame;
 	private JMenu restoreMenuAdvanced;
+	private String preloadedBioGameDir;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -691,7 +692,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						double serverver = Double.parseDouble((String) obj);
 						if (libver < serverver) {
 							ModManager.debugLogger.writeMessage("XBX Library is out of date, updating...");
-							FileUtils.deleteQuietly(new File(uiLibPath));
+							boolean deleted = FileUtils.deleteQuietly(new File(xbxLibPath));
+							if (!deleted) {
+								//failed to delete old folder
+								System.out.println("Break");
+							}
 							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updating SP Controller Support GUI library"));
 							String newLib = ModManager.getGUILibraryFor("DLC_CON_XBX", true);
 							if (newLib != null) {
@@ -769,7 +774,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					} else {
 						String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
 						updatetext += AllModsUpdateWindow.getVersionUpdateString(upackage);
-
+						if (upackage.getChangeLog() != null || !upackage.getChangeLog().equals("")) {
+							updatetext += "\n - ";
+							updatetext += upackage.getChangeLog();
+						}
 						updatetext += "Update this mod?";
 						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
 						if (result == JOptionPane.YES_OPTION) {
@@ -810,6 +818,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		Dimension minSize = new Dimension(560, 520);
 		this.setPreferredSize(minSize);
 		this.setMinimumSize(minSize);
+
+		PRELOADED_BIOGAME_DIR = getInitialBiogameDirText();
 
 		// Load mods first
 		ModManager.debugLogger.writeMessage("Loading mods...");
@@ -918,7 +928,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		cookedDirPanel = new JPanel(new BorderLayout());
 		TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory");
 		fieldBiogameDir = new JTextField();
-		fieldBiogameDir.setText(getInitialBiogameDirText());
+		fieldBiogameDir.setText(PRELOADED_BIOGAME_DIR);
 		fieldBiogameDir.addFocusListener(new FocusListener() {
 
 			@Override
@@ -2447,8 +2457,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @return True if valid, false otherwise
 	 */
 	public static boolean validateBIOGameDir() {
-		File coalesced = new File(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + "CookedPCConsole\\Coalesced.bin");
+		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
+			ModManagerWindow.PRELOADED_BIOGAME_DIR = ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText();
+		}
+		File coalesced = new File(ModManager.appendSlash(PRELOADED_BIOGAME_DIR) + "CookedPCConsole\\Coalesced.bin");
 		if (coalesced.exists()) {
+
 			setBioDirHighlight(false);
 			return true;
 		} else {
@@ -2464,14 +2478,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @param highlight
 	 */
 	private static void setBioDirHighlight(boolean highlight) {
-		if (highlight) {
-			TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory (INVALID)",
-					TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager.getDefaults().getFont("titledBorder.font"), Color.RED);
-			ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
-		} else {
-			TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory",
-					TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager.getDefaults().getFont("titledBorder.font"), new Color(0, 150, 0));
-			ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
+		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
+			if (highlight) {
+				TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory (INVALID)",
+						TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager.getDefaults().getFont("titledBorder.font"), Color.RED);
+				ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
+			} else {
+				TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory",
+						TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager.getDefaults().getFont("titledBorder.font"), new Color(0, 150, 0));
+				ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
+			}
 		}
 	}
 
@@ -2483,22 +2499,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @return
 	 */
 	private String getInitialBiogameDirText() {
-		ModManager.debugLogger.writeMessage("Getting location of Mass Effect 3 directory.");
+		ModManager.debugLogger.writeMessage("Getting location of Mass Effect 3 directory to populate BioGameDir text field.");
 		Wini settingsini;
 		String defaultDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
 		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
 		String os = System.getProperty("os.name");
-		ModManager.debugLogger.writeMessage("Entering getInitialBiogameDirText() try block");
 
 		try {
 			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 			setDir = settingsini.get("Settings", "biogame_dir");
-			ModManager.debugLogger.writeMessage("setDir = " + setDir);
+			ModManager.debugLogger.writeMessage("ME3CMM.ini has saved the biogame directory to (blank/null if doesn't exist): " + setDir);
 			if ((setDir == null || setDir.equals("")) && os.contains("Windows")) {
 				String installDir = null;
 				String _32bitpath = "SOFTWARE\\BioWare\\Mass Effect 3";
 				String _64bitpath = "SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
-				ModManager.debugLogger.writeMessage("OS contains windows and setDir is null or blank. trying 64bit registry key");
+				ModManager.debugLogger.writeMessage("ME3CMM.ini does not contain the game path, attempting lookup via 64-bit registry key");
 				try {
 					installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _64bitpath, "Install Dir");
 					ModManager.debugLogger.writeMessage("found installdir via 64bit reg key");
@@ -2510,7 +2525,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					// try 32bit key
 					try {
 						installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _32bitpath, "Install Dir");
-						ModManager.debugLogger.writeMessage("OS contains windows and setDir is null or blank. trying 32bit registry key");
+						ModManager.debugLogger.writeMessage("64-bit registry key not found. Attemping to find via 32-bit registy key");
 					} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
 						ModManager.debugLogger.writeMessage("Exception looking at 32bit registry key: " + _32bitpath);
 					}
@@ -2530,7 +2545,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeErrorWithException("Error occured while attempting to get/set the biogame directory! Could be the JNA crash.", e);
 			return "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame";
 		}
-		ModManager.debugLogger.writeMessage("Directory that was fetched: " + setDir);
+		ModManager.debugLogger.writeMessage("Directory that will be set: " + (setDir != null && !setDir.equals("") ? setDir : defaultDir));
 		return (setDir != null && !setDir.equals("")) ? setDir : defaultDir;
 	}
 
@@ -3006,4 +3021,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		new SingleModUpdateCheckThread(mod).execute();
 	}
 
+	public static String GetBioGameDir() {
+		if (ModManagerWindow.ACTIVE_WINDOW == null || ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir == null) {
+			return ModManagerWindow.PRELOADED_BIOGAME_DIR;
+		} else {
+			return ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText();
+		}
+	}
 }

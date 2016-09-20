@@ -274,7 +274,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		private HashMap<String, ArrayList<CustomDLC>> dlcfilemap;
 		private String biogameDirectory;
 		private double numFilesToScan;
-	    private final AtomicInteger numFilesScanned = new AtomicInteger();
+		private final AtomicInteger numFilesScanned = new AtomicInteger();
 
 		public CustomDLCGUIScanner(String biogameDirectory, HashMap<String, ArrayList<CustomDLC>> conflicts) {
 			this.dlcfilemap = conflicts;
@@ -300,7 +300,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			guiProgressBar.setVisible(false);
 			if (secondPriorityUIConflictFiles != null) {
 				guiPatchButton.setVisible(true);
-				statusText.setText("A GUI mod conflicts with " + secondPriorityUIConflictFiles.entrySet().size() + " files");
+				statusText.setText("A GUI mod needs to update " + secondPriorityUIConflictFiles.entrySet().size() + " files to work properly");
 			} else {
 				guiPatchButton.setVisible(false);
 				statusText.setText("No GUI mod file conflicts");
@@ -351,6 +351,11 @@ public class CustomDLCConflictWindow extends JDialog {
 						throw new Exception("One or more files failed to scan.");
 					}
 					if (result.hasGUI) {
+						System.out.println(result.dlcs.get(0)+" "+result.filename);
+						/*if (result.dlcs.size() > 1 && result.filename.equals("BioD_Nor_203aGalaxyMap.pcc")) {
+							ModManager.debugLogger.writeError("Mod Manager skipping Galaxy Map file that seems to crash when patching.");
+							continue;
+						}*/
 						returnconflictfiles.put(result.filename, result.dlcs);
 					}
 				}
@@ -387,8 +392,8 @@ public class CustomDLCConflictWindow extends JDialog {
 				int returncode = 2;
 				ProcessBuilder pb = new ProcessBuilder(command);
 				returncode = ModManager.runProcess(pb).getReturnCode();
-				
-				publish(new ThreadCommand("UPDATE_PROGRESS",null,numFilesScanned.incrementAndGet()));
+
+				publish(new ThreadCommand("UPDATE_PROGRESS", null, numFilesScanned.incrementAndGet()));
 				if (returncode == 1) {
 					//FILE CONTAINS GUI!
 					ModManager.debugLogger.writeMessage("GUI Export found in non-GUI mod while GUI mod is installed: " + scanFile);
@@ -407,13 +412,12 @@ public class CustomDLCConflictWindow extends JDialog {
 					guiProgressBar.setVisible(true);
 					break;
 				case "UPDATE_SCANNER_TEXT":
-					
+
 					break;
 				case "UPDATE_PROGRESS":
-					System.err.println("PROGRESS UPDATIN "+(int) ((int) tc.getData()*100 / numFilesToScan));
 					guiProgressBar.setIndeterminate(false);
 					guiProgressBar.setVisible(true);
-					guiProgressBar.setValue((int) ((int) tc.getData()*100 / numFilesToScan));
+					guiProgressBar.setValue((int) ((int) tc.getData() * 100 / numFilesToScan));
 					break;
 				}
 			}
@@ -543,6 +547,19 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Copying tier 2 files to new mod"));
 			//starter kit has finished. Copy files to it.
+			Map.Entry<String, CustomDLC> galaxymapfile = null;
+			Map.Entry<String, CustomDLC> cicfile = null;
+
+			//Do not modify galaxymap file. Just port it straight over (it has no acutal used GUIs)
+/*			for (Map.Entry<String, CustomDLC> resolutionFile : secondPriorityUIConflictFiles.entrySet()) {
+				//workaround for BioD_Nor_203aGalaxyMap.pcc crash oddity in EGM
+				if (resolutionFile.getKey().equals("BioD_Nor_203aGalaxyMap.pcc")) {
+					galaxymapfile = resolutionFile;
+					continue;
+				}
+			}
+*/
+
 			ArrayList<String> transplantFiles = new ArrayList<>();
 			for (Map.Entry<String, CustomDLC> resolutionFile : secondPriorityUIConflictFiles.entrySet()) {
 				String sourcePath = biogameDirectory + "DLC/" + resolutionFile.getValue().getDlcName() + "/CookedPCConsole/" + resolutionFile.getKey();
@@ -559,6 +576,7 @@ public class CustomDLCConflictWindow extends JDialog {
 				}
 			}
 
+
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Locating GUI library"));
 
 			ModManager.debugLogger.writeMessage("Copy of 2nd tier fields completed. Locating GUI library");
@@ -566,8 +584,14 @@ public class CustomDLCConflictWindow extends JDialog {
 			//Run ME3-GUI-Transplanter over CookedPCConsole files
 			double i = 0;
 			for (String transplantFile : transplantFiles) {
-				publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanting SWFs into " + new File(transplantFile).getName()));
 				publish(new ThreadCommand("SET_PROGRESS", null, i / transplantFiles.size()));
+				
+				if (new File(transplantFile).getName().equals("BioD_Nor_203aGalaxyMap.pcc")) {
+					i++;
+					ModManager.debugLogger.writeMessage("Skipping tranpslant of BioD_Nor_203aGalaxyMap.pcc for crash prevention.");
+					continue;
+				}
+				publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanting SWFs into " + new File(transplantFile).getName()));
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(transplanterpath);
 				commandBuilder.add("--injectswf");
@@ -594,7 +618,7 @@ public class CustomDLCConflictWindow extends JDialog {
 					}
 					return false;
 				}
-				i += 1;
+				i++;
 			}
 
 			//Remove .bak files

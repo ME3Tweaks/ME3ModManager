@@ -227,12 +227,30 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("A DLC bypass is installed");
 			}
 
-			if (precheckGameDB(jobs)) {
-				ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod");
-				return false;
-			} else {
-				ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
+			boolean checkedDB = false;
+			for (ModJob job : jobs) {
+				if (job.getJobName().equals(ModType.CUSTOMDLC)) {
+					continue;
+				}
+				if ((job.getJobName().equals(ModType.BASEGAME) && job.getFilesToReplaceTargets().size() == 0 && job.getFilesToRemoveTargets().size() == 0)) {
+					continue;
+				}
+				checkedDB = true;
+				if (precheckGameDB(jobs)) {
+					ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod");
+					return false;
+				} else {
+					ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
+				}
+				break;
 			}
+			if (!checkedDB) {
+				ModManager.debugLogger.writeMessage("Mod only adds files to basegame/adds custom DLC. The Game DB check has been skipped");
+			}
+
+			
+			
+			
 
 			ModManager.debugLogger.writeMessage("Processing jobs in mod queue.");
 			ExecutorService modinstallExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -1027,13 +1045,13 @@ public class ModInstallWindow extends JDialog {
 			for (String folder : destfolders) {
 				File dlcFolder = new File(dlcdir + File.separator + folder);
 				if (dlcFolder.exists() && dlcFolder.isDirectory()) {
-					ModManager.debugLogger.writeMessage("Deleting existing CustomDLC folder: " + dlcFolder);
+					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Deleting existing CustomDLC folder: " + dlcFolder);
 					FileUtils.deleteQuietly(dlcFolder);
 				}
 			}
 			taskSteps = job.getFilesToReplaceTargets().size();
 			completedTaskSteps = 0;
-			ModManager.debugLogger.writeMessage("Number of files to install: " + taskSteps);
+			ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Number of files to install: " + taskSteps);
 			for (int i = 0; i < job.getFilesToReplaceTargets().size(); i++) {
 				String target = job.getFilesToReplaceTargets().get(i);
 				String fileDestination = dlcdir + target;
@@ -1047,39 +1065,41 @@ public class ModInstallWindow extends JDialog {
 					dest.mkdirs();
 					Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
 					completedTaskSteps++;
-					ModManager.debugLogger.writeMessage("Installed mod file: " + fileSource + " => " + fileDestination);
+					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Installed mod file: " + fileSource + " => " + fileDestination);
 
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Installing custom dlc file failed:", e);
+					ModManager.debugLogger.writeErrorWithException("[CUSTOMDLC JOB]Installing custom dlc file failed:", e);
 					return false;
 				}
 			}
 			//autotoc if necessary, create metadata file
 			for (String str : job.getDestFolders()) {
 				if (alternatesApplied) {
-					publish("Automatically modified " + str + ", updating PCConsoleTOC");
-					//needs TOC on customDLC
-					ArrayList<String> commandBuilder = new ArrayList<String>();
-					// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-					commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-					commandBuilder.add("-autotoc");
-					commandBuilder.add(dlcdir + File.separator + str);
-					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-					ModManager.debugLogger.writeMessage("Updating PCConsoleTOC for CustomDLC that had alternate applied");
-					int returncode = 1;
-					ProcessBuilder pb = new ProcessBuilder(command);
-					ProcessResult pr = ModManager.runProcess(pb);
-					returncode = pr.getReturnCode();
-					if (returncode != 0 || pr.hadError()) {
-						ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error) running AutoTOC: " + returncode);
+					if (!ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+						publish("Automatically modified " + str + ", updating PCConsoleTOC");
+						//needs TOC on customDLC
+						ArrayList<String> commandBuilder = new ArrayList<String>();
+						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+						commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
+						commandBuilder.add("-autotoc");
+						commandBuilder.add(dlcdir + File.separator + str);
+						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+						ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Updating PCConsoleTOC for CustomDLC that had alternate applied");
+						int returncode = 1;
+						ProcessBuilder pb = new ProcessBuilder(command);
+						ProcessResult pr = ModManager.runProcess(pb);
+						returncode = pr.getReturnCode();
+						if (returncode != 0 || pr.hadError()) {
+							ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error) running AutoTOC: " + returncode);
+						}
 					}
 				}
 				try {
 					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
-					ModManager.debugLogger.writeMessage("Writing custom DLC metadata file: " + metadatapath);
+					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Writing custom DLC metadata file: " + metadatapath);
 					FileUtils.writeStringToFile(new File(metadatapath), mod.getModName() + " " + mod.getVersion());
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Couldn't write custom dlc metadata file:", e);
+					ModManager.debugLogger.writeErrorWithException("[CUSTOMDLC JOB]Couldn't write custom dlc metadata file:", e);
 				}
 			}
 			return true;
