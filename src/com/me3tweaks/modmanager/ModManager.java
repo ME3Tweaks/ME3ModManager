@@ -73,8 +73,8 @@ import com.sun.jna.platform.win32.WinReg;
 public class ModManager {
 
 	public static final String VERSION = "4.4";
-	public static long BUILD_NUMBER = 60L;
-	public static final String BUILD_DATE = "9/19/2016";
+	public static long BUILD_NUMBER = 62L;
+	public static final String BUILD_DATE = "9/20/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -86,7 +86,7 @@ public class ModManager {
 																// moddesc
 	public static boolean MOD_MANAGER_UPDATE_READY = false; //if true, don't delete temp
 	public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
-	public static boolean AUTO_UPDATE_MODS = true;
+	public static boolean AUTO_UPDATE_CONTENT = true;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
 	public static final int MIN_REQUIRED_ME3EXPLORER_MAIN = 2;
@@ -107,6 +107,7 @@ public class ModManager {
 	public static boolean LOG_PATCH_INIT = false;
 	public static boolean PERFORM_DOT_NET_CHECK = true;
 	public static boolean MODMAKER_CONTROLLER_MOD_ADDINS = false;
+	public static String THIRD_PARTY_MOD_JSON;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 
@@ -128,8 +129,9 @@ public class ModManager {
 			}
 
 			ICONS = new ArrayList<Image>();
-			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon32.png")));
+			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
+			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon32.png")));
 
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
 
@@ -227,7 +229,7 @@ public class ModManager {
 				String autoupdate = settingsini.get("Settings", "autoupdatemods");
 				if (autoupdate != null && autoupdate.toLowerCase().equals("false")) {
 					debugLogger.writeMessage("Disabling mod auto-updates");
-					AUTO_UPDATE_MODS = false;
+					AUTO_UPDATE_CONTENT = false;
 				}
 
 				// Autodownload ME3Explorer updates
@@ -311,7 +313,7 @@ public class ModManager {
 				}
 				{
 					// AutoTOC game files after install
-					String autotocPostInstallStr = settingsini.get("Settings", "runautotocpostinstall");
+					String autotocPostInstallStr = settingsini.get("Settings", "performautotocaftermodinstall");
 					int autotocPostInstallInt = 0;
 					if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
 						try {
@@ -325,13 +327,13 @@ public class ModManager {
 								POST_INSTALL_AUTOTOC_INSTEAD = false;
 							}
 						} catch (NumberFormatException e) {
-							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to disabled");
-							POST_INSTALL_AUTOTOC_INSTEAD = false;
+							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to enabled");
+							POST_INSTALL_AUTOTOC_INSTEAD = true;
 						}
 					}
 				}
 
-				// AutoTOC game files after install
+				// Controller mod fixes
 				String controllerModUserStr = settingsini.get("Settings", "controllermoduser");
 				int controllerModUserInt = 0;
 				if (controllerModUserStr != null && !controllerModUserStr.equals("")) {
@@ -424,6 +426,13 @@ public class ModManager {
 				JOptionPane.showMessageDialog(null,
 						"Mod Manager has detected that it running from a location with a long filepath.\nMod Manager caches files using their relative game directory path.\nYou may consider moving Mod Manager higher up this file system's hierarchy\nto avoid issues with Windows path limitations.",
 						"Windows Path Limitation Warning", JOptionPane.WARNING_MESSAGE);
+			}
+			
+			if (ModManager.getThirdPartyModDBFile().exists()) {
+				ModManager.debugLogger.writeMessage("Loading third party identification service JSON into memory");
+				ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile());
+			} else {
+				ModManager.debugLogger.writeMessage("No third party identification service JSON found. May not have been downloaded yet...");
 			}
 
 			ModManager.debugLogger.writeMessage("========End of startup=========");
@@ -911,7 +920,7 @@ public class ModManager {
 	}
 
 	private static boolean downloadGUITransplanter() {
-		String url = "http://me3tweaks.com/modmanager/tools/GUITRANSPLANTER.7z";
+		String url = "https://me3tweaks.com/modmanager/tools/GUITRANSPLANTER.7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI Transplanter: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());
@@ -965,12 +974,12 @@ public class ModManager {
 	}
 
 	/**
-	 * Returns data/asimods/
+	 * Returns data/me3tweaksservicescache/
 	 * 
 	 * @return
 	 */
-	public static String getASICache() {
-		File file = new File(getDataDir() + "asimods/");
+	public static String getME3TweaksServicesCache() {
+		File file = new File(getDataDir() + "me3tweaksservicescache/");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
@@ -2061,7 +2070,7 @@ public class ModManager {
 	 * @return true if extraction is OK, false if something went wrong
 	 */
 	private static boolean downloadGUILibrary(String dlcname) {
-		String url = "http://me3tweaks.com/modmanager/tools/uilibrary/" + dlcname.toUpperCase() + ".7z";
+		String url = "https://me3tweaks.com/modmanager/tools/uilibrary/" + dlcname.toUpperCase() + ".7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI library: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());
@@ -2127,7 +2136,11 @@ public class ModManager {
 	}
 
 	public static File getASIManifestFile() {
-		return new File(getASICache() + "manifest.xml");
+		return new File(getME3TweaksServicesCache() + "asimanifest.xml");
+	}
+	
+	public static File getThirdPartyModDBFile() {
+		return new File(getME3TweaksServicesCache() + "thirdpartymoddb.json");
 	}
 
 	public static boolean checkIfCMMPatchIsTooLong() {

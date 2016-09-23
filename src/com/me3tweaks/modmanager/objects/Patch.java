@@ -552,7 +552,7 @@ public class Patch implements Comparable<Patch> {
 		sb.append("\tfalse, /*FINALIZER*/\n");
 
 		String serverfolder = patchName.toLowerCase().replaceAll(" - ", "-").replaceAll(" ", "-");
-		sb.append("\t\"http://me3tweaks.com/mixins/library/" + serverfolder + "/patch.jsf\",\n");
+		sb.append("\t\"https://me3tweaks.com/mixins/library/" + serverfolder + "/patch.jsf\",\n");
 		sb.append("\t\"" + patchName + "\",\n");
 		sb.append("\tnull\n");
 		sb.append(");");

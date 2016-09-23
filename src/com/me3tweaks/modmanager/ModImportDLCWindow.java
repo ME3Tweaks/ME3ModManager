@@ -25,7 +25,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 
 public class ModImportDLCWindow extends JDialog implements ListSelectionListener {
 
@@ -72,7 +74,12 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 			//add to list
 			File metacmm = new File(mainDlcDir + File.separator + dir + File.separator + "_metacmm.txt");
 			if (dir.startsWith("DLC_") && !metacmm.exists()) {
-				model.addElement(dir);
+				ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dir);
+				if (tpmi != null) {
+					model.addElement(dir+" ("+tpmi.getModname()+")");
+				} else {
+					model.addElement(dir);
+				}
 			}
 		}
 
@@ -82,7 +89,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 		JPanel panel = new JPanel(new BorderLayout());
 
 		JLabel infoHeader = new JLabel(
-				"<html>Import already-installed mods into Mod Manager to<br>install or uninstall them quickly and easily.<br>Only mods not installed by Mod Manager are listed.</html>");
+				"<html><center>Import already-installed mods into Mod Manager to<br>install or uninstall them quickly and easily.<br>Only mods that have not been installed by Mod Manager are listed.</center></html>");
 		panel.add(infoHeader, BorderLayout.NORTH);
 
 		importButton = new JButton("Import");
@@ -91,8 +98,12 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String folder = mainDlcDir.getAbsolutePath() + File.separator + model.get(dlcModlist.getSelectedIndex());
-				ImportEntryWindow iew = new ImportEntryWindow(ModImportDLCWindow.this, folder);
+				String dlcfoldername = model.get(dlcModlist.getSelectedIndex());
+				if (dlcfoldername.contains(" ")) {
+					dlcfoldername = dlcfoldername.substring(0,dlcfoldername.indexOf(' '));
+				}
+				String folder = mainDlcDir.getAbsolutePath() + File.separator + dlcfoldername;
+				ImportEntryWindow iew = new ImportEntryWindow(ModImportDLCWindow.this, model.get(dlcModlist.getSelectedIndex()), folder);
 				if (iew.getResult() == ImportEntryWindow.OK) {
 					reloadWhenClosed = true;
 				}

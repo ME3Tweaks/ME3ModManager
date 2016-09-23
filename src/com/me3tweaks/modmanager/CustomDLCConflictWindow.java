@@ -585,12 +585,11 @@ public class CustomDLCConflictWindow extends JDialog {
 			double i = 0;
 			for (String transplantFile : transplantFiles) {
 				publish(new ThreadCommand("SET_PROGRESS", null, i / transplantFiles.size()));
-				
-				if (new File(transplantFile).getName().equals("BioD_Nor_203aGalaxyMap.pcc")) {
+/*				if (new File(transplantFile).getName().equals("BioD_Nor_203aGalaxyMap.pcc")) {
 					i++;
 					ModManager.debugLogger.writeMessage("Skipping tranpslant of BioD_Nor_203aGalaxyMap.pcc for crash prevention.");
 					continue;
-				}
+				}*/
 				publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanting SWFs into " + new File(transplantFile).getName()));
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(transplanterpath);

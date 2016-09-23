@@ -57,6 +57,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.me3tweaks.modmanager.modupdater.ManifestModFile;
 import com.me3tweaks.modmanager.objects.ASIMod;
 import com.me3tweaks.modmanager.objects.ASIUpdateGroup;
 import com.me3tweaks.modmanager.objects.InstalledASIMod;
@@ -105,7 +106,7 @@ public class ASIModWindow extends JDialog {
 		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(300, 200));
 		loadLocalManifest(true);
-		loadInstalledASIMods();
+		installedASIs = loadInstalledASIMods(asiDir);
 
 		ArrayList<ASIMod> latestASIs = getLatestASIs();
 
@@ -270,7 +271,7 @@ public class ASIModWindow extends JDialog {
 		return null;
 	}
 
-	private void loadInstalledASIMods() {
+	private static ArrayList<InstalledASIMod> loadInstalledASIMods(File asiDir) {
 		String[] installedASIfiles = asiDir.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
@@ -278,7 +279,7 @@ public class ASIModWindow extends JDialog {
 			}
 		});
 
-		installedASIs = new ArrayList<>();
+		ArrayList<InstalledASIMod> installedASIs = new ArrayList<>();
 		for (String installed : installedASIfiles) {
 			InstalledASIMod iam = new InstalledASIMod();
 			iam.setInstalledPath(ModManager.appendSlash(asiDir.getAbsolutePath()) + installed);
@@ -291,6 +292,8 @@ public class ASIModWindow extends JDialog {
 				ModManager.debugLogger.writeErrorWithException("ASI mod is installed but unable to get hash: " + installed, e1);
 			}
 		}
+
+		return installedASIs;
 	}
 
 	/**
@@ -602,7 +605,7 @@ public class ASIModWindow extends JDialog {
 								}
 							}
 						}
-						loadInstalledASIMods();
+						installedASIs = loadInstalledASIMods(asiDir);
 						dispose();
 					}
 				}
@@ -710,7 +713,7 @@ public class ASIModWindow extends JDialog {
 		public void done() {
 			//TODO: RELOAD TABLE INFO?
 			try {
-				loadInstalledASIMods();
+				installedASIs = loadInstalledASIMods(asiDir);
 				int retval = get();
 				//OK
 				TableModel model = table.getModel();
@@ -754,7 +757,7 @@ public class ASIModWindow extends JDialog {
 			amw.asiDir.mkdirs();
 		}
 		amw.loadLocalManifest(true);
-		amw.loadInstalledASIMods();
+		amw.installedASIs = amw.loadInstalledASIMods(amw.asiDir);
 
 		ASIUpdateGroup ug = null;
 		for (ASIUpdateGroup g : amw.updategroups) {
@@ -776,5 +779,33 @@ public class ASIModWindow extends JDialog {
 			ModManager.debugLogger.writeError("Update group is not present in the manifest: " + group + ". An ASI mod in this group cannot exist. Please report this to femshep.");
 		}
 		return false;
+	}
+
+	public static ArrayList<InstalledASIMod> getOutdatedASIMods(String biogamedir) {
+		ArrayList<InstalledASIMod> outdatedasi = new ArrayList<>();
+		ASIModWindow amw = new ASIModWindow();
+		amw.gamedir = new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent();
+		String asidir = ModManager.appendSlash(amw.gamedir) + "Binaries/win32/asi";
+		amw.asiDir = new File(asidir);
+		if (!amw.asiDir.exists()) {
+			amw.asiDir.mkdirs();
+		}
+		amw.loadLocalManifest(true);
+		amw.installedASIs = loadInstalledASIMods(amw.asiDir);
+		ArrayList<ASIMod> latestASIs = amw.getLatestASIs();
+		ModManager.debugLogger.writeMessage("Looking for outdated versions of installed ASIs...");
+		for (int i = 0; i < latestASIs.size(); i++) {
+			ASIMod mod = latestASIs.get(i);
+			if (amw.getInstalledModByHash(mod.getHash()) == null) {
+				//check for it in the update group...
+				InstalledASIMod outdatedmod = amw.findOutdatedInstalledModByManifestMod(mod);
+				if (outdatedmod != null) {
+					ModManager.debugLogger.writeMessage("Found outdated ASI "+outdatedmod);
+					outdatedasi.add(outdatedmod);
+				}
+			}
+		}
+		ModManager.debugLogger.writeMessage("Outdated ASI check has completed.");
+		return outdatedasi;
 	}
 }

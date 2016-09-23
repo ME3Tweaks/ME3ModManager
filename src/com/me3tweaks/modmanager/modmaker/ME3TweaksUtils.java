@@ -7,10 +7,15 @@ import java.net.URL;
 import java.util.HashMap;
 
 import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 public class ME3TweaksUtils {
 	public static final int FILENAME = 0;
@@ -50,7 +55,7 @@ public class ME3TweaksUtils {
 			break;
 		}
 
-		String link = "http://me3tweaks.com/coal/" + filename;
+		String link = "https://me3tweaks.com/coal/" + filename;
 		File target = new File(ModManager.getPristineDir() + standardFolder + File.separator + filename);
 		target.delete();
 		try {
@@ -94,7 +99,7 @@ public class ME3TweaksUtils {
 			break;
 		}
 
-		String link = "http://me3tweaks.com/toc/" + standardFolder + "/" + filename;
+		String link = "https://me3tweaks.com/toc/" + standardFolder + "/" + filename;
 		File target = new File(ModManager.getPristineDir() + standardFolder + File.separator + filename);
 		target.delete();
 		try {
@@ -111,13 +116,14 @@ public class ME3TweaksUtils {
 	}
 
 	/**
-	 * Downloads the JDiffTools if they don't exist in the tools dir. If they do then this method does nothing.
+	 * Downloads the JDiffTools if they don't exist in the tools dir. If they do
+	 * then this method does nothing.
 	 */
 	public static void downloadJDiffTools() {
 		ModManager.debugLogger.writeMessage("Downloading JoJo Diff Tools");
 
-		String difflink = "http://me3tweaks.com/modmanager/tools/jdiff.exe";
-		String patchlink = "http://me3tweaks.com/modmanager/tools/jptch.exe";
+		String difflink = "https://me3tweaks.com/modmanager/tools/jdiff.exe";
+		String patchlink = "https://me3tweaks.com/modmanager/tools/jptch.exe";
 
 		File diffTarget = new File(ModManager.getToolsDir() + "jdiff.exe");
 		File patchTarget = new File(ModManager.getToolsDir() + "jptch.exe");
@@ -294,11 +300,14 @@ public class ME3TweaksUtils {
 			return null;
 		}
 	}
-	
+
 	/**
-	 * Converts ModDesc.ini headers and job names into DLC folder names. These should be used for making mod folders. This is not the folders in the game that a DLC is placed in.
+	 * Converts ModDesc.ini headers and job names into DLC folder names. These
+	 * should be used for making mod folders. This is not the folders in the
+	 * game that a DLC is placed in.
 	 * 
-	 * @param header Header to lookup
+	 * @param header
+	 *            Header to lookup
 	 * @return local DLC name, such as MP1 or HEN_PR
 	 */
 	public static String headerNameToShortDLCFolderName(String header) {
@@ -558,7 +567,7 @@ public class ME3TweaksUtils {
 		tocHashMap.put(ModType.DH1, "");
 		return tocHashMap;
 	}
-	
+
 	/**
 	 * Converts the Coalesced.bin filenames to their respective PCConsoleTOC
 	 * directory in the .sfar files.
@@ -609,5 +618,53 @@ public class ME3TweaksUtils {
 			ModManager.debugLogger.writeMessage("[coalFileNameToDLCTOCDIR] UNRECOGNIZED COAL FILE: " + coalName);
 			return null;
 		}
+	}
+
+	/**
+	 * Retrieves a Custom DLC mod's name by using the ME3Tweaks Third Party Mod Name Service
+	 * @param customdlcfoldername Custom DLC Folder name
+	 * @return Unknown Mod if not found, otherwise the listed name.
+	 */
+	public static String getThirdPartyModName(String customdlcfoldername) {
+		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
+			return "Unknown Mod";
+		}
+		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: "+customdlcfoldername);
+		try {
+			JSONParser parser = new JSONParser();
+			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);
+			JSONObject modinfo = (JSONObject) dbObj.get(customdlcfoldername.toUpperCase());
+			if (modinfo == null) {
+				return "Unknown Mod";
+			} else {
+				return (String) modinfo.get("modname");
+			}
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return "Unknown Mod";
+	}
+	
+	public static ThirdPartyModInfo getThirdPartyModInfo(String customdlcfoldername) {
+		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
+			return null;
+		}
+		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: "+customdlcfoldername);
+		try {
+			JSONParser parser = new JSONParser();
+			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);
+			JSONObject modinfo = (JSONObject) dbObj.get(customdlcfoldername.toUpperCase());
+			if (modinfo == null) {
+				return null;
+			} else {
+				return new ThirdPartyModInfo(customdlcfoldername,modinfo);
+			}
+		} catch (ParseException e) {
+			ModManager.debugLogger.writeErrorWithException("Failed to parse 3rd party mod information: ", e);
+		}
+
+		return null;
 	}
 }

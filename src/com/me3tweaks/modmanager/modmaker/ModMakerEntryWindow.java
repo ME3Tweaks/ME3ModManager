@@ -454,6 +454,6 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	 * @return
 	 */
 	private boolean installBypass() {
-		return ModManager.installLauncherWV(biogameDir);
+		return ModManager.installBinkw32Bypass(biogameDir, false);
 	}
 }

@@ -114,6 +114,10 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 		JScrollPane topListScroller = new JScrollPane(mod1Panel,
 				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		
+		bottomListScroller.getVerticalScrollBar().setUnitIncrement(16);
+		topListScroller.getVerticalScrollBar().setUnitIncrement(16);
+		
 		topListScroller.setBorder(BorderFactory.createMatteBorder(3, 0, 3, 3, Color.BLUE));
 		bottomListScroller.setBorder(BorderFactory.createMatteBorder(3, 3, 3, 0, Color.ORANGE));
 		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,topListScroller,bottomListScroller);

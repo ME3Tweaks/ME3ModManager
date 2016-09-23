@@ -107,6 +107,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.languages = languages;
 		setupWindow();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiling ModMaker Mod...");
 		new ModDownloadWorker().execute();
 
 		if (!error) {
@@ -1873,10 +1874,10 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
 							//loader installed, no balance changes replacer
-							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > Manage ASI Code Injection Mods.</div></html>", "Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>", "Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 						}
 					} else {
-						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > Manage ASI Code Injection Mods.</div></html>", "ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>", "ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 					}
 					break;
 				}

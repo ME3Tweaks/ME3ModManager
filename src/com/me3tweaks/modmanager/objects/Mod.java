@@ -41,6 +41,7 @@ public class Mod implements Comparable<Mod> {
 	private int modmakerCode = 0;
 	private String modSite;
 	private String modmp;
+	private boolean emptyModIsOK;
 	private double compiledAgainstModmakerVersion;
 	private String modVersion;
 	public double modCMMVer = 1.0;
@@ -55,6 +56,7 @@ public class Mod implements Comparable<Mod> {
 	private ArrayList<String> sideloadOnlyTargets = new ArrayList<>();
 	private String sideloadURL;
 	private ArrayList<String> blacklistedFiles = new ArrayList<>();
+	private ArrayList<String> outdatedDLCModules = new ArrayList<>();
 
 	public String getServerModFolder() {
 		return serverModFolder;
@@ -65,7 +67,7 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	/**
-	 * Creates a new mod object.
+	 * Creates a new mod object from a moddesc file and loads it for use.
 	 * 
 	 * @param filepath
 	 *            Path to the moddesc.ini file.
@@ -74,6 +76,18 @@ public class Mod implements Comparable<Mod> {
 		if (filepath == null) {
 			return;
 		}
+		loadMod(filepath);
+	}
+
+	/**
+	 * Reads moddesc and sets up the mod object. This is mainly used from the
+	 * main Mod(moddesc.ini) method. This method was externalized to allow for
+	 * setting up the the mod object before this method is processed.
+	 * 
+	 * @param filepath
+	 *            Moddesc.ini file to load
+	 */
+	public void loadMod(String filepath) {
 		modifyString = "";
 		modDescFile = new File(filepath);
 		setModPath(ModManager.appendSlash(modDescFile.getParent()));
@@ -148,6 +162,7 @@ public class Mod implements Comparable<Mod> {
 		failedReason = mod.failedReason;
 		serverModFolder = mod.serverModFolder;
 		sideloadOnlyTargets = new ArrayList<String>();
+		outdatedDLCModules = new ArrayList<String>();
 		sideloadURL = mod.sideloadURL;
 		alternateFiles = new ArrayList<AlternateFile>();
 		requiredPatches = new ArrayList<Patch>();
@@ -166,6 +181,9 @@ public class Mod implements Comparable<Mod> {
 		}
 		for (ModDelta str : mod.modDeltas) {
 			modDeltas.add(new ModDelta(str));
+		}
+		for (String str : mod.outdatedDLCModules) {
+			outdatedDLCModules.add(str);
 		}
 	}
 
@@ -624,8 +642,8 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 			}
-			if (modCMMVer >= 4.32) {
-				System.out.println("Mod Manager Version >= 4.32, looking for altdlc header");
+			if (modCMMVer >= 4.4) {
+				System.out.println("Mod Manager Version >= 4.4, looking for altdlc header");
 				String altText = modini.get("CUSTOMDLC", "altdlc");
 				if (altText != null && !altText.equals("")) {
 					ArrayList<String> alts = ValueParserLib.getSplitValues(altText);
@@ -643,6 +661,30 @@ public class Mod implements Comparable<Mod> {
 						ModManager.debugLogger.writeMessageConditionally("Alternate CustomDLC specified: " + alt.toString(), ModManager.LOG_MOD_INIT);
 						alternateCustomDLC.add(altdlc);
 					}
+				}
+
+				String outdatedDLC = modini.get("CUSTOMDLC", "outdatedcustomdlc");
+				if (outdatedDLC != null && !outdatedDLC.equals("")) {
+					StringTokenizer outdatedDLCTok = new StringTokenizer(outdatedDLC, ";");
+					ArrayList<String> official = ModType.getStandardDLCFolders();
+					while (outdatedDLCTok.hasMoreTokens()) {
+						String outdateddlcmodule = outdatedDLCTok.nextToken();
+						for (String officialdlc : official) {
+							officialdlc = officialdlc.toUpperCase();
+							if (officialdlc.equals(outdateddlcmodule)) {
+								ModManager.debugLogger.writeError("This mod lists an outdated DLC that should be deleted that is an official Mass Effect 3 DLC: " + officialdlc
+										+ ". This is not allowed as it can lead to users deleting officially purchased DLC. Marking mod as invalid.");
+								setFailedReason("This mod lists an outdated DLC that should be deleted that is an official Mass Effect 3 DLC: " + officialdlc
+										+ ". This is not allowed as it can lead to users deleting officially purchased DLC.");
+								return;
+							}
+						}
+						ModManager.debugLogger.writeMessageConditionally(
+								"Mod lists outdated DLC module that will be deleted on installation if the user says OK: " + outdateddlcmodule, ModManager.LOG_MOD_INIT);
+						getOutdatedDLCModules().add(outdateddlcmodule);
+					}
+				} else {
+					ModManager.debugLogger.writeMessageConditionally("Mod has no outdated custom dlc listed to remove on install", ModManager.LOG_MOD_INIT);
 				}
 			}
 		}
@@ -686,6 +728,12 @@ public class Mod implements Comparable<Mod> {
 		if (jobs.size() > 0) {
 			ModManager.debugLogger.writeMessageConditionally("Verified source files, mod should be OK to install", ModManager.LOG_MOD_INIT);
 			validMod = true;
+		} else if (jobs.size() == 0 && emptyModIsOK) {
+			ModManager.debugLogger.writeMessage("Mod is empty, but we said it was OK to load.");
+			validMod = true;
+		} else {
+			ModManager.debugLogger.writeError("Mod has no tasks. This mod does nothing. Marking as invalid");
+			setFailedReason("This mod has no installation tasks and does nothing. Add some tasks or delete this mod.");
 		}
 
 		//modmaker compiledagainst flag (1.5+)
@@ -2241,7 +2289,8 @@ public class Mod implements Comparable<Mod> {
 				String destFilePath = ModManager.appendSlash(destdlc) + relativePath;
 				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false))
 						&& !ignoreLoadErrors)) {
-					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc+". The issue occured when attempting to add the file "+file+" to the mod.");
+					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc
+							+ ". The issue occured when attempting to add the file " + file + " to the mod.");
 					ModManager.debugLogger.writeError("Failed to add file to replace with ALTERNATE CUSTOM DLC (File likely does not exist), marking as invalid.");
 					return;
 				}
@@ -2257,7 +2306,8 @@ public class Mod implements Comparable<Mod> {
 				String destFilePath = ModManager.appendSlash(destdlc) + relativePath;
 				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false))
 						&& !ignoreLoadErrors)) {
-					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc+". The issue occured when attempting to add the file in an additional DLC to the mod: "+file+".");
+					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc
+							+ ". The issue occured when attempting to add the file in an additional DLC to the mod: " + file + ".");
 					ModManager.debugLogger.writeError("Failed to add file to replace with ADD ALTERNATE CUSTOM DLC (File likely does not exist), marking as invalid.");
 					return;
 				}
@@ -2371,4 +2421,21 @@ public class Mod implements Comparable<Mod> {
 	public void setBlacklistedFiles(ArrayList<String> blacklistedFiles) {
 		this.blacklistedFiles = blacklistedFiles;
 	}
+
+	public boolean isEmptyModIsOK() {
+		return emptyModIsOK;
+	}
+
+	public void setEmptyModIsOK(boolean emptyModIsOK) {
+		this.emptyModIsOK = emptyModIsOK;
+	}
+
+	public ArrayList<String> getOutdatedDLCModules() {
+		return outdatedDLCModules;
+	}
+
+	public void setOutdatedDLCModules(ArrayList<String> outdatedDLCModules) {
+		this.outdatedDLCModules = outdatedDLCModules;
+	}
+
 }

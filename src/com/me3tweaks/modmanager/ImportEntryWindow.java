@@ -52,10 +52,12 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
+import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -74,12 +76,14 @@ public class ImportEntryWindow extends JDialog {
 	private String dlcModName;
 	private int result = NO_ANSWER;
 	private JDialog callingWindow;
+	private String importDisplayStr;
 
-	public ImportEntryWindow(JDialog modImportWindow, String importPath) {
+	public ImportEntryWindow(JDialog modImportWindow, String diplayname, String importPath) {
+		ModManager.debugLogger.writeMessage("Opening Mod Import Window (Data Entry");
+		this.importDisplayStr = diplayname;
 		this.importPath = importPath;
 		this.callingWindow = modImportWindow;
 		setupWindow(modImportWindow);
-		new DLCDataFetcher(importPath).execute();
 		setVisible(true);
 	}
 
@@ -96,7 +100,7 @@ public class ImportEntryWindow extends JDialog {
 
 		JPanel panel = new JPanel(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
-		JLabel importHeader = new JLabel("<html><div style='text-align: center;'>Importing DLC Mod<br>" + dlcModName + "</div></html>", SwingConstants.CENTER);
+		JLabel importHeader = new JLabel("<html><div style='text-align: center;'>Importing DLC Mod<br>" + importDisplayStr + "</div></html>", SwingConstants.CENTER);
 		int row = 0;
 		c.gridx = 0;
 		c.gridy = row;
@@ -158,7 +162,7 @@ public class ImportEntryWindow extends JDialog {
 		telemetryCheckbox = new JCheckBox("Send this info to ME3Tweaks");
 		telemetryCheckbox.setSelected(true);
 		telemetryCheckbox.setToolTipText(
-				"<html><div style='width: 250px'>Sending this information to ME3Tweaks helps build a database of Non-Mod Manager mods that will automatically fill this information out when another user is importing it.<br>Nothing except the above information and the Mount.dlc mount priority value is submitted.</div></html>");
+				"<html><div style='width: 250px'>Sending this information to ME3Tweaks helps build a database of Non-Mod Manager mods that will automatically fill this information out in the Mod Manager interface for users.<br>Nothing except the above information and the Mount.dlc mount information is submitted.</div></html>");
 		importButton = new JButton("Import into Mod Manager");
 		importButton.addActionListener(new ActionListener() {
 
@@ -188,60 +192,22 @@ public class ImportEntryWindow extends JDialog {
 
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 
+		//check if we already got this info via 3rdparty telemetry
+		ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(new File(importPath).getName());
+		if (tpmi != null) {
+			modNameField.setText(tpmi.getModname());
+			modAuthorField.setText(tpmi.getModauthor());
+			modSiteField.setText(tpmi.getModsite());
+			modDescField.setText(tpmi.getModdescription());
+			telemetryCheckbox.setEnabled(false);
+			telemetryCheckbox.setSelected(false);
+			telemetryCheckbox.setText("Info for this mod already on ME3Tweaks");
+			setTitle("Importing "+tpmi.getModname());
+		}
+
 		add(panel);
 		pack();
 		setLocationRelativeTo(callingDialog);
-	}
-
-	class DLCDataFetcher extends SwingWorker<Void, Void> {
-
-		String foldername;
-		String modinfo;
-
-		public DLCDataFetcher(String importPath) {
-			foldername = new File(importPath).getName();
-		}
-
-		@Override
-		protected Void doInBackground() throws Exception {
-			modinfo = IOUtils.toString(new URL("https://me3tweaks.com/mods/dlc_mods/dlcinforequest?dlc_folder_name=" + foldername));
-			return null;
-		}
-
-		@Override
-		public void done() {
-			if (modinfo != null) {
-				//parse doc...
-				System.out.println(modinfo);
-				try {
-					DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-					ModManager.debugLogger.writeMessage("Downloaded data for " + foldername + " from ME3Tweaks.");
-					DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-					Document doc = dBuilder.parse(new InputSource(new ByteArrayInputStream(modinfo.getBytes("utf-8"))));
-
-					XPathFactory xPathfactory = XPathFactory.newInstance();
-					XPath xpath = xPathfactory.newXPath();
-					String modname = xpath.evaluate("/ME3TweaksDLCData/ModName", doc);
-					String moddev = xpath.evaluate("/ME3TweaksDLCData/ModDev", doc);
-					String modsite = xpath.evaluate("/ME3TweaksDLCData/ModSite", doc);
-					String moddesc = xpath.evaluate("/ME3TweaksDLCData/ModDesc", doc);
-
-					modNameField.setText(modname);
-					modAuthorField.setText(moddev);
-					modSiteField.setText(modsite);
-					modDescField.setText(moddesc);
-					if (!modname.equals("") && !moddev.equals("")) {
-						telemetryCheckbox.setEnabled(false);
-						telemetryCheckbox.setSelected(false);
-						telemetryCheckbox.setText("Info for this mod already on ME3Tweaks");
-					}
-				} catch (XPathExpressionException | ParserConfigurationException | SAXException | IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-
 	}
 
 	class ImportWorker extends SwingWorker<Void, Void> {
