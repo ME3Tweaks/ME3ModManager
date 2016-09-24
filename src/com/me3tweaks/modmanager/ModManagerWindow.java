@@ -485,7 +485,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					for (InstalledASIMod asi : outdated) {
 						message += "\n - " + asi.getFilename();
 					}
-					message = "\n\nOpen the ASI Mod Management window to update them under Mod Management.";
+					message += "\n\nOpen the ASI Mod Management window to update them under Mod Management.";
 					JOptionPane.showMessageDialog(ModManagerWindow.this, message, "ASI mod update available", JOptionPane.INFORMATION_MESSAGE);
 					break;
 				}

@@ -22,10 +22,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -2150,5 +2152,29 @@ public class ModManager {
 	public static boolean areBalanceChangesInstalled(String bioGameDir) {
 		File bcf = new File((new File(bioGameDir).getParent()) + "/Binaries/win32/asi/ServerCoalesced.bin");
 		return bcf.exists();
+	}
+
+	/**
+	 * Returns a file object taht points to a new log file that will be written to disk
+	 * @return
+	 */
+	public static File getNewLogFile(String fname) {
+		if (fname.equals("")) {
+			fname = "Log";
+		}
+		// TODO Auto-generated method stub
+		Date date = new Date();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH.mm") ;
+		String datestr = dateFormat.format(date);
+		String filepath = getLogsDir()+fname+"-ModManager"+ModManager.VERSION+"_b"+ModManager.BUILD_NUMBER+" "+datestr+".txt";
+		System.out.println(filepath);
+		System.out.println("break");
+		return new File(filepath);
+	}
+
+	private static String getLogsDir() {
+		File file = new File(getDataDir() + "logs/");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
 	}
 }

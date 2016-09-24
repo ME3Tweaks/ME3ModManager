@@ -263,10 +263,14 @@ public class AutoTocWindow extends JDialog {
 					}
 
 					//break into batches
-					for (String addFile : job.addFiles) {
+/*					for (String addFile : job.addFiles) {
 						String filename = FilenameUtils.getName(addFile);
 						if (filename.equals("PCConsoleTOC.bin")) {
 							continue; //this doens't need updated.
+						}
+						if (!addFile.startsWith("/BIOGame/")) {
+							System.out.println(addFile);
+							continue;
 						}
 						modulePath = FilenameUtils.getFullPath(addFile);
 						tbd.addNameSizePair(filename, (new File(addFile)).length());
@@ -276,7 +280,9 @@ public class AutoTocWindow extends JDialog {
 							tbd = new TocBatchDescriptor();
 							numJobsInCurrentBatch = 0;
 						}
-					}
+					}*/
+					
+					//Autotoc once installed. Don't bother with add files otherwise
 
 					if (numJobsInCurrentBatch > 0) {
 						batchJobs.add(tbd); //enter last batch task
@@ -301,13 +307,12 @@ public class AutoTocWindow extends JDialog {
 						}
 						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 
-						ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Performing a batch TOC update on the following files:");
 						String str = "";
 						for (SimpleEntry<String, Long> nsp : batchJob.getNameSizePairs()) {
 							str += nsp.getKey() + " " + nsp.getValue();
 							str += "\n";
 						}
-						ModManager.debugLogger.writeMessage(str);
+						ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Performing a batch TOC update on the following files:\n"+str);
 
 						int returncode = 1;
 						ProcessBuilder pb = new ProcessBuilder(command);
@@ -325,6 +330,9 @@ public class AutoTocWindow extends JDialog {
 							publish(Integer.toString(completed.get()));
 						}
 					}
+					return true;
+				}
+				if (job.getFilesToReplace().size() == 0) {
 					return true;
 				}
 				
