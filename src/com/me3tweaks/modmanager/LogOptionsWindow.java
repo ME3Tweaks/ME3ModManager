@@ -29,8 +29,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
@@ -52,13 +54,16 @@ import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
+import com.me3tweaks.modmanager.ui.HintTextAreaUI;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 
 @SuppressWarnings("serial")
 public class LogOptionsWindow extends JDialog {
 	JCheckBox sessionoption;
+	JTextField fdescription;
 	private JCheckBox installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile;
+	JCheckBox[] options;
 
 	public LogOptionsWindow(JFrame callingWindow) {
 		setupWindow();
@@ -79,19 +84,19 @@ public class LogOptionsWindow extends JDialog {
 		optionsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		JLabel infoLabel = new JLabel("Select what information to include in this log file.");
 		JTextField fname = new JTextField();
-		fname.setUI(new HintTextFieldUI("Enter a custom file name for saving"));
+		fname.setUI(new HintTextFieldUI("Enter a custom file name for saving (optional)"));
+		fdescription = new JTextField();
+		fdescription.setUI(new HintTextFieldUI("Enter a short description why this log is being made"));
 		sessionoption = new JCheckBox("Mod Manager Session Log");
 		sessionoption.setToolTipText("<html>Include messages outputted from Mod Manager during this session. Includes system information, ASI, and mod manager activity</html>");
 		sessionoption.setSelected(true);
 
 		installeddlcoption = new JCheckBox("Installed DLC Information");
-		installeddlcoption.setToolTipText(
-				"<html>Include a list of all installed DLC. This is almost always recommended as its is very helpful when troubleshooting</html>");
+		installeddlcoption.setToolTipText("<html>Include a list of all installed DLC. This is almost always recommended as its is very helpful when troubleshooting</html>");
 		installeddlcoption.setSelected(true);
 
 		dlcbypassinformation = new JCheckBox("DLC Bypass Information");
-		dlcbypassinformation.setToolTipText(
-				"<html>Include information about the installed DLC bypass, if any. Used for loading modified DLC</html>");
+		dlcbypassinformation.setToolTipText("<html>Include information about the installed DLC bypass, if any. Used for loading modified DLC</html>");
 		dlcbypassinformation.setSelected(true);
 
 		filetreeoption = new JCheckBox("Game File Tree (will take time to generate)");
@@ -116,6 +121,17 @@ public class LogOptionsWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				boolean somethingChecked = false;
+				for (JCheckBox cb : options) {
+					if (cb.isSelected()) {
+						somethingChecked = true;
+						break;
+					}
+				}
+				if (!somethingChecked) {
+					JOptionPane.showMessageDialog(LogOptionsWindow.this, "You must check at least one box to generate a log.", "No log options selected", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				shareViaPastebin.setEnabled(false);
 				shareViaFile.setEnabled(false);
 				// TODO Auto-generated method stub
@@ -127,6 +143,17 @@ public class LogOptionsWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				boolean somethingChecked = false;
+				for (JCheckBox cb : options) {
+					if (cb.isSelected()) {
+						somethingChecked = true;
+						break;
+					}
+				}
+				if (!somethingChecked) {
+					JOptionPane.showMessageDialog(LogOptionsWindow.this, "You must check at least one box to generate a log.", "No log options selected", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				// TODO Auto-generated method stub
 				shareViaPastebin.setEnabled(false);
 				shareViaFile.setEnabled(false);
@@ -145,6 +172,8 @@ public class LogOptionsWindow extends JDialog {
 				}
 			}
 		});
+		
+		options = new JCheckBox[] { installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile };
 
 		sessionoption.setAlignmentX(Component.LEFT_ALIGNMENT);
 		installeddlcoption.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -154,6 +183,7 @@ public class LogOptionsWindow extends JDialog {
 		me3logfile.setAlignmentX(Component.LEFT_ALIGNMENT);
 		filetreeoption.setAlignmentX(Component.LEFT_ALIGNMENT);
 		fname.setAlignmentX(Component.LEFT_ALIGNMENT);
+		fdescription.setAlignmentX(Component.LEFT_ALIGNMENT);
 		infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		fname.setAlignmentX(Component.LEFT_ALIGNMENT);
 		shareViaFile.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -168,7 +198,8 @@ public class LogOptionsWindow extends JDialog {
 		optionsPanel.add(me3logfile);
 		optionsPanel.add(filetreeoption);
 		optionsPanel.add(fname);
-		
+		optionsPanel.add(fdescription);
+
 		JLabel privacyLabel = new JLabel(
 				"<html><div style='width: 300px'>The Mod Manager log will contain minor identifying information such as your current logon username, directory paths and system environment variables. PasteBin posts are unlisted and are *never* shared to third parties by ME3Tweaks.</div></html>");
 		privacyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -186,8 +217,12 @@ public class LogOptionsWindow extends JDialog {
 	}
 
 	private String generateLog() {
-		String log = "";
-
+		String desc = "User did not enter a description of this log.";
+		if (!fdescription.getText().equals("")) {
+			desc = fdescription.getText();
+		}
+		String log = desc + "\n\n";
+		
 		if (installeddlcoption.isSelected()) {
 			log += "=========[INSTALLEDLC] Installed DLC =============\n";
 			log += getInstalledDLC();
@@ -195,10 +230,10 @@ public class LogOptionsWindow extends JDialog {
 
 			File executable = new File(gamedir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
 			int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
-			log += "Game version is 1.0"+minorBuildNum+"\n.";
+			log += "Game version is 1.0" + minorBuildNum + ". ";
 			if (minorBuildNum < 5) {
-				log += "Game is likely pirated since its not at the standard version that origin updates to.\n";
-			} else 	if (minorBuildNum > 5) {
+				log += "Game is likely pirated since its not at the standard version that Origin updates to.\n";
+			} else if (minorBuildNum > 5) {
 				log += "Game is likely from the UK as its using the UK specific game version 1.06. User may consider downgrading to Mass Effect 3 1.05 via this URL if issues occur: https://me3tweaks.com/forums/viewtopic.php?f=5&t=20\n";
 			} else {
 				log += "This is the standard patch version for this game.\n";
@@ -216,7 +251,7 @@ public class LogOptionsWindow extends JDialog {
 					String lastmodified = sdf.format(logfile.lastModified());
 					log += "The following ME3Logger contents were in a file that has a modification date of " + lastmodified + ".\n\n";
 					try {
-						log += FileUtils.readFileToString(logfile,Charset.defaultCharset()); //MAY CAUSE ISSUES...
+						log += FileUtils.readFileToString(logfile, Charset.defaultCharset()); //MAY CAUSE ISSUES...
 						log += "\n";
 					} catch (IOException e) {
 						log += "Error reading ME3Logger file. This shouldn't happen though...\n";
@@ -332,6 +367,8 @@ public class LogOptionsWindow extends JDialog {
 		String installeddlcstr = "";
 		if (ModManagerWindow.validateBIOGameDir()) {
 			File mainDlcDir = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "DLC" + File.separator);
+			File testpatch = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "Patches"+File.separator+"PCConsole" + File.separator + "Patch_001.sfar");
+
 			String[] directories = mainDlcDir.list(new FilenameFilter() {
 				@Override
 				public boolean accept(File current, String name) {
@@ -350,7 +387,7 @@ public class LogOptionsWindow extends JDialog {
 					if (metacmm.exists()) {
 						String metaname = "";
 						try {
-							metaname = FileUtils.readFileToString(metacmm,Charset.defaultCharset());
+							metaname = FileUtils.readFileToString(metacmm, Charset.defaultCharset());
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -368,6 +405,11 @@ public class LogOptionsWindow extends JDialog {
 						}
 					}
 				}
+			}
+			if (testpatch.exists()) {
+				installeddlcstr += "Patch_001.sfar (TESTPATCH) is installed.\n";
+			} else {
+				installeddlcstr += "Patch_001.sfar (TESTPATCH) is not installed. This is usually missing if the game is not up to date or is a cracked version\n";
 			}
 		} else {
 			return "Invalid BIOGame Directory: " + ModManagerWindow.GetBioGameDir() + "\n";
