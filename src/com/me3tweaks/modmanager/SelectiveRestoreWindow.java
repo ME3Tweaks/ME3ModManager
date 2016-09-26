@@ -98,7 +98,10 @@ public class SelectiveRestoreWindow extends JDialog {
 		//TABLE
 		Action restoreSfar = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
-
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore SFARs.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String header = (String) table.getModel().getValueAt(modelRow, COL_HUMNAME);
@@ -109,6 +112,10 @@ public class SelectiveRestoreWindow extends JDialog {
 		};
 		Action restoreUnpacked = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore unpacked files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String header = (String) table.getModel().getValueAt(modelRow, COL_HUMNAME);
@@ -119,6 +126,10 @@ public class SelectiveRestoreWindow extends JDialog {
 		};
 		Action deleteUnpacked = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete unpacked files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String header = (String) table.getModel().getValueAt(modelRow, COL_HUMNAME);
@@ -178,6 +189,10 @@ public class SelectiveRestoreWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					if (ModManager.isMassEffect3Running()) {
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete the local server balance changes file.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+						return;
+					}
 					new RestoreFilesWindow(BioGameDir, RestoreMode.BALANCE_CHANGES);
 					if (ModManager.areBalanceChangesInstalled(BioGameDir)) {
 						serverCoalescedButton.setEnabled(true);

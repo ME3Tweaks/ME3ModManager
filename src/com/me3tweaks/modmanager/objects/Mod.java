@@ -877,7 +877,6 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 		}
-
 		generateModDisplayDescription();
 		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for " + getModName());
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------END OF " + modName + "--------------------------", ModManager.LOG_MOD_INIT);

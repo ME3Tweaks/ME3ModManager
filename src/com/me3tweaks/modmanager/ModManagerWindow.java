@@ -240,8 +240,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.pack();
 		setLocationRelativeTo(null);
 		if (isUpdate) {
-			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER + ").", "Update Complete",
-					JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER
+					+ ").\nYou can access the changelog via the Help menu.", "Update Complete", JOptionPane.INFORMATION_MESSAGE);
 		}
 
 		// clear pending updates (done via sideload update)
@@ -592,6 +592,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								// the
 								// dialog.
 								ModManager.debugLogger.writeMessage("Advertising build " + latest_build);
+								settingsini.remove("Settings", "nextupdatedialogbuild");
+								settingsini.store();
 								showUpdate = true;
 							} else {
 								ModManager.debugLogger.writeMessage("User isn't seeing updates until build " + build_check);
@@ -1707,6 +1709,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else
 
 		if (e.getSource() == restoreRevertCoal) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
 				restoreCoalesced(fieldBiogameDir.getText());
 			} else {
@@ -1826,6 +1832,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else
 
 		if (e.getSource() == restoreRevertEverything) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
 				if (validateBIOGameDir()) {
 					if (JOptionPane.showConfirmDialog(this,
@@ -1908,23 +1918,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeMessage("User selected exit from Actions Menu");
 			System.exit(0);
 		} else if (e.getSource() == buttonApplyMod) {
-			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Applying selected mod: Biogame Dir is valid.");
-				if (ModManager.validateNETFrameworkIsInstalled()) {
-					updateApplyButton();
-					ModManager.debugLogger.writeMessage(".NET is installed");
-					applyMod();
+			if (!ModManager.isMassEffect3Running()) {
+				if (validateBIOGameDir()) {
+					ModManager.debugLogger.writeMessage("Applying selected mod: Biogame Dir is valid.");
+					if (ModManager.validateNETFrameworkIsInstalled()) {
+						updateApplyButton();
+						ModManager.debugLogger.writeMessage(".NET is installed");
+						applyMod();
+					} else {
+						updateApplyButton();
+						labelStatus.setText(".NET Framework 4.5 or higher is missing");
+						ModManager.debugLogger.writeMessage("Applying selected mod: .NET is not installed");
+						new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to install mods.");
+					}
 				} else {
-					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
-					ModManager.debugLogger.writeMessage("Applying selected mod: .NET is not installed");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to install mods.");
+					labelStatus.setText("Installing a mod requires valid BIOGame path");
+					labelStatus.setVisible(true);
+					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			} else {
-				labelStatus.setText("Installing a mod requires valid BIOGame path");
-				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "Mass Effect 3 must be closed before you can install a mod.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 			}
 		} else
 
@@ -2252,6 +2266,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == toolsInstallBinkw32asi) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 ASI DLC bypass.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
 				if (validateVC2012()) {
 					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
@@ -2280,8 +2298,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == toolsInstallBinkw32) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 DLC bypass.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Installing manual Binkw32 bypass.");
+				ModManager.debugLogger.writeMessage("Installing manual Binkw32 bypass (standard).");
 				installBinkw32Bypass(false);
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
@@ -2291,6 +2313,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 
 		} else if (e.getSource() == toolsUninstallBinkw32) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall a binkw32 DLC bypass.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Uninstalling manual binkw32 bypass.");
 				uninstallBinkw32Bypass();

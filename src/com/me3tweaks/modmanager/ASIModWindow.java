@@ -165,7 +165,7 @@ public class ASIModWindow extends JDialog {
 				//String filepath = ModManager.appendSlash(asiDir.getAbsolutePath()) + asifile;
 				Object[] row = new Object[3];
 				row[COL_ASIFILENAME] = mod;
-				row[COL_DESCRIPTION] = "Manually installed ASI. This ASI has not been verified by ME3Tweaks. If you wish to have it verifed, please visit the forums.";
+				row[COL_DESCRIPTION] = "Manually installed ASI. This ASI has not been verified by ME3Tweaks. If you wish to have it verified, please visit the forums.";
 				row[COL_ACTION] = "<html><center>Manually Installed</center></html>";
 				model.addRow(row);
 			}
@@ -557,6 +557,10 @@ public class ASIModWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					if (ModManager.isMassEffect3Running()) {
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install an ASI.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+						return;
+					}
 					new ASIModInstaller(mod).execute();
 					dispose();
 				}
@@ -566,6 +570,10 @@ public class ASIModWindow extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					if (ModManager.isMassEffect3Running()) {
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall an ASI.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+						return;
+					}
 					InstalledASIMod im = installedmod;
 					if (im == null) {
 						im = getInstalledModByHash(mod.getHash());

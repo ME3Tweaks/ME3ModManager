@@ -165,6 +165,10 @@ public class UnpackWindow extends JDialog {
 		unpackButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				//write to settings
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can unpack DLC.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				new UnpackDLCJob(BioGameDir, getJobs(), false).execute();
 			}
 		});

@@ -65,6 +65,10 @@ public class AutoTocWindow extends JDialog {
 	 * @param biogameDir
 	 */
 	public AutoTocWindow(String biogameDir) {
+		if (ModManager.isMassEffect3Running()) {
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed in order to run AutoTOC on it.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		setupWindow("Updating Basegame and DLC TOC files");
 		updatedGameTOCs = new HashMap<String, String>();
 		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: GAME-WIDE ===");

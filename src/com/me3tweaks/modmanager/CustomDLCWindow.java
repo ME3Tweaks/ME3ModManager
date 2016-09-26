@@ -13,6 +13,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -119,12 +120,15 @@ public class CustomDLCWindow extends JDialog {
 
 		Action delete = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete DLC.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator+ table.getModel().getValueAt(modelRow, COL_FOLDER));
 				ModManager.debugLogger.writeMessage("Deleting Custom DLC folder: "+path);
 				FileUtils.deleteQuietly(new File(path));
-				Object breakpoint = table.getModel();
 				((DefaultTableModel) table.getModel()).removeRow(modelRow);
 			}
 		};

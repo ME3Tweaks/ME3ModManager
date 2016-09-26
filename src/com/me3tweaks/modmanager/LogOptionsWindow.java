@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +53,7 @@ import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
+import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 
 @SuppressWarnings("serial")
 public class LogOptionsWindow extends JDialog {
@@ -189,6 +191,18 @@ public class LogOptionsWindow extends JDialog {
 		if (installeddlcoption.isSelected()) {
 			log += "=========[INSTALLEDLC] Installed DLC =============\n";
 			log += getInstalledDLC();
+			File gamedir = new File(ModManagerWindow.GetBioGameDir()).getParentFile();
+
+			File executable = new File(gamedir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
+			int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
+			log += "Game version is 1.0"+minorBuildNum+"\n.";
+			if (minorBuildNum < 5) {
+				log += "Game is likely pirated since its not at the standard version that origin updates to.\n";
+			} else 	if (minorBuildNum > 5) {
+				log += "Game is likely from the UK as its using the UK specific game version 1.06. User may consider downgrading to Mass Effect 3 1.05 via this URL if issues occur: https://me3tweaks.com/forums/viewtopic.php?f=5&t=20\n";
+			} else {
+				log += "This is the standard patch version for this game.\n";
+			}
 			log += "\n";
 		}
 
@@ -202,7 +216,7 @@ public class LogOptionsWindow extends JDialog {
 					String lastmodified = sdf.format(logfile.lastModified());
 					log += "The following ME3Logger contents were in a file that has a modification date of " + lastmodified + ".\n\n";
 					try {
-						log += FileUtils.readFileToString(logfile);
+						log += FileUtils.readFileToString(logfile,Charset.defaultCharset()); //MAY CAUSE ISSUES...
 						log += "\n";
 					} catch (IOException e) {
 						log += "Error reading ME3Logger file. This shouldn't happen though...\n";
@@ -336,7 +350,7 @@ public class LogOptionsWindow extends JDialog {
 					if (metacmm.exists()) {
 						String metaname = "";
 						try {
-							metaname = FileUtils.readFileToString(metacmm);
+							metaname = FileUtils.readFileToString(metacmm,Charset.defaultCharset());
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -477,8 +491,7 @@ public class LogOptionsWindow extends JDialog {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					ModManager.debugLogger.writeErrorWithException("Error uploading log: ", e1);
 				}
 				return null;
 			}

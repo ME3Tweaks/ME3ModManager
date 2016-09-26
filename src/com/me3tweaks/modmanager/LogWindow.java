@@ -81,7 +81,7 @@ public class LogWindow extends JFrame {
 		logArea = new JTextPane();
 		JButton copyLog, findNextError;
 
-		copyLog = new JButton("Copy log to clipboard");
+		copyLog = new JButton("Generate Diagnostics File");
 		findNextError = new JButton("Find Next Error");
 
 		copyLog.addActionListener(new ActionListener() {

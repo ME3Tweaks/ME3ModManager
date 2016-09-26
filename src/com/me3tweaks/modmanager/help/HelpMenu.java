@@ -119,7 +119,7 @@ public class HelpMenu {
 		helpAbout = new JMenuItem("About Mod Manager");
 		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
 
-		helpGetLog = new JMenuItem("Generate Mod Manager Log");
+		helpGetLog = new JMenuItem("Generate Diagnostics Log");
 		helpGetLog.setToolTipText("<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
 
 		helpLogViewer = new JMenuItem("View Mod Manager log");
@@ -185,7 +185,7 @@ public class HelpMenu {
 			public void actionPerformed(ActionEvent e) {
 				if (!ModManager.logging) {
 					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-							"You must enable logging via the File>Options menu before logs are generated.", "Logging disabled",
+							"You must enable logging via the Actions > Options menu before logs are generated.", "Logging disabled",
 							JOptionPane.ERROR_MESSAGE);
 				} else {
 					copyLogToClipboard();
@@ -202,7 +202,7 @@ public class HelpMenu {
 										+ "Please email me if you have crashes or bugs, or use the forums.<br>"
 										+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
 										+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
-										+ "2. Immediately after the issue occurs, go to Help > Generate Mod Manager Log.<br>"
+										+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
 										+ "3. Leave the default options unless instructed otherwise. Upload your log to pastebin.<br>"
 										+ "4. In your email, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
 										+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
