@@ -33,6 +33,7 @@ import javax.swing.border.EmptyBorder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
@@ -198,6 +199,7 @@ public class ModInstallWindow extends JDialog {
 		private boolean installCancelled = false;
 		private boolean failedLoadingDB = false;
 		private boolean alternatesApplied;
+		private ArrayList<String> outdatedinstalledfolders;
 
 		protected InjectionCommander(Mod mod) {
 			ModManager.debugLogger.writeMessage("===============Start of INJECTION COMMANDER==============");
@@ -219,22 +221,36 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("===========INJECTION COMMANDER BACKGROUND THREAD==============");
 			ModManager.debugLogger.writeMessage("Checking for DLC Bypass.");
 			if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
-				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing LauncherWV.exe...");
-				if (!ModManager.installLauncherWV(bioGameDir)) {
-					ModManager.debugLogger.writeError("LauncherWV failed to install");
+				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing binkw32 bypass...");
+				if (!ModManager.installBinkw32Bypass(bioGameDir,false)) {
+					ModManager.debugLogger.writeError("Binkw32 bypass failed to install");
 				}
 			} else {
 				ModManager.debugLogger.writeMessage("A DLC bypass is installed");
 			}
 
-			if (precheckGameDB(jobs)) {
-				ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod");
-				return false;
-			} else {
-				ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
+			boolean checkedDB = false;
+			for (ModJob job : jobs) {
+				if (job.getJobName().equals(ModType.CUSTOMDLC) || job.getJobName().equals(ModType.TESTPATCH)) {
+					continue;
+				}
+				if ((job.getJobName().equals(ModType.BASEGAME) && job.getFilesToReplaceTargets().size() == 0 && job.getFilesToRemoveTargets().size() == 0)) {
+					continue;
+				}
+				checkedDB = true;
+				if (precheckGameDB(jobs)) {
+					ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod");
+					return false;
+				} else {
+					ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
+				}
+				break;
+			}
+			if (!checkedDB) {
+				ModManager.debugLogger.writeMessage("Mod only adds files to basegame/adds custom DLC. The Game DB check has been skipped");
 			}
 
-			ModManager.debugLogger.writeMessage("Processing jobs in mod queue.");
+			ModManager.debugLogger.writeMessage("Processing mod jobs in job queue.");
 			ExecutorService modinstallExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
 			for (ModJob job : jobs) {
@@ -248,7 +264,7 @@ public class ModInstallWindow extends JDialog {
 				for (Future<Boolean> f : futures) {
 					boolean b = f.get();
 					if (!b) {
-						ModManager.debugLogger.writeError("A task failed.");
+						ModManager.debugLogger.writeError("A task failed!");
 						//throw some sort of error here...
 					}
 				}
@@ -259,7 +275,26 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeErrorWithException("UNKNOWN EXCEPTION OCCURED: ", e);
 				return null;
 			}
+
+			checkForOutdatedDLC();
+
 			return true;
+		}
+
+		private void checkForOutdatedDLC() {
+			if (mod.getOutdatedDLCModules().size() > 0) {
+				outdatedinstalledfolders = new ArrayList<>();
+				ArrayList<String> installedDLC = ModManager.getInstalledDLC(bioGameDir);
+				for (String installeddlcitem : installedDLC) {
+					for (String outdateditem : mod.getOutdatedDLCModules()) {
+						if (installeddlcitem.toUpperCase().equals(outdateditem.toUpperCase())) {
+							//outdated item is still installed.
+							outdatedinstalledfolders.add(outdateditem);
+						}
+					}
+				}
+			}
+
 		}
 
 		class JobTask implements Callable<Boolean> {
@@ -348,7 +383,7 @@ public class ModInstallWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("Skipping GRDB check for balance changes job");
 					continue;
 				}
-				publish("Checking GDB: " + job.getJobName());
+				publish("Checking database on " + job.getJobName());
 				if (job.getJobType() == ModJob.BASEGAME) {
 					//BGDB files are required
 					ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
@@ -474,7 +509,7 @@ public class ModInstallWindow extends JDialog {
 							return false;
 						}
 					} else {
-						ModManager.debugLogger.writeMessage("Post-Install TOC indicates we should skip installing PCConsoleTOC for this job");
+						ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Post-Install TOC indicates we should skip installing PCConsoleTOC for this job");
 					}
 				}
 			}
@@ -483,7 +518,7 @@ public class ModInstallWindow extends JDialog {
 			ArrayList<String> filesToAddTargets = job.getFilesToAddTargets();
 			ArrayList<String> filesToAdd = job.getFilesToAdd();
 			int numFilesToAdd = filesToAdd.size();
-			ModManager.debugLogger.writeMessage("Number of files to add to the basegame: " + numFilesToAdd);
+			ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Number of files to add to the basegame: " + numFilesToAdd);
 			for (int i = 0; i < numFilesToAdd; i++) {
 				String fileToAddTarget = filesToAddTargets.get(i);
 				String fileToAdd = filesToAdd.get(i);
@@ -499,10 +534,10 @@ public class ModInstallWindow extends JDialog {
 					Files.copy(newfilepath, installPath, StandardCopyOption.REPLACE_EXISTING);
 					if (job.getAddFilesReadOnlyTargets().contains(fileToAddTarget)) {
 						installFile.setReadOnly();
-						ModManager.debugLogger.writeMessage("Set read only: " + installFile);
+						ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Set read only: " + installFile);
 					}
 					completedTaskSteps++;
-					ModManager.debugLogger.writeMessage("Installed mod file: " + fileToAdd + " => " + installFile);
+					ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Installed mod file: " + fileToAdd + " => " + installFile);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeException(e);
 					return false;
@@ -511,7 +546,7 @@ public class ModInstallWindow extends JDialog {
 
 			//REMOVAL TASKS
 			ArrayList<String> filesToRemove = job.getFilesToRemoveTargets();
-			ModManager.debugLogger.writeMessage("Number of files to remove: " + filesToRemove.size());
+			ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Number of files to remove: " + filesToRemove.size());
 			for (String fileToRemove : filesToRemove) {
 				boolean userCanceled = checkBackupAndHash(me3dir, fileToRemove, job);
 				if (userCanceled) {
@@ -521,17 +556,17 @@ public class ModInstallWindow extends JDialog {
 
 				// remove file.
 				File unpacked = new File(me3dir + fileToRemove);
-				ModManager.debugLogger.writeMessage("Removing file: " + unpacked);
+				ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Removing file: " + unpacked);
 				publish(job.getJobName() + ": Removing " + FilenameUtils.getName(unpacked.getAbsolutePath()));
 				FileUtils.deleteQuietly(unpacked);
 				completedTaskSteps++;
-				ModManager.debugLogger.writeMessage("Deleted game file: " + unpacked);
+				ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Deleted game file: " + unpacked);
 			}
 			return true;
 		}
 
 		private boolean processBalanceChangesJob(ModJob job) {
-			ModManager.debugLogger.writeMessage("===Processing a balance changes job===");
+			ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]===Processing a balance changes job===");
 			completedTaskSteps = 0;
 			taskSteps = job.getFilesToReplace().size() + job.getFilesToAdd().size() + job.getFilesToRemoveTargets().size();
 			publish("Processing balance changes files...");
@@ -543,7 +578,7 @@ public class ModInstallWindow extends JDialog {
 				ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
 				ArrayList<String> newFiles = job.getFilesToReplace();
 				int numFilesToReplace = filesToReplace.size();
-				ModManager.debugLogger.writeMessage("Number of files to replace in the basegame (balance changes): " + numFilesToReplace);
+				ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Number of files to replace in the basegame (balance changes): " + numFilesToReplace);
 				for (int i = 0; i < numFilesToReplace; i++) {
 					String fileToReplace = filesToReplace.get(i);
 					String newFile = newFiles.get(i);
@@ -559,7 +594,7 @@ public class ModInstallWindow extends JDialog {
 						}
 						Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
 						completedTaskSteps++;
-						ModManager.debugLogger.writeMessage("Installed mod file: " + newFile + " => " + unpacked);
+						ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Installed mod file: " + newFile + " => " + unpacked);
 					} catch (IOException e) {
 						ModManager.debugLogger.writeException(e);
 						return false;
@@ -590,7 +625,7 @@ public class ModInstallWindow extends JDialog {
 				String fileToReplace = job.filesToReplace.get(i);
 				File unpackeddlcfile = new File(me3dir + fileToReplace);
 				if (!unpackeddlcfile.exists()) {
-					ModManager.debugLogger.writeMessage("Game DB: unpacked DLC file not present. DLC job will use SFAR method: " + job.getJobName());
+					ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Game DB: unpacked DLC file not present. DLC job will use SFAR method: " + job.getJobName());
 					return processSFARDLCJob(job);
 				}
 			}
@@ -605,13 +640,13 @@ public class ModInstallWindow extends JDialog {
 			File sfarFile = new File(sfarPath);
 			if (sfarFile.exists()) {
 				if (sfarName.equals("Patch_001.sfar") || sfarFile.length() >= knownsfarsize) {
-					ModManager.debugLogger.writeMessage(
-							"SFAR is same or larger in bytes than the known original. Likely is the vanilla one, or has been modified, but not unpacked. Using the SFAR method: "
-									+ job.getJobName());
+					ModManager.debugLogger.writeMessage("[" + job.getJobName()
+							+ "]SFAR is same or larger in bytes than the known original. Likely is the vanilla one, or has been modified, but not unpacked. Using the SFAR method: "
+							+ job.getJobName());
 					return processSFARDLCJob(job);
 				}
 			} else {
-				ModManager.debugLogger.writeError("SFAR doesn't exist for unpacked DLC... interesting... " + sfarPath);
+				ModManager.debugLogger.writeError("[" + job.getJobName() + "]SFAR doesn't exist for unpacked DLC... interesting... " + sfarPath);
 			}
 
 			//We don't need to check for files to remove, as if it this is an unpacked DLC we can just skip the file. If it is missing in the DLC then there would be nothing we can do.
@@ -1027,13 +1062,13 @@ public class ModInstallWindow extends JDialog {
 			for (String folder : destfolders) {
 				File dlcFolder = new File(dlcdir + File.separator + folder);
 				if (dlcFolder.exists() && dlcFolder.isDirectory()) {
-					ModManager.debugLogger.writeMessage("Deleting existing CustomDLC folder: " + dlcFolder);
+					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Deleting existing CustomDLC folder: " + dlcFolder);
 					FileUtils.deleteQuietly(dlcFolder);
 				}
 			}
 			taskSteps = job.getFilesToReplaceTargets().size();
 			completedTaskSteps = 0;
-			ModManager.debugLogger.writeMessage("Number of files to install: " + taskSteps);
+			ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Number of files to install: " + taskSteps);
 			for (int i = 0; i < job.getFilesToReplaceTargets().size(); i++) {
 				String target = job.getFilesToReplaceTargets().get(i);
 				String fileDestination = dlcdir + target;
@@ -1047,39 +1082,41 @@ public class ModInstallWindow extends JDialog {
 					dest.mkdirs();
 					Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
 					completedTaskSteps++;
-					ModManager.debugLogger.writeMessage("Installed mod file: " + fileSource + " => " + fileDestination);
+					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Installed mod file: " + fileSource + " => " + fileDestination);
 
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Installing custom dlc file failed:", e);
+					ModManager.debugLogger.writeErrorWithException("[CUSTOMDLC JOB]Installing custom dlc file failed:", e);
 					return false;
 				}
 			}
 			//autotoc if necessary, create metadata file
 			for (String str : job.getDestFolders()) {
 				if (alternatesApplied) {
-					publish("Automatically modified " + str + ", updating PCConsoleTOC");
-					//needs TOC on customDLC
-					ArrayList<String> commandBuilder = new ArrayList<String>();
-					// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-					commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-					commandBuilder.add("-autotoc");
-					commandBuilder.add(dlcdir + File.separator + str);
-					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-					ModManager.debugLogger.writeMessage("Updating PCConsoleTOC for CustomDLC that had alternate applied");
-					int returncode = 1;
-					ProcessBuilder pb = new ProcessBuilder(command);
-					ProcessResult pr = ModManager.runProcess(pb);
-					returncode = pr.getReturnCode();
-					if (returncode != 0 || pr.hadError()) {
-						ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error) running AutoTOC: " + returncode);
+					if (!ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+						publish("Automatically modified " + str + ", updating PCConsoleTOC");
+						//needs TOC on customDLC
+						ArrayList<String> commandBuilder = new ArrayList<String>();
+						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
+						commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
+						commandBuilder.add("-autotoc");
+						commandBuilder.add(dlcdir + File.separator + str);
+						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+						ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Updating PCConsoleTOC for CustomDLC that had alternate applied");
+						int returncode = 1;
+						ProcessBuilder pb = new ProcessBuilder(command);
+						ProcessResult pr = ModManager.runProcess(pb);
+						returncode = pr.getReturnCode();
+						if (returncode != 0 || pr.hadError()) {
+							ModManager.debugLogger.writeError("[" + job.getJobName() + "]ME3Explorer returned a non 0 code (or threw error) running AutoTOC: " + returncode);
+						}
 					}
 				}
 				try {
 					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
-					ModManager.debugLogger.writeMessage("Writing custom DLC metadata file: " + metadatapath);
+					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Writing custom DLC metadata file: " + metadatapath);
 					FileUtils.writeStringToFile(new File(metadatapath), mod.getModName() + " " + mod.getVersion());
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Couldn't write custom dlc metadata file:", e);
+					ModManager.debugLogger.writeErrorWithException("[CUSTOMDLC JOB]Couldn't write custom dlc metadata file:", e);
 				}
 			}
 			return true;
@@ -1119,6 +1156,35 @@ public class ModInstallWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeException(e);
 				hasException = true;
+			}
+
+			if (outdatedinstalledfolders != null && outdatedinstalledfolders.size() > 0) {
+				for (String outdated : outdatedinstalledfolders) {
+					int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
+							"<html><div style='width: 400px'>" + mod.getModName() + "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "("
+									+ ME3TweaksUtils.getThirdPartyModName(outdated)
+									+ ") is not compatible/no longer necessary for this mod. The mod indicates they should be deleted as they may conflict with this mod.<br><br>Delete the Custom DLC folder "
+									+ outdated + "?</div></html>",
+							"Outdated CustomDLC detected", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+					if (result == JOptionPane.YES_OPTION) {
+						String deleteFolder = bioGameDir + "DLC/" + outdated;
+						ModManager.debugLogger.writeMessage("Deleting outdated custom DLC: " + deleteFolder);
+						boolean deleted = false;//FileUtils.deleteQuietly(new File(deleteFolder));
+						if (deleted) {
+							ModManager.debugLogger.writeMessage("Deleted outdated custom DLC: " + deleteFolder);
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Deleted " + outdated);
+						} else {
+							ModManager.debugLogger.writeError("deleteQuietly() returned false when attempting to delete outdated custom DLC: " + deleteFolder);
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to " + outdated);
+							JOptionPane.showMessageDialog(ModInstallWindow.this, "Failed to delete custom DLC folder:\n" + deleteFolder, "Outdated Custom DLC deletion failed",
+									JOptionPane.ERROR_MESSAGE);
+						}
+					} else {
+						ModManager.debugLogger.writeMessage("User declined deleting outdated DLC: " + outdated);
+					}
+				}
+			} else {
+				ModManager.debugLogger.writeMessage("No outdated custom dlc to remove, continuing install...");
 			}
 
 			if (ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {

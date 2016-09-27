@@ -226,9 +226,9 @@ public class OptionsWindow extends JDialog {
 			}
 		});
 
-		autoUpdateMods = new JCheckBox("Keep mods and help contents up to date from ME3Tweaks.com");
-		autoUpdateMods.setToolTipText("<html>Checks every "+ModManager.AUTO_CHECK_INTERVAL_DAYS+" days for updates to mods and help contents from ME3Tweaks.com</html>");
-		autoUpdateMods.setSelected(ModManager.AUTO_UPDATE_MODS);
+		autoUpdateMods = new JCheckBox("Keep Mod Manager content up to date from ME3Tweaks.com");
+		autoUpdateMods.setToolTipText("<html>Checks every "+ModManager.AUTO_CHECK_INTERVAL_DAYS+" days for updates to mods, online asi manifest, help contents, 3rd party mod info and more.<br>It is highly recommended you keep this on as several parts of Mod Manager make use of this feature.</html>");
+		autoUpdateMods.setSelected(ModManager.AUTO_UPDATE_CONTENT);
 		autoUpdateMods.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini;
@@ -240,7 +240,7 @@ public class OptionsWindow extends JDialog {
 					ini.put("Settings", "autoupdatemods", autoUpdateMods.isSelected() ? "true" : "false");
 					ini.put("Settings", "declinedautoupdate", autoUpdateMods.isSelected() ? "false" : "true");
 					ini.store();
-					ModManager.AUTO_UPDATE_MODS = autoUpdateMods.isSelected();
+					ModManager.AUTO_UPDATE_CONTENT = autoUpdateMods.isSelected();
 				} catch (InvalidFileFormatException x) {
 					x.printStackTrace();
 				} catch (IOException x) {
@@ -321,7 +321,7 @@ public class OptionsWindow extends JDialog {
 						settings.createNewFile();
 					ini = new Wini(settings);
 					ModManager.debugLogger.writeMessage("User changing run autotoc post install to " + autoTocPostInstall.isSelected());
-					ini.put("Settings", "runautotocpostinstall", autoTocPostInstall.isSelected() ? "1" : "0");
+					ini.put("Settings", "performautotocaftermodinstall", autoTocPostInstall.isSelected() ? "1" : "0");
 					ModManager.POST_INSTALL_AUTOTOC_INSTEAD = autoTocPostInstall.isSelected();
 					ini.store();
 				} catch (InvalidFileFormatException ex) {

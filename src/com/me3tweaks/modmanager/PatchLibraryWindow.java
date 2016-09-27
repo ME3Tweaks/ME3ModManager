@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,6 +73,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	private ArrayList<DynamicPatch> dynamicMixIns;
 	private final Object lock = new Lock(); //threading wait() and notifyall();
 	private int numberofupdatedmixins = -1;
+	private Mod newmod;
 
 	public PatchLibraryWindow(int mode) {
 		if (mode == MANUAL_MODE) {
@@ -195,7 +197,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 								ModManager.debugLogger.writeMessage("Added patch 1533 to compilation");
 								break;
 							} else {
-								System.out.println("Skip patch "+x.getMe3tweaksid());
+								System.out.println("Skip patch " + x.getMe3tweaksid());
 							}
 						}
 					}
@@ -292,10 +294,14 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		modComboBox.setModel(modModel);
 		modComboBox.setRenderer(new ModCellRenderer());
 
-		Mod mod = new Mod(); // invalid
-		mod.setModName("Select a mod to add mixins to");
+		Mod selectamod = new Mod(); // invalid
+		selectamod.setModName("Select a mod to add mixins to");
 
-		modModel.addElement(mod);
+		newmod = new Mod();
+		newmod.setModName("Create new mod from MixIns");
+
+		modModel.addElement(selectamod);
+		modModel.addElement(newmod);
 		for (int i = 0; i < ModManagerWindow.ACTIVE_WINDOW.modModel.getSize(); i++) {
 			Mod loadedMod = ModManagerWindow.ACTIVE_WINDOW.modModel.get(i);
 			modModel.addElement(loadedMod);
@@ -390,9 +396,71 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == buttonApplyPatch) {
-			ModManager.debugLogger.writeMessage("Applying patches");
-			List<Patch> selectedPatches = patchList.getSelectedValuesList();
 			Mod mod = modModel.getElementAt(modComboBox.getSelectedIndex());
+			List<Patch> selectedPatches = patchList.getSelectedValuesList();
+			if (mod == newmod) {
+				boolean nameIsBad = true;
+				String errormsg = "";
+				String input = "";
+				while (nameIsBad) {
+					input = JOptionPane.showInputDialog(PatchLibraryWindow.this,
+							"Input a name for the mod that will be created from these MixIns.\nAlphanumberic only, must be less than 20 characters." + errormsg,
+							"Create a new mod from MixIns", JOptionPane.QUESTION_MESSAGE);
+					if (input == null) {
+						return;
+					}
+					input = input.trim();
+
+					boolean asciionly = input.chars().allMatch(c -> c == 0x20 || c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B)); //what the f is this?
+					if (!asciionly) {
+						ModManager.debugLogger.writeError("Name is not ascii alphanumeric only: " + input);
+						errormsg = "\nMod name must be alphanumberic.";
+						continue;
+					}
+					if (input.length() > 20 || input.length() < 1) {
+						ModManager.debugLogger.writeError("Name is empty or too long: " + input);
+						errormsg = "\nMod name must be less than 20 characters.";
+						continue;
+					}
+
+					if (input.equals("")) {
+						errormsg = "\nMod name must be at least 1 character.";
+						continue;
+					}
+					
+					nameIsBad = false;
+				}
+				
+				ModManager.debugLogger.writeMessage("User entered mod name: " + input);
+
+				mod = new Mod();
+				String modfolder = ModManager.getModsDir() + input;
+				File modfolderfile = new File(modfolder);
+				modfolderfile.mkdirs();
+				mod.setModPath(ModManager.getModsDir() + input);
+				mod.setModName(input);
+				mod.setVersion(1);
+				String desc = "This mod was created from the following MixIns:<br>";
+				for (Patch p : selectedPatches) {
+					desc += " - "+p.getPatchName()+" v"+p.getPatchVersion() +"<br>";
+				}
+				mod.setModDescription(desc);
+				mod.setAuthor("Mod Manager "+ModManager.VERSION);
+				String descini = mod.createModDescIni(true, ModManager.MODDESC_VERSION_SUPPORT);
+				ModManager.debugLogger.writeMessage("Creating blank moddesc.ini file for new mod " + input);
+				try {
+					FileUtils.writeStringToFile(new File(modfolder + "/moddesc.ini"), descini);
+					mod = new Mod();
+					mod.setEmptyModIsOK(true);
+					mod.loadMod(modfolder + "/moddesc.ini");
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					return;
+				}
+			}
+
+			ModManager.debugLogger.writeMessage("Applying patches");
 			if (!mod.isValidMod()) {
 				return; // this shouldn't be reachable anyways
 			}
@@ -449,7 +517,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			if (ModManager.IS_DEBUG) {
 				link = "http://webdev-mgamerz.c9.io/mixins/libraryinfo";
 			} else {
-				link = "http://me3tweaks.com/mixins/libraryinfo";
+				link = "https://me3tweaks.com/mixins/libraryinfo";
 			}
 			ModManager.debugLogger.writeMessage("Fetching mixin info from " + link);
 			try {
@@ -605,7 +673,6 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				}
 			}
 		}
-
 	}
 
 	private class ModmakerMixinIdentifier {

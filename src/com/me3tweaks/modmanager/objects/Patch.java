@@ -298,7 +298,14 @@ public class Patch implements Comparable<Patch> {
 					if (job.getJobName().equals(targetModule)) {
 						ModManager.debugLogger.writeMessage("Checking existing job: " + targetModule);
 						targetJob = job;
-						String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
+						String jobFolder = null;
+						if (job.getFilesToReplace().size() > 0) {
+							jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
+						} else if (job.getFilesToAdd().size() > 0) {
+							jobFolder = ModManager.appendSlash(new File(job.getFilesToAdd().get(0)).getParentFile().getAbsolutePath());
+						} else {
+							jobFolder = ModManager.appendSlash(mod.getModPath() + targetModule);
+						}
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
 
 						//ADD PATCH FILE TO JOB
@@ -545,7 +552,7 @@ public class Patch implements Comparable<Patch> {
 		sb.append("\tfalse, /*FINALIZER*/\n");
 
 		String serverfolder = patchName.toLowerCase().replaceAll(" - ", "-").replaceAll(" ", "-");
-		sb.append("\t\"http://me3tweaks.com/mixins/library/" + serverfolder + "/patch.jsf\",\n");
+		sb.append("\t\"https://me3tweaks.com/mixins/library/" + serverfolder + "/patch.jsf\",\n");
 		sb.append("\t\"" + patchName + "\",\n");
 		sb.append("\tnull\n");
 		sb.append(");");
@@ -586,7 +593,7 @@ public class Patch implements Comparable<Patch> {
 	public void setIsDynamic(boolean b) {
 		this.isDynamic = b;
 	}
-	
+
 	public boolean isDynamic() {
 		return this.isDynamic;
 	}

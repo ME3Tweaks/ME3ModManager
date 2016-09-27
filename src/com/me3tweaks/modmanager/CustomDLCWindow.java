@@ -13,6 +13,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -23,6 +24,7 @@ import javax.swing.table.DefaultTableModel;
 
 import org.apache.commons.io.FileUtils;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.ui.ButtonColumn;
@@ -81,6 +83,9 @@ public class CustomDLCWindow extends JDialog {
 				} catch (IOException e1) {
 					ModManager.debugLogger.writeErrorWithException("Unable to read metadata file about customdlc:", e1);
 				}
+			} else {
+				//try to lookup via 3rd party service
+				dlcName = ME3TweaksUtils.getThirdPartyModName(dir);
 			}
 			
 			String pcConsole = path+"CookedPCConsole/";
@@ -88,13 +93,13 @@ public class CustomDLCWindow extends JDialog {
 			File sfarFile = new File(pcConsole+"Default.sfar");
 			MountFile mount = new MountFile(mountFile.getAbsolutePath());
 			ModManager.debugLogger.writeMessage("Found mount file: "+mount);
+			mount.setAssociatedDLCName(dir);
 			if (!mountFile.exists()){
 				mount.setReason("No Mount.dlc file");
 			} else if (!sfarFile.exists()){
 				mount.setReason("No SFAR");
 			} else {
 				//String mount = MountFileEditorWindow.getMountDescription(mountFile);
-				mount.setAssociatedDLCName(dir);
 				mount.setAssociatedModName(dlcName);
 			}
 			mountList.add(mount);
@@ -115,12 +120,15 @@ public class CustomDLCWindow extends JDialog {
 
 		Action delete = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete DLC.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
 				String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator+ table.getModel().getValueAt(modelRow, COL_FOLDER));
 				ModManager.debugLogger.writeMessage("Deleting Custom DLC folder: "+path);
 				FileUtils.deleteQuietly(new File(path));
-				Object breakpoint = table.getModel();
 				((DefaultTableModel) table.getModel()).removeRow(modelRow);
 			}
 		};
@@ -141,7 +149,7 @@ public class CustomDLCWindow extends JDialog {
 		JScrollPane scrollpane = new JScrollPane(table);
 		panel.add(scrollpane, BorderLayout.CENTER);
 		
-		JLabel mpLabel = new JLabel("<html><div style=\"text-align: center;\">Custom DLC will never authorize unless you use a DLC bypass.<br>DLC that have MP in their Mount Flag will make all players require that DLC.</div></html>",SwingConstants.CENTER);
+		JLabel mpLabel = new JLabel("<html><div style=\"text-align: center;\">Custom DLC will never authorize unless you use a DLC bypass.<br>You can check for Custom DLC conflicts using the Custom DLC Conflict Detector tool in the Mod Management menu.<br>Custom DLCs that have MP in their Mount Flag will make all players require that DLC in order to join the lobby.</div></html>",SwingConstants.CENTER);
 		panel.add(mpLabel,BorderLayout.SOUTH);
 		panel.setBorder(new EmptyBorder(5,5,5,5));
 		add(panel);

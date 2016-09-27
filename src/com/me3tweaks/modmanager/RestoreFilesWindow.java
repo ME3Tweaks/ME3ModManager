@@ -55,6 +55,10 @@ public class RestoreFilesWindow extends JDialog {
 	private String[] customTaskHeader;
 
 	public RestoreFilesWindow(String BioGameDir, int restoreMode) {
+		if (ModManager.isMassEffect3Running()) {
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		this.BioGameDir = BioGameDir;
 		this.restoreMode = restoreMode;
 		consoleQueue = new String[levelCount];
@@ -76,6 +80,10 @@ public class RestoreFilesWindow extends JDialog {
 	 *            Operation to perform
 	 */
 	public RestoreFilesWindow(String BioGameDir, String header, int operationType) {
+		if (ModManager.isMassEffect3Running()) {
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		this.BioGameDir = BioGameDir;
 		consoleQueue = new String[levelCount];
 		setupWindow();

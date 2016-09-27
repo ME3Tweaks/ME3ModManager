@@ -71,16 +71,14 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		for (Mod mod : ModManagerWindow.ACTIVE_WINDOW.getInvalidMods()) {
 			failedModsModel.addElement(mod);
 		}
-		lrSplitPane
-				.setLeftComponent(new JScrollPane(failedModList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
+		lrSplitPane.setLeftComponent(new JScrollPane(failedModList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
 		failedModDesc = new JTextArea("Select a mod on the left to see why it failed to load.");
 
 		failedModDesc.setLineWrap(true);
 		failedModDesc.setWrapStyleWord(true);
 		failedModDesc.setEditable(false);
-		lrSplitPane
-				.setRightComponent(new JScrollPane(failedModDesc, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
+		lrSplitPane.setRightComponent(new JScrollPane(failedModDesc, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
 		c.weighty = 1;
 		c.weightx = 1;
@@ -105,8 +103,8 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 				} catch (MalformedURLException e) {
 					ModManager.debugLogger.writeErrorWithException("Malformed URL:", e);
 					JOptionPane.showMessageDialog(FailedModsWindow.this,
-							"The listed website is an invalid URL:\n" + failedModsModel.get(failedModList.getSelectedIndex()).getModSite(),
-							"Invalid URL", JOptionPane.ERROR_MESSAGE);
+							"The listed website is an invalid URL:\n" + failedModsModel.get(failedModList.getSelectedIndex()).getModSite(), "Invalid URL",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -130,11 +128,9 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 					}
 				} else {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Restoring ModMaker mods requires valid BIOGame");
-					JOptionPane
-							.showMessageDialog(
-									null,
-									"The BIOGame directory is not valid.\nCannot restore ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
-									"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,
+							"The BIOGame directory is not valid.\nCannot restore ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
+							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -176,7 +172,11 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		description += mod.getModName();
 		description += "\n" + mod.getModPath();
 		description += "\n\n";
-		description += mod.getFailedReason();
+		if (mod.getFailedReason() == null) {
+			description += "Mod has no failed reason set or it encountered a null pointer exception while loading.";
+		} else {
+			description += mod.getFailedReason();
+		}
 		if (mod.getModSite() != null && !mod.getModSite().equals("")) {
 			description += "\n\nThe mod lists a website: " + mod.getModSite()
 					+ ". Click the Visit Website button to go to it, you may be able to find additional assistance there.";

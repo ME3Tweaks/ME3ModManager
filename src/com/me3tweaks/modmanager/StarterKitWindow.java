@@ -156,7 +156,7 @@ public class StarterKitWindow extends JDialog {
 				.setToolTipText("<html>Developer of this mod. Likely your modding scene alias.<br>This is the moddesc moddev value under [ModInfo]</html>");
 		modSite.setToolTipText("<html>Optional website that will show up in Mod Manager the user can click to get help, more info, etc about the mod.<br>This is the moddesc modsite value under [ModInfo]</html>");
 		internalDLCName
-				.setToolTipText("<html>The internal name for the DLC, after the standard DLC_CON.<br>The hint for this textbox would mean the DLC folder is named DLC_CON_ExcellentMod.</html>");
+				.setToolTipText("<html>The internal name for the DLC, after the standard DLC_MOD.<br>The hint for this textbox would mean the DLC folder is named DLC_MOD_ExcellentMod.</html>");
 		internalDisplayName
 				.setToolTipText("<html>Internal name for this DLC. If a DLC fails to load, the user may see this name at the main menu.</html>");
 		internalTLKId
@@ -299,7 +299,7 @@ public class StarterKitWindow extends JDialog {
 		//Internal DLC Name
 		String intDLCName = internalDLCName.getText().trim();
 		if (intDLCName.length() < 1 || intDLCName.length() > 20) {
-			showErrorMessage("Invalid Internal DLC Name. Length must be between 1 and 20 characters.\nThis is the part that comes after DLC_CON_, e.g. DNA for DLC_CON_DNA.");
+			showErrorMessage("Invalid Internal DLC Name. Length must be between 1 and 20 characters.\nThis is the part that comes after DLC_MOD_, e.g. DNA for DLC_MOD_DNA.");
 			return false;
 		}
 
@@ -414,20 +414,20 @@ public class StarterKitWindow extends JDialog {
 			boolean madedir = modpathfile.mkdirs();
 
 			//create custom dlc folders
-			String cookedPath = modpath + "DLC_CON_" + internaldlcname + File.separator + "CookedPCConsole" + File.separator;
+			String cookedPath = modpath + "DLC_MOD_" + internaldlcname + File.separator + "CookedPCConsole" + File.separator;
 			File cookedpcconsole = new File(cookedPath);
 			boolean madecookeddir = cookedpcconsole.mkdirs();
 
 			//extract resources
 			ModManager.ExportResource("/Default.sfar", cookedPath + "Default.sfar");
 			ModManager.ExportResource("/Mount.dlc", cookedPath + "Mount.dlc");
-			String coalpath = cookedPath + "Default_DLC_CON_" + internaldlcname + ".bin";
-			ModManager.ExportResource("/Default_DLC_CON_StarterKit.bin", coalpath);
+			String coalpath = cookedPath + "Default_DLC_MOD_" + internaldlcname + ".bin";
+			ModManager.ExportResource("/Default_DLC_MOD_StarterKit.bin", coalpath);
 			String[] langs = { "INT", "DEU", "ESN", "FRA", "POL", "RUS" };
 
 			for (String lang : langs) {
 				publish(new ThreadCommand("SET_DIALOG_TEXT", "Updating TLK for " + lang));
-				String output = cookedPath + "DLC_CON_" + internaldlcname + "_" + lang + ".xml";
+				String output = cookedPath + "DLC_MOD_" + internaldlcname + "_" + lang + ".xml";
 				ModManager.ExportResource("/StarterKitTLK.xml", output);
 				String replaceOutput = FileUtils.readFileToString(new File(output));
 
@@ -456,7 +456,7 @@ public class StarterKitWindow extends JDialog {
 				//Set values
 				replaceOutput = replaceOutput.replaceAll("%STARTKIT%", internaldlcname + "_" + lang);
 				replaceOutput = replaceOutput.replaceAll("%INTERNALDISPLAYNAME%", internaldisplayname);
-				replaceOutput = replaceOutput.replaceAll("%INTERNALDLCNAME%", "DLC_CON_" + internaldlcname);
+				replaceOutput = replaceOutput.replaceAll("%INTERNALDLCNAME%", "DLC_MOD_" + internaldlcname);
 				replaceOutput = replaceOutput.replaceAll("%LANG%", langcode);
 
 				//set ID numbers
@@ -490,24 +490,24 @@ public class StarterKitWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Folder batch worker has completed. Resuming StarterKitGenerator");
 			//while tlk is compiling do more work on .bin file.
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 50));
-			publish(new ThreadCommand("SET_DIALOG_TEXT", "Compiling Default_DLC_CON_" + internaldlcname));
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Compiling Default_DLC_MOD_" + internaldlcname));
 			CoalescedWindow.decompileCoalesced(coalpath);
-			File bioenginefile = new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "BioEngine.xml");
+			File bioenginefile = new File(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "BioEngine.xml");
 			String bioengine = FileUtils.readFileToString(bioenginefile);
 			String newengine = bioengine.replaceAll("StarterKit", internaldlcname); //update bioengine
 			boolean deleted = FileUtils.deleteQuietly(bioenginefile);
 
-			FileUtils.writeStringToFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "BioEngine.xml"), newengine); //writeback
+			FileUtils.writeStringToFile(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "BioEngine.xml"), newengine); //writeback
 
 			//recompile and move up a dir
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 60));
-			publish(new ThreadCommand("SET_DIALOG_TEXT", "Moving Default_DLC_CON_" + internaldlcname));
-			ModManager.debugLogger.writeMessage("Recompiling Default_DLC_CON_" + internaldlcname + ".bin");
-			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_"
+			publish(new ThreadCommand("SET_DIALOG_TEXT", "Moving Default_DLC_MOD_" + internaldlcname));
+			ModManager.debugLogger.writeMessage("Recompiling Default_DLC_MOD_" + internaldlcname + ".bin");
+			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "Default_DLC_MOD_"
 					+ internaldlcname + ".xml");
 			FileUtils.deleteQuietly(new File(coalpath));
-			ModManager.debugLogger.writeMessage("Moving Default_DLC_CON_" + internaldlcname + ".bin to " + coalpath);
-			FileUtils.moveFile(new File(cookedPath + "Default_DLC_CON_" + internaldlcname + File.separator + "Default_DLC_CON_" + internaldlcname
+			ModManager.debugLogger.writeMessage("Moving Default_DLC_MOD_" + internaldlcname + ".bin to " + coalpath);
+			FileUtils.moveFile(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "Default_DLC_MOD_" + internaldlcname
 					+ ".bin"), new File(coalpath));
 
 			//update mount.dlc
@@ -532,8 +532,8 @@ public class StarterKitWindow extends JDialog {
 
 			//move coaleseced folder
 			ModManager.debugLogger.writeMessage("Moving Coalesced folder");
-			FileUtils.moveDirectory(new File(cookedPath + "Default_DLC_CON_" + internaldlcname), new File(modpath + "WORKSPACE" + File.separator
-					+ "Default_DLC_CON_" + internaldlcname));
+			FileUtils.moveDirectory(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname), new File(modpath + "WORKSPACE" + File.separator
+					+ "Default_DLC_MOD_" + internaldlcname));
 
 			//Create moddesc.ini
 			ModManager.debugLogger.writeMessage("Creating moddesc.ini for " + modname);
@@ -542,14 +542,14 @@ public class StarterKitWindow extends JDialog {
 
 			Mod startermod = new Mod();
 			startermod.setModPath(modpath);
-			ModJob custdlcjob = new ModJob("DLC_CON_" + internaldlcname, ModType.CUSTOMDLC, "");
+			ModJob custdlcjob = new ModJob("DLC_MOD_" + internaldlcname, ModType.CUSTOMDLC, "");
 
 			custdlcjob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
 			custdlcjob.setJobType(ModJob.CUSTOMDLC);
 			ArrayList<String> destFolders = new ArrayList<>();
 			ArrayList<String> srcFolders = new ArrayList<>();
-			destFolders.add("DLC_CON_" + internaldlcname);
-			srcFolders.add(modpath + "DLC_CON_" + internaldlcname);
+			destFolders.add("DLC_MOD_" + internaldlcname);
+			srcFolders.add(modpath + "DLC_MOD_" + internaldlcname);
 			custdlcjob.setDestFolders(destFolders);
 			custdlcjob.setSourceFolders(srcFolders);
 			startermod.addTask(ModType.CUSTOMDLC, custdlcjob);
@@ -626,7 +626,7 @@ public class StarterKitWindow extends JDialog {
 							.showMessageDialog(
 									callingDialog,
 									modname
-											+ " has been created.\nPlace files into the mod's DLC_CON_"
+											+ " has been created.\nPlace files into the mod's DLC_MOD_"
 											+ internaldlcname
 											+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
 									modname + " created", JOptionPane.INFORMATION_MESSAGE);

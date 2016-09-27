@@ -480,6 +480,7 @@ public class ModXMLTools {
 			// for all mods in serverlist
 			double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
 			String serverModName = modElem.getAttribute("name");
+			String changelog = modElem.getAttribute("changelog");
 			if (mod.getVersion() >= serverModVer) {
 				ModManager.debugLogger.writeMessage(mod.getModName() + " up to date. Local version: " + mod.getVersion() + " Server Version: "
 						+ serverModVer);
@@ -487,7 +488,7 @@ public class ModXMLTools {
 			} else {
 				ModManager.debugLogger.writeMessage(mod.getModName() + " - ModMaker Mod is outdated, local:" + mod.getVersion() + " server: "
 						+ serverModVer);
-				return new UpdatePackage(mod, serverModName, serverModVer);
+				return new UpdatePackage(mod, serverModName, serverModVer,changelog);
 			}
 		} else {
 			ModManager.debugLogger.writeMessage("XML document from server was null.");
@@ -520,6 +521,7 @@ public class ModXMLTools {
 			String serverFolder = modElem.getAttribute("folder");
 			String manifesttype = modElem.getAttribute("manifesttype");
 			boolean isFullManifest = manifesttype.equals("full");
+			String changelog = modElem.getAttribute("changelog");
 			if (mod.getVersion() >= serverModVer) {
 				ModManager.debugLogger.writeMessage(mod.getModName() + " is up to date");
 				return null; // not an update
@@ -640,7 +642,7 @@ public class ModXMLTools {
 				//server lists update, but local copy matches server
 				return null;
 			}
-			UpdatePackage up = new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder);
+			UpdatePackage up = new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder,changelog);
 			if (sideloadURL != null) {
 				up.setSideloadURL(sideloadURL);
 			}
@@ -656,7 +658,7 @@ public class ModXMLTools {
 			return up;
 
 		} else {
-			ModManager.debugLogger.writeMessage("Server returned a null document.");
+			ModManager.debugLogger.writeMessage("Server returned a null document. Guess there's no update.");
 		}
 		return null;
 
