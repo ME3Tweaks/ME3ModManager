@@ -114,7 +114,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JMenuBar menuBar;
 	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
-	JMenuItem actionExitDebugMode, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
+	JMenuItem actionExitDebugMode, actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
 			modManagementPatchLibary, modManagementClearPatchLibraryCache;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
@@ -254,7 +254,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		new NetworkThread().execute();
+		new NetworkThread(false).execute();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: Initialize() has completed.");
 	}
 
@@ -267,6 +267,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 *
 	 */
 	class NetworkThread extends SwingWorker<Void, ThreadCommand> {
+
+		private boolean force;
+
+		public NetworkThread(boolean force) {
+			this.force = force;
+		}
 
 		@Override
 		public Void doInBackground() {
@@ -372,11 +378,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
-				checkForUpdates();
+				checkForModManagerUpdates();
 			}
 			checkForME3ExplorerUpdates();
-			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0) {
-				checkForModUpdates();
+			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
+				checkForContentUpdates(force);
 			}
 			return null;
 		}
@@ -416,10 +422,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		private void checkForModUpdates() {
+		private void checkForContentUpdates(boolean force) {
 			// Check for updates
-			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0) {
-				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0) {
+			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
+				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0 || force) {
 					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
 							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK) + " since the last help/mods update check.");
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest help information"));
@@ -486,7 +492,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						message += "\n - " + asi.getFilename();
 					}
 					message += "\n\nOpen the ASI Mod Management window to update them under Mod Management.";
-					JOptionPane.showMessageDialog(ModManagerWindow.this, message, "ASI mod update available", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.this, message, "ASI mod update available", JOptionPane.WARNING_MESSAGE);
 					break;
 				}
 
@@ -503,7 +509,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		private Void checkForUpdates() {
+		private Void checkForModManagerUpdates() {
 			labelStatus.setText("Checking for Mod Manager updates");
 			ModManager.debugLogger.writeMessage("Checking for update...");
 			// Check for update
@@ -1146,10 +1152,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionExitDebugMode.setToolTipText("Restarts Mod Manager in standard mode");
 		actionExitDebugMode.addActionListener(this);
 
-		actionModMaker = new JMenuItem("Create a mod");
+		actionModMaker = new JMenuItem("Create a mod on ModMaker");
 		actionModMaker.setToolTipText("Opens ME3Tweaks ModMaker");
 		actionVisitMe = new JMenuItem("Open ME3Tweaks.com");
 		actionVisitMe.setToolTipText("Opens ME3Tweaks.com");
+
+		actionCheckForContentUpdates = new JMenuItem("Check for content updates");
+		actionCheckForContentUpdates.setToolTipText("Checks for Mod Manager content updates such as MixIns and ASI mods");
 
 		JMenu actionImportMenu = new JMenu("Import mod");
 		modManagementImportAlreadyInstalled = new JMenuItem("Import installed Custom DLC mod");
@@ -1184,13 +1193,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionMenu.add(actionVisitMe);
 		actionMenu.add(actionOptions);
 		actionMenu.addSeparator();
+		actionMenu.add(actionCheckForContentUpdates);
 		actionMenu.add(actionReload);
 		actionMenu.add(actionExit);
 
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
 		actionOptions.addActionListener(this);
-
+		actionCheckForContentUpdates.addActionListener(this);
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
 		menuBar.add(actionMenu);
@@ -1706,7 +1716,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (e.getSource() == restoreRevertCoal) {
 			if (ModManager.isMassEffect3Running()) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.", "MassEffect3.exe is running",
+						JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			if (validateBIOGameDir()) {
@@ -1829,7 +1840,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (e.getSource() == restoreRevertEverything) {
 			if (ModManager.isMassEffect3Running()) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.", "MassEffect3.exe is running",
+						JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			if (validateBIOGameDir()) {
@@ -1905,6 +1917,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// TODO Auto-generated catch block
 				ex.printStackTrace();
 			}
+		} else if (e.getSource() == actionCheckForContentUpdates) {
+			new NetworkThread(true).execute();
 		} else if (e.getSource() == actionReload) {
 			// Reload this jframe
 			new ModManagerWindow(false);
@@ -1934,7 +1948,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							JOptionPane.ERROR_MESSAGE);
 				}
 			} else {
-				JOptionPane.showMessageDialog(ModManagerWindow.this, "Mass Effect 3 must be closed before you can install a mod.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "Mass Effect 3 must be closed before you can install a mod.", "MassEffect3.exe is running",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else
 
@@ -2263,7 +2278,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == toolsInstallBinkw32asi) {
 			if (ModManager.isMassEffect3Running()) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 ASI DLC bypass.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 ASI DLC bypass.",
+						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			if (validateBIOGameDir()) {
@@ -2295,7 +2311,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == toolsInstallBinkw32) {
 			if (ModManager.isMassEffect3Running()) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 DLC bypass.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 DLC bypass.",
+						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			if (validateBIOGameDir()) {
@@ -2310,7 +2327,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		} else if (e.getSource() == toolsUninstallBinkw32) {
 			if (ModManager.isMassEffect3Running()) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall a binkw32 DLC bypass.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall a binkw32 DLC bypass.",
+						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			if (validateBIOGameDir()) {
