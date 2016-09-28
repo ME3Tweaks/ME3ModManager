@@ -80,7 +80,7 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "4.4 MR1";
+	public static final String VERSION = "4.4 MR2";
 	public static long BUILD_NUMBER = 62L;
 	public static final String BUILD_DATE = "9/27/2016";
 	public static DebugLogger debugLogger;
