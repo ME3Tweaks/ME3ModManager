@@ -275,7 +275,7 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 			}
 			ModJob job = new ModJob();
-			job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
+			job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin", ignoreLoadErrors);
 			addTask(ModType.BASEGAME, job);
 
 			validMod = true;
@@ -437,7 +437,7 @@ public class Mod implements Comparable<Mod> {
 
 						// Add the file swap to task job - if this method returns
 						// false it means a file doesn't exist somewhere
-						if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile)) && !ignoreLoadErrors) {
+						if (!(newJob.addFileReplace(modFolderPath + ModManager.appendSlash(iniModDir) + newFile, oldFile, ignoreLoadErrors)) && !ignoreLoadErrors) {
 							ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
 							setFailedReason("Mod has a newfiles/replacefiles task in a header (" + modHeader
 									+ ") that encountered an error while building the list of source/targets. This likely means the source file does not exist: " + modFolderPath
@@ -461,7 +461,7 @@ public class Mod implements Comparable<Mod> {
 
 						// Add the file swap to task job - if this method returns
 						// false it means a file doesn't exist somewhere
-						if (!(newJob.addNewFileTask(modFolderPath + ModManager.appendSlash(iniModDir) + addFile, targetFile) && !ignoreLoadErrors)) {
+						if (!(newJob.addNewFileTask(modFolderPath + ModManager.appendSlash(iniModDir) + addFile, targetFile, ignoreLoadErrors)) && !ignoreLoadErrors) {
 							ModManager.debugLogger.writeError("[ADDFILE]Failed to add task for file addition (File likely does not exist), marking as invalid.");
 							setFailedReason("Mod has an addfiles/addfilestargets task in a header (" + modHeader
 									+ ") that encountered an error while building the list of source/targets. This likely means the source file does not exist: " + modFolderPath
@@ -574,8 +574,8 @@ public class Mod implements Comparable<Mod> {
 						for (File file : sourceFiles) {
 							String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
 							String destFilePath = ModManager.appendSlash(destFolder) + relativePath;
-							if (!(newJob.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false))
-									&& !ignoreLoadErrors)) {
+							if (!(newJob.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false),
+									ignoreLoadErrors) && !ignoreLoadErrors)) {
 								setFailedReason("Mod specifies a CUSTOMDLC header, but a file in one of the source directories (" + sf
 										+ ") had a file that was unable to be added. This error should not be encountered.");
 								ModManager.debugLogger.writeError("Failed to add file to replace (File likely does not exist), marking as invalid.");
@@ -715,7 +715,7 @@ public class Mod implements Comparable<Mod> {
 						ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 					}
 					ModJob job = new ModJob();
-					job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
+					job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin", ignoreLoadErrors);
 					addTask(ModType.BASEGAME, job);
 				}
 			} catch (NumberFormatException e) {
@@ -827,7 +827,7 @@ public class Mod implements Comparable<Mod> {
 		}
 
 		//Apply Alternate CustomDLC
-		if (alternateCustomDLC.size() > 0) {
+		if (alternateCustomDLC.size() > 0 && !ignoreLoadErrors) {
 			if (ModManagerWindow.validateBIOGameDir()) {
 				addCustomDLCAlternates(ModManagerWindow.GetBioGameDir());
 			} else {
@@ -840,7 +840,7 @@ public class Mod implements Comparable<Mod> {
 		}
 
 		//Verify alternates and apply automatic ones
-		if (alternateFiles != null) {
+		if (alternateFiles != null && !ignoreLoadErrors) {
 			ModManager.debugLogger.writeMessage("Verifying automatic alternate files are valid for this mod");
 			HashMap<String, ArrayList<String>> autoOriginalFiles = new HashMap<String, ArrayList<String>>(); //header to altfiles map
 			for (AlternateFile af : alternateFiles) {
@@ -1599,7 +1599,7 @@ public class Mod implements Comparable<Mod> {
 						}
 					}
 					ModManager.debugLogger.writeMessage("Merging file replace: " + otherfile);
-					myCorrespendingJob.addFileReplace(otherfile, otherReplacePaths.get(i));
+					myCorrespendingJob.addFileReplace(otherfile, otherReplacePaths.get(i), ignoreLoadErrors);
 				}
 			}
 
@@ -1629,7 +1629,7 @@ public class Mod implements Comparable<Mod> {
 						}
 					}
 					ModManager.debugLogger.writeMessage("Merging file add: " + otherfile);
-					myCorrespendingJob.addNewFileTask(otherfile, otherAddFilesTargets.get(i));
+					myCorrespendingJob.addNewFileTask(otherfile, otherAddFilesTargets.get(i), ignoreLoadErrors);
 				}
 			}
 
@@ -2286,7 +2286,7 @@ public class Mod implements Comparable<Mod> {
 			for (File file : sourceFiles) {
 				String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
 				String destFilePath = ModManager.appendSlash(destdlc) + relativePath;
-				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false))
+				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false), ignoreLoadErrors)
 						&& !ignoreLoadErrors)) {
 					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc
 							+ ". The issue occured when attempting to add the file " + file + " to the mod.");
@@ -2303,7 +2303,7 @@ public class Mod implements Comparable<Mod> {
 			for (File file : addsourceFiles) {
 				String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
 				String destFilePath = ModManager.appendSlash(destdlc) + relativePath;
-				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false))
+				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false),ignoreLoadErrors)
 						&& !ignoreLoadErrors)) {
 					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc
 							+ ". The issue occured when attempting to add the file in an additional DLC to the mod: " + file + ".");

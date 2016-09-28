@@ -145,7 +145,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						System.out.println(relativepath);
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)),
 								new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Coalesced.bin"));
-						job.addFileReplace(mod.getModPath() + relativepath + "Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
+						job.addFileReplace(mod.getModPath() + relativepath + "Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin",false);
 						destinationBasegamecoal = ModManager.appendSlash(mod.getModPath()) + relativepath + "Coalesced.bin";
 						break;
 					}
@@ -160,7 +160,7 @@ public class KeybindsInjectionWindow extends JDialog {
 					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)),
 							new File(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin"));
 					destinationBasegamecoal = mod.getModPath() + "BASEGAME/Coalesced.bin";
-					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin");
+					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin",false);
 				}
 
 				//write new moddesc.ini file
@@ -203,7 +203,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
 								new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Default_DLC_CON_MP5.bin"));
 						destinationMP5coal = origMod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin";
-						job.addFileReplace(mod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin", "/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin");
+						job.addFileReplace(mod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin", "/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin",false);
 						break;
 					}
 				}
@@ -217,7 +217,7 @@ public class KeybindsInjectionWindow extends JDialog {
 					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
 							new File(ModManager.appendSlash(mod.getModPath()) + "MP5/Default_DLC_CON_MP5.bin"));
 					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "MP5/Default_DLC_CON_MP5.bin",
-							"/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin");
+							"/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin",false);
 					destinationMP5coal = origMod.getModPath() + "MP5/Default_DLC_CON_MP5.bin";
 					mod.addTask(ModType.MP5, job);
 				}
