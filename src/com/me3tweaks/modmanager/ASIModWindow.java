@@ -341,7 +341,7 @@ public class ASIModWindow extends JDialog {
 					NodeList asiMod = (NodeList) asiModExpr.evaluate(updateGroup, XPathConstants.NODESET);
 					for (int j = 0; j < asiMod.getLength(); j++) {
 						Element modVer = (Element) asiMod.item(j);
-						ASIMod mod = new ASIMod(modVer);
+						ASIMod mod = new ASIMod(modVer, groupID);
 						currentGroup.addVersion(mod);
 					}
 				}
@@ -558,7 +558,13 @@ public class ASIModWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if (ModManager.isMassEffect3Running()) {
-						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install an ASI.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install an ASI.", "MassEffect3.exe is running",
+								JOptionPane.ERROR_MESSAGE);
+						return;
+					}
+					if (mod.getDownloadURL() == null) {
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "This ASI had an error while parsing the download link. Please report this to femshep with a Mod Manager log.", "No download link available",
+								JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 					new ASIModInstaller(mod).execute();
@@ -571,7 +577,8 @@ public class ASIModWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if (ModManager.isMassEffect3Running()) {
-						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall an ASI.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall an ASI.", "MassEffect3.exe is running",
+								JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 					InstalledASIMod im = installedmod;
@@ -808,7 +815,7 @@ public class ASIModWindow extends JDialog {
 				//check for it in the update group...
 				InstalledASIMod outdatedmod = amw.findOutdatedInstalledModByManifestMod(mod);
 				if (outdatedmod != null) {
-					ModManager.debugLogger.writeMessage("Found outdated ASI "+outdatedmod);
+					ModManager.debugLogger.writeMessage("Found outdated ASI " + outdatedmod);
 					outdatedasi.add(outdatedmod);
 				}
 			}
