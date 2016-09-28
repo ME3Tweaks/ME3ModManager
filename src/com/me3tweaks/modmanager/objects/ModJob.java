@@ -182,12 +182,13 @@ public class ModJob {
 	 *            Source file that will be injected (full file path)
 	 * @param fileToReplace
 	 *            File path in DLC or basegame that will be updated
+	 * @param ignoreExistenceErrors Ignores errors if a source file doesn't exist. Typically means the file is compressed.
 	 * @return True if task was added OK, false if the source file does not
 	 *         exist or duplicate files were added
 	 */
-	public boolean addFileReplace(String newFile, String fileToReplace) {
+	public boolean addFileReplace(String newFile, String fileToReplace, boolean ignoreExistenceErrors) {
 		File file = new File(newFile);
-		if (!file.exists()) {
+		if (!file.exists() && !ignoreExistenceErrors) {
 			ModManager.debugLogger.writeError("Source file doesn't exist: " + newFile);
 			return false;
 		}
@@ -308,11 +309,15 @@ public class ModJob {
 	 *            new file to add
 	 * @param targetPath
 	 *            path to place in DLC
+	 * @param ignoreExistenceErrors Ignores errors if a source file doesn't exist. Typically a sign the mod is compressed and has no files on disk yet.
 	 * @return true if added, false otherwise
 	 */
-	public boolean addNewFileTask(String sourceFile, String targetPath) {
+	public boolean addNewFileTask(String sourceFile, String targetPath, boolean ignoreExistenceErrors) {
 		File file = new File(sourceFile);
 		if (!file.exists()) {
+			System.out.println("BREAKAGE.");
+		}
+		if (!file.exists() && !ignoreExistenceErrors) {
 			ModManager.debugLogger.writeError("Source file doesn't exist: " + sourceFile);
 			return false;
 		}
