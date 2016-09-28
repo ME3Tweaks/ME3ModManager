@@ -732,11 +732,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						ModManager.debugLogger.writeMessage("Server version of XBX library: " + serverver);
 						if (libver < serverver) {
 							ModManager.debugLogger.writeMessage("XBX Library is out of date, updating...");
-							boolean deleted = FileUtils.deleteQuietly(new File(xbxLibPath));
-							if (!deleted) {
-								//failed to delete old folder
-								System.out.println("Break");
-							}
+							FileUtils.deleteQuietly(new File(xbxLibPath));
 							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updating SP Controller Support GUI library"));
 							String newLib = ModManager.getGUILibraryFor("DLC_CON_XBX", true);
 							if (newLib != null) {
