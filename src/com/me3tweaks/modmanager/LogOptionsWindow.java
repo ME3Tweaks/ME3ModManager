@@ -3,7 +3,6 @@ package com.me3tweaks.modmanager;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dialog;
-import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -14,13 +13,16 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -32,7 +34,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
@@ -46,6 +47,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
@@ -54,7 +56,7 @@ import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
-import com.me3tweaks.modmanager.ui.HintTextAreaUI;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 
@@ -64,6 +66,8 @@ public class LogOptionsWindow extends JDialog {
 	JTextField fdescription;
 	private JCheckBox installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile;
 	JCheckBox[] options;
+	private JButton shareViaFile;
+	private JButton shareViaPastebin;
 
 	public LogOptionsWindow(JFrame callingWindow) {
 		setupWindow();
@@ -111,10 +115,10 @@ public class LogOptionsWindow extends JDialog {
 		me3logfile.setToolTipText("<html>Imports the ME3Logger contents into the log. If this bypass/ASI was not installed (or the file does not exist), this does nothing</html>");
 		me3logfile.setSelected(false);
 
-		JButton shareViaFile = new JButton("Save to disk");
+		shareViaFile = new JButton("Save to disk");
 		shareViaFile.setToolTipText("Saves this log to the logs directory.");
 
-		JButton shareViaPastebin = new JButton("Upload to pastebin");
+		shareViaPastebin = new JButton("Upload to pastebin");
 		shareViaPastebin.setToolTipText(
 				"Uploads the log to ME3Tweaks which is then posted to pastebin (unlisted). You will receive a link to your log and it will be stored in the logs folder");
 		shareViaPastebin.addActionListener(new ActionListener() {
@@ -129,7 +133,8 @@ public class LogOptionsWindow extends JDialog {
 					}
 				}
 				if (!somethingChecked) {
-					JOptionPane.showMessageDialog(LogOptionsWindow.this, "You must check at least one box to generate a log.", "No log options selected", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(LogOptionsWindow.this, "You must check at least one box to generate a log.", "No log options selected",
+							JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				shareViaPastebin.setEnabled(false);
@@ -151,28 +156,19 @@ public class LogOptionsWindow extends JDialog {
 					}
 				}
 				if (!somethingChecked) {
-					JOptionPane.showMessageDialog(LogOptionsWindow.this, "You must check at least one box to generate a log.", "No log options selected", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(LogOptionsWindow.this, "You must check at least one box to generate a log.", "No log options selected",
+							JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				// TODO Auto-generated method stub
 				shareViaPastebin.setEnabled(false);
 				shareViaFile.setEnabled(false);
 				// TODO Auto-generated method stub
-				String log = generateLog();
-				try {
-					File logfile = ModManager.getNewLogFile(fname.getText().trim());
-					FileUtils.writeStringToFile(logfile, log);
-					dispose();
-					Process p = new ProcessBuilder("explorer.exe", "/select,", logfile.getAbsolutePath()).start();
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Log file written to disk");
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					ModManager.debugLogger.writeErrorWithException("Failed to write log file to disk:", e1);
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to write log file to disk, view live log to see why");
-				}
+				saveLogToDisk(fname.getText().trim(), true);
+				dispose();
 			}
 		});
-		
+
 		options = new JCheckBox[] { installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile };
 
 		sessionoption.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -216,13 +212,32 @@ public class LogOptionsWindow extends JDialog {
 		this.pack();
 	}
 
+	protected String saveLogToDisk(String fname, boolean showWinExp) {
+		String log = generateLog();
+		try {
+			File logfile = ModManager.getNewLogFile(fname);
+			FileUtils.writeStringToFile(logfile, log);
+			//dispose();
+			if (showWinExp) {
+				Process p = new ProcessBuilder("explorer.exe", "/select,", logfile.getAbsolutePath()).start();
+			}
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Log file written to disk");
+			return logfile.getAbsolutePath();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeErrorWithException("Failed to write log file to disk:", e1);
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to write log file to disk, view live log to see why");
+		}
+		return null;
+	}
+
 	private String generateLog() {
 		String desc = "User did not enter a description of this log.";
 		if (!fdescription.getText().equals("")) {
 			desc = fdescription.getText();
 		}
 		String log = desc + "\n\n";
-		
+
 		if (installeddlcoption.isSelected()) {
 			log += "=========[INSTALLEDLC] Installed DLC =============\n";
 			log += getInstalledDLC();
@@ -367,7 +382,7 @@ public class LogOptionsWindow extends JDialog {
 		String installeddlcstr = "";
 		if (ModManagerWindow.validateBIOGameDir()) {
 			File mainDlcDir = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "DLC" + File.separator);
-			File testpatch = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "Patches"+File.separator+"PCConsole" + File.separator + "Patch_001.sfar");
+			File testpatch = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "Patches" + File.separator + "PCConsole" + File.separator + "Patch_001.sfar");
 
 			String[] directories = mainDlcDir.list(new FilenameFilter() {
 				@Override
@@ -486,9 +501,10 @@ public class LogOptionsWindow extends JDialog {
 			this.setLocationRelativeTo(callingDialog);
 		}
 
-		class PastebinUploaderThread extends SwingWorker<Void, Void> {
+		class PastebinUploaderThread extends SwingWorker<Boolean, Void> {
 			private String log, fname;
 			private LogOptionsWindow low;
+			private String pastebinlink;
 
 			public PastebinUploaderThread(String log, String fname, LogOptionsWindow low) {
 				this.log = log;
@@ -496,32 +512,47 @@ public class LogOptionsWindow extends JDialog {
 				this.fname = fname;
 			}
 
-			public Void doInBackground() {
+			public Boolean doInBackground() {
+				boolean OK = false;
 				try {
-
+					//compress with lzma
+					String logfile = saveLogToDisk(fname, false);
+					String outputFile = logfile + ".lzma";
+					String[] procargs = { ModManager.getToolsDir() + "lzma.exe", "e", logfile, outputFile, "-d26", "-mt" + Runtime.getRuntime().availableProcessors() };
+					ProcessBuilder p = new ProcessBuilder(procargs);
+					ModManager.runProcess(p);
+					String log = Base64.getEncoder().encodeToString(FileUtils.readFileToByteArray(new File(outputFile)));
 					HttpClient httpclient = HttpClients.createDefault();
-					HttpPost httppost = new HttpPost("https://me3tweaks.com/modmanager/tools/loguploader");
-
+					HttpPost httppost = new HttpPost("https://me3tweaks.com/modmanager/tools/loguploader-compress");
+					System.out.println(log);
 					// Request parameters and other properties.
 					List<NameValuePair> params = new ArrayList<NameValuePair>(2);
 					params.add(new BasicNameValuePair("MMVersion", ModManager.VERSION));
 					params.add(new BasicNameValuePair("MMBuild", Long.toString(ModManager.BUILD_NUMBER)));
 					params.add(new BasicNameValuePair("LogData", log));
+
 					httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
 					//Execute and get the response.
 					HttpResponse response = httpclient.execute(httppost);
 					HttpEntity entity = response.getEntity();
-
+					//new File(outputFile).delete();
 					if (entity != null) {
 						InputStream instream = entity.getContent();
 						try {
 							// do something useful
-							String pastebinlink = IOUtils.toString(instream);
-							ModManager.openWebpage(new URL(pastebinlink));
-							Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
-							StringSelection stringSelection = new StringSelection(pastebinlink);
-							clpbrd.setContents(stringSelection, null);
-							FileUtils.writeStringToFile(ModManager.getNewLogFile(fname.trim()), log);
+							pastebinlink = IOUtils.toString(instream);
+							OK = ModManager.openWebpage(new URL(pastebinlink));
+							if (OK) {
+								Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
+								ModManager.debugLogger.writeMessage("Server responded with " + pastebinlink);
+								StringSelection stringSelection = new StringSelection(pastebinlink);
+								clpbrd.setContents(stringSelection, null);
+							}
+
+						} catch (MalformedURLException e) {
+							OK = false;
+							ModManager.debugLogger.writeError("Malformed URL from server, likely an error...");
+							ModManager.debugLogger.writeError("Response was " + pastebinlink);
 						} finally {
 							instream.close();
 						}
@@ -535,13 +566,39 @@ public class LogOptionsWindow extends JDialog {
 				} catch (IOException e1) {
 					ModManager.debugLogger.writeErrorWithException("Error uploading log: ", e1);
 				}
-				return null;
+				return OK;
 			}
 
 			public void done() {
+				try {
+					boolean ok = get();
+					if (ok) {
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Uploaded log to pastebin, link copied to clipboard");
+						low.dispose();
+					} else {
+						shareViaPastebin.setEnabled(true);
+						shareViaFile.setEnabled(true);
+						ModManager.debugLogger.writeError("Pastebin thread NOT OK!");
+						if (pastebinlink != null && pastebinlink.equals("")) {
+							JOptionPane.showMessageDialog(LogOptionsWindow.this,
+									"An error occured uploading the log to the server.\nThe server responded, but there was nothing in the message. You should contact femshep as this shouldn't happen.\n\nYou can use the save to disk option and upload that as a backup for log sharing.",
+									"Upload Error", JOptionPane.ERROR_MESSAGE);
+						} else {
+							JOptionPane
+									.showMessageDialog(LogOptionsWindow.this,
+											"An error occured uploading the log to the server.\nThe server responded with the following:\n" + pastebinlink
+													+ "\n\nYou can use the save to disk option and upload that as a backup for log sharing.",
+											"Upload Error", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				} catch (ExecutionException e) {
+					ModManager.debugLogger.writeErrorWithException("Execution exception in pastebin thread: ", e);
+					JOptionPane.showMessageDialog(LogOptionsWindow.this, "An error occured uploading the log to the server:\n" + e.getMessage()
+							+ "\n\nYou can use the save to disk option and upload that as a backup for log sharing.", "Upload Error", JOptionPane.ERROR_MESSAGE);
+				} catch (InterruptedException e) {
+					ModManager.debugLogger.writeErrorWithException("Execution exception in pastebin thread: ", e);
+				}
 				dispose();
-				low.dispose();
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Uploaded log to pastebin, link copied to clipboard");
 			}
 		}
 	}

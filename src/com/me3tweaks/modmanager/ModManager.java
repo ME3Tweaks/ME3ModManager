@@ -80,9 +80,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "4.4 MR2";
+	public static final String VERSION = "4.4 MR3";
 	public static long BUILD_NUMBER = 62L;
-	public static final String BUILD_DATE = "9/27/2016";
+	public static final String BUILD_DATE = "10/1/2016";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -1713,16 +1713,18 @@ public class ModManager {
 			try {
 				desktop.browse(uri);
 			} catch (Exception e) {
-				e.printStackTrace();
+				ModManager.debugLogger.writeErrorWithException("Error opening webpage:", e);
 			}
 		}
 	}
 
-	public static void openWebpage(URL url) {
+	public static boolean openWebpage(URL url) {
 		try {
 			openWebpage(url.toURI());
+			return true;
 		} catch (URISyntaxException e) {
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("Error opening webpage: ", e);
+			return false;
 		}
 	}
 
@@ -1867,7 +1869,8 @@ public class ModManager {
 	/**
 	 * Returns map of Custom DLC files mapped to a list of custom dlc they
 	 * appear in. If the list is longer than 1 element it means there is a
-	 * conflict. Only scans for PCC files. The returned values are sorted in order of lowest to highest priority.
+	 * conflict. Only scans for PCC files. The returned values are sorted in
+	 * order of lowest to highest priority.
 	 * 
 	 * @param customDLCs
 	 *            list of Custom DLCs to scan against
@@ -2075,14 +2078,15 @@ public class ModManager {
 	public static File getNewLogFile(String fname) {
 		if (fname.equals("")) {
 			fname = "Log";
+		} else {
+			fname = fname.replaceAll("\\\\", "-");
+			fname = fname.replaceAll("..", "_");
 		}
 		// TODO Auto-generated method stub
 		Date date = new Date();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH.mm");
 		String datestr = dateFormat.format(date);
 		String filepath = getLogsDir() + fname + "-ModManager" + ModManager.VERSION + "_b" + ModManager.BUILD_NUMBER + " " + datestr + ".txt";
-		System.out.println(filepath);
-		System.out.println("break");
 		return new File(filepath);
 	}
 
@@ -2125,7 +2129,7 @@ public class ModManager {
 				sb.append(arg);
 				sb.append(" ");
 			}
-			ModManager.debugLogger.writeMessage("["+prefix+"]runProcess(): " + sb.toString());
+			ModManager.debugLogger.writeMessage("[" + prefix + "]runProcess(): " + sb.toString());
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
 			//handle stdout
@@ -2143,12 +2147,12 @@ public class ModManager {
 			}).start();
 			int returncode = process.waitFor();
 			long endTime = System.currentTimeMillis();
-			ModManager.debugLogger.writeMessage("["+prefix+"]Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
-			ModManager.debugLogger.writeMessage("["+prefix+"]Process output: " + writer.toString());
+			ModManager.debugLogger.writeMessage("[" + prefix + "]Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
+			ModManager.debugLogger.writeMessage("[" + prefix + "]Process output: " + writer.toString());
 			writer.close();
 			return new ProcessResult(returncode, null);
 		} catch (IOException | InterruptedException e) {
-			ModManager.debugLogger.writeErrorWithException("["+prefix+"]Process exception occured:", e);
+			ModManager.debugLogger.writeErrorWithException("[" + prefix + "]Process exception occured:", e);
 			return new ProcessResult(0, e);
 		}
 	}
