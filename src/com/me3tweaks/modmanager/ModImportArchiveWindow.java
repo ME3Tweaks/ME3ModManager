@@ -303,7 +303,7 @@ public class ModImportArchiveWindow extends JDialog {
 					break;
 				case "FOUND_MODFILE":
 					int data = (int) command.getData();
-					descriptionArea.setText("Scanning archive for Mod Manager mods...\nFound " + data + " potential mod" + (data != 1 ? "s" : ""));
+					descriptionArea.setText("Scanning archive for Mod Manager mods...\nFound " + data + " potential mod" + (data != 1 ? "s" : "")+"\n\nThe progress bar may not move for a while for large mods.");
 					break;
 				case "POST_SUBTEXT":
 					String rside = descriptionArea.getText();

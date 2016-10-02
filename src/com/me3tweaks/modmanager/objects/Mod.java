@@ -656,7 +656,6 @@ public class Mod implements Comparable<Mod> {
 						return;
 					}
 					for (String alt : alts) {
-						System.err.println(alt);
 						AlternateCustomDLC altdlc = new AlternateCustomDLC(alt);
 						ModManager.debugLogger.writeMessageConditionally("Alternate CustomDLC specified: " + alt.toString(), ModManager.LOG_MOD_INIT);
 						alternateCustomDLC.add(altdlc);
