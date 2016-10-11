@@ -303,9 +303,9 @@ public class AllModsUpdateWindow extends JDialog {
 			} else if (upackages.size() != completedUpdates.size()) {
 				//one error occured
 				JOptionPane.showMessageDialog(callingWindow, completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
-						+ " failed to update.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
+						+ " failed to update.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.", "Mods updated",
+				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.", "Mods updated",
 						JOptionPane.INFORMATION_MESSAGE);
 			}
 
