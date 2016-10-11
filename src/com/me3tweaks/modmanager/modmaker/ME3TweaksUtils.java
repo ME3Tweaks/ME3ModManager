@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
@@ -15,7 +16,6 @@ import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
-import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 public class ME3TweaksUtils {
 	public static final int FILENAME = 0;
@@ -666,5 +666,30 @@ public class ME3TweaksUtils {
 		}
 
 		return null;
+	}
+
+	public static ThirdPartyModInfo getThirdPartyModInfoByMountID(String priorityString) {
+		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
+			return null;
+		}
+		ModManager.debugLogger.writeMessage("Looking up mod information by mount priority using the 3rd party mod id service: "+priorityString);
+		try {
+			JSONParser parser = new JSONParser();
+			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);
+			
+		    for (Object key : dbObj.keySet()) {
+		        //based on you key types
+		        String keyStr = (String)key;
+		        JSONObject modinfo = (JSONObject) dbObj.get(keyStr);
+		        String mountpriority = (String) modinfo.get("mountpriority");
+		        System.out.println(mountpriority);
+		        if (mountpriority.equalsIgnoreCase(priorityString)) {
+					return new ThirdPartyModInfo(keyStr,modinfo);
+		        }
+		    }
+		} catch (ParseException e) {
+			ModManager.debugLogger.writeErrorWithException("Failed to parse 3rd party mod information: ", e);
+		}
+	    return null;
 	}
 }

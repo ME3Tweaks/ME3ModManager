@@ -44,11 +44,13 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 import com.me3tweaks.modmanager.FolderBatchWindow.BatchWorker;
 import com.me3tweaks.modmanager.ModManager.Lock;
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
+import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextAreaUI;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
@@ -138,8 +140,8 @@ public class StarterKitWindow extends JDialog {
 
 		mountFlagsCombobox.setModel(flagModel);
 		mountFlagsCombobox.setRenderer(new MountFlagCellRenderer());
-		mountFlagsCombobox
-				.setToolTipText("<html>Mount flags determine when this DLC is loaded and if it is required by save files.<br>Having a DLC load in MP will require all players to have the DLC installed or connections will be refused.</html>");
+		mountFlagsCombobox.setToolTipText(
+				"<html>Mount flags determine when this DLC is loaded and if it is required by save files.<br>Having a DLC load in MP will require all players to have the DLC installed or connections will be refused.</html>");
 
 		modName.setUI(new HintTextFieldUI("A Most Excellent Mod", true));
 		modDeveloper.setUI(new HintTextFieldUI("GatorZ", true));
@@ -148,21 +150,19 @@ public class StarterKitWindow extends JDialog {
 		internalDisplayName.setUI(new HintTextFieldUI("Excellent DLC Module", true));
 		internalTLKId.setUI(new HintTextFieldUI("13370000", true));
 		mountPriority.setUI(new HintTextFieldUI("4500", true));
-		modDescription
-				.setUI(new HintTextAreaUI(
-						"Mod description goes here.\nThis is what will appear in Mod Manager when the user selects your mod.\nThis is the moddesc attribute in moddesc.ini under [ModInfo].\nNewlines will be replaced with <br>."));
+		modDescription.setUI(new HintTextAreaUI(
+				"Mod description goes here.\nThis is what will appear in Mod Manager when the user selects your mod.\nThis is the moddesc attribute in moddesc.ini under [ModInfo].\nNewlines will be replaced with <br>."));
 		modName.setToolTipText("<html>Name of this mod that Mod Manager will display.<br>This is the moddesc modname value under [ModInfo]</html>");
-		modDeveloper
-				.setToolTipText("<html>Developer of this mod. Likely your modding scene alias.<br>This is the moddesc moddev value under [ModInfo]</html>");
-		modSite.setToolTipText("<html>Optional website that will show up in Mod Manager the user can click to get help, more info, etc about the mod.<br>This is the moddesc modsite value under [ModInfo]</html>");
-		internalDLCName
-				.setToolTipText("<html>The internal name for the DLC, after the standard DLC_MOD.<br>The hint for this textbox would mean the DLC folder is named DLC_MOD_ExcellentMod.</html>");
-		internalDisplayName
-				.setToolTipText("<html>Internal name for this DLC. If a DLC fails to load, the user may see this name at the main menu.</html>");
-		internalTLKId
-				.setToolTipText("<html>TLK ID to use for your generated TLK file.<br>A TLK file will be created for the main 6 languages<br>and the internal DLC name will be set on this one.<br>The mount file will point to this value.</html>");
-		mountPriority
-				.setToolTipText("<html>Mount priority of your mod. Official DLC ends around 3300.<br>Mods that have pcc files with the same name will only load the higher mount priority version.</html>");
+		modDeveloper.setToolTipText("<html>Developer of this mod. Likely your modding scene alias.<br>This is the moddesc moddev value under [ModInfo]</html>");
+		modSite.setToolTipText(
+				"<html>Optional website that will show up in Mod Manager the user can click to get help, more info, etc about the mod.<br>This is the moddesc modsite value under [ModInfo]</html>");
+		internalDLCName.setToolTipText(
+				"<html>The internal name for the DLC, after the standard DLC_MOD.<br>The hint for this textbox would mean the DLC folder is named DLC_MOD_ExcellentMod.</html>");
+		internalDisplayName.setToolTipText("<html>Internal name for this DLC. If a DLC fails to load, the user may see this name at the main menu.</html>");
+		internalTLKId.setToolTipText(
+				"<html>TLK ID to use for your generated TLK file.<br>A TLK file will be created for the main 6 languages<br>and the internal DLC name will be set on this one.<br>The mount file will point to this value.</html>");
+		mountPriority.setToolTipText(
+				"<html>Mount priority of your mod. Official DLC ends around 3300.<br>Mods that have pcc files with the same name will only load the higher mount priority version.</html>");
 
 		c.gridy = 0;
 		c.gridx = fieldColumn;
@@ -200,8 +200,8 @@ public class StarterKitWindow extends JDialog {
 					String modpath = ModManager.getModsDir() + modName.getText();
 					File modpathfile = new File(modpath);
 					if (modpathfile.exists() && modpathfile.isDirectory()) {
-						int result = JOptionPane.showConfirmDialog(StarterKitWindow.this, "A mod named " + modName.getText()
-								+ " already exists.\nDelete this mod and create the starter kit in its place?", "Mod already exists",
+						int result = JOptionPane.showConfirmDialog(StarterKitWindow.this,
+								"A mod named " + modName.getText() + " already exists.\nDelete this mod and create the starter kit in its place?", "Mod already exists",
 								JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 						if (result == JOptionPane.NO_OPTION) {
 							return;
@@ -285,7 +285,8 @@ public class StarterKitWindow extends JDialog {
 			String[] schemes = { "http", "https" }; // DEFAULT schemes = "http", "https", "ftp"
 			UrlValidator urlValidator = new UrlValidator(schemes);
 			if (!urlValidator.isValid(modsite)) {
-				showErrorMessage("Invalid mod site. This is the clickable link at the bottom of Mod Manager mod descriptions in the right side pane.\nThe specified URL is not valid.");
+				showErrorMessage(
+						"Invalid mod site. This is the clickable link at the bottom of Mod Manager mod descriptions in the right side pane.\nThe specified URL is not valid.");
 				return false;
 			}
 		}
@@ -331,6 +332,17 @@ public class StarterKitWindow extends JDialog {
 		} catch (NumberFormatException e) {
 			showErrorMessage("Invalid Mount Priority. Value must be between 1 and " + Short.MAX_VALUE + ".");
 			return false;
+		}
+
+		ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfoByMountID(priorityString);
+		if (tpmi != null) {
+			int result = JOptionPane.showConfirmDialog(StarterKitWindow.this,
+					"<html><div style='width: 400px'>The mod you are creating has the same mount priority as " + tpmi.getModname()
+							+ ". You should change this priority to prevent conflicts.<br><br>When mount priorities conflict, the game behaves in an undefined manner.<br>Change mount priority?</div></html>",
+					"Conflicting Mount Priority", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
+			if (result == JOptionPane.YES_OPTION) {
+				return false;
+			}
 		}
 		return true;
 	}
@@ -503,12 +515,10 @@ public class StarterKitWindow extends JDialog {
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 60));
 			publish(new ThreadCommand("SET_DIALOG_TEXT", "Moving Default_DLC_MOD_" + internaldlcname));
 			ModManager.debugLogger.writeMessage("Recompiling Default_DLC_MOD_" + internaldlcname + ".bin");
-			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "Default_DLC_MOD_"
-					+ internaldlcname + ".xml");
+			CoalescedWindow.compileCoalesced(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "Default_DLC_MOD_" + internaldlcname + ".xml");
 			FileUtils.deleteQuietly(new File(coalpath));
 			ModManager.debugLogger.writeMessage("Moving Default_DLC_MOD_" + internaldlcname + ".bin to " + coalpath);
-			FileUtils.moveFile(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "Default_DLC_MOD_" + internaldlcname
-					+ ".bin"), new File(coalpath));
+			FileUtils.moveFile(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "Default_DLC_MOD_" + internaldlcname + ".bin"), new File(coalpath));
 
 			//update mount.dlc
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 70));
@@ -532,8 +542,8 @@ public class StarterKitWindow extends JDialog {
 
 			//move coaleseced folder
 			ModManager.debugLogger.writeMessage("Moving Coalesced folder");
-			FileUtils.moveDirectory(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname), new File(modpath + "WORKSPACE" + File.separator
-					+ "Default_DLC_MOD_" + internaldlcname));
+			FileUtils.moveDirectory(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname),
+					new File(modpath + "WORKSPACE" + File.separator + "Default_DLC_MOD_" + internaldlcname));
 
 			//Create moddesc.ini
 			ModManager.debugLogger.writeMessage("Creating moddesc.ini for " + modname);
@@ -622,24 +632,17 @@ public class StarterKitWindow extends JDialog {
 			}
 			if (callingDialog instanceof StarterKitWindow) {
 				if (OK) {
-					JOptionPane
-							.showMessageDialog(
-									callingDialog,
-									modname
-											+ " has been created.\nPlace files into the mod's DLC_MOD_"
-											+ internaldlcname
-											+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
-									modname + " created", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(callingDialog,
+							modname + " has been created.\nPlace files into the mod's DLC_MOD_" + internaldlcname
+									+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
+							modname + " created", JOptionPane.INFORMATION_MESSAGE);
 					callingDialog.dispose();
 					ResourceUtils.openDir(generatedMod.getModPath());
 					new ModManagerWindow(false);
 				} else {
-					JOptionPane
-							.showMessageDialog(
-									callingDialog,
-									modname
-											+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the log attached.",
-									modname + " not created", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(callingDialog,
+							modname + " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the log attached.",
+							modname + " not created", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		}

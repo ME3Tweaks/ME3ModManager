@@ -219,6 +219,9 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 						ModManager.debugLogger.writeError("Skipping cmmbackup file " + file);
 						continue; //skip backups folder
 					}
+					if (file.getName().equalsIgnoreCase("PCConsoleTOC.bin")){
+						continue; //skip PCConsoleTOC as they'll be updated outside of mod installs. Especially the basegame one.
+					}
 					filesToHash.add(file);
 				}
 			}

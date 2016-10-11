@@ -200,7 +200,11 @@ public class AllModsUpdateWindow extends JDialog {
 						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + ", Preparing user prompt.");
 						updatetext += getVersionUpdateString(upackage);
 					}
-					updatetext += "Update these mods?";
+					if (upackages.size() > 1) {
+						updatetext += "Update these mods?";
+					} else {
+						updatetext += "Update this mod?";
+					}
 					int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
 					switch (result) {
 					case JOptionPane.YES_OPTION:

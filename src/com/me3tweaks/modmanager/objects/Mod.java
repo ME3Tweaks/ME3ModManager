@@ -15,6 +15,7 @@ import java.util.TreeSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.ini4j.BasicProfile;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -57,9 +58,34 @@ public class Mod implements Comparable<Mod> {
 	private String sideloadURL;
 	private ArrayList<String> blacklistedFiles = new ArrayList<>();
 	private ArrayList<String> outdatedDLCModules = new ArrayList<>();
+	private ArrayList<AlternateCustomDLC> appliedAutomaticAlternateCustomDLC = new ArrayList<AlternateCustomDLC>();
+
+	public ArrayList<AlternateCustomDLC> getAppliedAutomaticAlternateCustomDLC() {
+		return appliedAutomaticAlternateCustomDLC;
+	}
+
+	public void setAppliedAutomaticAlternateCustomDLC(ArrayList<AlternateCustomDLC> appliedAutomaticAlternateCustomDLC) {
+		this.appliedAutomaticAlternateCustomDLC = appliedAutomaticAlternateCustomDLC;
+	}
 
 	public String getServerModFolder() {
 		return serverModFolder;
+	}
+
+	public ArrayList<AlternateFile> getAlternateFiles() {
+		return alternateFiles;
+	}
+
+	public void setAlternateFiles(ArrayList<AlternateFile> alternateFiles) {
+		this.alternateFiles = alternateFiles;
+	}
+
+	public ArrayList<AlternateCustomDLC> getAlternateCustomDLC() {
+		return alternateCustomDLC;
+	}
+
+	public void setAlternateCustomDLC(ArrayList<AlternateCustomDLC> alternateCustomDLC) {
+		this.alternateCustomDLC = alternateCustomDLC;
 	}
 
 	public void setServerModFolder(String serverModFolder) {
@@ -181,6 +207,9 @@ public class Mod implements Comparable<Mod> {
 		}
 		for (ModDelta str : mod.modDeltas) {
 			modDeltas.add(new ModDelta(str));
+		}
+		for (AlternateCustomDLC dlc : mod.alternateCustomDLC) {
+			alternateCustomDLC.add(new AlternateCustomDLC(dlc));
 		}
 		for (String str : mod.outdatedDLCModules) {
 			outdatedDLCModules.add(str);
@@ -2291,6 +2320,8 @@ public class Mod implements Comparable<Mod> {
 							+ ". The issue occured when attempting to add the file " + file + " to the mod.");
 					ModManager.debugLogger.writeError("Failed to add file to replace with ALTERNATE CUSTOM DLC (File likely does not exist), marking as invalid.");
 					return;
+				} else {
+					appliedAutomaticAlternateCustomDLC.add(altdlc);
 				}
 			}
 			break;
@@ -2302,12 +2333,14 @@ public class Mod implements Comparable<Mod> {
 			for (File file : addsourceFiles) {
 				String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), sf.getAbsolutePath(), File.separator);
 				String destFilePath = ModManager.appendSlash(destdlc) + relativePath;
-				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false),ignoreLoadErrors)
+				if (!(job.addFileReplace(ResourceUtils.normalizeFilePath(file.getAbsolutePath(), false), ResourceUtils.normalizeFilePath(destFilePath, false), ignoreLoadErrors)
 						&& !ignoreLoadErrors)) {
 					setFailedReason("Mod specifies a CUSTOMDLC header, but an Alternate DLC operation failed to apply: " + altdlc
 							+ ". The issue occured when attempting to add the file in an additional DLC to the mod: " + file + ".");
 					ModManager.debugLogger.writeError("Failed to add file to replace with ADD ALTERNATE CUSTOM DLC (File likely does not exist), marking as invalid.");
 					return;
+				} else {
+					appliedAutomaticAlternateCustomDLC.add(altdlc);
 				}
 			}
 			break;
@@ -2434,6 +2467,64 @@ public class Mod implements Comparable<Mod> {
 
 	public void setOutdatedDLCModules(ArrayList<String> outdatedDLCModules) {
 		this.outdatedDLCModules = outdatedDLCModules;
+	}
+
+	/**
+	 * Gets applicable automatic alternate files to this mod
+	 * 
+	 * @param biogamedir
+	 *            biogame directory
+	 */
+	public ArrayList<AlternateFile> getApplicableAutomaticAlternates(String biogamedir) {
+		ArrayList<AlternateFile> applicableAutomaticAlternates = new ArrayList<AlternateFile>();
+		if (alternateFiles.size() > 0) {
+			ModManager.debugLogger.writeMessage(getModName() + ": Checking automatic alternate files for modutils list.");
+			//get list of installed DLC
+			ArrayList<String> installedDLC = ModManager.getInstalledDLC(biogamedir);
+			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
+
+			for (AlternateFile af : alternateFiles) {
+				String condition = af.getCondition();
+				String conditionaldlc = af.getConditionalDLC();
+				if (!installedDLC.contains(conditionaldlc)) {
+					//check if its a header...
+					if (officialDLCHeaders.contains(conditionaldlc)) {
+						//convert to dlc name
+						HashMap<String, String> headerFolderMap = ModType.getHeaderFolderMap();
+						String fname = headerFolderMap.get(conditionaldlc);
+						if (fname != null) {
+							conditionaldlc = fname;
+						} else {
+							//ModManager.debugLogger.writeError("[alt file application] Alt file specifies non-existent Custom DLC/Mod Manager Header: " + conditionaldlc);
+							continue;
+						}
+					}
+				}
+
+				switch (condition) {
+				case AlternateFile.CONDITION_DLC_NOT_PRESENT:
+					if (!installedDLC.contains(conditionaldlc.toUpperCase())) {
+						applicableAutomaticAlternates.add(af);
+					}
+					break;
+				case AlternateFile.CONDITION_DLC_PRESENT:
+					if (installedDLC.contains(conditionaldlc.toUpperCase())) {
+						applicableAutomaticAlternates.add(af);
+					}
+					break;
+				}
+			}
+		}
+		return applicableAutomaticAlternates;
+	}
+
+	public void applyManualCustomDLCs() {
+		for (AlternateCustomDLC dlc : alternateCustomDLC) {
+			if (dlc.getCondition().equals(AlternateCustomDLC.CONDITION_MANUAL) && dlc.hasBeenChoosen()) {
+				ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
+				applyAlternateDLCOperation(job, dlc);
+			}
+		}
 	}
 
 }

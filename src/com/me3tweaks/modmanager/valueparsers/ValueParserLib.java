@@ -77,7 +77,7 @@ public class ValueParserLib {
 
 	public static String getStringProperty(String inputString, String propertyName, boolean isQuoted) {
 		int charIndex = inputString.indexOf(propertyName);
-		System.out.println(inputString.charAt(charIndex - 1));
+		//System.out.println(inputString.charAt(charIndex - 1));
 		if (charIndex > 0
 				&& (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"' || inputString
 						.charAt(charIndex - 1) == ' ')) {

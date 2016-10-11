@@ -4,14 +4,24 @@ import org.json.simple.JSONObject;
 
 public class ThirdPartyModInfo {
 	private String modname, modauthor, customDLCfolder, moddescription, modsite;
-
-	public ThirdPartyModInfo(String modname, String modauthor, String customDLCfolder, String moddescription, String modsite) {
+	private short mountpriority;
+	/**
+	 * Copy constructor
+	 * @param modname
+	 * @param modauthor
+	 * @param customDLCfolder
+	 * @param moddescription
+	 * @param modsite
+	 * @param mountpriority
+	 */
+	public ThirdPartyModInfo(String modname, String modauthor, String customDLCfolder, String moddescription, String modsite, short mountpriority) {
 		super();
 		this.modname = modname;
 		this.modauthor = modauthor;
 		this.customDLCfolder = customDLCfolder;
 		this.moddescription = moddescription;
 		this.modsite = modsite;
+		this.mountpriority = mountpriority;
 	}
 
 	public ThirdPartyModInfo(String customdlcfolder, JSONObject modinfo) {
@@ -20,6 +30,8 @@ public class ThirdPartyModInfo {
 		this.modauthor = (String) modinfo.get("moddev");
 		this.moddescription = (String) modinfo.get("moddesc");
 		this.modsite = (String) modinfo.get("modsite");
+		String priority = (String) modinfo.get("mountpriority");
+		this.mountpriority = Short.parseShort(priority);
 	}
 
 	public String getModname() {
@@ -60,5 +72,13 @@ public class ThirdPartyModInfo {
 
 	public void setModsite(String modsite) {
 		this.modsite = modsite;
+	}
+
+	public short getMountpriority() {
+		return mountpriority;
+	}
+
+	public void setMountpriority(short mountpriority) {
+		this.mountpriority = mountpriority;
 	}
 }
