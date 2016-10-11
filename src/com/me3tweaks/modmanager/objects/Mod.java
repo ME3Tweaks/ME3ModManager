@@ -1003,6 +1003,14 @@ public class Mod implements Comparable<Mod> {
 				modDisplayDescription += "\n";
 			}
 		}
+		
+		if (hasAutomaticConfiguration()) {
+			modDisplayDescription += "This mod has been automatically configured for your game's current configuration.\n"; 
+		}
+		
+		if (hasOptionalManualCustomDLC()) {
+			modDisplayDescription += "This mod contains alternate installation options. Access them through the mod utils menu.\n"; 
+		}
 
 		// Add modversion
 		if (modVersion != null) {
@@ -1022,6 +1030,7 @@ public class Mod implements Comparable<Mod> {
 		if (classicCode > 0 /* && ModManager.IS_DEBUG */) {
 			modDisplayDescription += "\nUpdate code: " + classicCode;
 		}
+		
 		if (getSideloadOnlyTargets().size() > 0) {
 			modDisplayDescription += "\nFuture updates may require sideloading an update package";
 		}
@@ -1039,6 +1048,38 @@ public class Mod implements Comparable<Mod> {
 
 		// Add modifier
 		modDisplayDescription += getModifyString();
+	}
+
+	private boolean hasAutomaticConfiguration() {
+		if (alternateCustomDLC.size() > 0) {
+			for (AlternateCustomDLC dlc : alternateCustomDLC) {
+				if (!dlc.getCondition().equals(AlternateCustomDLC.CONDITION_MANUAL)) {
+					return true;
+				}
+			}
+		}
+		
+		if (alternateFiles.size() > 0) {
+			for (AlternateFile altfile : alternateFiles) {
+				if (!altfile.getCondition().equals(AlternateFile.CONDITION_MANUAL)) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+
+	private boolean hasOptionalManualCustomDLC() {
+		if (alternateCustomDLC.size() > 0) {
+			for (AlternateCustomDLC dlc : alternateCustomDLC) {
+				if (dlc.getCondition().equals(AlternateCustomDLC.CONDITION_MANUAL)) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 
 	public String getModDisplayDescription() {

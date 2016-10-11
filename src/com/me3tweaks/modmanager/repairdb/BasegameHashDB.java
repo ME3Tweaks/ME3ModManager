@@ -363,8 +363,8 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 			} else {
 				if (showGUI) {
 					infoLabel.setText("Database can't be loaded.");
-					JOptionPane.showMessageDialog(null, "Unable to connect to database.\nDo you have multiple Mod Manager windows open?", "Database error",
-							JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
+							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and delete the<br>data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
 					dispose();
 				}
 			}
