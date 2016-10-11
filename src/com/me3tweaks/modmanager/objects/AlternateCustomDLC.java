@@ -26,17 +26,26 @@ public class AlternateCustomDLC {
 	private String description;
 	private String operation;
 	private ArrayList<String> conditionalDLCs = new ArrayList<String>();
+	private String friendlyName;
+	private boolean hasBeenChosen;
+
+	public void setHasBeenChosen(boolean hasBeenChosen) {
+		this.hasBeenChosen = hasBeenChosen;
+	}
 
 	public AlternateCustomDLC(String altfileText) {
-		conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
-		altDLC = ValueParserLib.getStringProperty(altfileText, "ModAltDLC", false);
 		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
-		if (condition.equals(CONDITION_ANY_DLC_NOT_PRESENT)) {
-			parseConditionalDLC();
+		if (!condition.equals(CONDITION_MANUAL)) {
+			conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
+			if (condition.equals(CONDITION_ANY_DLC_NOT_PRESENT)) {
+				parseConditionalDLC();
+			}
 		}
+		altDLC = ValueParserLib.getStringProperty(altfileText, "ModAltDLC", false);
 		description = ValueParserLib.getStringProperty(altfileText, "Description", true);
 		operation = ValueParserLib.getStringProperty(altfileText, "ModOperation", false);
 		destDLC = ValueParserLib.getStringProperty(altfileText,"ModDestDLC", false);
+		friendlyName = ValueParserLib.getStringProperty(altfileText, "FriendlyName", true);
 	}
 
 	private void parseConditionalDLC() {
@@ -71,6 +80,8 @@ public class AlternateCustomDLC {
 		for (String str: alt.conditionalDLCs){
 			conditionalDLCs.add(str);
 		}
+		friendlyName = alt.friendlyName;
+		hasBeenChosen = alt.hasBeenChosen;
 	}
 
 	public String getDescription() {
@@ -159,11 +170,6 @@ public class AlternateCustomDLC {
 		this.operation = operation;
 	}
 
-	public boolean isApplicable() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 	public ArrayList<String> getConditionalDLCList() {
 		return conditionalDLCs;
 	}
@@ -173,5 +179,13 @@ public class AlternateCustomDLC {
 
 	public void setDestDLC(String destDLC) {
 		this.destDLC = destDLC;
+	}
+
+	public String getFriendlyName() {
+		return friendlyName;
+	}
+
+	public boolean hasBeenChoosen() {
+		return hasBeenChosen;
 	}
 }

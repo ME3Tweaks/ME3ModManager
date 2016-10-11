@@ -11,7 +11,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -202,17 +201,19 @@ public class ModInstallWindow extends JDialog {
 		private ArrayList<String> outdatedinstalledfolders;
 
 		protected InjectionCommander(Mod mod) {
-			ModManager.debugLogger.writeMessage("===============Start of INJECTION COMMANDER==============");
+			this.mod = new Mod(mod); //clone before applying alternates and optional addins
+			ModManager.debugLogger.writeMessage("========Installing " + this.mod.getModName() + "========");
 			ModManager.debugLogger.writeMessage("Applying automatic alt's before parsing jobs");
-			this.mod = new Mod(mod); //clone before applying alternates
 			alternatesApplied = this.mod.applyAutomaticAlternates(bioGameDir);
 			if (alternatesApplied) {
 				ModManager.debugLogger.writeMessage("At least one alternate file was applied, install now requires pre-toc.");
 			}
+			ModManager.debugLogger.writeMessage("Finshing applying alternate files. Now checking for manually selected addins...");
+			this.mod.applyManualCustomDLCs();
+			ModManager.debugLogger.writeMessage("Finished applying addins. Preparing to start the injection thread.");
 			this.jobs = this.mod.getJobs();
 			numjobs = jobs.length;
 			failedJobs = new ArrayList<String>();
-			ModManager.debugLogger.writeMessage("========Installing " + this.mod.getModName() + "========");
 			ModManager.debugLogger.writeMessage("Starting the InjectionCommander thread. Number of jobs to do: " + numjobs);
 		}
 
@@ -222,12 +223,14 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Checking for DLC Bypass.");
 			if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
 				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing binkw32 bypass...");
-				if (!ModManager.installBinkw32Bypass(bioGameDir,false)) {
+				if (!ModManager.installBinkw32Bypass(bioGameDir, false)) {
 					ModManager.debugLogger.writeError("Binkw32 bypass failed to install");
 				}
 			} else {
 				ModManager.debugLogger.writeMessage("A DLC bypass is installed");
 			}
+			
+			
 
 			boolean checkedDB = false;
 			for (ModJob job : jobs) {
@@ -365,8 +368,8 @@ public class ModInstallWindow extends JDialog {
 				if (bghDB == null) {
 					//cannot continue
 					failedLoadingDB = true;
-					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
-							+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
+							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
 					return true;
 				}
 
@@ -390,7 +393,9 @@ public class ModInstallWindow extends JDialog {
 					int numFilesToReplace = filesToReplace.size();
 					for (int i = 0; i < numFilesToReplace; i++) {
 						String fileToReplace = filesToReplace.get(i);
-
+						if (FilenameUtils.getName(fileToReplace).equalsIgnoreCase("PCConsoleTOC.bin")) {
+							continue; //skip PCConsoleTOC as they'll be updated outside of mod installs. Especially the basegame one.
+						}
 						File basegamefile = new File(me3dir + fileToReplace);
 
 						String relative = ResourceUtils.getRelativePath(basegamefile.getAbsolutePath(), me3dir, File.separator);
@@ -443,6 +448,9 @@ public class ModInstallWindow extends JDialog {
 					//DLC appears unpacked					
 					for (int i = 0; i < numFilesToReplace; i++) {
 						String fileToReplace = filesToReplace.get(i);
+						if (FilenameUtils.getName(fileToReplace).equalsIgnoreCase("PCConsoleTOC.bin")) {
+							continue; //skip PCConsoleTOC as they'll be updated outside of mod installs. Especially the basegame one.
+						}
 						File unpackeddlcfile = new File(me3dir + fileToReplace);
 
 						//check if in GDB
@@ -815,42 +823,21 @@ public class ModInstallWindow extends JDialog {
 				backupfile.getParentFile().mkdirs();
 
 				String relative = ResourceUtils.getRelativePath(unpacked.getAbsolutePath(), me3dir, File.separator);
-				RepairFileInfo rfi = bghDB.getFileInfo(relative);
-				// validate file to backup.
-				boolean justInstall = false;
 				boolean installAndUpdate = false;
-				if (rfi == null) {
-					int reply = JOptionPane.showOptionDialog(null,
-							"<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
-									+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
-							"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-							new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
-					switch (reply) {
-					case JOptionPane.CANCEL_OPTION:
-						installCancelled = true;
-						return false;
-					case JOptionPane.NO_OPTION:
-						justInstall = true;
-						break;
-					case JOptionPane.YES_OPTION:
-						installAndUpdate = true;
-						break;
-					}
-				}
 
-				// Check filesize
-				if (!justInstall && !installAndUpdate) {
-					if (unpacked.length() != rfi.filesize) {
-						// MISMATCH!
+				if (!FilenameUtils.getName(fileToReplace).equalsIgnoreCase("PCConsoleTOC.bin")) {
+					RepairFileInfo rfi = bghDB.getFileInfo(relative);
+					// validate file to backup.
+					boolean justInstall = false;
+					if (rfi == null) {
 						int reply = JOptionPane.showOptionDialog(null,
-								"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>" + unpacked.length()
-										+ " bytes (installed) vs " + rfi.filesize + " bytes (database)<br><br>"
-										+ "This file could be corrupted or modified since the database was created.<br>"
-										+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when you restore.<br></html>",
+								"<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
+										+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
 								"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-								new String[] { "Backup and update DB", "Backup this file", "Cancel mod installation" }, "default");
+								new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
 						switch (reply) {
 						case JOptionPane.CANCEL_OPTION:
+							installCancelled = true;
 							return false;
 						case JOptionPane.NO_OPTION:
 							justInstall = true;
@@ -860,19 +847,16 @@ public class ModInstallWindow extends JDialog {
 							break;
 						}
 					}
-				}
 
-				// Check hash
-				if (!justInstall && !installAndUpdate) {
-					// this is outside of the previous if statement as the
-					// previous one could set the restoreAnyways variable
-					// again.
-					try {
-						if (!MD5Checksum.getMD5Checksum(unpacked.getAbsolutePath()).equals(rfi.md5)) {
+					// Check filesize
+					if (!justInstall && !installAndUpdate) {
+						if (unpacked.length() != rfi.filesize) {
+							// MISMATCH!
 							int reply = JOptionPane.showOptionDialog(null,
-									"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
-											+ "This file has changed since the database was created.<br>"
-											+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when restoring.<br></html>",
+									"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>" + unpacked.length()
+											+ " bytes (installed) vs " + rfi.filesize + " bytes (database)<br><br>"
+											+ "This file could be corrupted or modified since the database was created.<br>"
+											+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when you restore.<br></html>",
 									"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
 									new String[] { "Backup and update DB", "Backup this file", "Cancel mod installation" }, "default");
 							switch (reply) {
@@ -886,11 +870,37 @@ public class ModInstallWindow extends JDialog {
 								break;
 							}
 						}
-					} catch (Exception e) {
-						ModManager.debugLogger.writeException(e);
+					}
+
+					// Check hash
+					if (!justInstall && !installAndUpdate) {
+						// this is outside of the previous if statement as the
+						// previous one could set the restoreAnyways variable
+						// again.
+						try {
+							if (!MD5Checksum.getMD5Checksum(unpacked.getAbsolutePath()).equals(rfi.md5)) {
+								int reply = JOptionPane.showOptionDialog(null,
+										"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
+												+ "This file has changed since the database was created.<br>"
+												+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when restoring.<br></html>",
+										"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+										new String[] { "Backup and update DB", "Backup this file", "Cancel mod installation" }, "default");
+								switch (reply) {
+								case JOptionPane.CANCEL_OPTION:
+									return false;
+								case JOptionPane.NO_OPTION:
+									justInstall = true;
+									break;
+								case JOptionPane.YES_OPTION:
+									installAndUpdate = true;
+									break;
+								}
+							}
+						} catch (Exception e) {
+							ModManager.debugLogger.writeException(e);
+						}
 					}
 				}
-
 				try {
 					// backup and then copy file
 					Files.copy(originalpath, backuppath);
@@ -1254,10 +1264,9 @@ public class ModInstallWindow extends JDialog {
 						}
 						if (bghDB == null) {
 							//cannot continue
-							JOptionPane.showMessageDialog(null,
-									"<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
-											+ "Please make sure you only have one instance of Mod Manager running.</html>",
-									"Database Failure", JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
+									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+
 						}
 					}
 				} else {

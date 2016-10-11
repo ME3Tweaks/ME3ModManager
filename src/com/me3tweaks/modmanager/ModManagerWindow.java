@@ -30,6 +30,7 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -73,6 +74,8 @@ import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
 import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
 import com.me3tweaks.modmanager.modupdater.ModXMLTools;
 import com.me3tweaks.modmanager.modupdater.UpdatePackage;
+import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
+import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.InstalledASIMod;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
@@ -113,7 +116,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JMenuBar menuBar;
-	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
+	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu, modAlternatesMenu;
 	JMenuItem actionExitDebugMode, actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
 			modManagementPatchLibary, modManagementClearPatchLibraryCache;
@@ -1282,6 +1285,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				"<html>This mod has variants that allow quick changes to the mod without shipping a full new version.<br>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
 		modDeltaMenu.setVisible(false);
 
+		modAlternatesMenu = new JMenu("No Alternate Options");
+		modAlternatesMenu.setToolTipText("<html>This mod has only one installation configuration</html>");
+		modAlternatesMenu.setEnabled(false);
+
 		modNoDeltas = new JMenuItem("No included variants");
 		modNoDeltas.setToolTipText("<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
 		modNoDeltas.setEnabled(false);
@@ -1316,6 +1323,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.addSeparator();
 		modMenu.add(modDeltaMenu);
 		modMenu.add(modNoDeltas);
+		modMenu.add(modAlternatesMenu);
 		modMenu.add(mountMenu);
 		modMenu.addSeparator();
 		modMenu.add(modutilsInstallCustomKeybinds);
@@ -2744,11 +2752,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						moddevUpdateXMLGenerator.setEnabled(true);
 						moddevUpdateXMLGenerator.setText("Prepare " + selectedMod.getModName() + " for ME3Tweaks Updater Service");
 						moddevUpdateXMLGenerator.setToolTipText("Compresses mod files for storage on ME3Tweaks and generates a mod manifest. Copies to clipboard when complete.");
-
 					}
 				} else {
 					modutilsRestoreMod.setVisible(false);
-
 					modutilsCheckforupdate.setEnabled(false);
 					modutilsCheckforupdate.setText("Mod not eligible for updates");
 					moddevUpdateXMLGenerator.setEnabled(false);
@@ -2833,6 +2839,62 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					modDeltaMenu.setVisible(false);
 					modNoDeltas.setVisible(true);
+				}
+
+				modAlternatesMenu.removeAll();
+				if (selectedMod.getAlternateFiles().size() > 0 || selectedMod.getAlternateCustomDLC().size() > 0) {
+					modAlternatesMenu.setEnabled(true);
+					ArrayList<AlternateFile> alts = selectedMod.getAlternateFiles();
+					ArrayList<AlternateCustomDLC> altdlcs = selectedMod.getAlternateCustomDLC();
+					int numoptions = altdlcs.size() + alts.size();
+					modAlternatesMenu.setText(numoptions + " alternate installation option" + (numoptions != 1 ? "s" : ""));
+					ArrayList<AlternateFile> autoAlts = selectedMod.getApplicableAutomaticAlternates(GetBioGameDir());
+					for (AlternateFile af : alts) {
+						String friendlyname = af.getOperation() + " due to " + af.getCondition() + " for " + af.getConditionalDLC();
+						if (af.getFriendlyName() != null) {
+							friendlyname = af.getFriendlyName();
+						}
+						JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+						item.setToolTipText(af.getDescription());
+						item.setEnabled(false);
+						if (autoAlts.contains(af)) {
+							item.setSelected(true);
+						}
+						modAlternatesMenu.add(item);
+					}
+
+					if (altdlcs.size() > 0) {
+						modAlternatesMenu.addSeparator();
+						for (AlternateCustomDLC altdlc : altdlcs) {
+							String friendlyname = altdlc.getOperation() + " due to " + altdlc.getCondition() + " for " + altdlc.getConditionalDLC();
+							if (altdlc.getFriendlyName() != null) {
+								friendlyname = altdlc.getFriendlyName();
+							}
+							JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+							item.setToolTipText(altdlc.getDescription());
+							if (!altdlc.getCondition().equals(AlternateCustomDLC.CONDITION_MANUAL)) {
+								item.setEnabled(false);
+							} else {
+								item.addActionListener(new ActionListener() {
+									
+									@Override
+									public void actionPerformed(ActionEvent e) {
+										ModManager.debugLogger.writeMessage("["+selectedMod.getModName()+"]User has toggled an optional addin "+item.getText()+" to "+(item.isSelected() ? "on" : "off")+".");
+										altdlc.setHasBeenChosen(item.isSelected());
+									}
+								});
+							}
+							if (selectedMod.getAppliedAutomaticAlternateCustomDLC().contains(altdlc)) {
+								item.setSelected(true);
+							} else {
+								item.setSelected(altdlc.hasBeenChoosen());
+							}
+							modAlternatesMenu.add(item);
+						}
+					}
+				} else {
+					modAlternatesMenu.setEnabled(false);
+					modAlternatesMenu.setText("No alternate installation options");
 				}
 			}
 		}

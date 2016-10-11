@@ -21,6 +21,7 @@ public class AlternateFile {
 	private String condition;
 	private String description;
 	private String operation;
+	private String friendlyName;
 
 	public AlternateFile(String altfileText) {
 		conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
@@ -32,6 +33,15 @@ public class AlternateFile {
 		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
 		description = ValueParserLib.getStringProperty(altfileText, "Description", true);
 		operation = ValueParserLib.getStringProperty(altfileText, "ModOperation", false);
+		friendlyName = ValueParserLib.getStringProperty(altfileText, "FriendlyName", true);
+	}
+
+	public String getFriendlyName() {
+		return friendlyName;
+	}
+
+	public void setFriendlyName(String friendlyName) {
+		this.friendlyName = friendlyName;
 	}
 
 	/**

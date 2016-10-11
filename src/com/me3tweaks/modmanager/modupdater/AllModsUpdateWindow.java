@@ -200,7 +200,11 @@ public class AllModsUpdateWindow extends JDialog {
 						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + ", Preparing user prompt.");
 						updatetext += getVersionUpdateString(upackage);
 					}
-					updatetext += "Update these mods?";
+					if (upackages.size() > 1) {
+						updatetext += "Update these mods?";
+					} else {
+						updatetext += "Update this mod?";
+					}
 					int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
 					switch (result) {
 					case JOptionPane.YES_OPTION:
@@ -299,9 +303,9 @@ public class AllModsUpdateWindow extends JDialog {
 			} else if (upackages.size() != completedUpdates.size()) {
 				//one error occured
 				JOptionPane.showMessageDialog(callingWindow, completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
-						+ " failed to update.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
+						+ " failed to update.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.", "Mods updated",
+				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.", "Mods updated",
 						JOptionPane.INFORMATION_MESSAGE);
 			}
 

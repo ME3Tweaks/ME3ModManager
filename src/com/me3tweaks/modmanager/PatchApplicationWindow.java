@@ -20,7 +20,6 @@ import javax.swing.SwingWorker;
 import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
-import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.PatchModBundle;

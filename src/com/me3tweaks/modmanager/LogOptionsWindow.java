@@ -535,7 +535,7 @@ public class LogOptionsWindow extends JDialog {
 					//Execute and get the response.
 					HttpResponse response = httpclient.execute(httppost);
 					HttpEntity entity = response.getEntity();
-					//new File(outputFile).delete();
+					new File(outputFile).delete();
 					if (entity != null) {
 						InputStream instream = entity.getContent();
 						try {
