@@ -315,10 +315,11 @@ public class ASIModWindow extends JDialog {
 
 	private void loadLocalManifest(boolean fetchOnlineManifest) {
 		File manifestFile = ModManager.getASIManifestFile();
+		updategroups = new ArrayList<ASIUpdateGroup>();
+
 		if (manifestFile.exists()) {
 			//Parse, download resources
 			DocumentBuilder db;
-			updategroups = new ArrayList<ASIUpdateGroup>();
 			try {
 				updateGroupExpr = xpath.compile("/ASIManifest/updategroup");
 				asiModExpr = xpath.compile("asimod");
@@ -356,8 +357,12 @@ public class ASIModWindow extends JDialog {
 			manifestLoaded = true;
 		} else {
 			if (fetchOnlineManifest) {
-				getOnlineASIManifest();
-				loadLocalManifest(false);
+				boolean fetchedOnlineManifest = getOnlineASIManifest();
+				if (fetchedOnlineManifest) {
+					loadLocalManifest(false);
+				} else {
+					manifestLoaded = false;
+				}
 			} else {
 				manifestLoaded = false;
 			}
@@ -408,6 +413,11 @@ public class ASIModWindow extends JDialog {
 			return true;
 		} catch (IOException | URISyntaxException e) {
 			ModManager.debugLogger.writeErrorWithException("Error fetching latest asi mod manifest file:", e);
+			if (ModManager.getASIManifestFile().exists()) {
+				ModManager.debugLogger.writeError("The old manifest will be loaded.");
+			} else {
+				ModManager.debugLogger.writeError("No manifest exists locally. New ASIs will not be usable within Mod Manager.");
+			}
 		}
 		return false;
 	}
@@ -563,7 +573,8 @@ public class ASIModWindow extends JDialog {
 						return;
 					}
 					if (mod.getDownloadURL() == null) {
-						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "This ASI had an error while parsing the download link. Please report this to femshep with a Mod Manager log.", "No download link available",
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+								"This ASI had an error while parsing the download link. Please report this to femshep with a Mod Manager log.", "No download link available",
 								JOptionPane.ERROR_MESSAGE);
 						return;
 					}
@@ -772,7 +783,7 @@ public class ASIModWindow extends JDialog {
 			amw.asiDir.mkdirs();
 		}
 		amw.loadLocalManifest(true);
-		amw.installedASIs = amw.loadInstalledASIMods(amw.asiDir);
+		amw.installedASIs = ASIModWindow.loadInstalledASIMods(amw.asiDir);
 
 		ASIUpdateGroup ug = null;
 		for (ASIUpdateGroup g : amw.updategroups) {
