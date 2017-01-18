@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -441,8 +442,9 @@ public class StarterKitWindow extends JDialog {
 				publish(new ThreadCommand("SET_DIALOG_TEXT", "Updating TLK for " + lang));
 				String output = cookedPath + "DLC_MOD_" + internaldlcname + "_" + lang + ".xml";
 				ModManager.ExportResource("/StarterKitTLK.xml", output);
-				String replaceOutput = FileUtils.readFileToString(new File(output));
-
+				String replaceOutput = FileUtils.readFileToString(new File(output), "UTF-8");
+				ModManager.debugLogger.writeMessage("DEBUGGING: LANGUAGE INPUT TEXT WAS READ AS:");
+				ModManager.debugLogger.writeMessage(replaceOutput);
 				String langcode = "";
 				switch (lang) {
 				case "INT":
@@ -482,7 +484,11 @@ public class StarterKitWindow extends JDialog {
 				replaceOutput = replaceOutput.replaceAll("%MALEID%", Integer.toString(currid));
 				currid++;
 				replaceOutput = replaceOutput.replaceAll("%FEMALEID%", Integer.toString(currid));
-				FileUtils.writeStringToFile(new File(output), replaceOutput);
+				ModManager.debugLogger.writeMessage("----------------------");
+				ModManager.debugLogger.writeMessage("AFTER TRANSFORMATION, OUTPUT IS NOW:");
+				ModManager.debugLogger.writeMessage(replaceOutput);
+
+				FileUtils.writeStringToFile(new File(output), replaceOutput, StandardCharsets.UTF_8);
 			}
 			//Compile TLK.
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 25));
@@ -505,11 +511,11 @@ public class StarterKitWindow extends JDialog {
 			publish(new ThreadCommand("SET_DIALOG_TEXT", "Compiling Default_DLC_MOD_" + internaldlcname));
 			CoalescedWindow.decompileCoalesced(coalpath);
 			File bioenginefile = new File(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "BioEngine.xml");
-			String bioengine = FileUtils.readFileToString(bioenginefile);
+			String bioengine = FileUtils.readFileToString(bioenginefile, "UTF-8");
 			String newengine = bioengine.replaceAll("StarterKit", internaldlcname); //update bioengine
 			boolean deleted = FileUtils.deleteQuietly(bioenginefile);
 
-			FileUtils.writeStringToFile(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "BioEngine.xml"), newengine); //writeback
+			FileUtils.writeStringToFile(new File(cookedPath + "Default_DLC_MOD_" + internaldlcname + File.separator + "BioEngine.xml"), newengine, StandardCharsets.UTF_8); //writeback
 
 			//recompile and move up a dir
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 60));
@@ -568,7 +574,7 @@ public class StarterKitWindow extends JDialog {
 			startermod.setSite(modsite);
 			startermod.setModName(modname);
 			startermod.setVersion(1.0);
-			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, 4.2));
+			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, 4.2), StandardCharsets.UTF_8);
 
 			//reload newly written mod.
 			ModManager.debugLogger.writeMessage("Loading moddesc.ini to verify mod is valid");
