@@ -81,8 +81,8 @@ import com.sun.jna.win32.W32APIOptions;
 public class ModManager {
 
 	public static final String VERSION = "4.4.3";
-	public static long BUILD_NUMBER = 64L;
-	public static final String BUILD_DATE = "1/5/2017";
+	public static long BUILD_NUMBER = 65L;
+	public static final String BUILD_DATE = "1/17/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
