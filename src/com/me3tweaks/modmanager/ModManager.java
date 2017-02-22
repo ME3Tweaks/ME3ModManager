@@ -80,9 +80,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "4.4.3";
-	public static long BUILD_NUMBER = 65L;
-	public static final String BUILD_DATE = "1/17/2017";
+	public static final String VERSION = "4.4.4";
+	public static long BUILD_NUMBER = 66L;
+	public static final String BUILD_DATE = "2/22/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -643,7 +643,7 @@ public class ModManager {
 	/**
 	 * Gets valid mods from the given directory by looking for subfolders with
 	 * moddesc.ini files
-	 * 
+	 *
 	 * @return
 	 */
 	private static ModList getMods(String path) {
@@ -854,7 +854,7 @@ public class ModManager {
 
 	/**
 	 * Appends a slash onto the end of a string if not already there.
-	 * 
+	 *
 	 * @param string
 	 *            Original string
 	 * @return Original string with a slash on the end if it was not there
@@ -872,7 +872,7 @@ public class ModManager {
 
 	/**
 	 * Convert a millisecond duration to a string format
-	 * 
+	 *
 	 * @param millis
 	 *            A duration to convert to a string form
 	 * @return A string of the form "X Days Y Hours Z Minutes A Seconds".
@@ -905,7 +905,7 @@ public class ModManager {
 
 	/**
 	 * Gets the mods directory, including a final slash
-	 * 
+	 *
 	 * @return
 	 */
 	public static String getModsDir() {
@@ -914,7 +914,7 @@ public class ModManager {
 
 	/**
 	 * Gets the data/ folder, returning with an appended slash
-	 * 
+	 *
 	 * @return
 	 */
 	public static String getDataDir() {
@@ -928,7 +928,7 @@ public class ModManager {
 	/**
 	 * Downloads Transplanter if not already downloaded. Returns path if
 	 * downloaded, null if not found locally after download attempt.
-	 * 
+	 *
 	 * @param download
 	 * @return
 	 */
@@ -1002,7 +1002,7 @@ public class ModManager {
 
 	/**
 	 * Returns data/me3tweaksservicescache/
-	 * 
+	 *
 	 * @return
 	 */
 	public static String getME3TweaksServicesCache() {
@@ -1013,7 +1013,7 @@ public class ModManager {
 
 	/**
 	 * Gets ME3Explorer directory, with slash on the end
-	 * 
+	 *
 	 * @param showDialog
 	 *            set to true to show dialog if me3explorer is not found
 	 * @return
@@ -1030,7 +1030,7 @@ public class ModManager {
 
 	/**
 	 * Gets the modmaker compiling directory
-	 * 
+	 *
 	 * @return
 	 */
 	public static String getCompilingDir() {
@@ -1047,7 +1047,7 @@ public class ModManager {
 
 	/**
 	 * Returns the mixinlibrary folder.
-	 * 
+	 *
 	 * @return ME3CMM/mixinlibrary/
 	 */
 	public static String getPatchesDir() {
@@ -1059,7 +1059,7 @@ public class ModManager {
 	/**
 	 * Returns if the specified coalesced (job) is in the pristine folder and
 	 * the hash matches the known good value for it
-	 * 
+	 *
 	 * @param name
 	 *            value to use to see if has pristine coalesced
 	 * @param mode
@@ -1109,10 +1109,10 @@ public class ModManager {
 
 	/**
 	 * Gets the path of a pristine coalesced with the given filename
-	 * 
+	 *
 	 * @param mode
 	 *            ME3TweaksUtils mode indicating what the name variable is
-	 * 
+	 *
 	 * @param basegame
 	 * @return
 	 */
@@ -1136,10 +1136,10 @@ public class ModManager {
 
 	/**
 	 * Gets the path of a pristine TOC with the given filename
-	 * 
+	 *
 	 * @param mode
 	 *            ME3TweaksUtils mode indicating what the name variable is
-	 * 
+	 *
 	 * @param mode
 	 *            Mode indicating what name is as a constant type
 	 * @return
@@ -1165,7 +1165,7 @@ public class ModManager {
 	/**
 	 * Returns if the specified coalesced (job) is in the pristine folder and
 	 * the hash matches the known good value for it
-	 * 
+	 *
 	 * @param name
 	 *            value to use to see if has pristine coalesced
 	 * @param mode
@@ -1235,7 +1235,7 @@ public class ModManager {
 	/**
 	 * Tries to find a resource for a target path inside of a target module.
 	 * Returns path to the found item or null if none could be found.
-	 * 
+	 *
 	 * @param targetPath
 	 * @param targetModule
 	 * @return
@@ -1345,7 +1345,7 @@ public class ModManager {
 
 	/**
 	 * Decompresses the PCC to the listed destination, location can be the same.
-	 * 
+	 *
 	 * @param sourceSource
 	 * @param sourceDestination
 	 * @return
@@ -1363,7 +1363,7 @@ public class ModManager {
 	/**
 	 * Compresses the listed PCC to the listed destination, both can be the
 	 * same.
-	 * 
+	 *
 	 * @param sourceSource
 	 * @param sourceDestination
 	 * @return
@@ -1381,7 +1381,7 @@ public class ModManager {
 	/**
 	 * Copies a file from the game to the specified location. Decompresses a
 	 * basegame PCC if one is specified.
-	 * 
+	 *
 	 * @param targetPath
 	 *            Path inside of module
 	 * @param targetModule
@@ -1475,7 +1475,7 @@ public class ModManager {
 				 * if
 				 * (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin"
 				 * )){
-				 * 
+				 *
 				 * //if (inPlaceToc) }
 				 */
 				try {
@@ -1539,7 +1539,7 @@ public class ModManager {
 
 	/**
 	 * Loads patch objects from the patchlibrary/patches directory
-	 * 
+	 *
 	 * @return
 	 */
 	public static ArrayList<Patch> getPatchesFromDirectory() {
@@ -1575,7 +1575,7 @@ public class ModManager {
 
 	/**
 	 * Checks for the binkw32 bypass.
-	 * 
+	 *
 	 * @return true if bink23 exists and bink32 hash fails, false otherwise
 	 */
 	public static boolean checkIfBinkBypassIsInstalled(String biogameDir) {
@@ -1601,7 +1601,7 @@ public class ModManager {
 
 	/**
 	 * Checks for the ASI binkw32 bypass.
-	 * 
+	 *
 	 * @return true if bink23 exists and bink32 hash matches known ASI version,
 	 *         false otherwise
 	 */
@@ -1730,7 +1730,7 @@ public class ModManager {
 
 	/**
 	 * Returns directory that contains folders of patches
-	 * 
+	 *
 	 * @return /mixinlibrary/patches/
 	 */
 	public static String getPatchLibraryDir() {
@@ -1740,7 +1740,7 @@ public class ModManager {
 	/**
 	 * Attemps to read what version of .NET framework is installed and if the
 	 * release version meets the minimum ME3Explorer requirements
-	 * 
+	 *
 	 * @return true if satisfied, false otherwise
 	 */
 	public static boolean validateNETFrameworkIsInstalled() {
@@ -1806,7 +1806,7 @@ public class ModManager {
 	/**
 	 * Runs a process already build via processbuilder, prints timing info and
 	 * returns the result
-	 * 
+	 *
 	 * @param p
 	 *            Process to build and run
 	 * @return ProcessResult, with code if successful, or exception as not-null
@@ -1854,7 +1854,7 @@ public class ModManager {
 
 	/**
 	 * Gets the GUI Transplant Directory (Transplanter-CLI, Transplanter-GUI)
-	 * 
+	 *
 	 * @return
 	 */
 	public static String getTransplantDir() {
@@ -1871,7 +1871,7 @@ public class ModManager {
 	 * appear in. If the list is longer than 1 element it means there is a
 	 * conflict. Only scans for PCC files. The returned values are sorted in
 	 * order of lowest to highest priority.
-	 * 
+	 *
 	 * @param customDLCs
 	 *            list of Custom DLCs to scan against
 	 * @param dlcdirectory
@@ -1921,7 +1921,7 @@ public class ModManager {
 	/**
 	 * Gets a list of DLC that begin with the name DLC_. The values are
 	 * converted to uppercase.
-	 * 
+	 *
 	 * @param biogamedir
 	 * @return list of foldernames that are considered by the game to be real
 	 *         DLC.
@@ -1944,7 +1944,7 @@ public class ModManager {
 
 	/**
 	 * Gets the path to the GUI library specified by the DLC name
-	 * 
+	 *
 	 * @param dlcname
 	 *            DLC to get library for
 	 * @param download
@@ -1981,7 +1981,7 @@ public class ModManager {
 	/**
 	 * Downloads an extract a GUI library from ME3Tweaks using the provided
 	 * dlcname as a filename.
-	 * 
+	 *
 	 * @param dlcname
 	 *            library to download
 	 * @return true if extraction is OK, false if something went wrong
@@ -2025,7 +2025,7 @@ public class ModManager {
 
 	/**
 	 * Returns the path of the UI Library
-	 * 
+	 *
 	 * @return
 	 */
 	private static String getUILibraryPath() {
@@ -2035,7 +2035,7 @@ public class ModManager {
 	/**
 	 * Returns true if DLC_CON_XBX, DLC_CON_UIScaling, or
 	 * DLC_CON_UIScaling_Shared is present in the DLC directory.
-	 * 
+	 *
 	 * @param biogameDirectory
 	 *            biogame dir
 	 * @return true if folder exists, false otherwise
@@ -2072,7 +2072,7 @@ public class ModManager {
 	/**
 	 * Returns a file object taht points to a new log file that will be written
 	 * to disk
-	 * 
+	 *
 	 * @return
 	 */
 	public static File getNewLogFile(String fname) {
