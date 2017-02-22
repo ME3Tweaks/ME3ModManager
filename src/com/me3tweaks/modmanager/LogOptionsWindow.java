@@ -59,6 +59,7 @@ import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 @SuppressWarnings("serial")
 public class LogOptionsWindow extends JDialog {
@@ -238,6 +239,11 @@ public class LogOptionsWindow extends JDialog {
 		}
 		String log = desc + "\n\n";
 
+		ArrayList<String> acceptableHashes = new ArrayList<String>();
+		acceptableHashes.add(""); //1.5
+		acceptableHashes.add(""); //1.6
+
+
 		if (installeddlcoption.isSelected()) {
 			log += "=========[INSTALLEDLC] Installed DLC =============\n";
 			log += getInstalledDLC();
@@ -247,11 +253,24 @@ public class LogOptionsWindow extends JDialog {
 			int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
 			log += "Game version is 1.0" + minorBuildNum + ". ";
 			if (minorBuildNum < 5) {
-				log += "Game is likely pirated since its not at the standard version that Origin updates to.\n";
+				log += "Game version is below minimum supported version (1.0"+minorBuildNum+").\n";
 			} else if (minorBuildNum > 5) {
-				log += "Game is likely from the UK as its using the UK specific game version 1.06. User may consider downgrading to Mass Effect 3 1.05 via this URL if issues occur: https://me3tweaks.com/forums/viewtopic.php?f=5&t=20\n";
+				log += "Game is likely from the UK as it's using the UK specific game version 1.06. User may consider downgrading to Mass Effect 3 1.05 via this URL if issues occur: https://me3tweaks.com/forums/viewtopic.php?f=5&t=20\n";
 			} else {
 				log += "This is the standard patch version for this game.\n";
+			}
+
+			if (minorBuildNum == 5) {
+				try {
+					String hash = MD5Checksum.getMD5Checksum(executable.getAbsolutePath());
+					if (acceptableHashes.contains(hash.toLowerCase())){
+						log += "EXE passed hash check. Hash of EXE is "+hash+"\n";
+					} else {
+						log += "EXE did not pass hash check. Hash of EXE is "+hash+"\n";
+					}
+				} catch (Exception e) {
+					log += "Error checking game executable. Skipping check.\n";
+				}
 			}
 			log += "\n";
 		}
