@@ -294,6 +294,8 @@ public class ASIModWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("ASI mod is installed but unable to get hash: " + installed, e1);
 				}
 			}
+		} else {
+			ModManager.debugLogger.writeMessage("Unable to get a list of installed ASI mods in folder: "+asiDir);
 		}
 
 		return installedASIs;

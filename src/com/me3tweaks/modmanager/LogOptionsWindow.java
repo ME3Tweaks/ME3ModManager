@@ -240,8 +240,8 @@ public class LogOptionsWindow extends JDialog {
 		String log = desc + "\n\n";
 
 		ArrayList<String> acceptableHashes = new ArrayList<String>();
-		acceptableHashes.add(""); //1.5
-		acceptableHashes.add(""); //1.6
+		acceptableHashes.add("1d09c01c94f01b305f8c25bb56ce9ab4"); //1.5
+		acceptableHashes.add("598bf934e0f4d269f5b1657002f453ce"); //1.6
 
 
 		if (installeddlcoption.isSelected()) {
