@@ -51,7 +51,7 @@ public class MergeConflictResolutionWindow extends JDialog implements ActionList
 	private void setupWindow() {
 		setTitle("Merge Conflicts");
 		setModal(true);
-		setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		setIconImages(ModManager.ICONS);
 
 		JPanel contentPanel = new JPanel(new BorderLayout());
 		JScrollPane listScroller = new JScrollPane(contentPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
