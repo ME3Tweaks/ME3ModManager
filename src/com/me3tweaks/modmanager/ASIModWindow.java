@@ -126,7 +126,8 @@ public class ASIModWindow extends JDialog {
 		JLabel binkw32 = new JLabel("Binkw32 ASI loader installed");
 		if (!ModManager.checkIfASIBinkBypassIsInstalled(gamedir + "BioGame\\")) {
 			binkw32 = new SwingLink("Binkw32 ASI loader not installed. Click to install...",
-					"ASI mods will not load without the binkw32 ASI loader. You can install ASI mods but they won't do anything without this loader.", installbinkasi);
+					"ASI mods will not load without the binkw32 ASI loader. You can install ASI mods but they won't do anything without this loader.",
+					installbinkasi);
 		}
 		binkw32.setHorizontalAlignment(JLabel.CENTER);
 
@@ -175,7 +176,7 @@ public class ASIModWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
-				//String path = ModManager.appendSlash(asiDir + File.separator + 
+				//String path = ModManager.appendSlash(asiDir + File.separator +
 				//ModManager.debugLogger.writeMessage("Deleting installed ASI mod: " + path);
 				//FileUtils.deleteQuietly(new File(path));
 				//Object breakpoint = table.getModel();
@@ -280,16 +281,18 @@ public class ASIModWindow extends JDialog {
 		});
 
 		ArrayList<InstalledASIMod> installedASIs = new ArrayList<>();
-		for (String installed : installedASIfiles) {
-			InstalledASIMod iam = new InstalledASIMod();
-			iam.setInstalledPath(ModManager.appendSlash(asiDir.getAbsolutePath()) + installed);
-			iam.setFilename(FilenameUtils.getBaseName(installed));
-			try {
-				iam.setHash(MD5Checksum.getMD5Checksum(ModManager.appendSlash(asiDir.getAbsolutePath()) + installed));
-				installedASIs.add(iam);
-				ModManager.debugLogger.writeMessage("Detected installed ASI mod: " + iam.toLogString());
-			} catch (Exception e1) {
-				ModManager.debugLogger.writeErrorWithException("ASI mod is installed but unable to get hash: " + installed, e1);
+		if (installedASIfiles != null) {
+			for (String installed : installedASIfiles) {
+				InstalledASIMod iam = new InstalledASIMod();
+				iam.setInstalledPath(ModManager.appendSlash(asiDir.getAbsolutePath()) + installed);
+				iam.setFilename(FilenameUtils.getBaseName(installed));
+				try {
+					iam.setHash(MD5Checksum.getMD5Checksum(ModManager.appendSlash(asiDir.getAbsolutePath()) + installed));
+					installedASIs.add(iam);
+					ModManager.debugLogger.writeMessage("Detected installed ASI mod: " + iam.toLogString());
+				} catch (Exception e1) {
+					ModManager.debugLogger.writeErrorWithException("ASI mod is installed but unable to get hash: " + installed, e1);
+				}
 			}
 		}
 
@@ -298,7 +301,7 @@ public class ASIModWindow extends JDialog {
 
 	/**
 	 * Fetches a list of the latest ASI versions for displaying
-	 * 
+	 *
 	 * @return
 	 */
 	private ArrayList<ASIMod> getLatestASIs() {
@@ -409,7 +412,8 @@ public class ASIModWindow extends JDialog {
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
 			FileUtils.writeStringToFile(ModManager.getASIManifestFile(), responseString);
-			ModManager.debugLogger.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getASIManifestFile().exists());
+			ModManager.debugLogger
+					.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getASIManifestFile().exists());
 			return true;
 		} catch (IOException | URISyntaxException e) {
 			ModManager.debugLogger.writeErrorWithException("Error fetching latest asi mod manifest file:", e);
@@ -424,7 +428,7 @@ public class ASIModWindow extends JDialog {
 
 	/**
 	 * Displays actions on MANIFEST mods - not independently installed mods.
-	 * 
+	 *
 	 * @author Mgamerz
 	 *
 	 */
@@ -520,8 +524,8 @@ public class ASIModWindow extends JDialog {
 						ASIActionDialog.this.dispose();
 					} catch (MalformedURLException e1) {
 						ModManager.debugLogger.writeErrorWithException("Invalid source code URL " + mod.getSourceCode(), e1);
-						JOptionPane.showMessageDialog(null, "<html>The specified source code URL is not valid:<br>" + mod.getSourceCode(), "Invalid Source Code Link",
-								JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(null, "<html>The specified source code URL is not valid:<br>" + mod.getSourceCode(),
+								"Invalid Source Code Link", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			});
@@ -568,14 +572,14 @@ public class ASIModWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if (ModManager.isMassEffect3Running()) {
-						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install an ASI.", "MassEffect3.exe is running",
-								JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install an ASI.",
+								"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 					if (mod.getDownloadURL() == null) {
 						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-								"This ASI had an error while parsing the download link. Please report this to femshep with a Mod Manager log.", "No download link available",
-								JOptionPane.ERROR_MESSAGE);
+								"This ASI had an error while parsing the download link. Please report this to femshep with a Mod Manager log.",
+								"No download link available", JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 					new ASIModInstaller(mod).execute();
@@ -588,8 +592,8 @@ public class ASIModWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if (ModManager.isMassEffect3Running()) {
-						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall an ASI.", "MassEffect3.exe is running",
-								JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall an ASI.",
+								"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 					InstalledASIMod im = installedmod;
@@ -719,7 +723,8 @@ public class ASIModWindow extends JDialog {
 				}
 
 				//install ASI
-				File installdest = new File(ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
+				File installdest = new File(
+						ModManager.appendSlash(asiDir.getAbsolutePath()) + mod.getInstallName() + "-v" + mod.getVersion() + ".asi");
 				FileUtils.deleteQuietly(installdest);
 				ModManager.debugLogger.writeMessage("Installing ASI mod " + dest + " => " + installdest);
 				FileUtils.copyFile(dest, installdest);
@@ -763,7 +768,9 @@ public class ASIModWindow extends JDialog {
 								reason = "Install Failed";
 								break;
 							}
-							model.setValueAt("<html><center>" + ASIActionColumn.ERROR_STR + ": " + reason + "<br>Check Mod Manager logs</center></html>", i, COL_ACTION);
+							model.setValueAt(
+									"<html><center>" + ASIActionColumn.ERROR_STR + ": " + reason + "<br>Check Mod Manager logs</center></html>", i,
+									COL_ACTION);
 						}
 					}
 				}
@@ -802,7 +809,8 @@ public class ASIModWindow extends JDialog {
 				}
 			}
 		} else {
-			ModManager.debugLogger.writeError("Update group is not present in the manifest: " + group + ". An ASI mod in this group cannot exist. Please report this to femshep.");
+			ModManager.debugLogger.writeError("Update group is not present in the manifest: " + group
+					+ ". An ASI mod in this group cannot exist. Please report this to femshep.");
 		}
 		return false;
 	}
