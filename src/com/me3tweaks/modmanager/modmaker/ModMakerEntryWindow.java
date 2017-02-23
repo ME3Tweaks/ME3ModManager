@@ -198,7 +198,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		add(modMakerPanel);
 
 		setResizable(false);
-		setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		setIconImages(ModManager.ICONS);
 		pack();
 		setLocationRelativeTo(callingWindow);
 
