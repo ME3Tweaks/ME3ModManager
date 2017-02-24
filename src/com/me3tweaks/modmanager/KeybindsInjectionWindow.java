@@ -92,7 +92,7 @@ public class KeybindsInjectionWindow extends JDialog {
 		this.pack();
 	}
 
-	class KeybindsInjectionWorker extends SwingWorker<Void, String> {
+	class KeybindsInjectionWorker extends SwingWorker<Boolean, String> {
 		private int stepsCompleted = 0;
 		private boolean talonremoved = false;
 
@@ -102,7 +102,9 @@ public class KeybindsInjectionWindow extends JDialog {
 			progressbar.setValue(0);
 		}
 
-		protected Void doInBackground() throws Exception {
+		protected Boolean doInBackground() throws Exception {
+			File userKeybinds = new File(ModManager.getOverrideDir() + "BioInput.xml");
+
 			String destinationBasegamecoal = mod.getBasegameCoalesced(); //points to real copy (null if not already in a job)
 			String destinationMP5coal = mod.getModTaskPath("/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin", ModType.MP5); //points to real copy
 			Mod origMod = mod;
@@ -122,10 +124,11 @@ public class KeybindsInjectionWindow extends JDialog {
 			mod = new Mod(stagingIniPath);
 			if (!mod.isValidMod()) {
 				ModManager.debugLogger.writeError("Mod in staging is not valid!");
-				return null;
+				return false;
 			}
 
 			//check if coal job exists first, and if we have a pristine one (or need to DL one)
+			//ModJob basegameJob = mod.getJobByModuleName(ModType.BASEGAME);
 			String basegamecoalstaging = mod.getBasegameCoalesced(); //points to staging
 			if (basegamecoalstaging == null) {
 				BGcopyWholeDirectory = true;
@@ -133,6 +136,9 @@ public class KeybindsInjectionWindow extends JDialog {
 				if (!ModManager.hasPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)) {
 					publish("Getting pristine Coalesced.bin file");
 					ME3TweaksUtils.downloadPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER);
+				} else {
+					ModManager.debugLogger.writeMessage("Mod already modifies basegame Coalesced, using that one instead of vanilla one");
+
 				}
 				//String pristineBase = ModManager.getPristineCoalesced(ModType.BASEGAME);
 				ModJob basegamejob = null;
@@ -145,7 +151,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						System.out.println(relativepath);
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)),
 								new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Coalesced.bin"));
-						job.addFileReplace(mod.getModPath() + relativepath + "Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin",false);
+						job.addFileReplace(mod.getModPath() + relativepath + "Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin", false);
 						destinationBasegamecoal = ModManager.appendSlash(mod.getModPath()) + relativepath + "Coalesced.bin";
 						break;
 					}
@@ -160,7 +166,17 @@ public class KeybindsInjectionWindow extends JDialog {
 					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)),
 							new File(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin"));
 					destinationBasegamecoal = mod.getModPath() + "BASEGAME/Coalesced.bin";
-					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin",false);
+					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin", false);
+
+					//Add TOC
+					if (!ModManager.hasPristineTOC("BASEGAME", ME3TweaksUtils.HEADER)) {
+						ME3TweaksUtils.downloadPristineTOC("BASEGAME", ME3TweaksUtils.HEADER);
+					}
+
+					File destTOC = new File(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/PCConsoleTOC.bin");
+					FileUtils.copyFile(new File(ModManager.getPristineTOC("BASEGAME", ME3TweaksUtils.HEADER)), destTOC);
+					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/PCConsoleTOC.bin", "\\BIOGame\\PCConsoleTOC.bin", false);
+					mod.addTask("BASEGAME", job);
 				}
 
 				//write new moddesc.ini file
@@ -177,66 +193,95 @@ public class KeybindsInjectionWindow extends JDialog {
 			}
 
 			if (basegamecoalstaging == null) {
-				ModManager.debugLogger.writeError("ERROR, Basegame coal is NULL!");
-				return null;
+				ModManager.debugLogger.writeError("ERROR, Basegame coal is NULL! Could not source a basegame coalesced to use.");
+				return false;
 			}
 
 			//MP5 TALON MERC FIX
-
-			//check if coal job exists first, and if we have a pristine one (or need to DL one)
-			String mp5coalstaging = mod.getModTaskPath("/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin", ModType.MP5); //points to staging
-			if (mp5coalstaging == null) {
-				MP5copyWholeDirectory = true;
-				ModManager.debugLogger.writeMessage("Mod does not appear to mod MP5 Coalesced.bin, performing prerequesite changes");
-				if (!ModManager.hasPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)) {
-					publish("Getting pristine Default_DLC_CON_MP5.bin file");
-					ME3TweaksUtils.downloadPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER);
-				}
-				ModJob mp5job = null;
-				//check if it has mp5 modjob
-				for (ModJob job : mod.jobs) {
-					if (job.getJobType() == ModJob.DLC && job.getJobName().equals(ModType.MP5)) {
-						mp5job = job;
-						String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
-						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
-						System.out.println(relativepath);
-						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
-								new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Default_DLC_CON_MP5.bin"));
-						destinationMP5coal = origMod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin";
-						job.addFileReplace(mod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin", "/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin",false);
+			//detect if talon keybinds are present int our user keybinds
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			Document iniFile = dbFactory.newDocumentBuilder().parse("file:///" + userKeybinds.getAbsolutePath());
+			iniFile.getDocumentElement().normalize();
+			NodeList sectionsList = iniFile.getElementsByTagName("Section");
+			for (int x = 0; x < sectionsList.getLength(); x++) {
+				Node n = sectionsList.item(x);
+				if (n.getNodeType() == Node.ELEMENT_NODE) {
+					String name = n.getAttributes().getNamedItem("name").getTextContent();
+					if (name.contains("sfxgame.sfxgamemodedefault_merc")) {
+						talonremoved = true;
+						ModManager.debugLogger.writeMessage("Detected talon keybindings in user keybinds");
+						TOTAL_STEPS = 6;
 						break;
 					}
 				}
-
-				if (mp5job == null) {
-					//no mp5 header, but has tasks, and does not mod coal
-					//means it doesn't modify mp5 files at all so we can just add the header and set modver to 3 (or max of both in case of 2 as modcoal was not set)
-					ModJob job = new ModJob();
-					File mp5folder = new File(ModManager.appendSlash(mod.getModPath()) + "MP5");
-					mp5folder.mkdirs();
-					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
-							new File(ModManager.appendSlash(mod.getModPath()) + "MP5/Default_DLC_CON_MP5.bin"));
-					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "MP5/Default_DLC_CON_MP5.bin",
-							"/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin",false);
-					destinationMP5coal = origMod.getModPath() + "MP5/Default_DLC_CON_MP5.bin";
-					mod.addTask(ModType.MP5, job);
-				}
-				double newCmmVer = Math.max(mod.modCMMVer, 3.0);
-				mod.modCMMVer = newCmmVer;
-
-				//write new moddesc.ini file
-				String descini = mod.createModDescIni(true, mod.modCMMVer);
-				ModManager.debugLogger.writeMessage("Writing new moddesc.ini with new coal modding job");
-				FileUtils.writeStringToFile(new File(stagingIniPath), descini);
-
-				//reload mod in staging with new job added
-				ModManager.debugLogger.writeMessage("Reloading Staging mod with new moddesc.ini file");
-				mod = new Mod(stagingIniPath);
-				mp5coalstaging = mod.getModTaskPath("/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin", ModType.MP5); //points to staging
-			} else {
-				ModManager.debugLogger.writeMessage("Mod has MP5 Coalesced job, using existing coalesced as base");
 			}
+			String mp5coalstaging = null;
+			if (talonremoved) {
+				//check if coal job exists first, and if we have a pristine one (or need to DL one)
+				mp5coalstaging = mod.getModTaskPath("/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin", ModType.MP5); //points to staging
+				if (mp5coalstaging == null) {
+					MP5copyWholeDirectory = true;
+					ModManager.debugLogger.writeMessage("Mod does not appear to mod MP5 Coalesced.bin, performing prerequesite changes");
+					if (!ModManager.hasPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)) {
+						publish("Getting pristine Default_DLC_CON_MP5.bin file");
+						ME3TweaksUtils.downloadPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER);
+					}
+					ModJob mp5job = null;
+					//check if it has mp5 modjob
+					for (ModJob job : mod.jobs) {
+						if (job.getJobType() == ModJob.DLC && job.getJobName().equals(ModType.MP5)) {
+							mp5job = job;
+							String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
+							String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
+							System.out.println(relativepath);
+							FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
+									new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Default_DLC_CON_MP5.bin"));
+							destinationMP5coal = origMod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin";
+							job.addFileReplace(mod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin", "/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin",
+									false);
+							break;
+						}
+					}
 
+					if (mp5job == null) {
+						//no mp5 header, but has tasks, and does not mod coal
+						//means it doesn't modify mp5 files at all so we can just add the header and set modver to 3 (or max of both in case of 2 as modcoal was not set)
+						ModJob job = new ModJob(ModType.getDLCPath(ModType.MP5), ModType.MP5, "Required to fix Talon Mercenary Keybinds");
+						File mp5folder = new File(ModManager.appendSlash(mod.getModPath()) + "MP5");
+						mp5folder.mkdirs();
+						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
+								new File(ModManager.appendSlash(mod.getModPath()) + "MP5/Default_DLC_CON_MP5.bin"));
+						job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "MP5/Default_DLC_CON_MP5.bin",
+								"/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin", false);
+						destinationMP5coal = origMod.getModPath() + "MP5/Default_DLC_CON_MP5.bin";
+
+						//Add TOC
+						if (!ModManager.hasPristineTOC(ModType.MP5, ME3TweaksUtils.HEADER)) {
+							ME3TweaksUtils.downloadPristineTOC(ModType.MP5, ME3TweaksUtils.HEADER);
+						}
+
+						File destTOC = new File(ModManager.appendSlash(mod.getModPath()) + "MP5/PCConsoleTOC.bin");
+						FileUtils.copyFile(new File(ModManager.getPristineTOC(ModType.MP5, ME3TweaksUtils.HEADER)), destTOC);
+						job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "MP5/PCConsoleTOC.bin", "/BIOGame/DLC/DLC_CON_MP5/PCConsoleTOC.bin", false);
+
+						mod.addTask(ModType.MP5, job);
+					}
+					double newCmmVer = Math.max(mod.modCMMVer, 3.0);
+					mod.modCMMVer = newCmmVer;
+
+					//write new moddesc.ini file
+					String descini = mod.createModDescIni(true, mod.modCMMVer);
+					ModManager.debugLogger.writeMessage("Writing new moddesc.ini with new coal modding job");
+					FileUtils.writeStringToFile(new File(stagingIniPath), descini);
+
+					//reload mod in staging with new job added
+					ModManager.debugLogger.writeMessage("Reloading Staging mod with new moddesc.ini file");
+					mod = new Mod(stagingIniPath);
+					mp5coalstaging = mod.getModTaskPath("/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin", ModType.MP5); //points to staging
+				} else {
+					ModManager.debugLogger.writeMessage("Mod has MP5 Coalesced job, using existing coalesced as base");
+				}
+			}
 			//decompile==========================================
 			String compilingDir = ModManager.getCompilingDir();
 			File basegamecoalFile = new File(compilingDir + "/coalesceds/Coalesced.bin");
@@ -255,24 +300,6 @@ public class KeybindsInjectionWindow extends JDialog {
 
 			//replace file
 			publish("Installing custom keybinds");
-			File userKeybinds = new File(ModManager.getOverrideDir() + "BioInput.xml");
-			//detect if talon keybinds are present int our user keybinds
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-			Document iniFile = dbFactory.newDocumentBuilder().parse("file:///" + userKeybinds.getAbsolutePath());
-			iniFile.getDocumentElement().normalize();
-			NodeList sectionsList = iniFile.getElementsByTagName("Section");
-			for (int x = 0; x < sectionsList.getLength(); x++) {
-				Node n = sectionsList.item(x);
-				if (n.getNodeType() == Node.ELEMENT_NODE) {
-					String name = n.getAttributes().getNamedItem("name").getTextContent();
-					if (name.contains("sfxgame.sfxgamemodedefault_merc")) {
-						talonremoved = true;
-						ModManager.debugLogger.writeMessage("Detected talon keybindings in user keybinds");
-						TOTAL_STEPS = 6;
-						break;
-					}
-				}
-			}
 
 			File modInputXML = new File(compilingDir + "coalesceds/Coalesced/BioInput.xml");
 			FileUtils.copyFile(userKeybinds, modInputXML);
@@ -292,7 +319,7 @@ public class KeybindsInjectionWindow extends JDialog {
 
 			if (BGcopyWholeDirectory) {
 				//copy folder
-				File destdir = new File(ModManager.getModsDir() + mod.getModName());
+				File destdir = new File(origMod.getModPath());
 				FileUtils.deleteDirectory(destdir);
 				FileUtils.copyDirectory(staging, destdir);
 				ModManager.debugLogger.writeMessage("Copied updated mod back to mod directory " + staging + " => " + destdir);
@@ -362,14 +389,15 @@ public class KeybindsInjectionWindow extends JDialog {
 
 				if (MP5copyWholeDirectory) {
 					//copy folder
-					File destdir = new File(ModManager.getModsDir() + mod.getModName());
+					File destdir = new File(origMod.getModPath());
 					FileUtils.deleteDirectory(destdir);
 					FileUtils.copyDirectory(staging, destdir);
 					ModManager.debugLogger.writeMessage("Copied removed-talon keybinds folder back to mod directory " + staging + " => " + destdir);
 				} else {
 					//update bin only
 					FileUtils.copyFile(new File(mp5coalstaging), new File(destinationMP5coal)); //shouldn't assume a user dir, but... eh...
-					ModManager.debugLogger.writeMessage("Copied removed-talon MP5 keybinds Default_DLC_CON_MP5.bin back to mod directory " + mp5coalstaging +" => "+destinationBasegamecoal);
+					ModManager.debugLogger
+							.writeMessage("Copied removed-talon MP5 keybinds Default_DLC_CON_MP5.bin back to mod directory " + mp5coalstaging + " => " + destinationBasegamecoal);
 				}
 
 				//END MP5
@@ -378,8 +406,8 @@ public class KeybindsInjectionWindow extends JDialog {
 			FileUtils.deleteDirectory(staging);
 			FileUtils.deleteDirectory(new File(compilingDir + "coalesceds/"));
 			ModManager.debugLogger.writeMessage("==================END KeybindsInjectionWorker==============");
-
-			return null;
+			mod = new Mod(origMod.getDescFile());
+			return true;
 		}
 
 		@Override
@@ -392,8 +420,9 @@ public class KeybindsInjectionWindow extends JDialog {
 
 		protected void done() {
 			dispose();
+			boolean result = false;
 			try {
-				get(); // this line can throw InterruptedException or ExecutionException
+				result = get(); // this line can throw InterruptedException or ExecutionException
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeError("Error occured in KeybindsInjectionWorker():");
 				ModManager.debugLogger.writeException(e);
@@ -402,13 +431,20 @@ public class KeybindsInjectionWindow extends JDialog {
 				e.printStackTrace();
 				return;
 			}
-			if (!automated) {
-				String removedTalonStr = "";
-				if (talonremoved) {
-					removedTalonStr = "\nKeybindings for the Talon Mercenary have been removed from Reckoning as they were detected in your override file.";
+			if (!automated || !result) {
+				if (result) {
+					new AutoTocWindow(mod,AutoTocWindow.LOCALMOD_MODE,ModManagerWindow.GetBioGameDir());
+					String removedTalonStr = "";
+					if (talonremoved) {
+						removedTalonStr = "\nKeybindings for the Talon Mercenary have been removed from Reckoning as they were detected in your override file.";
+					}
+					JOptionPane.showMessageDialog(KeybindsInjectionWindow.this, "Your custom keybinds have been inserted into " + mod.getModName() + "." + removedTalonStr,
+							"Injection Complete", JOptionPane.INFORMATION_MESSAGE);
+				} else {
+					JOptionPane.showMessageDialog(KeybindsInjectionWindow.this,
+							"An error occured inserting your keybinds into into " + mod.getModName() + ".\nThe Mod Manager log will have more information.", "Injection Failed",
+							JOptionPane.ERROR_MESSAGE);
 				}
-				JOptionPane.showMessageDialog(KeybindsInjectionWindow.this, "Your custom keybinds have been inserted into " + mod.getModName() + "." + removedTalonStr,
-						"Injection Complete", JOptionPane.INFORMATION_MESSAGE);
 				new ModManagerWindow(false);
 			}
 		}

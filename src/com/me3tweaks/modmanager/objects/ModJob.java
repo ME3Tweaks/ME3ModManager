@@ -42,6 +42,8 @@ public class ModJob {
 	 * 
 	 * @param DLCFilePath
 	 *            Path to the DLC Sfar file.
+	 * @param jobName Name of the job. Use 
+	 * @param requirementText Text to show if the DLC is not installed that this job targets
 	 */
 	public ModJob(String DLCFilePath, String jobName, String requirementText) {
 		setJobType(DLC);
