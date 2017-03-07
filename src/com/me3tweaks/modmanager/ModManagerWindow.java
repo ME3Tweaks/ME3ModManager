@@ -1338,13 +1338,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu = new JMenu("Tools");
 
 		toolsMergeMod = new JMenuItem("Mod Merging Utility");
-		toolsMergeMod.setToolTipText("Allows you to merge CMM3+ mods together and resolve conflicts between mods");
+		toolsMergeMod.setToolTipText("<html>Allows you to merge Mod Manager mods together and resolve conflicts between mods<br>This tool is deprecated and may be removed in the future</html>");
 
 		toolsOpenME3Dir = new JMenuItem("Open BIOGame directory");
 		toolsOpenME3Dir.setToolTipText("Opens a Windows Explorer window in the BIOGame Directory");
 
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
-		toolsInstallLauncherWV.setToolTipText("<html>Installs an in-memory patcher giving you console and allowing modified DLC.<br>This does not does not modify files</html>");
+		toolsInstallLauncherWV.setToolTipText("<html>Installs an in-memory patcher giving you console and allowing modified DLC.<br>This does not does not modify files.<br>This bypass method has been deprecated. Use binkw32 instead</html>");
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
 		toolsInstallBinkw32.setToolTipText(
 				"<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This modifies your game and is erased when doing an Origin Repair</html>");
@@ -2063,6 +2063,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == actionOptions) {
 			new OptionsWindow(this);
 		} else if (e.getSource() == toolsMergeMod) {
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"The mod merging tool has been deprecated.\nIt is no longer tested, and may break. To merge mods, install both and then run AutoTOC on the game.\nThe final applied mod will take precedence if there are conflicts.",
+					"Deprecated Tool", JOptionPane.WARNING_MESSAGE);
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				ModManager.debugLogger.writeMessage("Opening Mod Merging utility");
 				updateApplyButton();
@@ -2073,7 +2076,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Merge Tool: Missing .NET Framework");
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods.");
 			}
-
 		} else if (e.getSource() == toolME3Config) {
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Opening ME3 Config tool");
@@ -2275,14 +2277,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == sqlGearParser) {
 			// new GearGUI();
 		} else if (e.getSource() == toolsInstallLauncherWV) {
-			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Installing manual LauncherWV bypass.");
-				installBypass();
-			} else {
-				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
-				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+			int result = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"LauncherWV has been deprecated.\nYou can install install it, but using the binkw32 bypass methods are far more reliable.\nContinue installing LauncherWV?",
+					"Deprecated Bypass", JOptionPane.WARNING_MESSAGE);
+			if (result == JOptionPane.OK_OPTION) {
+				if (validateBIOGameDir()) {
+					ModManager.debugLogger.writeMessage("Installing manual LauncherWV bypass.");
+					installBypass();
+				} else {
+					labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
+					labelStatus.setVisible(true);
+					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+							JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		} else if (e.getSource() == toolsInstallBinkw32asi) {
 			if (ModManager.isMassEffect3Running()) {
@@ -2847,7 +2854,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ArrayList<AlternateFile> alts = selectedMod.getAlternateFiles();
 					ArrayList<AlternateCustomDLC> altdlcs = selectedMod.getAlternateCustomDLC();
 					int numoptions = altdlcs.size() + alts.size();
+					for (ModJob job : selectedMod.getJobs()) {
+						if (job.getJobType() == ModJob.CUSTOMDLC) {
+							continue; //don't parse these
+						}
+						numoptions += job.getAlternateFiles().size();
+					}
 					modAlternatesMenu.setText(numoptions + " alternate installation option" + (numoptions != 1 ? "s" : ""));
+					if (numoptions > 0) {
+						modAlternatesMenu.setToolTipText("<html>This mod has " + numoptions + " additional installation configuration" + (numoptions != 1 ? "s" : "") + "</html>");
+					}
+
 					ArrayList<AlternateFile> autoAlts = selectedMod.getApplicableAutomaticAlternates(GetBioGameDir());
 					for (AlternateFile af : alts) {
 						String friendlyname = af.getOperation() + " due to " + af.getCondition() + " for " + af.getConditionalDLC();
@@ -2863,6 +2880,34 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						modAlternatesMenu.add(item);
 					}
 
+					//Populate Manual Alternate Files for Official DLC
+					for (ModJob job : selectedMod.getJobs()) {
+						if (job.getJobType() == ModJob.CUSTOMDLC) {
+							continue; //don't parse these
+						}
+						for (AlternateFile af : job.getAlternateFiles()) {
+							String friendlyname = af.getOperation() + " due to " + af.getCondition() + " for " + job.getJobName();
+							if (af.getFriendlyName() != null) {
+								friendlyname = af.getFriendlyName();
+							}
+							JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+							item.setToolTipText(af.getDescription());
+							item.setEnabled(true); //Can only do CONDITION_MANUAL
+							item.setSelected(af.isEnabled());
+							item.addActionListener(new ActionListener() {
+
+								@Override
+								public void actionPerformed(ActionEvent e) {
+									af.setHasBeenChosen(item.isSelected());
+									ModManager.debugLogger.writeMessage("[" + selectedMod.getModName() + "] User has toggled an optional ALTFILE addin " + item.getText() + " to "
+											+ (item.isSelected() ? "on" : "off") + ".");
+									labelStatus.setText(item.getText() + " set to " + (item.isSelected() ? "enabled" : "disabled"));
+								}
+							});
+							modAlternatesMenu.add(item);
+						}
+					}
+
 					if (altdlcs.size() > 0) {
 						modAlternatesMenu.addSeparator();
 						for (AlternateCustomDLC altdlc : altdlcs) {
@@ -2876,10 +2921,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								item.setEnabled(false);
 							} else {
 								item.addActionListener(new ActionListener() {
-									
+
 									@Override
 									public void actionPerformed(ActionEvent e) {
-										ModManager.debugLogger.writeMessage("["+selectedMod.getModName()+"]User has toggled an optional addin "+item.getText()+" to "+(item.isSelected() ? "on" : "off")+".");
+										ModManager.debugLogger.writeMessage("[" + selectedMod.getModName() + "] User has toggled an optional ALTDLC addin " + item.getText()
+												+ " to " + (item.isSelected() ? "on" : "off") + ".");
 										altdlc.setHasBeenChosen(item.isSelected());
 									}
 								});

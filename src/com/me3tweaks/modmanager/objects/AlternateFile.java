@@ -21,12 +21,14 @@ public class AlternateFile {
 	private String condition;
 	private String description;
 	private String operation;
+	private String substitutefile;
 	private String friendlyName;
+	private boolean enabled = false;
 
 	public AlternateFile(String altfileText) {
 		conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
 		modFile = ValueParserLib.getStringProperty(altfileText, "ModFile", false);
-		if (modFile.charAt(0) != '/') {
+		if (modFile.charAt(0) != '/' && modFile.charAt(0) != '\\') {
 			modFile = "/" + modFile;
 		}
 		altFile = ValueParserLib.getStringProperty(altfileText, "ModAltFile", false);
@@ -34,6 +36,7 @@ public class AlternateFile {
 		description = ValueParserLib.getStringProperty(altfileText, "Description", true);
 		operation = ValueParserLib.getStringProperty(altfileText, "ModOperation", false);
 		friendlyName = ValueParserLib.getStringProperty(altfileText, "FriendlyName", true);
+		substitutefile = ValueParserLib.getStringProperty(altfileText, "SubstituteFile", false);
 	}
 
 	public String getFriendlyName() {
@@ -57,6 +60,8 @@ public class AlternateFile {
 		condition = alt.condition;
 		description = alt.description;
 		operation = alt.operation;
+		enabled = alt.enabled;
+		substitutefile = alt.substitutefile;
 	}
 
 	public String getDescription() {
@@ -121,17 +126,19 @@ public class AlternateFile {
 				ModManager.debugLogger.writeError("Operation is not one of the allowed values: " + operation);
 				return false;
 			}
-			ArrayList<String> officialHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
-			if (!officialHeaders.contains(conditionalDLC)) {
-				File f = new File(modPath + conditionalDLC);
-				if (f.exists() && f.isDirectory()) {
-					ModManager.debugLogger.writeError("ConditionalDLC is listed as part of the custom dlc this mod will install: " + conditionalDLC
-							+ ". On mod's first install this will have no effect, and on subsequent will change what is being installed.");
-					return false;
-				} else {
-					if (!conditionalDLC.startsWith("DLC_")) {
-						ModManager.debugLogger.writeError("ConditionalDLC is not an official header and does not start with DLC_: " + conditionalDLC + ".");
+			if (condition.equals(CONDITION_DLC_NOT_PRESENT) || condition.equals(CONDITION_DLC_PRESENT)) {
+				ArrayList<String> officialHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
+				if (!officialHeaders.contains(conditionalDLC)) {
+					File f = new File(modPath + conditionalDLC);
+					if (f.exists() && f.isDirectory()) {
+						ModManager.debugLogger.writeError("ConditionalDLC is listed as part of the custom dlc this mod will install: " + conditionalDLC
+								+ ". On mod's first install this will have no effect, and on subsequent will change what is being installed.");
 						return false;
+					} else {
+						if (!conditionalDLC.startsWith("DLC_")) {
+							ModManager.debugLogger.writeError("ConditionalDLC is not an official header and does not start with DLC_: " + conditionalDLC + ".");
+							return false;
+						}
 					}
 				}
 			}
@@ -160,6 +167,22 @@ public class AlternateFile {
 
 	public void setOperation(String operation) {
 		this.operation = operation;
+	}
+
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setHasBeenChosen(boolean enabled) {
+		this.enabled = enabled;
+	}
+
+	public String getSubtituteFile() {
+		return substitutefile;
+	}
+
+	public void setSubstituteFile(String substitutefile) {
+		this.substitutefile = substitutefile;
 	}
 
 }

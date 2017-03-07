@@ -97,7 +97,6 @@ public class PatchApplicationWindow extends JDialog {
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImages(ModManager.ICONS);
-		this.pack();
 		if (callingDialog == null && callingDialog == null) {
 			this.setLocationRelativeTo(null);
 		} else {
@@ -121,7 +120,7 @@ public class PatchApplicationWindow extends JDialog {
 				}
 			}
 		});
-
+		pack();
 	}
 
 	class PatchApplicationTask extends SwingWorker<Void, Object> {

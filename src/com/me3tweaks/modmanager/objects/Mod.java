@@ -443,7 +443,7 @@ public class Mod implements Comparable<Mod> {
 					}
 				}
 				newJob.setSourceDir(iniModDir);
-				if (newStrok != null && oldStrok != null)
+				if (newStrok != null && oldStrok != null) {
 					while (newStrok.hasMoreTokens()) {
 						String newFile = newStrok.nextToken();
 						String oldFile = oldStrok.nextToken();
@@ -475,6 +475,7 @@ public class Mod implements Comparable<Mod> {
 							return;
 						}
 					}
+				}
 				if (addStrok != null) {
 					while (addStrok.hasMoreTokens()) {
 						String addFile = addStrok.nextToken();
@@ -534,6 +535,48 @@ public class Mod implements Comparable<Mod> {
 						}
 					}
 				}
+
+				if (modCMMVer >= 4.5) {
+					String altText = modini.get(modHeader, "altfiles");
+					if (altText != null && !altText.equals("")) {
+						ArrayList<String> alts = ValueParserLib.getSplitValues(altText);
+						if (alts == null) {
+							//error
+							ModManager.debugLogger.writeError(
+									"ALTERNATES altfiles was specified, but the value couldn't be parsed. This error is from the OFFICIAL headers, so it only applies to official BioWare DLC or the basegame. The definition is likely invalid: "
+											+ altText);
+							setFailedReason("The moddesc indicates there should be files installed differently depending on certain conditions, but it failed to parse. The ["
+									+ modHeader + "] altfiles text that failed to parse was :" + altText
+									+ "\n\nThis may not affect your specific ME3 enviroment, but the mod has been marked as invalid to avoid possible issues.");
+							return;
+						}
+						for (String alt : alts) {
+							AlternateFile af = new AlternateFile(alt);
+							af.setModFile(ResourceUtils.normalizeFilePath(af.getModFile(), false));
+							ModManager.debugLogger.writeMessageConditionally("Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);
+							
+							if (af.getSubtituteFile() != null) {
+								//check location
+								//af.setSubstituteFile(ResourceUtils.normalizeFilePath(af.getSubtituteFile(), false));
+								String subfile = ModManager.appendSlash(getModPath()) + af.getSubtituteFile();
+								File f = new File(subfile);
+								if (!f.exists()) {
+									ModManager.debugLogger.writeError(
+											"This error is from the OFFICIAL headers, so it only applies to official BioWare DLC or the basegame. Substitute file doesn't exist: "
+													+ f.getAbsolutePath());
+									setFailedReason("The moddesc indicates there should be files installed differently depending on certain conditions, but a listed substitute file doesn't exist. The error occurs in the ["
+											+ modHeader + "] header altfiles text. The missing file is :" + f.getAbsolutePath()
+											+ "\n\nThis may not affect your specific ME3 enviroment, but the mod has been marked as invalid to avoid possible issues.");
+									return;
+								} else {
+									ModManager.debugLogger.writeMessageConditionally("Alternate for official headers has valid substitute file: "+f, ModManager.LOG_MOD_INIT);
+								}
+							}
+							newJob.getAlternateFiles().add(af);
+						}
+					}
+				}
+
 				ModManager.debugLogger.writeMessageConditionally(modName + ": Successfully made a new Mod Job for: " + modHeader, ModManager.LOG_MOD_INIT);
 				addTask(modHeader, newJob);
 			}
@@ -672,7 +715,7 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 			if (modCMMVer >= 4.4) {
-				System.out.println("Mod Manager Version >= 4.4, looking for altdlc header");
+				ModManager.debugLogger.writeMessageConditionally("Targetting Mod Manager Version >= 4.4, looking for altdlc header", ModManager.LOG_MOD_INIT);
 				String altText = modini.get("CUSTOMDLC", "altdlc");
 				if (altText != null && !altText.equals("")) {
 					ArrayList<String> alts = ValueParserLib.getSplitValues(altText);
@@ -905,6 +948,21 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 		}
+
+		//Resolve Official Alternates
+		if (modCMMVer >= 4.5) {
+			for (ModJob job : jobs) {
+				if (job.getJobType() == ModJob.CUSTOMDLC) {
+					continue;
+				}
+				for (AlternateFile af : job.getAlternateFiles()) {
+					String replacementFilePath = getModTaskPath(af.getModFile(), job.getJobName());
+					String relativePath = ResourceUtils.getRelativePath(replacementFilePath, modPath, File.separator);
+					relativePath = ResourceUtils.normalizeFilePath(relativePath, false);
+					af.setAltFile(relativePath);
+				}
+			}
+		}
 		generateModDisplayDescription();
 		ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for " + getModName());
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------END OF " + modName + "--------------------------", ModManager.LOG_MOD_INIT);
@@ -1003,13 +1061,13 @@ public class Mod implements Comparable<Mod> {
 				modDisplayDescription += "\n";
 			}
 		}
-		
+
 		if (hasAutomaticConfiguration()) {
-			modDisplayDescription += "This mod has been automatically configured for your game's current configuration.\n"; 
+			modDisplayDescription += "This mod has been automatically configured for your game's current configuration.\n";
 		}
-		
+
 		if (hasOptionalManualCustomDLC()) {
-			modDisplayDescription += "This mod contains alternate installation options. Access them through the mod utils menu.\n"; 
+			modDisplayDescription += "This mod contains alternate installation options. Access them through the mod utils menu.\n";
 		}
 
 		// Add modversion
@@ -1030,7 +1088,7 @@ public class Mod implements Comparable<Mod> {
 		if (classicCode > 0 /* && ModManager.IS_DEBUG */) {
 			modDisplayDescription += "\nUpdate code: " + classicCode;
 		}
-		
+
 		if (getSideloadOnlyTargets().size() > 0) {
 			modDisplayDescription += "\nFuture updates may require sideloading an update package";
 		}
@@ -1058,7 +1116,7 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 		}
-		
+
 		if (alternateFiles.size() > 0) {
 			for (AlternateFile altfile : alternateFiles) {
 				if (!altfile.getCondition().equals(AlternateFile.CONDITION_MANUAL)) {
@@ -1066,7 +1124,7 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -1078,7 +1136,7 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -2471,8 +2529,10 @@ public class Mod implements Comparable<Mod> {
 			break;
 		case AlternateFile.OPERATION_NOINSTALL:
 			ModManager.debugLogger.writeMessage("Condition match, will no longer modify " + af.getModFile());
-			boolean ftr = job.getFilesToReplace().remove(getModPath() + af.getAltFile());
-			boolean ftrt = job.getFilesToReplaceTargets().remove(af.getModFile());
+			String fileToRemove = ResourceUtils.normalizeFilePath(getModPath() + af.getAltFile(), true);
+			String fileToRemoveTarget = ResourceUtils.normalizeFilePath(af.getModFile(), false);
+			boolean ftr = job.getFilesToReplace().remove(fileToRemove);
+			boolean ftrt = job.getFilesToReplaceTargets().remove(fileToRemoveTarget);
 			if (ftr ^ ftrt) {
 				ModManager.debugLogger.writeError(
 						"Application of NO_INSTALL has caused mod to become invalid as one of the replace lists didn't contain the correct values, but the other one did.");
@@ -2481,7 +2541,12 @@ public class Mod implements Comparable<Mod> {
 		case AlternateFile.OPERATION_SUBSTITUTE:
 			ModManager.debugLogger.writeMessage("Condition match, repointing " + af.getModFile() + " to use " + af.getAltFile());
 			int index = job.getFilesToReplaceTargets().indexOf(af.getModFile());
-			job.getFilesToReplace().set(index, getModPath() + af.getAltFile());
+			if (af.getSubtituteFile() != null) {
+				//Substitute on OFFICIAL HEADERS
+				job.getFilesToReplace().set(index, getModPath() + af.getSubtituteFile());
+			} else {
+				job.getFilesToReplace().set(index, getModPath() + af.getAltFile());
+			}
 			break;
 		}
 	}
@@ -2559,6 +2624,9 @@ public class Mod implements Comparable<Mod> {
 		return applicableAutomaticAlternates;
 	}
 
+	/**
+	 * Applies Manually chosen Custom DLC configurations to this mod
+	 */
 	public void applyManualCustomDLCs() {
 		for (AlternateCustomDLC dlc : alternateCustomDLC) {
 			if (dlc.getCondition().equals(AlternateCustomDLC.CONDITION_MANUAL) && dlc.hasBeenChoosen()) {
@@ -2568,4 +2636,25 @@ public class Mod implements Comparable<Mod> {
 		}
 	}
 
+	/**
+	 * Applies Manual Alternate files to this mod
+	 * 
+	 * @param bioGameDir
+	 * @return
+	 */
+	public boolean applyManualAlternates(String bioGameDir) {
+		boolean altApplied = false;
+		for (ModJob job : jobs) {
+			if (job.getJobType() == ModJob.CUSTOMDLC) {
+				continue; //This is for official only
+			}
+			for (AlternateFile af : job.getAlternateFiles()) {
+				if (af.isEnabled()) {
+					applyAlternateFileOperation(job, af);
+					altApplied = true;
+				}
+			}
+		}
+		return altApplied;
+	}
 }

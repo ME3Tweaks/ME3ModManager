@@ -19,12 +19,14 @@ public class AlternateCustomDLC {
 	public static final String CONDITION_ANY_DLC_NOT_PRESENT = "COND_ANY_DLC_NOT_PRESENT"; //multiple DLC, any of which are missing
 	public static final String CONDITION_ALL_DLC_PRESENT = "COND_ALL_DLC_PRESENT";
 
+	private boolean isValid = true;
 	private String altDLC;
 	private String destDLC;
 	private String conditionalDLC;
 	private String condition;
 	private String description;
 	private String operation;
+	private String jobHeader;
 	private ArrayList<String> conditionalDLCs = new ArrayList<String>();
 	private String friendlyName;
 	private boolean hasBeenChosen;
@@ -33,7 +35,12 @@ public class AlternateCustomDLC {
 		this.hasBeenChosen = hasBeenChosen;
 	}
 
+	/**
+	 * Constructs a Alternate Custom DLC object. This is the original constructor introduced in Mod Manager 4.4, and only works with Custom DLC.
+	 * @param altfileText String to parse
+	 */
 	public AlternateCustomDLC(String altfileText) {
+		jobHeader = ModType.CUSTOMDLC;
 		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
 		if (!condition.equals(CONDITION_MANUAL)) {
 			conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
@@ -47,6 +54,36 @@ public class AlternateCustomDLC {
 		destDLC = ValueParserLib.getStringProperty(altfileText,"ModDestDLC", false);
 		friendlyName = ValueParserLib.getStringProperty(altfileText, "FriendlyName", true);
 	}
+	
+/*	/**
+	 * Constructs a alternate installation option for non-Custom DLC things.
+	 * @param altfileText Text to parse
+	 * @param jobHeader Job that this object targets
+	 *//*
+	public AlternateCustomDLC(String altfileText, String jobHeader) {
+		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
+		if (!condition.equals(CONDITION_MANUAL)) {
+			isValid = false; //Alternate Custom DLC targetting official DLC or basegame must be manually chosen.
+			return;
+		}
+		operation = ValueParserLib.getStringProperty(altfileText, "ModOperation", false);
+		if (!operation.equals(arg0))
+		
+		altDLC = ValueParserLib.getStringProperty(altfileText, "ModAltDLC", false);
+		description = ValueParserLib.getStringProperty(altfileText, "Description", true);
+		destDLC = ValueParserLib.getStringProperty(altfileText,"ModDestDLC", false);
+		friendlyName = ValueParserLib.getStringProperty(altfileText, "FriendlyName", true);
+	}*/
+	
+	/**
+	 * Returns if this is a valid Alternate Custom DLC object. This value is only set when using non-custom dlc options (targetting official file replacements)
+	 * @return true if valid, false if not valid
+	 */
+	public boolean isValid() {
+		return isValid;
+	}
+	
+	
 
 	private void parseConditionalDLC() {
 		String str = conditionalDLC.replaceAll("\\(", "");

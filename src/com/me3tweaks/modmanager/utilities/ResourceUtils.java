@@ -2,6 +2,10 @@ package com.me3tweaks.modmanager.utilities;
 
 import java.awt.Color;
 import java.awt.Desktop;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -351,12 +355,76 @@ public class ResourceUtils {
 		return (buffer[0] << 24) & 0xff000000 | (buffer[1] << 16) & 0x00ff0000 | (buffer[2] << 8) & 0x0000ff00 | (buffer[3] << 0) & 0x000000ff;
 	}
 
+	/**
+	 * Converts backslashes to forwardslashes, or vice versa
+	 * @param absolutePath Path to convert
+	 * @param backslash Set to true to make backwards slash, false to make forwardslashes
+	 * @return
+	 */
 	public static String normalizeFilePath(String absolutePath, boolean backslash) {
 		if (!backslash) {
 			return absolutePath.replaceAll("\\\\", "/");
 		}
 		return absolutePath.replaceAll("/", "\\\\");
 	}
+
+    public static BufferedImage getScaledInstance(
+            BufferedImage img, int targetWidth,
+            int targetHeight, Object hint, 
+            boolean higherQuality)
+        {
+            int type =
+                (img.getTransparency() == Transparency.OPAQUE)
+                ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
+            BufferedImage ret = (BufferedImage) img;
+            int w, h;
+            if (higherQuality)
+            {
+                // Use multi-step technique: start with original size, then
+                // scale down in multiple passes with drawImage()
+                // until the target size is reached
+                w = img.getWidth();
+                h = img.getHeight();
+            }
+            else
+            {
+                // Use one-step technique: scale directly from original
+                // size to target size with a single drawImage() call
+                w = targetWidth;
+                h = targetHeight;
+            }
+
+            do
+            {
+                if (higherQuality && w > targetWidth)
+                {
+                    w /= 2;
+                    if (w < targetWidth)
+                    {
+                        w = targetWidth;
+                    }
+                }
+
+                if (higherQuality && h > targetHeight)
+                {
+                    h /= 2;
+                    if (h < targetHeight)
+                    {
+                        h = targetHeight;
+                    }
+                }
+
+                BufferedImage tmp = new BufferedImage(w, h, type);
+                Graphics2D g2 = tmp.createGraphics();
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
+                g2.drawImage(ret, 0, 0, w, h, null);
+                g2.dispose();
+
+                ret = tmp;
+            } while (w != targetWidth || h != targetHeight);
+
+            return ret;
+        }
 
 	/*
 	 * public static void main(final String[] args) throws IOException { try

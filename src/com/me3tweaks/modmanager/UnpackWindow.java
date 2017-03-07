@@ -72,7 +72,7 @@ public class UnpackWindow extends JDialog {
 	private void setupWindow() {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html>Select DLCs to unpack.<br>Unpacking DLCs can take a really long time.</html>");
+		infoLabel = new JLabel("<html>Select DLCs to unpack.<br>Unpacking DLCs can take a really long time.<br>Do not use this if you are going to install ALOT.</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 
 		progressBar = new JProgressBar(0, 100);

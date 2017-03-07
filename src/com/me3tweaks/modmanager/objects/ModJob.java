@@ -21,6 +21,7 @@ public class ModJob {
 	public static final int DLC = 0;
 	public static final int CUSTOMDLC = 2;
 	public static final int BALANCE_CHANGES = 3;
+
 	@Override
 	public String toString() {
 		return "ModJob [jobName=" + jobName + "]";
@@ -35,6 +36,7 @@ public class ModJob {
 	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFilesTargets;
 	private String sourceDir;
 	private ArrayList<String> addFilesReadOnlyTargets;
+	private ArrayList<AlternateFile> altfiles;
 
 	/**
 	 * Holds many parameters that are required to inject files into a DLC Sfar
@@ -42,8 +44,10 @@ public class ModJob {
 	 * 
 	 * @param DLCFilePath
 	 *            Path to the DLC Sfar file.
-	 * @param jobName Name of the job. Use 
-	 * @param requirementText Text to show if the DLC is not installed that this job targets
+	 * @param jobName
+	 *            Name of the job. Use
+	 * @param requirementText
+	 *            Text to show if the DLC is not installed that this job targets
 	 */
 	public ModJob(String DLCFilePath, String jobName, String requirementText) {
 		setJobType(DLC);
@@ -56,6 +60,7 @@ public class ModJob {
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
+		altfiles = new ArrayList<AlternateFile>();
 	}
 
 	public ArrayList<String> getFilesToAdd() {
@@ -81,6 +86,14 @@ public class ModJob {
 	public void setRemoveFilesTargets(ArrayList<String> removeFilesTargets) {
 		this.removeFilesTargets = removeFilesTargets;
 	}
+	
+	public ArrayList<AlternateFile> getAlternateFiles() {
+		return altfiles;
+	}
+
+	public void setAlternateFiles(ArrayList<AlternateFile> altfiles) {
+		this.altfiles = altfiles;
+	}
 
 	/**
 	 * Creates a basegame modjob. It doesn't need a path since it can be derived
@@ -100,6 +113,7 @@ public class ModJob {
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
+		altfiles = new ArrayList<AlternateFile>();
 	}
 
 	/**
@@ -133,7 +147,11 @@ public class ModJob {
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
+		altfiles = new ArrayList<AlternateFile>();
 
+		for (AlternateFile f : job.altfiles) {
+			altfiles.add(new AlternateFile(f));
+		}
 		for (String str : job.newFiles) {
 			newFiles.add(str);
 		}
@@ -184,7 +202,9 @@ public class ModJob {
 	 *            Source file that will be injected (full file path)
 	 * @param fileToReplace
 	 *            File path in DLC or basegame that will be updated
-	 * @param ignoreExistenceErrors Ignores errors if a source file doesn't exist. Typically means the file is compressed.
+	 * @param ignoreExistenceErrors
+	 *            Ignores errors if a source file doesn't exist. Typically means
+	 *            the file is compressed.
 	 * @return True if task was added OK, false if the source file does not
 	 *         exist or duplicate files were added
 	 */
@@ -311,7 +331,9 @@ public class ModJob {
 	 *            new file to add
 	 * @param targetPath
 	 *            path to place in DLC
-	 * @param ignoreExistenceErrors Ignores errors if a source file doesn't exist. Typically a sign the mod is compressed and has no files on disk yet.
+	 * @param ignoreExistenceErrors
+	 *            Ignores errors if a source file doesn't exist. Typically a
+	 *            sign the mod is compressed and has no files on disk yet.
 	 * @return true if added, false otherwise
 	 */
 	public boolean addNewFileTask(String sourceFile, String targetPath, boolean ignoreExistenceErrors) {
