@@ -111,10 +111,12 @@ public class LogOptionsWindow extends JDialog {
 		customdlcconflictsoption = new JCheckBox("Custom DLC Conflicts");
 		customdlcconflictsoption.setToolTipText("<html>Generates a list of files that conflict in Custom DLC. Useful for developers to troubleshoot mod compatibility</html>");
 		customdlcconflictsoption.setSelected(false);
+		customdlcconflictsoption.setSelected(true);
+
 
 		me3logfile = new JCheckBox("ME3Logger Contents (Game crash info)");
 		me3logfile.setToolTipText("<html>Imports the ME3Logger contents into the log. If this bypass/ASI was not installed (or the file does not exist), this does nothing</html>");
-		me3logfile.setSelected(false);
+		me3logfile.setSelected(true);
 
 		shareViaFile = new JButton("Save to disk");
 		shareViaFile.setToolTipText("Saves this log to the logs directory.");
@@ -243,36 +245,45 @@ public class LogOptionsWindow extends JDialog {
 		acceptableHashes.add("1d09c01c94f01b305f8c25bb56ce9ab4"); //1.5
 		acceptableHashes.add("598bf934e0f4d269f5b1657002f453ce"); //1.6
 
-
 		if (installeddlcoption.isSelected()) {
-			log += "=========[INSTALLEDLC] Installed DLC =============\n";
+			log += "=========[INSTALLEDDLC] Installed DLC =============\n";
 			log += getInstalledDLC();
 			File gamedir = new File(ModManagerWindow.GetBioGameDir()).getParentFile();
 
 			File executable = new File(gamedir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
-			int minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
-			log += "Game version is 1.0" + minorBuildNum + ". ";
-			if (minorBuildNum < 5) {
-				log += "Game version is below minimum supported version (1.0"+minorBuildNum+").\n";
-			} else if (minorBuildNum > 5) {
-				log += "Game is likely from the UK as it's using the UK specific game version 1.06. User may consider downgrading to Mass Effect 3 1.05 via this URL if issues occur: https://me3tweaks.com/forums/viewtopic.php?f=5&t=20\n";
-			} else {
-				log += "This is the standard patch version for this game.\n";
-			}
-
-			if (minorBuildNum == 5) {
+			if (executable.exists()) {
+				int minorBuildNum = -1;
 				try {
-					String hash = MD5Checksum.getMD5Checksum(executable.getAbsolutePath());
-					if (acceptableHashes.contains(hash.toLowerCase())){
-						log += "EXE passed hash check. Hash of EXE is "+hash+"\n";
+					minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
+					log += "Game version is 1.0" + minorBuildNum + ". ";
+					if (minorBuildNum < 5) {
+						log += "Game version is below minimum supported version (1.0" + minorBuildNum + ").\n";
+					} else if (minorBuildNum > 5) {
+						log += "Game is likely from the UK as it's using the UK specific game version 1.06. User may consider downgrading to Mass Effect 3 1.05 via this URL if issues occur: https://me3tweaks.com/forums/viewtopic.php?f=5&t=20\n";
 					} else {
-						log += "EXE did not pass hash check. Hash of EXE is "+hash+"\n";
+						log += "This is the standard patch version for this game.\n";
 					}
 				} catch (Exception e) {
-					log += "Error checking game executable. Skipping check.\n";
+					ModManager.debugLogger.writeErrorWithException("Error checking game version:", e);
 				}
+
+				if (minorBuildNum == 5 || minorBuildNum == -1) {
+					try {
+						String hash = MD5Checksum.getMD5Checksum(executable.getAbsolutePath());
+						if (acceptableHashes.contains(hash.toLowerCase())) {
+							log += "EXE passed hash check. Hash of EXE is " + hash + "\n";
+							ModManager.debugLogger.writeMessage("EXE has passed hash check: "+hash);
+						} else {
+							log += "EXE did not pass hash check. Hash of EXE is " + hash + "\n";
+							ModManager.debugLogger.writeError("EXE has failed hash check: "+hash);
+						}
+					} catch (Exception e) {
+						log += "Error checking game executable. Skipping check.\n";
+						ModManager.debugLogger.writeErrorWithException("EXE was unable to be checked due to some error:",e);
+					}
+				}
+				log += "\n";
 			}
-			log += "\n";
 		}
 
 		if (me3logfile.isSelected()) {

@@ -70,7 +70,7 @@ public class ModInstallWindow extends JDialog {
 		this.setPreferredSize(new Dimension(320, 220));
 		consoleQueue = new String[levelCount];
 
-		setupWindow();
+		setupWindow(mod);
 
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
@@ -157,10 +157,10 @@ public class ModInstallWindow extends JDialog {
 		return result == JOptionPane.YES_OPTION;
 	}
 
-	private void setupWindow() {
+	private void setupWindow(Mod mod) {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html>Applying mod to Mass Effect 3...<br>This may take a few minutes.</html>");
+		infoLabel = new JLabel("<html>Applying "+mod.getModName()+" to Mass Effect 3...</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
@@ -203,8 +203,9 @@ public class ModInstallWindow extends JDialog {
 		protected InjectionCommander(Mod mod) {
 			this.mod = new Mod(mod); //clone before applying alternates and optional addins
 			ModManager.debugLogger.writeMessage("========Installing " + this.mod.getModName() + "========");
-			ModManager.debugLogger.writeMessage("Applying automatic alt's before parsing jobs");
+			ModManager.debugLogger.writeMessage("Applying alternate files before parsing jobs");
 			alternatesApplied = this.mod.applyAutomaticAlternates(bioGameDir);
+			alternatesApplied |= this.mod.applyManualAlternates(bioGameDir); //Must be separate or it might short circuit in compilation!
 			if (alternatesApplied) {
 				ModManager.debugLogger.writeMessage("At least one alternate file was applied, install now requires pre-toc.");
 			}
