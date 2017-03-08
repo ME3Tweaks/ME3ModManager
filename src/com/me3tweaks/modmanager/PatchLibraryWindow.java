@@ -199,7 +199,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					cameraTurningPatch = p;
 					continue;
 				}
-				if (p.getMe3tweaksid() == 1533) {
+				if (p.getMe3tweaksid() == 1557) {
 					vibrationPlatformCheckPatch = p;
 					continue;
 				}
@@ -218,7 +218,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				if (!modifiesPatchBioPlayerController
 						&& p.getTargetPath().equals("/BIOGame/DLC/DLC_TestPatch/CookedPCConsole/Patch_BioPlayerController.pcc")) {
 					patchesToAdd.add(vibrationPlatformCheckPatch);
-					ModManager.debugLogger.writeMessage("Added patch XXXX (VIBRATION PATCH) to compilation - ModMaker Controller Addins");
+					ModManager.debugLogger.writeMessage("Added patch 1557 (VIBRATION PATCH) to compilation - ModMaker Controller Addins");
 					modifiesPatchBioPlayerController = true;
 					continue;
 				}
@@ -628,7 +628,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					publish(new ThreadCommand("ADD_PATCH", null, p));
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				ModManager.debugLogger.writeErrorWithException("Error downloading mixins:", e);
 			}
 			return null;
 		}
