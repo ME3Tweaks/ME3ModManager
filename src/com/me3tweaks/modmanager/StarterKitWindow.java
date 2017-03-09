@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -56,6 +57,7 @@ import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextAreaUI;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.MountFlagCellRenderer;
+import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class StarterKitWindow extends JDialog {
@@ -132,6 +134,14 @@ public class StarterKitWindow extends JDialog {
 		modDescription = new JTextArea();
 		mountFlagsCombobox = new JComboBox<MountFlag>();
 		flagModel = new DefaultComboBoxModel<MountFlag>();
+
+		JLabel mountPriorityHint = new JLabel("You should always use a unique mount priority for your mod.", SwingConstants.CENTER);
+		SwingLink knowndlcLink = new SwingLink("Click here to see Mod Manager's mount priority telemetry data", "https://me3tweaks.com/mods/known_dlc_mods");
+		knowndlcLink.setHorizontalAlignment(JLabel.CENTER);
+		JLabel plsUseModManager = new JLabel(
+				"<html><center>Consider using Mod Manager to deploy your mods if you make them with starter kit.<br>Just zip up the mod's folder (including moddesc.ini) and distribute it. Users can still manually install by copying the mod folder.</center></html>",
+				SwingConstants.CENTER);
+
 		flagModel.addElement(new MountFlag("SP | Does not require DLC in save file", 8));
 		flagModel.addElement(new MountFlag("SP | Requires DLC in save file", 9));
 		flagModel.addElement(new MountFlag("SP&MP | Does not require DLC in save file", 28));
@@ -241,8 +251,15 @@ public class StarterKitWindow extends JDialog {
 		});
 		c.gridx = 0;
 		c.weighty = 0;
+
+		panel.add(mountPriorityHint, c);
+		c.gridy++;
+		panel.add(knowndlcLink, c);
+		c.gridy++;
 		panel.add(createButton, c);
 		c.gridy++;
+
+		panel.add(plsUseModManager, c);
 
 		progressBar.setVisible(false);
 		panel.add(progressBar, c);
@@ -327,11 +344,11 @@ public class StarterKitWindow extends JDialog {
 		String priorityString = mountPriority.getText().trim();
 		try {
 			short s = Short.parseShort(priorityString);
-			if (s < 1 || s > 32767) {
+			if (s < 1 || s > 4800) {
 				throw new NumberFormatException();
 			}
 		} catch (NumberFormatException e) {
-			showErrorMessage("Invalid Mount Priority. Value must be between 1 and " + Short.MAX_VALUE + ".");
+			showErrorMessage("Invalid Mount Priority. Value must be between 1 and 4800.\nIf your DLC mod needs higher priority to work properly, you can edit the mount file to make it work.\nThis limit to prevent priority issues with larger content mods.");
 			return false;
 		}
 

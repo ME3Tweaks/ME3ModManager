@@ -80,9 +80,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "4.5";
+	public static final String VERSION = "4.5.1";
 	public static long BUILD_NUMBER = 68L;
-	public static final String BUILD_DATE = "3/7/2017";
+	public static final String BUILD_DATE = "3/8/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -1928,6 +1928,7 @@ public class ModManager {
 	 */
 	public static ArrayList<String> getInstalledDLC(String biogamedir) {
 		File mainDlcDir = new File(ModManager.appendSlash(biogamedir) + "DLC/");
+		ModManager.debugLogger.writeMessage("Getting list of installed active DLC from " + mainDlcDir);
 		String[] directories = mainDlcDir.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
@@ -1936,8 +1937,12 @@ public class ModManager {
 			}
 		});
 		ArrayList<String> foldernames = new ArrayList<String>();
-		for (String folder : directories) {
-			foldernames.add(folder.toUpperCase());
+		if (directories != null) {
+			for (String folder : directories) {
+				foldernames.add(folder.toUpperCase());
+			}
+		} else {
+			ModManager.debugLogger.writeError("CRITICAL ERROR: UNABLE TO ENUMERATE DLCS!");
 		}
 		return foldernames;
 	}

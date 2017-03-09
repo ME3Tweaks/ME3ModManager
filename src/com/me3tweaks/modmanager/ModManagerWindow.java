@@ -211,7 +211,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	/**
 	 * This method scans all mod files and sees if any ones have imported
-	 * patches that need to be applied
+	 * patches that need to be applied.
+	 * 
+	 * DEPRECATED.
 	 * 
 	 * @return should reload mods and patches
 	 */
@@ -2546,6 +2548,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	/**
 	 * Checks if the string in the biogamedir is a valid biogame directory.
+	 * Checks for Coalesced.bin and DLC folder existence.
 	 * 
 	 * @return True if valid, false otherwise
 	 */
@@ -2553,9 +2556,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
 			ModManagerWindow.PRELOADED_BIOGAME_DIR = ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText();
 		}
+		
+		
 		File coalesced = new File(ModManager.appendSlash(PRELOADED_BIOGAME_DIR) + "CookedPCConsole\\Coalesced.bin");
-		if (coalesced.exists()) {
-
+		File dlcFolder = new File(ModManager.appendSlash(PRELOADED_BIOGAME_DIR) + "DLC\\");
+		if (coalesced.exists() && dlcFolder.exists()) {
 			setBioDirHighlight(false);
 			return true;
 		} else {
@@ -2685,13 +2690,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			File mainFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Default.sfar");
 			boolean defaultsfarMainFileExists = mainFile.exists();
 			File backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Default.sfar.bak");
-			System.out.println("Checking for backup file: " + backFile.getAbsolutePath());
+			ModManager.debugLogger.writeMessage("Checking for backup file: " + backFile.getAbsolutePath());
 			if (!backFile.exists()) {
 				// Patch_001.sfar
 				mainFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Patch_001.sfar");
 				boolean patch001farMainFileExists = mainFile.exists();
 				backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Patch_001.sfar.bak");
-				System.out.println("Checking for TESTPATCH file: " + backFile.getAbsolutePath());
+				ModManager.debugLogger.writeMessage("Checking for TESTPATCH file: " + backFile.getAbsolutePath());
 
 				if ((defaultsfarMainFileExists || patch001farMainFileExists) && !backFile.exists()) {
 					String YesNo[] = { "Yes", "No" }; // Yes/no buttons

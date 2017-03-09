@@ -73,10 +73,11 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 			}
 			//add to list
 			File metacmm = new File(mainDlcDir + File.separator + dir + File.separator + "_metacmm.txt");
-			if (dir.startsWith("DLC_") && !metacmm.exists()) {
+			File mountfile = new File(mainDlcDir + File.separator + dir + File.separator + "CookedPCConsole" + File.separator + "mount.dlc");
+			if (dir.startsWith("DLC_") && !metacmm.exists() && mountfile.exists()) {
 				ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dir);
 				if (tpmi != null) {
-					model.addElement(dir+" ("+tpmi.getModname()+")");
+					model.addElement(dir + " (" + tpmi.getModname() + ")");
 				} else {
 					model.addElement(dir);
 				}
@@ -89,7 +90,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 		JPanel panel = new JPanel(new BorderLayout());
 
 		JLabel infoHeader = new JLabel(
-				"<html><center>Import already-installed mods into Mod Manager to<br>install or uninstall them quickly and easily.<br>Only mods that have not been installed by Mod Manager are listed.</center></html>");
+				"<html><center>Import already-installed DLC mods into Mod Manager to<br>install or uninstall them quickly and easily.<br>Only mods that have not been installed by Mod Manager are listed.</center></html>");
 		panel.add(infoHeader, BorderLayout.NORTH);
 
 		importButton = new JButton("Import");
@@ -100,7 +101,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 			public void actionPerformed(ActionEvent e) {
 				String dlcfoldername = model.get(dlcModlist.getSelectedIndex());
 				if (dlcfoldername.contains(" ")) {
-					dlcfoldername = dlcfoldername.substring(0,dlcfoldername.indexOf(' '));
+					dlcfoldername = dlcfoldername.substring(0, dlcfoldername.indexOf(' '));
 				}
 				String folder = mainDlcDir.getAbsolutePath() + File.separator + dlcfoldername;
 				ImportEntryWindow iew = new ImportEntryWindow(ModImportDLCWindow.this, model.get(dlcModlist.getSelectedIndex()), folder);
