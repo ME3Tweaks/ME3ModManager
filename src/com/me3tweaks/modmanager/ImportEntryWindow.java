@@ -428,7 +428,7 @@ public class ImportEntryWindow extends JDialog {
 	 * @return
 	 */
 	public boolean inputValidate() {
-		if (modNameField.getText() == "") {
+		if (modNameField.getText().equals("")) {
 			JOptionPane.showMessageDialog(this, "You must set a Mod Name.", "Mod Name Required", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
