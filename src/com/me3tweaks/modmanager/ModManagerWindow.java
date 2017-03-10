@@ -1315,9 +1315,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsRestoreMod.addActionListener(this);
 		modutilsRestoreMod.setVisible(false);
 
-		modutilsDeleteMod = new JMenuItem("Delete mod");
+		modutilsDeleteMod = new JMenuItem("Delete mod from library");
 		modutilsDeleteMod.addActionListener(this);
-		modutilsDeleteMod.setToolTipText("Delete this mod from Mod Manager");
+		modutilsDeleteMod.setToolTipText("<html>Delete this mod from Mod Manager.<br>This does not remove this mod if it is installed</html>");
 
 		modMenu.add(modutilsHeader);
 		modMenu.add(modutilsCheckforupdate);
@@ -2204,7 +2204,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == modutilsDeleteMod) {
 			ModManager.debugLogger.writeMessage("User clicked Delete Mod on " + modModel.get(modList.getSelectedIndex()).getModName());
-			int result = JOptionPane.showConfirmDialog(this, "Deleting this mod will remove it from your filesystem.\nThis operation cannot be reversed.\nDelete "
+			int result = JOptionPane.showConfirmDialog(this, "Deleting this mod will remove it from Mod Manager's library.\nThis does not remove the mod if it is installed.\nThis operation cannot be reversed.\nDelete "
 					+ modModel.get(modList.getSelectedIndex()).getModName() + "?", "Confirm Mod Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 			if (result == JOptionPane.OK_OPTION) {
 				ModManager.debugLogger.writeMessage("Deleting mod: " + modModel.get(modList.getSelectedIndex()).getModPath());

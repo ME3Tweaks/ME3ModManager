@@ -221,7 +221,7 @@ public class AutoTocWindow extends JDialog {
 				boolean hasTOC = false;
 				if (mode == LOCALMOD_MODE) {
 					//see if has toc file
-					for (String file : job.newFiles) {
+					for (String file : job.filesToReplace) {
 						String filename = FilenameUtils.getName(file);
 						if (filename.equals("PCConsoleTOC.bin")) {
 							hasTOC = true;
@@ -250,8 +250,8 @@ public class AutoTocWindow extends JDialog {
 					//batchJobs.add(tbd);
 
 					//break into batches
-					ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Number of files in this job: "+(job.newFiles.size() + job.addFiles.size()-1));
-					for (String newFile : job.newFiles) {
+					ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Number of files in this job: "+(job.filesToReplace.size() + job.addFiles.size()-1));
+					for (String newFile : job.filesToReplace) {
 						String filename = FilenameUtils.getName(newFile);
 						if (filename.equals("PCConsoleTOC.bin")) {
 							continue; //this doesn't need updated.
@@ -353,7 +353,7 @@ public class AutoTocWindow extends JDialog {
 				boolean hasTOC = false;
 				if (mode == LOCALMOD_MODE) {
 					//find out if it has a toc file
-					for (String file : job.newFiles) {
+					for (String file : job.filesToReplace) {
 						String filename = FilenameUtils.getName(file);
 						if (filename.equals("PCConsoleTOC.bin")) {
 							hasTOC = true;
@@ -365,7 +365,7 @@ public class AutoTocWindow extends JDialog {
 				}
 
 				if (hasTOC) { //calc files
-					for (String file : job.newFiles) {
+					for (String file : job.filesToReplace) {
 						String filename = FilenameUtils.getName(file);
 						if (filename.equalsIgnoreCase("PCConsoleTOC.bin") || filename.equalsIgnoreCase("Mount.dlc")) {
 							continue;

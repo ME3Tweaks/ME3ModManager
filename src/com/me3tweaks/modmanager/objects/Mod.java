@@ -2013,7 +2013,7 @@ public class Mod implements Comparable<Mod> {
 			if (job.getJobName() == ModType.COAL) {
 				return true;
 			}
-			for (String file : job.filesToReplace) {
+			for (String file : job.filesToReplaceTargets) {
 				file = file.replaceAll("\\\\", "/"); //make sure all are the same (since the yall work)
 				if (file.toLowerCase().equals("/BIOGame/CookedPCConsole/Coalesced.bin".toLowerCase())) {
 					return true;
@@ -2062,14 +2062,14 @@ public class Mod implements Comparable<Mod> {
 			if (!job.getJobName().equals(header)) {
 				continue;
 			}
-			for (int i = 0; i < job.filesToReplace.size(); i++) {
-				String file = job.filesToReplace.get(i);
+			for (int i = 0; i < job.filesToReplaceTargets.size(); i++) {
+				String file = job.filesToReplaceTargets.get(i);
 				file = file.replaceAll("\\\\", "/"); //make sure all are the same (since the yall work)
 				if (!file.startsWith("/")) {
 					file = "/" + file;
 				}
 				if (file.toLowerCase().equals(modulePath.toLowerCase())) {
-					return job.newFiles.get(i);
+					return job.filesToReplace.get(i);
 				}
 			}
 		}
@@ -2529,13 +2529,20 @@ public class Mod implements Comparable<Mod> {
 			break;
 		case AlternateFile.OPERATION_NOINSTALL:
 			ModManager.debugLogger.writeMessage("Condition match, will no longer modify " + af.getModFile());
-			String fileToRemove = ResourceUtils.normalizeFilePath(getModPath() + af.getAltFile(), true);
+			String fileToRemovePath = af.getModFile();
+			if (fileToRemovePath.charAt(0) == '/' || fileToRemovePath.charAt(0) == '\\') {
+				fileToRemovePath = fileToRemovePath.substring(1);
+			}
+			String fileToRemove = ResourceUtils.normalizeFilePath(getModPath() + fileToRemovePath, false);
 			String fileToRemoveTarget = ResourceUtils.normalizeFilePath(af.getModFile(), false);
+			/*if (job.getJobType() == ModJob.CUSTOMDLC) {
+				fileToRemove = fileToRemoveTarget;
+			}*/
 			boolean ftr = job.getFilesToReplace().remove(fileToRemove);
 			boolean ftrt = job.getFilesToReplaceTargets().remove(fileToRemoveTarget);
 			if (ftr ^ ftrt) {
 				ModManager.debugLogger.writeError(
-						"Application of NO_INSTALL has caused mod to become invalid as one of the replace lists didn't contain the correct values, but the other one did.");
+						"Application of NO_INSTALL has caused mod to become invalid as one of the replace files lists didn't contain the correct values to remove, but the other one did.");
 			}
 			break;
 		case AlternateFile.OPERATION_SUBSTITUTE:
