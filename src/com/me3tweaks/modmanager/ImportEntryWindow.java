@@ -7,11 +7,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,6 +20,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -29,16 +28,9 @@ import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -48,9 +40,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
@@ -81,7 +70,7 @@ public class ImportEntryWindow extends JDialog {
 	public ImportEntryWindow(JDialog modImportWindow, String diplayname, String importPath) {
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window (Data Entry");
 		this.importDisplayStr = diplayname;
-		this.importPath = importPath;
+		this.importPath = ModManager.appendSlash(importPath);
 		this.callingWindow = modImportWindow;
 		setupWindow(modImportWindow);
 		setVisible(true);
@@ -95,7 +84,7 @@ public class ImportEntryWindow extends JDialog {
 		setIconImages(ModManager.ICONS);
 		dlcModName = FilenameUtils.getBaseName(importPath);
 		setTitle("Importing " + dlcModName);
-		setMinimumSize(new Dimension(400, 350));
+		setMinimumSize(new Dimension(480, 430));
 		setModalityType(Dialog.ModalityType.DOCUMENT_MODAL);
 
 		JPanel panel = new JPanel(new GridBagLayout());
@@ -154,9 +143,11 @@ public class ImportEntryWindow extends JDialog {
 		c.fill = GridBagConstraints.BOTH;
 		modDescField = new JTextArea();
 		modDescField.setLineWrap(true);
+		modDescField.setWrapStyleWord(true);
+		JScrollPane modDescFieldScroller = new JScrollPane(modDescField, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		JPanel descPanel = new JPanel(new BorderLayout());
 		descPanel.setBorder(new TitledBorder(new EtchedBorder(), "Mod Description"));
-		descPanel.add(modDescField);
+		descPanel.add(modDescFieldScroller);
 		panel.add(descPanel, c);
 
 		telemetryCheckbox = new JCheckBox("Send this info to ME3Tweaks");
@@ -199,10 +190,24 @@ public class ImportEntryWindow extends JDialog {
 			modAuthorField.setText(tpmi.getModauthor());
 			modSiteField.setText(tpmi.getModsite());
 			modDescField.setText(tpmi.getModdescription());
-			telemetryCheckbox.setEnabled(false);
-			telemetryCheckbox.setSelected(false);
-			telemetryCheckbox.setText("Info for this mod already on ME3Tweaks");
-			setTitle("Importing "+tpmi.getModname());
+			setTitle("Importing " + tpmi.getModname());
+			//Check if an update telemetry is required
+			MountFile mf = new MountFile(importPath + "CookedPCConsole" + File.separator + "Mount.dlc");
+			if (mf.getMountPriority() != tpmi.getMountpriority()) {
+				//TELEMETRY UPDATE
+				telemetryCheckbox.setText("Send updated mod info to ME3Tweaks");
+				telemetryCheckbox.setToolTipText(
+						"<html>ME3Tweaks Mod Identification Service has outdated information about this mod.<br>Please consider sending it in so we can update our database of mods.</html>");
+			} else {
+				//SAME DATA
+
+				telemetryCheckbox.setEnabled(false);
+				telemetryCheckbox.setSelected(false);
+				telemetryCheckbox.setText("Info for this mod already on ME3Tweaks");
+				telemetryCheckbox.setToolTipText(
+						"<html>The ME3Tweaks Mod Identification Service has identified this mod and has prefilled information for you from our database.</html>");
+
+			}
 		}
 
 		add(panel);
