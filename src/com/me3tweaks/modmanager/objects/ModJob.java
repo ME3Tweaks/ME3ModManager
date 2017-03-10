@@ -33,7 +33,7 @@ public class ModJob {
 	private String jobName, requirementText;
 	private ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
 	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
-	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFilesTargets;
+	public ArrayList<String> filesToReplace, filesToReplaceTargets, addFiles, addFilesTargets, removeFilesTargets;
 	private String sourceDir;
 	private ArrayList<String> addFilesReadOnlyTargets;
 	private ArrayList<AlternateFile> altfiles;
@@ -54,8 +54,8 @@ public class ModJob {
 		this.setJobName(jobName);
 		this.DLCFilePath = DLCFilePath;
 		this.requirementText = requirementText;
-		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+		filesToReplaceTargets = new ArrayList<String>();
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
@@ -107,8 +107,8 @@ public class ModJob {
 	public ModJob() {
 		setJobType(BASEGAME);
 		setJobName(ModType.BASEGAME);
-		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+		filesToReplaceTargets = new ArrayList<String>();
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
@@ -141,8 +141,8 @@ public class ModJob {
 				destFolders.add(str);
 			}
 		}
-		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+		filesToReplaceTargets = new ArrayList<String>();
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
@@ -152,11 +152,11 @@ public class ModJob {
 		for (AlternateFile f : job.altfiles) {
 			altfiles.add(new AlternateFile(f));
 		}
-		for (String str : job.newFiles) {
-			newFiles.add(str);
-		}
 		for (String str : job.filesToReplace) {
 			filesToReplace.add(str);
+		}
+		for (String str : job.filesToReplaceTargets) {
+			filesToReplaceTargets.add(str);
 		}
 		for (String str : job.addFiles) {
 			addFiles.add(str);
@@ -192,7 +192,7 @@ public class ModJob {
 	 * @return
 	 */
 	public ArrayList<String> getFilesToReplace() {
-		return newFiles;
+		return filesToReplace;
 	}
 
 	/**
@@ -233,13 +233,13 @@ public class ModJob {
 			}
 		}
 
-		if (newFiles.contains(newFile) || filesToReplace.contains(fileToReplace)) {
+		if (filesToReplace.contains(newFile) || filesToReplaceTargets.contains(fileToReplace)) {
 			ModManager.debugLogger.writeError("Adding duplicate source or target file for replacement: " + newFile + " or " + fileToReplace);
 			return false;
 		}
 
-		newFiles.add(newFile);
-		filesToReplace.add(fileToReplace);
+		filesToReplace.add(newFile);
+		filesToReplaceTargets.add(fileToReplace);
 		return true;
 	}
 
@@ -249,7 +249,7 @@ public class ModJob {
 	 * @return
 	 */
 	public ArrayList<String> getFilesToReplaceTargets() {
-		return filesToReplace;
+		return filesToReplaceTargets;
 	}
 
 	/*
@@ -291,7 +291,7 @@ public class ModJob {
 	 * @return
 	 */
 	public boolean hasTOC() {
-		for (String newFile : newFiles) {
+		for (String newFile : filesToReplace) {
 			if (FilenameUtils.getName(newFile).equals("PCConsoleTOC.bin")) {
 				return true;
 			}

@@ -630,8 +630,8 @@ public class ModInstallWindow extends JDialog {
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
 
 			//Check for files to replace not being present
-			for (int i = 0; i < job.filesToReplace.size(); i++) {
-				String fileToReplace = job.filesToReplace.get(i);
+			for (int i = 0; i < job.filesToReplaceTargets.size(); i++) {
+				String fileToReplace = job.filesToReplaceTargets.get(i);
 				File unpackeddlcfile = new File(me3dir + fileToReplace);
 				if (!unpackeddlcfile.exists()) {
 					ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Game DB: unpacked DLC file not present. DLC job will use SFAR method: " + job.getJobName());
