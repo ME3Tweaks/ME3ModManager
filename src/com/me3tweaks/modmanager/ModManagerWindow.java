@@ -2854,17 +2854,20 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 
 				modAlternatesMenu.removeAll();
-				if (selectedMod.getAlternateFiles().size() > 0 || selectedMod.getAlternateCustomDLC().size() > 0) {
-					modAlternatesMenu.setEnabled(true);
-					ArrayList<AlternateFile> alts = selectedMod.getAlternateFiles();
-					ArrayList<AlternateCustomDLC> altdlcs = selectedMod.getAlternateCustomDLC();
-					int numoptions = altdlcs.size() + alts.size();
-					for (ModJob job : selectedMod.getJobs()) {
-						if (job.getJobType() == ModJob.CUSTOMDLC) {
-							continue; //don't parse these
-						}
-						numoptions += job.getAlternateFiles().size();
+				//Count number of alternates
+				ArrayList<AlternateFile> alts = selectedMod.getAlternateFiles();
+				ArrayList<AlternateCustomDLC> altdlcs = selectedMod.getAlternateCustomDLC();
+				int numoptions = altdlcs.size() + alts.size();
+
+				for (ModJob job : selectedMod.getJobs()) {
+					if (job.getJobType() == ModJob.CUSTOMDLC) {
+						continue; //don't parse these
 					}
+					numoptions += job.getAlternateFiles().size();
+				}
+				
+				if (numoptions > 0) {
+					modAlternatesMenu.setEnabled(true);
 					modAlternatesMenu.setText(numoptions + " alternate installation option" + (numoptions != 1 ? "s" : ""));
 					if (numoptions > 0) {
 						modAlternatesMenu.setToolTipText("<html>This mod has " + numoptions + " additional installation configuration" + (numoptions != 1 ? "s" : "") + "</html>");
