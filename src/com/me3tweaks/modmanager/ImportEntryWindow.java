@@ -81,7 +81,7 @@ public class ImportEntryWindow extends JDialog {
 		this.importDisplayStr = diplayname;
 		this.importPath = importPath;
 		if (importPath.endsWith(File.separator)) {
-			importPath = importPath.substring(0, importPath.length()-2);
+			importPath = importPath.substring(0, importPath.length() - 2);
 		}
 		this.callingWindow = modImportWindow;
 		setupWindow(modImportWindow);
@@ -212,7 +212,7 @@ public class ImportEntryWindow extends JDialog {
 			modDescField.setText(tpmi.getModdescription());
 			setTitle("Importing " + tpmi.getModname());
 			//Check if an update telemetry is required
-			MountFile mf = new MountFile(importPath + "CookedPCConsole" + File.separator + "Mount.dlc");
+			MountFile mf = new MountFile(ModManager.appendSlash(importPath) + "CookedPCConsole" + File.separator + "Mount.dlc");
 			if (mf.getMountPriority() != tpmi.getMountPriority()) {
 				//TELEMETRY UPDATE
 				telemetryCheckbox.setText("Send updated mod info to ME3Tweaks");
@@ -425,6 +425,7 @@ public class ImportEntryWindow extends JDialog {
 
 	/**
 	 * Validates input into the Mod Import Window
+	 * 
 	 * @return
 	 */
 	public boolean inputValidate() {
