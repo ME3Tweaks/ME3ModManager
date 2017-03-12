@@ -74,7 +74,12 @@ public class CustomDLCWindow extends JDialog {
 
 		int datasize = 0;
 		for (String dir : directories) {
-			if (ModType.isKnownDLCFolder(dir)) {
+			String displayDir = dir;
+			if (dir.toLowerCase().startsWith("xdlc_")) {
+				displayDir = dir.substring(1);
+			}
+			
+			if (ModType.isKnownDLCFolder(displayDir)) {
 				continue;
 			}
 			datasize++;
@@ -89,10 +94,7 @@ public class CustomDLCWindow extends JDialog {
 				}
 			} else {
 				//try to lookup via 3rd party service
-				String displayDir = dir;
-				if (dir.toLowerCase().startsWith("xdlc_")) {
-					displayDir = dir.substring(1);
-				}
+				
 				dlcName = ME3TweaksUtils.getThirdPartyModName(displayDir);
 			}
 
@@ -186,19 +188,19 @@ public class CustomDLCWindow extends JDialog {
 			}
 		};
 		table.setRowHeight(30);
-
+		table.setAutoResizeMode(JTable.AUTO_RESIZE_NEXT_COLUMN);
 		ButtonColumn buttonColumn = new ButtonColumn(table, delete, COL_ACTION);
 		CustomDLCManagerToggleButtonColumn buttonColumn2 = new CustomDLCManagerToggleButtonColumn(table, toggle, COL_TOGGLE);
 
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
 		table.getColumnModel().getColumn(COL_MOUNT_PRIORITY).setCellRenderer(centerRenderer);
-
+		
 		JScrollPane scrollpane = new JScrollPane(table);
 		panel.add(scrollpane, BorderLayout.CENTER);
 
 		JLabel mpLabel = new JLabel(
-				"<html><div style=\"text-align: center;\">Custom DLC will never authorize unless you use a DLC bypass.<br>You can check for Custom DLC conflicts using the Custom DLC Conflict Detector tool in the Mod Management menu.<br>Custom DLCs that have MP in their Mount Flag will make all players require that DLC in order to join the lobby.</div></html>",
+				"<html><div style=\"text-align: center;\">Custom DLC will never authorize unless you use a DLC bypass.<br>You can check for Custom DLC conflicts using the Custom DLC Conflict Detector tool in the Mod Management menu.</div></html>",
 				SwingConstants.CENTER);
 		panel.add(mpLabel, BorderLayout.SOUTH);
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));

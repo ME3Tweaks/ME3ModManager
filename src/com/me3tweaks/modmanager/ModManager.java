@@ -82,7 +82,7 @@ public class ModManager {
 
 	public static final String VERSION = "4.5.2";
 	public static long BUILD_NUMBER = 70L;
-	public static final String BUILD_DATE = "3/10/2017";
+	public static final String BUILD_DATE = "3/11/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -189,13 +189,15 @@ public class ModManager {
 					}
 				}
 
+				debugLogger.writeMessage("--------Mod Manager Init--------");
+
 				String verString = settingsini.get("Settings", "initialmodmanagerversionbuild");
 				if (verString == null || verString.equals("")) {
 					settingsini.put("Settings", "initialmodmanagerversionbuild", "Before " + ModManager.VERSION + "-b" + ModManager.BUILD_NUMBER);
 					settingsini.store();
 					debugLogger.writeMessage("me3cmm.ini was created before " + ModManager.VERSION + "-b" + ModManager.BUILD_NUMBER);
 				} else {
-					debugLogger.writeMessage("me3cmm.ini was created by Mod Manager " + ModManager.VERSION + "-b" + ModManager.BUILD_NUMBER + ".");
+					debugLogger.writeMessage("me3cmm.ini was created by Mod Manager " + verString);
 				}
 
 				// .NET encforcement check
@@ -499,7 +501,8 @@ public class ModManager {
 		} catch (Throwable e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught throwable during runtime:", e);
 			JOptionPane.showMessageDialog(null,
-					"Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nThis error has been logged if logging was on.\nPlease report this to FemShep.");
+					"Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.",
+					"Mod Manager has crashed", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 

@@ -93,7 +93,9 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		actionsPanel.setLayout(new BoxLayout(actionsPanel, BoxLayout.LINE_AXIS));
 		websiteButton = new JButton("Visit Mod Website");
 		restoreButton = new JButton("Restore online");
-
+		websiteButton.setEnabled(false);
+		restoreButton.setEnabled(false);
+		
 		websiteButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -113,24 +115,27 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				Mod mod = failedModsModel.get(failedModList.getSelectedIndex());
-				mod = new Mod(mod); //make clone
-				if (mod.getModMakerCode() <= 0 || ModManagerWindow.validateBIOGameDir()) {
-					if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
-						ModManager.debugLogger.writeMessage("Running (restore mode) for failed mod " + mod.getModName());
-						mod.setVersion(0.001);
-						ModManagerWindow.ACTIVE_WINDOW.startSingleModUpdate(mod);
-						dispose();
+				int modelIndex = failedModList.getSelectedIndex();
+				if (modelIndex > -1) {
+					Mod mod = failedModsModel.get(modelIndex);
+					mod = new Mod(mod); //make clone
+					if (mod.getModMakerCode() <= 0 || ModManagerWindow.validateBIOGameDir()) {
+						if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
+							ModManager.debugLogger.writeMessage("Running (restore mode) for failed mod " + mod.getModName());
+							mod.setVersion(0.001);
+							ModManagerWindow.ACTIVE_WINDOW.startSingleModUpdate(mod);
+							dispose();
+						} else {
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(".NET Framework 4.5 or higher is missing");
+							ModManager.debugLogger.writeMessage("Fail Mod Restore: Missing .NET Framework");
+							new NetFrameworkMissingWindow("You must install .NET Framework 4.5 to restore ModMaker mods.");
+						}
 					} else {
-						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(".NET Framework 4.5 or higher is missing");
-						ModManager.debugLogger.writeMessage("Fail Mod Restore: Missing .NET Framework");
-						new NetFrameworkMissingWindow("You must install .NET Framework 4.5 to restore ModMaker mods.");
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Restoring ModMaker mods requires valid BIOGame");
+						JOptionPane.showMessageDialog(null,
+								"The BIOGame directory is not valid.\nCannot restore ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
+								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 					}
-				} else {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Restoring ModMaker mods requires valid BIOGame");
-					JOptionPane.showMessageDialog(null,
-							"The BIOGame directory is not valid.\nCannot restore ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
-							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -154,10 +159,11 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
-		System.out.println("values have changed.");
 		if (e.getValueIsAdjusting() == false) {
 			if (failedModList.getSelectedIndex() == -1) {
 				failedModDesc.setText("Select a mod on the left to see why it failed to load.");
+				websiteButton.setEnabled(false);
+				restoreButton.setEnabled(false);
 			} else {
 				updateDescription();
 			}
@@ -185,7 +191,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 			websiteButton.setEnabled(false);
 		}
 		if (mod.isME3TweaksUpdatable()) {
-			description += "\n\nThis mod is can be updated online via the ME3Tweaks updater service. Select Restore Online to force this mod to perform an update and match the version on the server.";
+			description += "\n\nThis mod can attempt a restore via the ME3Tweaks updater service. Select Restore Online to force this mod to perform an update and match the version on the server.\nIf the issue is from additional files, the service won't be able to fix it.";
 			restoreButton.setEnabled(true);
 		} else {
 			restoreButton.setEnabled(false);

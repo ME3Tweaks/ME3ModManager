@@ -213,7 +213,7 @@ public class ImportEntryWindow extends JDialog {
 			setTitle("Importing " + tpmi.getModname());
 			//Check if an update telemetry is required
 			MountFile mf = new MountFile(importPath + "CookedPCConsole" + File.separator + "Mount.dlc");
-			if (mf.getMountPriority() != tpmi.getMountpriority()) {
+			if (mf.getMountPriority() != tpmi.getMountPriority()) {
 				//TELEMETRY UPDATE
 				telemetryCheckbox.setText("Send updated mod info to ME3Tweaks");
 				telemetryCheckbox.setToolTipText(

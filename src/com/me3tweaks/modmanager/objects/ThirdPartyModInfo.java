@@ -74,7 +74,7 @@ public class ThirdPartyModInfo {
 		this.modsite = modsite;
 	}
 
-	public short getMountpriority() {
+	public short getMountPriority() {
 		return mountpriority;
 	}
 
