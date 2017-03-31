@@ -453,7 +453,7 @@ public class StarterKitWindow extends JDialog {
 			ModManager.ExportResource("/Mount.dlc", cookedPath + "Mount.dlc");
 			String coalpath = cookedPath + "Default_DLC_MOD_" + internaldlcname + ".bin";
 			ModManager.ExportResource("/Default_DLC_MOD_StarterKit.bin", coalpath);
-			String[] langs = { "INT", "DEU", "ESN", "FRA", "POL", "RUS" };
+			String[] langs = ModManager.SUPPORTED_GAME_LANGAUGES;
 
 			for (String lang : langs) {
 				publish(new ThreadCommand("SET_DIALOG_TEXT", "Updating TLK for " + lang));
@@ -481,6 +481,12 @@ public class StarterKitWindow extends JDialog {
 					break;
 				case "POL":
 					langcode = "pl-pl";
+					break;
+				case "ITA":
+					langcode = "it-it";
+					break;
+				case "JPN":
+					langcode = "ja"; //Unsure, could not find a file to verify this with...
 					break;
 				}
 

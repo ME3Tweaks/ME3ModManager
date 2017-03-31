@@ -197,7 +197,7 @@ public class AllModsUpdateWindow extends JDialog {
 					}
 					String updatetext = upackages.size() + " mod" + (upackages.size() == 1 ? " has" : "s have") + " available updates on ME3Tweaks:\n";
 					for (UpdatePackage upackage : upackages) {
-						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + ", Preparing user prompt.");
+						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + "");
 						updatetext += getVersionUpdateString(upackage);
 					}
 					if (upackages.size() > 1) {
@@ -205,6 +205,7 @@ public class AllModsUpdateWindow extends JDialog {
 					} else {
 						updatetext += "Update this mod?";
 					}
+					ModManager.debugLogger.writeMessage("Prompting users for updates");
 					int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
 					switch (result) {
 					case JOptionPane.YES_OPTION:
@@ -222,7 +223,10 @@ public class AllModsUpdateWindow extends JDialog {
 					operationLabel.setText("Updating mods from ME3Tweaks");
 					break;
 				case "MANIFEST_DOWNLOADED":
-					statusLabel.setText("Calculating files to update");
+					statusLabel.setText("Calculating files for update");
+					break;
+				case "CALCULATING_PROGRESS" :
+					statusLabel.setText(obj.getMessage());
 					break;
 				case "NUM_REMAINING":
 					Integer i = (Integer) obj.getData();
@@ -314,6 +318,10 @@ public class AllModsUpdateWindow extends JDialog {
 
 		public void setManifestDownloaded() {
 			publish(new ThreadCommand("MANIFEST_DOWNLOADED"));
+		}
+		
+		public void setUpdateCalculationProgress(int done, int total) {
+			publish(new ThreadCommand("CALCULATING_PROGRESS", "Calculating files for update ["+done+"/"+total+"]"));
 		}
 
 		public void publishUpdate(String update) {

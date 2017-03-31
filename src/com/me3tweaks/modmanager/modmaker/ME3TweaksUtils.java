@@ -647,6 +647,11 @@ public class ME3TweaksUtils {
 		return "Unknown Mod";
 	}
 	
+	/**
+	 * Retreives information about a 3rd party mod based on its folder name. Returns null if not in the database.
+	 * @param customdlcfoldername Folder to search against
+	 * @return
+	 */
 	public static ThirdPartyModInfo getThirdPartyModInfo(String customdlcfoldername) {
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
 			return null;

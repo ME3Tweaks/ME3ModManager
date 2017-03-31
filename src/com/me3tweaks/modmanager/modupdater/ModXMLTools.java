@@ -153,7 +153,7 @@ public class ModXMLTools {
 					double modversion = mod.getVersion();
 					mod.setVersion(0.001);
 					publish(new ThreadCommand("Calculating what files to use in delta update", null));
-					up = checkForClassicUpdate(mod, doc);
+					up = checkForClassicUpdate(mod, doc, null);
 					mod.setVersion(modversion); //restore, since this is pointe
 					if (up != null) {
 						for (ManifestModFile mf : up.getFilesToDownload()) {
@@ -411,7 +411,7 @@ public class ModXMLTools {
 		}
 		if (mod.getModMakerCode() <= 0) {
 			Document doc = getOnlineInfo(updateURL, false, mod.getClassicUpdateCode());
-			return checkForClassicUpdate(mod, doc);
+			return checkForClassicUpdate(mod, doc, null);
 		}
 		return null;
 	}
@@ -451,7 +451,7 @@ public class ModXMLTools {
 			if (allModsDownloadTask != null) {
 				allModsDownloadTask.publishUpdate(mod.getModName());
 			}
-			UpdatePackage update = checkForClassicUpdate(mod, doc);
+			UpdatePackage update = checkForClassicUpdate(mod, doc, allModsDownloadTask);
 			if (update != null) {
 				updates.add(update);
 			}
@@ -496,7 +496,7 @@ public class ModXMLTools {
 		return null;
 	}
 
-	private static UpdatePackage checkForClassicUpdate(Mod mod, Document doc) {
+	private static UpdatePackage checkForClassicUpdate(Mod mod, Document doc, AllModsUpdateWindow.AllModsDownloadTask amdt) {
 		// got document, now parse metainfo
 		if (doc != null) {
 			XPath xPath = XPathFactory.newInstance().newXPath();
@@ -520,7 +520,7 @@ public class ModXMLTools {
 			double serverModVer = Double.parseDouble(modElem.getAttribute("version"));
 			String serverFolder = modElem.getAttribute("folder");
 			String manifesttype = modElem.getAttribute("manifesttype");
-			boolean isFullManifest = manifesttype.equals("full");
+			boolean isFullManifest = manifesttype.equals("full"); //currently unused
 			String changelog = modElem.getAttribute("changelog");
 			if (mod.getVersion() >= serverModVer) {
 				ModManager.debugLogger.writeMessage(mod.getModName() + " is up to date");
@@ -535,8 +535,13 @@ public class ModXMLTools {
 			} catch (XPathExpressionException e1) {
 				ModManager.debugLogger.writeErrorWithException("Error trying to find sideload url in manifest:", e1);
 			}
+			
 			NodeList serverFileList = modElem.getElementsByTagName("sourcefile");
-			for (int j = 0; j < serverFileList.getLength(); j++) {
+			
+			//Build list of file objects for comparison
+			int numTotalFiles = serverFileList.getLength();
+			int numCheckedFiles = 0;
+			for (int j = 0; j < numTotalFiles; j++) {
 				Element fileElem = (Element) serverFileList.item(j);
 				String svrHash = fileElem.getAttribute("hash");
 				long srvSize = Long.parseLong(fileElem.getAttribute("size"));
@@ -583,6 +588,10 @@ public class ModXMLTools {
 			ArrayList<ManifestModFile> newFiles = new ArrayList<ManifestModFile>();
 
 			for (ManifestModFile mf : serverFiles) {
+				numCheckedFiles++;
+				if (amdt != null) {
+					amdt.setUpdateCalculationProgress(numCheckedFiles, numTotalFiles);
+				}
 				File localFile = new File(modpath + mf.getRelativePath());
 
 				// check existence
