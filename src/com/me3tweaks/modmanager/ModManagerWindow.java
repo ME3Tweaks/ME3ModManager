@@ -1258,7 +1258,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// MOD TOOLS
 		modMenu = new JMenu("Mod Utils");
-		mountMenu = new JMenu("Manage Custom DLC Mount files");
+		mountMenu = new JMenu("Manage [PLACEHOLDER] Mount files");
 		mountMenu.setVisible(false);
 		modutilsHeader = new JMenuItem("No mod selected");
 		modutilsHeader.setEnabled(false);
@@ -1326,7 +1326,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.add(modDeltaMenu);
 		modMenu.add(modNoDeltas);
 		modMenu.add(modAlternatesMenu);
-		modMenu.add(mountMenu);
 		modMenu.addSeparator();
 		modMenu.add(modutilsInstallCustomKeybinds);
 		modMenu.add(modutilsInfoEditor);
@@ -1386,6 +1385,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		moddevOfficialDLCManager = new JMenuItem("Official DLC Toggler");
 		moddevOfficialDLCManager.addActionListener(this);
 		moddevOfficialDLCManager.setToolTipText("Allows you to quickly enable or disable official BioWare DLC for testing");
+		devMenu.add(mountMenu);
 		devMenu.add(modDevStarterKit);
 		devMenu.add(moddevOfficialDLCManager);
 		devMenu.add(moddevUpdateXMLGenerator);
@@ -2824,6 +2824,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 				if (selectedMod.containsCustomDLCJob()) {
 					mountMenu.setVisible(true);
+					mountMenu.setText(selectedMod.getModName()+" Mount.dlc files");
 					for (ModJob job : selectedMod.getJobs()) {
 						if (job.getJobType() == ModJob.CUSTOMDLC) {
 							// has custom dlc task

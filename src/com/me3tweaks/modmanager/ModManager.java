@@ -80,9 +80,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "4.5.2";
-	public static long BUILD_NUMBER = 70L;
-	public static final String BUILD_DATE = "3/11/2017";
+	public static final String VERSION = "4.5.3";
+	public static long BUILD_NUMBER = 71L;
+	public static final String BUILD_DATE = "3/30/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -118,6 +118,7 @@ public class ModManager {
 	public static String THIRD_PARTY_MOD_JSON;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
+	public static final String[] SUPPORTED_GAME_LANGAUGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN", "ITA" };
 
 	public static final class Lock {
 	} //threading wait() and notifyall();
@@ -500,8 +501,7 @@ public class ModManager {
 			new ModManagerWindow(isUpdate);
 		} catch (Throwable e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught throwable during runtime:", e);
-			JOptionPane.showMessageDialog(null,
-					"Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.",
+			JOptionPane.showMessageDialog(null, "Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.",
 					"Mod Manager has crashed", JOptionPane.ERROR_MESSAGE);
 		}
 	}

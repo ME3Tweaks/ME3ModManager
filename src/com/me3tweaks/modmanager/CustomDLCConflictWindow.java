@@ -78,7 +78,7 @@ public class CustomDLCConflictWindow extends JDialog {
 	public String transplanterpath;
 	public HashMap<String, CustomDLC> secondPriorityUIConflictFiles;
 	public ArrayList<String> blacklistedGUIconflictfiles = new ArrayList<String>(
-			Arrays.asList(new String[] { "SFXWeapon_SniperRifle_Collector_LOC_INT.pcc", "SFXWeapon_AssaultRifle_Spitfire.pcc", "SFXWeapon_SMG_Collector_LOC_INT.pcc", "Startup_DLC_CON_MAPMOD_INT.pcc" }));
+			Arrays.asList(new String[] { "BioD_CitCas.pcc", "SFXWeapon_SniperRifle_Collector_LOC_INT.pcc", "SFXWeapon_AssaultRifle_Spitfire.pcc", "SFXWeapon_SMG_Collector_LOC_INT.pcc", "Startup_DLC_CON_MAPMOD_INT.pcc" }));
 
 	public CustomDLCConflictWindow() {
 		setupWindow();

@@ -553,6 +553,8 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "BIOGame_RUS.tlk";
 		case "POL":
 			return "BIOGame_POL.tlk";
+		case "JPN":
+			return "BIOGame_JPN.tlk";
 		default:
 			ModManager.debugLogger.writeMessage("UNRECOGNIZED TLK FILE: " + shortTLK);
 			return null;
@@ -1656,7 +1658,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (reqcoal.equals("Coalesced.bin")) {
 					ModManager.debugLogger.writeMessage("Coalesced pass: Checking for TLK files");
 					//it is basegame. copy the tlk files!
-					String[] tlkFiles = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL" };
+					String[] tlkFiles = ModManager.SUPPORTED_GAME_LANGAUGES;
 					for (String tlkFilename : tlkFiles) {
 						File compiledTLKFile = new File(ModManager.getCompilingDir() + "tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
 						if (!compiledTLKFile.exists()) {
@@ -1689,7 +1691,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					//}
 
 					//tlk, if they exist.
-					String[] tlkFiles = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL" };
+					String[] tlkFiles = ModManager.SUPPORTED_GAME_LANGAUGES;
 					for (String tlkFilename : tlkFiles) {
 						File basegameTLKFile = new File(compCoalDir + "\\BIOGame_" + tlkFilename + ".tlk");
 						if (basegameTLKFile.exists()) {

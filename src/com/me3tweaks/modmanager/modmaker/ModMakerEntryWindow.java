@@ -57,6 +57,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	private static final String FRENCH = "French";
 	private static final String ITALIAN = "Italian";
 	private static final String GERMAN = "German";
+	private static final String JAPANESE = "Japanese";
 	private static final int DIALOG_WIDTH = 400;
 	private static final int DIALOG_HEIGHT = 245;
 	JLabel infoLabel;
@@ -64,7 +65,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	JTextField codeField;
 	String biogameDir;
 	private JComboBox<String> languageChoices;
-	private String[] languages = { ALL_LANG, ENGLISH, RUSSIAN, SPANISH, POLISH, FRENCH, ITALIAN, GERMAN };
+	private String[] languages = { ALL_LANG, ENGLISH, RUSSIAN, SPANISH, POLISH, FRENCH, ITALIAN, GERMAN, JAPANESE };
 	boolean hasDLCBypass = false;
 	ModManagerWindow callingWindow;
 	private JButton makeModButton;
@@ -373,6 +374,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			languagesToCompile.add("FRA");
 			languagesToCompile.add("ITA");
 			languagesToCompile.add("DEU");
+			languagesToCompile.add("JPN");
 			break;
 		case ENGLISH:
 			languagesToCompile.add("INT");
@@ -395,6 +397,8 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		case GERMAN:
 			languagesToCompile.add("DEU");
 			break;
+		case JAPANESE:
+			languagesToCompile.add("JPN");
 		default:
 			break;
 		}
