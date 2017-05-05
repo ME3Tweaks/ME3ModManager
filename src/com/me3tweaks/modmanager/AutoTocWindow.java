@@ -223,7 +223,7 @@ public class AutoTocWindow extends JDialog {
 					//see if has toc file
 					for (String file : job.filesToReplace) {
 						String filename = FilenameUtils.getName(file);
-						if (filename.equals("PCConsoleTOC.bin")) {
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin")) {
 							hasTOC = true;
 							break;
 						}
@@ -253,7 +253,7 @@ public class AutoTocWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Number of files in this job: "+(job.filesToReplace.size() + job.addFiles.size()-1));
 					for (String newFile : job.filesToReplace) {
 						String filename = FilenameUtils.getName(newFile);
-						if (filename.equals("PCConsoleTOC.bin")) {
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin")) {
 							continue; //this doesn't need updated.
 						}
 						modulePath = FilenameUtils.getFullPath(newFile);
@@ -265,26 +265,6 @@ public class AutoTocWindow extends JDialog {
 							numJobsInCurrentBatch = 0;
 						}
 					}
-
-					//break into batches
-/*					for (String addFile : job.addFiles) {
-						String filename = FilenameUtils.getName(addFile);
-						if (filename.equals("PCConsoleTOC.bin")) {
-							continue; //this doens't need updated.
-						}
-						if (!addFile.startsWith("/BIOGame/")) {
-							System.out.println(addFile);
-							continue;
-						}
-						modulePath = FilenameUtils.getFullPath(addFile);
-						tbd.addNameSizePair(filename, (new File(addFile)).length());
-						numJobsInCurrentBatch++;
-						if (numJobsInCurrentBatch >= maxBatchSize) {
-							batchJobs.add(tbd);
-							tbd = new TocBatchDescriptor();
-							numJobsInCurrentBatch = 0;
-						}
-					}*/
 					
 					//Autotoc once installed. Don't bother with add files otherwise
 
@@ -355,7 +335,7 @@ public class AutoTocWindow extends JDialog {
 					//find out if it has a toc file
 					for (String file : job.filesToReplace) {
 						String filename = FilenameUtils.getName(file);
-						if (filename.equals("PCConsoleTOC.bin")) {
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin")) {
 							hasTOC = true;
 							break;
 						}
@@ -508,8 +488,8 @@ public class AutoTocWindow extends JDialog {
 			});
 			HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
 			for (String dir : directories) {
-				if (dir.startsWith("DLC_")) {
-					System.out.println(dir);
+				if (dir.toUpperCase().startsWith("DLC_")) {
+					//System.out.println(dir);
 					boolean isKnownDLC = ModType.isKnownDLCFolder(dir);
 					File mainSfar = new File(biogameDir + File.separator + "DLC" + File.separator + dir + File.separator + "CookedPCConsole\\Default.sfar");
 					if (mainSfar.exists()) {

@@ -26,6 +26,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
@@ -160,7 +161,7 @@ public class ModInstallWindow extends JDialog {
 	private void setupWindow(Mod mod) {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html>Applying "+mod.getModName()+" to Mass Effect 3...</html>");
+		infoLabel = new JLabel("<html><center>Now Installing<br>"+mod.getModName()+"</center></html>",SwingConstants.CENTER);
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
@@ -199,6 +200,7 @@ public class ModInstallWindow extends JDialog {
 		private boolean failedLoadingDB = false;
 		private boolean alternatesApplied;
 		private ArrayList<String> outdatedinstalledfolders;
+		private boolean skipTOC = false;
 
 		protected InjectionCommander(Mod mod) {
 			this.mod = new Mod(mod); //clone before applying alternates and optional addins
@@ -243,7 +245,8 @@ public class ModInstallWindow extends JDialog {
 				}
 				checkedDB = true;
 				if (precheckGameDB(jobs)) {
-					ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod");
+					ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod install.");
+					skipTOC = true;
 					return false;
 				} else {
 					ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
@@ -377,7 +380,7 @@ public class ModInstallWindow extends JDialog {
 			}
 			//check if DB exists
 			if (!bghDB.isBasegameTableCreated()) {
-				JOptionPane.showMessageDialog(ModInstallWindow.this, "The game repair database has not been created.\nYou need to do so before installing mods.",
+				JOptionPane.showMessageDialog(ModInstallWindow.this, "The game repair database has not been created.\nMods that affect the basegame or official DLC require the game repair database to install.",
 						"No Game Repair Database", JOptionPane.ERROR_MESSAGE);
 				return true; //open DB window
 			}
@@ -506,7 +509,7 @@ public class ModInstallWindow extends JDialog {
 					// install file.
 					File unpacked = new File(me3dir + fileToReplace);
 					Path originalpath = Paths.get(unpacked.toString());
-					if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+					if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
 						try {
 							publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 							Path newfilepath = Paths.get(newFile);
@@ -698,7 +701,7 @@ public class ModInstallWindow extends JDialog {
 				// install file.
 				File unpacked = new File(me3dir + fileToReplace);
 				Path originalpath = Paths.get(unpacked.toString());
-				if (!unpacked.getAbsolutePath().endsWith("PCConsoleTOC.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+				if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
 
 					try {
 						Path newfilepath = Paths.get(newFile);
@@ -1198,7 +1201,7 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("No outdated custom dlc to remove, continuing install...");
 			}
 
-			if (ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+			if (ModManager.POST_INSTALL_AUTOTOC_INSTEAD && !skipTOC) {
 				ModManager.debugLogger.writeMessage("Running Game-Wide AutoTOC after mod install");
 				new AutoTocWindow(bioGameDir);
 			}

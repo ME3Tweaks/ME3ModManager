@@ -142,6 +142,13 @@ public class ModManager {
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
 
+			//JVM Check
+			if (!System.getProperty("sun.arch.data.model").equals("32")) {
+				//JOptionPane.showMessageDialog(null, "Mod Manager requires the use of 32-bit Java due to bugs in the JNA library it uses.\nPlease install a 32-bit java (the running one is "+System.getProperty("sun.arch.data.model")+"-bit).", "Incompatible JVM", JOptionPane.ERROR_MESSAGE);
+				//System.err.println("Shutting down due to "+System.getProperty("sun.arch.data.model")+"-bit JVM (requires 32-bit).");
+				//System.exit(1);
+			}
+			
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
 
 			File settings = new File(ModManager.SETTINGS_FILENAME);
@@ -1473,14 +1480,6 @@ public class ModManager {
 			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
 			File unpackedFile = new File(gamedir + targetPath);
 			if (unpackedFile.exists()) {
-				//check if PCConsoleTOC, as we probably want the one in the SFAR (or this one, provided DLC is unpacked)
-				/*
-				 * if
-				 * (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin"
-				 * )){
-				 *
-				 * //if (inPlaceToc) }
-				 */
 				try {
 					new File(destFile.getParent()).mkdirs();
 					ModManager.debugLogger.writeMessage("Copying unpacked file to destination: " + copyToLocation);
@@ -1558,12 +1557,11 @@ public class ModManager {
 		ArrayList<Patch> validPatches = new ArrayList<Patch>();
 
 		if (subdirs != null && subdirs.length > 0) {
-			// Got a list of subdirs. Now loop them to find all moddesc.ini
+			// Got a list of subdirs. Now loop them to find all patchdesc.ini
 			// files
+			ModManager.debugLogger.writeMessage("Loading MixIns...");
 			for (int i = 0; i < subdirs.length; i++) {
 				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "patchdesc.ini");
-				// System.out.println("Searching for file: " +
-				// searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
 					Patch validatingPatch = new Patch(searchSubDirDesc.getAbsolutePath(), ModManager.appendSlash(subdirs[i].toString()) + "patch.jsf");
 					if (validatingPatch.isValid()) {
@@ -1571,6 +1569,8 @@ public class ModManager {
 					}
 				}
 			}
+			ModManager.debugLogger.writeMessage("Loaded "+validPatches.size()+" MixIns.");
+
 		}
 		Collections.sort(validPatches);
 		return validPatches;
@@ -1936,7 +1936,7 @@ public class ModManager {
 			@Override
 			public boolean accept(File current, String name) {
 				File f = new File(current, name);
-				return f.isDirectory() && f.getName().startsWith("DLC_");
+				return f.isDirectory() && f.getName().toUpperCase().startsWith("DLC_");
 			}
 		});
 		ArrayList<String> foldernames = new ArrayList<String>();

@@ -42,7 +42,7 @@ public class Patch implements Comparable<Patch> {
 	private boolean isDynamic = false;
 
 	public Patch(String descriptorPath, String patchPath) {
-		ModManager.debugLogger.writeMessage("Loading patch: " + descriptorPath);
+		ModManager.debugLogger.writeMessageConditionally("Loading patch: " + descriptorPath,ModManager.LOG_PATCH_INIT);
 		readPatch(descriptorPath);
 		setPatchPath(patchPath);
 	}

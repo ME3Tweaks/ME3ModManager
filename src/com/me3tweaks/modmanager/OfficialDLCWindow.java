@@ -76,7 +76,7 @@ public class OfficialDLCWindow extends JDialog {
 
 		for (String dir : directories) {
 			String checkDir = dir;
-			if (checkDir.startsWith("xDLC_")) {
+			if (checkDir.toUpperCase().startsWith("XDLC_")) {
 				checkDir = checkDir.substring(1);
 			}
 			if (!ModType.isKnownDLCFolder(checkDir)) {
@@ -194,7 +194,7 @@ public class OfficialDLCWindow extends JDialog {
 		public OfficialDLCInfo(String dir) {
 			initialFolderName = dir;
 			String realName = dir;
-			if (realName.startsWith("xDLC_")) {
+			if (realName.toLowerCase().startsWith("xdlc_")) {
 				realName = realName.substring(1);
 			}
 			ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(realName);

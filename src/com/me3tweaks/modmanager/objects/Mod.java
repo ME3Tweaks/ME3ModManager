@@ -1220,7 +1220,7 @@ public class Mod implements Comparable<Mod> {
 
 			//Compare my replace files to others replace/remove 
 			for (String file : job.getFilesToReplaceTargets()) {
-				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
+				if (FilenameUtils.getName(file).equalsIgnoreCase("PCConsoleTOC.bin")) {
 					continue;
 				}
 				ModManager.debugLogger.writeMessage("==Checking file for conflicts " + file + "==");
@@ -1309,7 +1309,7 @@ public class Mod implements Comparable<Mod> {
 			}
 			// scanned for matching job. Found it. Iterate over files...
 			for (String file : job.getFilesToReplaceTargets()) {
-				if (FilenameUtils.getName(file).equals("PCConsoleTOC.bin")) {
+				if (FilenameUtils.getName(file).equalsIgnoreCase("PCConsoleTOC.bin")) {
 					continue;
 				}
 				for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
@@ -1695,11 +1695,11 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessage("Merging job: " + myCorrespendingJob.getJobName());
 
 				//Check for bigger other TOC (means it likely has extra files)
-				if (FilenameUtils.getName(otherfile).equals("PCConsoleTOC.bin")) {
+				if (FilenameUtils.getName(otherfile).equalsIgnoreCase("PCConsoleTOC.bin")) {
 					for (int z = 0; z < myCorrespendingJob.getFilesToReplace().size(); z++) {
 						String myJobFile = myCorrespendingJob.getFilesToReplace().get(z);
 						System.out.println("My job files: " + myJobFile);
-						if (FilenameUtils.getName(myJobFile).equals("PCConsoleTOC.bin")) {
+						if (FilenameUtils.getName(myJobFile).equalsIgnoreCase("PCConsoleTOC.bin")) {
 							//comparing 2 of the same TOC files
 							File myToc = new File(myJobFile);
 							File otherToc = new File(otherfile);
@@ -1718,7 +1718,7 @@ public class Mod implements Comparable<Mod> {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherReplacePaths.get(i));
 					continue;
 				} else {
-					if (FilenameUtils.getName(otherfile).equals("PCConsoleTOC.bin")) {
+					if (FilenameUtils.getName(otherfile).equalsIgnoreCase("PCConsoleTOC.bin")) {
 						ModManager.debugLogger.writeMessage("CHECKING IF SHOULD ADD TOC, EXIST IN THIS JOB ALREADY: " + myCorrespendingJob.hasTOC());
 						// check if its there already
 						if (myCorrespendingJob.hasTOC()) {
@@ -1748,7 +1748,7 @@ public class Mod implements Comparable<Mod> {
 					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherAddFilesTargets.get(i));
 					continue;
 				} else {
-					if (FilenameUtils.getName(otherfile).equals("PCConsoleTOC.bin")) {
+					if (FilenameUtils.getName(otherfile).equalsIgnoreCase("PCConsoleTOC.bin")) {
 						ModManager.debugLogger.writeMessage("CHECKING IF SHOULD ADD TOC, EXIST IN THIS JOB ALREADY: " + myCorrespendingJob.hasTOC());
 						// check if its there already
 						if (myCorrespendingJob.hasTOC()) {

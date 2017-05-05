@@ -292,7 +292,7 @@ public class ModJob {
 	 */
 	public boolean hasTOC() {
 		for (String newFile : filesToReplace) {
-			if (FilenameUtils.getName(newFile).equals("PCConsoleTOC.bin")) {
+			if (FilenameUtils.getName(newFile).equalsIgnoreCase("PCConsoleTOC.bin")) {
 				return true;
 			}
 		}

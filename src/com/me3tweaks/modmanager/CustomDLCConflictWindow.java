@@ -99,7 +99,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 		for (String dlc : installedDLCs) {
 			File mountFile = new File(biogameDirectory + "DLC/" + dlc + File.separator + "CookedPCConsole/Mount.dlc");
-			if (!ModType.isKnownDLCFolder(dlc) && dlc.startsWith("DLC_") && mountFile.exists()) {
+			if (!ModType.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
 				customDLCs.add(new CustomDLC(new MountFile(mountFile.getAbsolutePath()), dlc));
 			}
 		}

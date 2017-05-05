@@ -363,7 +363,7 @@ public class LogOptionsWindow extends JDialog {
 			ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 			for (String dlc : installedDLCs) {
 				File mountFile = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "DLC/" + dlc + File.separator + "CookedPCConsole/Mount.dlc");
-				if (!ModType.isKnownDLCFolder(dlc) && dlc.startsWith("DLC_") && mountFile.exists()) {
+				if (!ModType.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
 					customDLCs.add(new CustomDLC(new MountFile(mountFile.getAbsolutePath()), dlc));
 				}
 			}
@@ -428,7 +428,7 @@ public class LogOptionsWindow extends JDialog {
 			for (String dir : directories) {
 				//add to list
 				File metacmm = new File(mainDlcDir + File.separator + dir + File.separator + "_metacmm.txt");
-				if (dir.startsWith("DLC_")) {
+				if (dir.toUpperCase().startsWith("DLC_")) {
 					if (ModType.isKnownDLCFolder(dir)) {
 						installeddlcstr += dir + " (Offical BioWare DLC)\n";
 						continue;
