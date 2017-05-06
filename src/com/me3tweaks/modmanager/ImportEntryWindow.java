@@ -209,7 +209,7 @@ public class ImportEntryWindow extends JDialog {
 			modNameField.setText(tpmi.getModname());
 			modAuthorField.setText(tpmi.getModauthor());
 			modSiteField.setText(tpmi.getModsite());
-			modDescField.setText(tpmi.getModdescription());
+			modDescField.setText(ResourceUtils.convertBrToNewline(tpmi.getModdescription()));
 			setTitle("Importing " + tpmi.getModname());
 			//Check if an update telemetry is required
 			MountFile mf = new MountFile(ModManager.appendSlash(importPath) + "CookedPCConsole" + File.separator + "Mount.dlc");
@@ -220,7 +220,6 @@ public class ImportEntryWindow extends JDialog {
 						"<html>ME3Tweaks Mod Identification Service has outdated information about this mod.<br>Please consider sending it in so we can update our database of mods.</html>");
 			} else {
 				//SAME DATA
-
 				telemetryCheckbox.setEnabled(false);
 				telemetryCheckbox.setSelected(false);
 				telemetryCheckbox.setText("Info for this mod already on ME3Tweaks");

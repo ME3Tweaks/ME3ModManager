@@ -142,7 +142,9 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		String repairInfoURL = "jdbc:derby:data/databases/repairinfo;create=true";
 		dbConnection = DriverManager.getConnection(repairInfoURL);
 		if (dbConnection != null) {
-			progressBar.setIndeterminate(false);
+			if (progressBar != null) {
+				progressBar.setIndeterminate(false);
+			}
 			ModManager.debugLogger.writeMessage("Loaded game repair database.");
 			databaseLoaded = true;
 			return true;

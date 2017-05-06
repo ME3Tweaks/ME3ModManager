@@ -1049,7 +1049,7 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeMessage("Mod Desc file is null, unable to read description");
 			return;
 		}
-		modDisplayDescription = breakFixer(modDescription);
+		modDisplayDescription = ResourceUtils.convertBrToNewline(modDescription);
 
 		modDisplayDescription += "\n=============================\n";
 
@@ -1146,22 +1146,6 @@ public class Mod implements Comparable<Mod> {
 
 	public String getModDescription() {
 		return modDescription;
-	}
-
-	/**
-	 * Replaces all break (br between <>) lines with a newline character. Used
-	 * to add newlines to ini4j.
-	 * 
-	 * @param string
-	 *            String to parse
-	 * @return String that has been fixed
-	 */
-	public static String breakFixer(String string) {
-		String br = "<br>";
-		if (string == null) {
-			return string;
-		}
-		return string.replaceAll(br, "\n");
 	}
 
 	@Override

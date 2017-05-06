@@ -26,9 +26,9 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.me3tweaks.modmanager.ModManagerWindow.SingleModUpdateCheckThread;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.ui.ModCellRenderer;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /**
  * Patch Window shows the list of patches in the patch library and things you
@@ -101,7 +101,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				try {
-					ModManager.openWebpage(new URL(failedModsModel.get(failedModList.getSelectedIndex()).getModSite()));
+					ResourceUtils.openWebpage(new URL(failedModsModel.get(failedModList.getSelectedIndex()).getModSite()));
 				} catch (MalformedURLException e) {
 					ModManager.debugLogger.writeErrorWithException("Malformed URL:", e);
 					JOptionPane.showMessageDialog(FailedModsWindow.this,

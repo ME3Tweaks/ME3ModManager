@@ -818,7 +818,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 										+ upackage.getMod().getModName() + ".",
 								"Sideload update required", JOptionPane.WARNING_MESSAGE);
 						try {
-							ModManager.openWebpage(new URL(upackage.getSideloadURL()));
+							ResourceUtils.openWebpage(new URL(upackage.getSideloadURL()));
 						} catch (MalformedURLException e) {
 							ModManager.debugLogger.writeError("Invalid sideload URL: " + upackage.getSideloadURL());
 							JOptionPane.showMessageDialog(ModManagerWindow.this,
@@ -1947,7 +1947,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == modWebsiteLink) {
 			Mod mod = modModel.get(modList.getSelectedIndex());
 			try {
-				ModManager.openWebpage(new URI(mod.getModSite()));
+				ResourceUtils.openWebpage(new URI(mod.getModSite()));
 			} catch (URISyntaxException e1) {
 				// TODO Auto-generated catch block
 				ModManager.debugLogger.writeErrorWithException("Unable to open this mod's web site:", e1);
@@ -2364,7 +2364,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							"The Binkw32 ASI Bypass requires Visual C++ 2012 x86 redistributable.\nIf you are sure you have this installed, turn off the .NET version check in Mod Manager options.",
 							"ASI loader requires VC2012 x86", JOptionPane.ERROR_MESSAGE);
 					try {
-						ModManager.openWebpage(new URL("https://www.microsoft.com/en-us/download/details.aspx?id=30679"));
+						ResourceUtils.openWebpage(new URL("https://www.microsoft.com/en-us/download/details.aspx?id=30679"));
 					} catch (MalformedURLException e1) {
 						ModManager.debugLogger.writeErrorWithException("Unable to open VC++ download page:", e1);
 					}
@@ -2569,6 +2569,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void checkForValidBioGame(JFileChooser dirChooser) {
 		String chosenPath = dirChooser.getSelectedFile().toString();
 		if (internalValidateBIOGameDir(chosenPath)) {
+			chosenPath = new File(chosenPath).getParent();
 			// Check to make sure mod manager folder is not a subset
 			String localpath = System.getProperty("user.dir");
 			try {
@@ -2625,17 +2626,23 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private static boolean internalValidateBIOGameDir(String path) {
 		File coalesced = new File(ModManager.appendSlash(path) + "CookedPCConsole\\Coalesced.bin");
 		File dlcFolder = new File(ModManager.appendSlash(path) + "DLC\\");
+		File parentPath = new File(path).getParentFile();
+		if (coalesced.exists() && dlcFolder.exists() && parentPath != null) {
 
-		if (coalesced.exists() && dlcFolder.exists()) {
-
-			String localpath = System.getProperty("user.dir");
+			String localpath = ModManager.appendSlash(System.getProperty("user.dir"));
 			try {
-				ResourceUtils.getRelativePath(localpath, path, File.separator);
+				
+				if (!localpath.equalsIgnoreCase(ModManager.appendSlash(parentPath.getAbsolutePath()))) {
+					String relative = ResourceUtils.getRelativePath(localpath, ModManager.appendSlash(parentPath.getAbsolutePath()), File.separator);
+					if (relative.startsWith("..")) {
+						return true;
+					}
+				}
 				// common path
-				ModManager.debugLogger.writeError("Mod Manager is located in a subdirectory of the chosen BioGame Directory! Shutting down to avoid issues.");
 				JOptionPane.showMessageDialog(null,
 						"Mod Manager cannot be located in the Mass Effect 3 game directory.\nMove Mod Manager out of the game directory and restart Mod Manager.",
 						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
+				ModManager.debugLogger.writeError("Mod Manager is located in the game directory! Shutting down to avoid issues.");
 				System.exit(1);
 			} catch (ResourceUtils.PathResolutionException e) {
 				// we're OK

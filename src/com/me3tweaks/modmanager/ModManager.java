@@ -80,9 +80,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "4.5.3";
-	public static long BUILD_NUMBER = 71L;
-	public static final String BUILD_DATE = "3/30/2017";
+	public static final String VERSION = "4.5.4";
+	public static long BUILD_NUMBER = 73L;
+	public static final String BUILD_DATE = "5/6/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -144,8 +144,9 @@ public class ModManager {
 
 			//JVM Check
 			if (!System.getProperty("sun.arch.data.model").equals("32")) {
-				//JOptionPane.showMessageDialog(null, "Mod Manager requires the use of 32-bit Java due to bugs in the JNA library it uses.\nPlease install a 32-bit java (the running one is "+System.getProperty("sun.arch.data.model")+"-bit).", "Incompatible JVM", JOptionPane.ERROR_MESSAGE);
-				//System.err.println("Shutting down due to "+System.getProperty("sun.arch.data.model")+"-bit JVM (requires 32-bit).");
+				ModManager.debugLogger.writeError("Running in "+System.getProperty("sun.arch.data.model")+"-bit java!");
+				JOptionPane.showMessageDialog(null, "Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\nPlease install 32-bit (x86) java (the running one is "+System.getProperty("sun.arch.data.model")+"-bit). 64-bit Java usage is not supported by Mod Manager.", "Untested JVM", JOptionPane.ERROR_MESSAGE);
+				ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
 				//System.exit(1);
 			}
 			
@@ -1710,26 +1711,6 @@ public class ModManager {
 		return sb.toString();
 	}
 
-	public static void openWebpage(URI uri) {
-		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
-		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
-			try {
-				desktop.browse(uri);
-			} catch (Exception e) {
-				ModManager.debugLogger.writeErrorWithException("Error opening webpage:", e);
-			}
-		}
-	}
-
-	public static boolean openWebpage(URL url) {
-		try {
-			openWebpage(url.toURI());
-			return true;
-		} catch (URISyntaxException e) {
-			ModManager.debugLogger.writeErrorWithException("Error opening webpage: ", e);
-			return false;
-		}
-	}
 
 	/**
 	 * Returns directory that contains folders of patches

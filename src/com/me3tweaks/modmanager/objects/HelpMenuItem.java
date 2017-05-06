@@ -9,8 +9,8 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class HelpMenuItem {
 	private String menuItemTitle;
@@ -47,7 +47,7 @@ public class HelpMenuItem {
 			public void actionPerformed(ActionEvent e) {
 				if (url != null) {
 					try {
-						ModManager.openWebpage(new URL(url));
+						ResourceUtils.openWebpage(new URL(url));
 					} catch (MalformedURLException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();

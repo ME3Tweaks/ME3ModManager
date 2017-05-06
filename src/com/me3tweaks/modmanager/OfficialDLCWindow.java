@@ -11,15 +11,12 @@ import java.util.Collections;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.DefaultRowSorter;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.RowSorter;
-import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -69,7 +66,7 @@ public class OfficialDLCWindow extends JDialog {
 		String[] directories = mainDlcDir.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
-				System.out.println(name);
+				//System.out.println(name);
 				return new File(current, name).isDirectory() && (name.toLowerCase().startsWith("xdlc_") || name.toLowerCase().startsWith("dlc_"));
 			}
 		});
@@ -111,7 +108,7 @@ public class OfficialDLCWindow extends JDialog {
 					return;
 				}
 				JTable table = (JTable) e.getSource();
-				int modelRow = table.convertRowIndexToModel(Integer.valueOf(e.getActionCommand()));
+				int modelRow = Integer.valueOf(e.getActionCommand());
 				String dlcname = (String) table.getModel().getValueAt(modelRow, COL_FOLDER);
 				String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator + dlcname);
 				ModManager.debugLogger.writeMessage("Toggling Official DLC folder: " + path);
@@ -130,8 +127,9 @@ public class OfficialDLCWindow extends JDialog {
 				File currentPath = new File(path);
 				File toggledPath = new File(mainDlcDir.getAbsolutePath() + File.separator + newname);
 				if (currentPath.renameTo(toggledPath)) {
-					table.setValueAt(disabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE : CustomDLCManagerToggleButtonColumn.STR_DISABLE, modelRow, COL_TOGGLE);
-					table.setValueAt(newname, modelRow, COL_FOLDER);
+					DefaultTableModel tm = (DefaultTableModel) table.getModel();
+					tm.setValueAt(disabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE : CustomDLCManagerToggleButtonColumn.STR_DISABLE, modelRow, COL_TOGGLE);
+					tm.setValueAt(newname, modelRow, COL_FOLDER);
 					somethingChanged = true;
 				}
 			}
@@ -173,6 +171,7 @@ public class OfficialDLCWindow extends JDialog {
 		//panel.add(mpLabel, BorderLayout.SOUTH);
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(panel);
+		table.setAutoCreateRowSorter(true);
 		pack();
 		updateRowHeights(table);
 		addWindowListener(new java.awt.event.WindowAdapter() {

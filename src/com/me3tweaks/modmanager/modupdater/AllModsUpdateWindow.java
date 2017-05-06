@@ -29,6 +29,7 @@ import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class AllModsUpdateWindow extends JDialog {
@@ -179,7 +180,7 @@ public class AllModsUpdateWindow extends JDialog {
 											+ upackage.getMod().getModName() + ".",
 									"Sideload update required", JOptionPane.WARNING_MESSAGE);
 							try {
-								ModManager.openWebpage(new URL(upackage.getSideloadURL()));
+								ResourceUtils.openWebpage(new URL(upackage.getSideloadURL()));
 							} catch (MalformedURLException e) {
 								ModManager.debugLogger.writeError("Invalid sideload URL: " + upackage.getSideloadURL());
 								JOptionPane.showMessageDialog(AllModsUpdateWindow.this,
