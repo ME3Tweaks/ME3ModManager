@@ -21,6 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
@@ -83,6 +84,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 	}
 
 	private void setupWindow() {
+		
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		// TODO Auto-generated method stub
@@ -94,7 +96,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		startMap.setEnabled(false);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
-		progressBar.setIndeterminate(false);
+		progressBar.setIndeterminate(true);
 		JPanel borderPanel = new JPanel(new BorderLayout()); //hack for border
 		borderPanel.add(progressBar, BorderLayout.CENTER);
 		borderPanel.setBorder(new EmptyBorder(0, 0, 0, 5));
@@ -108,16 +110,15 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		consoleArea = new JTextArea();
 		consoleArea.setLineWrap(true);
 		consoleArea.setWrapStyleWord(true);
-		consoleArea.setText("The game repair database keeps track of your preferred game configuration, so when restoring files you will be returned to the snapshotted state.\n"
-				+ "\nCreate or update the game repair DB to make a snapshot of all file hashes and filesizes so that when you install a new mod, the file that is backed up is known to be the one you want.\n"
-				+ "\nWhen restoring files, the game database checks the backed up files match the ones in the snapshot, and will show you a message if they don't."
-				+ "\n\nThe game repair database only works with unpacked DLC files and basegame files, not .sfar files. Modifications done outside of Mod Manager are unsupported by FemShep, so I won't help you fix problems with non Mod Manager mods.\n"
-				+ "If you choose to use non Mod Manager mods, you will need to enable the pre-install TOC option in the options page.");
+		consoleArea.setText("The game repair database allows Mod Manager to quickly restore files by checking against their hash. The database contains a list of your game files' hashes, and this is used to verify integrity of files for restoring/backing up. This is how Origin does game repairs.\n\nThis process does not create a backup of your files.");
 		consoleArea.setEditable(false);
+		JScrollPane jsp = new JScrollPane(consoleArea,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-		rootPanel.add(consoleArea, BorderLayout.CENTER);
+		rootPanel.add(jsp, BorderLayout.CENTER);
 		getContentPane().add(rootPanel);
-		this.setPreferredSize(new Dimension(425, 390));
+		this.setPreferredSize(new Dimension(425, 200));
+		this.setMinimumSize(new Dimension(300, 150));
+
 		this.addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
@@ -141,6 +142,9 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		String repairInfoURL = "jdbc:derby:data/databases/repairinfo;create=true";
 		dbConnection = DriverManager.getConnection(repairInfoURL);
 		if (dbConnection != null) {
+			if (progressBar != null) {
+				progressBar.setIndeterminate(false);
+			}
 			ModManager.debugLogger.writeMessage("Loaded game repair database.");
 			databaseLoaded = true;
 			return true;
@@ -148,6 +152,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 
 		ModManager.debugLogger.writeMessage("Game repair database failed to load.");
 		databaseLoaded = false;
+		progressBar.setIndeterminate(false);
 		return false;
 	}
 
@@ -186,7 +191,8 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 			//this.numFiles = basePath.size();
 			this.progress = progress;
 			if (showGUI) {
-				infoLabel.setText("Preparing to create restoration map...");
+				infoLabel.setText("Getting complete file list. This may take some time...");
+				this.progress.setIndeterminate(true);
 			}
 		}
 
@@ -204,7 +210,8 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 			this.numFiles = filesToUpdate.size();
 			this.progress = progress;
 			if (showGUI) {
-				infoLabel.setText("Preparing to create restoration map...");
+				infoLabel.setText("Getting complete file list.\nThis may take some time...");
+				this.progress.setIndeterminate(true);
 			}
 		}
 
@@ -321,6 +328,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		protected void process(List<Integer> numCompleted) {
 			if (showGUI) {
 				if (numFiles > numCompleted.get(0)) {
+					this.progress.setIndeterminate(false);
 					String fileName = ResourceUtils.getRelativePath(filesToHash.get(numCompleted.get(0)).getAbsolutePath(), basePath, File.separator);
 					infoLabel.setText("<html>Updated file information for:<br>" + fileName + "</html>");
 				}

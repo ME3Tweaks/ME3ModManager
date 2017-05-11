@@ -72,7 +72,9 @@ public class ModImportArchiveWindow extends JDialog {
 	 * Standard, user triggered opening
 	 */
 	public ModImportArchiveWindow() {
+		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (manual mode)");
 		try {
+			ModManager.debugLogger.writeMessage("Loading 7-zip library");
 			SevenZip.initSevenZipFromPlatformJAR();
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Error loading 7zip binding, it may be open in another instance of Mod Manager:", e);
@@ -94,8 +96,11 @@ public class ModImportArchiveWindow extends JDialog {
 	 *            file dropped
 	 */
 	public ModImportArchiveWindow(ModManagerWindow modManagerWindow, String file) {
+		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (filedrop mode)");
+		ModManager.debugLogger.writeMessage("Automating load of archive file: "+file);
+
 		try {
-			SevenZip.initSevenZipFromPlatformJAR();
+			ModManager.debugLogger.writeMessage("Loading 7-zip library");
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Error loading 7zip binding, it may be open in another instance of Mod Manager:", e);
 			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to load the 7-zip library.\nDo you have another instance of Mod Manager open?",
@@ -115,6 +120,7 @@ public class ModImportArchiveWindow extends JDialog {
 		importButton.setEnabled(false);
 		importButton.setVisible(false);
 		progressBar.setVisible(true);
+		ModManager.debugLogger.writeMessage("Starting archive loading thread.");
 		ScanWorker worker = new ScanWorker(archivePathField.getText());
 		worker.execute();
 	}
@@ -289,11 +295,13 @@ public class ModImportArchiveWindow extends JDialog {
 
 		@Override
 		protected ArrayList<CompressedMod> doInBackground() throws Exception {
+			ModManager.debugLogger.writeMessage("[ScanWorker]: Reading archive...");
 			// TODO Auto-generated method stub
 			return SevenZipCompressedModInspector.getCompressedModsInArchive(archiveFile, this);
 		}
 
 		protected void process(List<ThreadCommand> commands) {
+			
 			for (ThreadCommand command : commands) {
 				switch (command.getCommand()) {
 				case "PROGRESS_UPDATE":
@@ -319,6 +327,7 @@ public class ModImportArchiveWindow extends JDialog {
 		}
 
 		protected void done() {
+			ModManager.debugLogger.writeMessage("[SCANWORKER] Background thread finished.");
 			checkMap.clear();
 			compressedModModel.setRowCount(0);
 			compressedMods = null;
@@ -329,6 +338,8 @@ public class ModImportArchiveWindow extends JDialog {
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "An error occured while reading this archive file.", "Error reaching archive file",
 						JOptionPane.ERROR_MESSAGE);
 			}
+			ModManager.debugLogger.writeMessage("[SCANWORKER] Found "+compressedMods.size()+" in archive. Displaying to user.");
+
 			browseButton.setEnabled(true);
 
 			for (CompressedMod cm : compressedMods) {
@@ -367,11 +378,16 @@ public class ModImportArchiveWindow extends JDialog {
 			this.modsToImport = modsToImport;
 			descriptionArea.setText("Importing mods into Mod Manager...");
 			browseButton.setEnabled(false);
+			ModManager.debugLogger.writeMessage("[IMPORTWORKER] Starting ImportWorker. The following mods will be extracted: ");
+			for (CompressedMod cm : modsToImport) {
+				ModManager.debugLogger.writeMessage(" -- "+cm.modName);
+			}
 		}
 
 		@Override
 		protected Boolean doInBackground() throws Exception {
 			// TODO Auto-generated method stub
+			ModManager.debugLogger.writeMessage("[IMPORTWORKER] Starting to extract compressed mods.");
 			return SevenZipCompressedModInspector.extractCompressedModsFromArchive(archiveFilePath, modsToImport, this);
 		}
 
@@ -408,6 +424,7 @@ public class ModImportArchiveWindow extends JDialog {
 		}
 
 		public void done() {
+			ModManager.debugLogger.writeMessage("[IMPORTWORKER] Finished background thread.");
 			boolean error = false;
 			try {
 				error = !get(); //returns true for OK
@@ -426,10 +443,12 @@ public class ModImportArchiveWindow extends JDialog {
 			pack();
 			repaint();
 			if (!error) {
+				ModManager.debugLogger.writeMessage("[IMPORTWORKER] Import successful.");
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
 				dispose();
 				new ModManagerWindow(false);
 			} else {
+				ModManager.debugLogger.writeError("[IMPORTWORKER] Import was not fully successful");
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this,
 						"Error occured during mod import.\nSome mods may have successfully imported.\nReload Mod Manager from the actions menu\nto see new mods that may have imported.",
 						"Import Unsuccessful", JOptionPane.ERROR_MESSAGE);

@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextPane;
@@ -97,12 +100,14 @@ public class ResourceUtils {
 								PrintStream ps = new PrintStream(baos);
 								e.printStackTrace(ps);
 								try {
-									ModManager.debugLogger.writeError("Error while decompressing LZMA: " + baos.toString("utf-8"));
+									ModManager.debugLogger
+											.writeError("Error while decompressing LZMA: " + baos.toString("utf-8"));
 								} catch (UnsupportedEncodingException e1) {
-									//this shouldn't happen.
+									// this shouldn't happen.
 								}
 							} catch (IOException e) {
-								ModManager.debugLogger.writeErrorWithException("IOException while extracting " + lzmaFile, e);
+								ModManager.debugLogger
+										.writeErrorWithException("IOException while extracting " + lzmaFile, e);
 								e.printStackTrace();
 							} finally {
 								try {
@@ -111,10 +116,12 @@ public class ResourceUtils {
 										fos.close();
 									}
 								} catch (IOException e) {
-									ModManager.debugLogger.writeErrorWithException("Could not close FileOutputStream", e);
+									ModManager.debugLogger.writeErrorWithException("Could not close FileOutputStream",
+											e);
 								}
 							}
-							return data.length; // Return amount of consumed data
+							return data.length; // Return amount of consumed
+												// data
 						}
 					});
 
@@ -260,7 +267,8 @@ public class ResourceUtils {
 		StringBuffer common = new StringBuffer();
 
 		int commonIndex = 0;
-		while (commonIndex < target.length && commonIndex < base.length && target[commonIndex].equals(base[commonIndex])) {
+		while (commonIndex < target.length && commonIndex < base.length
+				&& target[commonIndex].equals(base[commonIndex])) {
 			common.append(target[commonIndex] + pathSeparator);
 			commonIndex++;
 		}
@@ -269,19 +277,23 @@ public class ResourceUtils {
 			// No single common path element. This most
 			// likely indicates differing drive letters, like C: and D:.
 			// These paths cannot be relativized.
-			throw new PathResolutionException("No common path element found for '" + normalizedTargetPath + "' and '" + normalizedBasePath + "'");
+			throw new PathResolutionException(
+					"No common path element found for '" + normalizedTargetPath + "' and '" + normalizedBasePath + "'");
 		}
 
-		// The number of directories we have to backtrack depends on whether the base is a file or a dir
+		// The number of directories we have to backtrack depends on whether the
+		// base is a file or a dir
 		// For example, the relative path from
 		//
 		// /foo/bar/baz/gg/ff to /foo/bar/baz
-		// 
+		//
 		// ".." if ff is a file
 		// "../.." if ff is a directory
 		//
-		// The following is a heuristic to figure out if the base refers to a file or dir. It's not perfect, because
-		// the resource referred to by this path may not actually exist, but it's the best I can do
+		// The following is a heuristic to figure out if the base refers to a
+		// file or dir. It's not perfect, because
+		// the resource referred to by this path may not actually exist, but
+		// it's the best I can do
 		boolean baseIsFile = true;
 
 		File baseResource = new File(normalizedBasePath);
@@ -306,17 +318,18 @@ public class ResourceUtils {
 		return relative.toString();
 	}
 
-	static class PathResolutionException extends RuntimeException {
+	public static class PathResolutionException extends RuntimeException {
 		PathResolutionException(String msg) {
 			super(msg);
 		}
 	}
 
 	public static String getForwardSlashVersion(String str) {
-		return str.replaceAll("\\\\", "/"); //string regex string again.
+		return str.replaceAll("\\\\", "/"); // string regex string again.
 	}
 
-	private final static String[] hexSymbols = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
+	private final static String[] hexSymbols = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d",
+			"e", "f" };
 	public final static int BITS_PER_HEX_DIGIT = 4;
 
 	public static String toHexFromByte(final byte b) {
@@ -352,13 +365,18 @@ public class ResourceUtils {
 		if (buffer.length != 4) {
 			return -1;
 		}
-		return (buffer[0] << 24) & 0xff000000 | (buffer[1] << 16) & 0x00ff0000 | (buffer[2] << 8) & 0x0000ff00 | (buffer[3] << 0) & 0x000000ff;
+		return (buffer[0] << 24) & 0xff000000 | (buffer[1] << 16) & 0x00ff0000 | (buffer[2] << 8) & 0x0000ff00
+				| (buffer[3] << 0) & 0x000000ff;
 	}
 
 	/**
 	 * Converts backslashes to forwardslashes, or vice versa
-	 * @param absolutePath Path to convert
-	 * @param backslash Set to true to make backwards slash, false to make forwardslashes
+	 * 
+	 * @param absolutePath
+	 *            Path to convert
+	 * @param backslash
+	 *            Set to true to make backwards slash, false to make
+	 *            forwardslashes
 	 * @return
 	 */
 	public static String normalizeFilePath(String absolutePath, boolean backslash) {
@@ -368,67 +386,87 @@ public class ResourceUtils {
 		return absolutePath.replaceAll("/", "\\\\");
 	}
 
-    public static BufferedImage getScaledInstance(
-            BufferedImage img, int targetWidth,
-            int targetHeight, Object hint, 
-            boolean higherQuality)
-        {
-            int type =
-                (img.getTransparency() == Transparency.OPAQUE)
-                ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
-            BufferedImage ret = (BufferedImage) img;
-            int w, h;
-            if (higherQuality)
-            {
-                // Use multi-step technique: start with original size, then
-                // scale down in multiple passes with drawImage()
-                // until the target size is reached
-                w = img.getWidth();
-                h = img.getHeight();
-            }
-            else
-            {
-                // Use one-step technique: scale directly from original
-                // size to target size with a single drawImage() call
-                w = targetWidth;
-                h = targetHeight;
-            }
+	public static BufferedImage getScaledInstance(BufferedImage img, int targetWidth, int targetHeight, Object hint,
+			boolean higherQuality) {
+		int type = (img.getTransparency() == Transparency.OPAQUE) ? BufferedImage.TYPE_INT_RGB
+				: BufferedImage.TYPE_INT_ARGB;
+		BufferedImage ret = (BufferedImage) img;
+		int w, h;
+		if (higherQuality) {
+			// Use multi-step technique: start with original size, then
+			// scale down in multiple passes with drawImage()
+			// until the target size is reached
+			w = img.getWidth();
+			h = img.getHeight();
+		} else {
+			// Use one-step technique: scale directly from original
+			// size to target size with a single drawImage() call
+			w = targetWidth;
+			h = targetHeight;
+		}
 
-            do
-            {
-                if (higherQuality && w > targetWidth)
-                {
-                    w /= 2;
-                    if (w < targetWidth)
-                    {
-                        w = targetWidth;
-                    }
-                }
+		do {
+			if (higherQuality && w > targetWidth) {
+				w /= 2;
+				if (w < targetWidth) {
+					w = targetWidth;
+				}
+			}
 
-                if (higherQuality && h > targetHeight)
-                {
-                    h /= 2;
-                    if (h < targetHeight)
-                    {
-                        h = targetHeight;
-                    }
-                }
+			if (higherQuality && h > targetHeight) {
+				h /= 2;
+				if (h < targetHeight) {
+					h = targetHeight;
+				}
+			}
 
-                BufferedImage tmp = new BufferedImage(w, h, type);
-                Graphics2D g2 = tmp.createGraphics();
-                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
-                g2.drawImage(ret, 0, 0, w, h, null);
-                g2.dispose();
+			BufferedImage tmp = new BufferedImage(w, h, type);
+			Graphics2D g2 = tmp.createGraphics();
+			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
+			g2.drawImage(ret, 0, 0, w, h, null);
+			g2.dispose();
 
-                ret = tmp;
-            } while (w != targetWidth || h != targetHeight);
+			ret = tmp;
+		} while (w != targetWidth || h != targetHeight);
 
-            return ret;
-        }
+		return ret;
+	}
 
-	/*
-	 * public static void main(final String[] args) throws IOException { try
+	public static void openWebpage(URI uri) {
+		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+			try {
+				desktop.browse(uri);
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Error opening webpage:", e);
+			}
+		}
+	}
+
+	public static boolean openWebpage(URL url) {
+		try {
+			openWebpage(url.toURI());
+			return true;
+		} catch (URISyntaxException e) {
+			ModManager.debugLogger.writeErrorWithException("Error opening webpage: ", e);
+			return false;
+		}
+	}
+
+	/**
+	 * Replaces all break (br between <>) lines with a newline character. Used
+	 * to add newlines to ini4j.
 	 * 
-	 * }
+	 * @param string
+	 *            String to parse
+	 * @return String that has been fixed
 	 */
+	public static String convertBrToNewline(String string) {
+		String br = "<br>";
+		if (string == null) {
+			return string;
+		}
+		return string.replaceAll(br, "\n");
+	}
+
 }

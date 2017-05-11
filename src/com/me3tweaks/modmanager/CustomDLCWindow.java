@@ -175,8 +175,9 @@ public class CustomDLCWindow extends JDialog {
 				File currentPath = new File(path);
 				File toggledPath = new File(mainDlcDir.getAbsolutePath() + File.separator + newname);
 				if (currentPath.renameTo(toggledPath)) {
-					table.setValueAt(disabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE : CustomDLCManagerToggleButtonColumn.STR_DISABLE, modelRow, COL_TOGGLE);
-					table.setValueAt(newname, modelRow, COL_FOLDER);
+					DefaultTableModel tm = (DefaultTableModel) table.getModel();
+					tm.setValueAt(disabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE : CustomDLCManagerToggleButtonColumn.STR_DISABLE, modelRow, COL_TOGGLE);
+					tm.setValueAt(newname, modelRow, COL_FOLDER);
 				}
 			}
 		};
@@ -195,7 +196,7 @@ public class CustomDLCWindow extends JDialog {
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
 		table.getColumnModel().getColumn(COL_MOUNT_PRIORITY).setCellRenderer(centerRenderer);
-		
+		table.setAutoCreateRowSorter(true);
 		JScrollPane scrollpane = new JScrollPane(table);
 		panel.add(scrollpane, BorderLayout.CENTER);
 

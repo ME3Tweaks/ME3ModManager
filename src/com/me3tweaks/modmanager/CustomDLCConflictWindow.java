@@ -99,7 +99,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 		for (String dlc : installedDLCs) {
 			File mountFile = new File(biogameDirectory + "DLC/" + dlc + File.separator + "CookedPCConsole/Mount.dlc");
-			if (!ModType.isKnownDLCFolder(dlc) && dlc.startsWith("DLC_") && mountFile.exists()) {
+			if (!ModType.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
 				customDLCs.add(new CustomDLC(new MountFile(mountFile.getAbsolutePath()), dlc));
 			}
 		}
@@ -161,12 +161,11 @@ public class CustomDLCConflictWindow extends JDialog {
 		JScrollPane scrollpane = new JScrollPane(table);
 		windowpanel = new JPanel(new BorderLayout());
 
-		String buttonText = "<html><center>Files listed below are Custom DLC files that have conflicts.<br>The Custom DLC with the highest mount priority will supercede others, and may cause the the superceded DLC to not work or cause game instability.<br><u><font color='#000099'>Click for info on how to toggle DLC in Mod Manager.</u></font></center></html>";
-		String message = "<html>To toggle Custom DLCs in Mod Manager, make sure all Custom DLC has been imported into Mod Manager.<br>This can be done through the Mod Management > Import Mods > Import installed Custom DLC mod.<br>Once imported, you can install it by simply applying the mod.<br>You can remove (disable) a mod by deleting it through the Custom DLC Manager, and then apply it again to enable it.</html>";
-		JButton infoLinkButton = new JButton();
+		String buttonText = "<html><center>Files listed below are Custom DLC files that have conflicts.<br>The Custom DLC with the highest mount priority will supercede others, and may cause the the superceded DLC to not work or cause game instability.<br>You can toggle Custom DLC in the Custom DLC Manager in the Restore Menu.</center></html>";
+		JLabel infoLinkButton = new JLabel(buttonText);
 		infoLinkButton.setText(buttonText);
 		infoLinkButton.setHorizontalAlignment(SwingConstants.CENTER);
-		infoLinkButton.setBorderPainted(false);
+/*		infoLinkButton.setBorderPainted(false);
 		infoLinkButton.setBackground(UIManager.getColor("Panel.background"));
 		infoLinkButton.setFocusPainted(false);
 		infoLinkButton.setMargin(new Insets(0, 0, 0, 0));
@@ -181,7 +180,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, message, "Toggling Custom DLC in Mod Manager", JOptionPane.INFORMATION_MESSAGE);
 			}
-		});
+		});*/
 		windowpanel.add(infoLinkButton, BorderLayout.NORTH);
 		windowpanel.add(scrollpane, BorderLayout.CENTER);
 

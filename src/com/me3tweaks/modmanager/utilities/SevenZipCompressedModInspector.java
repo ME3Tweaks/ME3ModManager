@@ -297,12 +297,12 @@ public class SevenZipCompressedModInspector {
 			//1st pass - Get all files and a count.
 			for (int i = 0; i < count; i++) {
 				String path = (String) inArchive.getProperty(i, PropID.PATH);
-				ModManager.debugLogger.writeMessage("Iterating over archive files: " + path);
+				//ModManager.debugLogger.writeMessage("Iterating over archive files: " + path);
 				for (String str : parentPathsToExtract) {
 					boolean folder = (Boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
 					if (!folder && (str == null || path.startsWith(str))) {
 						//null str means parent path resolved to nothing, extract whole folder.
-						ModManager.debugLogger.writeMessage("Marked for extraction:" + path);
+						ModManager.debugLogger.writeMessage("Adding item to extract: " + path);
 						itemsToExtract.add(i);
 						numItems++;
 						break;
@@ -314,7 +314,7 @@ public class SevenZipCompressedModInspector {
 			int i = 0;
 			for (Integer integer : itemsToExtract) {
 				items[i++] = integer.intValue();
-				System.out.println(integer + " " + inArchive.getProperty(integer, PropID.PATH));
+				//System.out.println(integer + " " + inArchive.getProperty(integer, PropID.PATH));
 			}
 			DecompressModToDiskCallback dftmc = new DecompressModToDiskCallback(inArchive, parentPathsToExtract, numItems, compressedModsToExtract.get(0).getModName(),
 					importWorker);
@@ -325,9 +325,9 @@ public class SevenZipCompressedModInspector {
 			//ModManager.debugLogger.writeErrorWithException("Last Potential Cause of SevenZipException while extracting mod:", e.getCauseLastPotentialThrown());
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			PrintStream ps = new PrintStream(baos);
-			e.printStackTrace(ps);
 			try {
 				ModManager.debugLogger.writeError("Error while extracting 7zip archive: " + baos.toString("utf-8"));
+				ModManager.debugLogger.writeErrorWithException("Stack Trace:", e);
 			} catch (UnsupportedEncodingException e1) {
 				//this shouldn't happen.
 			}
@@ -408,8 +408,10 @@ public class SevenZipCompressedModInspector {
 			for (Map.Entry<String, ByteArrayInOutStream> entry : outputs.entrySet()) {
 				String key = entry.getKey();
 				ByteArrayInOutStream value = entry.getValue();
+				ModManager.debugLogger.writeMessage("Loading compressed mod descriptor. - may throw errors for missing files - OK to ignore.");
 				Mod mod = new Mod(value);
 				CompressedMod cm = new CompressedMod();
+				ModManager.debugLogger.writeMessage("Finished loading compressed mod descriptor.");
 				cm.setModDescMod(mod);
 				cm.setModDescription(mod.getModDisplayDescription());
 				cm.setModName(mod.getModName());

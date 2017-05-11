@@ -1,8 +1,5 @@
 package com.me3tweaks.modmanager.help;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -46,6 +43,7 @@ import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.HelpMenuItem;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class HelpMenu {
 
@@ -414,7 +412,7 @@ public class HelpMenu {
 			public void actionPerformed(ActionEvent e) {
 				if (!url.equals("")) {
 					try {
-						ModManager.openWebpage(new URL(url));
+						ResourceUtils.openWebpage(new URL(url));
 					} catch (MalformedURLException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();

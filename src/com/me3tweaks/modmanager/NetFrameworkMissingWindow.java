@@ -15,6 +15,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
+
 @SuppressWarnings("serial")
 public class NetFrameworkMissingWindow extends JDialog {
 	JLabel introLabel;
@@ -44,7 +46,7 @@ public class NetFrameworkMissingWindow extends JDialog {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
-					ModManager.openWebpage(new URL(netPage));
+					ResourceUtils.openWebpage(new URL(netPage));
 				} catch (MalformedURLException e1) {
 					ModManager.debugLogger.writeError("Invalid URL for .NET! This shouldn't happen...");
 				}

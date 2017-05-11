@@ -47,7 +47,6 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
@@ -56,10 +55,10 @@ import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
-import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class LogOptionsWindow extends JDialog {
@@ -363,7 +362,7 @@ public class LogOptionsWindow extends JDialog {
 			ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 			for (String dlc : installedDLCs) {
 				File mountFile = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "DLC/" + dlc + File.separator + "CookedPCConsole/Mount.dlc");
-				if (!ModType.isKnownDLCFolder(dlc) && dlc.startsWith("DLC_") && mountFile.exists()) {
+				if (!ModType.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
 					customDLCs.add(new CustomDLC(new MountFile(mountFile.getAbsolutePath()), dlc));
 				}
 			}
@@ -428,7 +427,7 @@ public class LogOptionsWindow extends JDialog {
 			for (String dir : directories) {
 				//add to list
 				File metacmm = new File(mainDlcDir + File.separator + dir + File.separator + "_metacmm.txt");
-				if (dir.startsWith("DLC_")) {
+				if (dir.toUpperCase().startsWith("DLC_")) {
 					if (ModType.isKnownDLCFolder(dir)) {
 						installeddlcstr += dir + " (Offical BioWare DLC)\n";
 						continue;
@@ -575,7 +574,7 @@ public class LogOptionsWindow extends JDialog {
 						try {
 							// do something useful
 							pastebinlink = IOUtils.toString(instream);
-							OK = ModManager.openWebpage(new URL(pastebinlink));
+							OK = ResourceUtils.openWebpage(new URL(pastebinlink));
 							if (OK) {
 								Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
 								ModManager.debugLogger.writeMessage("Server responded with " + pastebinlink);

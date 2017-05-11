@@ -39,6 +39,7 @@ import org.json.simple.JSONObject;
 
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class UpdateAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
@@ -417,7 +418,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			dispose();
 		} else if (e.getSource() == manualDownloadButton) {
 			try {
-				ModManager.openWebpage(new URI(manualLink));
+				ResourceUtils.openWebpage(new URI(manualLink));
 				dispose();
 			} catch (URISyntaxException e1) {
 				ModManager.debugLogger.writeException(e1);
@@ -425,7 +426,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			dispose();
 		} else if (e.getSource() == changelogButton) {
 			try {
-				ModManager.openWebpage(new URI(changelogLink));
+				ResourceUtils.openWebpage(new URI(changelogLink));
 			} catch (URISyntaxException e1) {
 				ModManager.debugLogger.writeException(e1);
 			}

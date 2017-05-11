@@ -57,7 +57,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.me3tweaks.modmanager.modupdater.ManifestModFile;
 import com.me3tweaks.modmanager.objects.ASIMod;
 import com.me3tweaks.modmanager.objects.ASIUpdateGroup;
 import com.me3tweaks.modmanager.objects.InstalledASIMod;
@@ -65,6 +64,7 @@ import com.me3tweaks.modmanager.ui.ASIActionColumn;
 import com.me3tweaks.modmanager.ui.MultiLineTableCell;
 import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class ASIModWindow extends JDialog {
 
@@ -522,7 +522,7 @@ public class ASIModWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					try {
-						ModManager.openWebpage(new URL(mod.getSourceCode()));
+						ResourceUtils.openWebpage(new URL(mod.getSourceCode()));
 						ASIActionDialog.this.dispose();
 					} catch (MalformedURLException e1) {
 						ModManager.debugLogger.writeErrorWithException("Invalid source code URL " + mod.getSourceCode(), e1);

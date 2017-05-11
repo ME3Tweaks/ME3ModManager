@@ -80,9 +80,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "4.5.3";
-	public static long BUILD_NUMBER = 71L;
-	public static final String BUILD_DATE = "3/30/2017";
+	public static final String VERSION = "4.5.4";
+	public static long BUILD_NUMBER = 73L;
+	public static final String BUILD_DATE = "5/6/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -142,6 +142,14 @@ public class ModManager {
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
 
+			//JVM Check
+			if (!System.getProperty("sun.arch.data.model").equals("32")) {
+				ModManager.debugLogger.writeError("Running in "+System.getProperty("sun.arch.data.model")+"-bit java!");
+				JOptionPane.showMessageDialog(null, "Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\nPlease install 32-bit (x86) java (the running one is "+System.getProperty("sun.arch.data.model")+"-bit). 64-bit Java usage is not supported by Mod Manager.", "Untested JVM", JOptionPane.ERROR_MESSAGE);
+				ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
+				//System.exit(1);
+			}
+			
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
 
 			File settings = new File(ModManager.SETTINGS_FILENAME);
@@ -1473,14 +1481,6 @@ public class ModManager {
 			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
 			File unpackedFile = new File(gamedir + targetPath);
 			if (unpackedFile.exists()) {
-				//check if PCConsoleTOC, as we probably want the one in the SFAR (or this one, provided DLC is unpacked)
-				/*
-				 * if
-				 * (unpackedFile.getAbsolutePath().endsWith("PCConsoleTOC.bin"
-				 * )){
-				 *
-				 * //if (inPlaceToc) }
-				 */
 				try {
 					new File(destFile.getParent()).mkdirs();
 					ModManager.debugLogger.writeMessage("Copying unpacked file to destination: " + copyToLocation);
@@ -1558,12 +1558,11 @@ public class ModManager {
 		ArrayList<Patch> validPatches = new ArrayList<Patch>();
 
 		if (subdirs != null && subdirs.length > 0) {
-			// Got a list of subdirs. Now loop them to find all moddesc.ini
+			// Got a list of subdirs. Now loop them to find all patchdesc.ini
 			// files
+			ModManager.debugLogger.writeMessage("Loading MixIns...");
 			for (int i = 0; i < subdirs.length; i++) {
 				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "patchdesc.ini");
-				// System.out.println("Searching for file: " +
-				// searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
 					Patch validatingPatch = new Patch(searchSubDirDesc.getAbsolutePath(), ModManager.appendSlash(subdirs[i].toString()) + "patch.jsf");
 					if (validatingPatch.isValid()) {
@@ -1571,6 +1570,8 @@ public class ModManager {
 					}
 				}
 			}
+			ModManager.debugLogger.writeMessage("Loaded "+validPatches.size()+" MixIns.");
+
 		}
 		Collections.sort(validPatches);
 		return validPatches;
@@ -1710,26 +1711,6 @@ public class ModManager {
 		return sb.toString();
 	}
 
-	public static void openWebpage(URI uri) {
-		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
-		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
-			try {
-				desktop.browse(uri);
-			} catch (Exception e) {
-				ModManager.debugLogger.writeErrorWithException("Error opening webpage:", e);
-			}
-		}
-	}
-
-	public static boolean openWebpage(URL url) {
-		try {
-			openWebpage(url.toURI());
-			return true;
-		} catch (URISyntaxException e) {
-			ModManager.debugLogger.writeErrorWithException("Error opening webpage: ", e);
-			return false;
-		}
-	}
 
 	/**
 	 * Returns directory that contains folders of patches
@@ -1936,7 +1917,7 @@ public class ModManager {
 			@Override
 			public boolean accept(File current, String name) {
 				File f = new File(current, name);
-				return f.isDirectory() && f.getName().startsWith("DLC_");
+				return f.isDirectory() && f.getName().toUpperCase().startsWith("DLC_");
 			}
 		});
 		ArrayList<String> foldernames = new ArrayList<String>();
