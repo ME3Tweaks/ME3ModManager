@@ -81,8 +81,8 @@ import com.sun.jna.win32.W32APIOptions;
 public class ModManager {
 
 	public static final String VERSION = "4.5.4";
-	public static long BUILD_NUMBER = 72L;
-	public static final String BUILD_DATE = "5/13/2017";
+	public static long BUILD_NUMBER = 73L;
+	public static final String BUILD_DATE = "5/14/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -145,8 +145,8 @@ public class ModManager {
 			//JVM Check
 			if (!System.getProperty("sun.arch.data.model").equals("32")) {
 				ModManager.debugLogger.writeError("Running in "+System.getProperty("sun.arch.data.model")+"-bit java!");
-				JOptionPane.showMessageDialog(null, "Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\nPlease install 32-bit (x86) java (the running one is "+System.getProperty("sun.arch.data.model")+"-bit). 64-bit Java usage is not supported by Mod Manager.", "Untested JVM", JOptionPane.ERROR_MESSAGE);
-				ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
+				JOptionPane.showMessageDialog(null, "Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to isntall 32-bit java.", "Untested JVM", JOptionPane.ERROR_MESSAGE);
+				//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
 				//System.exit(1);
 			}
 			
