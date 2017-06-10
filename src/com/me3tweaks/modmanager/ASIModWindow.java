@@ -785,7 +785,7 @@ public class ASIModWindow extends JDialog {
 
 	public static boolean IsASIModGroupInstalled(int group) {
 		ASIModWindow amw = new ASIModWindow();
-		amw.gamedir = new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent();
+		amw.gamedir = new File(ModManagerWindow.GetBioGameDir()).getParent();
 		String asidir = ModManager.appendSlash(amw.gamedir) + "Binaries/win32/asi";
 		amw.asiDir = new File(asidir);
 		if (!amw.asiDir.exists()) {
@@ -820,7 +820,7 @@ public class ASIModWindow extends JDialog {
 	public static ArrayList<InstalledASIMod> getOutdatedASIMods(String biogamedir) {
 		ArrayList<InstalledASIMod> outdatedasi = new ArrayList<>();
 		ASIModWindow amw = new ASIModWindow();
-		amw.gamedir = new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent();
+		amw.gamedir = new File(ModManagerWindow.GetBioGameDir()).getParent();
 		String asidir = ModManager.appendSlash(amw.gamedir) + "Binaries/win32/asi";
 		amw.asiDir = new File(asidir);
 		if (!amw.asiDir.exists()) {

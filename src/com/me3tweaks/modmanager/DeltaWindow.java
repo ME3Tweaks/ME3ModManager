@@ -130,7 +130,7 @@ public class DeltaWindow extends JDialog {
 	public DeltaWindow(Mod mod) {
 		boolean switched = applyVariant(mod.getModPath(), mod.getModPath() + Mod.VARIANT_FOLDER + File.separator + Mod.ORIGINAL_FOLDER);
 		if (switched) {
-			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Reverted to original version of " + mod.getModName());
 			ModManager.debugLogger.writeMessage("Completed mod delta reversion");
 		} else {
@@ -328,7 +328,7 @@ public class DeltaWindow extends JDialog {
 
 			//Apply the variant
 			applyVariant(modFolder, newVariantDir);
-			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
 			return true;
 		}
 

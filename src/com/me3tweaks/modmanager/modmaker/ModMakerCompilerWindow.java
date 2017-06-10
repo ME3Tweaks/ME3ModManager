@@ -1410,7 +1410,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						String compilerPath = ModManager.getTankMasterTLKDir() + "MassEffect3.TlkEditor.exe";
 						commandBuilder.add(compilerPath);
 						commandBuilder
-								.add(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + "CookedPCConsole\\" + tlkShortNameToFileName(tlkType));
+								.add(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "CookedPCConsole\\" + tlkShortNameToFileName(tlkType));
 						commandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString()) + "BIOGame_" + tlkType + ".xml");
 						commandBuilder.add("--mode");
 						commandBuilder.add("ToXml");
@@ -1863,7 +1863,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			overallProgress.setValue(98);
 		}
 		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
-		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
 		overallProgress.setValue(100);
 		stepsCompleted++;
 		ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);
@@ -1874,7 +1874,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			//updater supresses this window
 			for (ModJob job : newMod.jobs) {
 				if (job.getJobName().equals(ModType.BINI)){
-					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())) {
+					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
 							//loader installed, no balance changes replacer
 							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>", "Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);

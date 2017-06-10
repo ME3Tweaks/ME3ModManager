@@ -6,6 +6,7 @@ import java.awt.Toolkit;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
@@ -53,6 +55,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.ini4j.Config;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.w3c.dom.Document;
@@ -144,12 +147,14 @@ public class ModManager {
 
 			//JVM Check
 			if (!System.getProperty("sun.arch.data.model").equals("32")) {
-				ModManager.debugLogger.writeError("Running in "+System.getProperty("sun.arch.data.model")+"-bit java!");
-				JOptionPane.showMessageDialog(null, "Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to isntall 32-bit java.", "Untested JVM", JOptionPane.ERROR_MESSAGE);
+				ModManager.debugLogger.writeError("Running in " + System.getProperty("sun.arch.data.model") + "-bit java!");
+				JOptionPane.showMessageDialog(null,
+						"Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to isntall 32-bit java.",
+						"Untested JVM", JOptionPane.ERROR_MESSAGE);
 				//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
 				//System.exit(1);
 			}
-			
+
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
 
 			File settings = new File(ModManager.SETTINGS_FILENAME);
@@ -937,6 +942,15 @@ public class ModManager {
 	}
 
 	/**
+	 * Returns the path to the Mod Manager Command Line Tools directory.
+	 * 
+	 * @return data/tools/ModMangerCommandLine
+	 */
+	public static String getCommandLineToolsDir() {
+		return getToolsDir() + "ModManagerCommandLine/";
+	}
+
+	/**
 	 * Downloads Transplanter if not already downloaded. Returns path if
 	 * downloaded, null if not found locally after download attempt.
 	 *
@@ -1009,6 +1023,34 @@ public class ModManager {
 		File file = new File(getDataDir() + "help/");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
+	}
+
+	public static ArrayList<String> getSavedBIOGameDirectories() {
+		ArrayList<String> directories = new ArrayList<>();
+		File file = new File(getDataDir() + "BIOGAME_DIRECTORIES");
+		if (!file.exists()) {
+			//uh...
+
+		} else {
+			Scanner scanner;
+			try {
+				scanner = new Scanner(file);
+				while (scanner.hasNextLine()) {
+					String directory = scanner.nextLine();
+					if (!(new File(directory).exists())) {
+						continue; //skip
+					}
+					directories.add(directory);
+				}
+				scanner.close();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+		return directories;
+
 	}
 
 	/**
@@ -1254,7 +1296,7 @@ public class ModManager {
 	public static String getPatchSource(String targetPath, String targetModule) {
 		ModManager.debugLogger.writeMessage("Looking for patch source: " + targetPath + " in module " + targetModule);
 		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator + targetPath);
-		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		String bioGameDir = ModManager.appendSlash(ModManagerWindow.GetBioGameDir());
 		if (sourceDestination.exists()) {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
@@ -1286,7 +1328,7 @@ public class ModManager {
 		} else {
 			// DLC===============================================================
 			// Check if its unpacked
-			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
+			String gamedir = appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent());
 			File unpackedFile = new File(gamedir + targetPath);
 			if (unpackedFile.exists()) {
 				try {
@@ -1305,8 +1347,7 @@ public class ModManager {
 			if (targetModule.equals(ModType.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + ModManager.appendSlash(ModType.getDLCPath(targetModule))
-					+ sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
 
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
@@ -1403,7 +1444,7 @@ public class ModManager {
 	 */
 	public static String getGameFile(String targetPath, String targetModule, String copyToLocation) {
 		ModManager.debugLogger.writeMessage("Getting game file (will use unpacked if possible) from " + targetModule + ", with relative path " + targetPath);
-		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		String bioGameDir = ModManager.appendSlash(ModManagerWindow.GetBioGameDir());
 		File destFile = new File(copyToLocation);
 		FileUtils.deleteQuietly(destFile);
 		new File(destFile.getParent()).mkdirs();
@@ -1478,7 +1519,7 @@ public class ModManager {
 		} else {
 			// DLC===============================================================
 			// Check if its unpacked
-			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
+			String gamedir = appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent());
 			File unpackedFile = new File(gamedir + targetPath);
 			if (unpackedFile.exists()) {
 				try {
@@ -1499,8 +1540,7 @@ public class ModManager {
 			if (targetModule.equals(ModType.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + ModManager.appendSlash(ModType.getDLCPath(targetModule))
-					+ sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
 
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
@@ -1570,7 +1610,7 @@ public class ModManager {
 					}
 				}
 			}
-			ModManager.debugLogger.writeMessage("Loaded "+validPatches.size()+" MixIns.");
+			ModManager.debugLogger.writeMessage("Loaded " + validPatches.size() + " MixIns.");
 
 		}
 		Collections.sort(validPatches);
@@ -1710,7 +1750,6 @@ public class ModManager {
 		}
 		return sb.toString();
 	}
-
 
 	/**
 	 * Returns directory that contains folders of patches
@@ -2144,5 +2183,75 @@ public class ModManager {
 			ModManager.debugLogger.writeErrorWithException("[" + prefix + "]Process exception occured:", e);
 			return new ProcessResult(0, e);
 		}
+	}
+
+	public static Wini LoadSettingsINI(boolean multivalue) {
+		File settings = new File(ModManager.SETTINGS_FILENAME);
+		if (!settings.exists()) {
+			try {
+				settings.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				ModManager.debugLogger.writeErrorWithException("ERROR WRITING NEW SETTINGS FILE:", e);
+			}
+		}
+		Wini ini = null;
+		try {
+			ini = new Wini(settings);
+			if (multivalue) {
+				Config conf = new Config();
+				conf.setMultiOption(true);
+				ini.setConfig(conf);
+			}
+			ini.load(settings);
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeErrorWithException("ERROR READING CONFIG FILE... WE'RE PROBABLY GOING TO CRASH.", e);
+		}
+
+		return ini;
+	}
+
+	/**
+	 * Looks up the game's installation directory using the windows registry
+	 * 
+	 * @param appendBiogame
+	 *            appends BIOGame to the end, if found.
+	 * @return
+	 */
+	public static String LookupGamePathViaRegistryKey(boolean appendBiogame) {
+		String installDir = null;
+		String _32bitpath = "SOFTWARE\\BioWare\\Mass Effect 3";
+		String _64bitpath = "SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
+		ModManager.debugLogger.writeMessage("ME3CMM.ini does not contain the game path, attempting lookup via 64-bit registry key");
+		try {
+			installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _64bitpath, "Install Dir");
+			ModManager.debugLogger.writeMessage("Game location found - via 64bit key.");
+		} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
+			ModManager.debugLogger.writeMessage("Exception looking at 64 registry key: " + _64bitpath);
+		}
+
+		if (installDir == null) {
+			// try 32bit key
+			try {
+				ModManager.debugLogger.writeMessage("64-bit registry key not found. Attemping to find via 32-bit registy key");
+				installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _32bitpath, "Install Dir");
+				ModManager.debugLogger.writeMessage("Game location found - via 32bit key.");
+			} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
+				ModManager.debugLogger.writeMessage("Exception looking at 32bit registry key: " + _32bitpath);
+			}
+		}
+		if (installDir != null) {
+			installDir = ModManager.appendSlash(installDir);
+			ModManager.debugLogger.writeMessage("Found mass effect 3 location in registry: " + installDir);
+			if (appendBiogame) {
+				installDir += "BIOGame";
+			}
+		} else {
+			ModManager.debugLogger.writeError("Could not find Mass Effect 3 registry key in both 32 and 64 bit locations.");
+		}
+
+		return installDir;
 	}
 }

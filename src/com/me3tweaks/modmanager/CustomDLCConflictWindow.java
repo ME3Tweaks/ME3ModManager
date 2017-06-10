@@ -94,7 +94,7 @@ public class CustomDLCConflictWindow extends JDialog {
 
 		// TODO Auto-generated method stub
 		//JTextPane tp = new JTextPane();
-		String biogameDirectory = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		String biogameDirectory = ModManager.appendSlash(ModManagerWindow.GetBioGameDir());
 		ArrayList<String> installedDLCs = ModManager.getInstalledDLC(biogameDirectory);
 		ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 		for (String dlc : installedDLCs) {

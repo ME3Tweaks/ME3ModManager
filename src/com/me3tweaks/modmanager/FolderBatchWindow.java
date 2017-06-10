@@ -297,7 +297,7 @@ public class FolderBatchWindow extends JDialog {
 
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						String copyDest = ModManager.appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent()) + "Binaries/win32/asi/"
+						String copyDest = ModManager.appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent()) + "Binaries/win32/asi/"
 								+ droppedFile.getName();
 						try {
 							FileUtils.copyFile(droppedFile, new File(copyDest));

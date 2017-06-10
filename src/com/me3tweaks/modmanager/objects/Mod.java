@@ -1876,7 +1876,7 @@ public class Mod implements Comparable<Mod> {
 			new DeltaWindow(newMod, delta, true, true);
 		}
 		if (newMod.isValidMod()) {
-			new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+			new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
 		} else {
 			return null;
 		}

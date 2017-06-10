@@ -104,7 +104,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		if (upackage.isModmakerupdate()) {
 			//validate biogamedir (TLK)
 			if (!ModManagerWindow.validateBIOGameDir()) {
-				ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.setText("ModMaker mods not updatable, invalid BIOGame directory");
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("ModMaker mods not updatable, invalid BIOGame directory");
 				return false;
 			}
 

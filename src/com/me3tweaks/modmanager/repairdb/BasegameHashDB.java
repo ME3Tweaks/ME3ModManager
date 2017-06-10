@@ -302,7 +302,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 					}
 
 					//Check if file should be deleted as a backup
-					File bgdir = new File(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()));
+					File bgdir = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()));
 					String me3dir = ModManager.appendSlash(bgdir.getParent());
 					// Make backup folder if it doesn't exist
 					String backupfolderpath = me3dir.toString() + "cmmbackup\\";
