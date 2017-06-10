@@ -5,7 +5,7 @@ public class Stat {
 	StatRange statrange;
 	
 	public Stat(String str) {
-		System.out.println("Creating stat from string: "+str);
+		//System.out.println("Creating stat from string: "+str);
 		String workingStr;
 		int charIndex = str.indexOf('\"'); // first ", which is the lead into the name.
 		workingStr = str.substring(charIndex+1);

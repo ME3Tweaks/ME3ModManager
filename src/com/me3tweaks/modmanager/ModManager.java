@@ -83,9 +83,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "4.5.4";
-	public static long BUILD_NUMBER = 73L;
-	public static final String BUILD_DATE = "5/14/2017";
+	public static final String VERSION = "5.0";
+	public static long BUILD_NUMBER = 74L;
+	public static final String BUILD_DATE = "6/10/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -104,7 +104,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_ME3EXPLORER_MINOR = 0;
 	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 6;
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 8; //1.0.0.X
-	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
+	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static boolean POST_INSTALL_AUTOTOC_INSTEAD = true;
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
@@ -119,6 +119,7 @@ public class ModManager {
 	public static boolean PERFORM_DOT_NET_CHECK = true;
 	public static boolean MODMAKER_CONTROLLER_MOD_ADDINS = false;
 	public static String THIRD_PARTY_MOD_JSON;
+	public static boolean LOG_MODMAKER = false;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGAUGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN", "ITA" };
@@ -171,6 +172,8 @@ public class ModManager {
 				logging = true;
 				debugLogger.writeMessage("Starting logger, this is a debugging build.");
 			}
+
+			logging = false;
 
 			Wini settingsini;
 			try {
@@ -407,6 +410,26 @@ public class ModManager {
 					} catch (NumberFormatException e) {
 						debugLogger.writeError("Number format exception reading the log mod init - setting to disabled");
 						LOG_MOD_INIT = false;
+					}
+				}
+
+				// Log Mod Startup
+				String modmakerlogStr = settingsini.get("Settings", "logmodmaker");
+				int modmakerlogStartupInt = 0;
+				if (modstartupStr != null && !modmakerlogStr.equals("")) {
+					try {
+						modmakerlogStartupInt = Integer.parseInt(modmakerlogStr);
+						if (modmakerlogStartupInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Modmaker Compiler logging is enabled");
+							LOG_MODMAKER = true;
+						} else {
+							debugLogger.writeMessage("Modmaker Compiler logging is disabled");
+							LOG_MODMAKER = false;
+						}
+					} catch (NumberFormatException e) {
+						debugLogger.writeError("Number format exception reading the log modmaker setting - setting to disabled");
+						LOG_MODMAKER = false;
 					}
 				}
 
@@ -1350,63 +1373,61 @@ public class ModManager {
 			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
 
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("-dlcextract");
+			commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
+			commandBuilder.add("--SFARPath");
 			commandBuilder.add(sfarPath);
+			commandBuilder.add("--ExtractFilenames");
 			commandBuilder.add(targetPath);
-			commandBuilder.add(sourceDestination.getAbsolutePath());
-			StringBuilder sb = new StringBuilder();
-			for (String arg : commandBuilder) {
-				if (arg.contains(" ")) {
-					sb.append("\"" + arg + "\" ");
-				} else {
-					sb.append(arg + " ");
-				}
-			}
-			sourceDestination.getParentFile().mkdirs();
-			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());
+			commandBuilder.add("--OutputPath");
+			commandBuilder.add(sourceDestination.getParent());
+			commandBuilder.add("--FlatFolderExtraction");
 
 			ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
 			// patchProcessBuilder.redirectErrorStream(true);
 			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-			Process extractionProcess;
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
-
-			try {
-				extractionProcess = extractionProcessBuilder.start();
-				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
-				String line;
-				while ((line = reader.readLine()) != null)
-					System.out.println(line);
-				int result = extractionProcess.waitFor();
-				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
-				if (result == 0) {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
-				} else {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
-				}
+			ProcessResult pr = ModManager.runProcess(extractionProcessBuilder);
+			if (pr.getReturnCode() == 0) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
+				ModManager.debugLogger.writeMessage("Caching complete for file " + sourceDestination.getName());
 				return sourceDestination.getAbsolutePath();
-			} catch (IOException e) {
-				ModManager.debugLogger.writeException(e);
-			} catch (InterruptedException e) {
-				ModManager.debugLogger.writeException(e);
+
+			} else {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+				ModManager.debugLogger.writeError("Caching failed (non 0 return code) for file " + sourceDestination.getName());
+				return null;
+
 			}
 		}
-		return null;
 	}
 
 	/**
 	 * Decompresses the PCC to the listed destination, location can be the same.
+	 * If the PCC file is already decompressed, the file is copied instead.
 	 *
 	 * @param sourceSource
+	 *            PCC to decompress
 	 * @param sourceDestination
-	 * @return
+	 *            Place to put decompressed pcc
+	 * @return result of the decomrpession process
 	 */
 	public static ProcessResult decompressPCC(File sourceSource, File sourceDestination) {
+		/*
+		 * ArrayList<String> commandBuilder = new ArrayList<String>();
+		 * commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) +
+		 * "ME3Explorer.exe"); commandBuilder.add("-decompresspcc");
+		 * commandBuilder.add(sourceSource.getAbsolutePath());
+		 * commandBuilder.add(sourceDestination.getAbsolutePath());
+		 * ProcessBuilder decompressProcessBuilder = new
+		 * ProcessBuilder(commandBuilder); return
+		 * ModManager.runProcess(decompressProcessBuilder);
+		 */
+
 		ArrayList<String> commandBuilder = new ArrayList<String>();
-		commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-		commandBuilder.add("-decompresspcc");
+		commandBuilder.add(ModManager.getCommandLineToolsDir() + "PCCDecompress.exe");
+		commandBuilder.add("--inputfile");
 		commandBuilder.add(sourceSource.getAbsolutePath());
+		commandBuilder.add("--outputfile");
 		commandBuilder.add(sourceDestination.getAbsolutePath());
 		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
 		return ModManager.runProcess(decompressProcessBuilder);

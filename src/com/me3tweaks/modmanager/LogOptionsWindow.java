@@ -171,7 +171,7 @@ public class LogOptionsWindow extends JDialog {
 			}
 		});
 
-		options = new JCheckBox[] { installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile };
+		options = new JCheckBox[] { sessionoption,installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile };
 
 		sessionoption.setAlignmentX(Component.LEFT_ALIGNMENT);
 		installeddlcoption.setAlignmentX(Component.LEFT_ALIGNMENT);

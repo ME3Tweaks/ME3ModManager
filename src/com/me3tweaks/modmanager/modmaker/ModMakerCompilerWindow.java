@@ -599,21 +599,9 @@ public class ModMakerCompilerWindow extends JDialog {
 
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(compilerPath);
-				commandBuilder.add(path + "coalesceds\\" + coal);
-				//System.out.println("Building command");
-				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-				//Debug stuff
-				StringBuilder sb = new StringBuilder();
-				for (String arg : command) {
-					sb.append(arg + " ");
-				}
-				ModManager.debugLogger.writeMessage("Executing decompile command: " + sb.toString());
-
-				ProcessBuilder decompileProcessBuilder = new ProcessBuilder(command);
-				decompileProcessBuilder.redirectErrorStream(true);
-				decompileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-				Process decompileProcess = decompileProcessBuilder.start();
-				decompileProcess.waitFor();
+				commandBuilder.add(path + "coalesceds\\" + coal);				
+				ProcessBuilder pb = new ProcessBuilder(commandBuilder);
+				ModManager.runProcess(pb);
 				coalsDecompiled++;
 				this.publish(coalsDecompiled);
 			}
@@ -857,7 +845,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					for (int j = 0; j < filesNodeList.getLength(); j++) {
 						Node fileNode = filesNodeList.item(j);
 						if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
-							publish(new ThreadCommand("MERGING_FILE",coalNode.getNodeName()+" "+fileNode.getNodeName()));
+							publish(new ThreadCommand("MERGING_FILE", coalNode.getNodeName() + " " + fileNode.getNodeName()));
 
 							//we now have a file ID such as biogame.
 							//We need to load that XML file now.
@@ -1217,15 +1205,15 @@ public class ModMakerCompilerWindow extends JDialog {
 														case "subtraction":
 															Node itemParent = itemToModify.getParentNode();
 															itemParent.removeChild(itemToModify);
-															ModManager.debugLogger.writeMessage("Removed array value: " + newValue);
+															ModManager.debugLogger.writeMessageConditionally("Removed array value: " + newValue,ModManager.LOG_MODMAKER);
 															break;
 														case "modify": //same as assignment right now
 														case "assignment":
 															itemToModify.setTextContent(newValue);
-															ModManager.debugLogger.writeMessage("Assigned array value: " + newValue);
+															ModManager.debugLogger.writeMessageConditionally("Assigned array value: " + newValue,ModManager.LOG_MODMAKER);
 															break;
 														default:
-															ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm: " + arrayType
+															ModManager.debugLogger.writeError("Unknown matching algorithm: " + arrayType
 																	+ " does this client need updated? Aborting this stat update.");
 															JOptionPane.showMessageDialog(null,
 																	"<html>Unknown operation from ME3Tweaks: " + operation
@@ -1314,7 +1302,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					break;
 				case "MERGING_FILE":
 					String currentoperation = tc.getMessage();
-					currentOperationLabel.setText("Merging "+currentoperation);
+					currentOperationLabel.setText("Merging " + currentoperation);
 					break;
 				}
 			}
@@ -1409,8 +1397,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 						String compilerPath = ModManager.getTankMasterTLKDir() + "MassEffect3.TlkEditor.exe";
 						commandBuilder.add(compilerPath);
-						commandBuilder
-								.add(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "CookedPCConsole\\" + tlkShortNameToFileName(tlkType));
+						commandBuilder.add(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "CookedPCConsole\\" + tlkShortNameToFileName(tlkType));
 						commandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString()) + "BIOGame_" + tlkType + ".xml");
 						commandBuilder.add("--mode");
 						commandBuilder.add("ToXml");
@@ -1873,14 +1860,20 @@ public class ModMakerCompilerWindow extends JDialog {
 		if (mod == null) {
 			//updater supresses this window
 			for (ModJob job : newMod.jobs) {
-				if (job.getJobName().equals(ModType.BINI)){
+				if (job.getJobName().equals(ModType.BINI)) {
 					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
 							//loader installed, no balance changes replacer
-							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>", "Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+							JOptionPane.showMessageDialog(this,
+									"<html><div style=\"width: 400px\">" + modName
+											+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>",
+									"Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 						}
 					} else {
-						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>", "ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+						JOptionPane.showMessageDialog(this,
+								"<html><div style=\"width: 400px\">" + modName
+										+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>",
+								"ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 					}
 					break;
 				}
