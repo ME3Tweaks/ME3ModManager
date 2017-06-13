@@ -8,7 +8,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +27,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ProcessResult;
 
 @SuppressWarnings("serial")
 public class UnpackWindow extends JDialog {
@@ -123,14 +123,14 @@ public class UnpackWindow extends JDialog {
 			if (mainSfar.exists()) {
 				ModManager.debugLogger.writeMessage("Found a .sfar");
 				long mainSfarSize = mainSfar.length();
-				if (mainSfarSize < dlcSizeArray.get(dlcName)){
+				if (mainSfarSize < dlcSizeArray.get(dlcName)) {
 					checkbox.setForeground(Color.BLACK);
 					checkbox.setToolTipText("This DLC appears to already be unpacked (filesize is smaller than original).");
 				} else {
 					checkbox.setForeground(Color.BLUE);
 					checkbox.setToolTipText("This DLC is not unpacked.");
 				}
-				
+
 				// File exists.
 				checkbox.setEnabled(true);
 				if (i < 8) {
@@ -166,7 +166,8 @@ public class UnpackWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				//write to settings
 				if (ModManager.isMassEffect3Running()) {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can unpack DLC.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can unpack DLC.", "MassEffect3.exe is running",
+							JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				new UnpackDLCJob(BioGameDir, getJobs(), false).execute();
@@ -197,8 +198,7 @@ public class UnpackWindow extends JDialog {
 			JCheckBox checkbox = checkboxMap.get(dlcName);
 			if (checkbox != null && checkbox.isSelected()) {
 				if (ModManager.logging) {
-					ModManager.debugLogger.writeMessage("Job added to unpack: " + checkbox.getText() + " at "
-							+ ModType.getDLCPath(checkbox.getText()));
+					ModManager.debugLogger.writeMessage("Job added to unpack: " + checkbox.getText() + " at " + ModType.getDLCPath(checkbox.getText()));
 				}
 				jobs.add(checkbox.getText());
 			}
@@ -240,12 +240,9 @@ public class UnpackWindow extends JDialog {
 				File backupSfar = new File(dlcPath + "Default.sfar.bak");
 				int _continue = JOptionPane.YES_OPTION;
 				if (mainSfar.exists() && !backupSfar.exists()) {
-					_continue = JOptionPane
-							.showConfirmDialog(
-									UnpackWindow.this,
-									dlcName
-											+ " does not have an SFAR backup.\nYou will have to use Origin's repair feature if you unpack this DLC and want to restore it.\n\nUnpack this DLC?",
-									"DLC not backed up", JOptionPane.YES_NO_OPTION);
+					_continue = JOptionPane.showConfirmDialog(UnpackWindow.this,
+							dlcName + " does not have an SFAR backup.\nYou will have to use Origin's repair feature if you unpack this DLC and want to restore it.\n\nUnpack this DLC?",
+							"DLC not backed up", JOptionPane.YES_NO_OPTION);
 				}
 
 				if (_continue == JOptionPane.YES_OPTION) {
@@ -266,8 +263,7 @@ public class UnpackWindow extends JDialog {
 			if (!dlcPath.exists()) {
 				// Maybe DLC is not installed?
 				if (ModManager.logging) {
-					ModManager.debugLogger.writeError(fullDLCDirectory
-							+ " does not exist. It might not be installed (this should have been caught!");
+					ModManager.debugLogger.writeError(fullDLCDirectory + " does not exist. It might not be installed (this should have been caught!");
 				}
 				return false;
 			}
@@ -276,39 +272,19 @@ public class UnpackWindow extends JDialog {
 			File mainSfar = new File(fullDLCDirectory + "Default.sfar");
 
 			if (mainSfar.exists()) {
-				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
-				commandBuilder.add("--unpacksfar");
-				commandBuilder.add(mainSfar.getAbsolutePath());
-				commandBuilder.add(new File(bioGameDir).getParent());
+				ArrayList<String> command = new ArrayList<String>();
+				command.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
+				command.add("--SFARPath");
+				command.add(mainSfar.getAbsolutePath());
+				command.add("--ExtractEntireArchive");
+				command.add("--OutputPath");
+				command.add(new File(bioGameDir).getParent());
 
 				//Build command.
-				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-				// Debug stuff
-				StringBuilder sb = new StringBuilder();
-				for (String arg : command) {
-					sb.append(arg + " ");
-				}
-				ModManager.debugLogger.writeMessage("Executing unpack command: " + sb.toString());
-				Process p = null;
-				int returncode = 1;
-				try {
-					ProcessBuilder pb = new ProcessBuilder(command);
-					ModManager.debugLogger.writeMessage("Executing process for DLC Unpack Job.");
-					// p = Runtime.getRuntime().exec(command);
-					long timeStart = System.currentTimeMillis();
-					p = pb.start();
-					ModManager.debugLogger.writeMessage("Executed command, waiting...");
-					returncode = p.waitFor();
-					long timeEnd = System.currentTimeMillis();
-					ModManager.debugLogger.writeMessage("Process has finished. Took " + (timeEnd - timeStart) + " ms.");
-				} catch (IOException | InterruptedException e) {
-					ModManager.debugLogger.writeException(e);
-					return false;
-				}
-
-				ModManager.debugLogger.writeMessage("Job completed successfully: " + (p != null && returncode == 0));
-				return p != null && returncode == 0;
+				ProcessBuilder pb = new ProcessBuilder(command);
+				ProcessResult pr = ModManager.runProcess(pb);
+				ModManager.debugLogger.writeMessage("Job completed successfully: " + (pr.getReturnCode() == 0));
+				return pr.getReturnCode() == 0;
 			}
 			return false; //sfar could not be found.
 		}

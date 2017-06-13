@@ -288,7 +288,6 @@ public class ModMakerCompilerWindow extends JDialog {
 						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				dispose();
-				//new ModManagerWindow(false);
 			}
 		}
 

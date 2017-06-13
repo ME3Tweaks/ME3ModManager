@@ -49,6 +49,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.StarterKitWindow.StarterKitGenerator;
 import com.me3tweaks.modmanager.objects.CustomDLC;
+import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
@@ -481,6 +482,7 @@ public class CustomDLCConflictWindow extends JDialog {
 
 		private HashMap<String, CustomDLC> secondPriorityUIConflictFiles;
 		private String modName;
+		private Mod outputMod;
 		private String biogameDirectory;
 		private Lock lock = new ModManager.Lock();
 		private boolean userAcceptedFirstFailMessage = false;
@@ -647,7 +649,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			}
 
 			//Run autotoc
-			publish(new ThreadCommand("SET_STATUS_TEXT", "Runing autotoc on new mod"));
+			publish(new ThreadCommand("SET_STATUS_TEXT", "Running AutoTOC on new mod"));
 			publish(new ThreadCommand("SET_PROGRESS", null, 1.0));
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
@@ -663,6 +665,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			if (returncode != 0 || pr.hadError()) {
 				ModManager.debugLogger.writeError("FullAutoTOC returned a non 0 code (or threw error) running AutoTOC: " + returncode);
 			}
+			outputMod = skg.getGeneratedMod();
 			return true;
 		}
 
@@ -735,13 +738,14 @@ public class CustomDLCConflictWindow extends JDialog {
 			if (successful) {
 				ModManager.debugLogger.writeMessage(modName + " created. Showing user directions on how to generate a new one.");
 				statusText.setText(modName + " has been created");
+				dispose();
+				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+				ModManagerWindow.ACTIVE_WINDOW.highlightMod(outputMod);
 				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
 						"Compatibility mod has been created.\nApply " + modName
 								+ " to fix the UI overriding conflicts.\n\nIf you update any of your conflicting mods, uninstall this mod then generate a new compatibilty mod.\nGenerating a compatibiilty pack while "
 								+ modName + " is installed will likely crash the game when the new mod is applied.",
 						"Mod created", JOptionPane.INFORMATION_MESSAGE);
-				dispose();
-				new ModManagerWindow(false);
 			} else {
 				statusText.setText(modName + " was not created");
 				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,

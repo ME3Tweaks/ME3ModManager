@@ -445,7 +445,7 @@ public class KeybindsInjectionWindow extends JDialog {
 							"An error occured inserting your keybinds into into " + mod.getModName() + ".\nThe Mod Manager log will have more information.", "Injection Failed",
 							JOptionPane.ERROR_MESSAGE);
 				}
-				new ModManagerWindow(false);
+				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			}
 		}
 	}

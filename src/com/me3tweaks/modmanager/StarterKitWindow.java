@@ -661,16 +661,17 @@ public class StarterKitWindow extends JDialog {
 			}
 			if (callingDialog instanceof StarterKitWindow) {
 				if (OK) {
+					callingDialog.dispose();
+					ResourceUtils.openDir(generatedMod.getModPath());
+					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+					ModManagerWindow.ACTIVE_WINDOW.highlightMod(generatedMod);
 					JOptionPane.showMessageDialog(callingDialog,
 							modname + " has been created.\nPlace files into the mod's DLC_MOD_" + internaldlcname
 									+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
 							modname + " created", JOptionPane.INFORMATION_MESSAGE);
-					callingDialog.dispose();
-					ResourceUtils.openDir(generatedMod.getModPath());
-					new ModManagerWindow(false);
 				} else {
 					JOptionPane.showMessageDialog(callingDialog,
-							modname + " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the log attached.",
+							modname + " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the diagnostics log attached.",
 							modname + " not created", JOptionPane.ERROR_MESSAGE);
 				}
 			}

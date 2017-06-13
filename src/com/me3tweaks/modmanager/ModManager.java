@@ -2259,6 +2259,9 @@ public class ModManager {
 	}
 
 	public static boolean GrantPermissionsToDirectory(String directory, String username) {
+		if (directory.endsWith("\\") || directory.endsWith("/")) {
+			directory = directory.substring(0, directory.length()-1);
+		}
 		ArrayList<String> command = new ArrayList<String>();
 		command.add(ModManager.getCommandLineToolsDir() + "elevate.exe");
 		command.add("-c");
@@ -2268,7 +2271,7 @@ public class ModManager {
 		command.add(directory);
 		command.add("/t");
 		command.add("/grant");
-		command.add(username + ":F");
+		command.add(username + ":(OI)(CI)F");
 		ModManager.debugLogger.writeMessage("Granting permissions to the current user for selected directory: " + directory);
 		ProcessBuilder pb = new ProcessBuilder(command);
 		ProcessResult pr = ModManager.runProcess(pb);

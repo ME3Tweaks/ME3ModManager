@@ -128,7 +128,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
 			modutilsDeleteMod;
 	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32,
-			toolsMountdlcEditor, toolsMergeMod, toolME3Config;
+			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
@@ -163,7 +163,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JPanel cookedDirPanel;
 	private JMenuItem toolsAutoTOCGame;
 	private JMenu restoreMenuAdvanced;
-	private String preloadedBioGameDir;
+	private boolean loadedFirstTime = false;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -179,11 +179,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		this.isUpdate = isUpdate;
 		ModManager.debugLogger.writeMessage("Starting Mod Manager UI (ModManagerWindow)");
-		boolean reload = false;
 		try {
 			initializeWindow();
 			ACTIVE_WINDOW = this;
-			reload = processPendingPatches();
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("UNKNOWN CRITICAL STARTUP EXCEPTION FOR MOD MANAGER WINDOW:", e);
 			ModManager.debugLogger.writeError("Mod Manager has crashed!");
@@ -195,24 +193,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			return;
 		}
 		validateBIOGameDir();
-		if (reload) {
-			new ModManagerWindow(false);
-		} else {
-			ModManager.debugLogger.writeMessage("Mod Manager GUI: Now setting visible.");
-			try {
-				this.setVisible(true);
-			} catch (Exception e) {
-				ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
-				ModManager.debugLogger.writeError("Mod Manager hit exception!");
-				if (ModManager.logging) {
-					JOptionPane.showMessageDialog(null,
-							"<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error<br>" + e.getMessage() + "<br>"
-									+ "<br>This has been logged to the me3cmm_last_run_log.txt file.<br>The application will attempt to ignore this error.</div></html>",
-							"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
-				} else {
-					JOptionPane.showMessageDialog(null, "<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error<br>" + e.getMessage() + "<br>"
-							+ "<br>The application will attempt to ignore this error.</div></html>", "Mod Manager Error", JOptionPane.ERROR_MESSAGE);
-				}
+
+		ModManager.debugLogger.writeMessage("Mod Manager GUI: Now setting visible.");
+		try {
+			this.setVisible(true);
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
+			ModManager.debugLogger.writeError("Mod Manager hit exception!");
+			if (ModManager.logging) {
+				JOptionPane.showMessageDialog(null,
+						"<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error<br>" + e.getMessage() + "<br>"
+								+ "<br>This has been logged to the me3cmm_last_run_log.txt file.<br>The application will attempt to ignore this error.</div></html>",
+						"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
+			} else {
+				JOptionPane.showMessageDialog(null, "<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error<br>" + e.getMessage() + "<br>"
+						+ "<br>The application will attempt to ignore this error.</div></html>", "Mod Manager Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -1143,6 +1138,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modlistFailedIndicatorLink
 				.setText("<HTML><font color=#ff2020><u>" + invalidMods.size() + " mod" + (invalidMods.size() != 1 ? "s" : "") + " failed to load</u></font></HTML>");
 		modlistFailedIndicatorLink.setVisible(invalidMods.size() > 0);
+		if (loadedFirstTime) {
+			labelStatus.setText("Reloaded mods");
+		} else {
+			loadedFirstTime = true;
+		}
 	}
 
 	protected void updateApplyButton() {
@@ -1343,9 +1343,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		// Tools
 		toolsMenu = new JMenu("Tools");
 
-		toolsMergeMod = new JMenuItem("Mod Merging Utility");
-		toolsMergeMod.setToolTipText(
-				"<html>Allows you to merge Mod Manager mods together and resolve conflicts between mods<br>This tool is deprecated and may be removed in the future</html>");
+		//toolsMergeMod = new JMenuItem("Mod Merging Utility");
+		//toolsMergeMod.setToolTipText(
+		//		"<html>Allows you to merge Mod Manager mods together and resolve conflicts between mods<br>This tool is deprecated and may be removed in the future</html>");
 
 		toolsOpenME3Dir = new JMenuItem("Open BIOGame directory");
 		toolsOpenME3Dir.setToolTipText("Opens a Windows Explorer window in the BIOGame Directory");
@@ -1368,8 +1368,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsUnpackDLC = new JMenuItem("DLC Unpacker");
 		toolsUnpackDLC.setToolTipText("Opens the Unpack DLC window so you can unpack DLC automatically");
 
-		toolsMountdlcEditor = new JMenuItem("Mount.dlc Editor");
-		toolsMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
+		toolMountdlcEditor = new JMenuItem("Mount.dlc Editor");
+		toolMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
 
 		toolME3Config = new JMenuItem("ME3 Config Tool");
 		toolME3Config.setToolTipText("<html>Opens the ME3 Configuration Utility that comes packaged with the game.<br>Lets you configure graphics and audio settings.</html>");
@@ -1378,13 +1378,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementModMaker.addActionListener(this);
 		modManagementASI.addActionListener(this);
 		modManagementConflictDetector.addActionListener(this);
-		toolsMergeMod.addActionListener(this);
+		//toolsMergeMod.addActionListener(this);
 		modManagementCheckallmodsforupdate.addActionListener(this);
 		toolsUnpackDLC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
 		toolsGrantWriteAccess.addActionListener(this);
 		modManagementPatchLibary.addActionListener(this);
-		toolsMountdlcEditor.addActionListener(this);
+		toolMountdlcEditor.addActionListener(this);
 
 		// DEV
 		devMenu = new JMenu("Mod Development");
@@ -1395,6 +1395,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		moddevOfficialDLCManager.addActionListener(this);
 		moddevOfficialDLCManager.setToolTipText("Allows you to quickly enable or disable official BioWare DLC for testing");
 		devMenu.add(mountMenu);
+		devMenu.add(toolMountdlcEditor);
 		devMenu.add(modDevStarterKit);
 		devMenu.add(moddevOfficialDLCManager);
 		devMenu.add(moddevUpdateXMLGenerator);
@@ -1411,8 +1412,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolTankmasterTLK.addActionListener(this);
 		toolTankmasterCoalFolder.addActionListener(this);
 		toolTankmasterCoalUI.addActionListener(this);
-		toolsMenu.add(toolsMergeMod);
-		toolsMenu.add(toolsMountdlcEditor);
+		//toolsMenu.add(toolsMergeMod);
 		// toolsMenu.add(toolGUITransplant);
 		toolsMenu.add(toolsUnpackDLC);
 		toolsMenu.add(toolsAutoTOCGame);
@@ -2085,20 +2085,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == actionOptions) {
 			new OptionsWindow(this);
-		} else if (e.getSource() == toolsMergeMod) {
-			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-					"The mod merging tool has been deprecated.\nIt is no longer tested, and may break. To merge mods, install both and then run AutoTOC on the game.\nThe final applied mod will take precedence if there are conflicts.",
-					"Deprecated Tool", JOptionPane.WARNING_MESSAGE);
-			if (ModManager.validateNETFrameworkIsInstalled()) {
-				ModManager.debugLogger.writeMessage("Opening Mod Merging utility");
-				updateApplyButton();
-				new MergeModWindow(this);
-			} else {
-				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
-				ModManager.debugLogger.writeMessage("Merge Tool: Missing .NET Framework");
-				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods.");
-			}
+			/*
+			 * } else if (e.getSource() == toolsMergeMod) {
+			 * JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+			 * "The mod merging tool has been deprecated.\nIt is no longer tested, and may break. To merge mods, install both and then run AutoTOC on the game.\nThe final applied mod will take precedence if there are conflicts."
+			 * , "Deprecated Tool", JOptionPane.WARNING_MESSAGE); if
+			 * (ModManager.validateNETFrameworkIsInstalled()) {
+			 * ModManager.debugLogger.writeMessage("Opening Mod Merging utility"
+			 * ); updateApplyButton(); new MergeModWindow(this); } else {
+			 * updateApplyButton();
+			 * labelStatus.setText(".NET Framework 4.5 or higher is missing");
+			 * ModManager.debugLogger.
+			 * writeMessage("Merge Tool: Missing .NET Framework"); new
+			 * NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods."
+			 * ); }
+			 */
 		} else if (e.getSource() == toolME3Config) {
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Opening ME3 Config tool");
@@ -2143,7 +2144,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"The BIOGame directory is not valid.\nCannot unpack DLC without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
-		} else if (e.getSource() == toolsMountdlcEditor) {
+		} else if (e.getSource() == toolMountdlcEditor) {
 			new MountFileEditorWindow();
 		} else if (e.getSource() == toolsOpenME3Dir) {
 			openME3Dir();
@@ -3410,11 +3411,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 *            the correct one
 	 */
 	public void highlightMod(Mod searchmod) {
-		for (int i = 0; i < modModel.size(); i++) {
-			Mod mod = modModel.getElementAt(i);
-			if (mod.getDescFile().equals(searchmod.getDescFile()) && searchmod.getDescFile() != null) {
-				modList.setSelectedIndex(i);
-				return;
+		if (searchmod != null) {
+			for (int i = 0; i < modModel.size(); i++) {
+				Mod mod = modModel.getElementAt(i);
+				if (mod.getDescFile().equals(searchmod.getDescFile()) && searchmod.getDescFile() != null) {
+					modList.setSelectedIndex(i);
+					return;
+				}
 			}
 		}
 	}

@@ -498,7 +498,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, str, "MixIns Error", JOptionPane.ERROR_MESSAGE);
 			}
 			dispose();
-			new ModManagerWindow(false);
+			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 		}
 	}
 

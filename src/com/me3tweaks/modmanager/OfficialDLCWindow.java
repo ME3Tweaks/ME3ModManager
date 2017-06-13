@@ -178,9 +178,7 @@ public class OfficialDLCWindow extends JDialog {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
 				if (somethingChanged) {
-					JOptionPane.showMessageDialog(OfficialDLCWindow.this, "The DLC configuration has changed.\nMods will reload to update their configuration.",
-							"Mods require reloading", JOptionPane.INFORMATION_MESSAGE);
-					new ModManagerWindow(false);
+					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 				}
 			}
 		});

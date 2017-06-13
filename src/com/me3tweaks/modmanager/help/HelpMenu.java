@@ -72,8 +72,7 @@ public class HelpMenu {
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
 			FileUtils.writeStringToFile(ModManager.getHelpFile(), responseString);
-			ModManager.debugLogger
-					.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getHelpFile().exists());
+			ModManager.debugLogger.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getHelpFile().exists());
 			//Parse, download resources
 			DocumentBuilder db;
 			try {
@@ -118,7 +117,8 @@ public class HelpMenu {
 		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
 
 		helpGetLog = new JMenuItem("Generate Diagnostics Log");
-		helpGetLog.setToolTipText("<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
+		helpGetLog.setToolTipText(
+				"<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
 
 		helpLogViewer = new JMenuItem("View Mod Manager log");
 		helpLogViewer.setToolTipText("<html>View the current session log</html>");
@@ -182,9 +182,8 @@ public class HelpMenu {
 		helpGetLog.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!ModManager.logging) {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-							"You must enable logging via the Actions > Options menu before logs are generated.", "Logging disabled",
-							JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "You must enable logging via the Actions > Options menu before logs are generated.",
+							"Logging disabled", JOptionPane.ERROR_MESSAGE);
 				} else {
 					copyLogToClipboard();
 				}
@@ -193,22 +192,18 @@ public class HelpMenu {
 		helpEmailFemShep.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JOptionPane
-						.showMessageDialog(
-								ModManagerWindow.ACTIVE_WINDOW,
-								"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>"
-										+ "Please email me if you have crashes or bugs, or use the forums.<br>"
-										+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
-										+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
-										+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
-										+ "3. Leave the default options unless instructed otherwise. Upload your log to pastebin.<br>"
-										+ "4. In your email, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
-										+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
-										+ "Please do not do any other operations as it makes the logs harder to read.<br>"
-										+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
-										+ "Please note that I only speak English.<br><br>"
-										+ "You can email me at femshep@me3tweaks.com.</div></html>", "Contacting FemShep",
-								JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+						"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>" + "Please email me if you have crashes or bugs, or use the forums.<br>"
+								+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
+								+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
+								+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
+								+ "3. Leave the default options unless instructed otherwise. Upload your log to pastebin.<br>"
+								+ "4. In your email, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
+								+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
+								+ "Please do not do any other operations as it makes the logs harder to read.<br>"
+								+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
+								+ "Please note that I only speak English.<br><br>" + "You can email me at femshep@me3tweaks.com.</div></html>",
+						"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 		helpForums.addActionListener(new ActionListener() {
@@ -314,7 +309,7 @@ public class HelpMenu {
 		for (int i = 0; i < itemsOfMenu.getLength(); i++) {
 			Element itemElem = (Element) itemsOfMenu.item(i);
 			JMenuItem item = createMenuItemFromElement(itemElem, validateOnly);
-			if (!validateOnly) {
+			if (!validateOnly && item != null) {
 				menu.add(item);
 			}
 		}
@@ -404,7 +399,9 @@ public class HelpMenu {
 		}
 
 		JMenuItem subMenuItem = new JMenuItem(title);
-		subMenuItem.setToolTipText(tooltipText);
+		if (tooltipText != null && !tooltipText.equals("")) {
+			subMenuItem.setToolTipText(tooltipText);
+		}
 
 		subMenuItem.addActionListener(new ActionListener() {
 
@@ -414,8 +411,7 @@ public class HelpMenu {
 					try {
 						ResourceUtils.openWebpage(new URL(url));
 					} catch (MalformedURLException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+						ModManager.debugLogger.writeErrorWithException("Help item has invalid URL:", e1);
 					}
 				} else if (!resource.equals("")) {
 					HelpItemPackage pack = new HelpItemPackage();
@@ -424,67 +420,11 @@ public class HelpMenu {
 					pack.setModalTitle(title);
 					new ResourceWindowHelpModal(pack);
 				} else {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "<html><div style=\"width: 300px\">" + content + "</div></html>",
-							modalTitle, messageType);
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "<html><div style=\"width: 300px\">" + content + "</div></html>", modalTitle, messageType);
 				}
 			}
 		});
 
 		return subMenuItem;
-	}
-
-	/**
-	 * Reads the cached latesthelp.xml file in the data/help directory and
-	 * parses it into menus to add
-	 * 
-	 * @return
-	 */
-	public static JMenu getHowDoIMenu_OLD() {
-		JMenu menu = new JMenu("Commonly Asked Questions");
-		ArrayList<HelpMenuItem> menuItems = new ArrayList<HelpMenuItem>();
-		menuItems
-				.add(new HelpMenuItem(
-						"How do I add a mod",
-						"Adding Mods to Mod Manager",
-						"To add a mod to Mod Manager, you will need a Mod Manager mod package. This is a folder containing a valid moddesc.ini file.<br>Put this folder in the mods/ directory and then restart Mod Manager."));
-		menuItems.add(new HelpMenuItem("How do I remove a mod", "Removing a mod from Mod Manager",
-				"To remove a mod from Mod Manager, delete its folder from the mods/ directory."));
-		menuItems
-				.add(new HelpMenuItem(
-						"How do I install a mod",
-						"Install a mod",
-						"Before installing a mod, make sure your DLC is backed up and you have created your repair game database. Then simply choose the mod on the left and click install. You may need to run ME3CMM.exe as administrator depending on where you put Mass Effect 3."));
-		menuItems
-				.add(new HelpMenuItem(
-						"How do I uninstall a mod",
-						"Uninstalling Mods",
-						"Uninstalling mods means you are restoring files. You cannot selectively uninstall a mod with Mod Manager, you can only return to your snapshotted state or original DLC depending on how it was before you installed the mod. Due to how easy mods are to install this isn't much of an issue. Use the items in the restore menu to restore your files. Hover over the entries to get a description of what each does."));
-		menuItems
-				.add(new HelpMenuItem(
-						"Can I use texture mods with Mod Manager",
-						"Mixing Mod Types",
-						"Mod Manager is not meant for installing texture mods, as it is full file replacement and texture mods modify a lot of files. As of 4.1 Beta 2 there is limited support for mixing Mod Manager mods and non Mod Manager mods.<br><br>First, backup your DLC with Mod Manager from the vanilla ME3 state.<br>Then install your texture mods. This will unpack your DLC so it is important you back it up with Mod Manager first. It will be very difficult to do this step (and have the game work or be restored) after you start using Mod Manager for mod management.<br>Now use Mod Manager, create your repair database, and use the option in the options menu to use game TOC files. You can then use Mod Manager like normal, but once you start using Mod Manager, modifications outside of it can and likely will break the game.<br><br>Mod Manager does not support mixing mods this way, so if you have issues with this method, you are on your own. There are simply too many different problems that can occur."));
-		menuItems
-				.add(new HelpMenuItem(
-						"Can I get banned for using mods",
-						"Ban Notice",
-						"Technically you can with Multiplayer mods. However BioWare has no active staff to do so and they haven't banned anyone since early 2013. That doesn't mean you should run mega-million, 1 hit kill or masochist mods in public lobbies."));
-
-		for (HelpMenuItem item : menuItems) {
-			menu.add(item.createMenuItem());
-		}
-
-		JMenuItem dlcFailure = new JMenuItem("DLC is not authorized/not loading");
-		dlcFailure.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				//new DLCFailedWindow();
-			}
-		});
-		menu.add(dlcFailure);
-
-		return menu;
-
 	}
 }

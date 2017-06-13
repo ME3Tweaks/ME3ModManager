@@ -49,16 +49,6 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 		setMinimumSize(new Dimension(300, 300));
 		setIconImages(ModManager.ICONS);
 
-		addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent e) {
-				ModManager.debugLogger.writeMessage("Closing ModImportWindow. Should we reload? " + reloadWhenClosed);
-				if (reloadWhenClosed) {
-					ModManagerWindow.ACTIVE_WINDOW = new ModManagerWindow(false); //reload
-				}
-			}
-		});
-
 		File mainDlcDir = new File(ModManager.appendSlash(biogameDir) + "DLC" + File.separator);
 		String[] directories = mainDlcDir.list(new FilenameFilter() {
 			@Override
@@ -115,7 +105,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 			JScrollPane scroll = new JScrollPane(dlcModlist, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			cPanel.add(scroll, BorderLayout.CENTER);
 		} else {
-			cPanel.add(new JLabel("<html><center><font color='#700000'>No Non-Mod Manager<br>Custom DLC mods are installed</font></center></html>", SwingConstants.CENTER));
+			cPanel.add(new JLabel("<html><center>No active Non-Mod Manager<br>Custom DLC mods are installed</center></html>", SwingConstants.CENTER));
 		}
 
 		cPanel.setBorder(new TitledBorder(new EtchedBorder(), "Installed Custom DLC mods"));

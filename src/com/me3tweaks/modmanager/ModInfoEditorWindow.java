@@ -103,7 +103,7 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 				ModManager.debugLogger.writeException(e1);
 			}
 			dispose();
-			new ModManagerWindow(false);
+			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 		}
 	}
 }
