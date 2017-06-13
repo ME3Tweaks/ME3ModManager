@@ -92,7 +92,7 @@ public class AlternateCustomDLC {
 		while (strok.hasMoreTokens()) {
 			String dlc = strok.nextToken();
 			conditionalDLCs.add(dlc);
-			System.out.println("Read conditional DLC in multi dlc "+dlc);
+			//System.out.println("Read conditional DLC in multi dlc "+dlc);
 		}
 	}
 

@@ -651,8 +651,8 @@ public class CustomDLCConflictWindow extends JDialog {
 			publish(new ThreadCommand("SET_PROGRESS", null, 1.0));
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("-autotoc");
+			commandBuilder.add(ModManager.getCommandLineToolsDir() + "FullAutoTOC.exe");
+			commandBuilder.add("--tocfolders");
 			commandBuilder.add(skg.getGeneratedMod().getModPath() + "DLC_MOD_" + internalName);
 			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 			ModManager.debugLogger.writeMessage("Running AutoTOC on newly created mod.");
@@ -661,7 +661,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			ProcessResult pr = ModManager.runProcess(pb);
 			returncode = pr.getReturnCode();
 			if (returncode != 0 || pr.hadError()) {
-				ModManager.debugLogger.writeError("ME3Explorer returned a non 0 code (or threw error) running AutoTOC: " + returncode);
+				ModManager.debugLogger.writeError("FullAutoTOC returned a non 0 code (or threw error) running AutoTOC: " + returncode);
 			}
 			return true;
 		}

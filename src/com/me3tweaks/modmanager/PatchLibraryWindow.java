@@ -87,8 +87,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				while (numberofupdatedmixins == -1) {
 					try {
 						ModManager.debugLogger.writeMessage("Loading mixin library in automated mode, waiting for it to finish");
-						new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), PatchLibraryWindow.AUTOUPDATE_MODE)
-								.execute();
+						new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), PatchLibraryWindow.AUTOUPDATE_MODE).execute();
 						lock.wait();
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
@@ -215,8 +214,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					continue;
 				}
 
-				if (!modifiesPatchBioPlayerController
-						&& p.getTargetPath().equals("/BIOGame/DLC/DLC_TestPatch/CookedPCConsole/Patch_BioPlayerController.pcc")) {
+				if (!modifiesPatchBioPlayerController && p.getTargetPath().equals("/BIOGame/DLC/DLC_TestPatch/CookedPCConsole/Patch_BioPlayerController.pcc")) {
 					patchesToAdd.add(vibrationPlatformCheckPatch);
 					ModManager.debugLogger.writeMessage("Added patch 1557 (VIBRATION PATCH) to compilation - ModMaker Controller Addins");
 					modifiesPatchBioPlayerController = true;
@@ -228,7 +226,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				ModManager.debugLogger.writeMessage("No controller add-ins required as no mixins create conflicting files");
 			} else {
 				patchesToApply.addAll(patchesToAdd);
-				ModManager.debugLogger.writeMessage("Added "+patchesToAdd.size()+" controller fixing mixins.");
+				ModManager.debugLogger.writeMessage("Added " + patchesToAdd.size() + " controller fixing mixins.");
 			}
 		}
 
@@ -426,16 +424,14 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				String input = "";
 				while (nameIsBad) {
 					input = JOptionPane.showInputDialog(PatchLibraryWindow.this,
-							"Input a name for the mod that will be created from these MixIns.\nAlphanumberic only, must be less than 20 characters."
-									+ errormsg,
+							"Input a name for the mod that will be created from these MixIns.\nAlphanumberic only, must be less than 20 characters." + errormsg,
 							"Create a new mod from MixIns", JOptionPane.QUESTION_MESSAGE);
 					if (input == null) {
 						return;
 					}
 					input = input.trim();
 
-					boolean asciionly = input.chars()
-							.allMatch(c -> c == 0x20 || c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B)); //what the f is this?
+					boolean asciionly = input.chars().allMatch(c -> c == 0x20 || c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B)); //what the f is this?
 					if (!asciionly) {
 						ModManager.debugLogger.writeError("Name is not ascii alphanumeric only: " + input);
 						errormsg = "\nMod name must be alphanumberic.";
@@ -492,8 +488,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() <= 0) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mixins were applied.", "MixIns applied",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mixins were applied.", "MixIns applied", JOptionPane.INFORMATION_MESSAGE);
 			} else {
 				String str = "The following MixIns failed to apply:\n";
 				for (Patch p : failedpatches) {
@@ -538,12 +533,8 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		protected Void doInBackground() throws Exception {
 			// Download XML from server
 			ModManager.debugLogger.writeMessage("================DOWNLOADING MIXIN LIBRARY INFORMATION==============");
-			String link;
-			if (ModManager.IS_DEBUG) {
-				link = "http://webdev-mgamerz.c9.io/mixins/libraryinfo";
-			} else {
-				link = "https://me3tweaks.com/mixins/libraryinfo";
-			}
+			String link = "https://me3tweaks.com/mixins/libraryinfo";
+
 			ModManager.debugLogger.writeMessage("Fetching mixin info from " + link);
 			try {
 				String modDelta = IOUtils.toString(new URL(link));
@@ -589,8 +580,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						}
 
 						if (localpatch.getPatchVersion() < serverpack.getPatchver()) {
-							ModManager.debugLogger
-									.writeMessage("Local MixIn " + serverpack.getPatchname() + " is out of date, adding to download queue");
+							ModManager.debugLogger.writeMessage("Local MixIn " + serverpack.getPatchname() + " is out of date, adding to download queue");
 							continue;
 						}
 
@@ -600,8 +590,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						break;
 					}
 					if (needsDownloaded) {
-						ModManager.debugLogger
-								.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally, adding to download queue");
+						ModManager.debugLogger.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally, adding to download queue");
 						packsToDownload.add(serverpack);
 					}
 				}

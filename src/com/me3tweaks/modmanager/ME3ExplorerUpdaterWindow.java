@@ -344,9 +344,9 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 		sb.append("::Remove old folder, copy new one");
 		sb.append("\r\n");
 		sb.append("rmdir /S /Q ");
-		sb.append(ModManager.getME3ExplorerEXEDirectory(false));
+		sb.append(ModManager.getME3ExplorerEXEDirectory_LEGACY(false));
 		sb.append("\r\n");
-		sb.append("xcopy /Q /Y /S ME3EXPNewVersion \""+ModManager.getME3ExplorerEXEDirectory(false)+"\"");
+		sb.append("xcopy /Q /Y /S ME3EXPNewVersion \""+ModManager.getME3ExplorerEXEDirectory_LEGACY(false)+"\"");
 		sb.append("\r\n");
 		sb.append("::Cleanup");
 		sb.append("\r\n");

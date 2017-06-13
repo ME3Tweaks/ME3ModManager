@@ -98,8 +98,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		JLabel modmakerLogoLabel = null;
 		try {
 			modmakerLogo = ImageIO.read(ModMakerEntryWindow.class.getResourceAsStream("/resource/modmaker.png"));
-			modmakerLogo = ResourceUtils.getScaledInstance(
-					modmakerLogo, 290, 109, RenderingHints.VALUE_INTERPOLATION_BILINEAR, true);
+			modmakerLogo = ResourceUtils.getScaledInstance(modmakerLogo, 290, 109, RenderingHints.VALUE_INTERPOLATION_BILINEAR, true);
 			modmakerLogoLabel = new JLabel(new ImageIcon(modmakerLogo));
 			modmakerLogoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		} catch (Exception e1) {
@@ -184,7 +183,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		getCodePane.add(Box.createRigidArea(new Dimension(10, 5)));
 		getCodePane.add(sideloadButton);
 		getCodePane.add(Box.createHorizontalGlue());
-		modMakerPanel.add(Box.createRigidArea(new Dimension(10,5)));
+		modMakerPanel.add(Box.createRigidArea(new Dimension(10, 5)));
 		modMakerPanel.add(getCodePane);
 		modMakerPanel.add(Box.createVerticalGlue());
 		if (!hasDLCBypass) {
@@ -249,23 +248,26 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			File tankMasterCompiler = new File(ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe");
 			if (!tankMasterCompiler.exists()) {
 				dispose();
+				ModManager.debugLogger.writeError("Tankmaster's compiler not detected. Abort. Searched at: " + tankMasterCompiler.toString());
 				JOptionPane.showMessageDialog(null,
-						"<html>You need TankMaster's Coalesced Compiler in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 3 in the TankMaster Compiler folder.</html>",
+						"<html>You need TankMaster's Coalesced Compiler in order to use ModMaker.<br><br>It should have been bundled with Mod Manager in the data/tankmaster_coalesce folder.</html>",
 						"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 
-				ModManager.debugLogger.writeMessage("Tankmaster's compiler not detected. Abort. Searched at: " + tankMasterCompiler.toString());
 				return false;
 			}
 			ModManager.debugLogger.writeMessage("Detected TankMaster coalesced compiler");
 
-			String me3explorerdir = ModManager.getME3ExplorerEXEDirectory(false);
-			if (me3explorerdir == null) {
+			String commandlinetoolsdir = ModManager.getCommandLineToolsDir();
+			File pccdecompress = new File(commandlinetoolsdir + "PCCDecompress.exe");
+			File sfarextractor = new File(commandlinetoolsdir + "SFARTools-Extract.exe");
+			if (!pccdecompress.exists() || !sfarextractor.exists()) {
 				dispose();
+				ModManager.debugLogger.writeError("Mod Manager Command Line tools not present, aborting.");
+
 				JOptionPane.showMessageDialog(null,
-						"<html>You need ME3Explorer in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 4 in the data/ME3Explorer folder.</html>",
+						"<html>Mod Manager's Command Line library is not installed. Mod Manager should automatically download this on startup from Github.</html>",
 						"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 
-				ModManager.debugLogger.writeMessage("ME3Explorer not detected. Abort.");
 				return false;
 			}
 		} catch (Exception e) {

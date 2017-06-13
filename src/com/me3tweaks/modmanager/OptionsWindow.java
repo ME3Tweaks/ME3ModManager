@@ -32,7 +32,6 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoUpdateME3Explorer;
 	private JCheckBox skipUpdate;
 	private JCheckBox logModmaker;
-	private JCheckBox autoTocPostInstall;
 	private AbstractButton logModInit;
 	private JCheckBox logPatchInit;
 	private JCheckBox autoFixControllerModMaker;
@@ -303,29 +302,6 @@ public class OptionsWindow extends JDialog {
 			});
 		}
 
-		autoTocPostInstall = new JCheckBox("<html><div style=\"width: 300px\">Run AutoTOC on game after mod install</div></html>");
-		autoTocPostInstall.setToolTipText("<html>Runs AutoTOC on the game after a mod install to help prevent game crashes</html>");
-		autoTocPostInstall.setSelected(ModManager.POST_INSTALL_AUTOTOC_INSTEAD);
-		autoTocPostInstall.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Wini ini;
-				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
-					ModManager.debugLogger.writeMessage("User changing run autotoc post install to " + autoTocPostInstall.isSelected());
-					ini.put("Settings", "performautotocaftermodinstall", autoTocPostInstall.isSelected() ? "1" : "0");
-					ModManager.POST_INSTALL_AUTOTOC_INSTEAD = autoTocPostInstall.isSelected();
-					ini.store();
-				} catch (InvalidFileFormatException ex) {
-					ex.printStackTrace();
-				} catch (IOException ex) {
-					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
-				}
-			}
-		});
-
 		logModmaker = new JCheckBox("<html><div style=\"width: 300px\">Log ModMaker Coalesced Compiler</div></html>");
 		logModmaker.setToolTipText("<html>ModMaker generates a large set of logs while compiling the coalesced files for ModMaker mods, which can slow down the process and generate large log files.<br>Turn this on only if you need to debug ModMaker.</html>");
 		logModmaker.setSelected(ModManager.LOG_MODMAKER);
@@ -397,7 +373,6 @@ public class OptionsWindow extends JDialog {
 		optionsPanel.add(autoInjectKeybindsModMaker);
 		optionsPanel.add(autoFixControllerModMaker);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
-		optionsPanel.add(autoTocPostInstall);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(autoUpdateModManager);
 		if (skipUpdate != null) {

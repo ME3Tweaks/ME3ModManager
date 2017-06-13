@@ -112,11 +112,14 @@ public class ModInstallWindow extends JDialog {
 		ArrayList<ModJob> missingModules = new ArrayList<ModJob>();
 		for (ModJob job : mod.jobs) {
 			if (job.getJobType() == ModJob.DLC) {
-				String me3exppath = ModManager.getME3ExplorerEXEDirectory(false);
-				if (me3exppath.equals("")) {
-					//me3explorer is missing
-					ModManager.debugLogger.writeError("Unable to find ME3Explorer, cancelling mod install");
-					JOptionPane.showMessageDialog(null, "Installation of mods requires ME3Explorer in the data directory.\nMod installation cannot continue.",
+				String commandlinetoolsdir = ModManager.getCommandLineToolsDir();
+				File fullautotoc = new File(commandlinetoolsdir + "FullAutoTOC.exe");
+				File sfarinjector = new File(commandlinetoolsdir + "SFARTools-Inject.exe");
+				if (!fullautotoc.exists() || !sfarinjector.exists()) {
+					dispose();
+					ModManager.debugLogger.writeError("Mod Manager Command Line tools are not available. Aborting installation");
+					JOptionPane.showMessageDialog(null,
+							"Installation of mods requires the Mod Manager Command Line tools library.\nThis will automatically download on startup when connected to the internet.\nMod installation cannot continue.",
 							"Required Component Missing", JOptionPane.ERROR_MESSAGE);
 					return false;
 				}
@@ -161,7 +164,7 @@ public class ModInstallWindow extends JDialog {
 	private void setupWindow(Mod mod) {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html><center>Now Installing<br>"+mod.getModName()+"</center></html>",SwingConstants.CENTER);
+		infoLabel = new JLabel("<html><center>Now Installing<br>" + mod.getModName() + "</center></html>", SwingConstants.CENTER);
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
@@ -232,8 +235,6 @@ public class ModInstallWindow extends JDialog {
 			} else {
 				ModManager.debugLogger.writeMessage("A DLC bypass is installed");
 			}
-			
-			
 
 			boolean checkedDB = false;
 			for (ModJob job : jobs) {
@@ -372,15 +373,18 @@ public class ModInstallWindow extends JDialog {
 				if (bghDB == null) {
 					//cannot continue
 					failedLoadingDB = true;
-					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
-							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,
+							"<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
+									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+							"Database Failure", JOptionPane.ERROR_MESSAGE);
 					return true;
 				}
 
 			}
 			//check if DB exists
 			if (!bghDB.isBasegameTableCreated()) {
-				JOptionPane.showMessageDialog(ModInstallWindow.this, "The game repair database has not been created.\nMods that affect the basegame or official DLC require the game repair database to install.",
+				JOptionPane.showMessageDialog(ModInstallWindow.this,
+						"The game repair database has not been created.\nMods that affect the basegame or official DLC require the game repair database to install.",
 						"No Game Repair Database", JOptionPane.ERROR_MESSAGE);
 				return true; //open DB window
 			}
@@ -509,7 +513,7 @@ public class ModInstallWindow extends JDialog {
 					// install file.
 					File unpacked = new File(me3dir + fileToReplace);
 					Path originalpath = Paths.get(unpacked.toString());
-					if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+					if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin")) {
 						try {
 							publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 							Path newfilepath = Paths.get(newFile);
@@ -701,7 +705,7 @@ public class ModInstallWindow extends JDialog {
 				// install file.
 				File unpacked = new File(me3dir + fileToReplace);
 				Path originalpath = Paths.get(unpacked.toString());
-				if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+				if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin")) {
 
 					try {
 						Path newfilepath = Paths.get(newFile);
@@ -938,8 +942,8 @@ public class ModInstallWindow extends JDialog {
 			if (job.getFilesToReplaceTargets().size() > 0) {
 
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcinject");
+				commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Inject.exe");
+				commandBuilder.add("--sfarpath");
 				String sfarName = "Default.sfar";
 				if (job.TESTPATCH) {
 					sfarName = "Patch_001.sfar";
@@ -952,6 +956,9 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
+				commandBuilder.add("--replacefiles");
+				commandBuilder.add("--files");
+
 				ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
 				ArrayList<String> newFiles = job.getFilesToReplace();
 				ModManager.debugLogger.writeMessage("Number of files to replace: " + filesToReplace.size());
@@ -959,20 +966,12 @@ public class ModInstallWindow extends JDialog {
 				publish("Updating " + filesToReplace.size() + " files in " + job.getJobName());
 				for (int i = 0; i < filesToReplace.size(); i++) {
 					commandBuilder.add(filesToReplace.get(i));
+
 					String newFile = newFiles.get(i);
 					commandBuilder.add(newFile);
 				}
-
-				// System.out.println("Building command");
-				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-				// Debug stuff
-				StringBuilder sb = new StringBuilder();
-				for (String arg : command) {
-					sb.append(arg + " ");
-				}
-				ModManager.debugLogger.writeMessage("Executing injection command: " + sb.toString());
 				int returncode = 1;
-				ProcessBuilder pb = new ProcessBuilder(command);
+				ProcessBuilder pb = new ProcessBuilder(commandBuilder);
 				ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
 				// p = Runtime.getRuntime().exec(command);
 				ProcessResult pr = ModManager.runProcess(pb);
@@ -984,8 +983,8 @@ public class ModInstallWindow extends JDialog {
 			//ADD FILE TASK
 			if (job.getFilesToAdd().size() > 0) {
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcaddfiles");
+				commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Inject.exe");
+				commandBuilder.add("--sfarpath");
 				String sfarName = "Default.sfar";
 				if (job.TESTPATCH) {
 					sfarName = "Patch_001.sfar";
@@ -998,6 +997,8 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
+				commandBuilder.add("--addfiles");
+				commandBuilder.add("--files");
 				ArrayList<String> filesToAdd = job.getFilesToAdd();
 				ArrayList<String> filesToAddTargets = job.getFilesToAddTargets();
 				ModManager.debugLogger.writeMessage("Number of files to add: " + filesToAdd.size());
@@ -1013,11 +1014,11 @@ public class ModInstallWindow extends JDialog {
 				for (String arg : command) {
 					sb.append(arg + " ");
 				}
-				ModManager.debugLogger.writeMessage("Executing injection command: " + sb.toString());
+				ModManager.debugLogger.writeMessage("[" + job.getJobName() + "] Executing injection");
 				int returncode = 1;
 				ProcessBuilder pb = new ProcessBuilder(command);
 				ModManager.debugLogger.writeMessage("Executing process for SFAR File Injection (Adding files).");
-				ProcessResult pr = ModManager.runProcess(pb);
+				ProcessResult pr = ModManager.runProcess(pb, job.getJobName());
 				returncode = pr.getReturnCode();
 				ModManager.debugLogger.writeMessage("ProcessSFARJob ADD FILES returned 0: " + (returncode == 0));
 				result = (returncode == 0) && result;
@@ -1026,8 +1027,8 @@ public class ModInstallWindow extends JDialog {
 			//REMOVE FILE TASK
 			if (job.getFilesToRemoveTargets().size() > 0) {
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcremovefiles");
+				commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Inject.exe");
+				commandBuilder.add("--sfarpath");
 				String sfarName = "Default.sfar";
 				if (job.TESTPATCH) {
 					sfarName = "Patch_001.sfar";
@@ -1040,6 +1041,8 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
+				commandBuilder.add("--deletefiles");
+				commandBuilder.add("--files");
 				ArrayList<String> filesToRemove = job.getFilesToRemoveTargets();
 				ModManager.debugLogger.writeMessage("Number of files to remove: " + filesToRemove.size());
 
@@ -1105,26 +1108,6 @@ public class ModInstallWindow extends JDialog {
 			}
 			//autotoc if necessary, create metadata file
 			for (String str : job.getDestFolders()) {
-				if (alternatesApplied) {
-					if (!ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
-						publish("Automatically modified " + str + ", updating PCConsoleTOC");
-						//needs TOC on customDLC
-						ArrayList<String> commandBuilder = new ArrayList<String>();
-						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-						commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-						commandBuilder.add("-autotoc");
-						commandBuilder.add(dlcdir + File.separator + str);
-						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-						ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Updating PCConsoleTOC for CustomDLC that had alternate applied");
-						int returncode = 1;
-						ProcessBuilder pb = new ProcessBuilder(command);
-						ProcessResult pr = ModManager.runProcess(pb);
-						returncode = pr.getReturnCode();
-						if (returncode != 0 || pr.hadError()) {
-							ModManager.debugLogger.writeError("[" + job.getJobName() + "]ME3Explorer returned a non 0 code (or threw error) running AutoTOC: " + returncode);
-						}
-					}
-				}
 				try {
 					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
 					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Writing custom DLC metadata file: " + metadatapath);
@@ -1201,7 +1184,7 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("No outdated custom dlc to remove, continuing install...");
 			}
 
-			if (ModManager.POST_INSTALL_AUTOTOC_INSTEAD && !skipTOC) {
+			if (!skipTOC) {
 				ModManager.debugLogger.writeMessage("Running Game-Wide AutoTOC after mod install");
 				new AutoTocWindow(bioGameDir);
 			}
@@ -1268,8 +1251,10 @@ public class ModInstallWindow extends JDialog {
 						}
 						if (bghDB == null) {
 							//cannot continue
-							JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
-									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(null,
+									"<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
+											+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+									"Database Failure", JOptionPane.ERROR_MESSAGE);
 
 						}
 					}

@@ -617,6 +617,7 @@ public class RestoreFilesWindow extends JDialog {
 						publish(taskTitle + ": Restoring " + backup.getName());
 						Files.copy(Paths.get(backup.toString()), Paths.get(ModManager.appendSlash(me3dir) + relative), StandardCopyOption.REPLACE_EXISTING);
 					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("Exception occured restoring " + backup.toString() + ":", e);
 						return false;
 					}
 				}
@@ -745,7 +746,15 @@ public class RestoreFilesWindow extends JDialog {
 		protected void done() {
 			try {
 				boolean result = get();
-				ModManager.debugLogger.writeMessage("RESULT OF RESTORATION THREAD:" + result);
+				ModManager.debugLogger.writeMessage("RESULT OF RESTORATION THREAD: " + result);
+				if (!result) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error occured during restore");
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+							"Errors occured during the file restoration process.\nAll or some of the files did not restore.\nCheck the logs for more information.", "Restoration Error",
+							JOptionPane.ERROR_MESSAGE);
+					dispose();
+					return;
+				}
 				finishRestore();
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Restore thread had an error.", e);
@@ -790,7 +799,6 @@ public class RestoreFilesWindow extends JDialog {
 				break;
 			}
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(status);
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setVisible(true);
 			dispose();
 		}
 	}

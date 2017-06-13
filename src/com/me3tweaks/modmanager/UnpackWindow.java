@@ -143,7 +143,7 @@ public class UnpackWindow extends JDialog {
 				continue;
 			} else {
 				if (dlcName.equals(ModType.TESTPATCH)) {
-					checkbox.setToolTipText("<html>TESTPATCH cannot be unpacked.<br>To unpack for files only you must do it manually through ME3Explorer.</html>");
+					checkbox.setToolTipText("<html>TESTPATCH cannot be unpacked.</html>");
 				}
 				ModManager.debugLogger.writeMessage(dlcName + " was not found.");
 				checkbox.setEnabled(false);
@@ -266,7 +266,7 @@ public class UnpackWindow extends JDialog {
 			if (!dlcPath.exists()) {
 				// Maybe DLC is not installed?
 				if (ModManager.logging) {
-					ModManager.debugLogger.writeMessage(fullDLCDirectory
+					ModManager.debugLogger.writeError(fullDLCDirectory
 							+ " does not exist. It might not be installed (this should have been caught!");
 				}
 				return false;
@@ -277,8 +277,8 @@ public class UnpackWindow extends JDialog {
 
 			if (mainSfar.exists()) {
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcunpack");
+				commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
+				commandBuilder.add("--unpacksfar");
 				commandBuilder.add(mainSfar.getAbsolutePath());
 				commandBuilder.add(new File(bioGameDir).getParent());
 

@@ -16,7 +16,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -36,8 +35,6 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FalseFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
@@ -67,11 +64,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 
 	public ModUpdateWindow(UpdatePackage upackage) {
 		this.upackage = upackage;
-		if (ModManager.IS_DEBUG) {
-			downloadSource = "http://webdev-mgamerz.c9.io/mods/updates/";
-		} else {
-			downloadSource = "https://me3tweaks.com/mods/updates/";
-		}
+		downloadSource = "https://me3tweaks.com/mods/updates/";
 		setupWindow();
 	}
 
@@ -496,8 +489,8 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		protected void done() {
 			dispose();
 			if (amuw == null && !error) {
-				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nYou will need to apply "+upackage.getMod().getModName()+" for the update to take effect.\nMod Manager will now reload mods.", "Update successful",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nYou will need to apply " + upackage.getMod().getModName()
+						+ " for the update to take effect.\nMod Manager will now reload mods.", "Update successful", JOptionPane.INFORMATION_MESSAGE);
 			} else if (amuw == null) {
 				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " failed to update. The Mod Manager log will have more information.", "Updated failed",
 						JOptionPane.ERROR_MESSAGE);

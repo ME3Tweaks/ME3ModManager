@@ -72,7 +72,7 @@ public class MergeModWindow extends JDialog implements ListSelectionListener, Ac
 
 	private void setupWindow() {
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Mod Merger");
+		this.setTitle("Mod Merging Utility (DEPRECATED)");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(900, 363));
 		

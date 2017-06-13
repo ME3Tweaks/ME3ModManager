@@ -480,7 +480,7 @@ public class Mod implements Comparable<Mod> {
 					while (addStrok.hasMoreTokens()) {
 						String addFile = addStrok.nextToken();
 						String targetFile = addTargetStrok.nextToken();
-						System.out.println("Add file target: " + targetFile);
+						//System.out.println("Add file target: " + targetFile);
 						if (!addFile.equals(getSfarFilename(targetFile))) {
 							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs " + getSfarFilename(targetFile));
 							setFailedReason("Mod specifies an addfile/addfiles target task in (" + modHeader + "), but the filenames for source vs targets doesn't match: "
@@ -1085,7 +1085,7 @@ public class Mod implements Comparable<Mod> {
 		if (modCMMVer > ModManager.MODDESC_VERSION_SUPPORT) {
 			modDisplayDescription += ", which is not fully supported by this version of Mod Manager. Update Mod Manager for full support.";
 		}
-		if (classicCode > 0 /* && ModManager.IS_DEBUG */) {
+		if (classicCode > 0) {
 			modDisplayDescription += "\nUpdate code: " + classicCode;
 		}
 
@@ -1100,7 +1100,6 @@ public class Mod implements Comparable<Mod> {
 
 		// Add Modmaker
 		if (modmakerCode > 0) {
-			//modmakerCode = modini.get("ModInfo", "modid");
 			modDisplayDescription += "\nModMaker code: " + modmakerCode;
 		}
 
@@ -1510,7 +1509,7 @@ public class Mod implements Comparable<Mod> {
 				isFirst = true;
 				StringBuilder rfsb = new StringBuilder();
 				for (String file : job.getFilesToReplaceTargets()) {
-					System.out.println("appending: " + file);
+					//System.out.println("appending: " + file);
 					if (isFirst) {
 						isFirst = false;
 					} else {

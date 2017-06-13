@@ -192,18 +192,12 @@ public class AutoTocWindow extends JDialog {
 						completed.incrementAndGet();
 						return true; //skip, this is done AFTER mod has been installed, and will run outside of autotoc window.
 					}
-					ArrayList<String> commandBuilder = new ArrayList<String>();
-					commandBuilder.add(autotocEXE);
-					commandBuilder.add("--tocfolders");
+					ArrayList<String> folders = new ArrayList<>();
 					for (String srcFolder : job.getSourceFolders()) {
-						commandBuilder.add(mod.getModPath() + srcFolder);
+						folders.add(mod.getModPath() + srcFolder);
 					}
-
-					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-					int returncode = 1;
-					ProcessBuilder pb = new ProcessBuilder(command);
-					ProcessResult pr = ModManager.runProcess(pb);
-					returncode = pr.getReturnCode();
+					ProcessResult pr = ModManager.runAutoTOCOnFolders(folders);
+					int returncode = pr.getReturnCode();
 					if (returncode != 0 || pr.hadError()) {
 						ModManager.debugLogger.writeError("Command line AutoTOC did not return with code 0! An error has occured.");
 					} else {
@@ -534,33 +528,6 @@ public class AutoTocWindow extends JDialog {
 
 			ProcessResult pr = ModManager.runProcess(pb);
 			return pr.getReturnCode() == 0;
-
-			/*
-			 * ExecutorService gametocExecutor =
-			 * Executors.newFixedThreadPool(Runtime.getRuntime().
-			 * availableProcessors()); ArrayList<Future<ProcessResult>> futures
-			 * = new ArrayList<Future<ProcessResult>>(); //submit jobs for
-			 * (String unpackedFolder : unpackedTOCPaths) { TOCTask ttask = new
-			 * TOCTask(new File(unpackedFolder).getParent(), false);
-			 * futures.add(gametocExecutor.submit(ttask)); }
-			 * 
-			 * //SFARS for (String sfarPath : sfarPaths) { TOCTask ttask = new
-			 * TOCTask(sfarPath, true);
-			 * futures.add(gametocExecutor.submit(ttask)); }
-			 * gametocExecutor.shutdown(); try {
-			 * gametocExecutor.awaitTermination(5, TimeUnit.MINUTES); for
-			 * (Future<ProcessResult> f : futures) { ProcessResult pr = f.get();
-			 * int returncode = pr.getReturnCode(); if (returncode != 0 ||
-			 * pr.hadError()) { ModManager.debugLogger.
-			 * writeError("ME3Explorer returned a non 0 code (or threw error): "
-			 * + returncode); //throw some sort of error here... } } } catch
-			 * (ExecutionException e) { ModManager.debugLogger.
-			 * writeErrorWithException("EXECUTION EXCEPTION WHILE TOCING ITEM: "
-			 * , e); return null; } catch (Exception e) {
-			 * ModManager.debugLogger.
-			 * writeErrorWithException("UNKNOWN EXCEPTION OCCURED: ", e); return
-			 * null; }
-			 */
 		}
 
 		class TOCTask implements Callable<ProcessResult> {

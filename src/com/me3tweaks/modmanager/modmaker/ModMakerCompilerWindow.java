@@ -14,7 +14,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -57,7 +63,6 @@ import com.me3tweaks.modmanager.ASIModWindow;
 import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.KeybindsInjectionWindow;
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
@@ -181,11 +186,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				//Download
 				ModManager.debugLogger.writeMessage("================DOWNLOADING MOD INFORMATION==============");
 				//ATTEMPT LZMA
-				if (ModManager.IS_DEBUG) {
-					link = "http://webdev-c9-mgamerz.c9.io/modmaker/download.php?id=" + code;
-				} else {
-					link = "https://me3tweaks.com/modmaker/download.php?id=" + code;
-				}
+				link = "https://me3tweaks.com/modmaker/download.php?id=" + code;
 				lzmalink = link + "&method=lzma";
 				ModManager.debugLogger.writeMessage("Fetching mod from " + lzmalink);
 			} else {
@@ -256,14 +257,14 @@ public class ModMakerCompilerWindow extends JDialog {
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
 						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
-				new ModManagerWindow(false);
+				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			} catch (IOException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
 						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
-				new ModManagerWindow(false);
+				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			} catch (ParserConfigurationException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
@@ -271,7 +272,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				dispose();
-				new ModManagerWindow(false);
+				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			} catch (SAXException e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
@@ -279,7 +280,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
 				dispose();
-				new ModManagerWindow(false);
+				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			} catch (Exception e) {
 				running = false;
 				ModManager.debugLogger.writeException(e);
@@ -454,7 +455,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		currentStepProgress = new JProgressBar(0, 100);
 		currentStepProgress.setStringPainted(true);
-		currentStepProgress.setIndeterminate(false);
+		currentStepProgress.setIndeterminate(true);
 		currentStepProgress.setEnabled(false);
 
 		JPanel overallPanel = new JPanel(new BorderLayout());
@@ -579,42 +580,53 @@ public class ModMakerCompilerWindow extends JDialog {
 		private ArrayList<String> coalsToDecompile;
 		private JProgressBar progress;
 		private int numCoals;
+		public AtomicInteger COMPLETED;
 
 		public DecompilerWorker(ArrayList<String> coalsToDecompile, JProgressBar progress) {
 			ModManager.debugLogger.writeMessage("==================DecompilerWorker==============");
-
+			COMPLETED = new AtomicInteger(0);
+			progress.setIndeterminate(true);
 			this.coalsToDecompile = coalsToDecompile;
 			this.numCoals = coalsToDecompile.size();
 			this.progress = progress;
-			currentOperationLabel.setText("Decompiling " + this.coalsToDecompile.get(0));
+			currentOperationLabel.setText("Decompiling Coalesced Files");
 			progress.setValue(0);
 		}
 
 		protected Void doInBackground() throws Exception {
-			int coalsDecompiled = 0;
-			//String path = Paths.get(".").toAbsolutePath().normalize().toString();
-			String path = ModManager.getCompilingDir();
-			for (String coal : coalsToDecompile) {
-				String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
-
-				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(compilerPath);
-				commandBuilder.add(path + "coalesceds\\" + coal);				
-				ProcessBuilder pb = new ProcessBuilder(commandBuilder);
-				ModManager.runProcess(pb);
-				coalsDecompiled++;
-				this.publish(coalsDecompiled);
+			ExecutorService decompilerExecutor = Executors.newFixedThreadPool(4);
+			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
+			for (String coalesced : coalsToDecompile) {
+				CoalescedDecompilerTask cct = new CoalescedDecompilerTask(coalesced, this);
+				futures.add(decompilerExecutor.submit(cct));
 			}
+
+			decompilerExecutor.shutdown();
+			decompilerExecutor.awaitTermination(60, TimeUnit.MINUTES);
+			for (Future<Boolean> f : futures) {
+				try {
+					Boolean result = f.get();
+					if (result == false) {
+						error = true;
+						ModManager.debugLogger.writeError("A coalesced file failed to decompile.");
+						throw new Exception("A coalesced file failed to decompile. Check the logs.");
+					}
+				} catch (ExecutionException e) {
+					ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE DECOMPILING COALESCED FILE (AFTER EXECUTOR FINISHED): ", e);
+				}
+			}
+
 			return null;
 		}
 
 		@Override
 		protected void process(List<Integer> numCompleted) {
-			if (numCoals > numCompleted.get(0)) {
-				currentOperationLabel.setText("Decompiling " + coalsToDecompile.get(numCompleted.get(0)));
-			}
 			progress.setIndeterminate(false);
 			progress.setValue((int) (100 / (numCoals / (float) numCompleted.get(0))));
+		}
+		
+		public void publishProgress(int numberdone) {
+			publish(numberdone);
 		}
 
 		protected void done() {
@@ -649,45 +661,71 @@ public class ModMakerCompilerWindow extends JDialog {
 		private ArrayList<String> coalsToCompile;
 		private JProgressBar progress;
 		private int numCoals;
+		public AtomicInteger COMPLETED;
 
 		public CompilerWorker(ArrayList<String> coalsToCompile, JProgressBar progress) {
 			ModManager.debugLogger.writeMessage("==================CompilerWorker==============");
+			COMPLETED = new AtomicInteger(0);
 			this.coalsToCompile = coalsToCompile;
 			this.numCoals = coalsToCompile.size();
 			this.progress = progress;
-			currentOperationLabel.setText("Recompiling " + this.coalsToCompile.get(0));
-			progress.setIndeterminate(false);
+			currentOperationLabel.setText("Recompiling Coalesced Files");
+			progress.setIndeterminate(true);
 			progress.setValue(0);
 		}
 
 		protected Void doInBackground() throws Exception {
 			int coalsCompiled = 0;
 			String path = ModManager.getCompilingDir();
-			for (String coal : coalsToCompile) {
-				String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
-				//ProcessBuilder compileProcessBuilder = new ProcessBuilder(
-				//		compilerPath, "--xml2bin", path + "\\coalesceds\\"
-				//				+ FilenameUtils.removeExtension(coal)+".xml");
-				ProcessBuilder compileProcessBuilder = new ProcessBuilder(compilerPath,
-						path + "\\coalesceds\\" + FilenameUtils.removeExtension(coal) + "\\" + FilenameUtils.removeExtension(coal) + ".xml", "--mode=ToBin");
-				//log it
-				ModManager.debugLogger.writeMessage("Executing compile command: " + compilerPath + " " + path + "\\coalesceds\\" + FilenameUtils.removeExtension(coal) + "\\"
-						+ FilenameUtils.removeExtension(coal) + ".xml --mode=ToBin");
-				compileProcessBuilder.redirectErrorStream(true);
-				compileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-				Process compileProcess = compileProcessBuilder.start();
-				compileProcess.waitFor();
-				coalsCompiled++;
-				this.publish(coalsCompiled);
+			/*
+			 * for (String coal : coalsToCompile) { String compilerPath =
+			 * ModManager.getTankMasterCompilerDir() +
+			 * "MassEffect3.Coalesce.exe"; ProcessBuilder compileProcessBuilder
+			 * = new ProcessBuilder(compilerPath, path +
+			 * "\\coalesceds\\" + FilenameUtils.removeExtension(coal) + "
+			 * \\" + FilenameUtils.removeExtension(coal) + ".xml", "--mode=ToBin
+			 * "); //log it
+			 * ModManager.debugLogger.writeMessage("Executing compile command: "
+			 * + compilerPath + " " + path +
+			 * "\\coalesceds\\" + FilenameUtils.removeExtension(coal) + "\\" +
+			 * FilenameUtils.removeExtension(coal) + ".xml --mode=ToBin");
+			 * compileProcessBuilder.redirectErrorStream(true);
+			 * compileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.
+			 * INHERIT); Process compileProcess = compileProcessBuilder.start();
+			 * compileProcess.waitFor(); coalsCompiled++;
+			 * this.publish(coalsCompiled); }
+			 */
+
+			ExecutorService compilerExecutor = Executors.newFixedThreadPool(4);
+			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
+			for (String coalesced : coalsToCompile) {
+				CoalescedCompilerTask cct = new CoalescedCompilerTask(coalesced, this);
+				futures.add(compilerExecutor.submit(cct));
 			}
+
+			compilerExecutor.shutdown();
+			compilerExecutor.awaitTermination(60, TimeUnit.MINUTES);
+			for (Future<Boolean> f : futures) {
+				try {
+					Boolean result = f.get();
+					if (result == false) {
+						error = true;
+						ModManager.debugLogger.writeError("A coalesced file failed to compile.");
+						throw new Exception("A coalesced file failed to compile. Check the logs.");
+					}
+				} catch (ExecutionException e) {
+					ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE COMPILING COALESCED FILE (AFTER EXECUTOR FINISHED): ", e);
+				}
+			}
+
 			return null;
 		}
 
 		@Override
 		protected void process(List<Integer> numCompleted) {
-			if (numCoals > numCompleted.get(0)) {
+/*			if (numCoals > numCompleted.get(0)) {
 				currentOperationLabel.setText("Recompiling " + coalsToCompile.get(numCompleted.get(0)));
-			}
+			}*/
 			progress.setIndeterminate(false);
 			progress.setValue((int) (100 / ((double) numCoals / numCompleted.get(0)) + 0.5)); //crazy rounding trick for integer.
 		}
@@ -715,6 +753,10 @@ public class ModMakerCompilerWindow extends JDialog {
 			overallProgress.setValue((int) ((100 / (TOTAL_STEPS / stepsCompleted))));
 			ModManager.debugLogger.writeMessage("COALS: RECOMPILED...");
 			new TLKWorker(progress, languages).execute();
+		}
+
+		public void publishProgress(int numberdone) {
+			publish(numberdone);
 		}
 	}
 
@@ -768,7 +810,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			try {
 				get(); // this line can throw InterruptedException or ExecutionException
 			} catch (ExecutionException e) {
-				ModManager.debugLogger.writeMessage("Error occured in CoalDownloadWorker():");
+				ModManager.debugLogger.writeError("Error occured in CoalDownloadWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
 						"An error occured while trying to download pristine Coalesced files from ME3Tweaks:\n" + e.getMessage()
@@ -884,7 +926,7 @@ public class ModMakerCompilerWindow extends JDialog {
 										newPropName = property.getAttribute("name");
 										operation = property.getAttribute("operation");
 										UE3type = property.getAttribute("type");
-										System.out.println(newPropName + " is a property");
+										//System.out.println(newPropName + " is a property");
 
 										isArrayProperty = false;
 										break;
@@ -893,14 +935,14 @@ public class ModMakerCompilerWindow extends JDialog {
 										matchontype = property.getAttribute("matchontype");
 										operation = property.getAttribute("operation");
 										UE3type = property.getAttribute("type");
-										System.out.println("Array property");
+										//System.out.println("Array property");
 
 										isArrayProperty = true;
 										break;
 									case "Section":
 
 										newPropName = property.getAttribute("name");
-										System.out.println(newPropName + " is a section");
+										//System.out.println(newPropName + " is a section");
 										operation = property.getAttribute("operation");
 										isArrayProperty = false;
 										isSection = true;
@@ -912,7 +954,7 @@ public class ModMakerCompilerWindow extends JDialog {
 										switch (operation) {
 										case "addition":
 											//adds a section
-											ModManager.debugLogger.writeMessage("Creating new section: " + newPropName);
+											ModManager.debugLogger.writeMessageConditionally("Creating new section: " + newPropName, ModManager.LOG_MODMAKER);
 											Element newElement;
 											newElement = iniFile.createElement("Section");
 											newElement.setAttribute("name", newPropName);
@@ -920,7 +962,7 @@ public class ModMakerCompilerWindow extends JDialog {
 											break;
 										case "subtraction":
 											//remove this section
-											ModManager.debugLogger.writeMessage("Subtracting section: " + newPropName);
+											ModManager.debugLogger.writeMessageConditionally("Subtracting section: " + newPropName, ModManager.LOG_MODMAKER);
 											boolean sectionFound = false;
 											for (int l = 0; l < SectionList.getLength(); l++) {
 												//iterate over all sections...
@@ -943,7 +985,7 @@ public class ModMakerCompilerWindow extends JDialog {
 											}
 										case "clear":
 											//gets rid of all children, leaving the node
-											ModManager.debugLogger.writeMessage("Clearing section: " + newPropName);
+											ModManager.debugLogger.writeMessageConditionally("Clearing section: " + newPropName, ModManager.LOG_MODMAKER);
 											boolean cleared = false;
 											for (int l = 0; l < SectionList.getLength(); l++) {
 												//iterate over all sections...
@@ -988,7 +1030,7 @@ public class ModMakerCompilerWindow extends JDialog {
 									while (drillTokenizer.hasMoreTokens()) {
 										//drill
 										String drillTo = drillTokenizer.nextToken();
-										ModManager.debugLogger.writeMessage("Drilling to find: " + drillTo);
+										ModManager.debugLogger.writeMessageConditionally("Drilling to find: " + drillTo, ModManager.LOG_MODMAKER);
 										boolean pathfound = false;
 										for (int l = 0; l < drilledList.getLength(); l++) {
 											//iterate over all sections...
@@ -1000,7 +1042,7 @@ public class ModMakerCompilerWindow extends JDialog {
 													continue;
 												} else {
 													//this is the section we want.
-													ModManager.debugLogger.writeMessage("Found " + drillTo);
+													ModManager.debugLogger.writeMessageConditionally("Found " + drillTo, ModManager.LOG_MODMAKER);
 													drilledList = drilled.getChildNodes();
 													pathfound = true;
 													break;
@@ -1009,6 +1051,9 @@ public class ModMakerCompilerWindow extends JDialog {
 										}
 										if (!pathfound) {
 											dispose();
+											ModManager.debugLogger.writeError("Could not find property to update: " + path + " for property " + newPropName + " in module "
+													+ intCoalName + ". PArt of the file: " + iniFileName);
+
 											JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: "
 													+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 											error = true;
@@ -1026,7 +1071,7 @@ public class ModMakerCompilerWindow extends JDialog {
 									if (operation.equals("addition")) {
 										//only for arrays
 										//we won't find anything to match, since it obviously can't exist. Add it from here.
-										ModManager.debugLogger.writeMessage("Creating new property with operation ADDITION");
+										ModManager.debugLogger.writeMessageConditionally("Creating new property with operation ADDITION", ModManager.LOG_MODMAKER);
 										Element newElement;
 										if (isArrayProperty) {
 											newElement = drilled.getOwnerDocument().createElement("Value");
@@ -1047,7 +1092,7 @@ public class ModMakerCompilerWindow extends JDialog {
 									//we are where we want to be. Now we can set the property or array value.
 									//drilled is the element (parent of our property) that we want.
 									NodeList props = drilled.getChildNodes(); //get children of the path (<property> list)
-									ModManager.debugLogger.writeMessage("Number of child property/elements to search: " + props.getLength());
+									ModManager.debugLogger.writeMessageConditionally("Number of child property/elements to search: " + props.getLength(), ModManager.LOG_MODMAKER);
 									boolean foundProperty = false;
 									for (int m = 0; m < props.getLength(); m++) {
 										Node propertyNode = props.item(m);
@@ -1061,14 +1106,14 @@ public class ModMakerCompilerWindow extends JDialog {
 												case "assignment":
 													if (itemToModify.getAttribute("name").equals(newPropName)) {
 														itemToModify.setTextContent(newValue);
-														ModManager.debugLogger.writeMessage("Assigning " + newPropName + " to " + newValue);
+														ModManager.debugLogger.writeMessageConditionally("Assigning " + newPropName + " to " + newValue, ModManager.LOG_MODMAKER);
 														foundProperty = true;
 														shouldBreak = true;
 													}
 													break;
 												case "subtraction":
 													if (itemToModify.getAttribute("name").equals(newPropName)) {
-														ModManager.debugLogger.writeMessage("Subtracting property " + newPropName);
+														ModManager.debugLogger.writeMessageConditionally("Subtracting property " + newPropName, ModManager.LOG_MODMAKER);
 														Node itemParent = itemToModify.getParentNode();
 														itemParent.removeChild(itemToModify);
 														foundProperty = true;
@@ -1086,13 +1131,14 @@ public class ModMakerCompilerWindow extends JDialog {
 												if (itemToModify.getAttribute("type").equals(matchontype)) {
 													//potential array value candidate...
 													boolean match = false;
-													ModManager.debugLogger
-															.writeMessage("Found type candidate (" + matchontype + ") for arrayreplace: " + itemToModify.getTextContent());
+													ModManager.debugLogger.writeMessageConditionally(
+															"Found type candidate (" + matchontype + ") for arrayreplace: " + itemToModify.getTextContent(),
+															ModManager.LOG_MODMAKER);
 													switch (arrayType) {
 													//Must use individual matching algorithms so we can figure out if something matches.
 													case "exactvalue": {
 														if (itemToModify.getTextContent().equals(newValue)) {
-															ModManager.debugLogger.writeMessage("exact Property match found.");
+															ModManager.debugLogger.writeMessageConditionally("exact Property match found.", ModManager.LOG_MODMAKER);
 															match = true;
 														}
 													}
@@ -1102,12 +1148,12 @@ public class ModMakerCompilerWindow extends JDialog {
 														Category existing = new Category(itemToModify.getTextContent());
 														Category importing = new Category(newValue);
 														if (existing.matchIdentifiers(importing)) {
-															ModManager.debugLogger.writeMessage("Match found: " + existing.categoryname);
+															ModManager.debugLogger.writeMessageConditionally("Match found: " + existing.categoryname, ModManager.LOG_MODMAKER);
 															existing.merge(importing);
 															newValue = existing.createCategoryString();
 															match = true;
 														} else {
-															ModManager.debugLogger.writeMessage("Match failed: " + existing.categoryname);
+															ModManager.debugLogger.writeMessageConditionally("Match failed: " + existing.categoryname, ModManager.LOG_MODMAKER);
 														}
 													}
 														break;
@@ -1117,7 +1163,7 @@ public class ModMakerCompilerWindow extends JDialog {
 														Wave importing = new Wave(newValue);
 														if (existing.matchIdentifiers(importing)) {
 															match = true;
-															ModManager.debugLogger.writeMessage("Wavelist match on " + existing.difficulty);
+															ModManager.debugLogger.writeMessageConditionally("Wavelist match on " + existing.difficulty, ModManager.LOG_MODMAKER);
 															newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
 														} else {
 															//CHECK FOR COLLECTOR PLAT WAVE 5.
@@ -1205,16 +1251,16 @@ public class ModMakerCompilerWindow extends JDialog {
 														case "subtraction":
 															Node itemParent = itemToModify.getParentNode();
 															itemParent.removeChild(itemToModify);
-															ModManager.debugLogger.writeMessageConditionally("Removed array value: " + newValue,ModManager.LOG_MODMAKER);
+															ModManager.debugLogger.writeMessageConditionally("Removed array value: " + newValue, ModManager.LOG_MODMAKER);
 															break;
 														case "modify": //same as assignment right now
 														case "assignment":
 															itemToModify.setTextContent(newValue);
-															ModManager.debugLogger.writeMessageConditionally("Assigned array value: " + newValue,ModManager.LOG_MODMAKER);
+															ModManager.debugLogger.writeMessageConditionally("Assigned array value: " + newValue, ModManager.LOG_MODMAKER);
 															break;
 														default:
-															ModManager.debugLogger.writeError("Unknown matching algorithm: " + arrayType
-																	+ " does this client need updated? Aborting this stat update.");
+															ModManager.debugLogger.writeError(
+																	"Unknown matching algorithm: " + arrayType + " does this client need updated? Aborting this stat update.");
 															JOptionPane.showMessageDialog(null,
 																	"<html>Unknown operation from ME3Tweaks: " + operation
 																			+ ".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
@@ -1280,7 +1326,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						}
 					}
 					coalsMerged++;
-					System.err.println((coalsMerged / (numCoalSections * 1.0)) * 100);
+					//System.err.println((coalsMerged / (numCoalSections * 1.0)) * 100);
 					publish(new ThreadCommand("MERGE_TASK_COMPLETED"));
 				}
 			}
@@ -1294,7 +1340,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				switch (tc.getCommand()) {
 				case "MERGE_TASK_COMPLETED":
 					if (coalsMerged != 0) {
-						System.err.println((coalsMerged / (float) numCoalSections) * 100);
+						//System.err.println((coalsMerged / (float) numCoalSections) * 100);
 						progress.setValue((int) Math.ceil(((coalsMerged / (numCoalSections * 1.0)) * 100)));
 					} else {
 						progress.setValue(0);
@@ -1878,8 +1924,10 @@ public class ModMakerCompilerWindow extends JDialog {
 					break;
 				}
 			}
+			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+			ModManagerWindow.ACTIVE_WINDOW.highlightMod(newMod);
 			JOptionPane.showMessageDialog(this, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
-			new ModManagerWindow(false);
+
 		}
 	}
 
@@ -2016,5 +2064,50 @@ public class ModMakerCompilerWindow extends JDialog {
 
 	public JLabel getCurrentTaskLabel() {
 		return currentOperationLabel;
+	}
+
+	class CoalescedCompilerTask implements Callable<Boolean> {
+		private String coalescedFile;
+		private CompilerWorker compilerWorker;
+
+		public CoalescedCompilerTask(String coalescedFile, CompilerWorker compilerWorker) {
+			this.coalescedFile = coalescedFile;
+			this.compilerWorker = compilerWorker;
+		}
+
+		@Override
+		public Boolean call() throws Exception {
+			String compilerdir = ModManager.getCompilingDir();
+			String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
+			ArrayList<String> command = new ArrayList<>();
+			command.add(compilerPath);
+			command.add(compilerdir + "\\coalesceds\\" + FilenameUtils.removeExtension(coalescedFile) + "\\" + FilenameUtils.removeExtension(coalescedFile) + ".xml");
+			command.add("--mode=ToBin");
+			ProcessBuilder compileProcessBuilder = new ProcessBuilder(command);
+			compilerWorker.publishProgress(compilerWorker.COMPLETED.incrementAndGet());
+			return ModManager.runProcess(compileProcessBuilder, FilenameUtils.removeExtension(coalescedFile)).getReturnCode() == 0;
+		}
+	}
+	
+	class CoalescedDecompilerTask implements Callable<Boolean> {
+		private String coalescedFile;
+		private DecompilerWorker decompilerWorker;
+
+		public CoalescedDecompilerTask(String coalescedFile, DecompilerWorker decompilerWorker) {
+			this.coalescedFile = coalescedFile;
+			this.decompilerWorker = decompilerWorker;
+		}
+
+		@Override
+		public Boolean call() throws Exception {
+			String compilerdir = ModManager.getCompilingDir();
+			String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
+			ArrayList<String> command = new ArrayList<>();
+			command.add(compilerPath);
+			command.add(compilerdir + "\\coalesceds\\" + coalescedFile);
+			ProcessBuilder compileProcessBuilder = new ProcessBuilder(command);
+			decompilerWorker.publishProgress(decompilerWorker.COMPLETED.incrementAndGet());
+			return ModManager.runProcess(compileProcessBuilder, FilenameUtils.removeExtension(coalescedFile)).getReturnCode() == 0;
+		}
 	}
 }
