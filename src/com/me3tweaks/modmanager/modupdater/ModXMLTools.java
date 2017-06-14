@@ -311,7 +311,7 @@ public class ModXMLTools {
 
 				String sideload7z = ModManager.appendSlash(new File(sideloadoutputfolder).getParent()) + foldername + "-sideload.7z";
 				FileUtils.deleteQuietly(new File(sideload7z));
-				String[] procargs = { "cmd", "/c", "start", "Building Sideload Package", ModManager.getToolsDir() + "7za", "a", "-r", "-mx9", "-mmt", sideload7z,
+				String[] procargs = { "cmd", "/c", "start", "Building Sideload Package", ModManager.getToolsDir() + "7z", "a", "-r", "-mx9", "-mmt", sideload7z,
 						sideloadoutputfolder };
 				ProcessBuilder p = new ProcessBuilder(procargs);
 				ModManager.runProcess(p);

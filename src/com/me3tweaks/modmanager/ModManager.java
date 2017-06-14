@@ -100,15 +100,16 @@ public class ModManager {
 	public static boolean AUTO_UPDATE_CONTENT = true;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
-	public static final int MIN_REQUIRED_ME3EXPLORER_MAIN = 2;
-	public static final int MIN_REQUIRED_ME3EXPLORER_MINOR = 0;
-	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 6;
+	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
+	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
+	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 0;
+
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 8; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
-	public static boolean AUTO_UPDATE_ME3EXPLORER = true;
 	public static boolean NET_FRAMEWORK_IS_INSTALLED = false;
 	public static long SKIP_UPDATES_UNTIL_BUILD = 0;
 	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
@@ -119,6 +120,7 @@ public class ModManager {
 	public static boolean MODMAKER_CONTROLLER_MOD_ADDINS = false;
 	public static String THIRD_PARTY_MOD_JSON;
 	public static boolean LOG_MODMAKER = false;
+	public static String COMMANDLINETOOLS_URL;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGAUGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN", "ITA" };
@@ -268,26 +270,6 @@ public class ModManager {
 				if (autoupdate != null && autoupdate.toLowerCase().equals("false")) {
 					debugLogger.writeMessage("Disabling mod auto-updates");
 					AUTO_UPDATE_CONTENT = false;
-				}
-
-				// Autodownload ME3Explorer updates
-				String autoupdateme3explorerStr = settingsini.get("Settings", "autodownloadme3explorer");
-				int autoupdateme3explorerInt = 0;
-				if (autoupdateme3explorerStr != null && !autoupdateme3explorerStr.equals("")) {
-					try {
-						autoupdateme3explorerInt = Integer.parseInt(autoupdateme3explorerStr);
-						if (autoupdateme3explorerInt > 0) {
-							// logging is on
-							debugLogger.writeMessage("ME3Explorer updates are auto enabled");
-							AUTO_UPDATE_ME3EXPLORER = true;
-						} else {
-							debugLogger.writeError("ME3Explorer updates are disabled - errors related to ME3EXplorer out of date ARE NOT SUPPORTED!");
-							AUTO_UPDATE_ME3EXPLORER = false;
-						}
-					} catch (NumberFormatException e) {
-						debugLogger.writeError("Number format exception reading the me3explorer update preference - turning on by default");
-						AUTO_UPDATE_ME3EXPLORER = true;
-					}
 				}
 
 				// Autoinject keybinds
@@ -947,7 +929,7 @@ public class ModManager {
 	 * @return data/tools/ModMangerCommandLine
 	 */
 	public static String getCommandLineToolsDir() {
-		return getToolsDir() + "ModManagerCommandLine/";
+		return getToolsDir() + "ModManagerCommandLine\\";
 	}
 
 	/**
@@ -982,7 +964,7 @@ public class ModManager {
 
 			//run 7za on it
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getToolsDir() + "7za.exe");
+			commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
 			commandBuilder.add("-y"); //overwrite
 			commandBuilder.add("x"); //extract
 			commandBuilder.add(ModManager.getTempDir() + "guitransplanter.7z");//7z file
@@ -1989,7 +1971,7 @@ public class ModManager {
 
 			//run 7za on it
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getToolsDir() + "7za.exe");
+			commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
 			commandBuilder.add("-y"); //overwrite
 			commandBuilder.add("x"); //extract
 			commandBuilder.add(ModManager.getTempDir() + "guilibrary.7z");//7z file
@@ -2159,7 +2141,7 @@ public class ModManager {
 		}
 	}
 
-	public static Wini LoadSettingsINI(boolean multivalue) {
+	public static Wini LoadSettingsINI() {
 		File settings = new File(ModManager.SETTINGS_FILENAME);
 		if (!settings.exists()) {
 			try {
@@ -2172,13 +2154,7 @@ public class ModManager {
 		Wini ini = null;
 		try {
 			ini = new Wini(settings);
-			if (multivalue) {
-				Config conf = new Config();
-				conf.setMultiOption(true);
-				ini.setConfig(conf);
-			}
 			ini.load(settings);
-
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeErrorWithException("ERROR READING CONFIG FILE... WE'RE PROBABLY GOING TO CRASH.", e);
@@ -2305,5 +2281,10 @@ public class ModManager {
 				return false;
 			}
 		}
+	}
+	
+	public static String getCommandLineToolsRequiredVersion() {
+		return ModManager.MIN_REQUIRED_CMDLINE_MAIN + "." + ModManager.MIN_REQUIRED_CMDLINE_MINOR + "." + ModManager.MIN_REQUIRED_CMDLINE_BUILD
+				+ "." + ModManager.MIN_REQUIRED_CMDLINE_REV;
 	}
 }

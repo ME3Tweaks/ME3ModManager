@@ -480,7 +480,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("::Extract update");
 		sb.append("\r\n\"");
 		sb.append(ModManager.getToolsDir());
-		sb.append("7za.exe\" -y x \"" + ModManager.getTempDir() + "ME3CMM.7z\" -o\"" + ModManager.getTempDir() + "NewVersion\"");
+		sb.append("7z.exe\" -y x \"" + ModManager.getTempDir() + "ME3CMM.7z\" -o\"" + ModManager.getTempDir() + "NewVersion\"");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("set MODMAN=%errorlevel%");

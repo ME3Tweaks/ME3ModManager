@@ -29,7 +29,6 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoUpdateModManager;
 	private JCheckBox autoUpdateMods;
 	private JCheckBox autoApplyMixins;
-	private JCheckBox autoUpdateME3Explorer;
 	private JCheckBox skipUpdate;
 	private JCheckBox logModmaker;
 	private AbstractButton logModInit;
@@ -171,33 +170,7 @@ public class OptionsWindow extends JDialog {
 				}
 			}
 		});
-
-		autoUpdateME3Explorer = new JCheckBox("Auto-download required ME3Explorer updates");
-		autoUpdateME3Explorer.setToolTipText("<html>Mod Manager requires specific versions of ME3Explorer and will not work without them</html>");
-		autoUpdateME3Explorer.setSelected(ModManager.AUTO_UPDATE_ME3EXPLORER);
-		autoUpdateME3Explorer.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Wini ini;
-				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
-					if (autoUpdateME3Explorer.isSelected()) {
-						ini.put("Settings", "autodownloadme3explorer", "1");
-					} else {
-						ini.put("Settings", "autodownloadme3explorer", "0");
-					}
-					ModManager.AUTO_UPDATE_ME3EXPLORER = autoUpdateME3Explorer.isSelected();
-					ini.store();
-				} catch (InvalidFileFormatException error) {
-					error.printStackTrace();
-				} catch (IOException error) {
-					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
-				}
-			}
-		});
-
+		
 		autoUpdateModManager = new JCheckBox("Check for updates at startup");
 		autoUpdateModManager.setToolTipText("<html>Keep Mod Manager up to date by checking for updates at startup</html>");
 		autoUpdateModManager.setSelected(ModManager.AUTO_UPDATE_MOD_MANAGER);
@@ -307,7 +280,7 @@ public class OptionsWindow extends JDialog {
 		logModmaker.setSelected(ModManager.LOG_MODMAKER);
 		logModmaker.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Wini ini = ModManager.LoadSettingsINI(false);
+				Wini ini = ModManager.LoadSettingsINI();
 				ModManager.debugLogger.writeMessage("User changing run log modmaker to " + logModmaker.isSelected());
 				ini.put("Settings", "logmodmaker", logModmaker.isSelected() ? "1" : "0");
 				ModManager.LOG_MODMAKER = logModmaker.isSelected();
@@ -373,13 +346,11 @@ public class OptionsWindow extends JDialog {
 		optionsPanel.add(autoInjectKeybindsModMaker);
 		optionsPanel.add(autoFixControllerModMaker);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
-		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(autoUpdateModManager);
 		if (skipUpdate != null) {
 			optionsPanel.add(skipUpdate);
 		}
 		optionsPanel.add(autoUpdateMods);
-		optionsPanel.add(autoUpdateME3Explorer);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(enforceDotNetRequirement);
 		optionsPanel.add(loggingMode);

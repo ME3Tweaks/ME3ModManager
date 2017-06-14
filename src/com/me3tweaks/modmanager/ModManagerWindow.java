@@ -71,6 +71,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.help.HelpMenu;
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
@@ -92,6 +93,7 @@ import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import com.me3tweaks.modmanager.utilities.Version;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
@@ -268,7 +270,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	/**
 	 * This thread executes multiple items: Check For Mod Manager Updates Check
-	 * for Mod Updates Check for 7za file + download Check for ME3Explorer
+	 * for Mod Updates Check for 7z file + download Check for ME3Explorer
 	 * Updates (if needed)
 	 * 
 	 * @author Michael
@@ -284,24 +286,46 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		@Override
 		public Void doInBackground() {
-			File f7za = new File(ModManager.getToolsDir() + "7za.exe");
-			if (!f7za.exists()) {
-				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7za Unzipper"));
-				ModManager.debugLogger.writeMessage("7za.exe does not exist at the following path, downloading new copy: " + f7za.getAbsolutePath());
-				String url = "https://me3tweaks.com/modmanager/tools/7za.exe";
+			{
+				File f7z = new File(ModManager.getToolsDir() + "7z.exe");
+				if (!f7z.exists()) {
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z Unzipper"));
+					ModManager.debugLogger.writeMessage("7z.exe does not exist at the following path, downloading new copy: " + f7z.getAbsolutePath());
+					String url = "https://me3tweaks.com/modmanager/tools/7z.exe";
+					try {
+						File updateDir = new File(ModManager.getToolsDir());
+						updateDir.mkdirs();
+						FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7z.exe"));
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 7z Unzipper into tools directory"));
+						ModManager.debugLogger.writeMessage("Downloaded missing 7z.exe file for updating Mod Manager");
+
+					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("Error downloading 7z.exe into tools folder", e);
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7z"));
+					}
+				} else {
+					ModManager.debugLogger.writeMessage("7z.exe is present in tools/ directory");
+				}
+			}
+
+			File f7zdll = new File(ModManager.getToolsDir() + "7z.dll");
+			if (!f7zdll.exists()) {
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z Unzipper library"));
+				ModManager.debugLogger.writeMessage("7z.dll does not exist at the following path, downloading new copy: " + f7zdll.getAbsolutePath());
+				String url = "https://me3tweaks.com/modmanager/tools/7z.dll";
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
-					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7za.exe"));
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 7za Unzipper into tools directory"));
-					ModManager.debugLogger.writeMessage("Downloaded missing 7za.exe file for updating Mod Manager");
+					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7z.dll"));
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 7z Unzipper dll into tools directory"));
+					ModManager.debugLogger.writeMessage("Downloaded missing 7z.dll file for updating Mod Manager");
 
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Error downloading 7za into tools folder", e);
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7za"));
+					ModManager.debugLogger.writeErrorWithException("Error downloading 7z dll into tools folder", e);
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7z dll"));
 				}
 			} else {
-				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
+				ModManager.debugLogger.writeMessage("7z.dll is present in tools/ directory");
 			}
 
 			File lzma = new File(ModManager.getToolsDir() + "lzma.exe");
@@ -340,7 +364,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 					// run 7za on it
 					ArrayList<String> commandBuilder = new ArrayList<String>();
-					commandBuilder.add(ModManager.getToolsDir() + "7za.exe");
+					commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
 					commandBuilder.add("-y"); // overwrite
 					commandBuilder.add("x"); // extract
 					commandBuilder.add(ModManager.getTempDir() + "tankmastertools.7z");// 7z
@@ -378,57 +402,100 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 					FileUtils.deleteQuietly(new File(ModManager.getTempDir() + "tankmastertools.7z"));
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Error downloading 7za into tools folder", e);
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7za for updating"));
+					ModManager.debugLogger.writeErrorWithException("Error downloading 7z into tools folder", e);
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7z for updating"));
 				}
 			} else {
-				ModManager.debugLogger.writeMessage("7za.exe is present in tools/ directory");
+				ModManager.debugLogger.writeMessage("7z.exe is present in tools/ directory");
+			}
+			
+			File jpatch = new File(ModManager.getToolsDir() + "jptch.exe");
+			if (!jpatch.exists()) {
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading MixIn Patching Tools"));
+				ME3TweaksUtils.downloadJDiffTools();
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded MixIn Patching Tools"));
 			}
 
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
 				checkForModManagerUpdates();
 			}
-			checkForME3ExplorerUpdates();
+			//checkForME3ExplorerUpdates();
+			checkForCommandLineToolUpdates();
 			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
 				checkForContentUpdates(force);
 			}
 			return null;
 		}
 
-		private void checkForME3ExplorerUpdates() {
-			String me3explorer = ModManager.getME3ExplorerEXEDirectory_LEGACY(false) + "ME3Explorer.exe";
-			File f = new File(me3explorer);
-			if (!f.exists()) {
-				ModManager.debugLogger.writeMessage("ME3Explorer is missing. Downloading from ME3Tweaks.");
-				if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
-					new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
+		/**
+		 * Checks for Command Line Tools and the correct version of them.
+		 */
+		private void checkForCommandLineToolUpdates() {
+			if (ModManager.COMMANDLINETOOLS_URL != null) {
+				String fullautotoc = ModManager.getCommandLineToolsDir() + "FullAutoTOC.exe";
+				File f = new File(fullautotoc);
+				if (!f.exists()) {
+					ModManager.debugLogger.writeMessage("Mod Manager Command Line Tools are missing. Downloading from GitHub.");
+					new CommandLineToolsUpdaterWindow();
 				} else {
-					ModManager.debugLogger.writeError("ME3Explorer missing but cannot download due to settings!");
-					JOptionPane.showMessageDialog(ModManagerWindow.this,
-							"ME3Explorer is missing from data/ME3Explorer.\nMod Manager requires ME3Explorer but you have auto updates for it turned off.\nIf there are errors in this session, they are not supported by FemShep.",
-							"Missing ME3Explorer", JOptionPane.ERROR_MESSAGE);
+					int main = EXEFileInfo.getMajorVersionOfProgram(fullautotoc);
+					int minor = EXEFileInfo.getMinorVersionOfProgram(fullautotoc);
+					int build = EXEFileInfo.getBuildOfProgram(fullautotoc);
+					int rev = EXEFileInfo.getRevisionOfProgram(fullautotoc);
+					ModManager.debugLogger.writeMessage("Command Line Tools Version: " + main + "." + minor + "." + build + "." + rev);
+
+					Version installedVersion = new Version(main + "." + minor + "." + build + "." + rev);
+					Version minVersion = new Version(ModManager.MIN_REQUIRED_CMDLINE_MAIN + "." + ModManager.MIN_REQUIRED_CMDLINE_MINOR + "."
+							+ ModManager.MIN_REQUIRED_CMDLINE_BUILD + "." + ModManager.MIN_REQUIRED_CMDLINE_REV);
+
+					if (installedVersion.compareTo(minVersion) < 0) {
+						// we must update it
+						ModManager.debugLogger.writeMessage("Command Line Tools out of date - required version: " + minVersion.toString());
+						new CommandLineToolsUpdaterWindow();
+					} else {
+						ModManager.debugLogger.writeMessage("Current Command Line Tools version satisfies requirements for Mod Manager");
+					}
 				}
 			} else {
-				int main = EXEFileInfo.getMajorVersionOfProgram(me3explorer);
-				int rev = EXEFileInfo.getBuildOfProgram(me3explorer);
-				ModManager.debugLogger.writeMessage("ME3Explorer Version: " + Arrays.toString(EXEFileInfo.getVersionInfo(me3explorer)));
-				if (main < ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN || main == ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN && rev < ModManager.MIN_REQUIRED_ME3EXPLORER_REV) {
-					// we must update it
-					ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:" + main + "." + rev + ", required" + ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN + "."
-							+ ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+");
-					if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
-						new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
-					} else {
-						ModManager.debugLogger.writeError("ME3Explorer outdated but cannot download due to settings!");
-						JOptionPane.showMessageDialog(ModManagerWindow.this,
-								"Mod Manager requires a newer version of ME3Explorer for this build.\nYou have auto updates for it turned off. You will need to turn them back on to download this update.\nIf there are errors in this session, they are not supported by FemShep.",
-								"ME3Explorer Outdated", JOptionPane.ERROR_MESSAGE);
-					}
-				} else {
-					ModManager.debugLogger.writeMessage("Current ME3Explorer version satisfies requirements for Mod Manager");
-				}
+				ModManager.debugLogger.writeMessage("No command line update link - no point checking for updates.");
 			}
 		}
+
+		/*
+		 * private void checkForME3ExplorerUpdates() { String me3explorer =
+		 * ModManager.getME3ExplorerEXEDirectory_LEGACY(false) +
+		 * "ME3Explorer.exe"; File f = new File(me3explorer); if (!f.exists()) {
+		 * ModManager.debugLogger.
+		 * writeMessage("ME3Explorer is missing. Downloading from ME3Tweaks.");
+		 * if (ModManager.AUTO_UPDATE_ME3EXPLORER) { new
+		 * ME3ExplorerUpdaterWindow(ModManagerWindow.this); } else {
+		 * ModManager.debugLogger.
+		 * writeError("ME3Explorer missing but cannot download due to settings!"
+		 * ); JOptionPane.showMessageDialog(ModManagerWindow.this,
+		 * "ME3Explorer is missing from data/ME3Explorer.\nMod Manager requires ME3Explorer but you have auto updates for it turned off.\nIf there are errors in this session, they are not supported by FemShep."
+		 * , "Missing ME3Explorer", JOptionPane.ERROR_MESSAGE); } } else { int
+		 * main = EXEFileInfo.getMajorVersionOfProgram(me3explorer); int rev =
+		 * EXEFileInfo.getBuildOfProgram(me3explorer);
+		 * ModManager.debugLogger.writeMessage("ME3Explorer Version: " +
+		 * Arrays.toString(EXEFileInfo.getVersionInfo(me3explorer))); if (main <
+		 * ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN || main ==
+		 * ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN && rev <
+		 * ModManager.MIN_REQUIRED_ME3EXPLORER_REV) { // we must update it
+		 * ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:"
+		 * + main + "." + rev + ", required" +
+		 * ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN + "." +
+		 * ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+"); if
+		 * (ModManager.AUTO_UPDATE_ME3EXPLORER) { new
+		 * ME3ExplorerUpdaterWindow(ModManagerWindow.this); } else {
+		 * ModManager.debugLogger.
+		 * writeError("ME3Explorer outdated but cannot download due to settings!"
+		 * ); JOptionPane.showMessageDialog(ModManagerWindow.this,
+		 * "Mod Manager requires a newer version of ME3Explorer for this build.\nYou have auto updates for it turned off. You will need to turn them back on to download this update.\nIf there are errors in this session, they are not supported by FemShep."
+		 * , "ME3Explorer Outdated", JOptionPane.ERROR_MESSAGE); } } else {
+		 * ModManager.debugLogger.
+		 * writeMessage("Current ME3Explorer version satisfies requirements for Mod Manager"
+		 * ); } } }
+		 */
 
 		private void checkForContentUpdates(boolean force) {
 			// Check for updates
@@ -563,6 +630,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 
 				long latest_build = (long) latest_object.get("latest_build_number");
+				String latestCommandLineToolsLink = (String) latest_object.get("latest_commandlinetools_link");
+
 				if (latest_build < ModManager.BUILD_NUMBER) {
 					// build is newer than current
 					labelStatus.setVisible(true);
@@ -570,6 +639,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					labelStatus.setText("No Mod Manager updates available");
 					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
 					checkForGUIupdates(latest_object);
+					if (latestCommandLineToolsLink != null) {
+						ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
+					}
 					return null;
 				}
 
@@ -580,6 +652,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					labelStatus.setText("Mod Manager is up to date");
 					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
 					checkForGUIupdates(latest_object);
+					if (latestCommandLineToolsLink != null) {
+						ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
+					}
 					return null;
 				}
 
@@ -588,36 +663,33 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 				boolean showUpdate = true;
 				// make sure the user hasn't declined this one.
-				Wini settingsini;
-				try {
-					settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-					String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
-					long build_check = ModManager.BUILD_NUMBER;
-					if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
-						try {
-							build_check = Integer.parseInt(showIfHigherThan);
-							if (latest_build > build_check) {
-								// update is newer than one stored in ini, show
-								// the
-								// dialog.
-								ModManager.debugLogger.writeMessage("Advertising build " + latest_build);
-								settingsini.remove("Settings", "nextupdatedialogbuild");
+				Wini settingsini = ModManager.LoadSettingsINI();
+				String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
+				long build_check = ModManager.BUILD_NUMBER;
+				if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
+					try {
+						build_check = Integer.parseInt(showIfHigherThan);
+						if (latest_build > build_check) {
+							// update is newer than one stored in ini, show
+							// the
+							// dialog.
+							ModManager.debugLogger.writeMessage("Advertising build " + latest_build);
+							settingsini.remove("Settings", "nextupdatedialogbuild");
+							try {
 								settingsini.store();
-								showUpdate = true;
-							} else {
-								ModManager.debugLogger.writeMessage("User isn't seeing updates until build " + build_check);
-								// don't show it.
-								showUpdate = false;
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								ModManager.debugLogger.writeErrorWithException("Unable to save settings:", e);
 							}
-						} catch (NumberFormatException e) {
-							ModManager.debugLogger.writeMessage("Number format exception reading the build number updateon in the ini. Showing the dialog.");
+							showUpdate = true;
+						} else {
+							ModManager.debugLogger.writeMessage("User isn't seeing updates until build " + build_check);
+							// don't show it.
+							showUpdate = false;
 						}
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeMessage("Number format exception reading the build number updateon in the ini. Showing the dialog.");
 					}
-				} catch (InvalidFileFormatException e) {
-					ModManager.debugLogger.writeErrorWithException("Invalid INI! Did the user modify it by hand?", e);
-					e.printStackTrace();
-				} catch (IOException e) {
-					ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 				}
 
 				if (showUpdate) {
@@ -628,6 +700,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					labelStatus.setVisible(true);
 					labelStatus.setText("Update notification suppressed until next build");
+				}
+				if (latestCommandLineToolsLink != null) {
+					ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
 				}
 				checkForGUIupdates(latest_object);
 			} catch (ParseException e) {
@@ -2707,7 +2782,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (biogameDirectories.size() == 0) {
 			try {
 				//LEGACY: Attempt to read from WINI.
-				Wini settingsini = ModManager.LoadSettingsINI(true);
+				Wini settingsini = ModManager.LoadSettingsINI();
 
 				Section names = settingsini.get("Settings");
 				setDir = names.get("biogame_dir");

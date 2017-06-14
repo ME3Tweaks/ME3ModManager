@@ -255,12 +255,6 @@ public class Patch implements Comparable<Patch> {
 		//If the files are not the right size we will not apply.
 		ModManager.debugLogger.writeMessage("=============APPLY PATCH " + getPatchName() + "=============");
 		try {
-
-			File jpatch = new File(ModManager.getToolsDir() + "jptch.exe");
-			if (!jpatch.exists()) {
-				ME3TweaksUtils.downloadJDiffTools();
-			}
-
 			if (!ModManager.hasPristineTOC(targetModule, ME3TweaksUtils.HEADER)) {
 				ME3TweaksUtils.downloadPristineTOC(targetModule, ME3TweaksUtils.HEADER);
 			}

@@ -42,15 +42,15 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 	JLabel introLabel, statusLabel;
 	JProgressBar downloadProgress;
 
-	public ME3ExplorerUpdaterWindow(JFrame callingWindow) {
-		this.setTitle("Required ME3Explorer Update");
+	public ME3ExplorerUpdaterWindow() {
+		this.setTitle("ME3Explorer Update");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
-		this.setLocationRelativeTo(callingWindow);
+		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		DownloadTask task = new DownloadTask(ModManager.getTempDir());
 		task.addPropertyChangeListener(this);
 		ModManager.debugLogger.writeMessage("Downloading ME3Explorer.7z");
@@ -62,7 +62,7 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("This version of Mod Manager requires ME3Explorer "+ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN+"."+ModManager.MIN_REQUIRED_ME3EXPLORER_MINOR+"."+ModManager.MIN_REQUIRED_ME3EXPLORER_REV+" or higher.");
+		introLabel = new JLabel("The local ME3Explorer version is out of date.");
 		statusLabel = new JLabel("Downloading new version...");
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
@@ -300,7 +300,7 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 		sb.append("::Extract update");
 		sb.append("\r\n\"");
 		sb.append(ModManager.getToolsDir());
-		sb.append("7za.exe\" -y x ME3Explorer.7z -o\""+ModManager.getTempDir()+"ME3EXPNewVersion\"");
+		sb.append("7z.exe\" -y x ME3Explorer.7z -o\""+ModManager.getTempDir()+"ME3EXPNewVersion\"");
 		sb.append("\r\n");
 		sb.append("set ME3EXP=%errorlevel%");
 		sb.append("\r\n");
