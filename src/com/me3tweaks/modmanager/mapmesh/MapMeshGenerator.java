@@ -1,13 +1,33 @@
 package com.me3tweaks.modmanager.mapmesh;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
 
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
+import org.apache.commons.io.FilenameUtils;
+
+import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
+
+import net.iharder.dnd.FileDrop;
 
 /**
  * Generates a map mesh from a ScriptDump4 file.
@@ -15,13 +35,155 @@ import javax.swing.JFrame;
  * @author Mgamerz
  *
  */
-public class MapMeshGenerator {
+public class MapMeshGenerator extends JFrame implements ActionListener {
 	static String endentry = "=======================================================================";
-	private static ArrayList<ReachSpec> reachspecs = new ArrayList<>();
-	private static ArrayList<PathNode> pathnodes = new ArrayList<>();
+	private ArrayList<ReachSpec> reachspecs = new ArrayList<>();
+	private ArrayList<PathNode> pathnodes = new ArrayList<>();
+	private JPanel mainPanel;
+	private JLabel viewinFileLabel;
+	MapMeshPanel mmp;
+	JCheckBox spawnCheck;
+	JCheckBox boostCheck;
+	JCheckBox coverCheck;
+	JCheckBox doorCheck;
+	JCheckBox standardCheck;
+	String currentFile;
 
-	public static void main(String[] args) throws FileNotFoundException, IOException {
-		File infile = new File(args[0]);
+	public MapMeshGenerator() {
+		setupWindow();
+		setLocationRelativeTo(null);
+		setVisible(true);
+	}
+
+	private void setupWindow() {
+		// TODO Auto-generated method stub
+		this.setIconImages(ModManager.ICONS);
+		JButton browse = new JButton("Open File");
+		browse.setFocusable(false);
+		mainPanel = new JPanel(new BorderLayout());
+		viewinFileLabel = new JLabel("Open or drop a pcc/dump file to view");
+
+		JPanel topPanel = new JPanel(new BorderLayout());
+		topPanel.add(viewinFileLabel, BorderLayout.CENTER);
+		topPanel.add(browse, BorderLayout.EAST);
+
+		JPanel itemPanel = new JPanel(new FlowLayout());
+		standardCheck = new JCheckBox("Pathing");
+		spawnCheck = new JCheckBox("Spawns");
+		doorCheck = new JCheckBox("Doors");
+		coverCheck = new JCheckBox("Cover");
+		boostCheck = new JCheckBox("Boost");
+
+		standardCheck.setSelected(true);
+		spawnCheck.setSelected(true);
+		doorCheck.setSelected(true);
+		coverCheck.setSelected(true);
+		boostCheck.setSelected(true);
+
+		standardCheck.addActionListener(this);
+		spawnCheck.addActionListener(this);
+		doorCheck.addActionListener(this);
+		coverCheck.addActionListener(this);
+		boostCheck.addActionListener(this);
+
+		standardCheck.setFocusable(false);
+		spawnCheck.setFocusable(false);
+		doorCheck.setFocusable(false);
+		coverCheck.setFocusable(false);
+		boostCheck.setFocusable(false);
+
+		itemPanel.add(standardCheck);
+		itemPanel.add(spawnCheck);
+		itemPanel.add(doorCheck);
+		itemPanel.add(coverCheck);
+		itemPanel.add(boostCheck);
+
+		mainPanel.add(topPanel, BorderLayout.NORTH);
+		mainPanel.add(itemPanel, BorderLayout.SOUTH);
+		add(mainPanel);
+
+		new FileDrop(mainPanel, new FileDrop.Listener() {
+			public void filesDropped(java.io.File[] files) {
+				if (files.length > 0) {
+					File f = files[0];
+					if (f.exists() && f.isFile()) {
+						String extension = FilenameUtils.getExtension(f.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("File dropped onto Map Mesh Viewer: " + f);
+						ModManager.debugLogger.writeMessage("Extension: " + extension);
+						switch (extension) {
+						case "txt":
+							openFile(f);
+							break;
+						case "pcc":
+							String transplanter = ModManager.getGUITransplanterCLI(true);
+							if (transplanter != null) {
+								viewinFileLabel.setText("Dumping file - this will take a long time!\nCheck task manager to ensure progress.");
+								Executors.newSingleThreadExecutor().execute(new Runnable() {
+									@Override
+									public void run() {
+										String biogamedir = ModManagerWindow.GetBioGameDir();
+										String directory = new File(biogamedir).getParent();
+										String[] command = { transplanter, "--inputfile", f.getAbsolutePath(), "--gamedir", directory, "--extract", "--exports", "--properties",
+												"--outputfolder", ModManager.getPCCDumpFolder() };
+										ProcessBuilder pb = new ProcessBuilder(command);
+										ModManager.runProcess(pb);
+										File outfile = new File(ModManager.getPCCDumpFolder() + FilenameUtils.getBaseName(f.getAbsolutePath()) + ".txt");
+										if (outfile.exists()) {
+											SwingUtilities.invokeLater(new Runnable() {
+												@Override
+												public void run() {
+													openFile(outfile);
+												}
+											});
+										} else {
+											ModManager.debugLogger.writeError("Output file does not exist: " + outfile);
+										}
+									}
+								});
+
+							}
+							break;
+						}
+					}
+				}
+			}
+
+		});
+
+		setTitle("Mod Manager Map Pathfinding Viewer");
+		setMinimumSize(new Dimension(400, 300));
+		pack();
+
+		browse.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				final JFileChooser fc = new JFileChooser();
+				//In response to a button click:
+				int returnVal = fc.showOpenDialog(MapMeshGenerator.this);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fc.getSelectedFile();
+					openFile(file);
+				}
+			}
+		});
+
+	}
+
+	protected void openFile(File file) {
+		MapMeshPanel panel = loadFile(file.getAbsolutePath());
+		if (panel != null) {
+			mmp = panel;
+			mainPanel.add(panel, BorderLayout.CENTER);
+			panel.requestFocusInWindow();
+			currentFile = file.getName();
+			//viewinFileLabel.setText("Viewing " + file.getName());
+			revalidate();
+		}
+	}
+
+	private MapMeshPanel loadFile(String infile) {
+
 		PathNode findingXYZ = null;
 		if (infile != null) {
 			//Parse PathNodes.
@@ -59,7 +221,8 @@ public class MapMeshGenerator {
 					}
 
 					if (line.contains("TheWorld.PersistentLevel.PathNode(PathNode)") || line.contains("TheWorld.PersistentLevel.SFXEnemySpawnPoint(SFXEnemySpawnPoint)")
-							|| line.contains("TheWorld.PersistentLevel.SFXDoorMarker(SFXDoorMarker)") || line.contains("TheWorld.PersistentLevel.CoverLink") || line.contains("TheWorld.PersistentLevel.CoverSlotMarker") || line.contains("TheWorld.PersistentLevel.SFXNav_BoostNode(SFXNav_BoostNode)") ) {
+							|| line.contains("TheWorld.PersistentLevel.SFXDoorMarker(SFXDoorMarker)") || line.contains("TheWorld.PersistentLevel.CoverLink")
+							|| line.contains("TheWorld.PersistentLevel.CoverSlotMarker") || line.contains("TheWorld.PersistentLevel.SFXNav_BoostNode(SFXNav_BoostNode)")) {
 						String index = line.trim().substring(line.indexOf('#') + 1, line.indexOf(' ')).trim();
 						findingXYZ = new PathNode(Integer.parseInt(index));
 						if (line.contains("TheWorld.PersistentLevel.PathNode(PathNode)")) {
@@ -70,7 +233,7 @@ public class MapMeshGenerator {
 							findingXYZ.setNodeType(PathNode.NODE_DOORMARKER);
 						} else if (line.contains("TheWorld.PersistentLevel.CoverLink")) {
 							findingXYZ.setNodeType(PathNode.NODE_COVERLINK);
-						} else if (line.contains("TheWorld.PersistentLevel.SFXNav_BoostNode(SFXNav_BoostNode)")){
+						} else if (line.contains("TheWorld.PersistentLevel.SFXNav_BoostNode(SFXNav_BoostNode)")) {
 							findingXYZ.setNodeType(PathNode.NODE_BOOST);
 						}
 
@@ -85,6 +248,12 @@ public class MapMeshGenerator {
 						continue;
 					}
 				}
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			ReachSpec findingreachspec = null;
 
@@ -100,7 +269,7 @@ public class MapMeshGenerator {
 							}
 							endindex = endindex.substring(0, endindex.indexOf('(')).trim();
 							findingreachspec.setEndindex(Integer.parseInt(endindex));
-							System.out.println("END INDEX: " + endindex);
+							//System.out.println("END INDEX: " + endindex);
 						}
 						if (line.contains("Name: \"Start\" Type: \"ObjectProperty\" Size: 4 Value:")) {
 							//start
@@ -110,12 +279,12 @@ public class MapMeshGenerator {
 							}
 							startindex = startindex.substring(0, startindex.indexOf('(')).trim();
 							findingreachspec.setStartindex(Integer.parseInt(startindex));
-							System.out.println("START INDEX: " + startindex);
+							//System.out.println("START INDEX: " + startindex);
 						}
 					}
 
 					if (line.contains("TheWorld.PersistentLevel.ReachSpec(ReachSpec)") || line.contains("TheWorld.PersistentLevel.SlotToSlotReachSpec(SlotToSlotReachSpec)")) {
-						System.out.println("ReachSpec: " + line);
+						//System.out.println("ReachSpec: " + line);
 						findingreachspec = new MapMeshGenerator.ReachSpec();
 						String index = line.trim().substring(line.indexOf('#') + 1, line.indexOf(' ')).trim();
 						findingreachspec.setIndex(Integer.parseInt(index));
@@ -136,39 +305,145 @@ public class MapMeshGenerator {
 						continue;
 					}
 				}
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 
-		for (ReachSpec spec : reachspecs) {
-			//	System.out.println(spec);
-		}
-
-		int leftmost = 0;
-		int topmost = 0;
+		int leftmost = 1000000;
+		int topmost = 1000000;
 		for (PathNode node : pathnodes) {
-			node.resolveNodes();
-			if (node.getX() == 0) {
+			node.resolveNodes(this);
+			if (node.getX() < leftmost && node.getX() != 0 && node.getY() < topmost && node.getY() != 0) {
 				leftmost = (int) node.getX();
-			}
-			if (node.getY() == 0) {
 				topmost = (int) node.getY();
+				System.out.println("New topmost: " + topmost);
+
+				System.out.println("New leftmost: " + leftmost);
 			}
-			System.out.println(node);
+			//System.out.println(node);
 		}
 
-		MapMeshViewer points = new MapMeshViewer();
+		/*
+		 * long fullx = 0; long fully = 0; for (PathNode p : pathnodes) { if
+		 * (p.x != 0 && p.y != 0) { fullx += p.x; fully += p.y; } } int centerx
+		 * = 0; int centery = 0; if (pathnodes.size() > 0) { centerx = (int)
+		 * (fullx / pathnodes.size()); centery = (int) (fully /
+		 * pathnodes.size()); }
+		 */
+		MapMeshPanel points = new MapMeshPanel(this, leftmost, topmost);
+
 		points.setNodes(pathnodes);
-		System.out.println("Coordinates: " + leftmost + ", " + topmost);
+		//System.out.println("Coordinates: " + leftmost + ", " + topmost);
 		points.setXoffset(leftmost);
 		points.setYoffset(topmost);
-		JFrame frame = new JFrame("Points");
-		points.setFparent(frame);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.add(points);
-		frame.setSize(250, 200);
-		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);
+		return points;
 	}
+
+	/*
+	 * public static void main(String[] args) throws FileNotFoundException,
+	 * IOException { File infile = new File(args[0]); PathNode findingXYZ =
+	 * null; if (infile != null) { //Parse PathNodes. try (BufferedReader br =
+	 * new BufferedReader(new FileReader(infile))) { for (String line; (line =
+	 * br.readLine()) != null;) { if (findingXYZ != null) { if
+	 * (line.contains("ReachSpec [EXPORT")) { String exportindex =
+	 * line.substring(line.indexOf('[') + 8, line.indexOf(']'));
+	 * findingXYZ.addConnectingReachSpec(Integer.parseInt(exportindex)); }
+	 * 
+	 * if (line.contains(" X : ")) { String endindex =
+	 * line.substring(line.indexOf(':') + 1); while (endindex.contains(":")) {
+	 * endindex = endindex.substring(endindex.indexOf(':') + 1).trim(); }
+	 * findingXYZ.setX(Double.parseDouble(endindex)); }
+	 * 
+	 * if (line.contains(" Y : ")) { String endindex =
+	 * line.substring(line.indexOf(':') + 1); while (endindex.contains(":")) {
+	 * endindex = endindex.substring(endindex.indexOf(':') + 1).trim(); }
+	 * findingXYZ.setY(Double.parseDouble(endindex)); }
+	 * 
+	 * if (line.contains(" Z : ")) { String endindex =
+	 * line.substring(line.indexOf(':') + 1); while (endindex.contains(":")) {
+	 * endindex = endindex.substring(endindex.indexOf(':') + 1).trim(); }
+	 * findingXYZ.setZ(Double.parseDouble(endindex)); } }
+	 * 
+	 * if (line.contains("TheWorld.PersistentLevel.PathNode(PathNode)") ||
+	 * line.contains(
+	 * "TheWorld.PersistentLevel.SFXEnemySpawnPoint(SFXEnemySpawnPoint)") ||
+	 * line.contains("TheWorld.PersistentLevel.SFXDoorMarker(SFXDoorMarker)") ||
+	 * line.contains("TheWorld.PersistentLevel.CoverLink") ||
+	 * line.contains("TheWorld.PersistentLevel.CoverSlotMarker") ||
+	 * line.contains(
+	 * "TheWorld.PersistentLevel.SFXNav_BoostNode(SFXNav_BoostNode)") ) { String
+	 * index = line.trim().substring(line.indexOf('#') + 1, line.indexOf('
+	 * ')).trim(); findingXYZ = new PathNode(Integer.parseInt(index)); if
+	 * (line.contains("TheWorld.PersistentLevel.PathNode(PathNode)")) {
+	 * findingXYZ.setNodeType(PathNode.NODE_STANDARD); } else if (line.contains(
+	 * "TheWorld.PersistentLevel.SFXEnemySpawnPoint(SFXEnemySpawnPoint)")) {
+	 * findingXYZ.setNodeType(PathNode.NODE_ENEMYSPAWN); } else if
+	 * (line.contains("TheWorld.PersistentLevel.SFXDoorMarker(SFXDoorMarker)"))
+	 * { findingXYZ.setNodeType(PathNode.NODE_DOORMARKER); } else if
+	 * (line.contains("TheWorld.PersistentLevel.CoverLink")) {
+	 * findingXYZ.setNodeType(PathNode.NODE_COVERLINK); } else if
+	 * (line.contains(
+	 * "TheWorld.PersistentLevel.SFXNav_BoostNode(SFXNav_BoostNode)")){
+	 * findingXYZ.setNodeType(PathNode.NODE_BOOST); }
+	 * 
+	 * }
+	 * 
+	 * if (line.equals(endentry)) { //commit if (findingXYZ != null) {
+	 * //pathnodes.add(findingXYZ); } findingXYZ = null; continue; } } }
+	 * ReachSpec findingreachspec = null;
+	 * 
+	 * //Parse ReachSpecs. try (BufferedReader br = new BufferedReader(new
+	 * FileReader(infile))) { for (String line; (line = br.readLine()) != null;)
+	 * { if (findingreachspec != null) { if (line.contains("Actor : ")) { //end
+	 * String endindex = line.substring(line.indexOf(':') + 1); while
+	 * (endindex.contains(":")) { endindex =
+	 * endindex.substring(endindex.indexOf(':') + 1).trim(); } endindex =
+	 * endindex.substring(0, endindex.indexOf('(')).trim();
+	 * findingreachspec.setEndindex(Integer.parseInt(endindex));
+	 * System.out.println("END INDEX: " + endindex); } if
+	 * (line.contains("Name: \"Start\" Type: \"ObjectProperty\" Size: 4 Value:"
+	 * )) { //start String startindex = line.substring(line.indexOf(':') + 1);
+	 * while (startindex.contains(":")) { startindex =
+	 * startindex.substring(startindex.indexOf(':') + 1).trim(); } startindex =
+	 * startindex.substring(0, startindex.indexOf('(')).trim();
+	 * findingreachspec.setStartindex(Integer.parseInt(startindex));
+	 * System.out.println("START INDEX: " + startindex); } }
+	 * 
+	 * if (line.contains("TheWorld.PersistentLevel.ReachSpec(ReachSpec)") ||
+	 * line.contains(
+	 * "TheWorld.PersistentLevel.SlotToSlotReachSpec(SlotToSlotReachSpec)")) {
+	 * System.out.println("ReachSpec: " + line); findingreachspec = new
+	 * MapMeshGenerator.ReachSpec(); String index =
+	 * line.trim().substring(line.indexOf('#') + 1, line.indexOf(' ')).trim();
+	 * findingreachspec.setIndex(Integer.parseInt(index)); if
+	 * (line.contains("TheWorld.PersistentLevel.ReachSpec(ReachSpec)")) {
+	 * findingreachspec.setReachSpecType(ReachSpec.SPEC_STANDARD); } else if
+	 * (line.contains(
+	 * "TheWorld.PersistentLevel.SlotToSlotReachSpec(SlotToSlotReachSpec)")) {
+	 * findingreachspec.setReachSpecType(ReachSpec.SPEC_SLOTTOSLOT);
+	 * 
+	 * } }
+	 * 
+	 * if (line.equals(endentry)) { //commit if (findingreachspec != null) { //
+	 * reachspecs.add(findingreachspec); } findingreachspec = null; continue; }
+	 * } } }
+	 * 
+	 * //for (ReachSpec spec : reachspecs) { // System.out.println(spec); //}
+	 * 
+	 * int leftmost = 0; int topmost = 0; /* for (PathNode node : pathnodes) {
+	 * // node.resolveNodes(); if (node.getX() == 0) { leftmost = (int)
+	 * node.getX(); } if (node.getY() == 0) { topmost = (int) node.getY(); }
+	 * System.out.println(node); }
+	 * 
+	 * MapMeshPanel points = new MapMeshPanel(); //points.setNodes(pathnodes);
+	 * System.out.println("Coordinates: " + leftmost + ", " + topmost);
+	 * points.setXoffset(leftmost); points.setYoffset(topmost); }
+	 */
 
 	static class PathNode {
 		public static final int NODE_BOOST = 4;
@@ -238,17 +513,17 @@ public class MapMeshGenerator {
 			reachSpecIndexes.add(index);
 		}
 
-		public boolean resolveNodes() {
+		public boolean resolveNodes(MapMeshGenerator map) {
 			boolean first = true;
 			for (int rindex : reachSpecIndexes) {
 				if (!first)
 					continue;
-				ReachSpec rs = getReachSpecByIndex(rindex);
+				ReachSpec rs = getReachSpecByIndex(rindex, map);
 				if (rs == null) {
-					System.err.println("No reachspec found for " + rindex);
+					//System.err.println("No reachspec found for " + rindex);
 					continue;
 				}
-				PathNode node = getPathNodeByIndex(rs.endindex);
+				PathNode node = getPathNodeByIndex(rs.endindex, map);
 				if (node == null) {
 					continue;
 				}
@@ -331,8 +606,8 @@ public class MapMeshGenerator {
 		}
 	}
 
-	public static PathNode getPathNodeByIndex(int endindex) {
-		for (PathNode p : pathnodes) {
+	public static PathNode getPathNodeByIndex(int endindex, MapMeshGenerator map) {
+		for (PathNode p : map.pathnodes) {
 			if (p.getIndex() == endindex) {
 				return p;
 			}
@@ -340,12 +615,26 @@ public class MapMeshGenerator {
 		return null;
 	}
 
-	public static ReachSpec getReachSpecByIndex(int rindex) {
-		for (ReachSpec r : reachspecs) {
+	public static ReachSpec getReachSpecByIndex(int rindex, MapMeshGenerator map) {
+		for (ReachSpec r : map.reachspecs) {
 			if (r.index == rindex) {
 				return r;
 			}
 		}
 		return null;
+	}
+
+	public void setPositionText(String string) {
+		viewinFileLabel.setText("Viewing " + currentFile + " | " + string);
+
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() instanceof JCheckBox) {
+			if (mmp != null) {
+				mmp.repaint();
+			}
+		}
 	}
 }

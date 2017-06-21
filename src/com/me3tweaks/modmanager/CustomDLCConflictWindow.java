@@ -630,7 +630,7 @@ public class CustomDLCConflictWindow extends JDialog {
 					publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanted PCC failed to verify"));
 					publish(new ThreadCommand("ERROR_PCC_VERIFY_FAILED", FilenameUtils.getName(transplantFile)));
 					ModManager.debugLogger.writeError("UI Mod Compat Builder has encountered a critical error. Performing cleanup procedures.");
-					FileUtils.deleteQuietly(new File(skg.getGeneratedMod().getModPath()));
+					//FileUtils.deleteQuietly(new File(skg.getGeneratedMod().getModPath()));
 					synchronized (lock) {
 						while (!userAcceptedFirstFailMessage) {
 							lock.wait();

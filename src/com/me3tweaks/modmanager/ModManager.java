@@ -83,9 +83,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "5.0";
+	public static final String VERSION = "5.0 Beta";
 	public static long BUILD_NUMBER = 74L;
-	public static final String BUILD_DATE = "6/10/2017";
+	public static final String BUILD_DATE = "6/17/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -105,7 +105,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
 	public final static int MIN_REQUIRED_CMDLINE_REV = 0;
 
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 8; //1.0.0.X
+	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 9; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
@@ -121,6 +121,8 @@ public class ModManager {
 	public static String THIRD_PARTY_MOD_JSON;
 	public static boolean LOG_MODMAKER = false;
 	public static String COMMANDLINETOOLS_URL;
+	public static String LATEST_ME3EXPLORER_URL;
+	public static String LATEST_ME3EXPLORER_VERSION;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGAUGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN", "ITA" };
@@ -375,7 +377,7 @@ public class ModManager {
 				// Log Mod Startup
 				String modmakerlogStr = settingsini.get("Settings", "logmodmaker");
 				int modmakerlogStartupInt = 0;
-				if (modstartupStr != null && !modmakerlogStr.equals("")) {
+				if (modmakerlogStr != null && !modmakerlogStr.equals("")) {
 					try {
 						modmakerlogStartupInt = Integer.parseInt(modmakerlogStr);
 						if (modmakerlogStartupInt > 0) {
@@ -540,7 +542,7 @@ public class ModManager {
 		if (me3expDir.exists()) {
 			ModManager.debugLogger.writeMessage("Moving ME3Explorer to data/");
 			try {
-				FileUtils.moveDirectory(me3expDir, new File(ModManager.getME3ExplorerEXEDirectory_LEGACY(false)));
+				FileUtils.moveDirectory(me3expDir, new File(ModManager.getME3ExplorerEXEDirectory()));
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("FAILED TO MOVE ME3EXPLORER TO /data/ME3EXPLORER!");
 				ModManager.debugLogger.writeException(e);
@@ -920,7 +922,7 @@ public class ModManager {
 	}
 
 	public static String getGUITransplanterDir() {
-		return getToolsDir() + "GUITransplanter/";
+		return getCommandLineToolsDir();
 	}
 
 	/**
@@ -1025,7 +1027,24 @@ public class ModManager {
 			} catch (FileNotFoundException e) {
 				ModManager.debugLogger.writeError("BIOGAME_DIRECTORIES file does not exist. Returning empty list.");
 			}
+		}
+		if (directories.size() == 0) {
+			Wini ini = ModManager.LoadSettingsINI();
+			String setDir = ini.get("Settings", "biogame_dir");
+			ModManager.debugLogger.writeMessage("FALLBACK: ME3CMM.ini has saved the biogame directory to (blank/null if doesn't exist): " + setDir);
+			if (setDir != null) {
+				File dir = new File(setDir);
+				if (dir.exists()) {
+					directories.add(setDir);
+					return directories;
+				}
+			}
 
+			//Haven't found any yet... look it up
+			String regpath = ModManager.LookupGamePathViaRegistryKey(true);
+			if (regpath != null && new File(regpath).exists()) {
+				directories.add(regpath);
+			}
 		}
 		return directories;
 
@@ -1045,17 +1064,10 @@ public class ModManager {
 	/**
 	 * Gets ME3Explorer directory, with slash on the end
 	 *
-	 * @param showDialog
-	 *            set to true to show dialog if me3explorer is not found
 	 * @return
 	 */
-	public static String getME3ExplorerEXEDirectory_LEGACY(boolean showDialog) {
+	public static String getME3ExplorerEXEDirectory() {
 		File me3expdir = new File(getDataDir() + "ME3Explorer/");
-		if (!me3expdir.exists() && showDialog) {
-			JOptionPane.showMessageDialog(null, "Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.", "ME3Explorer Error",
-					JOptionPane.ERROR_MESSAGE);
-			return "";
-		}
 		return appendSlash(me3expdir.getAbsolutePath());
 	}
 
@@ -1773,6 +1785,30 @@ public class ModManager {
 	}
 
 	/**
+	 * Runs a process already built via processbuilder. This method simply runs
+	 * the EXE and does not wait for it, nor does it print any of its output.
+	 *
+	 * @param p
+	 *            Process to build and run
+	 */
+	public static void runProcessDetached(ProcessBuilder p) {
+		try {
+			StringBuilder sb = new StringBuilder();
+			List<String> list = p.command();
+			for (String arg : list) {
+				sb.append(arg);
+				sb.append(" ");
+			}
+			ModManager.debugLogger.writeMessage("runProcessDetached(): " + sb.toString());
+			p.start();
+			return;
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("Process exception occured:", e);
+			return;
+		}
+	}
+
+	/**
 	 * Runs a process already build via processbuilder, prints timing info and
 	 * returns the result
 	 *
@@ -2070,6 +2106,11 @@ public class ModManager {
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * Checks if MassEffect3.exe is currently running. Uses native code.
+	 * 
+	 * @return
+	 */
 	public static boolean isMassEffect3Running() {
 		try {
 			Kernel32 kernel32 = (Kernel32) Native.loadLibrary(Kernel32.class, W32APIOptions.UNICODE_OPTIONS);
@@ -2236,7 +2277,7 @@ public class ModManager {
 
 	public static boolean GrantPermissionsToDirectory(String directory, String username) {
 		if (directory.endsWith("\\") || directory.endsWith("/")) {
-			directory = directory.substring(0, directory.length()-1);
+			directory = directory.substring(0, directory.length() - 1);
 		}
 		ArrayList<String> command = new ArrayList<String>();
 		command.add(ModManager.getCommandLineToolsDir() + "elevate.exe");
@@ -2282,9 +2323,20 @@ public class ModManager {
 			}
 		}
 	}
-	
+
 	public static String getCommandLineToolsRequiredVersion() {
-		return ModManager.MIN_REQUIRED_CMDLINE_MAIN + "." + ModManager.MIN_REQUIRED_CMDLINE_MINOR + "." + ModManager.MIN_REQUIRED_CMDLINE_BUILD
-				+ "." + ModManager.MIN_REQUIRED_CMDLINE_REV;
+		return ModManager.MIN_REQUIRED_CMDLINE_MAIN + "." + ModManager.MIN_REQUIRED_CMDLINE_MINOR + "." + ModManager.MIN_REQUIRED_CMDLINE_BUILD + "."
+				+ ModManager.MIN_REQUIRED_CMDLINE_REV;
+	}
+
+	/**
+	 * Returns the PCC dumping folder.
+	 * 
+	 * @return data/pccdumps
+	 */
+	public static String getPCCDumpFolder() {
+		File file = new File(getDataDir() + "PCCdumps\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
 	}
 }

@@ -15,27 +15,28 @@ import javax.swing.JPanel;
 
 import com.me3tweaks.modmanager.mapmesh.MapMeshGenerator.PathNode;
 
-public class MapMeshViewer extends JPanel {
+public class MapMeshPanel extends JPanel {
 
-	protected static JFrame fparent;
+	protected MapMeshGenerator fparent;
 	private ArrayList<PathNode> nodes;
 
-	public static JFrame getFparent() {
+	public JFrame getFparent() {
 		return fparent;
-	}
-
-	public static void setFparent(JFrame fparent) {
-		MapMeshViewer.fparent = fparent;
 	}
 
 	private int xoffset = 1000;
 	private int yoffset = 0;
-	private double scale = 1;
+	private double scale = 0.005;
 	private int delta = -2000;
 	private double pointdiameter = 10;
 
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
+		boolean standard = fparent.standardCheck.isSelected();
+		boolean boost = fparent.boostCheck.isSelected();
+		boolean cover = fparent.coverCheck.isSelected();
+		boolean door = fparent.doorCheck.isSelected();
+		boolean spawn = fparent.spawnCheck.isSelected();
 
 		Graphics2D g2d = (Graphics2D) g;
 		g2d.scale(scale, scale);
@@ -43,26 +44,42 @@ public class MapMeshViewer extends JPanel {
 		boolean first = true;
 		if (nodes != null) {
 			for (PathNode node : nodes) {
+				switch (node.getNodeType()) {
+				case PathNode.NODE_STANDARD:
+					if (!standard) {
+						continue;
+					}
+					g2d.setColor(Color.RED);
+					break;
+				case PathNode.NODE_ENEMYSPAWN:
+					if (!spawn) {
+						continue;
+					}
+					g2d.setColor(Color.GREEN);
+					break;
+				case PathNode.NODE_DOORMARKER:
+					if (!door) {
+						continue;
+					}
+					g2d.setColor(Color.YELLOW);
+					break;
+				case PathNode.NODE_COVERLINK:
+					if (!cover) {
+						continue;
+					}
+					g2d.setColor(Color.ORANGE);
+					break;
+				case PathNode.NODE_BOOST:
+					if (!boost) {
+						continue;
+					}
+					g2d.setColor(Color.CYAN);
+				}
 				//System.out.println(node);
 				Ellipse2D.Double circle = new Ellipse2D.Double(node.getX() - (pointdiameter / 2) + getXoffset(), node.getY() - (pointdiameter / 2) + getYoffset(), pointdiameter,
 						pointdiameter);
 				//System.out.println(circle.getCenterX()+", "+circle.getCenterY());
-				switch (node.getNodeType()) {
-				case PathNode.NODE_STANDARD:
-					g2d.setColor(Color.RED);
-					break;
-				case PathNode.NODE_ENEMYSPAWN:
-					g2d.setColor(Color.GREEN);
-					break;
-				case PathNode.NODE_DOORMARKER:
-					g2d.setColor(Color.YELLOW);
-					break;
-				case PathNode.NODE_COVERLINK:
-					g2d.setColor(Color.ORANGE);
-					break;
-				case PathNode.NODE_BOOST:
-					g2d.setColor(Color.CYAN);
-				}
+				
 				g2d.fill(circle);
 				g2d.setColor(Color.MAGENTA);
 				g2d.setFont(new Font("TimesRoman", Font.PLAIN, (int) (12 / scale)));
@@ -105,9 +122,10 @@ public class MapMeshViewer extends JPanel {
 	private static final int BASE_DELTA = -1000;
 	private static final double BASE_DIAMETER = 10;
 
-	public MapMeshViewer() {
+	public MapMeshPanel(MapMeshGenerator fParent, long centerx, long centery) {
+		this.fparent = fParent;
+		setBackground(Color.LIGHT_GRAY);
 		setFocusable(true);
-		requestFocusInWindow();
 		addKeyListener(new KeyListener() {
 
 			@Override
@@ -124,32 +142,33 @@ public class MapMeshViewer extends JPanel {
 				case KeyEvent.VK_LEFT:
 					setXoffset(getXoffset() + -delta);
 					System.out.println("Key pressed: " + e.getKeyCode());
-					MapMeshViewer.this.repaint();
+					MapMeshPanel.this.repaint();
 					break;
 				case KeyEvent.VK_RIGHT:
 					setXoffset(getXoffset() + delta);
-					MapMeshViewer.this.repaint();
+					MapMeshPanel.this.repaint();
 					break;
 				case KeyEvent.VK_UP:
 					setYoffset(getYoffset() + -delta);
-					MapMeshViewer.this.repaint();
+					MapMeshPanel.this.repaint();
 					break;
 				case KeyEvent.VK_DOWN:
 					setYoffset(getYoffset() + delta);
-					MapMeshViewer.this.repaint();
+					MapMeshPanel.this.repaint();
 					break;
+				case KeyEvent.VK_Z:
 				case KeyEvent.VK_PLUS:
 				case KeyEvent.VK_ADD:
-					setRelativeScale(0.1);
+					setRelativeScale(0.05);
 					break;
+				case KeyEvent.VK_O:
 				case KeyEvent.VK_MINUS:
 				case KeyEvent.VK_SUBTRACT:
-					setRelativeScale(-0.1);
+					setRelativeScale(-0.05);
 					break;
 				default:
 					System.out.println("Key not handled: " + e.getKeyCode());
 				}
-				MapMeshViewer.fparent.setTitle("Current Position: " + xoffset + ", " + yoffset + ", scale: " + scale);
 			}
 		});
 	}
@@ -167,6 +186,7 @@ public class MapMeshViewer extends JPanel {
 			delta = Math.min((int) (BASE_DELTA * (scale)), -400);
 			repaint();
 		}
+		fparent.setPositionText("Top Left Coordinate: " + xoffset + ", " + yoffset + " | Scale: " + scale);
 	}
 
 	public int getYoffset() {
@@ -175,6 +195,7 @@ public class MapMeshViewer extends JPanel {
 
 	public void setYoffset(int yoffset) {
 		this.yoffset = yoffset;
+		fparent.setPositionText("Top Left Coordinate: " + xoffset + ", " + yoffset + " | Scale: " + scale);
 	}
 
 	public int getXoffset() {
@@ -183,5 +204,6 @@ public class MapMeshViewer extends JPanel {
 
 	public void setXoffset(int xoffset) {
 		this.xoffset = xoffset;
+		fparent.setPositionText("Top Left Coordinate: " + xoffset + ", " + yoffset + " | Scale: " + scale);
 	}
 }

@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -25,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -43,6 +44,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -51,6 +53,7 @@ import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.border.EtchedBorder;
@@ -71,6 +74,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.help.HelpMenu;
+import com.me3tweaks.modmanager.mapmesh.MapMeshGenerator;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
@@ -130,7 +134,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
 			modutilsDeleteMod;
 	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32,
-			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config;
+			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config, toolsMapMeshViewer;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
@@ -408,7 +412,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				ModManager.debugLogger.writeMessage("7z.exe is present in tools/ directory");
 			}
-			
+
 			File jpatch = new File(ModManager.getToolsDir() + "jptch.exe");
 			if (!jpatch.exists()) {
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading MixIn Patching Tools"));
@@ -631,6 +635,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 				long latest_build = (long) latest_object.get("latest_build_number");
 				String latestCommandLineToolsLink = (String) latest_object.get("latest_commandlinetools_link");
+				ModManager.LATEST_ME3EXPLORER_VERSION = (String) latest_object.get("latest_me3explorer_version");
+				ModManager.LATEST_ME3EXPLORER_URL = (String) latest_object.get("latest_me3explorer_download_link");
 
 				if (latest_build < ModManager.BUILD_NUMBER) {
 					// build is newer than current
@@ -1077,6 +1083,29 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modList.addListSelectionListener(this);
 		modList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		modList.setLayoutOrientation(JList.VERTICAL);
+		modList.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				if (SwingUtilities.isRightMouseButton(e)) {
+					modList.setSelectedIndex(modList.locationToIndex(e.getPoint()));
+
+					JPopupMenu menu = new JPopupMenu();
+					JMenuItem itemRemove = new JMenuItem("Remove");
+					itemRemove.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+
+							// This could probably be improved, but assuming you also keep the values in an ArrayList, you can remove the element like this
+							//array_list.remove(listbox.getSelectedValue());
+							//listbox.setListData((String[]) array_list.toArray(new String[array_list.size()]));
+
+							System.out.println("Remove the element in position " + modList.getSelectedValue());
+
+						}
+					});
+					menu.add(itemRemove);
+					menu.show(modList, e.getPoint().x, e.getPoint().y);
+				}
+			}
+		});
 		JScrollPane listScroller = new JScrollPane(modList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 		modlistFailedIndicatorLink = new JButton();
@@ -1449,6 +1478,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolME3Config = new JMenuItem("ME3 Config Tool");
 		toolME3Config.setToolTipText("<html>Opens the ME3 Configuration Utility that comes packaged with the game.<br>Lets you configure graphics and audio settings.</html>");
 
+		toolsMapMeshViewer = new JMenuItem("Map Pathfinding Viewer");
+		toolsMapMeshViewer.setToolTipText("<html>Parses the output of the GUI Transplanter dumping tool and can show pathfinding nodes for a map.<br>VERY EXPERIMENTAL.</html>");
+
 		toolsAutoTOCGame.addActionListener(this);
 		modManagementModMaker.addActionListener(this);
 		modManagementASI.addActionListener(this);
@@ -1483,6 +1515,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsInstallBinkw32asi.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
 		toolME3Config.addActionListener(this);
+		toolsMapMeshViewer.addActionListener(this);
 		toolME3Explorer.addActionListener(this);
 		toolTankmasterTLK.addActionListener(this);
 		toolTankmasterCoalFolder.addActionListener(this);
@@ -1496,6 +1529,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolME3Config);
 		toolsMenu.add(toolME3Explorer);
+		toolsMenu.add(toolsMapMeshViewer);
 		toolsMenu.add(devMenu);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsInstallLauncherWV);
@@ -1686,13 +1720,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		// too bad we can't do a switch statement on the object :(
 		if (e.getSource() == buttonBioGameDir) {
 			JFileChooser dirChooser = new JFileChooser();
-			File tryDir = new File(GetBioGameDir());
-			if (tryDir.exists()) {
-				dirChooser.setCurrentDirectory(new File(GetBioGameDir()));
-			} else {
-				if (ModManager.logging) {
-					ModManager.debugLogger.writeMessage("Directory " + GetBioGameDir() + " does not exist, defaulting to working directory.");
+			String biogamedir = GetBioGameDir();
+			if (biogamedir != null) {
+				File tryDir = new File(biogamedir);
+				if (tryDir.exists()) {
+					dirChooser.setCurrentDirectory(new File(GetBioGameDir()));
+				} else {
+					if (ModManager.logging) {
+						ModManager.debugLogger.writeMessage("Directory " + GetBioGameDir() + " does not exist, defaulting to working directory.");
+					}
 				}
+			} else {
 				dirChooser.setCurrentDirectory(new java.io.File("."));
 			}
 			dirChooser.setDialogTitle("Select BIOGame directory");
@@ -2070,33 +2108,63 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"The BIOGame directory is not valid.\nMod Manager does not know where to launch the game executable.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
-		} else
-
-		if (e.getSource() == toolME3Explorer) {
+		} else if (e.getSource() == toolsMapMeshViewer) {
+			new MapMeshGenerator();
+		} else if (e.getSource() == toolME3Explorer) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
-				ModManager.debugLogger.writeMessage(".NET is installed");
-				ArrayList<String> commandBuilder = new ArrayList<String>();
-				String me3expdir = ModManager.appendSlash(ModManager.getME3ExplorerEXEDirectory_LEGACY(true));
-				commandBuilder.add(me3expdir + "ME3Explorer.exe");
-				// System.out.println("Building command");
-				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-				// Debug stuff
-				StringBuilder sb = new StringBuilder();
-				for (String arg : command) {
-					sb.append(arg + " ");
+				boolean prompt = false;
+				String extVersionStr = null;
+				File me3exp = new File(ModManager.getME3ExplorerEXEDirectory() + "ME3Explorer.exe");
+				String promptMessage = "Placeholder";
+				String promptTitle = "Placeholder";
+				int promptIcon = JOptionPane.ERROR_MESSAGE;
+
+				if (!me3exp.exists()) {
+					promptMessage = "ME3Explorer is not included in Mod Manager and must be downloaded.\nMod Manager can download version " + ModManager.LATEST_ME3EXPLORER_VERSION
+							+ " for you.\nDownload?";
+					promptIcon = JOptionPane.WARNING_MESSAGE;
+					promptTitle = "Download required";
+					prompt = true;
+				} else {
+					if (ModManager.LATEST_ME3EXPLORER_VERSION != null) {
+						int[] existingVersionInfo = EXEFileInfo.getVersionInfo(me3exp.getAbsolutePath());
+						extVersionStr = existingVersionInfo[0] + "." + existingVersionInfo[1] + "." + existingVersionInfo[2] + "." + existingVersionInfo[3];
+						if (EXEFileInfo.versionCompare(ModManager.LATEST_ME3EXPLORER_VERSION, extVersionStr) > 0) {
+							promptMessage = "Your local copy of ME3Explorer is out of date.\nLocal version: " + extVersionStr + "\nLatest version: "
+									+ ModManager.LATEST_ME3EXPLORER_VERSION + "\nDownload latest version?";
+							promptIcon = JOptionPane.WARNING_MESSAGE;
+							promptTitle = "Download required";
+							prompt = true;
+						}
+					}
 				}
-				ModManager.debugLogger.writeMessage("Executing ME3Explorer (via action menu) via command: " + sb.toString());
-				try {
-					ProcessBuilder pb = new ProcessBuilder(command);
-					pb.directory(new File(me3expdir)); // this is where you set
-														// the root folder for
-														// the executable to run
-														// with
-					pb.start();
-				} catch (IOException ex) {
-					ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(ex));
+				if (prompt) {
+					// Show update
+					int update = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW, promptMessage, promptTitle, JOptionPane.YES_NO_OPTION, promptIcon);
+					if (update == JOptionPane.YES_OPTION) {
+						new ME3ExplorerUpdaterWindow(extVersionStr, true);
+					} else {
+						if (me3exp.exists()) {
+							ModManager.debugLogger.writeMessage("Launching ME3Explorer");
+							labelStatus.setText("Launched ME3Explorer");
+							ProcessBuilder pb = new ProcessBuilder(me3exp.getAbsolutePath());
+							ModManager.runProcessDetached(pb);
+						} else {
+							ModManager.debugLogger.writeMessage("Aboring ME3Explorer launch - does not exist locally");
+							labelStatus.setText("ME3Explorer not available");
+						}
+					}
+				} else {
+					if (me3exp.exists()) {
+						//run it
+						ModManager.debugLogger.writeMessage("Launching ME3Explorer");
+						labelStatus.setText("Launched ME3Explorer");
+						ProcessBuilder pb = new ProcessBuilder(me3exp.getAbsolutePath());
+						ModManager.runProcessDetached(pb);
+					}
 				}
+
 			} else {
 				updateApplyButton();
 				labelStatus.setText(".NET Framework 4.5 or higher is missing");
@@ -2701,6 +2769,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @return
 	 */
 	private static boolean internalValidateBIOGameDir(String path) {
+		if (path == null) {
+			return false;
+		}
 		File coalesced = new File(ModManager.appendSlash(path) + "CookedPCConsole\\Coalesced.bin");
 		File dlcFolder = new File(ModManager.appendSlash(path) + "DLC\\");
 		File parentPath = new File(path).getParentFile();
@@ -3399,7 +3470,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	public static String GetBioGameDir() {
-		if (ModManagerWindow.ACTIVE_WINDOW == null || ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir == null) {
+		if (ModManagerWindow.ACTIVE_WINDOW == null || ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir == null
+				|| ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getSelectedItem() == null) {
 			return ModManagerWindow.PRELOADED_BIOGAME_DIR;
 		} else {
 			return ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getSelectedItem().toString();
