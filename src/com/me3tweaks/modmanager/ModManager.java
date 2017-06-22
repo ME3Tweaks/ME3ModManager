@@ -1044,7 +1044,7 @@ public class ModManager {
 				}
 				scanner.close();
 			} catch (FileNotFoundException e) {
-				ModManager.debugLogger.writeError("BIOGAME_DIRECTORIES file does not exist. Returning empty list.");
+				ModManager.debugLogger.writeError("BIOGAME_DIRECTORIES file does not exist.");
 			}
 		}
 		if (directories.size() == 0) {
@@ -1055,6 +1055,14 @@ public class ModManager {
 				File dir = new File(setDir);
 				if (dir.exists()) {
 					directories.add(setDir);
+				try {
+					ModManager.debugLogger.writeMessage("Upgrading biogame directory to BIOGAME_DIRECTORIES file.");
+					FileUtils.writeLines(file, directories);
+					ini.remove("Settings", "biogame_dir");
+					ini.store();
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("ERROR UPGRADING ME3CMM.ini bigame_dir to BIOGAME_DIRECTORIES:", e);
+				}
 					return directories;
 				}
 			}
@@ -2234,7 +2242,7 @@ public class ModManager {
 		String installDir = null;
 		String _32bitpath = "SOFTWARE\\BioWare\\Mass Effect 3";
 		String _64bitpath = "SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
-		ModManager.debugLogger.writeMessage("ME3CMM.ini does not contain the game path, attempting lookup via 64-bit registry key");
+		ModManager.debugLogger.writeMessage("Looking up location of game using registry...");
 		try {
 			installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _64bitpath, "Install Dir");
 			ModManager.debugLogger.writeMessage("Game location found - via 64bit key.");

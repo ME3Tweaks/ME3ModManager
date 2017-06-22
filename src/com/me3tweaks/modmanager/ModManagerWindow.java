@@ -127,7 +127,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JMenuBar menuBar;
-	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, parsersMenu, helpMenu, openToolMenu, modAlternatesMenu;
+	JMenu actionMenu, modUtilsPlaceholderMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, parsersMenu, helpMenu, openToolMenu, modAlternatesMenu;
+	JPopupMenu modMenu;
 	JMenuItem actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
 			modManagementPatchLibary, modManagementClearPatchLibraryCache;
@@ -465,41 +466,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		/*
-		 * private void checkForME3ExplorerUpdates() { String me3explorer =
-		 * ModManager.getME3ExplorerEXEDirectory_LEGACY(false) +
-		 * "ME3Explorer.exe"; File f = new File(me3explorer); if (!f.exists()) {
-		 * ModManager.debugLogger.
-		 * writeMessage("ME3Explorer is missing. Downloading from ME3Tweaks.");
-		 * if (ModManager.AUTO_UPDATE_ME3EXPLORER) { new
-		 * ME3ExplorerUpdaterWindow(ModManagerWindow.this); } else {
-		 * ModManager.debugLogger.
-		 * writeError("ME3Explorer missing but cannot download due to settings!"
-		 * ); JOptionPane.showMessageDialog(ModManagerWindow.this,
-		 * "ME3Explorer is missing from data/ME3Explorer.\nMod Manager requires ME3Explorer but you have auto updates for it turned off.\nIf there are errors in this session, they are not supported by FemShep."
-		 * , "Missing ME3Explorer", JOptionPane.ERROR_MESSAGE); } } else { int
-		 * main = EXEFileInfo.getMajorVersionOfProgram(me3explorer); int rev =
-		 * EXEFileInfo.getBuildOfProgram(me3explorer);
-		 * ModManager.debugLogger.writeMessage("ME3Explorer Version: " +
-		 * Arrays.toString(EXEFileInfo.getVersionInfo(me3explorer))); if (main <
-		 * ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN || main ==
-		 * ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN && rev <
-		 * ModManager.MIN_REQUIRED_ME3EXPLORER_REV) { // we must update it
-		 * ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:"
-		 * + main + "." + rev + ", required" +
-		 * ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN + "." +
-		 * ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+"); if
-		 * (ModManager.AUTO_UPDATE_ME3EXPLORER) { new
-		 * ME3ExplorerUpdaterWindow(ModManagerWindow.this); } else {
-		 * ModManager.debugLogger.
-		 * writeError("ME3Explorer outdated but cannot download due to settings!"
-		 * ); JOptionPane.showMessageDialog(ModManagerWindow.this,
-		 * "Mod Manager requires a newer version of ME3Explorer for this build.\nYou have auto updates for it turned off. You will need to turn them back on to download this update.\nIf there are errors in this session, they are not supported by FemShep."
-		 * , "ME3Explorer Outdated", JOptionPane.ERROR_MESSAGE); } } else {
-		 * ModManager.debugLogger.
-		 * writeMessage("Current ME3Explorer version satisfies requirements for Mod Manager"
-		 * ); } } }
-		 */
 
 		private void checkForContentUpdates(boolean force) {
 			// Check for updates
@@ -947,6 +913,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		ArrayList<String> directories = ModManager.getSavedBIOGameDirectories();
 
 		fieldBiogameDir = new JComboBox<String>(directories.toArray(new String[directories.size()]));
+		ModManager.debugLogger.writeMessage("Setting active biogame directory from registry...");
 		String registrykey = ModManager.LookupGamePathViaRegistryKey(true);
 		if (registrykey != null) {
 			int index = directories.indexOf(registrykey);
@@ -1088,9 +1055,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (SwingUtilities.isRightMouseButton(e)) {
 					modList.setSelectedIndex(modList.locationToIndex(e.getPoint()));
 					
-					JPopupMenu menu = new JPopupMenu();
-					menu.add(modMenu);
-					menu.show(modList, e.getPoint().x, e.getPoint().y);
+					//JPopupMenu menu = new JPopupMenu();
+					//menu.add(modMenu);
+					modMenu.show(modList, e.getPoint().x, e.getPoint().y);
 				}
 			}
 		});
@@ -1353,8 +1320,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementImportFromArchive.addActionListener(this);
 		modManagementImportAlreadyInstalled.addActionListener(this);
 
-		// MOD TOOLS
-		modMenu = new JMenu("Mod Utils");
+		//MOD UTILS PLACEHOLDER
+		modUtilsPlaceholderMenu = new JMenu("Mod Utils");
+		JMenuItem placeholderItem = new JMenuItem("Mod Utils menu has moved");
+		placeholderItem.setToolTipText("Right click a mod in the to list to the Mod Utils menu for it.");
+		placeholderItem.addActionListener(this);
+		modUtilsPlaceholderMenu.add(placeholderItem);
+		menuBar.add(modUtilsPlaceholderMenu);
+		// MOD TOOLS - NO LONGER ON THE TOP BAR...
+		modMenu = new JPopupMenu("Mod Utils");
 		mountMenu = new JMenu("Manage [PLACEHOLDER] Mount files");
 		mountMenu.setVisible(false);
 		modutilsHeader = new JMenuItem("No mod selected");
@@ -1430,7 +1404,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.addSeparator();
 		modMenu.add(modutilsDeleteMod);
 		//modMenu.setEnabled(false);
-		//menuBar.add(modMenu);
 
 		// Tools
 		toolsMenu = new JMenu("Tools");
@@ -2128,7 +2101,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					// Show update
 					int update = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW, promptMessage, promptTitle, JOptionPane.YES_NO_OPTION, promptIcon);
 					if (update == JOptionPane.YES_OPTION) {
-						new ME3ExplorerUpdaterWindow(extVersionStr, true);
+						new ME3ExplorerUpdaterWindow(ModManager.LATEST_ME3EXPLORER_VERSION, true);
 					} else {
 						if (me3exp.exists()) {
 							ModManager.debugLogger.writeMessage("Launching ME3Explorer");

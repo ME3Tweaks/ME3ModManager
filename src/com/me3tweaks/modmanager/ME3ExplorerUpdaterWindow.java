@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -36,11 +37,12 @@ import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeListener {
-	//String downloadLink, updateScriptLink;
+	// String downloadLink, updateScriptLink;
 	boolean error = false;
 	String version;
 	JLabel introLabel, statusLabel;
@@ -51,14 +53,14 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 		this.setTitle("ME3Explorer Update");
 		this.startAfterFinish = startAfterFinish;
 		this.version = versionStr;
-		
+
 		setupWindow();
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		DownloadTask task = new DownloadTask(ModManager.getTempDir());
 		task.addPropertyChangeListener(this);
-		ModManager.debugLogger.writeMessage("Downloading ME3Explorer "+versionStr);
+		ModManager.debugLogger.writeMessage("Downloading ME3Explorer " + versionStr);
 		task.execute();
 		this.setVisible(true);
 	}
@@ -111,10 +113,9 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 	 * @author www.codejava.net
 	 *
 	 */
-	class DownloadTask extends SwingWorker<Void, Void> {
+	class DownloadTask extends SwingWorker<Void, ThreadCommand> {
 		private static final int BUFFER_SIZE = 4096;
 		private String saveDirectory;
-		//private SwingFileDownloadHTTP gui;
 
 		public DownloadTask(String saveDirectory) {
 			this.saveDirectory = saveDirectory;
@@ -125,10 +126,10 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 		 */
 		@Override
 		protected Void doInBackground() throws Exception {
-			//Download the update
+			// Download the update
 			try {
 
-				//Download update
+				// Download update
 				HTTPDownloadUtil util = new HTTPDownloadUtil();
 				util.downloadFile(ModManager.LATEST_ME3EXPLORER_URL);
 
@@ -157,20 +158,23 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 				outputStream.close();
 
 				util.disconnect();
+				publish(new ThreadCommand("SET_PROGRESSBAR_INDETERMINATE"));
+				publish(new ThreadCommand("SET_STATUS_TEXT", "<html>Extracting ME3Explorer...<br>ME3Explorer is not part of Mod Manager.</html>"));
 
 				FileUtils.deleteQuietly(new File(ModManager.getME3ExplorerEXEDirectory()));
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
-				commandBuilder.add("-y"); //overwrite
-				commandBuilder.add("x"); //extract
-				commandBuilder.add(saveFilePath);//7z file
-				commandBuilder.add("-o" + ResourceUtils.normalizeFilePath(ModManager.getDataDir(),true)); //extraction path
+				commandBuilder.add("-y"); // overwrite
+				commandBuilder.add("x"); // extract
+				commandBuilder.add(saveFilePath);// 7z file
+				commandBuilder.add("-o" + ResourceUtils.normalizeFilePath(ModManager.getDataDir(), true)); // extraction
+																											// path
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 				ModManager.debugLogger.writeMessage("Extracting ME3Explorer...");
 				ProcessBuilder pb = new ProcessBuilder(command);
 				int returncode = ModManager.runProcess(pb).getReturnCode();
 				if (returncode == 0) {
-					File configFile = new File(ModManager.getME3ExplorerEXEDirectory()+ "ME3Explorer.exe.config");
+					File configFile = new File(ModManager.getME3ExplorerEXEDirectory() + "ME3Explorer.exe.config");
 					if (configFile.exists()) {
 						disableME3ExplorerUnpackStartup(configFile.getAbsolutePath());
 					}
@@ -185,6 +189,21 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 			return null;
 		}
 
+		@Override
+		protected void process(List<ThreadCommand> chunks) {
+			for (ThreadCommand tc : chunks) {
+				String command = tc.getCommand();
+				switch (command) {
+				case "SET_PROGRESSBAR_INDETERMINATE":
+					downloadProgress.setIndeterminate(true);
+					break;
+				case "SET_STATUS_TEXT":
+					statusLabel.setText(tc.getMessage());
+					break;
+				}
+			}
+		}
+
 		/**
 		 * Executed in Swing's event dispatching thread
 		 */
@@ -193,7 +212,7 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updated ME3Explorer");
 			dispose();
 			if (startAfterFinish) {
-				ProcessBuilder pb = new ProcessBuilder(ModManager.getME3ExplorerEXEDirectory()+"ME3Explorer.exe");
+				ProcessBuilder pb = new ProcessBuilder(ModManager.getME3ExplorerEXEDirectory() + "ME3Explorer.exe");
 				ModManager.runProcessDetached(pb);
 			}
 		}
@@ -282,7 +301,8 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 	 * @return
 	 */
 	public boolean disableME3ExplorerUnpackStartup(String configfilePath) {
-		//configuration/userSettings/ME3Explorer.Properties.Settings/setting DisableDLCCheckOnStart = true
+		// configuration/userSettings/ME3Explorer.Properties.Settings/setting
+		// DisableDLCCheckOnStart = true
 		try {
 
 			// Create a document by parsing a XML file
