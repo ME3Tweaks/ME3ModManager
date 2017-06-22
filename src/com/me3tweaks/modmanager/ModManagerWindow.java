@@ -25,6 +25,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.KeyStore.LoadStoreParameter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -171,6 +172,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem toolsAutoTOCGame;
 	private JMenu restoreMenuAdvanced;
 	private boolean loadedFirstTime = false;
+	private JMenuItem placeholderModUtilsItem;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -1322,11 +1324,23 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		//MOD UTILS PLACEHOLDER
 		modUtilsPlaceholderMenu = new JMenu("Mod Utils");
-		JMenuItem placeholderItem = new JMenuItem("Mod Utils menu has moved");
-		placeholderItem.setToolTipText("Right click a mod in the to list to the Mod Utils menu for it.");
-		placeholderItem.addActionListener(this);
-		modUtilsPlaceholderMenu.add(placeholderItem);
-		menuBar.add(modUtilsPlaceholderMenu);
+		placeholderModUtilsItem = new JMenuItem("Mod Utils menu has moved");
+		Wini ini = ModManager.LoadSettingsINI();
+		String modUtilsVisibilityStr = ini.get("Settings", "hidemodutilsmenu");
+		int modUtilsVisibilityInt = 0;
+		if (modUtilsVisibilityStr != null && !modUtilsVisibilityStr.equals("")) {
+			try {
+				modUtilsVisibilityInt = Integer.parseInt(modUtilsVisibilityStr);
+				if (modUtilsVisibilityInt == 0) {
+					addModUtilsPlaceholderMenu();
+				}
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeMessage("Error reading modutils visibility setting, showing.");
+				addModUtilsPlaceholderMenu();
+			}
+		} else {
+			addModUtilsPlaceholderMenu();
+		}
 		// MOD TOOLS - NO LONGER ON THE TOP BAR...
 		modMenu = new JPopupMenu("Mod Utils");
 		mountMenu = new JMenu("Manage [PLACEHOLDER] Mount files");
@@ -1647,32 +1661,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		return menuBar;
 	}
 
-	/*
-	 * private void verifyBackupCoalesced() { File restoreTest = new
-	 * File(ModManager.getDataDir() + "Coalesced.original"); if
-	 * (!restoreTest.exists()) { ModManager.debugLogger.writeMessage(
-	 * "Didn't find Coalesced.original - checking existing installed one, will copy if verified."
-	 * ); // try to copy the current one String patch3CoalescedHash =
-	 * "540053c7f6eed78d92099cf37f239e8e"; File coalesced = new
-	 * File(ModManager.appendSlash(GetBioGameDir().toString()) +
-	 * "CookedPCConsole\\Coalesced.bin"); // Take the MD5 first to verify it. if
-	 * (coalesced.exists()) { try { if
-	 * (patch3CoalescedHash.equals(MD5Checksum.getMD5Checksum
-	 * (coalesced.toString()))) { // back it up Files.copy(coalesced.toPath(),
-	 * restoreTest.toPath()); restoreRevertCoal.setEnabled(true);
-	 * ModManager.debugLogger.writeMessage("Backed up Coalesced."); } else {
-	 * ModManager .debugLogger.writeMessage(
-	 * "Didn't back up coalecsed, hash mismatch.");
-	 * restoreRevertCoal.setEnabled(false); } } catch (IOException e) { // TODO
-	 * Auto-generated catch block
-	 * ModManager.debugLogger.writeErrorWithException(
-	 * "I/O Exception while verifying backup coalesced.", e); } catch (Exception
-	 * e) { // TODO Auto-generated catch block
-	 * ModManager.debugLogger.writeErrorWithException (
-	 * "General Exception while verifying backup coalesced.", e); } } else {
-	 * ModManager.debugLogger.writeMessage(
-	 * "Coalesced.bin was not found - unable to back up automatically"); } } }
-	 */
+
+	private void addModUtilsPlaceholderMenu() {
+		placeholderModUtilsItem.setToolTipText("Right click a mod in the to list to the Mod Utils menu for it.");
+		placeholderModUtilsItem.addActionListener(this);
+		modUtilsPlaceholderMenu.add(placeholderModUtilsItem);
+		menuBar.add(modUtilsPlaceholderMenu);
+	}
 
 	public void actionPerformed(ActionEvent e) {
 		// too bad we can't do a switch statement on the object :(
@@ -1809,6 +1804,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"The BioGame directory is not valid.\nMod Manager cannot update or create the game repair database.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
+		} else if (e.getSource() == placeholderModUtilsItem) {
+			JOptionPane.showMessageDialog(ModManagerWindow.this, "<html>The Mod Utils menu has been moved into the right click menu for mods.<br>This placeholder menu will not be shown on subsequent Mod Manager launches.</html>", "Mod Utils menu has moved", JOptionPane.WARNING_MESSAGE);
+			Wini ini = ModManager.LoadSettingsINI();
+			ini.put("Settings", "hidemodutilsmenu", 1);
+			ModManager.debugLogger.writeMessage("Saving hidemodutilsmenu ini item to settings");
+			try {
+				ini.store();
+			} catch (IOException e1) {
+				ModManager.debugLogger.writeErrorWithException("Error saving hidemodutilsmenu to ini:", e1);
+			}
+			
 		} else
 
 		if (e.getSource() == restoreRevertCoal) {
