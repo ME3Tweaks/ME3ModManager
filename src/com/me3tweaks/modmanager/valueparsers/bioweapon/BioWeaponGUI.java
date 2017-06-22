@@ -234,6 +234,20 @@ public class BioWeaponGUI extends JFrame implements ActionListener {
 		bioweaponGUI.add(splitPane, BorderLayout.CENTER);
 		this.getContentPane().add(bioweaponGUI);
 		pack();
+		
+		generateFork.setEnabled(false);
+		generateLoad.setEnabled(false);
+		generatePublish.setEnabled(false);
+		generateTable.setEnabled(false);
+		generateVariables.setEnabled(false);
+		generateInsert.setEnabled(false);
+		
+		generateFork.setToolTipText("SQL output is disabled");
+		generateLoad.setToolTipText("SQL output is disabled");
+		generatePublish.setToolTipText("SQL output is disabled");
+		generateTable.setToolTipText("SQL output is disabled");
+		generateVariables.setToolTipText("SQL output is disabled");
+		generateInsert.setToolTipText("SQL output is disabled");
 }
 
 	public static void diffString(String str1, String str2) {

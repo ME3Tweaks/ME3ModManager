@@ -42,6 +42,7 @@ import java.util.prefs.Preferences;
 import javax.swing.JOptionPane;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -123,6 +124,7 @@ public class ModManager {
 	public static String COMMANDLINETOOLS_URL;
 	public static String LATEST_ME3EXPLORER_URL;
 	public static String LATEST_ME3EXPLORER_VERSION;
+	public static boolean USE_WINDOWS_UI;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGAUGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN", "ITA" };
@@ -137,13 +139,6 @@ public class ModManager {
 		try {
 			System.out.println("Starting Mod Manager " + ModManager.VERSION);
 			System.out.println("Debugging mode is " + (ModManager.IS_DEBUG ? "enabled" : "disabled"));
-			// SETUI LOOK
-			try {
-				// Set cross-platform Java L&F (also called "Metal")
-				UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-			} catch (Exception e) {
-				System.err.println("Couldn't set the UI interface style");
-			}
 
 			ICONS = new ArrayList<Image>();
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon32.png")));
@@ -238,23 +233,45 @@ public class ModManager {
 					}
 				}
 				// Auto Update Check
-				String updateStr = settingsini.get("Settings", "checkforupdates");
-				int updateInt = 0;
-				if (updateStr != null && !updateStr.equals("")) {
-					try {
-						updateInt = Integer.parseInt(updateStr);
-						if (updateInt > 0) {
-							// logging is on
-							debugLogger.writeMessage("Auto check for mod manager updates is enabled");
-							AUTO_UPDATE_MOD_MANAGER = true;
-						} else {
-							debugLogger.writeMessage("Auto check for mod manager updates is disabled");
-							AUTO_UPDATE_MOD_MANAGER = false;
+				{
+					String updateStr = settingsini.get("Settings", "checkforupdates");
+					int updateInt = 0;
+					if (updateStr != null && !updateStr.equals("")) {
+						try {
+							updateInt = Integer.parseInt(updateStr);
+							if (updateInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("Auto check for mod manager updates is enabled");
+								AUTO_UPDATE_MOD_MANAGER = true;
+							} else {
+								debugLogger.writeMessage("Auto check for mod manager updates is disabled");
+								AUTO_UPDATE_MOD_MANAGER = false;
+							}
+						} catch (NumberFormatException e) {
+							ModManager.debugLogger.writeError("Number format exception reading the update check flag, defaulting to enabled");
 						}
-					} catch (NumberFormatException e) {
-						ModManager.debugLogger.writeError("Number format exception reading the update check flag, defaulting to enabled");
+
 					}
 				}
+
+				String windowsUIStr = settingsini.get("Settings", "usewindowsui");
+				int windowsUIint = 0;
+				if (windowsUIStr != null && !windowsUIStr.equals("")) {
+					try {
+						windowsUIint = Integer.parseInt(windowsUIStr);
+						if (windowsUIint > 0) {
+							// logging is on
+							debugLogger.writeMessage("Windows UI L&F is enabled");
+							ModManager.USE_WINDOWS_UI = true;
+						} else {
+							debugLogger.writeMessage("Using default UI");
+							ModManager.USE_WINDOWS_UI = false;
+						}
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeError("Number format exception reading the UI flag, defaulting to cross platform (Default)");
+					}
+				}
+
 				String superDebugStr = settingsini.get("Settings", "superdebug");
 				if (superDebugStr != null && superDebugStr.equals("SUPERDEBUG")) {
 					debugLogger.writeMessage("Forcing SUPERDEBUG mode on");
@@ -457,7 +474,9 @@ public class ModManager {
 			}
 
 			ModManager.debugLogger.writeMessage("========End of startup=========");
-		} catch (Throwable e) {
+		} catch (
+
+		Throwable e) {
 			Wini ini;
 			try {
 				File settings = new File(ModManager.SETTINGS_FILENAME);
@@ -494,6 +513,16 @@ public class ModManager {
 						"Startup Error", JOptionPane.WARNING_MESSAGE);
 			}
 		}
+		// SETUI LOOK
+		try {
+			if (ModManager.USE_WINDOWS_UI) {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} else {
+				UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+			}
+		} catch (Exception e) {
+			System.err.println("Couldn't set the UI interface style");
+		}
 		try {
 			new ModManagerWindow(isUpdate);
 		} catch (Throwable e) {
@@ -501,16 +530,6 @@ public class ModManager {
 			JOptionPane.showMessageDialog(null, "Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.",
 					"Mod Manager has crashed", JOptionPane.ERROR_MESSAGE);
 		}
-	}
-
-	private static void deferred() {
-		try {
-			//put code here and deferred() in main to pre-execute testing values
-			isMassEffect3Running();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		System.exit(0);
 	}
 
 	/**

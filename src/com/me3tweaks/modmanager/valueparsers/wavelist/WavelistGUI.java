@@ -65,6 +65,8 @@ public class WavelistGUI extends JFrame implements ActionListener {
 		wavenumlist = new JComboBox<Integer>(waves);
 		generateInsert = new JButton("Generate SQL");
 		generateInsert.addActionListener(this);
+		generateInsert.setEnabled(false);
+		generateInsert.setToolTipText("SQL output is disabled");
 		SQLPanel.add(factionlist, BorderLayout.NORTH);
 		SQLPanel.add(wavenumlist, BorderLayout.CENTER);
 		SQLPanel.add(generateInsert, BorderLayout.SOUTH);

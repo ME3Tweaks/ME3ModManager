@@ -178,6 +178,24 @@ public class PowerCustomActionGUI extends JFrame implements ActionListener {
 		});
 		
 		pack();
+
+		generateFork.setEnabled(false);
+		generateLoad.setEnabled(false);
+		generatePublish.setEnabled(false);
+		generateTable.setEnabled(false);
+		generateVariables.setEnabled(false);
+		generateInsert.setEnabled(false);
+		generatePHPValidation.setEnabled(false);
+		generateJSValidation.setEnabled(false);
+
+		generateFork.setToolTipText("SQL output is disabled");
+		generateLoad.setToolTipText("SQL output is disabled");
+		generatePublish.setToolTipText("SQL output is disabled");
+		generateTable.setToolTipText("SQL output is disabled");
+		generateVariables.setToolTipText("SQL output is disabled");
+		generateInsert.setToolTipText("SQL output is disabled");
+		generateJSValidation.setToolTipText("SQL output is disabled");
+		generatePHPValidation.setToolTipText("SQL output is disabled");
 }
 
 	public static void diffString(String str1, String str2) {

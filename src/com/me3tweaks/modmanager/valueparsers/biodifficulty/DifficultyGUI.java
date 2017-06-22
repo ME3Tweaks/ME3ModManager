@@ -106,6 +106,8 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		generateHTML.addActionListener(this);
 		generatePublisherStatsList = new JButton("Generate Category");
 		generatePublisherStatsList.addActionListener(this);
+		
+		
 		//enerateInsert = new JButton("Generate SQL");
 		//generateInsert.addActionListener(this);
 		PHPPanel.add(generateFork, BorderLayout.NORTH);
@@ -153,6 +155,24 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		wavelistGUI.add(splitPane, BorderLayout.CENTER);
 		this.getContentPane().add(wavelistGUI);
 		pack();
+		
+		generateFork.setEnabled(false);
+		generateUpdate.setEnabled(false);
+		generateLoad.setEnabled(false);
+		generateHTML.setEnabled(false);
+		generatePublisherStatsList.setEnabled(false);
+		generateTable.setEnabled(false);
+		generateVariables.setEnabled(false);
+		generateInsert.setEnabled(false);
+		
+		generateFork.setToolTipText("SQL output is disabled");
+		generateUpdate.setToolTipText("SQL output is disabled");
+		generateLoad.setToolTipText("SQL output is disabled");
+		generateHTML.setToolTipText("SQL output is disabled");
+		generatePublisherStatsList.setToolTipText("SQL output is disabled");
+		generateTable.setToolTipText("SQL output is disabled");
+		generateVariables.setToolTipText("SQL output is disabled");
+		generateInsert.setToolTipText("SQL output is disabled");
 	}
 
 	public static void diffString(String str1, String str2) {

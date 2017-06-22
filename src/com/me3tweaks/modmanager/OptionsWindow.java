@@ -30,6 +30,7 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoUpdateMods;
 	private JCheckBox autoApplyMixins;
 	private JCheckBox skipUpdate;
+	private JCheckBox useWindowsUI;
 	private JCheckBox logModmaker;
 	private AbstractButton logModInit;
 	private JCheckBox logPatchInit;
@@ -117,6 +118,35 @@ public class OptionsWindow extends JDialog {
 			}
 		});
 
+		useWindowsUI = new JCheckBox("Use Windows style UI");
+		useWindowsUI.setToolTipText("<html>Instructs Java to use the Windows look and feel. This is experimental and is not fully supported.</html>");
+		useWindowsUI.setSelected(ModManager.USE_WINDOWS_UI);
+		useWindowsUI.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Wini ini = ModManager.LoadSettingsINI();
+
+				ModManager.PERFORM_DOT_NET_CHECK = enforceDotNetRequirement.isSelected();
+				if (useWindowsUI.isSelected()) {
+					ModManager.debugLogger.writeMessage("Enabling Windows UI");
+					ini.put("Settings", "usewindowsui", "1");
+					ModManager.USE_WINDOWS_UI = true;
+				} else {
+					ModManager.debugLogger.writeMessage("Disabling Windows UI");
+					ini.put("Settings", "usewindowsui", "0");
+					ModManager.USE_WINDOWS_UI = false;
+				}
+				try {
+					ini.store();
+					JOptionPane.showMessageDialog(OptionsWindow.this, "Restart Mod Manager for this setting to take effect.", "Restart required", JOptionPane.WARNING_MESSAGE);
+				} catch (InvalidFileFormatException error) {
+					error.printStackTrace();
+				} catch (IOException error) {
+					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				}
+			}
+		});
+
 		autoInjectKeybindsModMaker = new JCheckBox("Auto-inject custom keybinds into ModMaker mods");
 		autoInjectKeybindsModMaker.setToolTipText(
 				"<html>If you use a custom keybinds file (BioInput.xml) and place it in the data/override directory,<br>at the end of compiling ModMaker mods Mod Manager will auto-inject them for you.</html>");
@@ -170,7 +200,7 @@ public class OptionsWindow extends JDialog {
 				}
 			}
 		});
-		
+
 		autoUpdateModManager = new JCheckBox("Check for updates at startup");
 		autoUpdateModManager.setToolTipText("<html>Keep Mod Manager up to date by checking for updates at startup</html>");
 		autoUpdateModManager.setSelected(ModManager.AUTO_UPDATE_MOD_MANAGER);
@@ -276,7 +306,8 @@ public class OptionsWindow extends JDialog {
 		}
 
 		logModmaker = new JCheckBox("<html><div style=\"width: 300px\">Log ModMaker Coalesced Compiler</div></html>");
-		logModmaker.setToolTipText("<html>ModMaker generates a large set of logs while compiling the coalesced files for ModMaker mods, which can slow down the process and generate large log files.<br>Turn this on only if you need to debug ModMaker.</html>");
+		logModmaker.setToolTipText(
+				"<html>ModMaker generates a large set of logs while compiling the coalesced files for ModMaker mods, which can slow down the process and generate large log files.<br>Turn this on only if you need to debug ModMaker.</html>");
 		logModmaker.setSelected(ModManager.LOG_MODMAKER);
 		logModmaker.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -351,6 +382,7 @@ public class OptionsWindow extends JDialog {
 			optionsPanel.add(skipUpdate);
 		}
 		optionsPanel.add(autoUpdateMods);
+		optionsPanel.add(useWindowsUI);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(enforceDotNetRequirement);
 		optionsPanel.add(loggingMode);

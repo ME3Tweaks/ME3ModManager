@@ -92,6 +92,9 @@ public class PossessionWavesGUI extends JFrame implements ActionListener {
 		wavelistGUI.add(splitPane, BorderLayout.CENTER);
 		this.getContentPane().add(wavelistGUI);
 		pack();
+		generateInsert.setEnabled(false);
+		generateInsert.setToolTipText("SQL output is disabled");
+
 	}
 
 	public static void diffString(String str1, String str2) {

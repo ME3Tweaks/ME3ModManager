@@ -84,7 +84,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			task.execute();
 			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			setVisible(true); //EDT will stall until this modal window closes
-			new ModManagerWindow(false);
+			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 		}
 	}
 

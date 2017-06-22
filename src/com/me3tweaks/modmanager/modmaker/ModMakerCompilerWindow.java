@@ -623,7 +623,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			progress.setIndeterminate(false);
 			progress.setValue((int) (100 / (numCoals / (float) numCompleted.get(0))));
 		}
-		
+
 		public void publishProgress(int numberdone) {
 			publish(numberdone);
 		}
@@ -722,9 +722,11 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		@Override
 		protected void process(List<Integer> numCompleted) {
-/*			if (numCoals > numCompleted.get(0)) {
-				currentOperationLabel.setText("Recompiling " + coalsToCompile.get(numCompleted.get(0)));
-			}*/
+			/*
+			 * if (numCoals > numCompleted.get(0)) {
+			 * currentOperationLabel.setText("Recompiling " +
+			 * coalsToCompile.get(numCompleted.get(0))); }
+			 */
 			progress.setIndeterminate(false);
 			progress.setValue((int) (100 / ((double) numCoals / numCompleted.get(0)) + 0.5)); //crazy rounding trick for integer.
 		}
@@ -1755,10 +1757,8 @@ public class ModMakerCompilerWindow extends JDialog {
 
 				File compCoalSourceDir = new File(ModManager.getCompilingDir() + "coalesceds\\" + fileNameWithOutExt);
 				try {
-					if (!ModManager.IS_DEBUG) {
-						FileUtils.deleteDirectory(compCoalSourceDir);
-						ModManager.debugLogger.writeMessage("Deleted compiled coal directory: " + compCoalSourceDir);
-					}
+					FileUtils.deleteDirectory(compCoalSourceDir);
+					ModManager.debugLogger.writeMessage("Deleted compiled coal directory: " + compCoalSourceDir);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeMessage("IOException deleting compCoalSourceDir.");
 					ModManager.debugLogger.writeException(e);
@@ -1817,14 +1817,12 @@ public class ModMakerCompilerWindow extends JDialog {
 			ini.store();
 			ModManager.debugLogger.writeMessage("Removing temporary directories:");
 			try {
-				if (!ModManager.IS_DEBUG) {
-					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "tlk"));
-					ModManager.debugLogger.writeMessage("Deleted tlk");
-					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "toc"));
-					ModManager.debugLogger.writeMessage("Deleted toc");
-					FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "coalesceds"));
-					ModManager.debugLogger.writeMessage("Deleted coalesceds");
-				}
+				FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "tlk"));
+				ModManager.debugLogger.writeMessage("Deleted tlk");
+				FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "toc"));
+				ModManager.debugLogger.writeMessage("Deleted toc");
+				FileUtils.deleteDirectory(new File(ModManager.getCompilingDir() + "coalesceds"));
+				ModManager.debugLogger.writeMessage("Deleted coalesceds");
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("IOException deleting one of the tlk/toc/coalesced directories.");
 				ModManager.debugLogger.writeException(e);
@@ -2087,7 +2085,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			return ModManager.runProcess(compileProcessBuilder, FilenameUtils.removeExtension(coalescedFile)).getReturnCode() == 0;
 		}
 	}
-	
+
 	class CoalescedDecompilerTask implements Callable<Boolean> {
 		private String coalescedFile;
 		private DecompilerWorker decompilerWorker;

@@ -314,7 +314,7 @@ public class AllModsUpdateWindow extends JDialog {
 						JOptionPane.INFORMATION_MESSAGE);
 			}
 
-			new ModManagerWindow(false);
+			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 		}
 
 		public void setManifestDownloaded() {

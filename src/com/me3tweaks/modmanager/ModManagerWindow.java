@@ -127,7 +127,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JMenuBar menuBar;
-	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu, modAlternatesMenu;
+	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, parsersMenu, helpMenu, openToolMenu, modAlternatesMenu;
 	JMenuItem actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
 			modManagementPatchLibary, modManagementClearPatchLibraryCache;
@@ -1087,21 +1087,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			public void mousePressed(MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e)) {
 					modList.setSelectedIndex(modList.locationToIndex(e.getPoint()));
-
+					
 					JPopupMenu menu = new JPopupMenu();
-					JMenuItem itemRemove = new JMenuItem("Remove");
-					itemRemove.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent e) {
-
-							// This could probably be improved, but assuming you also keep the values in an ArrayList, you can remove the element like this
-							//array_list.remove(listbox.getSelectedValue());
-							//listbox.setListData((String[]) array_list.toArray(new String[array_list.size()]));
-
-							System.out.println("Remove the element in position " + modList.getSelectedValue());
-
-						}
-					});
-					menu.add(itemRemove);
+					menu.add(modMenu);
 					menu.show(modList, e.getPoint().x, e.getPoint().y);
 				}
 			}
@@ -1441,8 +1429,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.add(modutilsAutoTOC);
 		modMenu.addSeparator();
 		modMenu.add(modutilsDeleteMod);
-		modMenu.setEnabled(false);
-		menuBar.add(modMenu);
+		//modMenu.setEnabled(false);
+		//menuBar.add(modMenu);
 
 		// Tools
 		toolsMenu = new JMenu("Tools");
@@ -1520,6 +1508,31 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolTankmasterTLK.addActionListener(this);
 		toolTankmasterCoalFolder.addActionListener(this);
 		toolTankmasterCoalUI.addActionListener(this);
+		
+		parsersMenu = new JMenu("Coalesced Parsers");
+		sqlWavelistParser = new JMenuItem("Wavelist Parser");
+		sqlDifficultyParser = new JMenuItem("Biodifficulty Parser");
+		sqlAIWeaponParser = new JMenuItem("BioAI Parser");
+		sqlPowerCustomActionParser = new JMenuItem("CustomAction Parser");
+		sqlPowerCustomActionParser2 = new JMenuItem("CustomAction Editor");
+		sqlConsumableParser = new JMenuItem("Consumable Parser");
+		sqlGearParser = new JMenuItem("Gear Parser");
+
+		sqlWavelistParser.addActionListener(this);
+		sqlDifficultyParser.addActionListener(this);
+		sqlAIWeaponParser.addActionListener(this);
+		sqlPowerCustomActionParser.addActionListener(this);
+		//sqlPowerCustomActionParser2.addActionListener(this);
+		sqlConsumableParser.addActionListener(this);
+		sqlGearParser.addActionListener(this);
+
+		parsersMenu.add(sqlWavelistParser);
+		parsersMenu.add(sqlDifficultyParser);
+		parsersMenu.add(sqlAIWeaponParser);
+		parsersMenu.add(sqlPowerCustomActionParser);
+		parsersMenu.add(sqlConsumableParser);
+		parsersMenu.add(sqlGearParser);
+		
 		//toolsMenu.add(toolsMergeMod);
 		// toolsMenu.add(toolGUITransplant);
 		toolsMenu.add(toolsUnpackDLC);
@@ -1530,6 +1543,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.add(toolME3Config);
 		toolsMenu.add(toolME3Explorer);
 		toolsMenu.add(toolsMapMeshViewer);
+		toolsMenu.add(parsersMenu);
 		toolsMenu.add(devMenu);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsInstallLauncherWV);
@@ -1653,35 +1667,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreMenu.addSeparator();
 		restoreMenu.add(restoreMenuAdvanced);
 		menuBar.add(restoreMenu);
-
-		// DEBUG ONLY - MODMAKER SQL
-		sqlMenu = new JMenu("ModMaker SQL");
-		sqlWavelistParser = new JMenuItem("Wavelist Parser");
-		sqlDifficultyParser = new JMenuItem("Biodifficulty Parser");
-		sqlAIWeaponParser = new JMenuItem("BioAI Parser");
-		sqlPowerCustomActionParser = new JMenuItem("CustomAction Parser");
-		sqlPowerCustomActionParser2 = new JMenuItem("CustomAction Editor");
-		sqlConsumableParser = new JMenuItem("Consumable Parser");
-		sqlGearParser = new JMenuItem("Gear Parser");
-
-		sqlWavelistParser.addActionListener(this);
-		sqlDifficultyParser.addActionListener(this);
-		sqlAIWeaponParser.addActionListener(this);
-		sqlPowerCustomActionParser.addActionListener(this);
-		sqlPowerCustomActionParser2.addActionListener(this);
-		sqlConsumableParser.addActionListener(this);
-		sqlGearParser.addActionListener(this);
-
-		sqlMenu.add(sqlWavelistParser);
-		sqlMenu.add(sqlDifficultyParser);
-		sqlMenu.add(sqlAIWeaponParser);
-		sqlMenu.add(sqlPowerCustomActionParser);
-		sqlMenu.add(sqlPowerCustomActionParser2);
-		sqlMenu.add(sqlConsumableParser);
-		sqlMenu.add(sqlGearParser);
-		if (ModManager.IS_DEBUG) {
-			devMenu.add(sqlMenu);
-		}
 
 		helpMenu = HelpMenu.constructHelpMenu();
 		menuBar.add(helpMenu);
@@ -2384,7 +2369,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					modWebsiteLink.setVisible(false);
 					reloadModlist();
 				}
-				//new ModManagerWindow(false);
 			}
 		} else if (e.getSource() == modutilsInstallCustomKeybinds) {
 			new KeybindsInjectionWindow(this, modModel.getElementAt(modList.getSelectedIndex()), false);
