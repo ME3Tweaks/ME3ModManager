@@ -336,6 +336,8 @@ public class Patch implements Comparable<Patch> {
 					} else {
 						job = new ModJob(ModType.getDLCPath(targetModule), targetModule, null);
 					}
+					job.setOwningMod(mod);
+
 					File modulefolder = new File(ModManager.appendSlash(mod.getModPath() + standardFolder));
 					modulefolder.mkdirs();
 					ModManager.debugLogger.writeMessage("Adding PCConsoleTOC.bin to new job");

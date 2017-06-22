@@ -341,6 +341,7 @@ public class ImportEntryWindow extends JDialog {
 			mod.setSite(modSite);
 
 			ModJob dlcJob = new ModJob();
+			dlcJob.setOwningMod(mod);
 			dlcJob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
 			dlcJob.setJobType(ModJob.CUSTOMDLC);
 			dlcJob.setSourceFolders(new ArrayList<String>());

@@ -11,7 +11,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -61,26 +64,30 @@ public class ModInstallWindow extends JDialog {
 	ModManagerWindow callingWindow;
 	public final static String CUSTOMDLC_METADATA_FILE = "_metacmm.txt";
 
-	public ModInstallWindow(ModManagerWindow callingWindow, String bioGameDir, Mod mod) {
+	public ModInstallWindow(ModManagerWindow callingWindow, String bioGameDir, ArrayList<Mod> mods) {
+		initWindow(callingWindow, bioGameDir, mods);
+	}
+
+	private void initWindow(ModManagerWindow callingWindow, String bioGameDir, ArrayList<Mod> mods) {
 		// callingWindow.setEnabled(false);
 		this.callingWindow = callingWindow;
 		this.bioGameDir = bioGameDir;
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Applying Mod");
+		this.setTitle("Applying Mod" + (mods.size() > 1 ? "s" : ""));
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(320, 220));
 		consoleQueue = new String[levelCount];
 
-		setupWindow(mod);
+		setupWindow(mods);
 
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
 		this.setLocationRelativeTo(callingWindow);
 
-		checkModCMMVersion(mod);
-		boolean installMod = validateRequiredModulesAreAvailable(callingWindow, mod);
+		checkModCMMVersion(mods);
+		boolean installMod = validateRequiredModulesAreAvailable(callingWindow, mods);
 		if (installMod) {
-			new InjectionCommander(mod).execute();
+			new InjectionCommander(mods).execute();
 			this.setVisible(true);
 		} else {
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod install cancelled");
@@ -88,17 +95,24 @@ public class ModInstallWindow extends JDialog {
 		}
 	}
 
+	public ModInstallWindow(ModManagerWindow callingWindow, String bioGameDir, Mod mod) {
+		ArrayList<Mod> mods = new ArrayList<Mod>();
+		mods.add(mod);
+		initWindow(callingWindow, bioGameDir, mods);
+	}
+
 	/**
 	 * Checks to make sure that the MODDESC can be fully parsed.
 	 * 
-	 * @param mod
+	 * @param mods
 	 *            mod to check against
 	 */
-	private void checkModCMMVersion(Mod mod) {
-		if (mod.getCMMVer() > ModManager.MODDESC_VERSION_SUPPORT) {
-			JOptionPane.showMessageDialog(callingWindow,
-					"This mod specifies it requires a newer version of Mod Manager: " + mod.getCMMVer() + ".\nMod Manager will attempt to install the mod but it may not work.",
-					"Outdated Mod Manager", JOptionPane.WARNING_MESSAGE);
+	private void checkModCMMVersion(ArrayList<Mod> mods) {
+		for (Mod mod : mods) {
+			if (mod.getCMMVer() > ModManager.MODDESC_VERSION_SUPPORT) {
+				JOptionPane.showMessageDialog(callingWindow, mod.getModName() + " specifies it requires a newer version of Mod Manager: " + mod.getCMMVer()
+						+ ".\nMod Manager will attempt to install the mod but it may not work.", "Outdated Mod Manager", JOptionPane.WARNING_MESSAGE);
+			}
 		}
 	}
 
@@ -108,31 +122,49 @@ public class ModInstallWindow extends JDialog {
 	 * 
 	 * @return true if all are available or user ignored missing
 	 */
-	private boolean validateRequiredModulesAreAvailable(ModManagerWindow callingWindow, Mod mod) {
+	private boolean validateRequiredModulesAreAvailable(ModManagerWindow callingWindow, ArrayList<Mod> mods) {
 		ArrayList<ModJob> missingModules = new ArrayList<ModJob>();
-		for (ModJob job : mod.jobs) {
-			if (job.getJobType() == ModJob.DLC) {
-				String commandlinetoolsdir = ModManager.getCommandLineToolsDir();
-				File fullautotoc = new File(commandlinetoolsdir + "FullAutoTOC.exe");
-				File sfarinjector = new File(commandlinetoolsdir + "SFARTools-Inject.exe");
-				if (!fullautotoc.exists() || !sfarinjector.exists()) {
-					dispose();
-					ModManager.debugLogger.writeError("Mod Manager Command Line tools are not available. Aborting installation");
-					JOptionPane.showMessageDialog(null,
-							"Installation of mods requires the Mod Manager Command Line tools library.\nThis will automatically download on startup when connected to the internet.\nMod installation cannot continue.",
-							"Required Component Missing", JOptionPane.ERROR_MESSAGE);
-					return false;
-				}
+		StringBuilder sb = new StringBuilder();
+		for (Mod mod : mods) {
+			for (ModJob job : mod.jobs) {
+				if (job.getJobType() == ModJob.DLC) {
+					String commandlinetoolsdir = ModManager.getCommandLineToolsDir();
+					File fullautotoc = new File(commandlinetoolsdir + "FullAutoTOC.exe");
+					File sfarinjector = new File(commandlinetoolsdir + "SFARTools-Inject.exe");
+					if (!fullautotoc.exists() || !sfarinjector.exists()) {
+						dispose();
+						ModManager.debugLogger.writeError("Mod Manager Command Line tools are not available. Aborting installation");
+						JOptionPane.showMessageDialog(null,
+								"Installation of mods requires the Mod Manager Command Line tools library.\nThis will automatically download on startup when connected to the internet.\nMod installation cannot continue.",
+								"Required Component Missing", JOptionPane.ERROR_MESSAGE);
+						return false;
+					}
 
-				//check that sfar is available
-				String sfarName = "Default.sfar";
-				if (job.TESTPATCH) {
-					sfarName = "Patch_001.sfar";
+					//check that sfar is available
+					String sfarName = "Default.sfar";
+					if (job.TESTPATCH) {
+						sfarName = "Patch_001.sfar";
+					}
+					String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
+					File sfar = new File(sfarPath);
+					if (!sfar.exists()) {
+						ModManager.debugLogger.writeMessage("Installation module is missing: " + sfar);
+						missingModules.add(job);
+					}
 				}
-				String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
-				File sfar = new File(sfarPath);
-				if (!sfar.exists()) {
-					missingModules.add(job);
+			}
+
+			//module is missing
+			sb.append(mod.getModName() + " has jobs for the following missing DLC.\nIf the mod descriptor details the job description, they will be listed below.\n");
+			for (ModJob job : missingModules) {
+				ModManager.debugLogger.writeMessage(mod.getModName() + " requires missing DLC Module: " + job.getJobName());
+				sb.append(" - ");
+				sb.append(job.getJobName());
+				sb.append("\n");
+				if (job.getRequirementText() != null && !job.getRequirementText().equals("")) {
+					sb.append("   - ");
+					sb.append(job.getRequirementText());
+					sb.append("\n");
 				}
 			}
 		}
@@ -140,31 +172,21 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Mod has all required DLCs available");
 			return true;
 		}
-
-		//module is missing
-		StringBuilder sb = new StringBuilder();
-		sb.append("This mod has tasks for the following missing DLC.\nIf the mod descriptor details the job description, they will be listed below.\n");
-		for (ModJob job : missingModules) {
-			ModManager.debugLogger.writeMessage("Mod requires missing DLC Module: " + job.getJobName());
-			sb.append(" - ");
-			sb.append(job.getJobName());
-			sb.append("\n");
-			if (job.getRequirementText() != null && !job.getRequirementText().equals("")) {
-				sb.append("   - ");
-				sb.append(job.getRequirementText());
-				sb.append("\n");
-			}
-		}
 		sb.append("\nThese jobs will be skipped. Continue with the mod install?");
 		int result = JOptionPane.showConfirmDialog(callingWindow, sb.toString(), "Missing DLC", JOptionPane.WARNING_MESSAGE);
 		ModManager.debugLogger.writeMessage(result == JOptionPane.YES_OPTION ? "User continuing install even with missing DLC modules" : "User canceled Mod Install");
 		return result == JOptionPane.YES_OPTION;
 	}
 
-	private void setupWindow(Mod mod) {
+	private void setupWindow(ArrayList<Mod> mods) {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html><center>Now Installing<br>" + mod.getModName() + "</center></html>", SwingConstants.CENTER);
+		if (mods.size() == 1) {
+			infoLabel = new JLabel("<html><center>Now Installing<br>" + mods.get(0).getModName() + "</center></html>", SwingConstants.CENTER);
+		} else {
+			infoLabel = new JLabel("<html><center>Now Installing<br>" + mods.size() + " mods</center></html>", SwingConstants.CENTER);
+
+		}
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
@@ -195,30 +217,34 @@ public class ModInstallWindow extends JDialog {
 		double numjobs = 0;
 		double taskSteps = 0;
 		double completedTaskSteps = 0;
-		Mod mod;
-		ModJob[] jobs;
+		//Mod mod;
+		//ModJob[] jobs;
 		ArrayList<String> failedJobs;
 		private BasegameHashDB bghDB;
 		private boolean installCancelled = false;
 		private boolean failedLoadingDB = false;
-		private boolean alternatesApplied;
-		private ArrayList<String> outdatedinstalledfolders;
+		private HashMap<String, String> outdatedinstalledfolders;
 		private boolean skipTOC = false;
+		private ArrayList<Mod> mods;
 
-		protected InjectionCommander(Mod mod) {
-			this.mod = new Mod(mod); //clone before applying alternates and optional addins
-			ModManager.debugLogger.writeMessage("========Installing " + this.mod.getModName() + "========");
-			ModManager.debugLogger.writeMessage("Applying alternate files before parsing jobs");
-			alternatesApplied = this.mod.applyAutomaticAlternates(bioGameDir);
-			alternatesApplied |= this.mod.applyManualAlternates(bioGameDir); //Must be separate or it might short circuit in compilation!
-			if (alternatesApplied) {
-				ModManager.debugLogger.writeMessage("At least one alternate file was applied, install now requires pre-toc.");
+		protected InjectionCommander(ArrayList<Mod> mods) {
+			this.mods = new ArrayList<Mod>();
+			for (Mod mod : mods) {
+				this.mods.add(new Mod(mod)); //CLONE
 			}
-			ModManager.debugLogger.writeMessage("Finshing applying alternate files. Now checking for manually selected addins...");
-			this.mod.applyManualCustomDLCs();
-			ModManager.debugLogger.writeMessage("Finished applying addins. Preparing to start the injection thread.");
-			this.jobs = this.mod.getJobs();
-			numjobs = jobs.length;
+			ModManager.debugLogger.writeMessage("========Installing Mod(s) - Preprocessor========");
+			numjobs = 0;
+			for (Mod mod : this.mods) {
+				ModManager.debugLogger.writeMessage("Preprocessing: " + mod.getModName());
+				ModManager.debugLogger.writeMessage(" - Applying Automatic and Manual Alternate files to mod object");
+				mod.applyAutomaticAlternates(bioGameDir);
+				mod.applyManualAlternates(bioGameDir);
+				ModManager.debugLogger.writeMessage("App");
+				ModManager.debugLogger.writeMessage(" - Applying Manual Custom DLCs to mod object");
+				mod.applyManualCustomDLCs();
+				numjobs += mod.jobs.size();
+			}
+
 			failedJobs = new ArrayList<String>();
 			ModManager.debugLogger.writeMessage("Starting the InjectionCommander thread. Number of jobs to do: " + numjobs);
 		}
@@ -237,23 +263,28 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			boolean checkedDB = false;
-			for (ModJob job : jobs) {
+			ArrayList<ModJob> precheckJobs = new ArrayList<>();
+			for (Mod mod : mods) {
+				precheckJobs.addAll(mod.jobs);
+			}
+			for (ModJob job : precheckJobs) {
 				if (job.getJobName().equals(ModType.CUSTOMDLC) || job.getJobName().equals(ModType.TESTPATCH)) {
 					continue;
 				}
 				if ((job.getJobName().equals(ModType.BASEGAME) && job.getFilesToReplaceTargets().size() == 0 && job.getFilesToRemoveTargets().size() == 0)) {
 					continue;
 				}
+
 				checkedDB = true;
-				if (precheckGameDB(jobs)) {
-					ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod install.");
-					skipTOC = true;
-					return false;
-				} else {
-					ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
-				}
-				break;
 			}
+			if (precheckGameDB(precheckJobs)) {
+				ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod install.");
+				skipTOC = true;
+				return false;
+			} else {
+				ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
+			}
+
 			if (!checkedDB) {
 				ModManager.debugLogger.writeMessage("Mod only adds files to basegame/adds custom DLC. The Game DB check has been skipped");
 			}
@@ -261,7 +292,7 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Processing mod jobs in job queue.");
 			ExecutorService modinstallExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
-			for (ModJob job : jobs) {
+			for (ModJob job : precheckJobs) {
 				//submit jobs
 				JobTask jtask = new JobTask(job);
 				futures.add(modinstallExecutor.submit(jtask));
@@ -290,14 +321,16 @@ public class ModInstallWindow extends JDialog {
 		}
 
 		private void checkForOutdatedDLC() {
-			if (mod.getOutdatedDLCModules().size() > 0) {
-				outdatedinstalledfolders = new ArrayList<>();
-				ArrayList<String> installedDLC = ModManager.getInstalledDLC(bioGameDir);
-				for (String installeddlcitem : installedDLC) {
-					for (String outdateditem : mod.getOutdatedDLCModules()) {
-						if (installeddlcitem.toUpperCase().equals(outdateditem.toUpperCase())) {
-							//outdated item is still installed.
-							outdatedinstalledfolders.add(outdateditem);
+			for (Mod mod : mods) {
+				if (mod.getOutdatedDLCModules().size() > 0) {
+					outdatedinstalledfolders = new HashMap<String, String>();
+					ArrayList<String> installedDLC = ModManager.getInstalledDLC(bioGameDir);
+					for (String installeddlcitem : installedDLC) {
+						for (String outdateditem : mod.getOutdatedDLCModules()) {
+							if (installeddlcitem.toUpperCase().equals(outdateditem.toUpperCase())) {
+								//outdated item is still installed.
+								outdatedinstalledfolders.put(mod.getModName(), outdateditem);
+							}
 						}
 					}
 				}
@@ -335,9 +368,9 @@ public class ModInstallWindow extends JDialog {
 				//end of each callable...
 				if (result) {
 					completed.incrementAndGet();
-					ModManager.debugLogger.writeMessage("Successfully finished mod job.");
+					ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Successfully finished mod job.");
 				} else {
-					ModManager.debugLogger.writeMessage("Mod job failed: " + job.getDLCFilePath());
+					ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Mod job failed: " + job.getDLCFilePath());
 					failedJobs.add(job.getDLCFilePath());
 				}
 				publish(Integer.toString(completed.get()));
@@ -354,7 +387,7 @@ public class ModInstallWindow extends JDialog {
 		 * @return true if user clicks YES to open DB window, false if they
 		 *         don't (or all is Ok)
 		 */
-		private boolean precheckGameDB(ModJob[] jobs) {
+		private boolean precheckGameDB(ArrayList<ModJob> jobs) {
 			ModManager.debugLogger.writeMessage("---PRECHECKING GAME DATABASE---");
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
@@ -1111,7 +1144,7 @@ public class ModInstallWindow extends JDialog {
 				try {
 					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
 					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Writing custom DLC metadata file: " + metadatapath);
-					FileUtils.writeStringToFile(new File(metadatapath), mod.getModName() + " " + mod.getVersion());
+					FileUtils.writeStringToFile(new File(metadatapath), job.getOwningMod().getModName() + " " + job.getOwningMod().getVersion());
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("[CUSTOMDLC JOB]Couldn't write custom dlc metadata file:", e);
 				}
@@ -1156,9 +1189,12 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			if (outdatedinstalledfolders != null && outdatedinstalledfolders.size() > 0) {
-				for (String outdated : outdatedinstalledfolders) {
+				for (Map.Entry<String, String> entry : outdatedinstalledfolders.entrySet()) {
+					String modname = entry.getKey();
+					String outdated = entry.getValue();
+
 					int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
-							"<html><div style='width: 400px'>" + mod.getModName() + "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "("
+							"<html><div style='width: 400px'>" + modname + "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "("
 									+ ME3TweaksUtils.getThirdPartyModName(outdated)
 									+ ") is not compatible/no longer necessary for this mod. The mod indicates they should be deleted as they may conflict with this mod.<br><br>Delete the Custom DLC folder "
 									+ outdated + "?</div></html>",
@@ -1196,32 +1232,38 @@ public class ModInstallWindow extends JDialog {
 					sb.append(
 							"Failed to process mod installation.\nSome parts of the install may have succeeded.\nCheck the log file by copying it to the clipboard in the help menu.");
 					callingWindow.labelStatus.setText("Failed to install at least 1 part of mod");
-					ModManager.debugLogger.writeMessage(
-							mod.getModName() + " failed to fully install. Jobs required to copmlete: " + numjobs + ", while injectioncommander only reported " + completed);
+					ModManager.debugLogger
+							.writeMessage("Some mods failed to fully install. Jobs required to copmlete: " + numjobs + ", while injectioncommander only reported " + completed);
 					JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
 				} else {
 					// we're good
-					callingWindow.labelStatus.setText(" " + mod.getModName() + " installed");
-					for (ModJob job : jobs) {
-						if (job.getJobType() == ModJob.BALANCE_CHANGES) {
-							if (ModManager.checkIfASIBinkBypassIsInstalled(bioGameDir)) {
-								if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
-									ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
+					if (mods.size() > 1) {
+						callingWindow.labelStatus.setText(mods.size() + " mods installed");
+					} else {
+						callingWindow.labelStatus.setText(mods.get(0).getModName() + " installed");
+					}
+					for (Mod mod : mods) {
+						for (ModJob job : mod.jobs) {
+							if (job.getJobType() == ModJob.BALANCE_CHANGES) {
+								if (ModManager.checkIfASIBinkBypassIsInstalled(bioGameDir)) {
+									if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
+										ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
+										int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
+												"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
+												"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+										if (result == JOptionPane.YES_OPTION) {
+											new ASIModWindow(new File(bioGameDir).getParent());
+										}
+									}
+								} else {
+									//loader not in
+									ModManager.debugLogger.writeMessage("ASI loader not installed. Advertising install");
 									int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
-											"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
-											"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+											"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the binkw32 ASI loader installed as well as the Balance Changes Replacer ASI.\nOpen the ASI management window to install these?",
+											"ASI Loader + ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 									if (result == JOptionPane.YES_OPTION) {
 										new ASIModWindow(new File(bioGameDir).getParent());
 									}
-								}
-							} else {
-								//loader not in
-								ModManager.debugLogger.writeMessage("ASI loader not installed. Advertising install");
-								int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
-										"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the binkw32 ASI loader installed as well as the Balance Changes Replacer ASI.\nOpen the ASI management window to install these?",
-										"ASI Loader + ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-								if (result == JOptionPane.YES_OPTION) {
-									new ASIModWindow(new File(bioGameDir).getParent());
 								}
 							}
 						}
@@ -1267,7 +1309,7 @@ public class ModInstallWindow extends JDialog {
 		}
 
 		protected void finishInstall() {
-			ModManager.debugLogger.writeMessage("=========Finished installing " + mod.getModName() + "==========");
+			ModManager.debugLogger.writeMessage("=========Finished installing mod(s)==========");
 			dispose();
 		}
 	}

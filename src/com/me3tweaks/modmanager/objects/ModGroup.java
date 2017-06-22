@@ -18,9 +18,14 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
  *
  */
 public class ModGroup {
-	ArrayList<String> descPaths;
-	String modGroupName;
-	String modGroupDescription;
+	@Override
+	public String toString() {
+		return modGroupName;
+	}
+
+	private ArrayList<String> descPaths;
+	private String modGroupName;
+	private String modGroupDescription;
 
 	/**
 	 * Used for loading an existing modgroup file.
@@ -42,7 +47,7 @@ public class ModGroup {
 				String line;
 				while ((line = br.readLine()) != null) {
 					// process the line.
-					if (new File(line).exists()) {
+					if (new File(ModManager.getModsDir() + line).exists()) {
 						descPaths.add(line);
 					}
 				}
@@ -70,5 +75,17 @@ public class ModGroup {
 
 	public void resolveDescsToMods() {
 
+	}
+
+	public ArrayList<String> getDescPaths() {
+		return descPaths;
+	}
+
+	public String getModGroupName() {
+		return modGroupName;
+	}
+
+	public String getModGroupDescription() {
+		return modGroupDescription;
 	}
 }

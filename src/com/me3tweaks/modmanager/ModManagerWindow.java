@@ -25,7 +25,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.security.KeyStore.LoadStoreParameter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,7 +131,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JPopupMenu modMenu;
 	JMenuItem actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
-			modManagementPatchLibary, modManagementClearPatchLibraryCache;
+			modManagementPatchLibary, modManagementClearPatchLibraryCache, modManagementModGroupsManager;
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
 			modutilsDeleteMod;
 	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32,
@@ -467,7 +466,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("No command line update link - no point checking for updates.");
 			}
 		}
-
 
 		private void checkForContentUpdates(boolean force) {
 			// Check for updates
@@ -1056,7 +1054,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			public void mousePressed(MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e)) {
 					modList.setSelectedIndex(modList.locationToIndex(e.getPoint()));
-					
+
 					//JPopupMenu menu = new JPopupMenu();
 					//menu.add(modMenu);
 					modMenu.show(modList, e.getPoint().x, e.getPoint().y);
@@ -1150,7 +1148,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
 			buttonApplyMod.setToolTipText("Select a mod on the left");
 		} else {
-			buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5 or higher in order to install mods");
+			buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
 		}
 		buttonStartGame = new JButton("Start Game");
 		buttonStartGame.addActionListener(this);
@@ -1218,7 +1216,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else {
 			buttonApplyMod.setText(".NET Missing");
-			buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5 or higher in order to install mods");
+			buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
 		}
 	}
 
@@ -1293,6 +1291,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementClearPatchLibraryCache = new JMenuItem("Clear MixIn cache");
 		modManagementClearPatchLibraryCache.setToolTipText(
 				"<html>Clears the decompressed MixIn library cache.<br>This will make Mod Manager fetch the original files again as MixIns require them.<br>Use this if MixIns are having issues.</html>");
+		modManagementModGroupsManager = new JMenuItem("Batch Mod Installer");
+		modManagementModGroupsManager.setToolTipText("<html>Installs mods in batch mod using mod groups.</html>");
 
 		int numFailedMods = getInvalidMods().size();
 		modManagementFailedMods = new JMenuItem(numFailedMods + " mod" + (numFailedMods != 1 ? "s" : "") + " failed to load");
@@ -1311,6 +1311,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementMenu.add(modManagementConflictDetector);
 		modManagementMenu.add(modManagementCheckallmodsforupdate);
 		modManagementMenu.add(modManagementPatchLibary);
+		modManagementMenu.add(modManagementModGroupsManager);
 		modManagementMenu.add(modManagementOpenModsFolder);
 		modManagementMenu.addSeparator();
 		modManagementMenu.add(modManagementClearPatchLibraryCache);
@@ -1321,6 +1322,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementFailedMods.addActionListener(this);
 		modManagementImportFromArchive.addActionListener(this);
 		modManagementImportAlreadyInstalled.addActionListener(this);
+		modManagementModGroupsManager.addActionListener(this);
 
 		//MOD UTILS PLACEHOLDER
 		modUtilsPlaceholderMenu = new JMenu("Mod Utils");
@@ -1495,7 +1497,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolTankmasterTLK.addActionListener(this);
 		toolTankmasterCoalFolder.addActionListener(this);
 		toolTankmasterCoalUI.addActionListener(this);
-		
+
 		parsersMenu = new JMenu("Coalesced Parsers");
 		sqlWavelistParser = new JMenuItem("Wavelist Parser");
 		sqlDifficultyParser = new JMenuItem("Biodifficulty Parser");
@@ -1519,7 +1521,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		parsersMenu.add(sqlPowerCustomActionParser);
 		parsersMenu.add(sqlConsumableParser);
 		parsersMenu.add(sqlGearParser);
-		
+
 		//toolsMenu.add(toolsMergeMod);
 		// toolsMenu.add(toolGUITransplant);
 		toolsMenu.add(toolsUnpackDLC);
@@ -1661,7 +1663,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		return menuBar;
 	}
 
-
 	private void addModUtilsPlaceholderMenu() {
 		placeholderModUtilsItem.setToolTipText("Right click a mod in the to list to the Mod Utils menu for it.");
 		placeholderModUtilsItem.addActionListener(this);
@@ -1709,9 +1710,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 
 					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 					ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use ModMaker.");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to use ModMaker.");
 				}
 			} else {
 				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
@@ -1756,9 +1757,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					new CustomDLCConflictWindow();
 				} else {
 					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 					ModManager.debugLogger.writeError("Custom DLC Conflict Window: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to fully use the conflict detection tool.");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to fully use the conflict detection tool.");
 				}
 			} else {
 				labelStatus.setText("Conflict detector requires valid BIOGame directory");
@@ -1805,7 +1806,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == placeholderModUtilsItem) {
-			JOptionPane.showMessageDialog(ModManagerWindow.this, "<html>The Mod Utils menu has been moved into the right click menu for mods.<br>This placeholder menu will not be shown on subsequent Mod Manager launches.</html>", "Mod Utils menu has moved", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.this,
+					"<html>The Mod Utils menu has been moved into the right click menu for mods.<br>This placeholder menu will not be shown on subsequent Mod Manager launches.</html>",
+					"Mod Utils menu has moved", JOptionPane.WARNING_MESSAGE);
 			Wini ini = ModManager.LoadSettingsINI();
 			ini.put("Settings", "hidemodutilsmenu", 1);
 			ModManager.debugLogger.writeMessage("Saving hidemodutilsmenu ini item to settings");
@@ -1814,7 +1817,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} catch (IOException e1) {
 				ModManager.debugLogger.writeErrorWithException("Error saving hidemodutilsmenu to ini:", e1);
 			}
-			
+
 		} else
 
 		if (e.getSource() == restoreRevertCoal) {
@@ -2045,9 +2048,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						applyMod();
 					} else {
 						updateApplyButton();
-						labelStatus.setText(".NET Framework 4.5 or higher is missing");
+						labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 						ModManager.debugLogger.writeMessage("Applying selected mod: .NET is not installed");
-						new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to install mods.");
+						new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to install mods.");
 					}
 				} else {
 					labelStatus.setText("Installing a mod requires valid BIOGame path");
@@ -2131,9 +2134,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			} else {
 				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
-				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5 or higher in order to run.");
+				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5.2 or higher in order to run.");
 			}
 		} else if (e.getSource() == toolTankmasterCoalFolder) {
 			ResourceUtils.openDir(ModManager.getTankMasterCompilerDir());
@@ -2177,18 +2180,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			} else {
 				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 				ModManager.debugLogger.writeMessage("Run TLK: .NET is not installed");
-				new NetFrameworkMissingWindow("Tankmaster's TLK Tool requires .NET 4.5 or higher in order to run.");
+				new NetFrameworkMissingWindow("Tankmaster's TLK Tool requires .NET 4.5.2 or higher in order to run.");
 			}
 		} else if (e.getSource() == toolTankmasterCoalUI) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				new CoalescedWindow();
 			} else {
 				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
-				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5 or higher in order to run.");
+				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5.2 or higher in order to run.");
 			}
 		} else if (e.getSource() == actionOptions) {
 			new OptionsWindow(this);
@@ -2201,10 +2204,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			 * ModManager.debugLogger.writeMessage("Opening Mod Merging utility"
 			 * ); updateApplyButton(); new MergeModWindow(this); } else {
 			 * updateApplyButton();
-			 * labelStatus.setText(".NET Framework 4.5 or higher is missing");
+			 * labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 			 * ModManager.debugLogger.
 			 * writeMessage("Merge Tool: Missing .NET Framework"); new
-			 * NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods."
+			 * NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to merge mods."
 			 * ); }
 			 */
 		} else if (e.getSource() == toolME3Config) {
@@ -2240,9 +2243,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					new UnpackWindow(this, GetBioGameDir());
 				} else {
 					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 					ModManager.debugLogger.writeMessage("Unpack DLC Tool: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to unpack DLC.");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to unpack DLC.");
 				}
 			} else {
 				labelStatus.setText("Unpacking DLC requires a valid BIOGame directory");
@@ -2268,9 +2271,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					new AutoTocWindow(ModManagerWindow.GetBioGameDir());
 				} else {
 					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 					ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use the AutoTOC feature.");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to use the AutoTOC feature.");
 				}
 			} else {
 				labelStatus.setText("Game AutoTOC requires a valid BIOGame directory");
@@ -2286,9 +2289,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				autoTOC(AutoTocWindow.LOCALMOD_MODE);
 			} else {
 				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 				ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
-				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use the AutoTOC feature.");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to use the AutoTOC feature.");
 			}
 
 		} else if (e.getSource() == modutilsInfoEditor) {
@@ -2303,9 +2306,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					new SingleModUpdateCheckThread(mod).execute();
 				} else {
 					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 					ModManager.debugLogger.writeMessage("Single mode updater: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 to update ModMaker mods.");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 to update ModMaker mods.");
 				}
 			} else {
 				labelStatus.setText("Updating ModMaker mods requires valid BIOGame");
@@ -2325,9 +2328,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					new SingleModUpdateCheckThread(mod).execute();
 				} else {
 					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 					ModManager.debugLogger.writeMessage("Single mode updater: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 to update ModMaker mods.");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 to update ModMaker mods.");
 				}
 			} else {
 				labelStatus.setText("Updating ModMaker mods requires valid BIOGame");
@@ -2365,9 +2368,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					new PatchLibraryWindow(PatchLibraryWindow.MANUAL_MODE);
 				} else {
 					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
+					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 					ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to use MixIns.");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to use MixIns.");
+				}
+			} else {
+				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
+				labelStatus.setVisible(true);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
+			}
+		} else if (e.getSource() == modManagementModGroupsManager) {
+			if (validateBIOGameDir()) {
+				if (ModManager.validateNETFrameworkIsInstalled()) {
+					ModManager.debugLogger.writeMessage("Opening Mod Groups window.");
+					updateApplyButton();
+					new ModGroupWindow();
+				} else {
+					updateApplyButton();
+					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
+					ModManager.debugLogger.writeMessage("Batch Mod Installer: Missing .NET Framework");
+					new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher in order to batch install mods.");
 				}
 			} else {
 				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
@@ -2381,9 +2402,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Reverting a delta.");
 				new DeltaWindow(modModel.get(modList.getSelectedIndex()));
 			} else {
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 				ModManager.debugLogger.writeMessage("Revert Delta: Missing .NET Framework");
-				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher to switch mod variants.");
 			}
 		} else if (e.getSource() == modutilsVerifyDeltas) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
@@ -2393,9 +2414,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					new DeltaWindow(mod, delta, true, false);
 				}
 			} else {
-				labelStatus.setText(".NET Framework 4.5 or higher is missing");
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 				ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
-				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher to switch mod variants.");
+				new NetFrameworkMissingWindow("You must install .NET Framework 4.5.2 or higher to switch mod variants.");
 			}
 		} else if (e.getSource() == moddevUpdateXMLGenerator) {
 			ModManager.debugLogger.writeMessage("Generating Manifest...");
@@ -2938,7 +2959,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
 					buttonApplyMod.setToolTipText("Select a mod on the left");
 				} else {
-					buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5 or higher in order to install mods");
+					buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
 				}
 				fieldDescription.setText(selectAModDescription);
 				modMenu.setEnabled(false);
@@ -2958,7 +2979,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					buttonApplyMod.setToolTipText(
 							"<html>Apply this mod to the game.<br>If other mods are installed, you should consider uninstalling them by<br>using the Restore Menu if they are known to not work together.</html>");
 				} else {
-					buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5 or higher in order to install mods");
+					buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
 				}
 				modutilsHeader.setText(modModel.get(modList.getSelectedIndex()).getModName());
 				modMenu.setEnabled(true);

@@ -194,7 +194,9 @@ public class Mod implements Comparable<Mod> {
 		requiredPatches = new ArrayList<Patch>();
 		modDeltas = new ArrayList<ModDelta>();
 		for (ModJob job : mod.jobs) {
-			jobs.add(new ModJob(job));
+			ModJob newjob = new ModJob(job);
+			job.setOwningMod(this);
+			jobs.add(newjob);
 		}
 		for (String str : mod.sideloadOnlyTargets) {
 			sideloadOnlyTargets.add(str);
@@ -304,6 +306,7 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 			}
 			ModJob job = new ModJob();
+			job.setOwningMod(this);
 			job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin", ignoreLoadErrors);
 			addTask(ModType.BASEGAME, job);
 
@@ -442,6 +445,7 @@ public class Mod implements Comparable<Mod> {
 						newJob.TESTPATCH = true;
 					}
 				}
+				newJob.setOwningMod(this);
 				newJob.setSourceDir(iniModDir);
 				if (newStrok != null && oldStrok != null) {
 					while (newStrok.hasMoreTokens()) {
@@ -610,6 +614,7 @@ public class Mod implements Comparable<Mod> {
 				}
 
 				ModJob newJob = new ModJob();
+				newJob.setOwningMod(this);
 				newJob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
 				newJob.setJobType(ModJob.CUSTOMDLC);
 				newJob.setSourceFolders(new ArrayList<String>());
@@ -786,6 +791,7 @@ public class Mod implements Comparable<Mod> {
 						ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 					}
 					ModJob job = new ModJob();
+					job.setOwningMod(this);
 					job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin", ignoreLoadErrors);
 					addTask(ModType.BASEGAME, job);
 				}
@@ -1954,7 +1960,7 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	public String getDescFile() {
-		return getModPath() + File.separator + "moddesc.ini";
+		return getModPath() + "moddesc.ini";
 	}
 
 	public double getCMMVer() {

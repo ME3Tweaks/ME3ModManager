@@ -582,7 +582,7 @@ public class StarterKitWindow extends JDialog {
 			Mod startermod = new Mod();
 			startermod.setModPath(modpath);
 			ModJob custdlcjob = new ModJob("DLC_MOD_" + internaldlcname, ModType.CUSTOMDLC, "");
-
+			custdlcjob.setOwningMod(startermod);
 			custdlcjob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
 			custdlcjob.setJobType(ModJob.CUSTOMDLC);
 			ArrayList<String> destFolders = new ArrayList<>();

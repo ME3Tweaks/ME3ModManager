@@ -161,6 +161,7 @@ public class KeybindsInjectionWindow extends JDialog {
 					//no basegame header, but has tasks, and does not mod coal
 					//means it doesn't modify basegame files at all so we can just add the header and set modver to 3 (or max of both in case of 2 as modcoal was not set)
 					ModJob job = new ModJob();
+					job.setOwningMod(mod);
 					File basegamefolder = new File(ModManager.appendSlash(mod.getModPath()) + "BASEGAME");
 					basegamefolder.mkdirs();
 					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)),
@@ -247,6 +248,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						//no mp5 header, but has tasks, and does not mod coal
 						//means it doesn't modify mp5 files at all so we can just add the header and set modver to 3 (or max of both in case of 2 as modcoal was not set)
 						ModJob job = new ModJob(ModType.getDLCPath(ModType.MP5), ModType.MP5, "Required to fix Talon Mercenary Keybinds");
+						job.setOwningMod(mod);
 						File mp5folder = new File(ModManager.appendSlash(mod.getModPath()) + "MP5");
 						mp5folder.mkdirs();
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),

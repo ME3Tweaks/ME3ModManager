@@ -21,6 +21,7 @@ public class ModJob {
 	public static final int DLC = 0;
 	public static final int CUSTOMDLC = 2;
 	public static final int BALANCE_CHANGES = 3;
+	private Mod owningMod;
 
 	@Override
 	public String toString() {
@@ -419,5 +420,13 @@ public class ModJob {
 
 	public void setAddFilesReadOnlyTargets(ArrayList<String> addFilesReadOnlyTargets) {
 		this.addFilesReadOnlyTargets = addFilesReadOnlyTargets;
+	}
+	
+	public Mod getOwningMod() {
+		return owningMod;
+	}
+
+	public void setOwningMod(Mod mod) {
+		owningMod = mod;
 	}
 }

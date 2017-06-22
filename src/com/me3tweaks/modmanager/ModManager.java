@@ -2366,4 +2366,10 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
+
+	public static String getModGroupsFolder() {
+		File file = new File(getDataDir() + "modgroups\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
 }
