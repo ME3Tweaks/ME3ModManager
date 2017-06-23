@@ -195,7 +195,7 @@ public class Mod implements Comparable<Mod> {
 		modDeltas = new ArrayList<ModDelta>();
 		for (ModJob job : mod.jobs) {
 			ModJob newjob = new ModJob(job);
-			job.setOwningMod(this);
+			newjob.setOwningMod(this);
 			jobs.add(newjob);
 		}
 		for (String str : mod.sideloadOnlyTargets) {

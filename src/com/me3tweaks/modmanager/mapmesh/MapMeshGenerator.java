@@ -356,16 +356,15 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 			//System.out.println(node);
 		}
 
-		/*
-		 * long fullx = 0; long fully = 0; for (PathNode p : pathnodes) { if
-		 * (p.x != 0 && p.y != 0) { fullx += p.x; fully += p.y; } } int centerx
-		 * = 0; int centery = 0; if (pathnodes.size() > 0) { centerx = (int)
-		 * (fullx / pathnodes.size()); centery = (int) (fully /
-		 * pathnodes.size()); }
-		 */
 		MapMeshPanel points = new MapMeshPanel(this, leftmost, topmost);
 
 		points.setNodes(pathnodes);
+		if (leftmost == 1000000) {
+			leftmost = 1200;
+		}
+		if (topmost == 1000000) {
+			topmost = 1200;
+		}
 		//System.out.println("Coordinates: " + leftmost + ", " + topmost);
 		points.setXoffset(-leftmost);
 		points.setYoffset(-topmost);

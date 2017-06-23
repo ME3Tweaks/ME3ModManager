@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.io.File;
@@ -11,7 +12,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -61,17 +62,32 @@ public class ModInstallWindow extends JDialog {
 	String consoleQueue[];
 	String currentText;
 	JProgressBar progressBar;
-	ModManagerWindow callingWindow;
+	//ModManagerWindow callingWindow;
 	public final static String CUSTOMDLC_METADATA_FILE = "_metacmm.txt";
 
-	public ModInstallWindow(ModManagerWindow callingWindow, String bioGameDir, ArrayList<Mod> mods) {
-		initWindow(callingWindow, bioGameDir, mods);
+	public ModInstallWindow(JFrame callingWindow, ArrayList<Mod> mods) {
+		initWindow(callingWindow, mods);
 	}
 
-	private void initWindow(ModManagerWindow callingWindow, String bioGameDir, ArrayList<Mod> mods) {
+	public ModInstallWindow(JDialog callingWindow, ArrayList<Mod> mods) {
+		initWindow(callingWindow, mods);
+	}
+
+	public ModInstallWindow(JDialog callingWindow, Mod mod) {
+		ArrayList<Mod> mods = new ArrayList<Mod>();
+		mods.add(mod);
+		initWindow(callingWindow, mods);
+	}
+
+	public ModInstallWindow(JFrame callingWindow, Mod mod) {
+		ArrayList<Mod> mods = new ArrayList<Mod>();
+		mods.add(mod);
+		initWindow(callingWindow, mods);
+	}
+
+	private void initWindow(Component callingWindow, ArrayList<Mod> mods) {
 		// callingWindow.setEnabled(false);
-		this.callingWindow = callingWindow;
-		this.bioGameDir = bioGameDir;
+		this.bioGameDir = ModManagerWindow.GetBioGameDir();
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("Applying Mod" + (mods.size() > 1 ? "s" : ""));
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -82,9 +98,13 @@ public class ModInstallWindow extends JDialog {
 
 		this.setIconImages(ModManager.ICONS);
 		this.pack();
-		this.setLocationRelativeTo(callingWindow);
+		if (callingWindow instanceof JFrame) {
+			this.setLocationRelativeTo((JFrame) callingWindow);
+		} else {
+			this.setLocationRelativeTo((JDialog) callingWindow);
+		}
 
-		checkModCMMVersion(mods);
+		checkModCMMVersion(callingWindow, mods);
 		boolean installMod = validateRequiredModulesAreAvailable(callingWindow, mods);
 		if (installMod) {
 			new InjectionCommander(mods).execute();
@@ -95,19 +115,13 @@ public class ModInstallWindow extends JDialog {
 		}
 	}
 
-	public ModInstallWindow(ModManagerWindow callingWindow, String bioGameDir, Mod mod) {
-		ArrayList<Mod> mods = new ArrayList<Mod>();
-		mods.add(mod);
-		initWindow(callingWindow, bioGameDir, mods);
-	}
-
 	/**
 	 * Checks to make sure that the MODDESC can be fully parsed.
 	 * 
 	 * @param mods
 	 *            mod to check against
 	 */
-	private void checkModCMMVersion(ArrayList<Mod> mods) {
+	private void checkModCMMVersion(Component callingWindow, ArrayList<Mod> mods) {
 		for (Mod mod : mods) {
 			if (mod.getCMMVer() > ModManager.MODDESC_VERSION_SUPPORT) {
 				JOptionPane.showMessageDialog(callingWindow, mod.getModName() + " specifies it requires a newer version of Mod Manager: " + mod.getCMMVer()
@@ -122,7 +136,7 @@ public class ModInstallWindow extends JDialog {
 	 * 
 	 * @return true if all are available or user ignored missing
 	 */
-	private boolean validateRequiredModulesAreAvailable(ModManagerWindow callingWindow, ArrayList<Mod> mods) {
+	private boolean validateRequiredModulesAreAvailable(Component callingWindow, ArrayList<Mod> mods) {
 		ArrayList<ModJob> missingModules = new ArrayList<ModJob>();
 		StringBuilder sb = new StringBuilder();
 		for (Mod mod : mods) {
@@ -1231,16 +1245,16 @@ public class ModInstallWindow extends JDialog {
 					StringBuilder sb = new StringBuilder();
 					sb.append(
 							"Failed to process mod installation.\nSome parts of the install may have succeeded.\nCheck the log file by copying it to the clipboard in the help menu.");
-					callingWindow.labelStatus.setText("Failed to install at least 1 part of mod");
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to install at least 1 part of mod");
 					ModManager.debugLogger
 							.writeMessage("Some mods failed to fully install. Jobs required to copmlete: " + numjobs + ", while injectioncommander only reported " + completed);
 					JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
 				} else {
 					// we're good
 					if (mods.size() > 1) {
-						callingWindow.labelStatus.setText(mods.size() + " mods installed");
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(mods.size() + " mods installed");
 					} else {
-						callingWindow.labelStatus.setText(mods.get(0).getModName() + " installed");
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(mods.get(0).getModName() + " installed");
 					}
 					for (Mod mod : mods) {
 						for (ModJob job : mod.jobs) {
@@ -1278,7 +1292,7 @@ public class ModInstallWindow extends JDialog {
 					}
 					System.gc();//force shutdown the old DB
 
-					callingWindow.labelStatus.setText("Mod install canceled");
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod install canceled");
 					dispose();
 					if (!failedLoadingDB) {
 						File bgdir = new File(ModManager.appendSlash(bioGameDir));

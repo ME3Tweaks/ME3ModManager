@@ -2905,7 +2905,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (mod.getJobs().length > 0) {
 			checkBackedUp(mod);
-			new ModInstallWindow(this, GetBioGameDir(), mod);
+			new ModInstallWindow(this, mod);
 		} else {
 			ModManager.debugLogger.writeMessage("No dlc mod job, finishing mod installation");
 		}

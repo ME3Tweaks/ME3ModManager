@@ -3,6 +3,7 @@ package com.me3tweaks.modmanager;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,12 +44,13 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 
 	private JList<ModGroup> modGroupsList;
 	private JList<Mod> modsInGroupList;
-	private JButton mergeButton;
+	private JButton installButton;
 	private JSplitPane splitPane;
 	private boolean painted = false;
 	private JLabel groupDescription;
 	private DefaultListModel<ModGroup> modGroupModel;
 	private DefaultListModel<Mod> groupContentsModel;
+	private JButton createButton;
 
 	public ModGroupWindow() {
 		setupWindow();
@@ -59,14 +61,14 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("Batch Mod Installer");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(400, 363));
+		this.setPreferredSize(new Dimension(500, 375));
 		this.setIconImages(ModManager.ICONS);
 
 		JPanel contentPanel = new JPanel(new BorderLayout());
 
 		// Title Panel - TOP
 		JPanel titlePanel = new JPanel(new BorderLayout());
-		titlePanel.add(new JLabel("Create a mod group so you can quickly batch install a specific set of mods.", SwingConstants.CENTER), BorderLayout.NORTH);
+		titlePanel.add(new JLabel("Mod Groups allow you to install a batch of mods all in the same run.", SwingConstants.CENTER), BorderLayout.NORTH);
 
 		//GROUPS - WEST
 		JPanel groupsPanel = new JPanel(new BorderLayout());
@@ -108,11 +110,18 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 		groupContentPanel.add(topRightPanel, BorderLayout.NORTH);
 		groupContentPanel.add(bottomRightPanel, BorderLayout.CENTER);
 
+
+		JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		installButton = new JButton("Install Group");
+		installButton.setEnabled(false);
+
+		createButton = new JButton("Create Group");
+		actionsPanel.add(createButton);
+		actionsPanel.add(installButton);
+		
+		groupContentPanel.add(actionsPanel,BorderLayout.SOUTH);
 		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, groupsPanel, groupContentPanel);
 		splitPane.setResizeWeight(.5d);
-		mergeButton = new JButton("Select a mod from both sides to merge");
-		//mergeButton.setEnabled(false);
-		//mergeButton.addActionListener(this);
 
 		contentPanel.add(titlePanel, BorderLayout.NORTH);
 		contentPanel.add(splitPane, BorderLayout.CENTER);
@@ -122,6 +131,35 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 
+		installButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				for (int i = 0; i < groupContentsModel.size(); i++) {
+					Mod mod = groupContentsModel.get(i);
+					new ModInstallWindow(ModGroupWindow.this,mod);
+				}
+				ModGroup mg = modGroupModel.getElementAt(modGroupsList.getSelectedIndex());
+
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '"+mg.getModGroupName()+"' was installed");
+				dispose();
+			}
+		});
+		
+		createButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int index = modGroupsList.getSelectedIndex();
+				if (index >= 0) {
+					ModGroup mg = modGroupsList.getSelectedValue();
+					new ModGroupCreatorWindow(mg);
+				} else {
+					new ModGroupCreatorWindow();
+				}
+			}
+		});
+		
 	}
 
 	@Override
@@ -136,6 +174,10 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 			if (listChange.getSource() == modGroupsList) {
 				int index = modGroupsList.getSelectedIndex();
 				if (index >= 0) {
+					installButton.setEnabled(true);
+					installButton.setToolTipText("Install all mods in this group");
+					createButton.setText("Edit Group");
+					createButton.setToolTipText("Add, remove, and reorder the installation of mods in the selected group");
 					ModGroup mg = modGroupModel.getElementAt(index);
 					groupDescription.setText(mg.getModGroupDescription());
 					groupContentsModel.clear();
@@ -148,12 +190,16 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 							if (mod.getDescFile().equalsIgnoreCase(lookingfor)) {
 								groupContentsModel.addElement(mod);
 							} else {
-								System.out.println("Not matched: "+mod.getDescFile());
-
+								//System.out.println("Not matched: "+mod.getDescFile());
 							}
 
 						}
 					}
+				} else {
+					installButton.setEnabled(false);
+					installButton.setToolTipText("Select a mod group first");
+					createButton.setText("Create Group");
+					createButton.setToolTipText("Create a new mod installation group");
 				}
 			}
 		}
@@ -181,6 +227,7 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 		}
 
 		return groups;
-
 	}
+	
+	
 }
