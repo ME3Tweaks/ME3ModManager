@@ -26,6 +26,7 @@ public class ModGroup {
 	private ArrayList<String> descPaths;
 	private String modGroupName;
 	private String modGroupDescription;
+	private String loadFilePath;
 
 	/**
 	 * Used for loading an existing modgroup file.
@@ -34,6 +35,7 @@ public class ModGroup {
 	 *            Path to a modgroup file.
 	 */
 	public ModGroup(String modgroupFilePath) {
+		loadFilePath = modgroupFilePath;
 		File file = new File(modgroupFilePath);
 		if (file.exists()) {
 			//parse
@@ -59,22 +61,8 @@ public class ModGroup {
 		}
 	}
 
-	/**
-	 * Used for constructing a new Mod Group.
-	 * 
-	 * @param name
-	 *            Name of the mod group.
-	 * @param description
-	 *            Description of the mod group.
-	 * @param mods
-	 *            List of mods from that are part of the mod group.
-	 */
-	public ModGroup(String name, String description, ArrayList<Mod> mods) {
-
-	}
-
-	public void resolveDescsToMods() {
-
+	public String getLoadFilePath() {
+		return loadFilePath;
 	}
 
 	public ArrayList<String> getDescPaths() {

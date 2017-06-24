@@ -23,7 +23,6 @@ import com.me3tweaks.modmanager.utilities.DebugLogger;
 
 @SuppressWarnings("serial")
 public class OptionsWindow extends JDialog {
-	JCheckBox loggingMode;
 	private JCheckBox autoInjectKeybindsModMaker;
 	private JCheckBox enforceDotNetRequirement;
 	private JCheckBox autoUpdateModManager;
@@ -52,37 +51,6 @@ public class OptionsWindow extends JDialog {
 		JPanel optionsPanel = new JPanel();
 		optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.PAGE_AXIS));
 
-		loggingMode = new JCheckBox("Write Mod Manager log to file");
-		loggingMode.setToolTipText(
-				"<html>Turning this on will write a session log to me3cmm_last_run_log.txt next to ME3CMM.exe.<br>This log can be used by FemShep to help diagnose issues with Mod Manager.<br>It will also tell you why mods aren't loading and other things.</html>");
-		loggingMode.setSelected(ModManager.logging);
-		loggingMode.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Wini ini;
-				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
-
-					if (loggingMode.isSelected()) {
-						ini.put("Settings", "logging_mode", "1");
-						JOptionPane.showMessageDialog(null,
-								"<html>Logs will be written to a file named " + DebugLogger.LOGGING_FILENAME
-										+ ", next to the ME3CMM.exe file.<br>This log will help you debug mods that fail to show up in the list and can be used by FemShep to fix problems.<br>Mod Manager must be fully restarted for logging to start.</html>",
-								"Logging Mode", JOptionPane.INFORMATION_MESSAGE);
-					} else {
-						ini.put("Settings", "logging_mode", "0");
-						ModManager.logging = false;
-					}
-					ini.store();
-				} catch (InvalidFileFormatException error) {
-					error.printStackTrace();
-				} catch (IOException error) {
-					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
-				}
-			}
-		});
 
 		enforceDotNetRequirement = new JCheckBox("Perform .NET requirements check");
 		enforceDotNetRequirement.setToolTipText(
@@ -385,7 +353,6 @@ public class OptionsWindow extends JDialog {
 		optionsPanel.add(useWindowsUI);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(enforceDotNetRequirement);
-		optionsPanel.add(loggingMode);
 		optionsPanel.add(logModmaker);
 		optionsPanel.add(logModInit);
 		optionsPanel.add(logPatchInit);

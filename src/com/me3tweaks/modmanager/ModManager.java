@@ -1,6 +1,5 @@
 package com.me3tweaks.modmanager;
 
-import java.awt.Desktop;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.BufferedReader;
@@ -16,8 +15,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.StringWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +39,6 @@ import java.util.prefs.Preferences;
 import javax.swing.JOptionPane;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -56,7 +52,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.ini4j.Config;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.w3c.dom.Document;
@@ -84,12 +79,12 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "5.0 Beta";
+	public static final String VERSION = "5.0 Beta 1";
 	public static long BUILD_NUMBER = 74L;
-	public static final String BUILD_DATE = "6/17/2017";
-	public static DebugLogger debugLogger;
-	public static boolean IS_DEBUG = true;
+	public static final String BUILD_DATE = "6/23/2017";
+	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
+	public static DebugLogger debugLogger;
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
 																// version
@@ -106,7 +101,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
 	public final static int MIN_REQUIRED_CMDLINE_REV = 0;
 
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 9; //1.0.0.X
+	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 10; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
@@ -127,7 +122,7 @@ public class ModManager {
 	public static boolean USE_WINDOWS_UI;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
-	public static final String[] SUPPORTED_GAME_LANGAUGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN", "ITA" };
+	public static final String[] SUPPORTED_GAME_LANGUAGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
 
 	public static final class Lock {
 	} //threading wait() and notifyall();
@@ -145,16 +140,6 @@ public class ModManager {
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
 
-			//JVM Check
-			if (!System.getProperty("sun.arch.data.model").equals("32") && !IS_DEBUG) {
-				ModManager.debugLogger.writeError("Running in " + System.getProperty("sun.arch.data.model") + "-bit java!");
-				JOptionPane.showMessageDialog(null,
-						"Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to isntall 32-bit java.",
-						"Untested JVM", JOptionPane.ERROR_MESSAGE);
-				//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
-				//System.exit(1);
-			}
-
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
 
 			File settings = new File(ModManager.SETTINGS_FILENAME);
@@ -165,45 +150,25 @@ public class ModManager {
 				settingsini.store();
 			}
 
-			// Set and get debugging mode from wini
-			if (ModManager.IS_DEBUG) {
-				debugLogger.initialize();
-				logging = true;
-				debugLogger.writeMessage("Starting logger, this is a debugging build.");
-			}
-
 			Wini settingsini;
 			try {
 				settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-				{
-					if (!ModManager.IS_DEBUG) {
-						String logStr = settingsini.get("Settings", "logging_mode");
-						int logInt = 0;
-						if (logStr != null && !logStr.equals("")) {
-							try {
-								logInt = Integer.parseInt(logStr);
-								if (logInt > 0) {
-									// logging is on
-									debugLogger.initialize();
-									logging = true;
-									debugLogger.writeMessage("Starting logger. Logger was able to start up with no issues.");
-									debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build Date " + BUILD_DATE);
-								} else {
-									debugLogger.writeMessage("Logging mode disabled");
-								}
-							} catch (NumberFormatException e) {
-								debugLogger.writeMessage("Number format exception reading the log mode - log mode disabled");
-							}
-						} else {
-							debugLogger.initialize();
-							logging = true;
-							debugLogger.writeMessage("Logging variable not set, defaulting to true. Starting logger. Mod Manager version " + ModManager.VERSION + "; Build "
-									+ ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
-						}
-					}
-				}
+				debugLogger.initialize();
+				logging = true;
+				debugLogger.writeMessage("Starting logger. Logger was able to start up with no issues.");
+				debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build Date " + BUILD_DATE);
+				debugLogger.writeMessage("--------Mod Manager Main Startup--------");
 
-				debugLogger.writeMessage("--------Mod Manager Init--------");
+				//JVM Check
+				if (!System.getProperty("sun.arch.data.model").equals("32") && !IS_DEBUG) {
+					ModManager.debugLogger.writeError("Running in " + System.getProperty("sun.arch.data.model") + "-bit java!");
+					JOptionPane.showMessageDialog(null,
+							"Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to isntall 32-bit java.",
+							"Untested JVM", JOptionPane.ERROR_MESSAGE);
+					//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
+					//System.exit(1);
+				}
+				
 
 				String verString = settingsini.get("Settings", "initialmodmanagerversionbuild");
 				if (verString == null || verString.equals("")) {
@@ -1433,7 +1398,7 @@ public class ModManager {
 	 */
 	public static ProcessResult compressPCC(File sourceSource, File sourceDestination) {
 		ArrayList<String> commandBuilder = new ArrayList<String>();
-		commandBuilder.add(ModManager.getCommandLineToolsDir() + "PCCDecompressor.exe");
+		commandBuilder.add(ModManager.getCommandLineToolsDir() + "PCCDecompress.exe");
 		commandBuilder.add("--inputfile");
 		commandBuilder.add(sourceSource.getAbsolutePath());
 		commandBuilder.add("--outputfile");

@@ -78,8 +78,8 @@ public class CustomDLCConflictWindow extends JDialog {
 	private JPanel windowpanel;
 	public String transplanterpath;
 	public HashMap<String, CustomDLC> secondPriorityUIConflictFiles;
-	public ArrayList<String> blacklistedGUIconflictfiles = new ArrayList<String>(
-			Arrays.asList(new String[] { "BioD_CitCas.pcc", "SFXWeapon_SniperRifle_Collector_LOC_INT.pcc", "SFXWeapon_AssaultRifle_Spitfire.pcc", "SFXWeapon_SMG_Collector_LOC_INT.pcc", "Startup_DLC_CON_MAPMOD_INT.pcc" }));
+	public ArrayList<String> blacklistedGUIconflictfiles = new ArrayList<String>(Arrays.asList(new String[] { "BioD_CitCas.pcc", "SFXWeapon_SniperRifle_Collector_LOC_INT.pcc",
+			"SFXWeapon_AssaultRifle_Spitfire.pcc", "SFXWeapon_SMG_Collector_LOC_INT.pcc", "Startup_DLC_CON_MAPMOD_INT.pcc" }));
 
 	public CustomDLCConflictWindow() {
 		setupWindow();
@@ -166,22 +166,22 @@ public class CustomDLCConflictWindow extends JDialog {
 		JLabel infoLinkButton = new JLabel(buttonText);
 		infoLinkButton.setText(buttonText);
 		infoLinkButton.setHorizontalAlignment(SwingConstants.CENTER);
-/*		infoLinkButton.setBorderPainted(false);
-		infoLinkButton.setBackground(UIManager.getColor("Panel.background"));
-		infoLinkButton.setFocusPainted(false);
-		infoLinkButton.setMargin(new Insets(0, 0, 0, 0));
-		infoLinkButton.setContentAreaFilled(false);
-		infoLinkButton.setBorderPainted(false);
-		infoLinkButton.setOpaque(false);
-		infoLinkButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-		infoLinkButton.setToolTipText("Click for info on how to toggle Custom DLC mods in Mod Manager");
-		infoLinkButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, message, "Toggling Custom DLC in Mod Manager", JOptionPane.INFORMATION_MESSAGE);
-			}
-		});*/
+		/*
+		 * infoLinkButton.setBorderPainted(false);
+		 * infoLinkButton.setBackground(UIManager.getColor("Panel.background"));
+		 * infoLinkButton.setFocusPainted(false); infoLinkButton.setMargin(new
+		 * Insets(0, 0, 0, 0)); infoLinkButton.setContentAreaFilled(false);
+		 * infoLinkButton.setBorderPainted(false);
+		 * infoLinkButton.setOpaque(false); infoLinkButton.setCursor(new
+		 * Cursor(Cursor.HAND_CURSOR)); infoLinkButton.
+		 * setToolTipText("Click for info on how to toggle Custom DLC mods in Mod Manager"
+		 * ); infoLinkButton.addActionListener(new ActionListener() {
+		 * 
+		 * @Override public void actionPerformed(ActionEvent e) {
+		 * JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, message,
+		 * "Toggling Custom DLC in Mod Manager",
+		 * JOptionPane.INFORMATION_MESSAGE); } });
+		 */
 		windowpanel.add(infoLinkButton, BorderLayout.NORTH);
 		windowpanel.add(scrollpane, BorderLayout.CENTER);
 
@@ -292,10 +292,10 @@ public class CustomDLCConflictWindow extends JDialog {
 			HashMap<String, ArrayList<CustomDLC>> guiFilesWithNoSuperceding = detectNewFilesSupercedingUI(dlcfilemap);
 			ModManager.debugLogger.writeMessage("The following items will be transplanted into if the user accepts UI transplants:");
 			for (Map.Entry<String, CustomDLC> secondtier : secondPriorityUIConflictFiles.entrySet()) {
-				ModManager.debugLogger.writeMessage(secondtier.getValue().getDlcName()+" "+secondtier.getKey());
+				ModManager.debugLogger.writeMessage(secondtier.getValue().getDlcName() + " " + secondtier.getKey());
 			}
 			if (guiFilesWithNoSuperceding != null) {
-				
+
 				ArrayList<String> knownGUImods = new ArrayList<String>(Arrays.asList(ModManager.KNOWN_GUI_CUSTOMDLC_MODS));
 				for (Entry<String, ArrayList<CustomDLC>> entry : guiFilesWithNoSuperceding.entrySet()) {
 					//add conflicts to gui conflict list since they have guis and aren't overridden by gui mod
@@ -305,7 +305,7 @@ public class CustomDLCConflictWindow extends JDialog {
 					for (int i = dlcs.size() - 1; i >= 0; i--) {
 						CustomDLC tier = dlcs.get(i);
 						if (knownGUImods.contains(tier.getDlcName())) {
-							ModManager.debugLogger.writeMessage("- Skip tier "+tier.getDlcName());
+							ModManager.debugLogger.writeMessage("- Skip tier " + tier.getDlcName());
 							continue;
 						} else {
 							ModManager.debugLogger.writeMessage(entry.getValue().get(i) + " " + entry.getKey());
@@ -582,19 +582,23 @@ public class CustomDLCConflictWindow extends JDialog {
 			 */
 
 			ArrayList<String> transplantFiles = new ArrayList<>();
+			double i = 0;
+			int filesToCopy = secondPriorityUIConflictFiles.entrySet().size();
 			for (Map.Entry<String, CustomDLC> resolutionFile : secondPriorityUIConflictFiles.entrySet()) {
+				publish(new ThreadCommand("SET_PROGRESS", null, i / filesToCopy));
 				String sourcePath = biogameDirectory + "DLC/" + resolutionFile.getValue().getDlcName() + "/CookedPCConsole/" + resolutionFile.getKey();
 				String copyTargetPath = skg.getGeneratedMod().getModPath() + "DLC_MOD_" + internalName + "/CookedPCConsole/" + resolutionFile.getKey();
-				try {
-					ModManager.debugLogger.writeMessage("Copying 2nd tier conflict file: " + sourcePath + " => " + copyTargetPath);
-					FileUtils.copyFile(new File(sourcePath), new File(copyTargetPath));
+			//	try {
+					ModManager.debugLogger.writeMessage("Decompressing 2nd tier conflict file: " + sourcePath + " => " + copyTargetPath);
+					//FileUtils.copyFile(new File(sourcePath), new File(copyTargetPath));
+					ModManager.decompressPCC(new File(sourcePath), new File(copyTargetPath));
 					transplantFiles.add(copyTargetPath);
-				} catch (IOException e1) {
-					ModManager.debugLogger.writeErrorWithException("ERROR COPYING FILE INTO COMPAT PACKAGE: ", e1);
-					FileUtils.deleteQuietly(new File(skg.getGeneratedMod().getModPath()));
-					publish(new ThreadCommand("ERROR_FILE_COPY_INTO_COMPAT"));
-					return false;
-				}
+//					ModManager.debugLogger.writeErrorWithException("ERROR COPYING FILE INTO COMPAT PACKAGE: ", e1);
+	//				FileUtils.deleteQuietly(new File(skg.getGeneratedMod().getModPath()));
+		//			publish(new ThreadCommand("ERROR_FILE_COPY_INTO_COMPAT"));
+			//		return false;
+				//}
+					i++;
 			}
 
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Locating GUI library"));
@@ -602,7 +606,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Copy of 2nd tier fields completed. Locating GUI library");
 
 			//Run ME3-GUI-Transplanter over CookedPCConsole files
-			double i = 0;
+			i = 0;
 			for (String transplantFile : transplantFiles) {
 				publish(new ThreadCommand("SET_PROGRESS", null, i / transplantFiles.size()));
 				/*

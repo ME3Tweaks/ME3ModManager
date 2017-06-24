@@ -1,7 +1,6 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -10,8 +9,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -21,6 +18,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -57,6 +55,7 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 	private JTextField fieldModGroupName;
 	private JTextArea fieldModGroupDescription;
 	private JButton moveRightButton, moveLeftButton, moveUpButton, moveDownButton;
+	private boolean windowResult = false;
 
 	public ModGroupCreatorWindow() {
 		setupWindow();
@@ -85,7 +84,6 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 				if (mod.getDescFile().equalsIgnoreCase(lookingfor)) {
 					Mod porting = modsAvailableModel.remove(i);
 					modsInGroupModel.addElement(porting);
-					System.out.println("Move to right side: " + porting.getModName());
 					break;
 				}
 			}
@@ -128,7 +126,8 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 		moveRightButton.setToolTipText("Add selected mods to the group");
 		moveLeftButton = new JButton("<<");
 		moveLeftButton.setToolTipText("Remove selected mods from the group");
-
+		moveRightButton.setEnabled(false);
+		moveLeftButton.setEnabled(false);
 		JPanel movementPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		movementPanel.add(moveRightButton);
 
@@ -172,7 +171,7 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 		//panel above buttons
 		JPanel textPanel = new JPanel(new BorderLayout());
 		fieldModGroupName = new JTextField();
-		fieldModGroupDescription = new JTextArea(2, 60);
+		fieldModGroupDescription = new JTextArea(2, 20);
 
 		JPanel groupnamePanel = new JPanel(new BorderLayout());
 		JPanel groupdescriptionPanel = new JPanel(new BorderLayout());
@@ -199,10 +198,17 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				saveGroup();
-
-				//ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '"+mg.getModGroupName()+"' was installed");
-				dispose();
+				String message = validateSave();
+				if (message == null) {
+					ModManager.debugLogger.writeMessage("Saving group...");
+					if (saveGroup()) {
+						windowResult = true;
+						dispose();
+					}
+				} else {
+					ModManager.debugLogger.writeMessage("Error validating form: " + message);
+					JOptionPane.showMessageDialog(ModGroupCreatorWindow.this, message, "Error saving group", JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		});
 
@@ -218,7 +224,7 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 					Mod porting = modsAvailableModel.remove(selectedIndices[i]);
 					modsInGroupModel.addElement(porting);
 				}
-				saveButton.setEnabled(modsInGroupModel.size() > 0);
+				saveButton.setEnabled(true);
 			}
 		});
 
@@ -233,7 +239,7 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 					Mod porting = modsInGroupModel.remove(selectedIndices[i]);
 					modsAvailableModel.addElement(porting);
 				}
-				saveButton.setEnabled(modsInGroupModel.size() > 0);
+				saveButton.setEnabled(true);
 			}
 		});
 
@@ -268,6 +274,7 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 		});
 
 		modsInGroupList.addListSelectionListener(this);
+		modsAvailableForSelectionList.addListSelectionListener(this);
 
 		for (int i = 0; i < ModManagerWindow.ACTIVE_WINDOW.modModel.size(); i++) {
 			Mod mod = ModManagerWindow.ACTIVE_WINDOW.modModel.get(i);
@@ -277,6 +284,16 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
+	/**
+	 * Swaps two items in a listmodel
+	 * 
+	 * @param model
+	 *            Model to swap in
+	 * @param a
+	 *            Index 1
+	 * @param b
+	 *            Index 2
+	 */
 	private void swap(DefaultListModel<Mod> model, int a, int b) {
 		ModManager.debugLogger.writeMessage("Swapping items in list: " + a + " and " + b);
 		if (a < 0 || b < 0 || a > model.size() - 1 || b > model.size() - 1) {
@@ -289,46 +306,91 @@ public class ModGroupCreatorWindow extends JDialog implements ListSelectionListe
 
 	}
 
-	public ArrayList<ModGroup> getModGroups() {
-		ArrayList<ModGroup> groups = new ArrayList<>();
-		String modGroupFolder = ModManager.getModGroupsFolder();
-		String[] extensions = new String[] { "txt" };
-		List<File> files = (List<File>) FileUtils.listFiles(new File(modGroupFolder), extensions, false);
-		for (File file : files) {
-			System.out.println("file: " + file.getAbsolutePath());
-			ModGroup mg = new ModGroup(file.getAbsolutePath());
-			groups.add(mg);
-		}
-
-		return groups;
-	}
-
 	@Override
 	public void valueChanged(ListSelectionEvent listChange) {
 		if (listChange.getValueIsAdjusting() == false) {
 			if (listChange.getSource() == modsInGroupList) {
-				int[] selectedInidicies = modsInGroupList.getSelectedIndices();
-				moveUpButton.setEnabled(selectedInidicies.length == 1);
-				moveDownButton.setEnabled(selectedInidicies.length == 1);
+				int[] selectedIndicies = modsInGroupList.getSelectedIndices();
+				moveUpButton.setEnabled(selectedIndicies.length == 1);
+				moveDownButton.setEnabled(selectedIndicies.length == 1);
+				moveLeftButton.setEnabled(selectedIndicies.length > 0);
+			} else if (listChange.getSource() == modsAvailableForSelectionList) {
+				int[] selectedIndicies = modsAvailableForSelectionList.getSelectedIndices();
+				moveRightButton.setEnabled(selectedIndicies.length > 0);
 			}
 		}
 	}
 
-	private void saveGroup() {
-		String output = fieldModGroupName.getText() + "\n";
-		output += ResourceUtils.convertNewlineToBr(fieldModGroupDescription.getText()) + "\n";
-		for (int i = 0; i < modsInGroupModel.size(); i++) {
-			Mod mod = modsInGroupModel.get(i);
-			String relativePath = ResourceUtils.getRelativePath(mod.getDescFile(), ModManager.getModsDir(), File.separator);
-			output += relativePath + "\n";
+	/**
+	 * Saves the mod group to disk. Deletes the mod group if there is nothing in
+	 * the list.
+	 * 
+	 * @return true if the dialog should close (saved or deleted), false if it
+	 *         shouldn't (user declined deleting, invalid group)
+	 */
+	private boolean saveGroup() {
+		int numModsInGroup = modsInGroupModel.size();
+		if (numModsInGroup == 0 && modGroup != null) {
+			//delete
+			int result = JOptionPane.showConfirmDialog(this, "No mods have been placed into this group!\nDelete this group?", "Delete group", JOptionPane.YES_NO_OPTION,
+					JOptionPane.WARNING_MESSAGE);
+			if (result == JOptionPane.YES_OPTION) {
+				ModManager.debugLogger.writeMessage("Deleting empty modgroup: " + modGroup.getLoadFilePath());
+				FileUtils.deleteQuietly(new File(modGroup.getLoadFilePath()));
+			}
+			return true;
+		} else if (numModsInGroup == 0) {
+			JOptionPane.showMessageDialog(this, "No mods have been placed into this group.", "Empty group", JOptionPane.ERROR_MESSAGE);
+			return false;
+		} else {
+			String output = fieldModGroupName.getText() + "\n";
+			output += ResourceUtils.convertNewlineToBr(fieldModGroupDescription.getText()) + "\n";
+			for (int i = 0; i < modsInGroupModel.size(); i++) {
+				Mod mod = modsInGroupModel.get(i);
+				String relativePath = ResourceUtils.getRelativePath(mod.getDescFile(), ModManager.getModsDir(), File.separator);
+				output += relativePath + "\n";
+			}
+			String outputname = fieldModGroupName.getText().replaceAll("[^a-zA-Z]", "").toLowerCase();
+			String outputpath = ModManager.getModGroupsFolder() + outputname + ".txt";
+			if (modGroup != null) {
+				FileUtils.deleteQuietly(new File(modGroup.getLoadFilePath()));
+			}
+			try {
+				ModManager.debugLogger.writeMessage("Saving mod group file: " + outputpath);
+				FileUtils.writeStringToFile(new File(outputpath), output, StandardCharsets.UTF_8);
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException("Error saving mod group!", e);
+			}
+			return true;
 		}
-		String outputname = fieldModGroupName.getText().replaceAll("[^a-zA-Z]", "").toLowerCase();
-		String outputpath = ModManager.getModGroupsFolder() + outputname+".txt";
-		try {
-			ModManager.debugLogger.writeMessage("Saving mod group file: "+outputpath);
-			FileUtils.writeStringToFile(new File(outputpath), output, StandardCharsets.UTF_8);
-		} catch (IOException e) {
-			ModManager.debugLogger.writeErrorWithException("Error saving mod group!", e);
+	}
+
+	/**
+	 * Validates the saving form (does not validate the modlist).
+	 * 
+	 * @return null if OK, string error message if failed.
+	 */
+	private String validateSave() {
+		String name = fieldModGroupName.getText();
+		String outputname = fieldModGroupName.getText().replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+
+		if (name.length() == 0 || outputname.length() == 0) {
+			return "Mod Group name must be at least 1 alphanumeric character.";
 		}
+
+		String desc = fieldModGroupDescription.getText().trim();
+		if (desc.length() == 0) {
+			return "Mod group description cannot be empty.";
+		}
+
+		return null;
+	}
+	
+	/**
+	 * Gets the value inidicating if this window made changes.
+	 * @return
+	 */
+	public boolean getWindowResult(){
+		return windowResult ;
 	}
 }

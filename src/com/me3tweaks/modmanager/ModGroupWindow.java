@@ -40,7 +40,7 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
  * @author Mgamerz
  *
  */
-public class ModGroupWindow extends JDialog implements ActionListener, ListSelectionListener {
+public class ModGroupWindow extends JDialog implements ListSelectionListener {
 
 	private JList<ModGroup> modGroupsList;
 	private JList<Mod> modsInGroupList;
@@ -80,9 +80,6 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 
 		modGroupModel = new DefaultListModel<ModGroup>();
 		modGroupsList.setModel(modGroupModel);
-		for (ModGroup mod : getModGroups()) {
-			modGroupModel.addElement(mod);
-		}
 		JScrollPane leftListScroller = new JScrollPane(modGroupsList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		groupsPanel.setBorder(modGroupsBorder);
 		groupsPanel.add(leftListScroller, BorderLayout.CENTER);
@@ -94,7 +91,7 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 		modsInGroupList.addListSelectionListener(this);
 		modsInGroupList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		modsInGroupList.setLayoutOrientation(JList.VERTICAL);
-		
+
 		groupContentsModel = new DefaultListModel<Mod>();
 		modsInGroupList.setModel(groupContentsModel);
 
@@ -110,7 +107,6 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 		groupContentPanel.add(topRightPanel, BorderLayout.NORTH);
 		groupContentPanel.add(bottomRightPanel, BorderLayout.CENTER);
 
-
 		JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		installButton = new JButton("Install Group");
 		installButton.setEnabled(false);
@@ -118,8 +114,8 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 		createButton = new JButton("Create Group");
 		actionsPanel.add(createButton);
 		actionsPanel.add(installButton);
-		
-		groupContentPanel.add(actionsPanel,BorderLayout.SOUTH);
+
+		groupContentPanel.add(actionsPanel, BorderLayout.SOUTH);
 		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, groupsPanel, groupContentPanel);
 		splitPane.setResizeWeight(.5d);
 
@@ -128,44 +124,61 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(contentPanel);
+		loadModGroups();
+
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 
 		installButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				for (int i = 0; i < groupContentsModel.size(); i++) {
 					Mod mod = groupContentsModel.get(i);
-					new ModInstallWindow(ModGroupWindow.this,mod);
+					new ModInstallWindow(ModGroupWindow.this, mod);
 				}
 				ModGroup mg = modGroupModel.getElementAt(modGroupsList.getSelectedIndex());
 
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '"+mg.getModGroupName()+"' was installed");
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '" + mg.getModGroupName() + "' was installed");
 				dispose();
 			}
 		});
-		
+
 		createButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				int index = modGroupsList.getSelectedIndex();
+				ModGroupCreatorWindow mgcw = null;
 				if (index >= 0) {
 					ModGroup mg = modGroupsList.getSelectedValue();
-					new ModGroupCreatorWindow(mg);
+					mgcw = new ModGroupCreatorWindow(mg);
 				} else {
-					new ModGroupCreatorWindow();
+					mgcw = new ModGroupCreatorWindow();
+				}
+				if (mgcw.getWindowResult()) {
+					loadModGroups();
 				}
 			}
 		});
-		
+
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent arg0) {
-		// TODO Auto-generated method stub
+	/**
+	 * Reloads the mod groups list
+	 */
+	private void loadModGroups() {
+		modGroupModel.clear();
+		for (ModGroup mod : getModGroups()) {
+			modGroupModel.addElement(mod);
+		}
+		groupContentsModel.clear();
+		groupDescription.setText("Select a mod group");
 
+		installButton.setEnabled(false);
+		installButton.setToolTipText("Select a mod group first");
+		createButton.setText("Create Group");
+		createButton.setToolTipText("Create a new mod installation group");
 	}
 
 	@Override
@@ -184,15 +197,11 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 					for (String descini : mg.getDescPaths()) {
 						for (int i = 0; i < ModManagerWindow.ACTIVE_WINDOW.modModel.size(); i++) {
 							Mod mod = ModManagerWindow.ACTIVE_WINDOW.modModel.getElementAt(i);
-							String lookingfor = ResourceUtils.normalizeFilePath(ModManager.getModsDir()+descini,true);
-							System.out.println("Looking for: "+lookingfor);
+							String lookingfor = ResourceUtils.normalizeFilePath(ModManager.getModsDir() + descini, true);
 
 							if (mod.getDescFile().equalsIgnoreCase(lookingfor)) {
 								groupContentsModel.addElement(mod);
-							} else {
-								//System.out.println("Not matched: "+mod.getDescFile());
 							}
-
 						}
 					}
 				} else {
@@ -215,19 +224,26 @@ public class ModGroupWindow extends JDialog implements ActionListener, ListSelec
 		}
 	}
 
+	/**
+	 * Reads the mod groups list from disk
+	 * 
+	 * @return list of valid modgroups
+	 */
 	public ArrayList<ModGroup> getModGroups() {
 		ArrayList<ModGroup> groups = new ArrayList<>();
 		String modGroupFolder = ModManager.getModGroupsFolder();
 		String[] extensions = new String[] { "txt" };
 		List<File> files = (List<File>) FileUtils.listFiles(new File(modGroupFolder), extensions, false);
 		for (File file : files) {
-			System.out.println("file: " + file.getAbsolutePath());
 			ModGroup mg = new ModGroup(file.getAbsolutePath());
-			groups.add(mg);
+			if (mg.getDescPaths().size() > 0) {
+				groups.add(mg);
+			} else {
+				ModManager.debugLogger.writeMessage("Modgroup has no valid desc paths in it: " + mg.getModGroupName());
+			}
 		}
 
 		return groups;
 	}
-	
-	
+
 }

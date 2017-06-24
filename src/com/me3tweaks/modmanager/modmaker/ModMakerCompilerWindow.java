@@ -1385,7 +1385,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 	}
 
-	class TLKWorker extends SwingWorker<Void, Integer> {
+	class TLKWorker extends SwingWorker<Void, Object> {
 		private JProgressBar progress;
 		boolean error = false;
 		ArrayList<String> languages;
@@ -1401,11 +1401,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		protected Void doInBackground() throws Exception {
-			/*
-			 * if (true) { ModManager.debugLogger.writeMessage(
-			 * "Debug skipping TLK"); return null; //skip tlk, mod doesn't have
-			 * it }
-			 */
 			NodeList tlkElementNodeList = doc.getElementsByTagName("TLKData");
 			if (tlkElementNodeList.getLength() < 1) {
 				ModManager.debugLogger.writeMessage("No TLK in mod file, or length is 0.");
@@ -1434,7 +1429,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (languages.contains(tlkNode.getNodeName())) {
 						ModManager.debugLogger.writeMessage("Read TLK ID: " + tlkType);
 						ModManager.debugLogger.writeMessage("---------------------START OF " + tlkType + "-------------------------");
-
+						publish(new ThreadCommand("SET_STATUS","Decompiling "+tlkType+" language file"));
 						//decompile TLK to tlk folder
 						File tlkdir = new File(ModManager.getCompilingDir() + "tlk/");
 						tlkdir.mkdirs(); // created tlk directory
@@ -1473,6 +1468,8 @@ public class ModMakerCompilerWindow extends JDialog {
 						this.publish(++jobsDone);
 						//END OF DECOMPILE==================================================
 						//iterate over TLK indexes and load into memory
+						publish(new ThreadCommand("SET_STATUS","Modifying "+tlkType+" language file"));
+
 						HashMap<Integer, TLKFragment> indexMap = new HashMap<Integer, TLKFragment>();
 						NodeList localizedNodeList = tlkNode.getChildNodes();
 						for (int j = 0; j < localizedNodeList.getLength(); j++) {
@@ -1548,6 +1545,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						this.publish(++jobsDone);
 						//create new TLK file from this.
 						//START OF TLK COMPILE=========================================================
+						publish(new ThreadCommand("SET_STATUS","Recompiling "+tlkType+" language file"));
 						ArrayList<String> tlkCompileCommandBuilder = new ArrayList<String>();
 						tlkCompileCommandBuilder.add(compilerPath);
 						tlkCompileCommandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString()) + "BIOGame_" + tlkType + ".xml");
@@ -1586,9 +1584,22 @@ public class ModMakerCompilerWindow extends JDialog {
 			return null;
 		}
 
-		@Override
-		protected void process(List<Integer> numCompleted) {
-			progress.setValue((int) (100 / (jobsToDo / (float) numCompleted.get(0))));
+		public void process(List<Object> chunks) {
+			for (Object obj : chunks) {
+				if (obj instanceof ThreadCommand) {
+					ThreadCommand error = (ThreadCommand) obj;
+					String cmd = error.getCommand();
+					switch (cmd) {
+					case "SET_STATUS":
+						currentOperationLabel.setText(error.getMessage());
+						break;
+					}
+				} else if (obj instanceof Integer) {
+					Integer progressVal = (Integer) obj;
+					float progressAsFloat = (float) (progressVal * 1.0);
+					progress.setValue((int) (100 / (jobsToDo / (float) progressAsFloat)));
+				}
+			}
 		}
 
 		protected void done() {
@@ -1692,7 +1703,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (reqcoal.equals("Coalesced.bin")) {
 					ModManager.debugLogger.writeMessage("Coalesced pass: Checking for TLK files");
 					//it is basegame. copy the tlk files!
-					String[] tlkFiles = ModManager.SUPPORTED_GAME_LANGAUGES;
+					String[] tlkFiles = ModManager.SUPPORTED_GAME_LANGUAGES;
 					for (String tlkFilename : tlkFiles) {
 						File compiledTLKFile = new File(ModManager.getCompilingDir() + "tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
 						if (!compiledTLKFile.exists()) {
@@ -1725,7 +1736,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					//}
 
 					//tlk, if they exist.
-					String[] tlkFiles = ModManager.SUPPORTED_GAME_LANGAUGES;
+					String[] tlkFiles = ModManager.SUPPORTED_GAME_LANGUAGES;
 					for (String tlkFilename : tlkFiles) {
 						File basegameTLKFile = new File(compCoalDir + "\\BIOGame_" + tlkFilename + ".tlk");
 						if (basegameTLKFile.exists()) {
@@ -1844,7 +1855,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Mod failed validation. Setting error flag to true.");
 			error = true;
 			JOptionPane.showMessageDialog(this,
-					modName + " was not successfully created.\nCheck the debugging file me3cmm_last_run_log.txt,\nand make sure mod startup logging is enabled in the options menu.\nContact FemShep if you need help via the forums.",
+					modName + " was not successfully created.\nGenerate a diagnostics log from the help menu and search for errors.\nContact FemShep if you need help via the forums.",
 					"Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
 		/*

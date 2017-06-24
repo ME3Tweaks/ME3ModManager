@@ -453,7 +453,7 @@ public class StarterKitWindow extends JDialog {
 			ModManager.ExportResource("/Mount.dlc", cookedPath + "Mount.dlc");
 			String coalpath = cookedPath + "Default_DLC_MOD_" + internaldlcname + ".bin";
 			ModManager.ExportResource("/Default_DLC_MOD_StarterKit.bin", coalpath);
-			String[] langs = ModManager.SUPPORTED_GAME_LANGAUGES;
+			String[] langs = ModManager.SUPPORTED_GAME_LANGUAGES;
 
 			for (String lang : langs) {
 				publish(new ThreadCommand("SET_DIALOG_TEXT", "Updating TLK for " + lang));

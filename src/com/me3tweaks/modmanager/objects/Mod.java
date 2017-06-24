@@ -233,7 +233,13 @@ public class Mod implements Comparable<Mod> {
 		// Check if this mod has been made for Mod Manager 2.0 or legacy mode
 		modCMMVer = 1.0f;
 		try {
-			modCMMVer = Float.parseFloat(modini.get("ModManager", "cmmver"));
+			String versionStr = modini.get("ModManager", "cmmver");
+			if (versionStr == null) {
+				ModManager.debugLogger.writeMessageConditionally("Didn't read a ModManager version of the mod. Setting modtype to legacy", ModManager.LOG_MOD_INIT);
+				modCMMVer = 1.0f;
+			} else {
+				modCMMVer = Float.parseFloat(versionStr);
+			}
 		} catch (NumberFormatException e) {
 			ModManager.debugLogger.writeMessageConditionally("Didn't read a ModManager version of the mod. Setting modtype to legacy", ModManager.LOG_MOD_INIT);
 			modCMMVer = 1.0f;
@@ -558,7 +564,7 @@ public class Mod implements Comparable<Mod> {
 							AlternateFile af = new AlternateFile(alt);
 							af.setModFile(ResourceUtils.normalizeFilePath(af.getModFile(), false));
 							ModManager.debugLogger.writeMessageConditionally("Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);
-							
+
 							if (af.getSubtituteFile() != null) {
 								//check location
 								//af.setSubstituteFile(ResourceUtils.normalizeFilePath(af.getSubtituteFile(), false));
@@ -568,12 +574,13 @@ public class Mod implements Comparable<Mod> {
 									ModManager.debugLogger.writeError(
 											"This error is from the OFFICIAL headers, so it only applies to official BioWare DLC or the basegame. Substitute file doesn't exist: "
 													+ f.getAbsolutePath());
-									setFailedReason("The moddesc indicates there should be files installed differently depending on certain conditions, but a listed substitute file doesn't exist. The error occurs in the ["
-											+ modHeader + "] header altfiles text. The missing file is :" + f.getAbsolutePath()
-											+ "\n\nThis may not affect your specific ME3 enviroment, but the mod has been marked as invalid to avoid possible issues.");
+									setFailedReason(
+											"The moddesc indicates there should be files installed differently depending on certain conditions, but a listed substitute file doesn't exist. The error occurs in the ["
+													+ modHeader + "] header altfiles text. The missing file is :" + f.getAbsolutePath()
+													+ "\n\nThis may not affect your specific ME3 enviroment, but the mod has been marked as invalid to avoid possible issues.");
 									return;
 								} else {
-									ModManager.debugLogger.writeMessageConditionally("Alternate for official headers has valid substitute file: "+f, ModManager.LOG_MOD_INIT);
+									ModManager.debugLogger.writeMessageConditionally("Alternate for official headers has valid substitute file: " + f, ModManager.LOG_MOD_INIT);
 								}
 							}
 							newJob.getAlternateFiles().add(af);
@@ -2524,9 +2531,10 @@ public class Mod implements Comparable<Mod> {
 			}
 			String fileToRemove = ResourceUtils.normalizeFilePath(getModPath() + fileToRemovePath, false);
 			String fileToRemoveTarget = ResourceUtils.normalizeFilePath(af.getModFile(), false);
-			/*if (job.getJobType() == ModJob.CUSTOMDLC) {
-				fileToRemove = fileToRemoveTarget;
-			}*/
+			/*
+			 * if (job.getJobType() == ModJob.CUSTOMDLC) { fileToRemove =
+			 * fileToRemoveTarget; }
+			 */
 			boolean ftr = job.getFilesToReplace().remove(fileToRemove);
 			boolean ftrt = job.getFilesToReplaceTargets().remove(fileToRemoveTarget);
 			if (ftr ^ ftrt) {
