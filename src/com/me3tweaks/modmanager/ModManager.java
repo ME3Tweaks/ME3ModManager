@@ -163,7 +163,7 @@ public class ModManager {
 				if (!System.getProperty("sun.arch.data.model").equals("32") && !IS_DEBUG) {
 					ModManager.debugLogger.writeError("Running in " + System.getProperty("sun.arch.data.model") + "-bit java!");
 					JOptionPane.showMessageDialog(null,
-							"Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to isntall 32-bit java.",
+							"Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to install 32-bit java.",
 							"Untested JVM", JOptionPane.ERROR_MESSAGE);
 					//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
 					//System.exit(1);
