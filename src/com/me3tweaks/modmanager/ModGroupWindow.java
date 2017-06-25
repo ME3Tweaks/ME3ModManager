@@ -17,6 +17,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -133,14 +134,19 @@ public class ModGroupWindow extends JDialog implements ListSelectionListener {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				for (int i = 0; i < groupContentsModel.size(); i++) {
-					Mod mod = groupContentsModel.get(i);
-					new ModInstallWindow(ModGroupWindow.this, mod);
-				}
-				ModGroup mg = modGroupModel.getElementAt(modGroupsList.getSelectedIndex());
+				if (ModManagerWindow.validateBIOGameDir()) {
+					for (int i = 0; i < groupContentsModel.size(); i++) {
+						Mod mod = groupContentsModel.get(i);
+						mod = new Mod(mod.getDescFile()); //This is so that automatic configuration of the mod being installed can take place.
+						new ModInstallWindow(ModGroupWindow.this, mod);
+					}
+					ModGroup mg = modGroupModel.getElementAt(modGroupsList.getSelectedIndex());
 
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '" + mg.getModGroupName() + "' was installed");
-				dispose();
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '" + mg.getModGroupName() + "' was installed");
+					dispose();
+				} else {
+					JOptionPane.showMessageDialog(ModGroupWindow.this, "Batch installation of mods requires a valid biogame directory.","BIOGame Directory invalid", JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		});
 
