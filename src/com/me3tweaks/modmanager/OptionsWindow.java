@@ -30,6 +30,7 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoApplyMixins;
 	private JCheckBox skipUpdate;
 	private JCheckBox useWindowsUI;
+	private JCheckBox compressCompatibilityGeneratorOutput;
 	private JCheckBox logModmaker;
 	private AbstractButton logModInit;
 	private JCheckBox logPatchInit;
@@ -50,7 +51,6 @@ public class OptionsWindow extends JDialog {
 
 		JPanel optionsPanel = new JPanel();
 		optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.PAGE_AXIS));
-
 
 		enforceDotNetRequirement = new JCheckBox("Perform .NET requirements check");
 		enforceDotNetRequirement.setToolTipText(
@@ -94,19 +94,44 @@ public class OptionsWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				Wini ini = ModManager.LoadSettingsINI();
 
-				ModManager.PERFORM_DOT_NET_CHECK = enforceDotNetRequirement.isSelected();
+				ModManager.USE_WINDOWS_UI = useWindowsUI.isSelected();
 				if (useWindowsUI.isSelected()) {
 					ModManager.debugLogger.writeMessage("Enabling Windows UI");
 					ini.put("Settings", "usewindowsui", "1");
-					ModManager.USE_WINDOWS_UI = true;
 				} else {
 					ModManager.debugLogger.writeMessage("Disabling Windows UI");
 					ini.put("Settings", "usewindowsui", "0");
-					ModManager.USE_WINDOWS_UI = false;
 				}
 				try {
 					ini.store();
 					JOptionPane.showMessageDialog(OptionsWindow.this, "Restart Mod Manager for this setting to take effect.", "Restart required", JOptionPane.WARNING_MESSAGE);
+				} catch (InvalidFileFormatException error) {
+					error.printStackTrace();
+				} catch (IOException error) {
+					ModManager.debugLogger.writeMessage("Settings file encountered an I/O error while attempting to write it. Settings not saved.");
+				}
+			}
+		});
+
+		compressCompatibilityGeneratorOutput = new JCheckBox("Compress compatibility generator output files");
+		compressCompatibilityGeneratorOutput.setToolTipText("<html>Compresses the output compatibilibility generator files. This may save some space, but is experimental.</html>");
+		compressCompatibilityGeneratorOutput.setSelected(ModManager.COMPRESS_COMPAT_OUTPUT);
+		compressCompatibilityGeneratorOutput.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Wini ini = ModManager.LoadSettingsINI();
+				ModManager.COMPRESS_COMPAT_OUTPUT = compressCompatibilityGeneratorOutput.isSelected();
+				if (compressCompatibilityGeneratorOutput.isSelected()) {
+					ModManager.debugLogger.writeMessage("Setting compat generator output to compressed");
+					ini.put("Settings", "compresscompatibilitygeneratorouput", "1");
+					ModManager.USE_WINDOWS_UI = true;
+				} else {
+					ModManager.debugLogger.writeMessage("Setting compat generator output to decompressed");
+					ini.put("Settings", "compresscompatibilitygeneratorouput", "0");
+					ModManager.USE_WINDOWS_UI = false;
+				}
+				try {
+					ini.store();
 				} catch (InvalidFileFormatException error) {
 					error.printStackTrace();
 				} catch (IOException error) {
@@ -344,6 +369,7 @@ public class OptionsWindow extends JDialog {
 		optionsPanel.add(autoApplyMixins);
 		optionsPanel.add(autoInjectKeybindsModMaker);
 		optionsPanel.add(autoFixControllerModMaker);
+		optionsPanel.add(compressCompatibilityGeneratorOutput);
 		optionsPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 		optionsPanel.add(autoUpdateModManager);
 		if (skipUpdate != null) {

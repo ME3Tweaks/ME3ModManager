@@ -1706,7 +1706,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
 					updateApplyButton();
-					new ModMakerEntryWindow(this, GetBioGameDir());
+					new ModMakerEntryWindow();
 				} else {
 
 					updateApplyButton();

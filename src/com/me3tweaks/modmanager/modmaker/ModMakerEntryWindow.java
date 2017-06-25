@@ -58,8 +58,6 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	private static final String ITALIAN = "Italian";
 	private static final String GERMAN = "German";
 	private static final String JAPANESE = "Japanese";
-	private static final int DIALOG_WIDTH = 400;
-	private static final int DIALOG_HEIGHT = 245;
 	JLabel infoLabel;
 	JButton downloadButton;
 	JTextField codeField;
@@ -67,14 +65,12 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	private JComboBox<String> languageChoices;
 	private String[] languages = { ALL_LANG, ENGLISH, RUSSIAN, SPANISH, POLISH, FRENCH, ITALIAN, GERMAN, JAPANESE };
 	boolean hasDLCBypass = false;
-	ModManagerWindow callingWindow;
 	private JButton makeModButton;
 	private JButton browseModsButton;
 	private JButton sideloadButton;
 
-	public ModMakerEntryWindow(JFrame callingWindow, String biogameDir) {
-		this.callingWindow = (ModManagerWindow) callingWindow;
-		this.biogameDir = biogameDir;
+	public ModMakerEntryWindow() {
+		this.biogameDir = ModManagerWindow.GetBioGameDir();
 		this.setTitle("ME3Tweaks ModMaker");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
@@ -216,22 +212,14 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		setResizable(false);
 		setIconImages(ModManager.ICONS);
 		pack();
-		setLocationRelativeTo(callingWindow);
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 
 		//set combobox from settings
-		Wini settingsini;
-		try {
-			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-			String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
-			if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
-				//language setting exists
-				languageChoices.setSelectedItem(modmakerLanguage);
-			}
-		} catch (InvalidFileFormatException e) {
-			ModManager.debugLogger.writeMessage("Invalid INI! Did the user modify it by hand?");
-			e.printStackTrace();
-		} catch (IOException e) {
-			ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting is stored to disk.");
+		Wini settingsini = ModManager.LoadSettingsINI();
+		String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
+		if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
+			//language setting exists
+			languageChoices.setSelectedItem(modmakerLanguage);
 		}
 	}
 
@@ -345,22 +333,18 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 				shouldContinue = installBypass();
 			}
 			if (shouldContinue) {
-				Wini ini;
+				Wini ini = ModManager.LoadSettingsINI();
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
 					ini.put("Settings", "modmaker_language", languageChoices.getSelectedItem());
 					ini.store();
 				} catch (InvalidFileFormatException e) {
-					e.printStackTrace();
+					ModManager.debugLogger.writeErrorWithException("Invalid file format exception writing settings ini: ", e);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 				}
 				this.setModalityType(Dialog.ModalityType.MODELESS);
 				dispose();
-				callingWindow.startModMaker(chosenFile, languages);
+				ModManagerWindow.ACTIVE_WINDOW.startModMaker(chosenFile, languages);
 			}
 		}
 	}
@@ -414,20 +398,13 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	 */
 	public static ArrayList<String> getDefaultLanguages() {
 		String defaultLang = ALL_LANG;
-		Wini settingsini;
-		try {
-			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-			String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
-			if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
-				//language setting exists
-				defaultLang = modmakerLanguage;
-			}
-		} catch (InvalidFileFormatException e) {
-			ModManager.debugLogger.writeMessage("Invalid INI! Did the user modify it by hand?");
-			e.printStackTrace();
-		} catch (IOException e) {
-			ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting is stored to disk.");
+		Wini settingsini = ModManager.LoadSettingsINI();
+		String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
+		if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
+			//language setting exists
+			defaultLang = modmakerLanguage;
 		}
+
 		return getLanguages(defaultLang);
 	}
 
@@ -457,7 +434,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			} catch (IOException e) {
 				ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 			}
-			callingWindow.startModMaker(codeField.getText().toString(), languages);
+			ModManagerWindow.ACTIVE_WINDOW.startModMaker(codeField.getText().toString(), languages);
 		}
 	}
 

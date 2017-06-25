@@ -593,20 +593,18 @@ public class CustomDLCConflictWindow extends JDialog {
 					//FileUtils.copyFile(new File(sourcePath), new File(copyTargetPath));
 					ModManager.decompressPCC(new File(sourcePath), new File(copyTargetPath));
 					transplantFiles.add(copyTargetPath);
-//					ModManager.debugLogger.writeErrorWithException("ERROR COPYING FILE INTO COMPAT PACKAGE: ", e1);
-	//				FileUtils.deleteQuietly(new File(skg.getGeneratedMod().getModPath()));
-		//			publish(new ThreadCommand("ERROR_FILE_COPY_INTO_COMPAT"));
-			//		return false;
-				//}
 					i++;
 			}
 
-			publish(new ThreadCommand("SET_STATUS_TEXT", "Locating GUI library"));
+			//publish(new ThreadCommand("SET_STATUS_TEXT", "Locating GUI library"));
 
 			ModManager.debugLogger.writeMessage("Copy of 2nd tier fields completed. Locating GUI library");
 
 			//Run ME3-GUI-Transplanter over CookedPCConsole files
 			i = 0;
+			if (ModManager.COMPRESS_COMPAT_OUTPUT) {
+				ModManager.debugLogger.writeMessage("Output files will be compressed (--Compress)");
+			}
 			for (String transplantFile : transplantFiles) {
 				publish(new ThreadCommand("SET_PROGRESS", null, i / transplantFiles.size()));
 				/*
@@ -623,6 +621,10 @@ public class CustomDLCConflictWindow extends JDialog {
 				commandBuilder.add(ResourceUtils.normalizeFilePath(guilibrarypath, true));
 				commandBuilder.add("--targetfile");
 				commandBuilder.add(ResourceUtils.normalizeFilePath(transplantFile, true));
+				if (ModManager.COMPRESS_COMPAT_OUTPUT) {
+					commandBuilder.add("--compress");
+				}
+				//commandBuilder.add("-v");
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 				ModManager.debugLogger.writeMessage("Injecting SWFs into " + transplantFile);
 				int returncode = 1;

@@ -82,7 +82,7 @@ public class ModManager {
 	public static final String VERSION = "5.0 Beta 1";
 	public static long BUILD_NUMBER = 74L;
 	public static final String BUILD_DATE = "6/23/2017";
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -120,6 +120,7 @@ public class ModManager {
 	public static String LATEST_ME3EXPLORER_URL;
 	public static String LATEST_ME3EXPLORER_VERSION;
 	public static boolean USE_WINDOWS_UI;
+	protected static boolean COMPRESS_COMPAT_OUTPUT = false;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGUAGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
@@ -168,7 +169,6 @@ public class ModManager {
 					//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
 					//System.exit(1);
 				}
-				
 
 				String verString = settingsini.get("Settings", "initialmodmanagerversionbuild");
 				if (verString == null || verString.equals("")) {
@@ -195,28 +195,48 @@ public class ModManager {
 						}
 					} catch (NumberFormatException e) {
 						ModManager.debugLogger.writeError("Number format exception reading the .NET enforcement check flag, defaulting to enabled");
-					}
-				}
-				// Auto Update Check
-				{
-					String updateStr = settingsini.get("Settings", "checkforupdates");
-					int updateInt = 0;
-					if (updateStr != null && !updateStr.equals("")) {
-						try {
-							updateInt = Integer.parseInt(updateStr);
-							if (updateInt > 0) {
-								// logging is on
-								debugLogger.writeMessage("Auto check for mod manager updates is enabled");
-								AUTO_UPDATE_MOD_MANAGER = true;
-							} else {
-								debugLogger.writeMessage("Auto check for mod manager updates is disabled");
-								AUTO_UPDATE_MOD_MANAGER = false;
-							}
-						} catch (NumberFormatException e) {
-							ModManager.debugLogger.writeError("Number format exception reading the update check flag, defaulting to enabled");
-						}
 
 					}
+				}
+
+				// .NET encforcement check
+				String compressCompatOutput = settingsini.get("Settings", "enforcedotnetrequirement");
+				int compressCompatOutputInt = 0;
+				if (compressCompatOutput != null && !compressCompatOutput.equals("")) {
+					try {
+						compressCompatOutputInt = Integer.parseInt(compressCompatOutput);
+						if (compressCompatOutputInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Compressing GUI Compatibility Generator output is ON");
+							COMPRESS_COMPAT_OUTPUT = true;
+						} else {
+							debugLogger.writeMessage("Compressing GUI Compatibility Generator output is OFF");
+							COMPRESS_COMPAT_OUTPUT = false;
+						}
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeError("Number format exception reading the compress output compat generator check flag, defaulting to false");
+					}
+				}
+
+				// Auto Update Check
+
+				String updateStr = settingsini.get("Settings", "checkforupdates");
+				int updateInt = 0;
+				if (updateStr != null && !updateStr.equals("")) {
+					try {
+						updateInt = Integer.parseInt(updateStr);
+						if (updateInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Auto check for mod manager updates is enabled");
+							AUTO_UPDATE_MOD_MANAGER = true;
+						} else {
+							debugLogger.writeMessage("Auto check for mod manager updates is disabled");
+							AUTO_UPDATE_MOD_MANAGER = false;
+						}
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeError("Number format exception reading the update check flag, defaulting to enabled");
+					}
+
 				}
 
 				String windowsUIStr = settingsini.get("Settings", "usewindowsui");
@@ -1020,14 +1040,14 @@ public class ModManager {
 				File dir = new File(setDir);
 				if (dir.exists()) {
 					directories.add(setDir);
-				try {
-					ModManager.debugLogger.writeMessage("Upgrading biogame directory to BIOGAME_DIRECTORIES file.");
-					FileUtils.writeLines(file, directories);
-					ini.remove("Settings", "biogame_dir");
-					ini.store();
-				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("ERROR UPGRADING ME3CMM.ini bigame_dir to BIOGAME_DIRECTORIES:", e);
-				}
+					try {
+						ModManager.debugLogger.writeMessage("Upgrading biogame directory to BIOGAME_DIRECTORIES file.");
+						FileUtils.writeLines(file, directories);
+						ini.remove("Settings", "biogame_dir");
+						ini.store();
+					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("ERROR UPGRADING ME3CMM.ini bigame_dir to BIOGAME_DIRECTORIES:", e);
+					}
 					return directories;
 				}
 			}
@@ -2174,6 +2194,13 @@ public class ModManager {
 		}
 	}
 
+	/**
+	 * Reads me3cmm.ini from disk. If it does not exist, it is created. In
+	 * almost all instances this should work - if on read only media it won't,
+	 * but that's not really my concern.
+	 * 
+	 * @return Wini object for ME3CMM.ini
+	 */
 	public static Wini LoadSettingsINI() {
 		File settings = new File(ModManager.SETTINGS_FILENAME);
 		if (!settings.exists()) {
