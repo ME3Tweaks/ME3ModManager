@@ -232,9 +232,11 @@ public class ModMakerCompilerWindow extends JDialog {
 					//load sideload
 					modDelta = FileUtils.readFileToString(new File(code));
 				}
-				//File downloaded = new File(DOWNLOADED_XML_FILENAME);
-				//downloaded.delete();
-				//FileUtils.copyURLToFile(new URL(link), downloaded);
+				//File has been downloaded
+				if (mmcode != 0) {
+					FileUtils.writeStringToFile(new File(ModManager.getModmakerCacheDir() + mmcode + ".xml"), modDelta, StandardCharsets.UTF_8);
+				}
+				ModManager.debugLogger.writeMessage("Cached xml file to cache directory.");
 				publish(new ThreadCommand("UPDATE_INFO", "<html>Parsing Mod Delta</html>"));
 				ModManager.debugLogger.writeMessage("Mod delta downloaded to memory");
 				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -1429,7 +1431,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (languages.contains(tlkNode.getNodeName())) {
 						ModManager.debugLogger.writeMessage("Read TLK ID: " + tlkType);
 						ModManager.debugLogger.writeMessage("---------------------START OF " + tlkType + "-------------------------");
-						publish(new ThreadCommand("SET_STATUS","Decompiling "+tlkType+" language file"));
+						publish(new ThreadCommand("SET_STATUS", "Decompiling " + tlkType + " language file"));
 						//decompile TLK to tlk folder
 						File tlkdir = new File(ModManager.getCompilingDir() + "tlk/");
 						tlkdir.mkdirs(); // created tlk directory
@@ -1468,7 +1470,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						this.publish(++jobsDone);
 						//END OF DECOMPILE==================================================
 						//iterate over TLK indexes and load into memory
-						publish(new ThreadCommand("SET_STATUS","Modifying "+tlkType+" language file"));
+						publish(new ThreadCommand("SET_STATUS", "Modifying " + tlkType + " language file"));
 
 						HashMap<Integer, TLKFragment> indexMap = new HashMap<Integer, TLKFragment>();
 						NodeList localizedNodeList = tlkNode.getChildNodes();
@@ -1545,7 +1547,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						this.publish(++jobsDone);
 						//create new TLK file from this.
 						//START OF TLK COMPILE=========================================================
-						publish(new ThreadCommand("SET_STATUS","Recompiling "+tlkType+" language file"));
+						publish(new ThreadCommand("SET_STATUS", "Recompiling " + tlkType + " language file"));
 						ArrayList<String> tlkCompileCommandBuilder = new ArrayList<String>();
 						tlkCompileCommandBuilder.add(compilerPath);
 						tlkCompileCommandBuilder.add(ModManager.appendSlash(tlkdir.getAbsolutePath().toString()) + "BIOGame_" + tlkType + ".xml");

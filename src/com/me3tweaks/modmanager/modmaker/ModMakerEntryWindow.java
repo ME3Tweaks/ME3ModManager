@@ -313,13 +313,8 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	 */
 	private void sideloadModmaker(ArrayList<String> languages) {
 		JFileChooser dirChooser = new JFileChooser();
-		String home = System.getProperty("user.home");
-		File file = new File(home + "/Downloads");
-		if (file.exists()) {
-			dirChooser.setCurrentDirectory(file);
-		} else {
-			dirChooser.setCurrentDirectory(new java.io.File("."));
-		}
+		File file = new File(ModManager.getModmakerCacheDir());
+		dirChooser.setCurrentDirectory(file);
 		dirChooser.setDialogTitle("Select ModMaker XML file");
 		dirChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		dirChooser.setAcceptAllFileFilterUsed(false);

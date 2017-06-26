@@ -79,7 +79,7 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "5.0 Beta 2";
+	public static final String VERSION = "5.0 Beta 3";
 	public static long BUILD_NUMBER = 74L;
 	public static final String BUILD_DATE = "6/25/2017";
 	public static boolean IS_DEBUG = true;
@@ -148,12 +148,12 @@ public class ModManager {
 				settings.createNewFile();
 				Wini settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 				settingsini.put("Settings", "initialmodmanagerversionbuild", ModManager.VERSION + "-b" + ModManager.BUILD_NUMBER);
+				settingsini.put("Settings", "usewindowsui", "1"); //Default to Windows UI
 				settingsini.store();
 			}
 
-			Wini settingsini;
 			try {
-				settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
+				Wini settingsini = ModManager.LoadSettingsINI();
 				debugLogger.initialize();
 				logging = true;
 				debugLogger.writeMessage("Starting logger. Logger was able to start up with no issues.");
@@ -913,7 +913,7 @@ public class ModManager {
 	 * @return
 	 */
 	public static String getModsDir() {
-		return appendSlash(System.getProperty("user.dir")) + "mods/";
+		return appendSlash(System.getProperty("user.dir")) + "mods\\";
 	}
 
 	/**
@@ -922,7 +922,7 @@ public class ModManager {
 	 * @return
 	 */
 	public static String getDataDir() {
-		return appendSlash(System.getProperty("user.dir")) + "data/";
+		return appendSlash(System.getProperty("user.dir")) + "data\\";
 	}
 
 	public static String getGUITransplanterDir() {
@@ -2361,6 +2361,18 @@ public class ModManager {
 
 	public static String getModGroupsFolder() {
 		File file = new File(getDataDir() + "modgroups\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * Gets the directory that modmaker xml files are cached to, with a \\ on
+	 * the end.
+	 * 
+	 * @return cache directory path
+	 */
+	public static String getModmakerCacheDir() {
+		File file = new File(getDataDir() + "modmaker\\cache\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}

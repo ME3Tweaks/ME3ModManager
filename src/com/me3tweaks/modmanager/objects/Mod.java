@@ -1929,7 +1929,6 @@ public class Mod implements Comparable<Mod> {
 			return false;
 		}
 		for (ModJob job : jobs) {
-			System.out.println(job);
 			if (job.getJobType() == ModJob.CUSTOMDLC) {
 				return true;
 			}
