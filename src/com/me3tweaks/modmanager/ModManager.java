@@ -79,9 +79,9 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "5.0 Beta 1";
+	public static final String VERSION = "5.0 Beta 2";
 	public static long BUILD_NUMBER = 74L;
-	public static final String BUILD_DATE = "6/23/2017";
+	public static final String BUILD_DATE = "6/25/2017";
 	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
@@ -101,7 +101,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
 	public final static int MIN_REQUIRED_CMDLINE_REV = 0;
 
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 10; //1.0.0.X
+	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 11; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
