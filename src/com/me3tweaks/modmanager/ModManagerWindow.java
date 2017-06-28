@@ -930,7 +930,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 						if (files[0].isDirectory()) {
 							// prompt
-							new FolderBatchWindow(ModManagerWindow.this, files[0]);
+							new FileDropWindow(ModManagerWindow.this, files[0]);
 						}
 						if (files[0].isFile()) {
 							String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
@@ -952,7 +952,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 									break;
 								}
 							case "xml":
-								new FolderBatchWindow(ModManagerWindow.this, files[0]);
+								new FileDropWindow(ModManagerWindow.this, files[0]);
 								break;
 							case "dlc":
 								new MountFileEditorWindow(files[0].toString());

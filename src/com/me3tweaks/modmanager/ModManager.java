@@ -1476,7 +1476,7 @@ public class ModManager {
 		commandBuilder.add(options.outputFolder);
 
 		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
-		return ModManager.runProcess(decompressProcessBuilder);
+		return ModManager.runProcess(decompressProcessBuilder, FilenameUtils.getName(pcc));
 	}
 
 	/**

@@ -1,5 +1,7 @@
 package com.me3tweaks.modmanager;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -8,6 +10,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -15,14 +18,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.StarterKitWindow.StarterKitProgressDialog;
@@ -30,18 +35,83 @@ import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 
-public class FolderBatchWindow extends JDialog {
+public class FileDropWindow extends JDialog {
 	File droppedFile;
 	boolean show = true;
 	private final Object lock = new Lock(); //threading wait() and notifyall();
 
-	public FolderBatchWindow(JFrame parentFrame, File file) {
+	public FileDropWindow(JFrame parentFrame, File file) {
 		droppedFile = file;
-		setupWindow();
-		setLocationRelativeTo(parentFrame);
+		setupWindow2();
 		if (show) {
 			setVisible(true);
 		}
+	}
+
+	private void setupWindow2() {
+		setTitle("Files drop task selector");
+		setIconImages(ModManager.ICONS);
+
+		JButton compileAllTLK = new JButton("Compile as TLK manifest");
+		JButton decompileAllTLK = new JButton("Decompile all TLK files");
+		JButton compileAllCoalesced = new JButton("Compile as coalesced manifest");
+		JButton decompileAllCoalesced = new JButton("Decompile all Coalesced files");
+		JButton decompressAllPcc = new JButton("Decompress all PCC files");
+		JButton compressAllPcc = new JButton("Compress all PCC files");
+		JButton sideloadAllModMaker = new JButton("Sideload as ModMaker delta");
+
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+
+		String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath());
+		switch (extension) {
+		case "xml": {
+			JPanel xmlFilePanel = new JPanel();
+			xmlFilePanel.setLayout(new BoxLayout(xmlFilePanel, BoxLayout.PAGE_AXIS));
+
+			TitledBorder xmlBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML File Operations");
+			xmlFilePanel.setBorder(xmlBorder);
+
+			JPanel tlkXMLPanel = new JPanel();
+			TitledBorder tlkManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - TLK Manifest File");
+			tlkXMLPanel.setBorder(tlkManifestBorder);
+			tlkXMLPanel.add(compileAllTLK);
+
+			JPanel coalescedXMLPanel = new JPanel();
+			TitledBorder coalescedManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - Coalesced Manifest File");
+			coalescedXMLPanel.setBorder(coalescedManifestBorder);
+			coalescedXMLPanel.add(compileAllCoalesced);
+
+			JPanel modmakerXMLPanel = new JPanel();
+			TitledBorder modmakerManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - ModMaker Mod Delta");
+			modmakerXMLPanel.setBorder(modmakerManifestBorder);
+			modmakerXMLPanel.add(sideloadAllModMaker);
+
+			xmlFilePanel.add(coalescedXMLPanel);
+			xmlFilePanel.add(tlkXMLPanel);
+			xmlFilePanel.add(modmakerXMLPanel);
+
+			panel.add(xmlFilePanel);
+			break;
+		}
+		default: {
+			JPanel failPanel = new JPanel();
+			failPanel.add(new JLabel("<html><center>Unsupported Drag & Drop file extension: " + extension + "</center></html>", SwingConstants.CENTER));
+			panel.add(failPanel);
+		}
+		}
+
+		JPanel rootPanel = new JPanel(new BorderLayout());
+		rootPanel.add(panel, BorderLayout.CENTER);
+		JLabel others = new JLabel(
+				"<html><center>Supported file drop types:<br> - .pcc (ME3 package file)<br> - .bin (Coalesced file)<br> - .tlk (Localization file)<br> - .txt (PCC data dump file)<br> - .xml (Multiple types)<br> - .dlc (Mount.dlc file)</center></html>",
+				SwingConstants.CENTER);
+		rootPanel.add(others, BorderLayout.SOUTH);
+		rootPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+		add(rootPanel);
+		setMinimumSize(new Dimension(200, 200));
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	private void setupWindow() {
@@ -297,14 +367,13 @@ public class FolderBatchWindow extends JDialog {
 
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						String copyDest = ModManager.appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent()) + "Binaries/win32/asi/"
-								+ droppedFile.getName();
+						String copyDest = ModManager.appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent()) + "Binaries/win32/asi/" + droppedFile.getName();
 						try {
 							FileUtils.copyFile(droppedFile, new File(copyDest));
-							ModManager.debugLogger.writeMessage("Installed dropped ASI File: "+droppedFile+" to "+copyDest);
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Installed "+droppedFile.getName());
+							ModManager.debugLogger.writeMessage("Installed dropped ASI File: " + droppedFile + " to " + copyDest);
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Installed " + droppedFile.getName());
 						} catch (IOException e1) {
-							ModManager.debugLogger.writeErrorWithException("ASI Mod install failed "+copyDest+":", e1);
+							ModManager.debugLogger.writeErrorWithException("ASI Mod install failed " + copyDest + ":", e1);
 							JOptionPane.showMessageDialog(null, "Unable to install ASI mod.\nYou may need to run Mod Manager as an administrator.", "Installation Failure",
 									JOptionPane.ERROR_MESSAGE);
 						}

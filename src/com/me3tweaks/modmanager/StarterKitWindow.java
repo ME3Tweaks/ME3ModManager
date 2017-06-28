@@ -44,7 +44,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
-import com.me3tweaks.modmanager.FolderBatchWindow.BatchWorker;
+import com.me3tweaks.modmanager.FileDropWindow.BatchWorker;
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
@@ -516,7 +516,7 @@ public class StarterKitWindow extends JDialog {
 			//Compile TLK.
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 25));
 			publish(new ThreadCommand("SET_DIALOG_TEXT", "Compiling TLKs..."));
-			FolderBatchWindow.BatchWorker bw = new FolderBatchWindow.BatchWorker(cookedpcconsole, BatchWorker.COMPILE_TLK, dialog);
+			FileDropWindow.BatchWorker bw = new FileDropWindow.BatchWorker(cookedpcconsole, BatchWorker.COMPILE_TLK, dialog);
 			bw.execute();
 			synchronized (bw.lock) {
 				while (!bw.completed) {

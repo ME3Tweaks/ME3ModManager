@@ -3,9 +3,9 @@ package com.me3tweaks.modmanager;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.io.File;
-import java.io.FilenameFilter;
-import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -13,14 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.swing.BorderFactory;
-import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -30,26 +24,16 @@ import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FilenameUtils;
 
-import com.me3tweaks.modmanager.CustomDLCConflictWindow.CustomDLCGUIScanner.GUIScanResult;
-import com.me3tweaks.modmanager.CustomDLCConflictWindow.CustomDLCGUIScanner.GUIScanTask;
-import com.me3tweaks.modmanager.ModInstallWindow.InjectionCommander.JobTask;
-import com.me3tweaks.modmanager.ModManagerWindow.BiogameDirChangeListener;
-import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.ProcessResult;
-import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.objects.TocBatchDescriptor;
-import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class AutoTocWindow extends JDialog {
 	JLabel infoLabel;
 	JProgressBar progressBar;
-	//Mod mod;
-	JCheckBox loggingMode;
-	private final int maxBatchSize = 10;
 	public int mode = LOCALMOD_MODE;
 	private HashMap<String, String> updatedGameTOCs;
 	private Mod mod;
