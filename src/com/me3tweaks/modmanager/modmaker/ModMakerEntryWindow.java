@@ -220,6 +220,42 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
 			//language setting exists
 			languageChoices.setSelectedItem(modmakerLanguage);
+		} else {
+			//Attempt lookup via registry.
+			String locale = ModManager.LookupGameLanguageViaRegistryKey();
+			if (locale != null) {
+				String setlang = null;
+				switch (locale) {
+				case "en_US":
+					setlang = "English";
+					break;
+				case "pl_PL":
+					setlang = "Polish";
+					break;
+				case "fr_FR":
+					setlang = "French";
+					break;
+				case "ru_RU":
+					setlang = "Russian";
+					break;
+				case "it_IT":
+					setlang = "Italian";
+					break;
+				case "ja":
+					setlang = "Japanese";
+					break;
+				case "de_DE":
+					setlang = "German";
+					break;
+				case "es_ES":
+					setlang = "Spanish";
+					break;
+					//TODO: Other languages
+				}
+				if (setlang != null) {
+					languageChoices.setSelectedItem(setlang);
+				}
+			}
 		}
 	}
 

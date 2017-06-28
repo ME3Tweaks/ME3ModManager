@@ -135,7 +135,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
 			modutilsDeleteMod;
 	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32,
-			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config, toolsMapMeshViewer;
+			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config, toolsMapMeshViewer, toolsPCCDataDumper;
 	JMenuItem backupBackupDLC, backupCreateGDB;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
@@ -385,22 +385,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					for (String arg : command) {
 						sb.append(arg + " ");
 					}
-					ModManager.debugLogger.writeMessage("Executing 7z extraction command: " + sb.toString());
-					Process p = null;
-					int returncode = 1;
-					try {
-						ProcessBuilder pb = new ProcessBuilder(command);
-						long timeStart = System.currentTimeMillis();
-						p = pb.start();
-						ModManager.debugLogger.writeMessage("Executed command, waiting...");
-						returncode = p.waitFor();
-						long timeEnd = System.currentTimeMillis();
-						ModManager.debugLogger.writeMessage("Process has finished. Took " + (timeEnd - timeStart) + " ms.");
-					} catch (IOException | InterruptedException e) {
-						ModManager.debugLogger.writeException(e);
-					}
+					ModManager.debugLogger.writeMessage("Extracting Tankmaster Tools.");
+					ProcessBuilder pb = new ProcessBuilder(command);
+					ProcessResult pr = ModManager.runProcess(pb);
+					int returncode = pr.getReturnCode();
 
-					ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (p != null && returncode == 0));
+					ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (returncode == 0));
 					if (returncode == 0) {
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded Tankmaster Tools into data directory"));
 					} else {
@@ -412,7 +402,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7z for updating"));
 				}
 			} else {
-				ModManager.debugLogger.writeMessage("7z.exe is present in tools/ directory");
+				ModManager.debugLogger.writeMessage("Tankmaster tools exist locally already.");
 			}
 
 			File jpatch = new File(ModManager.getToolsDir() + "jptch.exe");
@@ -489,7 +479,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					try {
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
 						ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
-						FileUtils.copyURLToFile(new URL("http://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice"), ModManager.getThirdPartyModDBFile());
+						FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice-beta"), ModManager.getThirdPartyModDBFile());
 						ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile());
 						ModManager.debugLogger.writeMessage("Downloaded third party mod data from identification service");
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod identification info"));
@@ -1029,7 +1019,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		buttonBioGameDir = new JButton("Browse...");
 		buttonBioGameDir.setToolTipText(
-				"<html>Browse and set the BIOGame directory.<br>This is located in the installation directory for Mass Effect 3.<br>Typically this is in the Origin Games folder.</html>");
+				"<html>Add a new BIOGame directory target.<br>This is located in the installation directory for Mass Effect 3.<br>Typically this is in the Origin Games folder.</html>");
 		buttonBioGameDir.setPreferredSize(new Dimension(90, 14));
 
 		buttonBioGameDir.addActionListener(this);
@@ -1188,7 +1178,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		ModList ml = ModManager.getModsFromDirectory();
 		ArrayList<Mod> validMods = ml.getValidMods();
 		invalidMods = ml.getInvalidMods();
-		ModManager.debugLogger.writeMessage("Mods have loaded");
+		ModManager.debugLogger
+				.writeMessage(validMods.size() + invalidMods.size() + " mods have loaded. " + validMods.size() + " are valid, " + invalidMods.size() + " are invalid.");
 
 		for (Mod mod : validMods) {
 			modModel.addElement(mod);
@@ -1458,6 +1449,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMapMeshViewer = new JMenuItem("Map Pathfinding Viewer");
 		toolsMapMeshViewer.setToolTipText("<html>Parses the output of the GUI Transplanter dumping tool and can show pathfinding nodes for a map.<br>VERY EXPERIMENTAL.</html>");
 
+		toolsPCCDataDumper = new JMenuItem("PCC Data Dumper");
+		toolsPCCDataDumper
+				.setToolTipText("<html>Parses PCC informtation (such as scripts, properties, coalesced, etc)<br>and dumps it into an easily searchable text format.</html>");
+
 		toolsAutoTOCGame.addActionListener(this);
 		modManagementModMaker.addActionListener(this);
 		modManagementASI.addActionListener(this);
@@ -1493,6 +1488,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsUninstallBinkw32.addActionListener(this);
 		toolME3Config.addActionListener(this);
 		toolsMapMeshViewer.addActionListener(this);
+		toolsPCCDataDumper.addActionListener(this);
 		toolME3Explorer.addActionListener(this);
 		toolTankmasterTLK.addActionListener(this);
 		toolTankmasterCoalFolder.addActionListener(this);
@@ -1531,6 +1527,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolME3Config);
 		toolsMenu.add(toolME3Explorer);
+		toolsMenu.add(toolsPCCDataDumper);
 		toolsMenu.add(toolsMapMeshViewer);
 		toolsMenu.add(parsersMenu);
 		toolsMenu.add(devMenu);
@@ -2076,7 +2073,26 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == toolsMapMeshViewer) {
-			new MapMeshGenerator();
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				updateApplyButton();
+				new MapMeshGenerator();
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run Map Mesh Viewer: .NET is not installed");
+				new NetFrameworkMissingWindow("The Map Mesh Viewer requires .NET 4.5.2 or higher to be installed.");
+			}
+		} else if (e.getSource() == toolsPCCDataDumper) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				updateApplyButton();
+				new PCCDataDumperWindow();
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run PCC Data Dumper: .NET is not installed");
+				new NetFrameworkMissingWindow("The PCC Data Dumper tool requires .NET 4.5.2 or higher to be installed.");
+			}
+
 		} else if (e.getSource() == toolME3Explorer) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();

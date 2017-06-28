@@ -72,10 +72,7 @@ public class BackupWindow extends JDialog {
 
 		setupWindow();
 
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(callingWindow);
-		this.setVisible(true);
+		
 	}
 
 	/**
@@ -100,9 +97,6 @@ public class BackupWindow extends JDialog {
 
 		setupWindowAutomated(dlcName);
 
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(callingWindow);
 		new backupDLCJob(BioGameDir, new String[] { dlcName }, true).execute();
 		this.setVisible(true);
 	}
@@ -220,6 +214,9 @@ public class BackupWindow extends JDialog {
 				// methods will read this variable
 			}
 		});
+		this.setIconImages(ModManager.ICONS);
+		this.pack();
+		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	private void setupWindowAutomated(String dlcName) {
@@ -237,6 +234,10 @@ public class BackupWindow extends JDialog {
 		rootPanel.add(northPanel, BorderLayout.NORTH);
 		rootPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
 		add(rootPanel);
+
+		this.setIconImages(ModManager.ICONS);
+		this.pack();
+		this.setLocationRelativeTo(callingWindow);
 	}
 
 	private String[] getJobs() {

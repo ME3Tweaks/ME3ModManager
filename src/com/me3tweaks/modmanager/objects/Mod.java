@@ -925,10 +925,11 @@ public class Mod implements Comparable<Mod> {
 
 		//Verify alternates and apply automatic ones
 		if (alternateFiles != null && !ignoreLoadErrors) {
-			ModManager.debugLogger.writeMessage("Verifying automatic alternate files are valid for this mod");
+			ModManager.debugLogger.writeMessageConditionally("Verifying automatic alternate files are valid for this mod", ModManager.LOG_MOD_INIT);
 			HashMap<String, ArrayList<String>> autoOriginalFiles = new HashMap<String, ArrayList<String>>(); //header to altfiles map
 			for (AlternateFile af : alternateFiles) {
-				ModManager.debugLogger.writeMessage("Verifying " + af.getAltFile() + " on " + af.getCondition() + " of " + af.getConditionalDLC());
+				ModManager.debugLogger.writeMessageConditionally("Verifying " + af.getAltFile() + " on " + af.getCondition() + " of " + af.getConditionalDLC(),
+						ModManager.LOG_MOD_INIT);
 				if (af.isValidLocally(modPath)) {
 					//Verify pass
 					//ModManager.debugLogger.writeMessageConditionally("This mod has " + modDeltas.size() + " deltas.", ModManager.LOG_MOD_INIT);
@@ -2297,7 +2298,7 @@ public class Mod implements Comparable<Mod> {
 			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
 
 			for (AlternateCustomDLC altdlc : alternateCustomDLC) {
-				ModManager.debugLogger.writeMessage("Checking if Alternate DLC applies: " + altdlc);
+				ModManager.debugLogger.writeMessageConditionally("Checking if Alternate DLC applies: " + altdlc,ModManager.LOG_MOD_INIT);
 				String condition = altdlc.getCondition();
 				String conditionaldlc = altdlc.getConditionalDLC();
 				ArrayList<String> conditionaldlcs = altdlc.getConditionalDLCList();
@@ -2327,23 +2328,27 @@ public class Mod implements Comparable<Mod> {
 					switch (condition) {
 					case AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT:
 						if (!installedDLC.containsAll(remappedHeaders)) {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as at least one DLC in condition is present: " + altdlc);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as at least one DLC in condition is present: " + altdlc,
+									ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 
 						} else {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc,
+									ModManager.LOG_MOD_INIT);
 						}
 						break;
 					case AlternateCustomDLC.CONDITION_ANY_DLC_NOT_PRESENT:
 						if (!installedDLC.containsAll(remappedHeaders)) {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as at least one DLC in condition are not present: " + altdlc);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as at least one DLC in condition are not present: " + altdlc,
+									ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 						} else {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc,
+									ModManager.LOG_MOD_INIT);
 						}
 						break;
 					default:
@@ -2365,26 +2370,25 @@ public class Mod implements Comparable<Mod> {
 							}
 						}
 					}
-					ModManager.debugLogger.writeMessage("Checking condition...");
 					switch (condition) {
 					case AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT:
 						if (!installedDLC.contains(conditionaldlc.toUpperCase())) {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is not present");
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is not present", ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 						} else {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is present");
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is present", ModManager.LOG_MOD_INIT);
 						}
 						break;
 					case AlternateCustomDLC.CONDITION_DLC_PRESENT:
 						if (installedDLC.contains(conditionaldlc.toUpperCase())) {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is present");
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is present", ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 						} else {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is not present");
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is not present", ModManager.LOG_MOD_INIT);
 						}
 						break;
 					}
@@ -2401,7 +2405,7 @@ public class Mod implements Comparable<Mod> {
 		String destdlc = altdlc.getDestDLC();
 		switch (altdlc.getOperation()) {
 		case AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER:
-			ModManager.debugLogger.writeMessage("Condition match, adding additional layer for DLC folder: " + altdlc.getDestDLC());
+			ModManager.debugLogger.writeMessageConditionally("Condition match, adding additional layer for DLC folder: " + altdlc.getDestDLC(), ModManager.LOG_MOD_INIT);
 			job.getSourceFolders().add(altdlc.getAltDLC());
 			job.getDestFolders().add(altdlc.getDestDLC());
 			List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
@@ -2450,13 +2454,14 @@ public class Mod implements Comparable<Mod> {
 	public boolean applyAutomaticAlternates(String biogamedir) {
 		if (alternateFiles.size() > 0) {
 			boolean altApplied = false;
-			ModManager.debugLogger.writeMessage(getModName() + ": Checking automatic alternate files list to see if applicable and will apply if conditions are right");
+			ModManager.debugLogger.writeMessageConditionally(getModName() + ": Checking automatic alternate files list to see if applicable and will apply if conditions are right",
+					ModManager.LOG_MOD_INIT);
 			//get list of installed DLC
 			ArrayList<String> installedDLC = ModManager.getInstalledDLC(biogamedir);
 			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
 
 			for (AlternateFile af : alternateFiles) {
-				ModManager.debugLogger.writeMessage("Checking if Alt file applies: " + af);
+				ModManager.debugLogger.writeMessageConditionally("Checking if Alt file applies: " + af, ModManager.LOG_MOD_INIT);
 				String condition = af.getCondition();
 				String conditionaldlc = af.getConditionalDLC();
 				if (!installedDLC.contains(conditionaldlc)) {

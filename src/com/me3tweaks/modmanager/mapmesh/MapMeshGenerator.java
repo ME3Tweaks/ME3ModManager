@@ -199,7 +199,7 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 	}
 
 	private MapMeshPanel loadFile(String infile) {
-		ModManager.debugLogger.writeMessage("Loading pathfinding file: "+infile);
+		ModManager.debugLogger.writeMessage("Loading pathfinding file: " + infile);
 		PathNode findingXYZ = null;
 		if (infile != null) {
 			//Parse PathNodes.
@@ -349,11 +349,12 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 			if (node.getX() < leftmost && node.getX() != 0 && node.getY() < topmost && node.getY() != 0) {
 				leftmost = (int) node.getX();
 				topmost = (int) node.getY();
-				System.out.println("New topmost: " + topmost);
-
-				System.out.println("New leftmost: " + leftmost);
+				//System.out.println("New topmost: " + topmost);
+				//System.out.println("New leftmost: " + leftmost);
 			}
-			//System.out.println(node);
+			if (ModManager.IS_DEBUG) {
+				System.out.println(node);
+			}
 		}
 
 		MapMeshPanel points = new MapMeshPanel(this, leftmost, topmost);
@@ -396,7 +397,7 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 
 		@Override
 		public String toString() {
-			return "Pathnode...";
+			return "Pathnode "+x+","+y+","+z;
 		}
 
 		public ArrayList<PathNode> getConnectingNodes() {

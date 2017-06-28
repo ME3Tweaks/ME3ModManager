@@ -16,6 +16,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -54,6 +56,8 @@ import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.w3c.dom.Document;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
@@ -62,8 +66,10 @@ import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModList;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.PCCDumpOptions;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.utilities.DebugLogger;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
@@ -81,7 +87,7 @@ public class ModManager {
 
 	public static final String VERSION = "5.0 Beta 3";
 	public static long BUILD_NUMBER = 74L;
-	public static final String BUILD_DATE = "6/25/2017";
+	public static final String BUILD_DATE = "6/85/2017";
 	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
@@ -101,7 +107,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
 	public final static int MIN_REQUIRED_CMDLINE_REV = 0;
 
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 11; //1.0.0.X
+	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 12; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
@@ -130,6 +136,7 @@ public class ModManager {
 
 	public static void main(String[] args) {
 		loadLogger();
+
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
 		try {
@@ -453,7 +460,7 @@ public class ModManager {
 
 			if (ModManager.getThirdPartyModDBFile().exists()) {
 				ModManager.debugLogger.writeMessage("Loading third party identification service JSON into memory");
-				ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile());
+				ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile(), StandardCharsets.UTF_8);
 			} else {
 				ModManager.debugLogger.writeMessage("No third party identification service JSON found. May not have been downloaded yet...");
 			}
@@ -1430,6 +1437,49 @@ public class ModManager {
 	}
 
 	/**
+	 * Dumps the pcc using the specified options package.
+	 *
+	 * @param sourceSource
+	 *            PCC to dump
+	 * @param options
+	 *            Options package that is used to set the exe switches
+	 * 
+	 * @return Process result of dump
+	 */
+	public static ProcessResult dumpPCC(String pcc, PCCDumpOptions options) {
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(ModManager.getGUITransplanterCLI(false));
+		commandBuilder.add("--inputfile");
+		commandBuilder.add(pcc);
+		commandBuilder.add("--gamedir");
+		commandBuilder.add(options.gamePath);
+		commandBuilder.add("--extract");
+		if (options.names) {
+			commandBuilder.add("--names");
+		}
+		if (options.imports) {
+			commandBuilder.add("--imports");
+		}
+		if (options.exports) {
+			commandBuilder.add("--exports");
+		}
+		if (options.coalesced) {
+			commandBuilder.add("--coalesced");
+		}
+		if (options.scripts) {
+			commandBuilder.add("--scripts");
+		}
+		if (options.properties) {
+			commandBuilder.add("--properties");
+		}
+		commandBuilder.add("--outputfolder");
+		commandBuilder.add(options.outputFolder);
+
+		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
+		return ModManager.runProcess(decompressProcessBuilder);
+	}
+
+	/**
 	 * Copies a file from the game to the specified location. Decompresses a
 	 * basegame PCC if one is specified.
 	 *
@@ -1556,7 +1606,7 @@ public class ModManager {
 	 * @return
 	 */
 	public static ArrayList<Patch> getPatchesFromDirectory() {
-		ModManager.debugLogger.writeMessage("Loading Patches from patchlibrary");
+		ModManager.debugLogger.writeMessage("Loading MixIns from data directory.");
 		File modsDir = new File(getPatchesDir() + "patches/");
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
@@ -2266,6 +2316,42 @@ public class ModManager {
 	}
 
 	/**
+	 * Looks up the game's language through the registry.
+	 * 
+	 * @return language code if found, null if not found
+	 */
+	public static String LookupGameLanguageViaRegistryKey() {
+		String locale = null;
+		String _32bitpath = "SOFTWARE\\BioWare\\Mass Effect 3";
+		String _64bitpath = "SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
+		ModManager.debugLogger.writeMessage("Looking up location of game using registry...");
+		try {
+			locale = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _64bitpath, "Locale");
+			ModManager.debugLogger.writeMessage("Locale found - via 64bit key.");
+		} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
+			ModManager.debugLogger.writeMessage("Exception looking at 64 registry key: " + _64bitpath);
+		}
+
+		if (locale == null) {
+			// try 32bit key
+			try {
+				ModManager.debugLogger.writeMessage("64-bit registry key not found. Attemping to find via 32-bit registy key");
+				locale = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _32bitpath, "Locale");
+				ModManager.debugLogger.writeMessage("Game location found - via 32bit key.");
+			} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
+				ModManager.debugLogger.writeMessage("Exception looking at 32bit registry key: " + _32bitpath);
+			}
+		}
+		if (locale != null) {
+			ModManager.debugLogger.writeMessage("Found mass effect 3 locale in registry: " + locale);
+		} else {
+			ModManager.debugLogger.writeError("Could not find Mass Effect 3 registry key in both 32 and 64 bit locations.");
+		}
+
+		return locale;
+	}
+
+	/**
 	 * Runs autotoc on the listed folders.
 	 * 
 	 * @param folders
@@ -2373,6 +2459,17 @@ public class ModManager {
 	 */
 	public static String getModmakerCacheDir() {
 		File file = new File(getDataDir() + "modmaker\\cache\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * Gets the directory for running tests in Mod Manager.
+	 * 
+	 * @return data/testing with a slash on the end.
+	 */
+	public static String getTestingDir() {
+		File file = new File(getDataDir() + "testing\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}

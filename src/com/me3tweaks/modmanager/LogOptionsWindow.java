@@ -112,7 +112,6 @@ public class LogOptionsWindow extends JDialog {
 		customdlcconflictsoption.setSelected(false);
 		customdlcconflictsoption.setSelected(true);
 
-
 		me3logfile = new JCheckBox("ME3Logger Contents (Game crash info)");
 		me3logfile.setToolTipText("<html>Imports the ME3Logger contents into the log. If this bypass/ASI was not installed (or the file does not exist), this does nothing</html>");
 		me3logfile.setSelected(true);
@@ -143,7 +142,14 @@ public class LogOptionsWindow extends JDialog {
 				shareViaFile.setEnabled(false);
 				// TODO Auto-generated method stub
 				String log = generateLog();
-				new PasteBinUploaderDialog(log, fname.getText(), LogOptionsWindow.this);
+				if (log.length() > (524288 / 2)) { //512KB
+					JOptionPane.showMessageDialog(LogOptionsWindow.this,
+							"The log file is too big for Pastebin.\nUpload the log to something like Google Drive or Dropbox and share the link from there.",
+							"Log too big for pastebin", JOptionPane.ERROR_MESSAGE);
+					saveLogToDisk(fname.getText().trim(), true);
+				} else {
+					new PasteBinUploaderDialog(log, fname.getText(), LogOptionsWindow.this);
+				}
 			}
 		});
 		shareViaFile.addActionListener(new ActionListener() {
@@ -171,7 +177,7 @@ public class LogOptionsWindow extends JDialog {
 			}
 		});
 
-		options = new JCheckBox[] { sessionoption,installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile };
+		options = new JCheckBox[] { sessionoption, installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile };
 
 		sessionoption.setAlignmentX(Component.LEFT_ALIGNMENT);
 		installeddlcoption.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -221,7 +227,7 @@ public class LogOptionsWindow extends JDialog {
 			FileUtils.writeStringToFile(logfile, log);
 			//dispose();
 			if (showWinExp) {
-				Process p = new ProcessBuilder("explorer.exe", "/select,", logfile.getAbsolutePath()).start();
+				new ProcessBuilder("explorer.exe", "/select,", logfile.getAbsolutePath()).start();
 			}
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Log file written to disk");
 			return logfile.getAbsolutePath();
@@ -271,14 +277,14 @@ public class LogOptionsWindow extends JDialog {
 						String hash = MD5Checksum.getMD5Checksum(executable.getAbsolutePath());
 						if (acceptableHashes.contains(hash.toLowerCase())) {
 							log += "EXE passed hash check. Hash of EXE is " + hash + "\n";
-							ModManager.debugLogger.writeMessage("EXE has passed hash check: "+hash);
+							ModManager.debugLogger.writeMessage("EXE has passed hash check: " + hash);
 						} else {
 							log += "EXE did not pass hash check. Hash of EXE is " + hash + "\n";
-							ModManager.debugLogger.writeError("EXE has failed hash check: "+hash);
+							ModManager.debugLogger.writeError("EXE has failed hash check: " + hash);
 						}
 					} catch (Exception e) {
 						log += "Error checking game executable. Skipping check.\n";
-						ModManager.debugLogger.writeErrorWithException("EXE was unable to be checked due to some error:",e);
+						ModManager.debugLogger.writeErrorWithException("EXE was unable to be checked due to some error:", e);
 					}
 				}
 				log += "\n";
@@ -408,7 +414,8 @@ public class LogOptionsWindow extends JDialog {
 
 	/**
 	 * Gets a string representing all installed DLC
-	 * @return string 
+	 * 
+	 * @return string
 	 */
 	private String getInstalledDLC() {
 		ModManager.debugLogger.writeMessage("Getting list of installed DLC...");
@@ -438,7 +445,7 @@ public class LogOptionsWindow extends JDialog {
 							metaname = FileUtils.readFileToString(metacmm, Charset.defaultCharset());
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
-							ModManager.debugLogger.writeErrorWithException("Error reading metacmm file ("+metacmm+"):", e);
+							ModManager.debugLogger.writeErrorWithException("Error reading metacmm file (" + metacmm + "):", e);
 							metaname = "[Can't read metacmm.txt]";
 						}
 						installeddlcstr += dir + " (" + metaname + ", installed by Mod Manager)\n";
@@ -550,6 +557,7 @@ public class LogOptionsWindow extends JDialog {
 				try {
 					//compress with lzma
 					String logfile = saveLogToDisk(fname, false);
+					
 					String outputFile = logfile + ".lzma";
 					String[] procargs = { ModManager.getToolsDir() + "lzma.exe", "e", logfile, outputFile, "-d26", "-mt" + Runtime.getRuntime().availableProcessors() };
 					ProcessBuilder p = new ProcessBuilder(procargs);

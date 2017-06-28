@@ -301,7 +301,6 @@ public class ImportEntryWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since this is optional we will ignore this error: ", e);
 				}
 			}
-
 			String localModPath = ModManager.getModsDir() + modName;
 			File localModPathFile = new File(localModPath);
 			localModPathFile.mkdirs();
@@ -429,12 +428,13 @@ public class ImportEntryWindow extends JDialog {
 	 * @return
 	 */
 	public boolean inputValidate() {
-		if (modNameField.getText().equals("")) {
+		if (modNameField.getText().trim().equals("")) {
 			JOptionPane.showMessageDialog(this, "You must set a Mod Name.", "Mod Name Required", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		try {
-			File.createTempFile(modNameField.getText(), "tmp");
+			File f = File.createTempFile(modNameField.getText(), "tmp");
+			f.delete();
 		} catch (IOException e) {
 			//illegal characters in name likely
 			JOptionPane.showMessageDialog(this, "Illegal characters in the mod name.\nThis OS cannot make a folder with the mod name you specified, please change it.",
