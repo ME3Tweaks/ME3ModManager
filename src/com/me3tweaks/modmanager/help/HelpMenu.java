@@ -36,12 +36,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.me3tweaks.modmanager.AboutWindow;
+import com.me3tweaks.modmanager.AboutWindow2;
 import com.me3tweaks.modmanager.LogOptionsWindow;
 import com.me3tweaks.modmanager.LogWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.objects.HelpMenuItem;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -228,7 +227,7 @@ public class HelpMenu {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new AboutWindow(ModManagerWindow.ACTIVE_WINDOW);
+				new AboutWindow2();
 			}
 		});
 

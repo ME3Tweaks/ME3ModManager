@@ -933,6 +933,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							new FileDropWindow(ModManagerWindow.this, files[0]);
 						}
 						if (files[0].isFile()) {
+							new FileDropWindow(ModManagerWindow.this, files[0]);
+						}
+						/*
 							String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
 							switch (extension) {
 							case "7z":
@@ -983,7 +986,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 									/*
 									 * switch (magic) { default:
 									 * System.out.println("uh"); }
-									 */
+									 *
 								} catch (IOException e) {
 									e.printStackTrace();
 									// this shouldn't be possible
@@ -995,7 +998,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								labelStatus.setText("Extension not supported for Drag and Drop: " + extension);
 								break;
 							}
-						}
+						}*/
 					}
 				} else {
 					labelStatus.setText("Drag and Drop requires a valid BioGame directory");

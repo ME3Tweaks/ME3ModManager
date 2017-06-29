@@ -6,11 +6,14 @@ import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -34,6 +37,7 @@ import com.me3tweaks.modmanager.StarterKitWindow.StarterKitProgressDialog;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class FileDropWindow extends JDialog {
 	File droppedFile;
@@ -52,20 +56,17 @@ public class FileDropWindow extends JDialog {
 		setTitle("Files drop task selector");
 		setIconImages(ModManager.ICONS);
 
-		JButton compileAllTLK = new JButton("Compile as TLK manifest");
-		JButton decompileAllTLK = new JButton("Decompile all TLK files");
-		JButton compileAllCoalesced = new JButton("Compile as coalesced manifest");
-		JButton decompileAllCoalesced = new JButton("Decompile all Coalesced files");
-		JButton decompressAllPcc = new JButton("Decompress all PCC files");
-		JButton compressAllPcc = new JButton("Compress all PCC files");
-		JButton sideloadAllModMaker = new JButton("Sideload as ModMaker delta");
-
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 
 		String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath());
 		switch (extension) {
 		case "xml": {
+
+			JButton compileAllTLK = new JButton("Compile as TLK manifest");
+			JButton compileAllCoalesced = new JButton("Compile as coalesced manifest");
+			JButton sideloadAllModMaker = new JButton("Sideload as ModMaker delta");
+
 			JPanel xmlFilePanel = new JPanel();
 			xmlFilePanel.setLayout(new BoxLayout(xmlFilePanel, BoxLayout.PAGE_AXIS));
 
@@ -92,6 +93,122 @@ public class FileDropWindow extends JDialog {
 			xmlFilePanel.add(modmakerXMLPanel);
 
 			panel.add(xmlFilePanel);
+			break;
+		}
+		case "pcc": {
+			JButton decompressAllPcc = new JButton("Decompress PCC file");
+			JButton compressAllPcc = new JButton("Compress PCC file");
+			JButton dumpGfxFiles = new JButton("");
+
+			JPanel pccFilePanel = new JPanel();
+			pccFilePanel.setLayout(new BoxLayout(pccFilePanel, BoxLayout.PAGE_AXIS));
+
+			TitledBorder xmlBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC File Operations");
+			pccFilePanel.setBorder(xmlBorder);
+
+			JPanel compressionPCCPanel = new JPanel();
+			compressionPCCPanel.setLayout(new BoxLayout(compressionPCCPanel, BoxLayout.LINE_AXIS));
+			TitledBorder compressionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - Compression options");
+			compressionPCCPanel.setBorder(compressionBorder);
+			compressionPCCPanel.add(Box.createGlue());
+			compressionPCCPanel.add(decompressAllPcc);
+			compressionPCCPanel.add(Box.createGlue());
+			compressionPCCPanel.add(compressAllPcc);
+			compressionPCCPanel.add(Box.createGlue());
+
+			JButton aipathfinding = new JButton("View AI Pathfinding in Map Pathfinding Viewer");
+			JButton dumppcc = new JButton("Dump PCC info with PCC Data Dumper");
+			JPanel readPCCPanel = new JPanel();
+			TitledBorder coalescedManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - Data Viewers");
+			readPCCPanel.setBorder(coalescedManifestBorder);
+			readPCCPanel.add(Box.createGlue());
+			readPCCPanel.add(aipathfinding);
+			readPCCPanel.add(Box.createGlue());
+			readPCCPanel.add(dumppcc);
+			readPCCPanel.add(Box.createGlue());
+
+			pccFilePanel.add(compressionPCCPanel);
+			pccFilePanel.add(readPCCPanel);
+
+			panel.add(pccFilePanel);
+			break;
+		}
+		case "bin": {
+			JButton decompileCoalescedFile = new JButton("Decompile Coalesced File");
+
+			JPanel binFilePanel = new JPanel();
+			binFilePanel.setLayout(new BoxLayout(binFilePanel, BoxLayout.PAGE_AXIS));
+
+			TitledBorder coalescedFilePanelBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "BIN File Operations");
+			binFilePanel.setBorder(coalescedFilePanelBorder);
+
+			JPanel coalescedPanel = new JPanel();
+			TitledBorder coalescedBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "BIN - Coalesced File");
+			coalescedPanel.setBorder(coalescedBorder);
+			coalescedPanel.add(decompileCoalescedFile);
+
+			binFilePanel.add(coalescedPanel);
+
+			//Check if coalesced
+			byte[] buffer = new byte[4];
+
+			try (InputStream is = new FileInputStream(droppedFile.getAbsolutePath())) {
+				if (is.read(buffer) != buffer.length) {
+					// do something
+					decompileCoalescedFile.setEnabled(false);
+					decompileCoalescedFile.setToolTipText("Dropped file is not a coalesced file.");
+					return;
+				}
+				int magic = ResourceUtils.byteArrayToInt(buffer);
+				if (magic != ModManager.COALESCED_MAGIC_NUMBER) {
+					//not a coalesced file
+					decompileCoalescedFile.setEnabled(false);
+					decompileCoalescedFile.setToolTipText("Dropped file is not a coalesced file.");
+				}
+				is.close();
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException("Error reading input binary file! (Coalesced Drop)", e);
+			}
+			panel.add(binFilePanel);
+			break;
+		}
+		case "dlc": {
+			JButton decompileCoalescedFile = new JButton("Mount.dlc file options");
+
+			JPanel binFilePanel = new JPanel();
+			binFilePanel.setLayout(new BoxLayout(binFilePanel, BoxLayout.PAGE_AXIS));
+
+			TitledBorder coalescedFilePanelBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "BIN File Operations");
+			binFilePanel.setBorder(coalescedFilePanelBorder);
+
+			JPanel coalescedPanel = new JPanel();
+			TitledBorder coalescedBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "BIN - Coalesced File");
+			coalescedPanel.setBorder(coalescedBorder);
+			coalescedPanel.add(decompileCoalescedFile);
+
+			binFilePanel.add(coalescedPanel);
+
+			//Check if coalesced
+			byte[] buffer = new byte[4];
+
+			try (InputStream is = new FileInputStream(droppedFile.getAbsolutePath())) {
+				if (is.read(buffer) != buffer.length) {
+					// do something
+					decompileCoalescedFile.setEnabled(false);
+					decompileCoalescedFile.setToolTipText("Dropped file is not a coalesced file.");
+					return;
+				}
+				int magic = ResourceUtils.byteArrayToInt(buffer);
+				if (magic != ModManager.COALESCED_MAGIC_NUMBER) {
+					//not a coalesced file
+					decompileCoalescedFile.setEnabled(false);
+					decompileCoalescedFile.setToolTipText("Dropped file is not a coalesced file.");
+				}
+				is.close();
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException("Error reading input binary file! (Coalesced Drop)", e);
+			}
+			panel.add(binFilePanel);
 			break;
 		}
 		default: {
