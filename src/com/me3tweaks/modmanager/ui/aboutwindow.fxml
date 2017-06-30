@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Font?>
+
+<GridPane fx:controller="com.me3tweaks.modmanager.ui.AboutWindow2Controller" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="408.0" prefWidth="451.0" xmlns="http://javafx.com/javafx/8.0.131" xmlns:fx="http://javafx.com/fxml/1">
+	<!-- TODO Add Nodes -->
+	<ImageView id="boxImage" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.rowSpan="5" GridPane.valignment="TOP">
+		<image>
+			<Image url="/resource/icon128.png" />
+		</image>
+      <GridPane.margin>
+         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+      </GridPane.margin>
+	</ImageView>
+	<Label text="Mass Effect 3 Mod Manager" GridPane.columnIndex="1" GridPane.rowIndex="0">
+      <padding>
+         <Insets left="4.0" />
+      </padding>
+      <GridPane.margin>
+         <Insets top="5.0" />
+      </GridPane.margin>
+      <font>
+         <Font name="Trebuchet MS" size="18.0" />
+      </font></Label>
+	<Label fx:id="versionLabel" text="Version X" GridPane.columnIndex="1" GridPane.rowIndex="1">
+      <padding>
+         <Insets left="4.0" />
+      </padding></Label>
+	<Label text="Developed by FemShep (Mgamerz)" GridPane.columnIndex="1" GridPane.rowIndex="2">
+      <padding>
+         <Insets left="4.0" />
+      </padding></Label>
+	<Hyperlink text="https://me3tweaks.com" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+   <Label alignment="CENTER" text="Libraries" textAlignment="CENTER" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="6">
+      <font>
+         <Font name="Verdana Bold" size="14.0" />
+      </font>
+   </Label>
+   <FlowPane alignment="CENTER" prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="7">
+      <children>
+         <Hyperlink onAction="#open7ZipJBindingPage" text="7-Zip JBinding" />
+         <Hyperlink onAction="#openDerbyPage" text="Apache Derby" />
+         <Hyperlink onAction="#openCommonsIOPage" text="Apache Commons IO" />
+         <Hyperlink onAction="#openCommonsValidatorPage" text="Apache Commons Validator" />
+         <Hyperlink onAction="#openHttpComponentsPage" text="Apache HttpComponents" />
+         <Hyperlink onAction="#openCommonsLangPage" text="Apache Commons Lang" />
+         <Hyperlink onAction="#openFileDropPage" text="FileDrop" />
+         <Hyperlink onAction="#openini4jPage" text="ini4j" />
+         <Hyperlink onAction="#openjsonsimplePage" text="json-simple" />
+         <Hyperlink onAction="#openJNAPage" text="Java Native Access" />
+      </children>
+      <GridPane.margin>
+         <Insets left="5.0" right="5.0" />
+      </GridPane.margin>
+   </FlowPane>
+   <Label alignment="BOTTOM_CENTER" maxHeight="1.7976931348623157E308" text="Third Party Code" textAlignment="CENTER" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="8">
+      <font>
+         <Font name="Verdana Bold" size="14.0" />
+      </font>
+      <GridPane.margin>
+         <Insets />
+      </GridPane.margin>
+      <padding>
+         <Insets bottom="3.0" />
+      </padding>
+   </Label>
+   <FlowPane alignment="CENTER" layoutX="10.0" layoutY="103.0" prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="9">
+      <children>
+         <Hyperlink onAction="#open7ZipPage" text="7-Zip" />
+         <Hyperlink onAction="#openBinkw32Page" text="binkw32" />
+         <Hyperlink onAction="#openBinkw32ASIPage" text="binkw32 (ASI)" />
+         <Hyperlink onAction="#openElevatePage" text="Elevate" />
+         <Hyperlink onAction="#openJojoDiffPage" text="JoJo Diff" />
+         <Hyperlink onAction="#openLaunch4jPage" text="Launch4j" />
+         <Hyperlink onAction="#openLauncherWVPage" text="LauncherWV" />
+         <Hyperlink onAction="#openMEMPage" text="Mass Effect Modder" />
+         <Hyperlink onAction="#openME3ExplorerPage" text="ME3Explorer" />
+         <Hyperlink onAction="#openTankmasterPage" text="Tankmaster TLK &amp; Coalesce" />
+      </children>
+      <padding>
+         <Insets left="5.0" right="5.0" />
+      </padding>
+   </FlowPane>
+   <Label alignment="BOTTOM_CENTER" layoutX="170.0" layoutY="177.0" maxHeight="1.7976931348623157E308" text="Special Thanks" textAlignment="CENTER" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="10" GridPane.valignment="BOTTOM">
+      <font>
+         <Font name="Verdana Bold" size="14.0" />
+      </font>
+      <padding>
+         <Insets bottom="3.0" />
+      </padding>
+   </Label>
+   <FlowPane alignment="CENTER" prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="11">
+      <children>
+         <Label text="Warranty Voider">
+            <FlowPane.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </FlowPane.margin>
+         </Label>
+         <Label layoutX="192.0" layoutY="17.0" text="Kinkojiro">
+            <FlowPane.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </FlowPane.margin>
+         </Label>
+         <Label text="Erik JS">
+            <FlowPane.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </FlowPane.margin>
+         </Label>
+         <Label text="Aquadran">
+            <FlowPane.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </FlowPane.margin>
+         </Label>
+         <Label layoutX="261.0" layoutY="17.0" text="Zergged">
+            <FlowPane.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </FlowPane.margin>
+         </Label>
+         <Label layoutX="290.0" layoutY="17.0" text="Transam617">
+            <FlowPane.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </FlowPane.margin>
+         </Label>
+         <Label text="Deadspear" />
+         <Label text="You, the end user, for making this software worth developing">
+            <FlowPane.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </FlowPane.margin>
+         </Label>
+      </children>
+   </FlowPane>
+   <Label text="This software is licensed under GPL 3. All derivatives of this work must have its source code available, licensed under GPL." wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="4">
+      <padding>
+         <Insets left="4.0" />
+      </padding>
+   </Label>
+   <columnConstraints>
+      <ColumnConstraints />
+      <ColumnConstraints hgrow="SOMETIMES" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints minHeight="1.0" prefHeight="1.0" />
+      <RowConstraints minHeight="10.0" prefHeight="20.0" />
+      <RowConstraints maxHeight="-Infinity" minHeight="10.0" prefHeight="60.0" vgrow="SOMETIMES" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="40.0" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="40.0" />
+   </rowConstraints>
+</GridPane>
