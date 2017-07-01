@@ -517,8 +517,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				switch (latest.getCommand()) {
 				case "UPDATE_HELP_MENU":
 					menuBar.remove(helpMenu);
-					menuBar.revalidate();
-					menuBar.add(HelpMenu.constructHelpMenu());
+					helpMenu = HelpMenu.constructHelpMenu();
+					menuBar.add(helpMenu);
 					break;
 				case "SHOW_UPDATE_WINDOW":
 					new UpdateAvailableWindow((JSONObject) latest.getData(), ModManagerWindow.this);

@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -56,8 +55,6 @@ import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.w3c.dom.Document;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
@@ -69,7 +66,6 @@ import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.PCCDumpOptions;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
-import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.utilities.DebugLogger;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
@@ -86,8 +82,8 @@ import com.sun.jna.win32.W32APIOptions;
 public class ModManager {
 
 	public static final String VERSION = "5.0 Beta 4";
-	public static long BUILD_NUMBER = 74L;
-	public static final String BUILD_DATE = "6/29/2017";
+	public static long BUILD_NUMBER = 75L;
+	public static final String BUILD_DATE = "7/1/2017";
 	public static boolean IS_DEBUG = true;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
@@ -105,7 +101,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 0;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 1;
 
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 12; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
