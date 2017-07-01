@@ -12,9 +12,14 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+<<<<<<< Updated upstream
 import java.util.HashMap;
 import java.util.Map;
+=======
+import java.util.Collections;
+>>>>>>> Stashed changes
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -46,7 +51,6 @@ import com.me3tweaks.modmanager.AboutWindow;
 import com.me3tweaks.modmanager.LogWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.objects.HelpMenuItem;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 
 public class HelpMenu {
@@ -57,6 +61,7 @@ public class HelpMenu {
 	private static XPath xpath = XPathFactory.newInstance().newXPath();
 	private static XPathExpression helpItemExpr;
 	private static XPathExpression sublistExpr;
+	private static XPathExpression topLevelExpr;
 
 	/**
 	 * Contacts ME3Tweaks and fetches the latest help info. If any resources are
@@ -75,9 +80,8 @@ public class HelpMenu {
 			ModManager.debugLogger.writeMessage("Getting latest help info from link: " + uri.toASCIIString());
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
-			FileUtils.writeStringToFile(ModManager.getHelpFile(), responseString);
-			ModManager.debugLogger
-					.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getHelpFile().exists());
+			FileUtils.writeStringToFile(ModManager.getHelpFile(), responseString, StandardCharsets.UTF_8);
+			ModManager.debugLogger.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getHelpFile().exists());
 			//Parse, download resources
 			DocumentBuilder db;
 			try {
@@ -121,8 +125,14 @@ public class HelpMenu {
 		helpAbout = new JMenuItem("About Mod Manager");
 		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
 
+<<<<<<< Updated upstream
 		helpGetLog = new JMenuItem("Copy log to clipboard");
 		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
+=======
+		helpGetLog = new JMenuItem("Generate Diagnostics Log");
+		helpGetLog.setToolTipText(
+				"<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
+>>>>>>> Stashed changes
 
 		helpLogViewer = new JMenuItem("View Mod Manager log");
 		helpLogViewer.setToolTipText("<html>View the current session log</html>");
@@ -186,9 +196,14 @@ public class HelpMenu {
 		helpGetLog.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!ModManager.logging) {
+<<<<<<< Updated upstream
 					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 							"You must enable logging via the File>Options menu before logs are generated.", "Logging disabled",
 							JOptionPane.ERROR_MESSAGE);
+=======
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "You must enable logging via the Actions > Options menu before logs are generated.",
+							"Logging disabled", JOptionPane.ERROR_MESSAGE);
+>>>>>>> Stashed changes
 				} else {
 					copyLogToClipboard();
 				}
@@ -197,6 +212,7 @@ public class HelpMenu {
 		helpEmailFemShep.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+<<<<<<< Updated upstream
 				JOptionPane
 						.showMessageDialog(
 								ModManagerWindow.ACTIVE_WINDOW,
@@ -214,6 +230,20 @@ public class HelpMenu {
 										+ "Please note that I only speak English.<br><br>"
 										+ "You can email me at femshep@me3tweaks.com.</div></html>", "Contacting FemShep",
 								JOptionPane.INFORMATION_MESSAGE);
+=======
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+						"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>" + "Please email me if you have crashes or bugs, or use the forums.<br>"
+								+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
+								+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
+								+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
+								+ "3. Leave the default options unless instructed otherwise. Upload your log to pastebin.<br>"
+								+ "4. In your email, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
+								+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
+								+ "Please do not do any other operations as it makes the logs harder to read.<br>"
+								+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
+								+ "Please note that I only speak English.<br><br>" + "You can email me at femshep@me3tweaks.com.</div></html>",
+						"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
+>>>>>>> Stashed changes
 			}
 		});
 		helpForums.addActionListener(new ActionListener() {
@@ -280,6 +310,7 @@ public class HelpMenu {
 			return;
 		}
 		try {
+			topLevelExpr = xpath.compile("helpitem|list");
 			helpItemExpr = xpath.compile("helpitem");
 			sublistExpr = xpath.compile("list");
 		} catch (XPathExpressionException e1) {
@@ -302,16 +333,34 @@ public class HelpMenu {
 
 			//Parse items
 			Element helpMenuElement = (Element) doc.getElementsByTagName("helpmenu").item(0);
-			NodeList topLevelLists = (NodeList) sublistExpr.evaluate(helpMenuElement, XPathConstants.NODESET);
-			for (int i = 0; i < topLevelLists.getLength(); i++) {
-				Element topLevelList = (Element) topLevelLists.item(i);
-				JMenu topMenu = new JMenu(topLevelList.getAttribute("title"));
 
-				buildSublist(topMenu, topLevelList, false);
-				helpMenu.add(topMenu);
+			ArrayList<SortableHelpElement> items = new ArrayList<>();
+			NodeList topLevelItems = (NodeList) topLevelExpr.evaluate(helpMenuElement, XPathConstants.NODESET);
+			for (int i = 0; i < topLevelItems.getLength(); i++) {
+				Element topLevelList = (Element) topLevelItems.item(i);
+				items.add(new SortableHelpElement(topLevelList));
 			}
 
-		} catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException e) {
+			Collections.sort(items);
+			for (SortableHelpElement sortedItem : items) {
+				Element helpElement = sortedItem.element;
+				String nodetype = helpElement.getTagName();
+				switch (nodetype) {
+				case "list":
+					JMenu topMenu = new JMenu(helpElement.getAttribute("title"));
+					buildSublist(topMenu, helpElement, false);
+					helpMenu.add(topMenu);
+					break;
+				case "helpitem":
+					JMenuItem item = createMenuItemFromElement(helpElement, false);
+					helpMenu.add(item);
+					break;
+				}
+			}
+
+		} catch (ParserConfigurationException | SAXException | IOException |
+
+				XPathExpressionException e) {
 			ModManager.debugLogger.writeErrorWithException("Error loading help file:", e);
 		}
 	}
@@ -325,22 +374,37 @@ public class HelpMenu {
 	 * @throws XPathExpressionException
 	 */
 	private static void buildSublist(JMenu menu, Element xmlElem, boolean validateOnly) throws XPathExpressionException {
+		ArrayList<SortableHelpElement> items = new ArrayList<>();
 		NodeList sublistsOfMenu = (NodeList) sublistExpr.evaluate(xmlElem, XPathConstants.NODESET);
 		for (int i = 0; i < sublistsOfMenu.getLength(); i++) {
 			Element subListElem = (Element) sublistsOfMenu.item(i);
-			JMenu subMenu = new JMenu(subListElem.getAttribute("title"));
-			buildSublist(subMenu, subListElem, validateOnly);
-			if (!validateOnly) {
-				menu.add(subMenu);
-			}
+			items.add(new SortableHelpElement(subListElem));
 		}
 
 		NodeList itemsOfMenu = (NodeList) helpItemExpr.evaluate(xmlElem, XPathConstants.NODESET);
 		for (int i = 0; i < itemsOfMenu.getLength(); i++) {
 			Element itemElem = (Element) itemsOfMenu.item(i);
-			JMenuItem item = createMenuItemFromElement(itemElem, validateOnly);
-			if (!validateOnly) {
-				menu.add(item);
+			items.add(new SortableHelpElement(itemElem));
+		}
+
+		Collections.sort(items);
+		for (SortableHelpElement sortedItem : items) {
+			Element helpElement = sortedItem.element;
+			String nodetype = helpElement.getTagName();
+			switch (nodetype) {
+			case "list":
+				JMenu subMenu = new JMenu(helpElement.getAttribute("title"));
+				buildSublist(subMenu, helpElement, validateOnly);
+				if (!validateOnly) {
+					menu.add(subMenu);
+				}
+				break;
+			case "helpitem":
+				JMenuItem item = createMenuItemFromElement(helpElement, validateOnly);
+				if (!validateOnly && item != null) {
+					menu.add(item);
+				}
+				break;
 			}
 		}
 	}
@@ -429,7 +493,9 @@ public class HelpMenu {
 		}
 
 		JMenuItem subMenuItem = new JMenuItem(title);
-		subMenuItem.setToolTipText(tooltipText);
+		if (tooltipText != null && !tooltipText.equals("")) {
+			subMenuItem.setToolTipText(tooltipText);
+		}
 
 		subMenuItem.addActionListener(new ActionListener() {
 
@@ -439,8 +505,7 @@ public class HelpMenu {
 					try {
 						ModManager.openWebpage(new URL(url));
 					} catch (MalformedURLException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+						ModManager.debugLogger.writeErrorWithException("Help item has invalid URL:", e1);
 					}
 				} else if (!resource.equals("")) {
 					HelpItemPackage pack = new HelpItemPackage();
@@ -449,8 +514,7 @@ public class HelpMenu {
 					pack.setModalTitle(title);
 					new ResourceWindowHelpModal(pack);
 				} else {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "<html><div style=\"width: 300px\">" + content + "</div></html>",
-							modalTitle, messageType);
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "<html><div style=\"width: 300px\">" + content + "</div></html>", modalTitle, messageType);
 				}
 			}
 		});
@@ -458,58 +522,40 @@ public class HelpMenu {
 		return subMenuItem;
 	}
 
-	/**
-	 * Reads the cached latesthelp.xml file in the data/help directory and
-	 * parses it into menus to add
-	 * 
-	 * @return
-	 */
-	public static JMenu getHowDoIMenu_OLD() {
-		JMenu menu = new JMenu("Commonly Asked Questions");
-		ArrayList<HelpMenuItem> menuItems = new ArrayList<HelpMenuItem>();
-		menuItems
-				.add(new HelpMenuItem(
-						"How do I add a mod",
-						"Adding Mods to Mod Manager",
-						"To add a mod to Mod Manager, you will need a Mod Manager mod package. This is a folder containing a valid moddesc.ini file.<br>Put this folder in the mods/ directory and then restart Mod Manager."));
-		menuItems.add(new HelpMenuItem("How do I remove a mod", "Removing a mod from Mod Manager",
-				"To remove a mod from Mod Manager, delete its folder from the mods/ directory."));
-		menuItems
-				.add(new HelpMenuItem(
-						"How do I install a mod",
-						"Install a mod",
-						"Before installing a mod, make sure your DLC is backed up and you have created your repair game database. Then simply choose the mod on the left and click install. You may need to run ME3CMM.exe as administrator depending on where you put Mass Effect 3."));
-		menuItems
-				.add(new HelpMenuItem(
-						"How do I uninstall a mod",
-						"Uninstalling Mods",
-						"Uninstalling mods means you are restoring files. You cannot selectively uninstall a mod with Mod Manager, you can only return to your snapshotted state or original DLC depending on how it was before you installed the mod. Due to how easy mods are to install this isn't much of an issue. Use the items in the restore menu to restore your files. Hover over the entries to get a description of what each does."));
-		menuItems
-				.add(new HelpMenuItem(
-						"Can I use texture mods with Mod Manager",
-						"Mixing Mod Types",
-						"Mod Manager is not meant for installing texture mods, as it is full file replacement and texture mods modify a lot of files. As of 4.1 Beta 2 there is limited support for mixing Mod Manager mods and non Mod Manager mods.<br><br>First, backup your DLC with Mod Manager from the vanilla ME3 state.<br>Then install your texture mods. This will unpack your DLC so it is important you back it up with Mod Manager first. It will be very difficult to do this step (and have the game work or be restored) after you start using Mod Manager for mod management.<br>Now use Mod Manager, create your repair database, and use the option in the options menu to use game TOC files. You can then use Mod Manager like normal, but once you start using Mod Manager, modifications outside of it can and likely will break the game.<br><br>Mod Manager does not support mixing mods this way, so if you have issues with this method, you are on your own. There are simply too many different problems that can occur."));
-		menuItems
-				.add(new HelpMenuItem(
-						"Can I get banned for using mods",
-						"Ban Notice",
-						"Technically you can with Multiplayer mods. However BioWare has no active staff to do so and they haven't banned anyone since early 2013. That doesn't mean you should run mega-million, 1 hit kill or masochist mods in public lobbies."));
-
-		for (HelpMenuItem item : menuItems) {
-			menu.add(item.createMenuItem());
+	private static class SortableHelpElement implements Comparable<SortableHelpElement> {
+		@Override
+		public String toString() {
+			return element.getAttribute("title");
 		}
 
-		JMenuItem dlcFailure = new JMenuItem("DLC is not authorized/not loading");
-		dlcFailure.addActionListener(new ActionListener() {
+		private Element element;
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				//new DLCFailedWindow();
+		public SortableHelpElement(Element element) {
+			this.element = element;
+		}
+
+		@Override
+		public int compareTo(SortableHelpElement other) {
+			Integer mypriority = getPriorityValue(element.getAttribute("sort"));
+			Integer otherpriority = getPriorityValue(other.element.getAttribute("sort"));
+			System.out.println("Priority value: "+mypriority.compareTo(otherpriority));
+			return mypriority.compareTo(otherpriority);
+		}
+
+		private int getPriorityValue(String priority) {
+			if (priority == null || priority.equals(""))
+				return 0;
+			switch (priority) {
+			case "low":
+				return 1;
+			case "medium":
+				return 0;
+			case "high":
+				return -1;
+			default:
+				return 0;
 			}
-		});
-		menu.add(dlcFailure);
-
-		return menu;
+		}
 
 	}
 }

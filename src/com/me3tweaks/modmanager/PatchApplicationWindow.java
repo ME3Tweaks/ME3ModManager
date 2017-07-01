@@ -20,7 +20,6 @@ import javax.swing.SwingWorker;
 import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
-import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.PatchModBundle;
@@ -98,12 +97,7 @@ public class PatchApplicationWindow extends JDialog {
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		if (callingDialog == null && callingDialog == null) {
-			this.setLocationRelativeTo(null);
-		} else {
-			this.setLocationRelativeTo(callingDialog == null ? callingFrame : callingDialog);
-		}
+
 		JPanel panel = new JPanel(new BorderLayout());
 
 		operationLabel = new JLabel("Applying mixins to " + mod.getModName() + "[0/0]");
@@ -123,6 +117,12 @@ public class PatchApplicationWindow extends JDialog {
 			}
 		});
 
+		pack();
+		if (callingDialog == null && callingDialog == null) {
+			this.setLocationRelativeTo(null);
+		} else {
+			this.setLocationRelativeTo(callingDialog == null ? callingFrame : callingDialog);
+		}
 	}
 
 	class PatchApplicationTask extends SwingWorker<Void, Object> {

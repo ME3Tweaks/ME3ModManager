@@ -72,9 +72,9 @@ import com.sun.jna.platform.win32.WinReg;
 
 public class ModManager {
 
-	public static final String VERSION = "4.3.2";
-	public static long BUILD_NUMBER = 61L;
-	public static final String BUILD_DATE = "9/20/2016";
+	public static final String VERSION = "4.5.5";
+	public static long BUILD_NUMBER = 74L;
+	public static final String BUILD_DATE = "7/1/2017";
 	public static DebugLogger debugLogger;
 	public static boolean IS_DEBUG = false;
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -109,6 +109,10 @@ public class ModManager {
 	public static boolean MODMAKER_CONTROLLER_MOD_ADDINS = false;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
+<<<<<<< Updated upstream
+=======
+	public static final String[] SUPPORTED_GAME_LANGAUGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
+>>>>>>> Stashed changes
 
 	public static final class Lock {
 	} //threading wait() and notifyall();

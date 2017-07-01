@@ -24,3 +24,4 @@ server/
 patches/
 derby.log
 data/Coalesced.original
+/bin/
