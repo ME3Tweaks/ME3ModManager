@@ -230,6 +230,49 @@ public class FileDropWindow extends JDialog {
 			panel.add(asiFilePanel);
 			break;
 		}
+		case "tlk": {
+			JButton decompileTLKButton = new JButton("Decompile TLK");
+			decompileTLKButton.setAlignmentX(CENTER_ALIGNMENT);
+			JPanel tlkFilePanel = new JPanel();
+			tlkFilePanel.setLayout(new BoxLayout(tlkFilePanel, BoxLayout.PAGE_AXIS));
+
+			TitledBorder tlkFileBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "TLK file options");
+			tlkFilePanel.setBorder(tlkFileBorder);
+
+			JPanel tlkDecompilePanel = new JPanel();
+			TitledBorder tlkLocalizeBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "TLK - String localization file");
+			tlkDecompilePanel.setBorder(tlkLocalizeBorder);
+			tlkDecompilePanel.setLayout(new BoxLayout(tlkDecompilePanel, BoxLayout.PAGE_AXIS));
+
+			tlkDecompilePanel.add(decompileTLKButton);
+			tlkFilePanel.add(tlkDecompilePanel);
+
+			panel.add(tlkFilePanel);
+			break;
+		}
+		case "txt": {
+			JButton pathfindingButton = new JButton("Open file in Map Pathfinding Viewer");
+			if (!ArchUtils.getProcessor().is64Bit()) {
+				pathfindingButton.setEnabled(false);
+				pathfindingButton.setToolTipText("Requires 64-bit Windows");
+			}
+			pathfindingButton.setAlignmentX(CENTER_ALIGNMENT);
+			JPanel textFilePanel = new JPanel();
+			textFilePanel.setLayout(new BoxLayout(textFilePanel, BoxLayout.PAGE_AXIS));
+			TitledBorder textFileBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "TXT - Text file options");
+			textFilePanel.setBorder(textFileBorder);
+
+			JPanel pathfindingDumpPanel = new JPanel();
+			TitledBorder pathfindingDumpBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "TXT - PCC or Pathfinding dump");
+			pathfindingDumpPanel.setBorder(pathfindingDumpBorder);
+			pathfindingDumpPanel.setLayout(new BoxLayout(pathfindingDumpPanel, BoxLayout.PAGE_AXIS));
+
+			pathfindingDumpPanel.add(pathfindingButton);
+			textFilePanel.add(pathfindingDumpPanel);
+
+			panel.add(textFilePanel);
+			break;
+		}
 		default: {
 			JPanel failPanel = new JPanel();
 			failPanel.add(new JLabel("<html><center>Unsupported Drag & Drop file extension: " + extension + "</center></html>", SwingConstants.CENTER));
