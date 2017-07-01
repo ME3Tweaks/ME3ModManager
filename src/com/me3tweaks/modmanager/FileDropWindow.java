@@ -3,6 +3,8 @@ package com.me3tweaks.modmanager;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -56,6 +58,118 @@ public class FileDropWindow extends JDialog {
 	private void setupWindow2() {
 		setTitle("Files drop task selector");
 		setIconImages(ModManager.ICONS);
+
+		if (droppedFile.isDirectory()) {
+			JPanel panel = new JPanel(new GridBagLayout());
+			GridBagConstraints c = new GridBagConstraints();
+
+			c.gridy = 0;
+			JLabel headerLabel = new JLabel("<html>You dropped a folder onto Mod Manager:<br>" + droppedFile
+					+ "<br>Select what operation to perform on the contents of this folder.<br>Hover over each button to see a description.</html>");
+			panel.add(headerLabel, c);
+
+			JButton compileAllTLK = new JButton("Compile all TLK XML Manifests");
+
+			JButton decompileAllTLK = new JButton("Decompile all TLK files");
+			JButton compileAllCoalesced = new JButton("Compile all Coalesced manifest");
+			JButton decompileAllCoalesced = new JButton("Decompile all Coalesced files");
+			JButton decompressAllPcc = new JButton("Decompress all PCC files");
+			JButton compressAllPcc = new JButton("Compress all PCC files");
+			JButton sideloadAllModMaker = new JButton("Sideload all ModMaker XML files");
+
+			compileAllTLK.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
+			decompileAllTLK.setToolTipText("<html>Decompiles all TLK files using the TankMaster compiler tool included with Mod Manager.</html>");
+			decompileAllCoalesced
+					.setToolTipText("<html>Decompils all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
+			decompressAllPcc.setToolTipText("<html>Decompresses all PCC files to their uncompressed state</html>");
+			compressAllPcc.setToolTipText("<html>Compresses all PCC files to their compressed state, using the game's method of compression</html>");
+			sideloadAllModMaker.setToolTipText("<html>Sideload all XML files as ModMaker mods and compile them in batch mode</html>");
+
+			compileAllTLK.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose COMPILE_TLK operation");
+					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK, null).execute();
+					dispose();
+				}
+			});
+
+			decompileAllTLK.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose DECOMPILE_TLK operation");
+					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_TLK, null).execute();
+					dispose();
+				}
+			});
+
+			compileAllCoalesced.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose COMPILE_COAL operation");
+					new BatchWorker(droppedFile, BatchWorker.COMPILE_COAL, null).execute();
+					dispose();
+				}
+			});
+
+			decompileAllCoalesced.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose DECOMPILE_COAL operation");
+					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_COAL, null).execute();
+					dispose();
+				}
+			});
+
+			decompressAllPcc.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					ModManager.debugLogger.writeMessage("User chose DECOMPRESS_PCC operation");
+					new BatchWorker(droppedFile, BatchWorker.DECOMPRESS_PCC, null).execute();
+					dispose();
+				}
+			});
+
+			compressAllPcc.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					ModManager.debugLogger.writeMessage("User chose COMPRESS_PCC operation");
+					new BatchWorker(droppedFile, BatchWorker.COMPRESS_PCC, null).execute();
+					dispose();
+				}
+			});
+
+			sideloadAllModMaker.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					ModManager.debugLogger.writeMessage("User chose SIDELOAD_MODMAKER operation");
+					new BatchWorker(droppedFile, BatchWorker.SIDELOAD_MODMAKER, null).execute();
+					dispose();
+				}
+			});
+
+			c.gridy++;
+			panel.add(compileAllTLK, c);
+			c.gridy++;
+			panel.add(decompileAllTLK, c);
+			c.gridy++;
+			panel.add(compileAllCoalesced, c);
+			c.gridy++;
+			panel.add(decompileAllCoalesced, c);
+			panel.add(decompressAllPcc, c);
+			c.gridy++;
+			panel.add(compressAllPcc, c);
+			c.gridy++;
+			panel.add(sideloadAllModMaker, c);
+			c.gridy++;
+		}
 
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
@@ -311,7 +425,7 @@ public class FileDropWindow extends JDialog {
 
 			JButton decompileAllTLK = new JButton("Decompile all TLK files");
 			JButton compileAllCoalesced = new JButton("Compile all Coalesced manifest");
-			JButton decompileAllCoalesced = new JButton("Deompile all Coalesced files");
+			JButton decompileAllCoalesced = new JButton("Decompile all Coalesced files");
 			JButton decompressAllPcc = new JButton("Decompress all PCC files");
 			JButton compressAllPcc = new JButton("Compress all PCC files");
 			JButton sideloadAllModMaker = new JButton("Sideload all ModMaker XML files");

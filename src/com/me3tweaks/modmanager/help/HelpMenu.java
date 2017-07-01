@@ -9,7 +9,9 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -52,6 +54,7 @@ public class HelpMenu {
 	private static XPath xpath = XPathFactory.newInstance().newXPath();
 	private static XPathExpression helpItemExpr;
 	private static XPathExpression sublistExpr;
+	private static XPathExpression topLevelExpr;
 
 	/**
 	 * Contacts ME3Tweaks and fetches the latest help info. If any resources are
@@ -70,7 +73,7 @@ public class HelpMenu {
 			ModManager.debugLogger.writeMessage("Getting latest help info from link: " + uri.toASCIIString());
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
-			FileUtils.writeStringToFile(ModManager.getHelpFile(), responseString);
+			FileUtils.writeStringToFile(ModManager.getHelpFile(), responseString, StandardCharsets.UTF_8);
 			ModManager.debugLogger.writeMessage("File written to disk. Exists on filesystem, ready for loading: " + ModManager.getHelpFile().exists());
 			//Parse, download resources
 			DocumentBuilder db;
@@ -249,6 +252,7 @@ public class HelpMenu {
 			return;
 		}
 		try {
+			topLevelExpr = xpath.compile("helpitem|list");
 			helpItemExpr = xpath.compile("helpitem");
 			sublistExpr = xpath.compile("list");
 		} catch (XPathExpressionException e1) {
@@ -271,16 +275,34 @@ public class HelpMenu {
 
 			//Parse items
 			Element helpMenuElement = (Element) doc.getElementsByTagName("helpmenu").item(0);
-			NodeList topLevelLists = (NodeList) sublistExpr.evaluate(helpMenuElement, XPathConstants.NODESET);
-			for (int i = 0; i < topLevelLists.getLength(); i++) {
-				Element topLevelList = (Element) topLevelLists.item(i);
-				JMenu topMenu = new JMenu(topLevelList.getAttribute("title"));
 
-				buildSublist(topMenu, topLevelList, false);
-				helpMenu.add(topMenu);
+			ArrayList<SortableHelpElement> items = new ArrayList<>();
+			NodeList topLevelItems = (NodeList) topLevelExpr.evaluate(helpMenuElement, XPathConstants.NODESET);
+			for (int i = 0; i < topLevelItems.getLength(); i++) {
+				Element topLevelList = (Element) topLevelItems.item(i);
+				items.add(new SortableHelpElement(topLevelList));
 			}
 
-		} catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException e) {
+			Collections.sort(items);
+			for (SortableHelpElement sortedItem : items) {
+				Element helpElement = sortedItem.element;
+				String nodetype = helpElement.getTagName();
+				switch (nodetype) {
+				case "list":
+					JMenu topMenu = new JMenu(helpElement.getAttribute("title"));
+					buildSublist(topMenu, helpElement, false);
+					helpMenu.add(topMenu);
+					break;
+				case "helpitem":
+					JMenuItem item = createMenuItemFromElement(helpElement, false);
+					helpMenu.add(item);
+					break;
+				}
+			}
+
+		} catch (ParserConfigurationException | SAXException | IOException |
+
+				XPathExpressionException e) {
 			ModManager.debugLogger.writeErrorWithException("Error loading help file:", e);
 		}
 	}
@@ -294,22 +316,37 @@ public class HelpMenu {
 	 * @throws XPathExpressionException
 	 */
 	private static void buildSublist(JMenu menu, Element xmlElem, boolean validateOnly) throws XPathExpressionException {
+		ArrayList<SortableHelpElement> items = new ArrayList<>();
 		NodeList sublistsOfMenu = (NodeList) sublistExpr.evaluate(xmlElem, XPathConstants.NODESET);
 		for (int i = 0; i < sublistsOfMenu.getLength(); i++) {
 			Element subListElem = (Element) sublistsOfMenu.item(i);
-			JMenu subMenu = new JMenu(subListElem.getAttribute("title"));
-			buildSublist(subMenu, subListElem, validateOnly);
-			if (!validateOnly) {
-				menu.add(subMenu);
-			}
+			items.add(new SortableHelpElement(subListElem));
 		}
 
 		NodeList itemsOfMenu = (NodeList) helpItemExpr.evaluate(xmlElem, XPathConstants.NODESET);
 		for (int i = 0; i < itemsOfMenu.getLength(); i++) {
 			Element itemElem = (Element) itemsOfMenu.item(i);
-			JMenuItem item = createMenuItemFromElement(itemElem, validateOnly);
-			if (!validateOnly && item != null) {
-				menu.add(item);
+			items.add(new SortableHelpElement(itemElem));
+		}
+
+		Collections.sort(items);
+		for (SortableHelpElement sortedItem : items) {
+			Element helpElement = sortedItem.element;
+			String nodetype = helpElement.getTagName();
+			switch (nodetype) {
+			case "list":
+				JMenu subMenu = new JMenu(helpElement.getAttribute("title"));
+				buildSublist(subMenu, helpElement, validateOnly);
+				if (!validateOnly) {
+					menu.add(subMenu);
+				}
+				break;
+			case "helpitem":
+				JMenuItem item = createMenuItemFromElement(helpElement, validateOnly);
+				if (!validateOnly && item != null) {
+					menu.add(item);
+				}
+				break;
 			}
 		}
 	}
@@ -425,5 +462,42 @@ public class HelpMenu {
 		});
 
 		return subMenuItem;
+	}
+
+	private static class SortableHelpElement implements Comparable<SortableHelpElement> {
+		@Override
+		public String toString() {
+			return element.getAttribute("title");
+		}
+
+		private Element element;
+
+		public SortableHelpElement(Element element) {
+			this.element = element;
+		}
+
+		@Override
+		public int compareTo(SortableHelpElement other) {
+			Integer mypriority = getPriorityValue(element.getAttribute("sort"));
+			Integer otherpriority = getPriorityValue(other.element.getAttribute("sort"));
+			System.out.println("Priority value: "+mypriority.compareTo(otherpriority));
+			return mypriority.compareTo(otherpriority);
+		}
+
+		private int getPriorityValue(String priority) {
+			if (priority == null || priority.equals(""))
+				return 0;
+			switch (priority) {
+			case "low":
+				return 1;
+			case "medium":
+				return 0;
+			case "high":
+				return -1;
+			default:
+				return 0;
+			}
+		}
+
 	}
 }

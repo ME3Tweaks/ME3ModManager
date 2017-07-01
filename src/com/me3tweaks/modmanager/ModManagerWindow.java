@@ -15,8 +15,10 @@ import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -103,7 +105,6 @@ import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI2;
-import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
@@ -516,6 +517,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				switch (latest.getCommand()) {
 				case "UPDATE_HELP_MENU":
 					menuBar.remove(helpMenu);
+					menuBar.revalidate();
 					menuBar.add(HelpMenu.constructHelpMenu());
 					break;
 				case "SHOW_UPDATE_WINDOW":
@@ -937,48 +939,66 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						if (files[0].isFile()) {
 							new FileDropWindow(ModManagerWindow.this, files[0]);
 						}
-						/*
-						 * String extension =
-						 * FilenameUtils.getExtension(files[0].toString()).
-						 * toLowerCase(); switch (extension) { case "7z": case
-						 * "zip": case "rar": new
-						 * ModImportArchiveWindow(ModManagerWindow.this,
-						 * files[0].toString()); break; case "pcc": case "asi":
-						 * int exebuild =
-						 * ModManager.checkforME3105(GetBioGameDir()); if
-						 * (exebuild != 5) { labelStatus.
-						 * setText("ASI mods don't work with Mass Effect 3 1.0"
-						 * + exebuild); break; } if
-						 * (!ModManager.checkIfASIBinkBypassIsInstalled(
-						 * GetBioGameDir())) { labelStatus.
-						 * setText("Binkw32 ASI loader not installed"); break; }
-						 * case "xml": new FileDropWindow(ModManagerWindow.this,
-						 * files[0]); break; case "dlc": new
-						 * MountFileEditorWindow(files[0].toString()); break;
-						 * case "tlk": TLKTool.decompileTLK(files[0]); break;
-						 * 
-						 * case "bin": // read magic at beginning to find out
-						 * what type // of // file this is try { byte[] buffer =
-						 * new byte[4]; InputStream is = new
-						 * FileInputStream(files[0]); if (is.read(buffer) !=
-						 * buffer.length) { // do something } int magic =
-						 * ResourceUtils.byteArrayToInt(buffer); switch (magic)
-						 * { case ModManager.COALESCED_MAGIC_NUMBER: new
-						 * CoalescedWindow(files[0], false); break; }
-						 * 
-						 * is.close();
-						 * 
-						 * /* switch (magic) { default:
-						 * System.out.println("uh"); }
-						 *
-						 * } catch (IOException e) { e.printStackTrace(); //
-						 * this shouldn't be possible } finally {
-						 * 
-						 * } break; default: labelStatus.
-						 * setText("Extension not supported for Drag and Drop: "
-						 * + extension); break; } }
-						 */
+
+						String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
+						switch (extension) {
+						case "7z":
+						case "zip":
+						case "rar":
+							new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
+							break;
+						case "pcc":
+							
+							break;
+						case "asi":
+							int exebuild = ModManager.checkforME3105(GetBioGameDir());
+							if (exebuild != 5) {
+								labelStatus.setText("ASI mods don't work with Mass Effect 3 1.0" + exebuild);
+								break;
+							}
+							if (!ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir())) {
+								labelStatus.setText("Binkw32 ASI loader not installed");
+								break;
+							}
+						case "xml":
+							new FileDropWindow(ModManagerWindow.this, files[0]);
+							break;
+						case "dlc":
+							new MountFileEditorWindow(files[0].toString());
+							break;
+						case "tlk":
+							TLKTool.decompileTLK(files[0]);
+							break;
+						case "bin": // read magic at beginning to find out
+							//what type // of // file this is 
+							byte[] buffer = new byte[4];
+
+							try (InputStream is = new FileInputStream(files[0])) {
+								if (is.read(buffer) != buffer.length) { // do something 
+									
+									ModManager.debugLogger.writeMessage("Dropped file not a coalesced file.");
+									labelStatus.setText("Dropped file is not a coalesced file");
+									break;
+								}
+								int magic = ResourceUtils.byteArrayToInt(buffer);
+								switch (magic) {
+								case ModManager.COALESCED_MAGIC_NUMBER:
+									new CoalescedWindow(files[0], false);
+									break;
+								}
+
+								is.close();
+							} catch (IOException e) {
+								ModManager.debugLogger.writeErrorWithException("I/O Exception reading coalesced magic number:", e);
+								labelStatus.setText("Dropped file is not a coalesced file");
+							}
+							break;
+						default:
+							labelStatus.setText("Extension not supported for Drag & Drop: " + extension);
+							break;
+						}
 					}
+
 				} else {
 					labelStatus.setText("Drag and Drop requires a valid BioGame directory");
 					labelStatus.setVisible(true);
@@ -1024,6 +1044,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		modList.setLayoutOrientation(JList.VERTICAL);
 		modList.addMouseListener(new MouseAdapter() {
+
 			public void mousePressed(MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e)) {
 					modList.setSelectedIndex(modList.locationToIndex(e.getPoint()));
@@ -1041,6 +1062,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 		});
+
 		JScrollPane listScroller = new JScrollPane(modList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 		modlistFailedIndicatorLink = new JButton();
