@@ -185,6 +185,17 @@ public class DebugLogger {
 			currentMessages = 0;
 		}
 	}
+	
+	public void flush() {
+		if (ModManager.logging && fw != null) {
+			try {
+				fw.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			currentMessages = 0;
+		}
+	}
 
 	public void writeErrorWithException(String error, Throwable e) {
 		writeError(error);

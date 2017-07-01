@@ -343,9 +343,6 @@ public class CustomDLCConflictWindow extends JDialog {
 			if (transplanterpath == null) {
 				return null;
 			}
-			for (Map.Entry<String, ArrayList<CustomDLC>> entry : dlcfilemap.entrySet()) {
-				System.out.println(entry.getKey() + " in " + entry.getValue().get(0));
-			}
 			HashMap<String, ArrayList<CustomDLC>> nonguimodfiles = new HashMap<>();
 			//filter out files where the gui mod is superceding, we don't care.
 			for (Map.Entry<String, ArrayList<CustomDLC>> entry : dlcfilemap.entrySet()) {
@@ -498,16 +495,20 @@ public class CustomDLCConflictWindow extends JDialog {
 			String guilibrarypath = ModManager.getGUILibraryFor(conflictingGUIMod, true);
 			transplanterpath = ModManager.getGUITransplanterCLI(true);
 			if (guilibrarypath == null) {
+				ModManager.debugLogger.writeError("GUI LIBRARY IS MISSING: " + conflictingGUIMod);
 				publish(new ThreadCommand("MISSING_GUI_LIBRARY"));
 				return false;
 			}
 			if (transplanterpath == null) {
+				ModManager.debugLogger.writeError("Unable to acquire GUI transplanter");
 				publish(new ThreadCommand("MISSING_TRANSPLANTER"));
 				return false;
 			} else {
 				//check version
 				int version = EXEFileInfo.getRevisionOfProgram(transplanterpath);
 				if (version < ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD) {
+					ModManager.debugLogger.writeError(
+							"Outdated transplanter detected - aborting install. Local: " + version + ", required: 1.0.0." + ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD);
 					publish(new ThreadCommand("OUTDATED_TRANSPLANTER", Integer.toString(version)));
 					return false;
 				}
@@ -569,17 +570,6 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Copying tier 2 files to new mod"));
 			//starter kit has finished. Copy files to it.
-			Map.Entry<String, CustomDLC> galaxymapfile = null;
-			Map.Entry<String, CustomDLC> cicfile = null;
-
-			//Do not modify galaxymap file. Just port it straight over (it has no acutal used GUIs)
-			/*
-			 * for (Map.Entry<String, CustomDLC> resolutionFile :
-			 * secondPriorityUIConflictFiles.entrySet()) { //workaround for
-			 * BioD_Nor_203aGalaxyMap.pcc crash oddity in EGM if
-			 * (resolutionFile.getKey().equals("BioD_Nor_203aGalaxyMap.pcc")) {
-			 * galaxymapfile = resolutionFile; continue; } }
-			 */
 
 			ArrayList<String> transplantFiles = new ArrayList<>();
 			double i = 0;
@@ -588,12 +578,12 @@ public class CustomDLCConflictWindow extends JDialog {
 				publish(new ThreadCommand("SET_PROGRESS", null, i / filesToCopy));
 				String sourcePath = biogameDirectory + "DLC/" + resolutionFile.getValue().getDlcName() + "/CookedPCConsole/" + resolutionFile.getKey();
 				String copyTargetPath = skg.getGeneratedMod().getModPath() + "DLC_MOD_" + internalName + "/CookedPCConsole/" + resolutionFile.getKey();
-			//	try {
-					ModManager.debugLogger.writeMessage("Decompressing 2nd tier conflict file: " + sourcePath + " => " + copyTargetPath);
-					//FileUtils.copyFile(new File(sourcePath), new File(copyTargetPath));
-					ModManager.decompressPCC(new File(sourcePath), new File(copyTargetPath));
-					transplantFiles.add(copyTargetPath);
-					i++;
+				//	try {
+				ModManager.debugLogger.writeMessage("Decompressing 2nd tier conflict file: " + sourcePath + " => " + copyTargetPath);
+				//FileUtils.copyFile(new File(sourcePath), new File(copyTargetPath));
+				ModManager.decompressPCC(new File(sourcePath), new File(copyTargetPath));
+				transplantFiles.add(copyTargetPath);
+				i++;
 			}
 
 			//publish(new ThreadCommand("SET_STATUS_TEXT", "Locating GUI library"));
@@ -672,6 +662,11 @@ public class CustomDLCConflictWindow extends JDialog {
 				ModManager.debugLogger.writeError("FullAutoTOC returned a non 0 code (or threw error) running AutoTOC: " + returncode);
 			}
 			outputMod = skg.getGeneratedMod();
+			String workspaceFolder = outputMod.getModPath() + "WORKSPACE/";
+			boolean deletedWS = FileUtils.deleteQuietly(new File(workspaceFolder));
+			if (deletedWS) {
+				ModManager.debugLogger.writeError("Deleted workspace folder from starter kit generated mod");
+			}
 			return true;
 		}
 
@@ -747,12 +742,12 @@ public class CustomDLCConflictWindow extends JDialog {
 				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 				ModManagerWindow.ACTIVE_WINDOW.highlightMod(outputMod);
-				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
-						"Compatibility mod has been created.\nApply " + modName
-								+ " to fix the UI overriding conflicts.\n\nIf you update any of your conflicting mods, uninstall this mod then generate a new compatibilty mod.\nGenerating a compatibiilty pack while "
-								+ modName + " is installed will likely crash the game when the new mod is applied.",
-						"Mod created", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, "Compatibility mod has been created.\nApply " + modName
+						+ " to fix the UI overriding conflicts.\n\nIf you update any of your conflicting mods, uninstall this mod then generate a new compatibilty mod.\nGenerating a compatibiilty pack while "
+						+ modName + " is installed will likely crash the game when the new mod is applied.", "Mod created", JOptionPane.INFORMATION_MESSAGE);
 			} else {
+				ModManager.debugLogger.writeError("Failed to create compatibility mod - see above logs.");
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to generate compatibility mod");
 				statusText.setText(modName + " was not created");
 				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
 						"An error occured while generating the compatibility mod.\nOpen the log viewer to find more detailed information.\n\nIf you continue to have issues, please contact FemShep (see the help menu)\nand attach the log to your message.",

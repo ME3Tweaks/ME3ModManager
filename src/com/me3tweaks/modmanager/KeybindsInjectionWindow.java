@@ -448,6 +448,7 @@ public class KeybindsInjectionWindow extends JDialog {
 							JOptionPane.ERROR_MESSAGE);
 				}
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+				ModManagerWindow.ACTIVE_WINDOW.highlightMod(mod);
 			}
 		}
 	}

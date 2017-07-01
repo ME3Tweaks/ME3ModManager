@@ -75,6 +75,11 @@ public class AboutWindow2Controller {
 	private void open7ZipPage() {
 		ResourceUtils.openWebpage("http://www.7-zip.org/");
 	}
+	
+	@FXML
+	private void openME3TweaksPage() {
+		ResourceUtils.openWebpage("https://me3tweaks.com");
+	}
 
 	@FXML
 	private void openJNAPage() {
@@ -83,7 +88,7 @@ public class AboutWindow2Controller {
 
 	@FXML
 	private void openBinkw32Page() {
-		ResourceUtils.openWebpage("http://me3explorer.freeforums.org/me3logger-t1932.html");
+		ResourceUtils.openWebpage("https://github.com/HeffU/ME3Utils");
 	}
 
 	@FXML

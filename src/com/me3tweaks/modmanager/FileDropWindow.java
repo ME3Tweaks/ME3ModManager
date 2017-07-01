@@ -31,6 +31,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.lang3.ArchUtils;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.StarterKitWindow.StarterKitProgressDialog;
@@ -98,7 +99,7 @@ public class FileDropWindow extends JDialog {
 		case "pcc": {
 			JButton decompressAllPcc = new JButton("Decompress PCC file");
 			JButton compressAllPcc = new JButton("Compress PCC file");
-			JButton dumpGfxFiles = new JButton("");
+			JButton dumpGfxFiles = new JButton("Dump SWF/GFX GUI files");
 
 			JPanel pccFilePanel = new JPanel();
 			pccFilePanel.setLayout(new BoxLayout(pccFilePanel, BoxLayout.PAGE_AXIS));
@@ -117,6 +118,10 @@ public class FileDropWindow extends JDialog {
 			compressionPCCPanel.add(Box.createGlue());
 
 			JButton aipathfinding = new JButton("View AI Pathfinding in Map Pathfinding Viewer");
+			if (ArchUtils.getProcessor().is64Bit()) {
+				aipathfinding.setEnabled(false);
+				aipathfinding.setToolTipText("Requires 64-bit Windows");
+			}
 			JButton dumppcc = new JButton("Dump PCC info with PCC Data Dumper");
 			JPanel readPCCPanel = new JPanel();
 			TitledBorder coalescedManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - Data Viewers");
@@ -127,8 +132,18 @@ public class FileDropWindow extends JDialog {
 			readPCCPanel.add(dumppcc);
 			readPCCPanel.add(Box.createGlue());
 
+			JPanel swfPCCPanel = new JPanel();
+			swfPCCPanel.setLayout(new BoxLayout(swfPCCPanel, BoxLayout.LINE_AXIS));
+			TitledBorder swfBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - SWF/GFX GUI options");
+			swfPCCPanel.setBorder(swfBorder);
+
+			swfPCCPanel.add(Box.createGlue());
+			swfPCCPanel.add(dumpGfxFiles);
+			swfPCCPanel.add(Box.createGlue());
+
 			pccFilePanel.add(compressionPCCPanel);
 			pccFilePanel.add(readPCCPanel);
+			pccFilePanel.add(swfPCCPanel);
 
 			panel.add(pccFilePanel);
 			break;

@@ -16,6 +16,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
+import org.apache.commons.lang3.ArchUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -54,7 +55,7 @@ public class OptionsWindow extends JDialog {
 
 		enforceDotNetRequirement = new JCheckBox("Perform .NET requirements check");
 		enforceDotNetRequirement.setToolTipText(
-				"<html>.NET 4.5 or higher is required for Mod Manager to complete most tasks.<br>Due to a bug in one of the libraries Mod Manager uses, this isn't always detected.<br>Turn this off if you have .NET 4.5 or higher, but Mod Manager can't detect it.</html>");
+				"<html>.NET 4.5.2 or higher is required for Mod Manager to complete most tasks.<br>Due to a bug in one of the libraries Mod Manager uses, this isn't always detected.<br>Turn this off if you have .NET 4.5.2 or higher, but Mod Manager can't detect it.</html>");
 		enforceDotNetRequirement.setSelected(ModManager.PERFORM_DOT_NET_CHECK);
 		enforceDotNetRequirement.addActionListener(new ActionListener() {
 			@Override
@@ -124,11 +125,11 @@ public class OptionsWindow extends JDialog {
 				if (compressCompatibilityGeneratorOutput.isSelected()) {
 					ModManager.debugLogger.writeMessage("Setting compat generator output to compressed");
 					ini.put("Settings", "compresscompatibilitygeneratorouput", "1");
-					ModManager.USE_WINDOWS_UI = true;
+					ModManager.COMPRESS_COMPAT_OUTPUT = true;
 				} else {
 					ModManager.debugLogger.writeMessage("Setting compat generator output to decompressed");
 					ini.put("Settings", "compresscompatibilitygeneratorouput", "0");
-					ModManager.USE_WINDOWS_UI = false;
+					ModManager.COMPRESS_COMPAT_OUTPUT = false;
 				}
 				try {
 					ini.store();
@@ -139,6 +140,10 @@ public class OptionsWindow extends JDialog {
 				}
 			}
 		});
+		if (ArchUtils.getProcessor().is64Bit()){
+			compressCompatibilityGeneratorOutput.setEnabled(false);
+			compressCompatibilityGeneratorOutput.setToolTipText("Compressing output requires 64-bit version of Windows");
+		}
 
 		autoInjectKeybindsModMaker = new JCheckBox("Auto-inject custom keybinds into ModMaker mods");
 		autoInjectKeybindsModMaker.setToolTipText(

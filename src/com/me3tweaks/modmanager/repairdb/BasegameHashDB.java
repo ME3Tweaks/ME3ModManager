@@ -223,7 +223,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				filesToHash = new ArrayList<File>();
 				for (File file : files) {
 					if (file.getAbsolutePath().toLowerCase().startsWith((ModManager.appendSlash(basePath) + "cmmbackup").toLowerCase())) {
-						ModManager.debugLogger.writeError("Skipping cmmbackup file " + file);
+						//ModManager.debugLogger.writeError("Skipping cmmbackup file " + file);
 						continue; //skip backups folder
 					}
 					if (file.getName().equalsIgnoreCase("PCConsoleTOC.bin")){

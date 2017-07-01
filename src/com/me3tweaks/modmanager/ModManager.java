@@ -85,7 +85,7 @@ import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
 
-	public static final String VERSION = "5.0 Beta 3";
+	public static final String VERSION = "5.0 Beta 4";
 	public static long BUILD_NUMBER = 74L;
 	public static final String BUILD_DATE = "6/29/2017";
 	public static boolean IS_DEBUG = true;
@@ -811,7 +811,7 @@ public class ModManager {
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			} else {
 				JOptionPane.showMessageDialog(null,
-						"An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+						"An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator or grant yourself write permissions from the tools menu.",
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			}
 			return false;
@@ -967,7 +967,7 @@ public class ModManager {
 	}
 
 	private static boolean downloadGUITransplanter() {
-		String url = "https://me3tweaks.com/modmanager/tools/GUITRANSPLANTER.7z";
+		String url = "https://me3tweaks.com/modmanager/tools/GUITRANSPLANTER-MM5.7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI Transplanter: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());

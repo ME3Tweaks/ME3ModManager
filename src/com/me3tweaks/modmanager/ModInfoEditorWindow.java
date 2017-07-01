@@ -12,7 +12,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -33,16 +32,16 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 	private JButton saveButton;
 	private JCheckBox keepUpdateCode;
 
-	public ModInfoEditorWindow(JFrame frame, Mod mod) {
+	public ModInfoEditorWindow(Mod mod) {
 		this.mod = mod;
 		setupWindow();
-		this.setLocationRelativeTo(frame);
+		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		this.setVisible(true);
 	}
 
 	private void setupWindow() {
 		// TODO Auto-generated method stub
-		this.setTitle(mod.getModName());
+		this.setTitle("Editing metadata for "+mod.getModName());
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(380, 365));
 		this.setResizable(false);
@@ -100,10 +99,11 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 			try {
 				FileUtils.writeStringToFile(file, mod.createModDescIni(keepUpdateCode.isSelected(), mod.modCMMVer));
 			} catch (IOException e1) {
-				ModManager.debugLogger.writeException(e1);
+				ModManager.debugLogger.writeErrorWithException("Error saving user's changes:",e1);
 			}
 			dispose();
 			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+			ModManagerWindow.ACTIVE_WINDOW.highlightMod(mod);
 		}
 	}
 }

@@ -39,7 +39,7 @@
       <padding>
          <Insets left="4.0" />
       </padding></Label>
-	<Hyperlink text="https://me3tweaks.com" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+	<Hyperlink onAction="#openME3TweaksPage" text="https://me3tweaks.com" GridPane.columnIndex="1" GridPane.rowIndex="3" />
    <Label alignment="CENTER" text="Libraries" textAlignment="CENTER" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="6">
       <font>
          <Font name="Verdana Bold" size="14.0" />
@@ -55,8 +55,8 @@
          <Hyperlink onAction="#openCommonsLangPage" text="Apache Commons Lang" />
          <Hyperlink onAction="#openFileDropPage" text="FileDrop" />
          <Hyperlink onAction="#openini4jPage" text="ini4j" />
-         <Hyperlink onAction="#openjsonsimplePage" text="json-simple" />
          <Hyperlink onAction="#openJNAPage" text="Java Native Access" />
+         <Hyperlink onAction="#openjsonsimplePage" text="json-simple" />
       </children>
       <GridPane.margin>
          <Insets left="5.0" right="5.0" />
