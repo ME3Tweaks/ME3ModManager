@@ -107,6 +107,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.languages = languages;
 		setupWindow();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiling ModMaker Mod...");
 		new ModDownloadWorker().execute();
 
 		if (!error) {
@@ -269,7 +270,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
 						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
-
+				dispose();
 				new ModManagerWindow(false);
 			} catch (SAXException e) {
 				running = false;
@@ -277,6 +278,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
 						"An error occured while preparing to compile the mod:\n" + e.getMessage() + "\nCheck the Mod Manager log for more info (in the help menu).",
 						"Pre-compilation error", JOptionPane.ERROR_MESSAGE);
+				dispose();
 				new ModManagerWindow(false);
 			} catch (Exception e) {
 				running = false;
@@ -551,6 +553,8 @@ public class ModMakerCompilerWindow extends JDialog {
 			return "BIOGame_RUS.tlk";
 		case "POL":
 			return "BIOGame_POL.tlk";
+		case "JPN":
+			return "BIOGame_JPN.tlk";
 		default:
 			ModManager.debugLogger.writeMessage("UNRECOGNIZED TLK FILE: " + shortTLK);
 			return null;
@@ -1654,7 +1658,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				if (reqcoal.equals("Coalesced.bin")) {
 					ModManager.debugLogger.writeMessage("Coalesced pass: Checking for TLK files");
 					//it is basegame. copy the tlk files!
-					String[] tlkFiles = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL" };
+					String[] tlkFiles = ModManager.SUPPORTED_GAME_LANGAUGES;
 					for (String tlkFilename : tlkFiles) {
 						File compiledTLKFile = new File(ModManager.getCompilingDir() + "tlk\\" + "BIOGame_" + tlkFilename + ".tlk");
 						if (!compiledTLKFile.exists()) {
@@ -1687,7 +1691,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					//}
 
 					//tlk, if they exist.
-					String[] tlkFiles = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL" };
+					String[] tlkFiles = ModManager.SUPPORTED_GAME_LANGAUGES;
 					for (String tlkFilename : tlkFiles) {
 						File basegameTLKFile = new File(compCoalDir + "\\BIOGame_" + tlkFilename + ".tlk");
 						if (basegameTLKFile.exists()) {
@@ -1873,10 +1877,10 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
 							//loader installed, no balance changes replacer
-							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > Manage ASI Code Injection Mods.</div></html>", "Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>", "Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 						}
 					} else {
-						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > Manage ASI Code Injection Mods.</div></html>", "ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
+						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">"+modName + " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>", "ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 					}
 					break;
 				}

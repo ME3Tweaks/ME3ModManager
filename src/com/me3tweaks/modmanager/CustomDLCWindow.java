@@ -1,8 +1,10 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -11,8 +13,12 @@ import java.util.Collections;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -23,16 +29,18 @@ import javax.swing.table.DefaultTableModel;
 
 import org.apache.commons.io.FileUtils;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.ui.ButtonColumn;
+import com.me3tweaks.modmanager.ui.CustomDLCManagerToggleButtonColumn;
 
 public class CustomDLCWindow extends JDialog {
 
 	protected static final int COL_FOLDER = 0;
 	protected static final int COL_NAME = 1;
-	protected static final int COL_MOUNT = 2;
-	public static final int COL_MOUNT_PRIORITY = 3;
+	public static final int COL_MOUNT_PRIORITY = 2;
+	protected static final int COL_TOGGLE = 3;
 	protected static final int COL_ACTION = 4;
 	private String bioGameDir;
 	private ArrayList<MountFile> mountList;
@@ -50,29 +58,38 @@ public class CustomDLCWindow extends JDialog {
 		setTitle("Custom DLC Manager");
 		setModal(true);
 		setPreferredSize(new Dimension(800, 600));
-		setMinimumSize(new Dimension(300, 200));
+		setMinimumSize(new Dimension(700, 350));
 
 		mountList = new ArrayList<MountFile>();
 
 		JPanel panel = new JPanel(new BorderLayout());
-		JLabel infoLabel = new JLabel("<html>Installed Custom DLCs</html>",SwingConstants.CENTER);
+		JLabel infoLabel = new JLabel(
+				"<html><center>Installed Custom DLCs<br>Disabled DLCs start with an x. Mass Effect 3 only loads DLCs that start with DLC_.</center></html>");
+		infoLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		panel.add(infoLabel, BorderLayout.NORTH);
 
 		File mainDlcDir = new File(ModManager.appendSlash(bioGameDir) + "DLC/");
 		String[] directories = mainDlcDir.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
-				return new File(current, name).isDirectory();
+				System.out.println(name);
+				return new File(current, name).isDirectory()
+						&& (name.toLowerCase().startsWith("xdlc_") || name.toLowerCase().startsWith("dlc_"));
 			}
 		});
 
 		int datasize = 0;
 		for (String dir : directories) {
-			if (ModType.isKnownDLCFolder(dir)) {
+			String displayDir = dir;
+			if (dir.toLowerCase().startsWith("xdlc_")) {
+				displayDir = dir.substring(1);
+			}
+
+			if (ModType.isKnownDLCFolder(displayDir)) {
 				continue;
 			}
-			datasize ++;
-			String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath()+ File.separator + dir);
+			datasize++;
+			String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator + dir);
 			String dlcName = "Unknown";
 			File metaFile = new File(path + ModInstallWindow.CUSTOMDLC_METADATA_FILE);
 			if (metaFile.exists()) {
@@ -81,70 +98,214 @@ public class CustomDLCWindow extends JDialog {
 				} catch (IOException e1) {
 					ModManager.debugLogger.writeErrorWithException("Unable to read metadata file about customdlc:", e1);
 				}
+			} else {
+				// try to lookup via 3rd party service
+
+				dlcName = ME3TweaksUtils.getThirdPartyModName(displayDir);
 			}
-			
-			String pcConsole = path+"CookedPCConsole/";
-			File mountFile = new File(pcConsole+"Mount.dlc");
-			File sfarFile = new File(pcConsole+"Default.sfar");
+
+			String pcConsole = path + "CookedPCConsole/";
+			File mountFile = new File(pcConsole + "Mount.dlc");
+			File sfarFile = new File(pcConsole + "Default.sfar");
 			MountFile mount = new MountFile(mountFile.getAbsolutePath());
-			ModManager.debugLogger.writeMessage("Found mount file: "+mount);
-			if (!mountFile.exists()){
+			ModManager.debugLogger.writeMessage("Found mount file: " + mount);
+			mount.setAssociatedDLCName(dir);
+			if (!mountFile.exists()) {
 				mount.setReason("No Mount.dlc file");
-			} else if (!sfarFile.exists()){
+			} else if (!sfarFile.exists()) {
 				mount.setReason("No SFAR");
 			} else {
-				//String mount = MountFileEditorWindow.getMountDescription(mountFile);
-				mount.setAssociatedDLCName(dir);
+				// String mount =
+				// MountFileEditorWindow.getMountDescription(mountFile);
 				mount.setAssociatedModName(dlcName);
 			}
 			mountList.add(mount);
 		}
-		
-		Collections.sort(mountList);
 
-		//TABLE
+		Collections.sort(mountList);
+		Collections.reverse(mountList); // Descending
+		// TABLE
 		Object[][] data = new Object[datasize][5];
 		for (int i = 0; i < datasize; i++) {
 			MountFile mount = mountList.get(i);
 			data[i][COL_FOLDER] = mount.getAssociatedDLCName();
 			data[i][COL_NAME] = mount.getAssociatedModName();
-			data[i][COL_MOUNT] = mount.getMountFlagString();
 			data[i][COL_MOUNT_PRIORITY] = mount.getMountPriority();
+			data[i][COL_TOGGLE] = mount.getAssociatedDLCName().toLowerCase().startsWith("xdlc_")
+					? CustomDLCManagerToggleButtonColumn.STR_ENABLE : CustomDLCManagerToggleButtonColumn.STR_DISABLE;
 			data[i][COL_ACTION] = "Delete DLC";
 		}
 
 		Action delete = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+							"Mass Effect 3 must be closed before you can delete DLC.", "MassEffect3.exe is running",
+							JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
-				String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator+ table.getModel().getValueAt(modelRow, COL_FOLDER));
-				ModManager.debugLogger.writeMessage("Deleting Custom DLC folder: "+path);
-				FileUtils.deleteQuietly(new File(path));
-				Object breakpoint = table.getModel();
-				((DefaultTableModel) table.getModel()).removeRow(modelRow);
+				String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator
+						+ table.getModel().getValueAt(modelRow, COL_FOLDER));
+				ModManager.debugLogger.writeMessage("Deleting Custom DLC folder: " + path);
+				if (FileUtils.deleteQuietly(new File(path))) {
+					((DefaultTableModel) table.getModel()).removeRow(modelRow);
+				} else {
+					// Failed
+					ModManager.debugLogger.writeError("Failed to delete folder!");
+				}
 			}
 		};
-		String[] columnNames = { "DLC Folder", "DLC Name", "Mount Flag", "Mount Priority","Delete DLC" };
+
+		Action toggle = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+							"Mass Effect 3 must be closed before you can enable or disable DLC.",
+							"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				JTable table = (JTable) e.getSource();
+				int modelRow = Integer.valueOf(e.getActionCommand());
+				String dlcname = (String) table.getModel().getValueAt(modelRow, COL_FOLDER);
+				String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator + dlcname);
+				ModManager.debugLogger.writeMessage("Toggling Custom DLC folder: " + path);
+				String newname = "MM_PLACEHOLDER";
+				boolean disabling = false;
+				if (dlcname.toLowerCase().startsWith("x")) {
+					// Enable
+					newname = dlcname.substring(1);
+					disabling = false;
+				} else {
+					// Disable
+					newname = "x" + dlcname;
+					disabling = true;
+				}
+
+				File currentPath = new File(path);
+				File toggledPath = new File(mainDlcDir.getAbsolutePath() + File.separator + newname);
+				if (currentPath.renameTo(toggledPath)) {
+					DefaultTableModel tm = (DefaultTableModel) table.getModel();
+					tm.setValueAt(disabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE
+							: CustomDLCManagerToggleButtonColumn.STR_DISABLE, modelRow, COL_TOGGLE);
+					tm.setValueAt(newname, modelRow, COL_FOLDER);
+				}
+			}
+		};
+		String[] columnNames = { "DLC Folder", "DLC Name", "Mount Priority", "Toggle DLC", "Delete DLC" };
 		DefaultTableModel model = new DefaultTableModel(data, columnNames);
 		JTable table = new JTable(model) {
 			public boolean isCellEditable(int row, int column) {
-				return column == COL_ACTION;
+				return column == COL_ACTION || column == COL_TOGGLE;
 			}
 		};
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+		table.setRowHeight(30);
+		table.setAutoResizeMode(JTable.AUTO_RESIZE_NEXT_COLUMN);
 		ButtonColumn buttonColumn = new ButtonColumn(table, delete, COL_ACTION);
-		
+		CustomDLCManagerToggleButtonColumn buttonColumn2 = new CustomDLCManagerToggleButtonColumn(table, toggle,
+				COL_TOGGLE);
+
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-		centerRenderer.setHorizontalAlignment( JLabel.CENTER );
+		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
 		table.getColumnModel().getColumn(COL_MOUNT_PRIORITY).setCellRenderer(centerRenderer);
-		
+		table.setAutoCreateRowSorter(true);
 		JScrollPane scrollpane = new JScrollPane(table);
 		panel.add(scrollpane, BorderLayout.CENTER);
-		
-		JLabel mpLabel = new JLabel("<html><div style=\"text-align: center;\">Custom DLC will never authorize unless you use a DLC bypass.<br>DLC that have MP in their Mount Flag will make all players require that DLC.</div></html>",SwingConstants.CENTER);
-		panel.add(mpLabel,BorderLayout.SOUTH);
-		panel.setBorder(new EmptyBorder(5,5,5,5));
+
+		JPanel bottomPanel = new JPanel();
+		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+		// bottomPanel.setLayout(new Flow);
+		String bypassmessage = "Your game has a DLC bypass installed. Custom DLC will be able to authorize.";
+		if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
+			bypassmessage = "Your game has does not have a DLC bypass installed. Custom DLC will not authorize.";
+		}
+		JLabel mpLabel = new JLabel(
+				"<html><div style=\"text-align: center;\">" + bypassmessage
+						+ "<br>You can check for Custom DLC conflicts using the Custom DLC Conflict Detector tool in the Mod Management menu.</div></html>",
+				SwingConstants.CENTER);
+		mpLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		JPanel toggleAllPanel = new JPanel();
+		JButton enableAllButton = new JButton("Enable All Custom DLC");
+		JButton disableAllButton = new JButton("Disable All Custom DLC");
+
+		ActionListener toggleAll = new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+							"Mass Effect 3 must be closed before you can enable or disable DLC.",
+							"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				DefaultTableModel tm = (DefaultTableModel) table.getModel();
+				boolean enabling = e.getSource() == enableAllButton;
+
+				for(int row = 0;row < tm.getRowCount();row++) {
+					//for(int col = 0;col < dm2.getColumnCount();col++) {
+					//	System.out.println(dm2.getValueAt(row, col));
+					//}
+					String dlcname = (String) table.getModel().getValueAt(row, COL_FOLDER);
+					String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator + dlcname);
+					if (dlcname.toLowerCase().startsWith("x") && !enabling) {
+						continue; //skip
+					}
+					if (dlcname.toUpperCase().startsWith("DLC_") && enabling) {
+						continue; //skip
+					}
+					
+					String newname = enabling ? dlcname.substring(1) : "x"+dlcname;
+
+					File currentPath = new File(path);
+					File toggledPath = new File(mainDlcDir.getAbsolutePath() + File.separator + newname);
+					if (currentPath.renameTo(toggledPath)) {
+						tm.setValueAt(!enabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE
+								: CustomDLCManagerToggleButtonColumn.STR_DISABLE, row, COL_TOGGLE);
+						tm.setValueAt(newname, row, COL_FOLDER);
+					}
+				}
+				
+			}
+
+		};
+
+		enableAllButton.setToolTipText("Enable all Custom DLC listed in this window");
+		enableAllButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		enableAllButton.addActionListener(toggleAll);
+		disableAllButton.addActionListener(toggleAll);
+
+		disableAllButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		disableAllButton.setToolTipText("Disable all Custom DLC listed in this window");
+		toggleAllPanel.setLayout(new BoxLayout(toggleAllPanel, BoxLayout.X_AXIS));
+		toggleAllPanel.add(Box.createHorizontalGlue());
+		toggleAllPanel.add(enableAllButton);
+		toggleAllPanel.add(Box.createRigidArea(new Dimension(15, 15)));
+		toggleAllPanel.add(disableAllButton);
+		toggleAllPanel.add(Box.createRigidArea(new Dimension(15, 15)));
+		toggleAllPanel.add(Box.createHorizontalGlue());
+
+		bottomPanel.add(toggleAllPanel);
+		bottomPanel.add(mpLabel);
+
+		panel.add(bottomPanel, BorderLayout.SOUTH);
+		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(panel);
 		pack();
+		updateRowHeights(table);
+	}
+
+	private void updateRowHeights(JTable table) {
+		for (int row = 0; row < table.getRowCount(); row++) {
+			int rowHeight = table.getRowHeight();
+
+			for (int column = 0; column < table.getColumnCount(); column++) {
+				Component comp = table.prepareRenderer(table.getCellRenderer(row, column), row, column);
+				rowHeight = Math.max(rowHeight, comp.getPreferredSize().height);
+			}
+
+			table.setRowHeight(row, rowHeight);
+		}
 	}
 }

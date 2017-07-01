@@ -42,7 +42,7 @@ public class Patch implements Comparable<Patch> {
 	private boolean isDynamic = false;
 
 	public Patch(String descriptorPath, String patchPath) {
-		ModManager.debugLogger.writeMessage("Loading patch: " + descriptorPath);
+		ModManager.debugLogger.writeMessageConditionally("Loading patch: " + descriptorPath,ModManager.LOG_PATCH_INIT);
 		readPatch(descriptorPath);
 		setPatchPath(patchPath);
 	}
@@ -298,13 +298,20 @@ public class Patch implements Comparable<Patch> {
 					if (job.getJobName().equals(targetModule)) {
 						ModManager.debugLogger.writeMessage("Checking existing job: " + targetModule);
 						targetJob = job;
-						String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
+						String jobFolder = null;
+						if (job.getFilesToReplace().size() > 0) {
+							jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
+						} else if (job.getFilesToAdd().size() > 0) {
+							jobFolder = ModManager.appendSlash(new File(job.getFilesToAdd().get(0)).getParentFile().getAbsolutePath());
+						} else {
+							jobFolder = ModManager.appendSlash(mod.getModPath() + targetModule);
+						}
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
 
 						//ADD PATCH FILE TO JOB
 						File modFilePath = new File(ModManager.appendSlash(mod.getModPath()) + relativepath + filename);
 						ModManager.debugLogger.writeMessage("Adding new mod task => " + targetModule + ": add " + modFilePath.getAbsolutePath());
-						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath);
+						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath,false);
 
 						//CHECK IF JOB HAS TOC - SOME MIGHT NOT, FOR SOME WEIRD REASON
 						//copy toc
@@ -318,7 +325,7 @@ public class Patch implements Comparable<Patch> {
 						String tocTask = mod.getModTaskPath(ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)), targetModule);
 						if (tocTask == null) {
 							//add toc replacejob
-							job.addFileReplace(tocFile.getAbsolutePath(), targetPath);
+							job.addFileReplace(tocFile.getAbsolutePath(), targetPath,false);
 						}
 						break;
 					}
@@ -341,14 +348,14 @@ public class Patch implements Comparable<Patch> {
 					File tocSource = new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER));
 					File tocDest = new File(modulefolder + File.separator + "PCConsoleTOC.bin");
 					FileUtils.copyFile(tocSource, tocDest);
-					job.addFileReplace(tocDest.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)));
+					job.addFileReplace(tocDest.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)),false);
 
 					ModManager.debugLogger.writeMessage("Adding " + filename + " to new job");
 					/*
 					 * File modFile = new File(modulefolder + File.separator +
 					 * filename); FileUtils.copyFile(libraryFile, modFile);
 					 */
-					job.addFileReplace(modFile.getAbsolutePath(), targetPath);
+					job.addFileReplace(modFile.getAbsolutePath(), targetPath,false);
 					mod.addTask(targetModule, job);
 					mod.modCMMVer = newCmmVer;
 				}
@@ -545,7 +552,7 @@ public class Patch implements Comparable<Patch> {
 		sb.append("\tfalse, /*FINALIZER*/\n");
 
 		String serverfolder = patchName.toLowerCase().replaceAll(" - ", "-").replaceAll(" ", "-");
-		sb.append("\t\"http://me3tweaks.com/mixins/library/" + serverfolder + "/patch.jsf\",\n");
+		sb.append("\t\"https://me3tweaks.com/mixins/library/" + serverfolder + "/patch.jsf\",\n");
 		sb.append("\t\"" + patchName + "\",\n");
 		sb.append("\tnull\n");
 		sb.append(");");
@@ -586,7 +593,7 @@ public class Patch implements Comparable<Patch> {
 	public void setIsDynamic(boolean b) {
 		this.isDynamic = b;
 	}
-	
+
 	public boolean isDynamic() {
 		return this.isDynamic;
 	}

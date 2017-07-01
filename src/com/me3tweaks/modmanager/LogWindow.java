@@ -66,7 +66,7 @@ public class LogWindow extends JFrame {
 	}
 
 	public void setupWindow() {
-		setTitle("Mod Manager Mod Manager log");
+		setTitle("Mod Manager session log");
 		setPreferredSize(new Dimension(720, 480));
 		setIconImages(ModManager.ICONS);
 		addWindowListener(new java.awt.event.WindowAdapter() {
@@ -81,7 +81,7 @@ public class LogWindow extends JFrame {
 		logArea = new JTextPane();
 		JButton copyLog, findNextError;
 
-		copyLog = new JButton("Copy log to clipboard");
+		copyLog = new JButton("Generate Diagnostics File");
 		findNextError = new JButton("Find Next Error");
 
 		copyLog.addActionListener(new ActionListener() {

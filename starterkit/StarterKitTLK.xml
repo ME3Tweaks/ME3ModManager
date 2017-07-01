@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TlkFile name="DLC_CON_%STARTKIT%/DLC_CON_%STARTKIT%0.xml">
+<TlkFile name="DLC_MOD_%STARTKIT%/DLC_MOD_%STARTKIT%0.xml">
 	<Strings>
 		<String id="%INTERNALDISPLAYNAMEID%">%INTERNALDISPLAYNAME%</String>
 		<String id="%INTERNALDLCNAMEID%">%INTERNALDLCNAME%</String>

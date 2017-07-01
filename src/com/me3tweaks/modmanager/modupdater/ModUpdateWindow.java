@@ -70,7 +70,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		if (ModManager.IS_DEBUG) {
 			downloadSource = "http://webdev-mgamerz.c9.io/mods/updates/";
 		} else {
-			downloadSource = "http://me3tweaks.com/mods/updates/";
+			downloadSource = "https://me3tweaks.com/mods/updates/";
 		}
 		setupWindow();
 	}
@@ -496,7 +496,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 		protected void done() {
 			dispose();
 			if (amuw == null && !error) {
-				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nMod Manager will now reload mods.", "Update successful",
+				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " has been successfully updated.\nYou will need to apply "+upackage.getMod().getModName()+" for the update to take effect.\nMod Manager will now reload mods.", "Update successful",
 						JOptionPane.INFORMATION_MESSAGE);
 			} else if (amuw == null) {
 				JOptionPane.showMessageDialog(null, upackage.getMod().getModName() + " failed to update. The Mod Manager log will have more information.", "Updated failed",

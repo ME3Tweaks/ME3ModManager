@@ -23,6 +23,7 @@ public class UpdatePackage {
 	private String serverModName;
 	private boolean requiresSideload = false;
 	private String sideloadURL;
+	private String changelog;
 
 	public boolean requiresSideload() {
 		return requiresSideload;
@@ -66,7 +67,7 @@ public class UpdatePackage {
 	 * @param filesToDelete
 	 * @param serverFolderName
 	 */
-	public UpdatePackage(Mod mod, double version, ArrayList<ManifestModFile> filesToDownload, ArrayList<String> filesToDelete, String serverFolderName) {
+	public UpdatePackage(Mod mod, double version, ArrayList<ManifestModFile> filesToDownload, ArrayList<String> filesToDelete, String serverFolderName,String changelog) {
 		super();
 		this.mod = mod;
 		this.version = version;
@@ -75,6 +76,7 @@ public class UpdatePackage {
 		this.serverFolderName = serverFolderName;
 		this.modmakerupdate = false;
 		this.serverModName = mod.getModName();
+		this.changelog = changelog;
 	}
 
 	/**
@@ -88,11 +90,12 @@ public class UpdatePackage {
 	 * @param version
 	 *            Server version Server version of mod
 	 */
-	public UpdatePackage(Mod mod, String serverModName, double version) {
+	public UpdatePackage(Mod mod, String serverModName, double version, String changelog) {
 		this.mod = mod;
 		this.version = version;
 		this.serverModName = serverModName;
 		this.modmakerupdate = true;
+		this.changelog = changelog;
 	}
 
 	public Mod getMod() {
@@ -163,6 +166,10 @@ public class UpdatePackage {
 
 	public String getSideloadURL() {
 		return sideloadURL;
+	}
+
+	public String getChangeLog() {
+		return changelog;
 	}
 
 }

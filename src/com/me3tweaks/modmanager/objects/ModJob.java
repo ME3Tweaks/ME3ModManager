@@ -21,6 +21,7 @@ public class ModJob {
 	public static final int DLC = 0;
 	public static final int CUSTOMDLC = 2;
 	public static final int BALANCE_CHANGES = 3;
+
 	@Override
 	public String toString() {
 		return "ModJob [jobName=" + jobName + "]";
@@ -32,9 +33,10 @@ public class ModJob {
 	private String jobName, requirementText;
 	private ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
 	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
-	public ArrayList<String> newFiles, filesToReplace, addFiles, addFilesTargets, removeFilesTargets;
+	public ArrayList<String> filesToReplace, filesToReplaceTargets, addFiles, addFilesTargets, removeFilesTargets;
 	private String sourceDir;
 	private ArrayList<String> addFilesReadOnlyTargets;
+	private ArrayList<AlternateFile> altfiles;
 
 	/**
 	 * Holds many parameters that are required to inject files into a DLC Sfar
@@ -42,18 +44,23 @@ public class ModJob {
 	 * 
 	 * @param DLCFilePath
 	 *            Path to the DLC Sfar file.
+	 * @param jobName
+	 *            Name of the job. Use
+	 * @param requirementText
+	 *            Text to show if the DLC is not installed that this job targets
 	 */
 	public ModJob(String DLCFilePath, String jobName, String requirementText) {
 		setJobType(DLC);
 		this.setJobName(jobName);
 		this.DLCFilePath = DLCFilePath;
 		this.requirementText = requirementText;
-		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+		filesToReplaceTargets = new ArrayList<String>();
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
+		altfiles = new ArrayList<AlternateFile>();
 	}
 
 	public ArrayList<String> getFilesToAdd() {
@@ -79,6 +86,14 @@ public class ModJob {
 	public void setRemoveFilesTargets(ArrayList<String> removeFilesTargets) {
 		this.removeFilesTargets = removeFilesTargets;
 	}
+	
+	public ArrayList<AlternateFile> getAlternateFiles() {
+		return altfiles;
+	}
+
+	public void setAlternateFiles(ArrayList<AlternateFile> altfiles) {
+		this.altfiles = altfiles;
+	}
 
 	/**
 	 * Creates a basegame modjob. It doesn't need a path since it can be derived
@@ -92,12 +107,13 @@ public class ModJob {
 	public ModJob() {
 		setJobType(BASEGAME);
 		setJobName(ModType.BASEGAME);
-		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+		filesToReplaceTargets = new ArrayList<String>();
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
+		altfiles = new ArrayList<AlternateFile>();
 	}
 
 	/**
@@ -125,18 +141,22 @@ public class ModJob {
 				destFolders.add(str);
 			}
 		}
-		newFiles = new ArrayList<String>();
 		filesToReplace = new ArrayList<String>();
+		filesToReplaceTargets = new ArrayList<String>();
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
+		altfiles = new ArrayList<AlternateFile>();
 
-		for (String str : job.newFiles) {
-			newFiles.add(str);
+		for (AlternateFile f : job.altfiles) {
+			altfiles.add(new AlternateFile(f));
 		}
 		for (String str : job.filesToReplace) {
 			filesToReplace.add(str);
+		}
+		for (String str : job.filesToReplaceTargets) {
+			filesToReplaceTargets.add(str);
 		}
 		for (String str : job.addFiles) {
 			addFiles.add(str);
@@ -172,7 +192,7 @@ public class ModJob {
 	 * @return
 	 */
 	public ArrayList<String> getFilesToReplace() {
-		return newFiles;
+		return filesToReplace;
 	}
 
 	/**
@@ -182,12 +202,15 @@ public class ModJob {
 	 *            Source file that will be injected (full file path)
 	 * @param fileToReplace
 	 *            File path in DLC or basegame that will be updated
+	 * @param ignoreExistenceErrors
+	 *            Ignores errors if a source file doesn't exist. Typically means
+	 *            the file is compressed.
 	 * @return True if task was added OK, false if the source file does not
 	 *         exist or duplicate files were added
 	 */
-	public boolean addFileReplace(String newFile, String fileToReplace) {
+	public boolean addFileReplace(String newFile, String fileToReplace, boolean ignoreExistenceErrors) {
 		File file = new File(newFile);
-		if (!file.exists()) {
+		if (!file.exists() && !ignoreExistenceErrors) {
 			ModManager.debugLogger.writeError("Source file doesn't exist: " + newFile);
 			return false;
 		}
@@ -210,13 +233,13 @@ public class ModJob {
 			}
 		}
 
-		if (newFiles.contains(newFile) || filesToReplace.contains(fileToReplace)) {
+		if (filesToReplace.contains(newFile) || filesToReplaceTargets.contains(fileToReplace)) {
 			ModManager.debugLogger.writeError("Adding duplicate source or target file for replacement: " + newFile + " or " + fileToReplace);
 			return false;
 		}
 
-		newFiles.add(newFile);
-		filesToReplace.add(fileToReplace);
+		filesToReplace.add(newFile);
+		filesToReplaceTargets.add(fileToReplace);
 		return true;
 	}
 
@@ -226,7 +249,7 @@ public class ModJob {
 	 * @return
 	 */
 	public ArrayList<String> getFilesToReplaceTargets() {
-		return filesToReplace;
+		return filesToReplaceTargets;
 	}
 
 	/*
@@ -268,8 +291,8 @@ public class ModJob {
 	 * @return
 	 */
 	public boolean hasTOC() {
-		for (String newFile : newFiles) {
-			if (FilenameUtils.getName(newFile).equals("PCConsoleTOC.bin")) {
+		for (String newFile : filesToReplace) {
+			if (FilenameUtils.getName(newFile).equalsIgnoreCase("PCConsoleTOC.bin")) {
 				return true;
 			}
 		}
@@ -308,11 +331,17 @@ public class ModJob {
 	 *            new file to add
 	 * @param targetPath
 	 *            path to place in DLC
+	 * @param ignoreExistenceErrors
+	 *            Ignores errors if a source file doesn't exist. Typically a
+	 *            sign the mod is compressed and has no files on disk yet.
 	 * @return true if added, false otherwise
 	 */
-	public boolean addNewFileTask(String sourceFile, String targetPath) {
+	public boolean addNewFileTask(String sourceFile, String targetPath, boolean ignoreExistenceErrors) {
 		File file = new File(sourceFile);
 		if (!file.exists()) {
+			System.out.println("BREAKAGE.");
+		}
+		if (!file.exists() && !ignoreExistenceErrors) {
 			ModManager.debugLogger.writeError("Source file doesn't exist: " + sourceFile);
 			return false;
 		}

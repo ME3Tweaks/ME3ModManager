@@ -65,6 +65,10 @@ public class AutoTocWindow extends JDialog {
 	 * @param biogameDir
 	 */
 	public AutoTocWindow(String biogameDir) {
+		if (ModManager.isMassEffect3Running()) {
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed in order to run AutoTOC on it.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		setupWindow("Updating Basegame and DLC TOC files");
 		updatedGameTOCs = new HashMap<String, String>();
 		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: GAME-WIDE ===");
@@ -217,9 +221,9 @@ public class AutoTocWindow extends JDialog {
 				boolean hasTOC = false;
 				if (mode == LOCALMOD_MODE) {
 					//see if has toc file
-					for (String file : job.newFiles) {
+					for (String file : job.filesToReplace) {
 						String filename = FilenameUtils.getName(file);
-						if (filename.equals("PCConsoleTOC.bin")) {
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin")) {
 							hasTOC = true;
 							break;
 						}
@@ -246,10 +250,10 @@ public class AutoTocWindow extends JDialog {
 					//batchJobs.add(tbd);
 
 					//break into batches
-					ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Number of files in this job: "+(job.newFiles.size() + job.addFiles.size()-1));
-					for (String newFile : job.newFiles) {
+					ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Number of files in this job: "+(job.filesToReplace.size() + job.addFiles.size()-1));
+					for (String newFile : job.filesToReplace) {
 						String filename = FilenameUtils.getName(newFile);
-						if (filename.equals("PCConsoleTOC.bin")) {
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin")) {
 							continue; //this doesn't need updated.
 						}
 						modulePath = FilenameUtils.getFullPath(newFile);
@@ -261,22 +265,8 @@ public class AutoTocWindow extends JDialog {
 							numJobsInCurrentBatch = 0;
 						}
 					}
-
-					//break into batches
-					for (String addFile : job.addFiles) {
-						String filename = FilenameUtils.getName(addFile);
-						if (filename.equals("PCConsoleTOC.bin")) {
-							continue; //this doens't need updated.
-						}
-						modulePath = FilenameUtils.getFullPath(addFile);
-						tbd.addNameSizePair(filename, (new File(addFile)).length());
-						numJobsInCurrentBatch++;
-						if (numJobsInCurrentBatch >= maxBatchSize) {
-							batchJobs.add(tbd);
-							tbd = new TocBatchDescriptor();
-							numJobsInCurrentBatch = 0;
-						}
-					}
+					
+					//Autotoc once installed. Don't bother with add files otherwise
 
 					if (numJobsInCurrentBatch > 0) {
 						batchJobs.add(tbd); //enter last batch task
@@ -301,13 +291,12 @@ public class AutoTocWindow extends JDialog {
 						}
 						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 
-						ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Performing a batch TOC update on the following files:");
 						String str = "";
 						for (SimpleEntry<String, Long> nsp : batchJob.getNameSizePairs()) {
 							str += nsp.getKey() + " " + nsp.getValue();
 							str += "\n";
 						}
-						ModManager.debugLogger.writeMessage(str);
+						ModManager.debugLogger.writeMessage("["+job.getJobName()+"]Performing a batch TOC update on the following files:\n"+str);
 
 						int returncode = 1;
 						ProcessBuilder pb = new ProcessBuilder(command);
@@ -327,6 +316,9 @@ public class AutoTocWindow extends JDialog {
 					}
 					return true;
 				}
+				if (job.getFilesToReplace().size() == 0) {
+					return true;
+				}
 				
 				return false;
 			}
@@ -341,9 +333,9 @@ public class AutoTocWindow extends JDialog {
 				boolean hasTOC = false;
 				if (mode == LOCALMOD_MODE) {
 					//find out if it has a toc file
-					for (String file : job.newFiles) {
+					for (String file : job.filesToReplace) {
 						String filename = FilenameUtils.getName(file);
-						if (filename.equals("PCConsoleTOC.bin")) {
+						if (filename.equalsIgnoreCase("PCConsoleTOC.bin")) {
 							hasTOC = true;
 							break;
 						}
@@ -353,7 +345,7 @@ public class AutoTocWindow extends JDialog {
 				}
 
 				if (hasTOC) { //calc files
-					for (String file : job.newFiles) {
+					for (String file : job.filesToReplace) {
 						String filename = FilenameUtils.getName(file);
 						if (filename.equalsIgnoreCase("PCConsoleTOC.bin") || filename.equalsIgnoreCase("Mount.dlc")) {
 							continue;
@@ -496,8 +488,8 @@ public class AutoTocWindow extends JDialog {
 			});
 			HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
 			for (String dir : directories) {
-				if (dir.startsWith("DLC_")) {
-					System.out.println(dir);
+				if (dir.toUpperCase().startsWith("DLC_")) {
+					//System.out.println(dir);
 					boolean isKnownDLC = ModType.isKnownDLCFolder(dir);
 					File mainSfar = new File(biogameDir + File.separator + "DLC" + File.separator + dir + File.separator + "CookedPCConsole\\Default.sfar");
 					if (mainSfar.exists()) {

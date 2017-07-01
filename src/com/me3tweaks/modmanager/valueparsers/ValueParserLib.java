@@ -77,6 +77,7 @@ public class ValueParserLib {
 
 	public static String getStringProperty(String inputString, String propertyName, boolean isQuoted) {
 		int charIndex = inputString.indexOf(propertyName);
+		//System.out.println(inputString.charAt(charIndex - 1));
 		if (charIndex > 0
 				&& (inputString.charAt(charIndex - 1) == '(' || inputString.charAt(charIndex - 1) == ',' || inputString.charAt(charIndex - 1) == '"' || inputString
 						.charAt(charIndex - 1) == ' ')) {
@@ -85,6 +86,7 @@ public class ValueParserLib {
 				String workingStr = inputString.substring(charIndex + propertyName.length());
 				if (workingStr.charAt(0) == '=' || workingStr.charAt(1) == '=') { //next char, or after space char is =
 					workingStr = workingStr.substring(workingStr.indexOf('=') + 1); //cut off =
+					boolean startedWithParenthesis = workingStr.charAt(0) == '(';
 					if (isQuoted) {
 						workingStr = workingStr.substring(workingStr.indexOf('\"') + 1); //cut off " from quoted items.
 					}
@@ -96,8 +98,14 @@ public class ValueParserLib {
 								return workingStr.substring(0, charIndex).trim();
 							}
 						} else {
-							if (workingStr.charAt(charIndex) == ')' || workingStr.charAt(charIndex) == ',') {
-								return workingStr.substring(0, charIndex).trim();
+							if (workingStr.charAt(charIndex) == ')') {
+								if (startedWithParenthesis) {
+									return workingStr.substring(0, charIndex+1).trim(); //+1 is 
+								} else {
+									return workingStr.substring(0, charIndex).trim();
+								}
+							} else if (workingStr.charAt(charIndex) == ',') {
+								return  workingStr.substring(0, charIndex).trim();
 							}
 						}
 						charIndex++;

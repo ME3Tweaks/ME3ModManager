@@ -29,6 +29,7 @@ import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class AllModsUpdateWindow extends JDialog {
@@ -179,7 +180,7 @@ public class AllModsUpdateWindow extends JDialog {
 											+ upackage.getMod().getModName() + ".",
 									"Sideload update required", JOptionPane.WARNING_MESSAGE);
 							try {
-								ModManager.openWebpage(new URL(upackage.getSideloadURL()));
+								ResourceUtils.openWebpage(new URL(upackage.getSideloadURL()));
 							} catch (MalformedURLException e) {
 								ModManager.debugLogger.writeError("Invalid sideload URL: " + upackage.getSideloadURL());
 								JOptionPane.showMessageDialog(AllModsUpdateWindow.this,
@@ -197,10 +198,15 @@ public class AllModsUpdateWindow extends JDialog {
 					}
 					String updatetext = upackages.size() + " mod" + (upackages.size() == 1 ? " has" : "s have") + " available updates on ME3Tweaks:\n";
 					for (UpdatePackage upackage : upackages) {
-						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + ", Preparing user prompt.");
+						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + "");
 						updatetext += getVersionUpdateString(upackage);
 					}
-					updatetext += "Update these mods?";
+					if (upackages.size() > 1) {
+						updatetext += "Update these mods?";
+					} else {
+						updatetext += "Update this mod?";
+					}
+					ModManager.debugLogger.writeMessage("Prompting users for updates");
 					int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
 					switch (result) {
 					case JOptionPane.YES_OPTION:
@@ -218,7 +224,10 @@ public class AllModsUpdateWindow extends JDialog {
 					operationLabel.setText("Updating mods from ME3Tweaks");
 					break;
 				case "MANIFEST_DOWNLOADED":
-					statusLabel.setText("Calculating files to update");
+					statusLabel.setText("Calculating files for update");
+					break;
+				case "CALCULATING_PROGRESS" :
+					statusLabel.setText(obj.getMessage());
 					break;
 				case "NUM_REMAINING":
 					Integer i = (Integer) obj.getData();
@@ -299,9 +308,9 @@ public class AllModsUpdateWindow extends JDialog {
 			} else if (upackages.size() != completedUpdates.size()) {
 				//one error occured
 				JOptionPane.showMessageDialog(callingWindow, completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
-						+ " failed to update.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
+						+ " failed to update.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nMod Manager will now reload mods.", "Mods updated",
+				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.", "Mods updated",
 						JOptionPane.INFORMATION_MESSAGE);
 			}
 
@@ -310,6 +319,10 @@ public class AllModsUpdateWindow extends JDialog {
 
 		public void setManifestDownloaded() {
 			publish(new ThreadCommand("MANIFEST_DOWNLOADED"));
+		}
+		
+		public void setUpdateCalculationProgress(int done, int total) {
+			publish(new ThreadCommand("CALCULATING_PROGRESS", "Calculating files for update ["+done+"/"+total+"]"));
 		}
 
 		public void publishUpdate(String update) {

@@ -60,7 +60,7 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 		JPanel descriptionPanel = new JPanel(new BorderLayout());
 		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description");
 		descriptionPanel.setBorder(descriptionBorder);
-		modDescriptionField = new JTextArea(Mod.breakFixer(mod.getModDescription()));
+		modDescriptionField = new JTextArea(ResourceUtils.convertBrToNewline(mod.getModDescription()));
 		JScrollPane scrollPane = new JScrollPane(modDescriptionField);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);

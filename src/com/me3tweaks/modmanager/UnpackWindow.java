@@ -72,7 +72,7 @@ public class UnpackWindow extends JDialog {
 	private void setupWindow() {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html>Select DLCs to unpack.<br>Unpacking DLCs can take a really long time.</html>");
+		infoLabel = new JLabel("<html>Select DLCs to unpack.<br>Unpacking DLCs can take a really long time.<br>Do not use this if you are going to install ALOT.</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 
 		progressBar = new JProgressBar(0, 100);
@@ -165,6 +165,10 @@ public class UnpackWindow extends JDialog {
 		unpackButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				//write to settings
+				if (ModManager.isMassEffect3Running()) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can unpack DLC.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				new UnpackDLCJob(BioGameDir, getJobs(), false).execute();
 			}
 		});

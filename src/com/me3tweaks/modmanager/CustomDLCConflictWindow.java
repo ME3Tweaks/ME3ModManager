@@ -77,6 +77,8 @@ public class CustomDLCConflictWindow extends JDialog {
 	private JPanel windowpanel;
 	public String transplanterpath;
 	public HashMap<String, CustomDLC> secondPriorityUIConflictFiles;
+	public ArrayList<String> blacklistedGUIconflictfiles = new ArrayList<String>(
+			Arrays.asList(new String[] { "BioD_CitCas.pcc", "SFXWeapon_SniperRifle_Collector_LOC_INT.pcc", "SFXWeapon_AssaultRifle_Spitfire.pcc", "SFXWeapon_SMG_Collector_LOC_INT.pcc", "Startup_DLC_CON_MAPMOD_INT.pcc" }));
 
 	public CustomDLCConflictWindow() {
 		setupWindow();
@@ -97,7 +99,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 		for (String dlc : installedDLCs) {
 			File mountFile = new File(biogameDirectory + "DLC/" + dlc + File.separator + "CookedPCConsole/Mount.dlc");
-			if (!ModType.isKnownDLCFolder(dlc) && dlc.startsWith("DLC_") && mountFile.exists()) {
+			if (!ModType.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
 				customDLCs.add(new CustomDLC(new MountFile(mountFile.getAbsolutePath()), dlc));
 			}
 		}
@@ -124,7 +126,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			data[i][COL_FILENAME] = key;
 			data[i][COL_SUPERCEDING] = value.get(value.size() - 1).getDlcName() + " (" + value.get(value.size() - 1).getMountFile().getMountPriority() + ")";
 			String superceeded = "";
-			for (int x = 0; x <= value.size() - 2; x++) {
+			for (int x = value.size() - 2; x >= 0; x--) {
 				superceeded += value.get(x).getDlcName() + " (" + value.get(x).getMountFile().getMountPriority() + ")\n";
 			}
 
@@ -148,6 +150,7 @@ public class CustomDLCConflictWindow extends JDialog {
 				}
 			}
 		};
+		table.setAutoCreateRowSorter(true);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
@@ -158,12 +161,11 @@ public class CustomDLCConflictWindow extends JDialog {
 		JScrollPane scrollpane = new JScrollPane(table);
 		windowpanel = new JPanel(new BorderLayout());
 
-		String buttonText = "<html><center>Files listed below are Custom DLC files that have conflicts.<br>The Custom DLC with the highest mount priority will supercede others, and may cause the the superceded DLC to not work or cause game instability.<br><u><font color='#000099'>Click for info on how to toggle DLC in Mod Manager.</u></font></center></html>";
-		String message = "<html>To toggle Custom DLCs in Mod Manager, make sure all Custom DLC has been imported into Mod Manager.<br>This can be done through the Mod Management > Import Mods > Import installed Custom DLC mod.<br>Once imported, you can install it by simply applying the mod.<br>You can remove (disable) a mod by deleting it through the Custom DLC Manager, and then apply it again to enable it.</html>";
-		JButton infoLinkButton = new JButton();
+		String buttonText = "<html><center>Files listed below are Custom DLC files that have conflicts.<br>The Custom DLC with the highest mount priority will supercede others, and may cause the the superceded DLC to not work or cause game instability.<br>You can toggle Custom DLC in the Custom DLC Manager in the Restore Menu.</center></html>";
+		JLabel infoLinkButton = new JLabel(buttonText);
 		infoLinkButton.setText(buttonText);
 		infoLinkButton.setHorizontalAlignment(SwingConstants.CENTER);
-		infoLinkButton.setBorderPainted(false);
+/*		infoLinkButton.setBorderPainted(false);
 		infoLinkButton.setBackground(UIManager.getColor("Panel.background"));
 		infoLinkButton.setFocusPainted(false);
 		infoLinkButton.setMargin(new Insets(0, 0, 0, 0));
@@ -178,7 +180,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this, message, "Toggling Custom DLC in Mod Manager", JOptionPane.INFORMATION_MESSAGE);
 			}
-		});
+		});*/
 		windowpanel.add(infoLinkButton, BorderLayout.NORTH);
 		windowpanel.add(scrollpane, BorderLayout.CENTER);
 
@@ -274,7 +276,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		private HashMap<String, ArrayList<CustomDLC>> dlcfilemap;
 		private String biogameDirectory;
 		private double numFilesToScan;
-	    private final AtomicInteger numFilesScanned = new AtomicInteger();
+		private final AtomicInteger numFilesScanned = new AtomicInteger();
 
 		public CustomDLCGUIScanner(String biogameDirectory, HashMap<String, ArrayList<CustomDLC>> conflicts) {
 			this.dlcfilemap = conflicts;
@@ -287,10 +289,29 @@ public class CustomDLCConflictWindow extends JDialog {
 		protected Void doInBackground() throws Exception {
 			secondPriorityUIConflictFiles = detectUIModConflicts(dlcfilemap);
 			HashMap<String, ArrayList<CustomDLC>> guiFilesWithNoSuperceding = detectNewFilesSupercedingUI(dlcfilemap);
+			ModManager.debugLogger.writeMessage("The following items will be transplanted into if the user accepts UI transplants:");
+			for (Map.Entry<String, CustomDLC> secondtier : secondPriorityUIConflictFiles.entrySet()) {
+				ModManager.debugLogger.writeMessage(secondtier.getValue().getDlcName()+" "+secondtier.getKey());
+			}
 			if (guiFilesWithNoSuperceding != null) {
+				
+				ArrayList<String> knownGUImods = new ArrayList<String>(Arrays.asList(ModManager.KNOWN_GUI_CUSTOMDLC_MODS));
 				for (Entry<String, ArrayList<CustomDLC>> entry : guiFilesWithNoSuperceding.entrySet()) {
 					//add conflicts to gui conflict list since they have guis and aren't overridden by gui mod
-					secondPriorityUIConflictFiles.put(entry.getKey(), entry.getValue().get(0));
+					//find highest priority non gui mod in list...
+					//ModManager.debugLogger.writeMessage("Enumerating file "+entry.getKey());
+					ArrayList<CustomDLC> dlcs = entry.getValue();
+					for (int i = dlcs.size() - 1; i >= 0; i--) {
+						CustomDLC tier = dlcs.get(i);
+						if (knownGUImods.contains(tier.getDlcName())) {
+							ModManager.debugLogger.writeMessage("- Skip tier "+tier.getDlcName());
+							continue;
+						} else {
+							ModManager.debugLogger.writeMessage(entry.getValue().get(i) + " " + entry.getKey());
+							secondPriorityUIConflictFiles.put(entry.getKey(), entry.getValue().get(i)); //used to be 0 in versions < BUILD 62 PREVIEW 6. I think this used to cause it to choose the lowest priority conflict rather than the highest
+							break;
+						}
+					}
 				}
 			}
 			return null;
@@ -300,7 +321,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			guiProgressBar.setVisible(false);
 			if (secondPriorityUIConflictFiles != null) {
 				guiPatchButton.setVisible(true);
-				statusText.setText("A GUI mod conflicts with " + secondPriorityUIConflictFiles.entrySet().size() + " files");
+				statusText.setText("A GUI mod needs to update " + secondPriorityUIConflictFiles.entrySet().size() + " files to work properly");
 			} else {
 				guiPatchButton.setVisible(false);
 				statusText.setText("No GUI mod file conflicts");
@@ -309,8 +330,8 @@ public class CustomDLCConflictWindow extends JDialog {
 		}
 
 		/**
-		 * Detects files that contain interfaces but are not superceded by a
-		 * controller mod
+		 * Detects files that contain interfaces but are not superceded by a UI
+		 * DLC
 		 * 
 		 * @param dlcfilemap
 		 * @return
@@ -327,13 +348,17 @@ public class CustomDLCConflictWindow extends JDialog {
 			HashMap<String, ArrayList<CustomDLC>> nonguimodfiles = new HashMap<>();
 			//filter out files where the gui mod is superceding, we don't care.
 			for (Map.Entry<String, ArrayList<CustomDLC>> entry : dlcfilemap.entrySet()) {
-				if (entry.getValue().size() != 1 || entry.getValue().get(0).isGUIMod()) {
-					continue; //not conflict... may be bad logic if two mods have same new file for some reason.
+				if (entry.getValue().get(entry.getValue().size() - 1).isGUIMod() || blacklistedGUIconflictfiles.contains(entry.getKey())) {
+					//ignores heavy MP4/MP5 files that dont have any actual GUIs.
+					continue; //not conflict... may be bad logic if two mods have same new file for some reason though. //used to have if size is not zero pre 62
 				}
 				nonguimodfiles.put(entry.getKey(), entry.getValue());
 			}
 			numFilesToScan = nonguimodfiles.size();
-			ExecutorService guiscanExecutor = Executors.newFixedThreadPool(4);
+			int cores = Runtime.getRuntime().availableProcessors();
+			cores = Math.max(1, cores - 1);
+			ModManager.debugLogger.writeMessage("GUI Conflict scanner will use " + cores + " threads.");
+			ExecutorService guiscanExecutor = Executors.newFixedThreadPool(cores);
 			ArrayList<Future<GUIScanResult>> futures = new ArrayList<Future<GUIScanResult>>();
 			//submit jobs
 			for (Map.Entry<String, ArrayList<CustomDLC>> entry : nonguimodfiles.entrySet()) {
@@ -383,15 +408,15 @@ public class CustomDLCConflictWindow extends JDialog {
 				commandBuilder.add("--inputfile");
 				commandBuilder.add(ResourceUtils.normalizeFilePath(scanFile, true));
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-				ModManager.debugLogger.writeMessage("Scanning for GFxMovieInfo export: " + scanFile);
+				ModManager.debugLogger.writeMessage("[" + FilenameUtils.getBaseName(scanFile) + "]Scanning for GFxMovieInfo export: " + scanFile);
 				int returncode = 2;
 				ProcessBuilder pb = new ProcessBuilder(command);
-				returncode = ModManager.runProcess(pb).getReturnCode();
-				
-				publish(new ThreadCommand("UPDATE_PROGRESS",null,numFilesScanned.incrementAndGet()));
+				returncode = ModManager.runProcess(pb, FilenameUtils.getBaseName(scanFile)).getReturnCode();
+
+				publish(new ThreadCommand("UPDATE_PROGRESS", null, numFilesScanned.incrementAndGet()));
 				if (returncode == 1) {
 					//FILE CONTAINS GUI!
-					ModManager.debugLogger.writeMessage("GUI Export found in non-GUI mod while GUI mod is installed: " + scanFile);
+					ModManager.debugLogger.writeMessage("[" + FilenameUtils.getBaseName(scanFile) + "]GUI Export found in non-GUI mod while GUI mod is installed: " + scanFile);
 					return new GUIScanResult(true, filepath, dlcs);
 				}
 				return new GUIScanResult(false, filepath, dlcs);
@@ -407,13 +432,12 @@ public class CustomDLCConflictWindow extends JDialog {
 					guiProgressBar.setVisible(true);
 					break;
 				case "UPDATE_SCANNER_TEXT":
-					
+
 					break;
 				case "UPDATE_PROGRESS":
-					System.err.println("PROGRESS UPDATIN "+(int) ((int) tc.getData()*100 / numFilesToScan));
 					guiProgressBar.setIndeterminate(false);
 					guiProgressBar.setVisible(true);
-					guiProgressBar.setValue((int) ((int) tc.getData()*100 / numFilesToScan));
+					guiProgressBar.setValue((int) ((int) tc.getData() * 100 / numFilesToScan));
 					break;
 				}
 			}
@@ -489,10 +513,10 @@ public class CustomDLCConflictWindow extends JDialog {
 			}
 
 			String internalName = modName.toUpperCase().replaceAll(" ", "_");
-			ModManager.debugLogger.writeMessage("Compatibility pack will be named DLC_CON_" + internalName);
+			ModManager.debugLogger.writeMessage("Compatibility pack will be named DLC_MOD_" + internalName);
 			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, progressPanel, CustomDLCConflictWindow.this);
-			skg.setInternaldisplayname("GUI Compatibility Pack from MM " + ModManager.BUILD_NUMBER);
-			skg.setMountpriority(6000);
+			skg.setInternaldisplayname("GUI Compatibility Pack from Mod Manager " + ModManager.BUILD_NUMBER);
+			skg.setMountpriority(31050);
 			skg.setModdev("Mod Manager Build " + ModManager.BUILD_NUMBER);
 			skg.setMountflag(new MountFlag(null, 0x8));
 			skg.setInternaldlcname(internalName);
@@ -543,10 +567,22 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Copying tier 2 files to new mod"));
 			//starter kit has finished. Copy files to it.
+			Map.Entry<String, CustomDLC> galaxymapfile = null;
+			Map.Entry<String, CustomDLC> cicfile = null;
+
+			//Do not modify galaxymap file. Just port it straight over (it has no acutal used GUIs)
+			/*
+			 * for (Map.Entry<String, CustomDLC> resolutionFile :
+			 * secondPriorityUIConflictFiles.entrySet()) { //workaround for
+			 * BioD_Nor_203aGalaxyMap.pcc crash oddity in EGM if
+			 * (resolutionFile.getKey().equals("BioD_Nor_203aGalaxyMap.pcc")) {
+			 * galaxymapfile = resolutionFile; continue; } }
+			 */
+
 			ArrayList<String> transplantFiles = new ArrayList<>();
 			for (Map.Entry<String, CustomDLC> resolutionFile : secondPriorityUIConflictFiles.entrySet()) {
 				String sourcePath = biogameDirectory + "DLC/" + resolutionFile.getValue().getDlcName() + "/CookedPCConsole/" + resolutionFile.getKey();
-				String copyTargetPath = skg.getGeneratedMod().getModPath() + "DLC_CON_" + internalName + "/CookedPCConsole/" + resolutionFile.getKey();
+				String copyTargetPath = skg.getGeneratedMod().getModPath() + "DLC_MOD_" + internalName + "/CookedPCConsole/" + resolutionFile.getKey();
 				try {
 					ModManager.debugLogger.writeMessage("Copying 2nd tier conflict file: " + sourcePath + " => " + copyTargetPath);
 					FileUtils.copyFile(new File(sourcePath), new File(copyTargetPath));
@@ -566,8 +602,14 @@ public class CustomDLCConflictWindow extends JDialog {
 			//Run ME3-GUI-Transplanter over CookedPCConsole files
 			double i = 0;
 			for (String transplantFile : transplantFiles) {
-				publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanting SWFs into " + new File(transplantFile).getName()));
 				publish(new ThreadCommand("SET_PROGRESS", null, i / transplantFiles.size()));
+				/*
+				 * if (new File(transplantFile).getName().equals(
+				 * "BioD_Nor_203aGalaxyMap.pcc")) { i++; ModManager.debugLogger.
+				 * writeMessage("Skipping tranpslant of BioD_Nor_203aGalaxyMap.pcc for crash prevention."
+				 * ); continue; }
+				 */
+				publish(new ThreadCommand("SET_STATUS_TEXT", "Transplanting SWFs into " + new File(transplantFile).getName()));
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(transplanterpath);
 				commandBuilder.add("--injectswf");
@@ -594,12 +636,12 @@ public class CustomDLCConflictWindow extends JDialog {
 					}
 					return false;
 				}
-				i += 1;
+				i++;
 			}
 
 			//Remove .bak files
 			publish(new ThreadCommand("SET_STATUS_TEXT", "Deleting .bak files"));
-			List<File> files = (List<File>) FileUtils.listFiles(new File(skg.getGeneratedMod().getModPath() + "DLC_CON_" + internalName), new String[] { "bak" }, true);
+			List<File> files = (List<File>) FileUtils.listFiles(new File(skg.getGeneratedMod().getModPath() + "DLC_MOD_" + internalName), new String[] { "bak" }, true);
 			for (File file : files) {
 				FileUtils.deleteQuietly(file);
 			}
@@ -611,7 +653,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
 			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
 			commandBuilder.add("-autotoc");
-			commandBuilder.add(skg.getGeneratedMod().getModPath() + "DLC_CON_" + internalName);
+			commandBuilder.add(skg.getGeneratedMod().getModPath() + "DLC_MOD_" + internalName);
 			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 			ModManager.debugLogger.writeMessage("Running AutoTOC on newly created mod.");
 			int returncode = 1;

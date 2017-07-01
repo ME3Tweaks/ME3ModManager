@@ -120,7 +120,7 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 
 	        	//Download update
 	            HTTPDownloadUtil util = new HTTPDownloadUtil();
-	            util.downloadFile("http://me3tweaks.com/modmanager/tools/me3explorer.7z");
+	            util.downloadFile("https://me3tweaks.com/modmanager/tools/me3explorer.7z");
 	             
 	            // set file information on the GUI
 	             

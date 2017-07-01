@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,7 @@ import com.me3tweaks.modmanager.ui.PatchCellRenderer;
 /**
  * Patch Window shows the list of patches in the patch library and things you
  * can do with it
- * 
+ *
  * @author Mgamerz
  *
  */
@@ -72,6 +73,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	private ArrayList<DynamicPatch> dynamicMixIns;
 	private final Object lock = new Lock(); //threading wait() and notifyall();
 	private int numberofupdatedmixins = -1;
+	private Mod newmod;
 
 	public PatchLibraryWindow(int mode) {
 		if (mode == MANUAL_MODE) {
@@ -85,7 +87,8 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				while (numberofupdatedmixins == -1) {
 					try {
 						ModManager.debugLogger.writeMessage("Loading mixin library in automated mode, waiting for it to finish");
-						new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), PatchLibraryWindow.AUTOUPDATE_MODE).execute();
+						new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), PatchLibraryWindow.AUTOUPDATE_MODE)
+								.execute();
 						lock.wait();
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
@@ -101,7 +104,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	 * Starts PatchLibraryWindow in automatic mode. The IDs specified are
 	 * checked for being in the local library. If they aren't in the library, it
 	 * attempts to download them from me3tweaks.com's library.
-	 * 
+	 *
 	 * @param requiredMixinIds
 	 *            me3tweaks patch ids
 	 */
@@ -166,12 +169,12 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	private void advertiseInstalls(JDialog callingDialog, ArrayList<Integer> mixinIds, Mod mod) {
 		//Build patch array, build prompt text
 		String str = "This mod wants to apply the following MixIns from ME3Tweaks:";
-		ArrayList<Patch> patches = new ArrayList<Patch>();
+		ArrayList<Patch> patchesToApply = new ArrayList<Patch>();
 		for (int mixinid : mixinIds) {
 			for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
 				if (mixinid == patch.getMe3tweaksid()) {
 					str += "\n - " + patch.getPatchName();
-					patches.add(patch);
+					patchesToApply.add(patch);
 					break;
 				}
 			}
@@ -179,32 +182,53 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 
 		for (DynamicPatch p : dynamicMixIns) {
 			str += "\n - " + p.getFinalPatch().getPatchName();
-			patches.add(p.getFinalPatch());
+			patchesToApply.add(p.getFinalPatch());
 		}
 
 		if (ModManager.MODMAKER_CONTROLLER_MOD_ADDINS) {
 			ModManager.debugLogger.writeMessage("User has enabled controller mod addins for modmaker mods");
-			Patch addpatch = null;
-			for (Patch p : patches) {
-				if (addpatch == null) {
-					if (p.getTargetPath().equals("/BIOGame/CookedPCConsole/SFXGame.pcc")) {
-						//Add Patch for camera turning
-						for (Patch x : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
-							if (x.getMe3tweaksid() == 1533) {
-								addpatch = x;
-								ModManager.debugLogger.writeMessage("Added patch 1533 to compilation");
-								break;
-							} else {
-								System.out.println("Skip patch "+x.getMe3tweaksid());
-							}
-						}
-					}
+
+			Patch cameraTurningPatch = null;
+			Patch vibrationPlatformCheckPatch = null;
+			boolean modifiesSFXgame = false;
+			boolean modifiesPatchBioPlayerController = false;
+
+			//Get Patches
+			for (Patch p : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
+				if (p.getMe3tweaksid() == 1533) {
+					cameraTurningPatch = p;
+					continue;
+				}
+				if (p.getMe3tweaksid() == 1557) {
+					vibrationPlatformCheckPatch = p;
+					continue;
 				}
 			}
-			if (addpatch == null) {
-				ModManager.debugLogger.writeMessage("SFXgame not modified. no controller add-ins required");
+
+			//Build List of controller patches to apply
+			ArrayList<Patch> patchesToAdd = new ArrayList<>();
+			for (Patch p : patchesToApply) {
+				if (!modifiesSFXgame && p.getTargetPath().equals("/BIOGame/CookedPCConsole/SFXGame.pcc")) {
+					patchesToAdd.add(cameraTurningPatch);
+					ModManager.debugLogger.writeMessage("Added patch 1533 (CAMERA TURNING) to compilation - ModMaker Controller Addins");
+					modifiesSFXgame = true;
+					continue;
+				}
+
+				if (!modifiesPatchBioPlayerController
+						&& p.getTargetPath().equals("/BIOGame/DLC/DLC_TestPatch/CookedPCConsole/Patch_BioPlayerController.pcc")) {
+					patchesToAdd.add(vibrationPlatformCheckPatch);
+					ModManager.debugLogger.writeMessage("Added patch 1557 (VIBRATION PATCH) to compilation - ModMaker Controller Addins");
+					modifiesPatchBioPlayerController = true;
+					continue;
+				}
+			}
+
+			if (patchesToAdd.size() == 0) {
+				ModManager.debugLogger.writeMessage("No controller add-ins required as no mixins create conflicting files");
 			} else {
-				patches.add(addpatch);
+				patchesToApply.addAll(patchesToAdd);
+				ModManager.debugLogger.writeMessage("Added "+patchesToAdd.size()+" controller fixing mixins.");
 			}
 		}
 
@@ -234,7 +258,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			if (!mod.isValidMod()) {
 				return; // this shouldn't be reachable anyways
 			}
-			PatchApplicationWindow paw = new PatchApplicationWindow(callingDialog, patches, mod);
+			PatchApplicationWindow paw = new PatchApplicationWindow(callingDialog, patchesToApply, mod);
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() > 0) {
 				String rstr = "The following MixIns failed to apply:\n";
@@ -292,10 +316,14 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		modComboBox.setModel(modModel);
 		modComboBox.setRenderer(new ModCellRenderer());
 
-		Mod mod = new Mod(); // invalid
-		mod.setModName("Select a mod to add mixins to");
+		Mod selectamod = new Mod(); // invalid
+		selectamod.setModName("Select a mod to add mixins to");
 
-		modModel.addElement(mod);
+		newmod = new Mod();
+		newmod.setModName("Create new mod from MixIns");
+
+		modModel.addElement(selectamod);
+		modModel.addElement(newmod);
 		for (int i = 0; i < ModManagerWindow.ACTIVE_WINDOW.modModel.getSize(); i++) {
 			Mod loadedMod = ModManagerWindow.ACTIVE_WINDOW.modModel.get(i);
 			modModel.addElement(loadedMod);
@@ -390,9 +418,73 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == buttonApplyPatch) {
-			ModManager.debugLogger.writeMessage("Applying patches");
-			List<Patch> selectedPatches = patchList.getSelectedValuesList();
 			Mod mod = modModel.getElementAt(modComboBox.getSelectedIndex());
+			List<Patch> selectedPatches = patchList.getSelectedValuesList();
+			if (mod == newmod) {
+				boolean nameIsBad = true;
+				String errormsg = "";
+				String input = "";
+				while (nameIsBad) {
+					input = JOptionPane.showInputDialog(PatchLibraryWindow.this,
+							"Input a name for the mod that will be created from these MixIns.\nAlphanumberic only, must be less than 20 characters."
+									+ errormsg,
+							"Create a new mod from MixIns", JOptionPane.QUESTION_MESSAGE);
+					if (input == null) {
+						return;
+					}
+					input = input.trim();
+
+					boolean asciionly = input.chars()
+							.allMatch(c -> c == 0x20 || c == 0x5F || (c > 0x30 && c < 0x3A) || (c > 0x40 && c < 0x5B) || (c > 0x60 && c < 0x7B)); //what the f is this?
+					if (!asciionly) {
+						ModManager.debugLogger.writeError("Name is not ascii alphanumeric only: " + input);
+						errormsg = "\nMod name must be alphanumberic.";
+						continue;
+					}
+					if (input.length() > 20 || input.length() < 1) {
+						ModManager.debugLogger.writeError("Name is empty or too long: " + input);
+						errormsg = "\nMod name must be less than 20 characters.";
+						continue;
+					}
+
+					if (input.equals("")) {
+						errormsg = "\nMod name must be at least 1 character.";
+						continue;
+					}
+
+					nameIsBad = false;
+				}
+
+				ModManager.debugLogger.writeMessage("User entered mod name: " + input);
+
+				mod = new Mod();
+				String modfolder = ModManager.getModsDir() + input;
+				File modfolderfile = new File(modfolder);
+				modfolderfile.mkdirs();
+				mod.setModPath(ModManager.getModsDir() + input);
+				mod.setModName(input);
+				mod.setVersion(1);
+				String desc = "This mod was created from the following MixIns:<br>";
+				for (Patch p : selectedPatches) {
+					desc += " - " + p.getPatchName() + " v" + p.getPatchVersion() + "<br>";
+				}
+				mod.setModDescription(desc);
+				mod.setAuthor("Mod Manager " + ModManager.VERSION);
+				String descini = mod.createModDescIni(true, ModManager.MODDESC_VERSION_SUPPORT);
+				ModManager.debugLogger.writeMessage("Creating blank moddesc.ini file for new mod " + input);
+				try {
+					FileUtils.writeStringToFile(new File(modfolder + "/moddesc.ini"), descini);
+					mod = new Mod();
+					mod.setEmptyModIsOK(true);
+					mod.loadMod(modfolder + "/moddesc.ini");
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					return;
+				}
+			}
+
+			ModManager.debugLogger.writeMessage("Applying patches");
 			if (!mod.isValidMod()) {
 				return; // this shouldn't be reachable anyways
 			}
@@ -400,7 +492,8 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
 			ArrayList<Patch> failedpatches = paw.getFailedPatches();
 			if (failedpatches.size() <= 0) {
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mixins were applied.", "MixIns applied", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "All mixins were applied.", "MixIns applied",
+						JOptionPane.INFORMATION_MESSAGE);
 			} else {
 				String str = "The following MixIns failed to apply:\n";
 				for (Patch p : failedpatches) {
@@ -425,7 +518,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		private int numChanged = 0;
 
 		/**
-		 * 
+		 *
 		 * @param callingDialog
 		 *            calling dialog. Can be null.
 		 * @param patches
@@ -449,7 +542,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			if (ModManager.IS_DEBUG) {
 				link = "http://webdev-mgamerz.c9.io/mixins/libraryinfo";
 			} else {
-				link = "http://me3tweaks.com/mixins/libraryinfo";
+				link = "https://me3tweaks.com/mixins/libraryinfo";
 			}
 			ModManager.debugLogger.writeMessage("Fetching mixin info from " + link);
 			try {
@@ -496,7 +589,8 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						}
 
 						if (localpatch.getPatchVersion() < serverpack.getPatchver()) {
-							ModManager.debugLogger.writeMessage("Local MixIn " + serverpack.getPatchname() + " is out of date, adding to download queue");
+							ModManager.debugLogger
+									.writeMessage("Local MixIn " + serverpack.getPatchname() + " is out of date, adding to download queue");
 							continue;
 						}
 
@@ -506,7 +600,8 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						break;
 					}
 					if (needsDownloaded) {
-						ModManager.debugLogger.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally, adding to download queue");
+						ModManager.debugLogger
+								.writeMessage("Server MixIn " + serverpack.getPatchname() + " is not present locally, adding to download queue");
 						packsToDownload.add(serverpack);
 					}
 				}
@@ -533,7 +628,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 					publish(new ThreadCommand("ADD_PATCH", null, p));
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				ModManager.debugLogger.writeErrorWithException("Error downloading mixins:", e);
 			}
 			return null;
 		}
@@ -605,7 +700,6 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				}
 			}
 		}
-
 	}
 
 	private class ModmakerMixinIdentifier {

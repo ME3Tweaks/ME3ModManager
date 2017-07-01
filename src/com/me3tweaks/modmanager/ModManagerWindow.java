@@ -30,6 +30,7 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -73,6 +74,9 @@ import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
 import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
 import com.me3tweaks.modmanager.modupdater.ModXMLTools;
 import com.me3tweaks.modmanager.modupdater.UpdatePackage;
+import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
+import com.me3tweaks.modmanager.objects.AlternateFile;
+import com.me3tweaks.modmanager.objects.InstalledASIMod;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
@@ -105,26 +109,28 @@ import net.iharder.dnd.FileDrop;
 public class ModManagerWindow extends JFrame implements ActionListener, ListSelectionListener {
 	public static ModManagerWindow ACTIVE_WINDOW;
 	public static ArrayList<Integer> forceUpdateOnReloadList = new ArrayList<Integer>();
+	private static String PRELOADED_BIOGAME_DIR;
 	boolean isUpdate;
 	public JTextField fieldBiogameDir;
 	JTextArea fieldDescription;
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JMenuBar menuBar;
-	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu;
-	JMenuItem actionExitDebugMode, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
-	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
-			modManagementPatchLibary, modManagementClearPatchLibraryCache;
-	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
-			modutilsDeleteMod;
-	JMenuItem toolME3Explorer, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32, toolsMountdlcEditor, toolsMergeMod,
-			toolME3Config;
+	JMenu actionMenu, modMenu, modManagementMenu, devMenu, modDeltaMenu, toolsMenu, backupMenu, restoreMenu, sqlMenu, helpMenu, openToolMenu, modAlternatesMenu;
+	JMenuItem actionExitDebugMode, actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
+	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI,
+			modManagementFailedMods, modManagementPatchLibary, modManagementClearPatchLibraryCache;
+	JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate,
+			modutilsRestoreMod, modutilsDeleteMod;
+	JMenuItem toolME3Explorer, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32, toolsMountdlcEditor,
+			toolsMergeMod, toolME3Config;
 	JMenuItem backupBackupDLC, backupCreateGDB;
-	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
-			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
+	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC,
+			restoreRevertMPDLC, restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 
-	JMenuItem modDevStarterKit;
-	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser, sqlGearParser;
+	JMenuItem modDevStarterKit, moddevOfficialDLCManager;
+	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser,
+			sqlGearParser;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
@@ -153,6 +159,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JPanel cookedDirPanel;
 	private JMenuItem toolsAutoTOCGame;
 	private JMenu restoreMenuAdvanced;
+	private String preloadedBioGameDir;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -177,8 +184,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeErrorWithException("UNKNOWN CRITICAL STARTUP EXCEPTION FOR MOD MANAGER WINDOW:", e);
 			ModManager.debugLogger.writeError("Mod Manager has crashed!");
 			JOptionPane.showMessageDialog(null,
-					"<html><div style=\"width:330px;\">Mod Manager's interface (post-startup) encountered a critical unknown error and was unable to start:<br>" + e.getMessage()
-							+ "<br>"
+					"<html><div style=\"width:330px;\">Mod Manager's interface (post-startup) encountered a critical unknown error and was unable to start:<br>"
+							+ e.getMessage() + "<br>"
 							+ "<br>This has been logged to the me3cmm_last_run_log.txt file if you didn't explicitly turn logging off.<br>Please report this to femshep.</div></html>",
 					"Critical Error", JOptionPane.ERROR_MESSAGE);
 			return;
@@ -205,7 +212,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	/**
 	 * This method scans all mod files and sees if any ones have imported
-	 * patches that need to be applied
+	 * patches that need to be applied.
+	 * 
+	 * DEPRECATED.
 	 * 
 	 * @return should reload mods and patches
 	 */
@@ -237,8 +246,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.pack();
 		setLocationRelativeTo(null);
 		if (isUpdate) {
-			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER + ").", "Update Complete",
-					JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER
+					+ ").\nYou can access the changelog via the Help menu.", "Update Complete", JOptionPane.INFORMATION_MESSAGE);
 		}
 
 		// clear pending updates (done via sideload update)
@@ -251,7 +260,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		new NetworkThread().execute();
+		new NetworkThread(false).execute();
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: Initialize() has completed.");
 	}
 
@@ -265,13 +274,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	class NetworkThread extends SwingWorker<Void, ThreadCommand> {
 
+		private boolean force;
+
+		public NetworkThread(boolean force) {
+			this.force = force;
+		}
+
 		@Override
 		public Void doInBackground() {
 			File f7za = new File(ModManager.getToolsDir() + "7za.exe");
 			if (!f7za.exists()) {
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7za Unzipper"));
 				ModManager.debugLogger.writeMessage("7za.exe does not exist at the following path, downloading new copy: " + f7za.getAbsolutePath());
-				String url = "http://me3tweaks.com/modmanager/tools/7za.exe";
+				String url = "https://me3tweaks.com/modmanager/tools/7za.exe";
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
@@ -291,7 +306,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (!lzma.exists()) {
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading LZMA tool"));
 				ModManager.debugLogger.writeMessage("lzma.exe does not exist at the following path, downloading new copy: " + lzma.getAbsolutePath());
-				String url = "http://me3tweaks.com/modmanager/tools/lzma.exe";
+				String url = "https://me3tweaks.com/modmanager/tools/lzma.exe";
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
@@ -314,7 +329,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (!tmtlk.exists() || !tmc.exists()) {
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading Tankmaster Tools"));
 				ModManager.debugLogger.writeMessage("Tankmaster's TLK/COALESCE tools are missing, downloading new copy: " + tmtlk.getAbsolutePath());
-				String url = "http://me3tweaks.com/modmanager/tools/tankmastertools.7z";
+				String url = "https://me3tweaks.com/modmanager/tools/tankmastertools.7z";
 				try {
 					File updateDir = new File(ModManager.getTempDir());
 					updateDir.mkdirs();
@@ -369,11 +384,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
-				checkForUpdates();
+				checkForModManagerUpdates();
 			}
 			checkForME3ExplorerUpdates();
-			if (ModManager.AUTO_UPDATE_MODS || forceUpdateOnReloadList.size() > 0) {
-				checkForModUpdates();
+			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
+				checkForContentUpdates(force);
 			}
 			return null;
 		}
@@ -395,10 +410,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				int main = EXEFileInfo.getMajorVersionOfProgram(me3explorer);
 				int rev = EXEFileInfo.getBuildOfProgram(me3explorer);
 				ModManager.debugLogger.writeMessage("ME3Explorer Version: " + Arrays.toString(EXEFileInfo.getVersionInfo(me3explorer)));
-				if (main < ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN || main == ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN && rev < ModManager.MIN_REQUIRED_ME3EXPLORER_REV) {
+				if (main < ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN
+						|| main == ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN && rev < ModManager.MIN_REQUIRED_ME3EXPLORER_REV) {
 					// we must update it
-					ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:" + main + "." + rev + ", required" + ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN + "."
-							+ ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+");
+					ModManager.debugLogger.writeMessage("ME3Explorer is outdated, local:" + main + "." + rev + ", required"
+							+ ModManager.MIN_REQUIRED_ME3EXPLORER_MAIN + "." + ModManager.MIN_REQUIRED_ME3EXPLORER_REV + "+");
 					if (ModManager.AUTO_UPDATE_ME3EXPLORER) {
 						new ME3ExplorerUpdaterWindow(ModManagerWindow.this);
 					} else {
@@ -413,12 +429,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		private void checkForModUpdates() {
+		private void checkForContentUpdates(boolean force) {
 			// Check for updates
-			if (ModManager.AUTO_UPDATE_MODS || forceUpdateOnReloadList.size() > 0) {
-				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0) {
+			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
+				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0
+						|| force) {
 					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
-							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK) + " since the last help/mods update check.");
+							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK)
+							+ " since the last help/mods update check.");
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest help information"));
 					HelpMenu.getOnlineHelp();
 					publish(new ThreadCommand("UPDATE_HELP_MENU"));
@@ -430,6 +448,34 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					if (modModel.getSize() > 0) {
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Checking for updates to mods"));
 						checkAllModsForUpdates(false);
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Mod update check complete"));
+					}
+					try {
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
+						ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
+						FileUtils.copyURLToFile(new URL("http://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice"),
+								ModManager.getThirdPartyModDBFile());
+						ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile());
+						ModManager.debugLogger.writeMessage("Downloaded third party mod data from identification service");
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod identification info"));
+
+					} catch (MalformedURLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						ModManager.debugLogger.writeErrorWithException("Failed to download third party identification data: ", e);
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party mod identification info"));
+					}
+					if (validateBIOGameDir()) {
+						ArrayList<InstalledASIMod> outdatedASImods = ASIModWindow.getOutdatedASIMods(GetBioGameDir());
+						if (outdatedASImods.size() > 0) {
+							ModManager.debugLogger.writeMessage("At least one ASI is outdated, advertising update");
+							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "ASI mods are outdated"));
+							publish(new ThreadCommand("SHOW_OUTDATED_ASI_MODS", null, outdatedASImods));
+						} else {
+							ModManager.debugLogger.writeMessage("Installed ASIs are up to date (if any are installed)");
+						}
 					}
 				}
 			}
@@ -449,6 +495,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				case "SET_STATUSBAR_TEXT":
 					labelStatus.setText(latest.getMessage());
 					break;
+				case "SHOW_OUTDATED_ASI_MODS":
+					String message = "The following installed ASIs are out of date:";
+					ArrayList<InstalledASIMod> outdated = (ArrayList<InstalledASIMod>) latest.getData();
+					for (InstalledASIMod asi : outdated) {
+						message += "\n - " + asi.getFilename();
+					}
+					message += "\n\nOpen the ASI Mod Management window to update them under Mod Management.";
+					JOptionPane.showMessageDialog(ModManagerWindow.this, message, "ASI mod update available", JOptionPane.WARNING_MESSAGE);
+					break;
 				}
 
 			}
@@ -464,7 +519,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		private Void checkForUpdates() {
+		private Void checkForModManagerUpdates() {
 			labelStatus.setText("Checking for Mod Manager updates");
 			ModManager.debugLogger.writeMessage("Checking for update...");
 			// Check for update
@@ -535,8 +590,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					return null;
 				}
 
-				ModManager.debugLogger
-						.writeMessage("Update check: Local:" + ModManager.BUILD_NUMBER + " Latest: " + latest_build + ", is less? " + (ModManager.BUILD_NUMBER < latest_build));
+				ModManager.debugLogger.writeMessage("Update check: Local:" + ModManager.BUILD_NUMBER + " Latest: " + latest_build + ", is less? "
+						+ (ModManager.BUILD_NUMBER < latest_build));
 
 				boolean showUpdate = true;
 				// make sure the user hasn't declined this one.
@@ -553,6 +608,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								// the
 								// dialog.
 								ModManager.debugLogger.writeMessage("Advertising build " + latest_build);
+								settingsini.remove("Settings", "nextupdatedialogbuild");
+								settingsini.store();
 								showUpdate = true;
 							} else {
 								ModManager.debugLogger.writeMessage("User isn't seeing updates until build " + build_check);
@@ -567,7 +624,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeErrorWithException("Invalid INI! Did the user modify it by hand?", e);
 					e.printStackTrace();
 				} catch (IOException e) {
-					ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
+					ModManager.debugLogger
+							.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 				}
 
 				if (showUpdate) {
@@ -609,7 +667,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					if (build < latestGUITransplanter) {
 						// download
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading update for GUI Transplanter"));
-						ModManager.debugLogger.writeMessage("GUI Transplanter is out of date from server. Local " + build + " vs server " + latestGUITransplanter);
+						ModManager.debugLogger
+								.writeMessage("GUI Transplanter is out of date from server. Local " + build + " vs server " + latestGUITransplanter);
 						File transplanterFolder = cli.getParentFile();
 						FileUtils.deleteQuietly(transplanterFolder);
 						ModManager.debugLogger.writeMessage("Downloading new GUI Transplanter");
@@ -688,6 +747,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					obj = serversJSON.get("latest_xbx_guilibrary");
 					if (obj != null) {
 						double serverver = Double.parseDouble((String) obj);
+						ModManager.debugLogger.writeMessage("Server version of XBX library: " + serverver);
 						if (libver < serverver) {
 							ModManager.debugLogger.writeMessage("XBX Library is out of date, updating...");
 							FileUtils.deleteQuietly(new File(xbxLibPath));
@@ -758,17 +818,20 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 										+ upackage.getMod().getModName() + ".",
 								"Sideload update required", JOptionPane.WARNING_MESSAGE);
 						try {
-							ModManager.openWebpage(new URL(upackage.getSideloadURL()));
+							ResourceUtils.openWebpage(new URL(upackage.getSideloadURL()));
 						} catch (MalformedURLException e) {
 							ModManager.debugLogger.writeError("Invalid sideload URL: " + upackage.getSideloadURL());
 							JOptionPane.showMessageDialog(ModManagerWindow.this,
-									upackage.getMod().getModName() + " specified an invalid URL for it's sideload upload:\n" + upackage.getSideloadURL(), "Invalid Sideload URL",
-									JOptionPane.ERROR_MESSAGE);
+									upackage.getMod().getModName() + " specified an invalid URL for it's sideload upload:\n" + upackage.getSideloadURL(),
+									"Invalid Sideload URL", JOptionPane.ERROR_MESSAGE);
 						}
 					} else {
 						String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
 						updatetext += AllModsUpdateWindow.getVersionUpdateString(upackage);
-
+						if (upackage.getChangeLog() != null || !upackage.getChangeLog().equals("")) {
+							updatetext += "\n - ";
+							updatetext += upackage.getChangeLog();
+						}
 						updatetext += "Update this mod?";
 						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
 						if (result == JOptionPane.YES_OPTION) {
@@ -809,6 +872,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		Dimension minSize = new Dimension(560, 520);
 		this.setPreferredSize(minSize);
 		this.setMinimumSize(minSize);
+
+		PRELOADED_BIOGAME_DIR = getInitialBiogameDirText();
 
 		// Load mods first
 		ModManager.debugLogger.writeMessage("Loading mods...");
@@ -863,7 +928,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								break;
 
 							case "bin":
-								// read magic at beginning to find out what type of
+								// read magic at beginning to find out what type
+								// of
 								// file this is
 								try {
 									byte[] buffer = new byte[4];
@@ -911,13 +977,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// Title Panel
 		JPanel titlePanel = new JPanel(new BorderLayout());
-		titlePanel.add(new JLabel("Mass Effect 3 Mod Manager " + ModManager.VERSION + (ModManager.IS_DEBUG ? " [DEBUG MODE]" : ""), SwingConstants.LEFT), BorderLayout.WEST);
+		titlePanel.add(new JLabel("Mass Effect 3 Mod Manager " + ModManager.VERSION + (ModManager.IS_DEBUG ? " [DEBUG MODE]" : ""), SwingConstants.LEFT),
+				BorderLayout.WEST);
 
 		// BioGameDir Panel
 		cookedDirPanel = new JPanel(new BorderLayout());
-		TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory");
+		TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+				"Mass Effect 3 BIOGame Directory");
 		fieldBiogameDir = new JTextField();
-		fieldBiogameDir.setText(getInitialBiogameDirText());
+		fieldBiogameDir.setText(PRELOADED_BIOGAME_DIR);
 		fieldBiogameDir.addFocusListener(new FocusListener() {
 
 			@Override
@@ -958,8 +1026,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JScrollPane listScroller = new JScrollPane(modList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 		modlistFailedIndicatorLink = new JButton();
-		modlistFailedIndicatorLink
-				.setText("<HTML><font color=#ff2020><u>" + invalidMods.size() + " mod" + (invalidMods.size() != 1 ? "s" : "") + " failed to load</u></font></HTML>");
+		modlistFailedIndicatorLink.setText(
+				"<HTML><font color=#ff2020><u>" + invalidMods.size() + " mod" + (invalidMods.size() != 1 ? "s" : "") + " failed to load</u></font></HTML>");
 		modlistFailedIndicatorLink.setBorderPainted(false);
 		modlistFailedIndicatorLink.setBackground(UIManager.getColor("Panel.background"));
 		modlistFailedIndicatorLink.setFocusPainted(false);
@@ -1099,14 +1167,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionExitDebugMode.setToolTipText("Restarts Mod Manager in standard mode");
 		actionExitDebugMode.addActionListener(this);
 
-		actionModMaker = new JMenuItem("Create a mod");
+		actionModMaker = new JMenuItem("Create a mod on ModMaker");
 		actionModMaker.setToolTipText("Opens ME3Tweaks ModMaker");
 		actionVisitMe = new JMenuItem("Open ME3Tweaks.com");
 		actionVisitMe.setToolTipText("Opens ME3Tweaks.com");
 
+		actionCheckForContentUpdates = new JMenuItem("Check for content updates");
+		actionCheckForContentUpdates.setToolTipText("Checks for Mod Manager content updates such as MixIns and ASI mods");
+
 		JMenu actionImportMenu = new JMenu("Import mod");
 		modManagementImportAlreadyInstalled = new JMenuItem("Import installed Custom DLC mod");
-		modManagementImportAlreadyInstalled.setToolTipText("<html>Import an already installed DLC mod.<br>You can then manage that mod with Mod Manager.</html>");
+		modManagementImportAlreadyInstalled
+				.setToolTipText("<html>Import an already installed DLC mod.<br>You can then manage that mod with Mod Manager.</html>");
 		modManagementImportFromArchive = new JMenuItem("Import mod from .7z/.rar/.zip");
 		modManagementImportFromArchive.setToolTipText(
 				"<html>Import a mod that has been packaged for importing into Mod Manager.<br>For directions on how to make mods in this format, please see the Mod Manager moddesc page.</html>");
@@ -1123,7 +1195,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolTankmasterTLK = new JMenuItem("TankMaster ME2/ME3 TLK Tool");
 		toolTankmasterTLK.setToolTipText("Runs the bundled TLK tool provided by TankMaster");
 		toolsAutoTOCGame = new JMenuItem("Run AutoTOC on game");
-		toolsAutoTOCGame.setToolTipText("<html>Updates TOC files for basegame, DLC (unpacked and modified SFAR), and custom DLC.<br>May help fix infinite loading issues</html>");
+		toolsAutoTOCGame.setToolTipText(
+				"<html>Updates TOC files for basegame, DLC (unpacked and modified SFAR), and custom DLC.<br>May help fix infinite loading issues</html>");
 
 		actionReload = new JMenuItem("Reload Mod Manager");
 		actionReload.setToolTipText("Reloads Mod Manager to refresh mods, mixins, and help documentation");
@@ -1137,13 +1210,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionMenu.add(actionVisitMe);
 		actionMenu.add(actionOptions);
 		actionMenu.addSeparator();
+		actionMenu.add(actionCheckForContentUpdates);
 		actionMenu.add(actionReload);
 		actionMenu.add(actionExit);
 
 		actionModMaker.addActionListener(this);
 		actionVisitMe.addActionListener(this);
 		actionOptions.addActionListener(this);
-
+		actionCheckForContentUpdates.addActionListener(this);
 		actionReload.addActionListener(this);
 		actionExit.addActionListener(this);
 		menuBar.add(actionMenu);
@@ -1152,12 +1226,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementMenu = new JMenu("Mod Management");
 		modManagementModMaker = new JMenuItem("Download ME3Tweaks ModMaker Mod");
 		modManagementModMaker.setToolTipText("Allows you to download and compile ME3Tweaks ModMaker mods");
-		modManagementASI = new JMenuItem("Manage ASI Code Injection mods");
+		modManagementASI = new JMenuItem("ASI Mod Manager");
 		modManagementASI.setToolTipText("Manage installed ASI mods that can modify the MassEffect3.exe process while running");
 		modManagementConflictDetector = new JMenuItem("Custom DLC Conflict Detector");
 		modManagementConflictDetector.setToolTipText("Scans installed custom DLC for file conflicts that may prevent them from working correctly");
 		modManagementCheckallmodsforupdate = new JMenuItem("Check eligible mods for updates");
-		modManagementCheckallmodsforupdate.setToolTipText("Checks eligible mods for updates on ME3Tweaks and prompts to download an update if one is available");
+		modManagementCheckallmodsforupdate
+				.setToolTipText("Checks eligible mods for updates on ME3Tweaks and prompts to download an update if one is available");
 		modManagementPatchLibary = new JMenuItem("MixIn Library");
 		modManagementPatchLibary.setToolTipText("Add premade mixins to mods using patches in your patch library");
 		modManagementOpenModsFolder = new JMenuItem("Open mods/ folder");
@@ -1196,7 +1271,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// MOD TOOLS
 		modMenu = new JMenu("Mod Utils");
-		mountMenu = new JMenu("Manage Custom DLC Mount files");
+		mountMenu = new JMenu("Manage [PLACEHOLDER] Mount files");
 		mountMenu.setVisible(false);
 		modutilsHeader = new JMenuItem("No mod selected");
 		modutilsHeader.setEnabled(false);
@@ -1206,7 +1281,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (!checkForKeybindsOverride()) {
 			ModManager.debugLogger.writeMessage("No keybinds file in the override directory (bioinput.xml)");
 			modutilsInstallCustomKeybinds.setEnabled(false);
-			modutilsInstallCustomKeybinds.setToolTipText("<html>To enable installing custom keybinds put a<br>BioInput.xml file in the data/override/ directory.</html>");
+			modutilsInstallCustomKeybinds
+					.setToolTipText("<html>To enable installing custom keybinds put a<br>BioInput.xml file in the data/override/ directory.</html>");
 		} else {
 			ModManager.debugLogger.writeMessage("Found keybinds file in the override directory (bioinput.xml)");
 			modutilsInstallCustomKeybinds.setToolTipText("<html>Replace BioInput.xml in the BASEGAME Coalesced file</html>");
@@ -1225,8 +1301,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				"<html>This mod has variants that allow quick changes to the mod without shipping a full new version.<br>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
 		modDeltaMenu.setVisible(false);
 
+		modAlternatesMenu = new JMenu("No Alternate Options");
+		modAlternatesMenu.setToolTipText("<html>This mod has only one installation configuration</html>");
+		modAlternatesMenu.setEnabled(false);
+
 		modNoDeltas = new JMenuItem("No included variants");
-		modNoDeltas.setToolTipText("<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
+		modNoDeltas.setToolTipText(
+				"<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
 		modNoDeltas.setEnabled(false);
 
 		modutilsVerifyDeltas = new JMenuItem("Verify variants");
@@ -1249,9 +1330,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modutilsRestoreMod.addActionListener(this);
 		modutilsRestoreMod.setVisible(false);
 
-		modutilsDeleteMod = new JMenuItem("Delete mod");
+		modutilsDeleteMod = new JMenuItem("Delete mod from library");
 		modutilsDeleteMod.addActionListener(this);
-		modutilsDeleteMod.setToolTipText("Delete this mod from Mod Manager");
+		modutilsDeleteMod.setToolTipText("<html>Delete this mod from Mod Manager.<br>This does not remove this mod if it is installed</html>");
 
 		modMenu.add(modutilsHeader);
 		modMenu.add(modutilsCheckforupdate);
@@ -1259,7 +1340,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modMenu.addSeparator();
 		modMenu.add(modDeltaMenu);
 		modMenu.add(modNoDeltas);
-		modMenu.add(mountMenu);
+		modMenu.add(modAlternatesMenu);
 		modMenu.addSeparator();
 		modMenu.add(modutilsInstallCustomKeybinds);
 		modMenu.add(modutilsInfoEditor);
@@ -1273,13 +1354,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu = new JMenu("Tools");
 
 		toolsMergeMod = new JMenuItem("Mod Merging Utility");
-		toolsMergeMod.setToolTipText("Allows you to merge CMM3+ mods together and resolve conflicts between mods");
+		toolsMergeMod.setToolTipText(
+				"<html>Allows you to merge Mod Manager mods together and resolve conflicts between mods<br>This tool is deprecated and may be removed in the future</html>");
 
 		toolsOpenME3Dir = new JMenuItem("Open BIOGame directory");
 		toolsOpenME3Dir.setToolTipText("Opens a Windows Explorer window in the BIOGame Directory");
 
 		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
-		toolsInstallLauncherWV.setToolTipText("<html>Installs an in-memory patcher giving you console and allowing modified DLC.<br>This does not does not modify files</html>");
+		toolsInstallLauncherWV.setToolTipText(
+				"<html>Installs an in-memory patcher giving you console and allowing modified DLC.<br>This does not does not modify files.<br>This bypass method has been deprecated. Use binkw32 instead</html>");
 		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
 		toolsInstallBinkw32.setToolTipText(
 				"<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This modifies your game and is erased when doing an Origin Repair</html>");
@@ -1287,7 +1370,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsInstallBinkw32asi.setToolTipText(
 				"<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This version allows loading of advanced ASI mods that allow 3rd party code to run on your machine.<br>This modifies your game and is erased when doing an Origin Repair</html>");
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
-		toolsUninstallBinkw32.setToolTipText("<html>Removes the Binkw32.dll startup patcher, reverting the original file</html>");
+		toolsUninstallBinkw32.setToolTipText("<html>Removes the Binkw32.dll DLC bypass (including ASI version), reverting to the original file</html>");
 
 		toolsUnpackDLC = new JMenuItem("DLC Unpacker");
 		toolsUnpackDLC.setToolTipText("Opens the Unpack DLC window so you can unpack DLC automatically");
@@ -1296,7 +1379,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
 
 		toolME3Config = new JMenuItem("ME3 Config Tool");
-		toolME3Config.setToolTipText("<html>Opens the ME3 Configuration Utility that comes packaged with the game.<br>Lets you configure graphics and audio settings.</html>");
+		toolME3Config.setToolTipText(
+				"<html>Opens the ME3 Configuration Utility that comes packaged with the game.<br>Lets you configure graphics and audio settings.</html>");
 
 		toolsAutoTOCGame.addActionListener(this);
 		modManagementModMaker.addActionListener(this);
@@ -1314,7 +1398,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modDevStarterKit = new JMenuItem("Generate a Custom DLC Starter Kit");
 		modDevStarterKit.addActionListener(this);
 		modDevStarterKit.setToolTipText("Generate a barebones Custom DLC mod that is immediately ready to use");
+		moddevOfficialDLCManager = new JMenuItem("Official DLC Toggler");
+		moddevOfficialDLCManager.addActionListener(this);
+		moddevOfficialDLCManager.setToolTipText("Allows you to quickly enable or disable official BioWare DLC for testing");
+		devMenu.add(mountMenu);
 		devMenu.add(modDevStarterKit);
+		devMenu.add(moddevOfficialDLCManager);
 		devMenu.add(moddevUpdateXMLGenerator);
 		devMenu.add(toolTankmasterCoalFolder);
 		devMenu.add(toolTankmasterCoalUI);
@@ -1350,7 +1439,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		backupMenu = new JMenu("Backup");
 
 		backupBackupDLC = new JMenuItem("Backup DLCs");
-		backupBackupDLC.setToolTipText("Backs up your DLC to .bak files. When installing a mod it will ask if a .bak files does not exist if you want to backup");
+		backupBackupDLC
+				.setToolTipText("Backs up your DLC to .bak files. When installing a mod it will ask if a .bak files does not exist if you want to backup");
 
 		backupBasegameUnpacked = new JMenuItem("Backup basegame/unpacked files");
 		backupBasegameUnpacked.setToolTipText("An Unpacked and basegame file will be automatically backed up when Mod Manager replaces or removes that file");
@@ -1379,8 +1469,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				"<html>Restores all basegame files, deletes unpacked DLC files, and restores all SFAR files.<br>This will delete any non standard DLC folders.</html>");
 
 		restoreDeleteUnpacked = new JMenuItem("Delete all unpacked DLC files");
-		restoreDeleteUnpacked
-				.setToolTipText("<html>Deletes unpacked DLC files, leaving PCConsoleTOC,<br>.sfar and .bak files in the DLC folders.<br>Does not modify Custom DLC.</html>");
+		restoreDeleteUnpacked.setToolTipText(
+				"<html>Deletes unpacked DLC files, leaving PCConsoleTOC,<br>.sfar and .bak files in the DLC folders.<br>Does not modify Custom DLC.</html>");
 
 		restoreRevertBasegame = new JMenuItem("Restore basegame files");
 		restoreRevertBasegame.setToolTipText("<html>Restores all basegame files that have been modified by installing mods</html>");
@@ -1410,7 +1500,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertSPDLC.setToolTipText("<html>Restores all SP DLCs.<br>This does not remove custom DLC modules.</html>");
 
 		restoreRevertSPBaseDLC = new JMenuItem("Restore SP DLC SFARs + Basegame");
-		restoreRevertSPBaseDLC.setToolTipText("<html>Restores all basegame files, and checks all SP DLC SFAR files.<br>This does not remove custom DLC modules.</html>");
+		restoreRevertSPBaseDLC
+				.setToolTipText("<html>Restores all basegame files, and checks all SP DLC SFAR files.<br>This does not remove custom DLC modules.</html>");
 
 		restoreRevertMPDLC = new JMenuItem("Restore MP DLC SFARs");
 		restoreRevertMPDLC.setToolTipText("<html>Restores all MP DLC SFARs.<br>This does not remove custom DLC modules.</html>");
@@ -1567,8 +1658,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 
 			}
 		} else if (e.getSource() == modManagementASI) {
@@ -1594,8 +1685,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				updateApplyButton();
 				labelStatus.setText("Can't manage ASI mods without valid BioGame");
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				ModManager.debugLogger.writeMessage("Invalid biogame dir for asi management");
 			}
 
@@ -1614,8 +1705,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Conflict detector requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == modManagementFailedMods) {
 			new FailedModsWindow();
@@ -1625,8 +1716,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Backing up DLC requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else
 
@@ -1644,8 +1735,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == backupCreateGDB) {
 			if (validateBIOGameDir()) {
@@ -1658,33 +1749,50 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else
 
 		if (e.getSource() == restoreRevertCoal) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.",
+						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
 				restoreCoalesced(fieldBiogameDir.getText());
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == modDevStarterKit) {
 			new StarterKitWindow();
+		} else if (e.getSource() == moddevOfficialDLCManager) {
+			if (validateBIOGameDir()) {
+				new OfficialDLCWindow(ModManagerWindow.GetBioGameDir());
+			} else {
+				labelStatus.setText("Official DLC Toggler requires valid BIOGame");
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BioGame directory to use the Official DLC toggler.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			}
 		} else if (e.getSource() == restoreRevertAllDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.ALLDLC);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoredeleteAllCustomDLC) {
 			if (validateBIOGameDir()) {
-				if (JOptionPane.showConfirmDialog(this, "This will delete all folders in the BIOGame/DLC folder that aren't known to be official.\nDelete all custom DLC?",
+				if (JOptionPane.showConfirmDialog(this,
+						"This will delete all folders in the BIOGame/DLC folder that aren't known to be official.\nDelete all custom DLC?",
 						"Delete all Custom DLC", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
 
 					restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.REMOVECUSTOMDLC);
 				}
 			} else {
 				labelStatus.setText("Can't remove custom DLC with invalid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreCustomDLCManager) {
@@ -1701,7 +1809,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				new SelectiveRestoreWindow(fieldBiogameDir.getText());
 			} else {
 				labelStatus.setText("Custom Restore requires valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nCustom Restore requires a valid directory.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nCustom Restore requires a valid directory.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertBasegame) {
@@ -1709,7 +1818,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.BASEGAME);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertUnpacked) {
@@ -1717,7 +1827,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.UNPACKED);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertBasegameUnpacked) {
@@ -1725,7 +1836,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.UNPACKEDBASEGAME);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreVanillifyDLC) {
@@ -1738,7 +1850,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertSPDLC) {
@@ -1746,7 +1859,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.SP);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 
@@ -1755,7 +1869,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.MP);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertSPBaseDLC) {
@@ -1763,7 +1878,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.SPBASE);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertMPBaseDLC) {
@@ -1771,12 +1887,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreDataFiles(fieldBiogameDir.getText(), RestoreMode.MPBASE);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else
 
 		if (e.getSource() == restoreRevertEverything) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.",
+						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
 				if (validateBIOGameDir()) {
 					if (JOptionPane.showConfirmDialog(this,
@@ -1803,7 +1925,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Cannot delete files with invalid BIOGame directory");
 
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(null,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == actionExitDebugMode) {
@@ -1824,7 +1947,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == modWebsiteLink) {
 			Mod mod = modModel.get(modList.getSelectedIndex());
 			try {
-				ModManager.openWebpage(new URI(mod.getModSite()));
+				ResourceUtils.openWebpage(new URI(mod.getModSite()));
 			} catch (URISyntaxException e1) {
 				// TODO Auto-generated catch block
 				ModManager.debugLogger.writeErrorWithException("Unable to open this mod's web site:", e1);
@@ -1850,6 +1973,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// TODO Auto-generated catch block
 				ex.printStackTrace();
 			}
+		} else if (e.getSource() == actionCheckForContentUpdates) {
+			new NetworkThread(true).execute();
 		} else if (e.getSource() == actionReload) {
 			// Reload this jframe
 			new ModManagerWindow(false);
@@ -1859,22 +1984,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeMessage("User selected exit from Actions Menu");
 			System.exit(0);
 		} else if (e.getSource() == buttonApplyMod) {
-			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Applying selected mod: Biogame Dir is valid.");
-				if (ModManager.validateNETFrameworkIsInstalled()) {
-					updateApplyButton();
-					ModManager.debugLogger.writeMessage(".NET is installed");
-					applyMod();
+			if (!ModManager.isMassEffect3Running()) {
+				if (validateBIOGameDir()) {
+					ModManager.debugLogger.writeMessage("Applying selected mod: Biogame Dir is valid.");
+					if (ModManager.validateNETFrameworkIsInstalled()) {
+						updateApplyButton();
+						ModManager.debugLogger.writeMessage(".NET is installed");
+						applyMod();
+					} else {
+						updateApplyButton();
+						labelStatus.setText(".NET Framework 4.5 or higher is missing");
+						ModManager.debugLogger.writeMessage("Applying selected mod: .NET is not installed");
+						new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to install mods.");
+					}
 				} else {
-					updateApplyButton();
-					labelStatus.setText(".NET Framework 4.5 or higher is missing");
-					ModManager.debugLogger.writeMessage("Applying selected mod: .NET is not installed");
-					new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to install mods.");
+					labelStatus.setText("Installing a mod requires valid BIOGame path");
+					labelStatus.setVisible(true);
+					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
 			} else {
-				labelStatus.setText("Installing a mod requires valid BIOGame path");
-				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "Mass Effect 3 must be closed before you can install a mod.", "MassEffect3.exe is running",
 						JOptionPane.ERROR_MESSAGE);
 			}
 		} else
@@ -1981,6 +2111,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == actionOptions) {
 			new OptionsWindow(this);
 		} else if (e.getSource() == toolsMergeMod) {
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"The mod merging tool has been deprecated.\nIt is no longer tested, and may break. To merge mods, install both and then run AutoTOC on the game.\nThe final applied mod will take precedence if there are conflicts.",
+					"Deprecated Tool", JOptionPane.WARNING_MESSAGE);
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				ModManager.debugLogger.writeMessage("Opening Mod Merging utility");
 				updateApplyButton();
@@ -1991,7 +2124,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Merge Tool: Missing .NET Framework");
 				new NetFrameworkMissingWindow("You must install .NET Framework 4.5 or higher in order to merge mods.");
 			}
-
 		} else if (e.getSource() == toolME3Config) {
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Opening ME3 Config tool");
@@ -2008,7 +2140,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				} else {
 					ModManager.debugLogger.writeError("Config tool is missing! Not found at " + path);
-					JOptionPane.showMessageDialog(null, "The config tool executable doesn't exist where it should:\n" + path, "Missing Config Tool exe", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "The config tool executable doesn't exist where it should:\n" + path, "Missing Config Tool exe",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			} else {
 				labelStatus.setText("ME3 Config tool requires a valid BIOGame directory");
@@ -2118,8 +2251,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		} else if (e.getSource() == modutilsDeleteMod) {
 			ModManager.debugLogger.writeMessage("User clicked Delete Mod on " + modModel.get(modList.getSelectedIndex()).getModName());
-			int result = JOptionPane.showConfirmDialog(this, "Deleting this mod will remove it from your filesystem.\nThis operation cannot be reversed.\nDelete "
-					+ modModel.get(modList.getSelectedIndex()).getModName() + "?", "Confirm Mod Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+			int result = JOptionPane.showConfirmDialog(this,
+					"Deleting this mod will remove it from Mod Manager's library.\nThis does not remove the mod if it is installed.\nThis operation cannot be reversed.\nDelete "
+							+ modModel.get(modList.getSelectedIndex()).getModName() + "?",
+					"Confirm Mod Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 			if (result == JOptionPane.OK_OPTION) {
 				ModManager.debugLogger.writeMessage("Deleting mod: " + modModel.get(modList.getSelectedIndex()).getModPath());
 				FileUtils.deleteQuietly(new File(modModel.get(modList.getSelectedIndex()).getModPath()));
@@ -2148,8 +2283,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == modDeltaRevert) {
 			// if (validateBIOGameDir()) {
@@ -2193,16 +2328,26 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == sqlGearParser) {
 			// new GearGUI();
 		} else if (e.getSource() == toolsInstallLauncherWV) {
-			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Installing manual LauncherWV bypass.");
-				installBypass();
-			} else {
-				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
-				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+			int result = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"LauncherWV has been deprecated.\nYou can install install it, but using the binkw32 bypass methods are far more reliable.\nContinue installing LauncherWV?",
+					"Deprecated Bypass", JOptionPane.WARNING_MESSAGE);
+			if (result == JOptionPane.OK_OPTION) {
+				if (validateBIOGameDir()) {
+					ModManager.debugLogger.writeMessage("Installing manual LauncherWV bypass.");
+					installBypass();
+				} else {
+					labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
+					labelStatus.setVisible(true);
+					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		} else if (e.getSource() == toolsInstallBinkw32asi) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 ASI DLC bypass.",
+						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
 				if (validateVC2012()) {
 					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
@@ -2219,7 +2364,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							"The Binkw32 ASI Bypass requires Visual C++ 2012 x86 redistributable.\nIf you are sure you have this installed, turn off the .NET version check in Mod Manager options.",
 							"ASI loader requires VC2012 x86", JOptionPane.ERROR_MESSAGE);
 					try {
-						ModManager.openWebpage(new URL("https://www.microsoft.com/en-us/download/details.aspx?id=30679"));
+						ResourceUtils.openWebpage(new URL("https://www.microsoft.com/en-us/download/details.aspx?id=30679"));
 					} catch (MalformedURLException e1) {
 						ModManager.debugLogger.writeErrorWithException("Unable to open VC++ download page:", e1);
 					}
@@ -2227,29 +2372,39 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == toolsInstallBinkw32) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 DLC bypass.",
+						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
-				ModManager.debugLogger.writeMessage("Installing manual Binkw32 bypass.");
+				ModManager.debugLogger.writeMessage("Installing manual Binkw32 bypass (standard).");
 				installBinkw32Bypass(false);
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 
 		} else if (e.getSource() == toolsUninstallBinkw32) {
+			if (ModManager.isMassEffect3Running()) {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall a binkw32 DLC bypass.",
+						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Uninstalling manual binkw32 bypass.");
 				uninstallBinkw32Bypass();
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -2316,8 +2471,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			if (isManualCheck) {
 				JOptionPane.showMessageDialog(null,
-						"No mods are eligible for the Mod Manager update service.\nEligible mods include ModMaker mods and ones hosted on ME3Tweaks.com.", "No updatable mods",
-						JOptionPane.WARNING_MESSAGE);
+						"No mods are eligible for the Mod Manager update service.\nEligible mods include ModMaker mods and ones hosted on ME3Tweaks.com.",
+						"No updatable mods", JOptionPane.WARNING_MESSAGE);
 			}
 			Wini ini;
 			try {
@@ -2384,7 +2539,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new BackupWindow(this, bioGameDir);
 		} else {
 			// Biogame is invalid
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
+			JOptionPane.showMessageDialog(null,
+					"The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
 					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			labelStatus.setText("DLC backup failed");
 			labelStatus.setVisible(true);
@@ -2398,7 +2554,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new BackupWindow(this, bioGameDir, dlcName);
 		} else {
 			// Biogame is invalid
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
+			JOptionPane.showMessageDialog(null,
+					"The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
 					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			labelStatus.setText("DLC backup failed");
 			labelStatus.setVisible(true);
@@ -2410,49 +2567,101 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * Checks that the user has chosen a correct biogame directory.
 	 */
 	private void checkForValidBioGame(JFileChooser dirChooser) {
-		File coalesced = new File(ModManager.appendSlash(dirChooser.getSelectedFile().toString()) + "CookedPCConsole\\Coalesced.bin");
-		if (coalesced.exists()) {
-			String YesNo[] = { "Yes", "No" };
-			int saveDir = JOptionPane.showOptionDialog(null, "BioGame directory set to: " + dirChooser.getSelectedFile().toString() + "\nSave this path?", "Save BIOGame path?",
-					JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
-			if (saveDir == 0) {
-				Wini ini;
-				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
-					ini.put("Settings", "biogame_dir", ModManager.appendSlash(dirChooser.getSelectedFile().toString()));
-					ModManager.debugLogger.writeMessage(ModManager.appendSlash(dirChooser.getSelectedFile().toString()));
-					ini.store();
-				} catch (InvalidFileFormatException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
-				}
-				labelStatus.setText("Saved BioGame directory to me3cmm.ini");
-				labelStatus.setVisible(true);
+		String chosenPath = dirChooser.getSelectedFile().toString();
+		if (internalValidateBIOGameDir(chosenPath)) {
+			chosenPath = new File(chosenPath).getParent();
+			// Check to make sure mod manager folder is not a subset
+			String localpath = System.getProperty("user.dir");
+			try {
+				ResourceUtils.getRelativePath(localpath, chosenPath, File.separator);
+				// common path
+				JOptionPane.showMessageDialog(null,
+						"Mod Manager cannot be located in the Mass Effect 3 game directory.\nMove Mod Manager out of the game directory.",
+						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
+				return;
+			} catch (ResourceUtils.PathResolutionException e) {
+				// we're OK
+
 			}
+
+			saveBiogamePath(dirChooser.getSelectedFile().toString());
+			labelStatus.setText("Saved BioGame directory to me3cmm.ini");
+			labelStatus.setVisible(true);
 			fieldBiogameDir.setText(dirChooser.getSelectedFile().toString());
 			validateBIOGameDir();
 		} else {
-			JOptionPane.showMessageDialog(null, "Coalesced.bin not found in " + dirChooser.getSelectedFile().toString(), "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Invalid Mass Effect 3 BIOGame folder selected:\n" + dirChooser.getSelectedFile().toString(),
+					"Invalid ME3 BIOGame Directory", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
 	/**
 	 * Checks if the string in the biogamedir is a valid biogame directory.
+	 * Checks for Coalesced.bin and DLC folder existence.
 	 * 
 	 * @return True if valid, false otherwise
 	 */
 	public static boolean validateBIOGameDir() {
-		File coalesced = new File(ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + "CookedPCConsole\\Coalesced.bin");
-		if (coalesced.exists()) {
+		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
+			ModManagerWindow.PRELOADED_BIOGAME_DIR = ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText();
+		}
+
+		if (internalValidateBIOGameDir(PRELOADED_BIOGAME_DIR)) {
 			setBioDirHighlight(false);
+			setBottomButtonState(true);
 			return true;
 		} else {
 			setBioDirHighlight(true);
+			setBottomButtonState(false);
 			return false;
+		}
+	}
+
+	/**
+	 * Internal validation rule for validating biogame dir.
+	 * 
+	 * @param path
+	 * @return
+	 */
+	private static boolean internalValidateBIOGameDir(String path) {
+		File coalesced = new File(ModManager.appendSlash(path) + "CookedPCConsole\\Coalesced.bin");
+		File dlcFolder = new File(ModManager.appendSlash(path) + "DLC\\");
+		File parentPath = new File(path).getParentFile();
+		if (coalesced.exists() && dlcFolder.exists() && parentPath != null) {
+
+			String localpath = ModManager.appendSlash(System.getProperty("user.dir"));
+			try {
+				
+				if (!localpath.equalsIgnoreCase(ModManager.appendSlash(parentPath.getAbsolutePath()))) {
+					String relative = ResourceUtils.getRelativePath(localpath, ModManager.appendSlash(parentPath.getAbsolutePath()), File.separator);
+					if (relative.startsWith("..")) {
+						return true;
+					}
+				}
+				// common path
+				JOptionPane.showMessageDialog(null,
+						"Mod Manager cannot be located in the Mass Effect 3 game directory.\nMove Mod Manager out of the game directory and restart Mod Manager.",
+						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
+				ModManager.debugLogger.writeError("Mod Manager is located in the game directory! Shutting down to avoid issues.");
+				System.exit(1);
+			} catch (ResourceUtils.PathResolutionException e) {
+				// we're OK
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Sets the state of the bottom two buttons in Mod Manager main UI
+	 * 
+	 * @param b
+	 *            true to on, false to off
+	 */
+	private static void setBottomButtonState(boolean b) {
+		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
+			ModManagerWindow.ACTIVE_WINDOW.buttonApplyMod.setEnabled(b);
+			ModManagerWindow.ACTIVE_WINDOW.buttonStartGame.setEnabled(b);
 		}
 	}
 
@@ -2463,14 +2672,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @param highlight
 	 */
 	private static void setBioDirHighlight(boolean highlight) {
-		if (highlight) {
-			TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory (INVALID)",
-					TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager.getDefaults().getFont("titledBorder.font"), Color.RED);
-			ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
-		} else {
-			TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory",
-					TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager.getDefaults().getFont("titledBorder.font"), new Color(0, 150, 0));
-			ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
+		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
+			if (highlight) {
+				TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+						"Mass Effect 3 BIOGame Directory (INVALID)", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
+						UIManager.getDefaults().getFont("titledBorder.font"), Color.RED);
+				ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
+			} else {
+				TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+						"Mass Effect 3 BIOGame Directory", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
+						UIManager.getDefaults().getFont("titledBorder.font"), new Color(0, 150, 0));
+				ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
+			}
 		}
 	}
 
@@ -2482,25 +2695,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @return
 	 */
 	private String getInitialBiogameDirText() {
-		ModManager.debugLogger.writeMessage("Getting location of Mass Effect 3 directory.");
+		ModManager.debugLogger.writeMessage("Getting location of Mass Effect 3 directory to populate BioGameDir text field.");
 		Wini settingsini;
 		String defaultDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
 		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
 		String os = System.getProperty("os.name");
-		ModManager.debugLogger.writeMessage("Entering getInitialBiogameDirText() try block");
 
 		try {
 			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 			setDir = settingsini.get("Settings", "biogame_dir");
-			ModManager.debugLogger.writeMessage("setDir = " + setDir);
+			ModManager.debugLogger.writeMessage("ME3CMM.ini has saved the biogame directory to (blank/null if doesn't exist): " + setDir);
 			if ((setDir == null || setDir.equals("")) && os.contains("Windows")) {
 				String installDir = null;
 				String _32bitpath = "SOFTWARE\\BioWare\\Mass Effect 3";
 				String _64bitpath = "SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
-				ModManager.debugLogger.writeMessage("OS contains windows and setDir is null or blank. trying 64bit registry key");
+				ModManager.debugLogger.writeMessage("ME3CMM.ini does not contain the game path, attempting lookup via 64-bit registry key");
 				try {
 					installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _64bitpath, "Install Dir");
 					ModManager.debugLogger.writeMessage("found installdir via 64bit reg key");
+					if (internalValidateBIOGameDir(ModManager.appendSlash(installDir) + "BIOGame")) {
+						saveBiogamePath(ModManager.appendSlash(installDir) + "BIOGame");
+					}
 				} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
 					ModManager.debugLogger.writeMessage("Exception looking at 64 registry key: " + _64bitpath);
 				}
@@ -2508,8 +2723,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (installDir == null) {
 					// try 32bit key
 					try {
+						ModManager.debugLogger.writeMessage("64-bit registry key not found. Attemping to find via 32-bit registy key");
 						installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _32bitpath, "Install Dir");
-						ModManager.debugLogger.writeMessage("OS contains windows and setDir is null or blank. trying 32bit registry key");
+						if (internalValidateBIOGameDir(ModManager.appendSlash(installDir) + "BIOGame")) {
+							saveBiogamePath(ModManager.appendSlash(installDir) + "BIOGame");
+						}
 					} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
 						ModManager.debugLogger.writeMessage("Exception looking at 32bit registry key: " + _32bitpath);
 					}
@@ -2529,8 +2747,34 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeErrorWithException("Error occured while attempting to get/set the biogame directory! Could be the JNA crash.", e);
 			return "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame";
 		}
-		ModManager.debugLogger.writeMessage("Directory that was fetched: " + setDir);
+		ModManager.debugLogger.writeMessage("Directory that will be set: " + (setDir != null && !setDir.equals("") ? setDir : defaultDir));
 		return (setDir != null && !setDir.equals("")) ? setDir : defaultDir;
+	}
+
+	/**
+	 * Saves the biogame directory path to me3cmm.ini
+	 * 
+	 * @param installDir
+	 *            Directory of ME3 BIOGame folder
+	 */
+	private void saveBiogamePath(String installDir) {
+		ModManager.debugLogger.writeMessage("Saving BIOGame path to settings: " + installDir);
+
+		Wini ini;
+		try {
+
+			File settings = new File(ModManager.SETTINGS_FILENAME);
+			if (!settings.exists())
+				settings.createNewFile();
+			ini = new Wini(settings);
+			ini.put("Settings", "biogame_dir", ModManager.appendSlash(installDir));
+			ini.store();
+			ModManager.debugLogger.writeMessage("Saved BIOGame path to settings.");
+		} catch (InvalidFileFormatException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+		}
 	}
 
 	/**
@@ -2540,23 +2784,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	private boolean applyMod() {
 		// Prepare
-		labelStatus.setText("Installing mod...");
+		Mod mod = modModel.get(modList.getSelectedIndex());
+
+		labelStatus.setText("Installing " + mod.getModName() + "...");
 		labelStatus.setVisible(true);
 
-		// Validate BioGame Dir
-		File coalesced = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + "CookedPCConsole\\" + "Coalesced.bin");
-		if (ModManager.logging) {
-			ModManager.debugLogger.writeMessage("Validating BioGame dir: " + coalesced);
-		}
-		if (!coalesced.exists()) {
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.", "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
-
-			labelStatus.setText("Mod not installed");
-			labelStatus.setVisible(true);
-			return false;
-		}
-
-		Mod mod = modModel.get(modList.getSelectedIndex());
 		if (mod.getJobs().length > 0) {
 			checkBackedUp(mod);
 			new ModInstallWindow(this, fieldBiogameDir.getText(), mod);
@@ -2576,18 +2808,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			File mainFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Default.sfar");
 			boolean defaultsfarMainFileExists = mainFile.exists();
 			File backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Default.sfar.bak");
-			System.out.println("Checking for backup file: " + backFile.getAbsolutePath());
+			ModManager.debugLogger.writeMessage("Checking for backup file: " + backFile.getAbsolutePath());
 			if (!backFile.exists()) {
 				// Patch_001.sfar
 				mainFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Patch_001.sfar");
 				boolean patch001farMainFileExists = mainFile.exists();
 				backFile = new File(ModManager.appendSlash(fieldBiogameDir.getText()) + job.getDLCFilePath() + "\\Patch_001.sfar.bak");
-				System.out.println("Checking for TESTPATCH file: " + backFile.getAbsolutePath());
+				ModManager.debugLogger.writeMessage("Checking for TESTPATCH file: " + backFile.getAbsolutePath());
 
 				if ((defaultsfarMainFileExists || patch001farMainFileExists) && !backFile.exists()) {
 					String YesNo[] = { "Yes", "No" }; // Yes/no buttons
-					int showDLCBackup = JOptionPane.showOptionDialog(null, "<html>" + job.getJobName() + " DLC has not been backed up.<br>Back it up now?</hmtl>", "Backup DLC",
-							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
+					int showDLCBackup = JOptionPane.showOptionDialog(null,
+							"<html>" + job.getJobName() + " DLC has not been backed up.<br>Back it up now?</hmtl>", "Backup DLC", JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
 					if (showDLCBackup == 0) {
 						autoBackupDLC(fieldBiogameDir.getText(), job.getJobName());
 					}
@@ -2631,7 +2864,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				buttonApplyMod.setEnabled(true);
 				if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
 					buttonApplyMod.setToolTipText(
-							"<html>Apply this mod to the game.<br>If another mod is already installed, restore your game first!<br>You can merge Mod Manager mods in the Tools menu.</html>");
+							"<html>Apply this mod to the game.<br>If other mods are installed, you should consider uninstalling them by<br>using the Restore Menu if they are known to not work together.</html>");
 				} else {
 					buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5 or higher in order to install mods");
 				}
@@ -2649,18 +2882,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					} else {
 						moddevUpdateXMLGenerator.setEnabled(true);
 						moddevUpdateXMLGenerator.setText("Prepare " + selectedMod.getModName() + " for ME3Tweaks Updater Service");
-						moddevUpdateXMLGenerator.setToolTipText("Compresses mod files for storage on ME3Tweaks and generates a mod manifest. Copies to clipboard when complete.");
-
+						moddevUpdateXMLGenerator.setToolTipText(
+								"Compresses mod files for storage on ME3Tweaks and generates a mod manifest. Copies to clipboard when complete.");
 					}
 				} else {
 					modutilsRestoreMod.setVisible(false);
-
 					modutilsCheckforupdate.setEnabled(false);
 					modutilsCheckforupdate.setText("Mod not eligible for updates");
 					moddevUpdateXMLGenerator.setEnabled(false);
 					moddevUpdateXMLGenerator.setToolTipText(selectedMod.getModName() + " does not have a ME3Tweaks update code");
 					moddevUpdateXMLGenerator.setText("Cannot prepare " + selectedMod.getModName() + " for ME3Tweaks Updater Service");
-					modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
+					modutilsCheckforupdate.setToolTipText(
+							"<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 				}
 
 				UrlValidator urlValidator = new UrlValidator(new String[] { "http", "https" });
@@ -2676,6 +2909,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 				if (selectedMod.containsCustomDLCJob()) {
 					mountMenu.setVisible(true);
+					mountMenu.setText(selectedMod.getModName() + " Mount.dlc files");
 					for (ModJob job : selectedMod.getJobs()) {
 						if (job.getJobType() == ModJob.CUSTOMDLC) {
 							// has custom dlc task
@@ -2739,6 +2973,106 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					modDeltaMenu.setVisible(false);
 					modNoDeltas.setVisible(true);
+				}
+
+				modAlternatesMenu.removeAll();
+				// Count number of alternates
+				ArrayList<AlternateFile> alts = selectedMod.getAlternateFiles();
+				ArrayList<AlternateCustomDLC> altdlcs = selectedMod.getAlternateCustomDLC();
+				int numoptions = altdlcs.size() + alts.size();
+
+				for (ModJob job : selectedMod.getJobs()) {
+					if (job.getJobType() == ModJob.CUSTOMDLC) {
+						continue; // don't parse these
+					}
+					numoptions += job.getAlternateFiles().size();
+				}
+
+				if (numoptions > 0) {
+					modAlternatesMenu.setEnabled(true);
+					modAlternatesMenu.setText(numoptions + " alternate installation option" + (numoptions != 1 ? "s" : ""));
+					if (numoptions > 0) {
+						modAlternatesMenu.setToolTipText(
+								"<html>This mod has " + numoptions + " additional installation configuration" + (numoptions != 1 ? "s" : "") + "</html>");
+					}
+
+					ArrayList<AlternateFile> autoAlts = selectedMod.getApplicableAutomaticAlternates(GetBioGameDir());
+					for (AlternateFile af : alts) {
+						String friendlyname = af.getOperation() + " due to " + af.getCondition() + " for " + af.getConditionalDLC();
+						if (af.getFriendlyName() != null) {
+							friendlyname = af.getFriendlyName();
+						}
+						JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+						item.setToolTipText(af.getDescription());
+						item.setEnabled(false);
+						if (autoAlts.contains(af)) {
+							item.setSelected(true);
+						}
+						modAlternatesMenu.add(item);
+					}
+
+					// Populate Manual Alternate Files for Official DLC
+					for (ModJob job : selectedMod.getJobs()) {
+						if (job.getJobType() == ModJob.CUSTOMDLC) {
+							continue; // don't parse these
+						}
+						for (AlternateFile af : job.getAlternateFiles()) {
+							String friendlyname = af.getOperation() + " due to " + af.getCondition() + " for " + job.getJobName();
+							if (af.getFriendlyName() != null) {
+								friendlyname = af.getFriendlyName();
+							}
+							JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+							item.setToolTipText(af.getDescription());
+							item.setEnabled(true); // Can only do
+													// CONDITION_MANUAL
+							item.setSelected(af.isEnabled());
+							item.addActionListener(new ActionListener() {
+
+								@Override
+								public void actionPerformed(ActionEvent e) {
+									af.setHasBeenChosen(item.isSelected());
+									ModManager.debugLogger.writeMessage("[" + selectedMod.getModName() + "] User has toggled an optional ALTFILE addin "
+											+ item.getText() + " to " + (item.isSelected() ? "on" : "off") + ".");
+									labelStatus.setText(item.getText() + " set to " + (item.isSelected() ? "enabled" : "disabled"));
+								}
+							});
+							modAlternatesMenu.add(item);
+						}
+					}
+
+					if (altdlcs.size() > 0) {
+						modAlternatesMenu.addSeparator();
+						for (AlternateCustomDLC altdlc : altdlcs) {
+							String friendlyname = altdlc.getOperation() + " due to " + altdlc.getCondition() + " for " + altdlc.getConditionalDLC();
+							if (altdlc.getFriendlyName() != null) {
+								friendlyname = altdlc.getFriendlyName();
+							}
+							JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+							item.setToolTipText(altdlc.getDescription());
+							if (!altdlc.getCondition().equals(AlternateCustomDLC.CONDITION_MANUAL)) {
+								item.setEnabled(false);
+							} else {
+								item.addActionListener(new ActionListener() {
+
+									@Override
+									public void actionPerformed(ActionEvent e) {
+										ModManager.debugLogger.writeMessage("[" + selectedMod.getModName() + "] User has toggled an optional ALTDLC addin "
+												+ item.getText() + " to " + (item.isSelected() ? "on" : "off") + ".");
+										altdlc.setHasBeenChosen(item.isSelected());
+									}
+								});
+							}
+							if (selectedMod.getAppliedAutomaticAlternateCustomDLC().contains(altdlc)) {
+								item.setSelected(true);
+							} else {
+								item.setSelected(altdlc.hasBeenChoosen());
+							}
+							modAlternatesMenu.add(item);
+						}
+					}
+				} else {
+					modAlternatesMenu.setEnabled(false);
+					modAlternatesMenu.setText("No alternate installation options");
 				}
 			}
 		}
@@ -2818,8 +3152,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			labelStatus.setText("Invalid BioGame Directory");
 			labelStatus.setVisible(true);
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid. Files cannot be restored.\nFix the directory and try again.", "Invalid BioGame Directory",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid. Files cannot be restored.\nFix the directory and try again.",
+					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 	}
@@ -2867,9 +3201,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// check if the new one exists
 		if (!executable.exists()) {
-			JOptionPane.showMessageDialog(null,
-					"Unable to find game executable in the specified directory:\n" + executable.getAbsolutePath() + "\nMake sure your BIOGame directory is correct.",
-					"Unable to Launch Game", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Unable to find game executable in the specified directory:\n" + executable.getAbsolutePath()
+					+ "\nMake sure your BIOGame directory is correct.", "Unable to Launch Game", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		// Executable exists.
@@ -3005,4 +3338,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		new SingleModUpdateCheckThread(mod).execute();
 	}
 
+	public static String GetBioGameDir() {
+		if (ModManagerWindow.ACTIVE_WINDOW == null || ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir == null) {
+			return ModManagerWindow.PRELOADED_BIOGAME_DIR;
+		} else {
+			return ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText();
+		}
+	}
 }

@@ -97,7 +97,6 @@ public class PatchApplicationWindow extends JDialog {
 		this.setResizable(false);
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImages(ModManager.ICONS);
-
 		JPanel panel = new JPanel(new BorderLayout());
 
 		operationLabel = new JLabel("Applying mixins to " + mod.getModName() + "[0/0]");
