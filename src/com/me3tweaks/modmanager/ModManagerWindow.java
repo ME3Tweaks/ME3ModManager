@@ -2166,7 +2166,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
-
 		} else if (e.getSource() == restoreRevertMPDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(GetBioGameDir(), RestoreMode.MP);

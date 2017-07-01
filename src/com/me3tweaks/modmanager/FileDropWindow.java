@@ -188,42 +188,46 @@ public class FileDropWindow extends JDialog {
 			break;
 		}
 		case "dlc": {
-			JButton decompileCoalescedFile = new JButton("Mount.dlc file options");
+			JButton editMountButton = new JButton("Edit Mount.dlc in Mount Editor");
 
-			JPanel binFilePanel = new JPanel();
-			binFilePanel.setLayout(new BoxLayout(binFilePanel, BoxLayout.PAGE_AXIS));
+			JPanel mountFilePanel = new JPanel();
+			mountFilePanel.setLayout(new BoxLayout(mountFilePanel, BoxLayout.PAGE_AXIS));
 
-			TitledBorder coalescedFilePanelBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "BIN File Operations");
-			binFilePanel.setBorder(coalescedFilePanelBorder);
+			TitledBorder mountFileBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mount.dlc file operations");
+			mountFilePanel.setBorder(mountFileBorder);
 
-			JPanel coalescedPanel = new JPanel();
-			TitledBorder coalescedBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "BIN - Coalesced File");
-			coalescedPanel.setBorder(coalescedBorder);
-			coalescedPanel.add(decompileCoalescedFile);
+			JPanel mountDLCOperationsPanel = new JPanel();
+			TitledBorder mountOperationsBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "DLC metadata file");
+			mountDLCOperationsPanel.setBorder(mountOperationsBorder);
+			mountDLCOperationsPanel.add(editMountButton);
 
-			binFilePanel.add(coalescedPanel);
+			mountFilePanel.add(mountDLCOperationsPanel);
 
-			//Check if coalesced
-			byte[] buffer = new byte[4];
+			panel.add(mountFilePanel);
+			break;
+		}
+		case "asi": {
+			JButton installASIButton = new JButton("Install ASI");
+			installASIButton.setAlignmentX(CENTER_ALIGNMENT);
+			JPanel asiFilePanel = new JPanel();
+			asiFilePanel.setLayout(new BoxLayout(asiFilePanel, BoxLayout.PAGE_AXIS));
 
-			try (InputStream is = new FileInputStream(droppedFile.getAbsolutePath())) {
-				if (is.read(buffer) != buffer.length) {
-					// do something
-					decompileCoalescedFile.setEnabled(false);
-					decompileCoalescedFile.setToolTipText("Dropped file is not a coalesced file.");
-					return;
-				}
-				int magic = ResourceUtils.byteArrayToInt(buffer);
-				if (magic != ModManager.COALESCED_MAGIC_NUMBER) {
-					//not a coalesced file
-					decompileCoalescedFile.setEnabled(false);
-					decompileCoalescedFile.setToolTipText("Dropped file is not a coalesced file.");
-				}
-				is.close();
-			} catch (IOException e) {
-				ModManager.debugLogger.writeErrorWithException("Error reading input binary file! (Coalesced Drop)", e);
-			}
-			panel.add(binFilePanel);
+			TitledBorder asiBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "ASI Native Mod options");
+			asiFilePanel.setBorder(asiBorder);
+
+			JPanel asiInstallationPanel = new JPanel();
+			TitledBorder coalescedBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "ASI - Native Mod");
+			asiInstallationPanel.setBorder(coalescedBorder);
+			asiInstallationPanel.setLayout(new BoxLayout(asiInstallationPanel, BoxLayout.PAGE_AXIS));
+			asiInstallationPanel.setAlignmentX(CENTER_ALIGNMENT);
+			JLabel warning = new JLabel("<html>Install ASI mods at your own risk, as they can execute native code.</html>");
+			warning.setAlignmentX(CENTER_ALIGNMENT);
+
+			asiInstallationPanel.add(warning);
+			asiInstallationPanel.add(installASIButton);
+			asiFilePanel.add(asiInstallationPanel);
+
+			panel.add(asiFilePanel);
 			break;
 		}
 		default: {
@@ -236,7 +240,7 @@ public class FileDropWindow extends JDialog {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		rootPanel.add(panel, BorderLayout.CENTER);
 		JLabel others = new JLabel(
-				"<html><center>Supported file drop types:<br> - .pcc (ME3 package file)<br> - .bin (Coalesced file)<br> - .tlk (Localization file)<br> - .txt (PCC data dump file)<br> - .xml (Multiple types)<br> - .dlc (Mount.dlc file)</center></html>",
+				"<html><center>Supported file drop types:<br> - .pcc (ME3 package file)<br> - .bin (Coalesced file)<br> - .tlk (Localization file)<br> - .txt (PCC data dump file)<br> - .xml (Multiple types)<br> - .dlc (Mount.dlc file)<br> - .asi (Runtime native mod)</center></html>",
 				SwingConstants.CENTER);
 		rootPanel.add(others, BorderLayout.SOUTH);
 		rootPanel.setBorder(new EmptyBorder(5, 5, 5, 5));

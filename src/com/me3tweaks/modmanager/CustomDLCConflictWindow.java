@@ -654,10 +654,9 @@ public class CustomDLCConflictWindow extends JDialog {
 			commandBuilder.add(skg.getGeneratedMod().getModPath() + "DLC_MOD_" + internalName);
 			String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 			ModManager.debugLogger.writeMessage("Running AutoTOC on newly created mod.");
-			int returncode = 1;
 			ProcessBuilder pb = new ProcessBuilder(command);
 			ProcessResult pr = ModManager.runProcess(pb);
-			returncode = pr.getReturnCode();
+			int returncode = pr.getReturnCode();
 			if (returncode != 0 || pr.hadError()) {
 				ModManager.debugLogger.writeError("FullAutoTOC returned a non 0 code (or threw error) running AutoTOC: " + returncode);
 			}
@@ -665,7 +664,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			String workspaceFolder = outputMod.getModPath() + "WORKSPACE/";
 			boolean deletedWS = FileUtils.deleteQuietly(new File(workspaceFolder));
 			if (deletedWS) {
-				ModManager.debugLogger.writeError("Deleted workspace folder from starter kit generated mod");
+				ModManager.debugLogger.writeMessage("Deleted workspace folder from starter kit generated mod");
 			}
 			return true;
 		}
