@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -102,7 +103,8 @@ public class ASIModWindow extends JDialog {
 	private void setupWindow() {
 		setIconImages(ModManager.ICONS);
 		setTitle("ASI Mod Manager");
-		setModal(true);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(300, 200));
 		loadLocalManifest(true);
@@ -458,8 +460,9 @@ public class ASIModWindow extends JDialog {
 			} else {
 				setTitle(installedmod.getFilename() + " Actions");
 			}
+			setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 			setIconImages(ModManager.ICONS);
-			setModal(true);
+			setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 
 			JPanel panel = new JPanel();
 			panel.setLayout(new GridBagLayout());

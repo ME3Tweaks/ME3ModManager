@@ -55,21 +55,16 @@ public class UnpackWindow extends JDialog {
 		this.callingWindow = callingWindow;
 		this.BioGameDir = BioGameDir;
 		checkboxMap = new HashMap<String, JCheckBox>();
-
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Unpack DLCs");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		//this.setPreferredSize(new Dimension(260, 452));
-
 		setupWindow();
-
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(callingWindow);
 		this.setVisible(true);
 	}
 
 	private void setupWindow() {
+		setTitle("Unpack DLCs");
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setIconImages(ModManager.ICONS);
+		
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		infoLabel = new JLabel("<html>Select DLCs to unpack.<br>Items in blue are not unpacked.</html>");
@@ -189,6 +184,9 @@ public class UnpackWindow extends JDialog {
 				// methods will read this variable
 			}
 		});
+		
+		pack();
+		setLocationRelativeTo(callingWindow);
 	}
 
 	private String[] getJobs() {

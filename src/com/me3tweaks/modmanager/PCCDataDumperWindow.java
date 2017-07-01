@@ -72,6 +72,7 @@ public class PCCDataDumperWindow extends JDialog {
 
 	private void setupWindow() {
 		setTitle("PCC Data Dumper");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		JLabel[] threadOperationLabels = new JLabel[threads]; //VMs won't be supported obviously

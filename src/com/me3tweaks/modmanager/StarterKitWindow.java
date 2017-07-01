@@ -71,7 +71,6 @@ public class StarterKitWindow extends JDialog {
 
 	public StarterKitWindow() {
 		setupWindow();
-		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
 
@@ -162,7 +161,7 @@ public class StarterKitWindow extends JDialog {
 		internalTLKId.setUI(new HintTextFieldUI("13370000", true));
 		mountPriority.setUI(new HintTextFieldUI("4500", true));
 		modDescription.setUI(new HintTextAreaUI(
-				"Mod description goes here.\nThis is what will appear in Mod Manager when the user selects your mod.\nThis is the moddesc attribute in moddesc.ini under [ModInfo].\nNewlines will be replaced with <br>."));
+				"Mod description goes here.\nThis is what will appear in Mod Manager when a user\nselects your mod.\nThis is the moddesc descriptor in moddesc.ini\nunder [ModInfo].\nNewlines will be replaced with <br>."));
 		modName.setToolTipText("<html>Name of this mod that Mod Manager will display.<br>This is the moddesc modname value under [ModInfo]</html>");
 		modDeveloper.setToolTipText("<html>Developer of this mod. Likely your modding scene alias.<br>This is the moddesc moddev value under [ModInfo]</html>");
 		modSite.setToolTipText(
@@ -264,19 +263,8 @@ public class StarterKitWindow extends JDialog {
 		progressBar.setVisible(false);
 		panel.add(progressBar, c);
 		add(panel);
-
-		//DEBUG ONLY
-		/*
-		 * modName.setText("Starter Kit Testing");
-		 * internalDisplayName.setText("Starter Kit Testing");
-		 * internalTLKId.setText("6700000"); mountPriority.setText("4505");
-		 * internalDLCName.setText("StartKitTest");
-		 * modDeveloper.setText("Gatomade");
-		 * modSite.setText("http://example.com"); modDescription.setText(
-		 * "This is what a mod description looks like.\nIt has multiple lines.\nOf txt."
-		 * );
-		 */
 		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	private boolean validateFields() {
@@ -692,6 +680,13 @@ public class StarterKitWindow extends JDialog {
 		}
 
 		private void setupDialog(JDialog dialog, String title, Dimension size) {
+			setTitle(title);
+			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+			setResizable(false);
+			setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+			setIconImages(ModManager.ICONS);
+			setPreferredSize(size);
+			
 			JPanel aboutPanel = new JPanel(new BorderLayout());
 			infoLabel = new JLabel("<html>Placeholder text</html>", SwingConstants.CENTER);
 			aboutPanel.add(infoLabel, BorderLayout.NORTH);
@@ -700,15 +695,10 @@ public class StarterKitWindow extends JDialog {
 			progressBar.setIndeterminate(false);
 			aboutPanel.add(progressBar, BorderLayout.CENTER);
 			aboutPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			this.getContentPane().add(aboutPanel);
-			this.setTitle(title);
-			this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-			this.setResizable(false);
-			this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-			this.setIconImages(ModManager.ICONS);
-			this.setPreferredSize(size);
-			this.pack();
-			this.setLocationRelativeTo(dialog);
+			getContentPane().add(aboutPanel);
+
+			pack();
+			setLocationRelativeTo(dialog);
 		}
 	}
 

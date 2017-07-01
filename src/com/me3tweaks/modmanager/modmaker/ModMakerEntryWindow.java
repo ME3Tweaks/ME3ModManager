@@ -77,8 +77,8 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		boolean shouldshow = validateModMakerPrereqs();
 		if (shouldshow) {
 			setupWindow();
-			this.setVisible(true);
-			this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+			setVisible(true);
+			setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		} else {
 			dispose();
 		}
@@ -86,6 +86,10 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	}
 
 	private void setupWindow() {
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setResizable(false);
+		setIconImages(ModManager.ICONS);
+		
 		JPanel modMakerPanel = new JPanel();
 		modMakerPanel.setLayout(new BoxLayout(modMakerPanel, BoxLayout.Y_AXIS));
 		JPanel infoPane = new JPanel();
@@ -208,9 +212,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		add(modMakerPanel);
-
-		setResizable(false);
-		setIconImages(ModManager.ICONS);
+		
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 

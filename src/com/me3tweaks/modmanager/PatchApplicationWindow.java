@@ -92,16 +92,16 @@ public class PatchApplicationWindow extends JDialog {
 
 	private void setupWindow() {
 		failedPatches = new ArrayList<Patch>();
-		this.setTitle("MixIn Installer");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(320, 70));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
+		setTitle("MixIn Installer");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(320, 70));
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
 		if (callingDialog == null && callingDialog == null) {
-			this.setLocationRelativeTo(null);
+			setLocationRelativeTo(null);
 		} else {
-			this.setLocationRelativeTo(callingDialog == null ? callingFrame : callingDialog);
+			setLocationRelativeTo(callingDialog == null ? callingFrame : callingDialog);
 		}
 		JPanel panel = new JPanel(new BorderLayout());
 
@@ -110,7 +110,7 @@ public class PatchApplicationWindow extends JDialog {
 		panel.add(operationLabel, BorderLayout.NORTH);
 		panel.add(statusLabel, BorderLayout.SOUTH);
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		this.getContentPane().add(panel);
+		getContentPane().add(panel);
 
 		addWindowListener(new WindowAdapter() {
 			@Override

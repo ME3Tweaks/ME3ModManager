@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -42,7 +43,6 @@ public class OfficialDLCWindow extends JDialog {
 		ModManager.debugLogger.writeMessage("Opening Official DLC window.");
 		this.bioGameDir = bioGameDir;
 		setupWindow();
-		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
 
@@ -52,7 +52,8 @@ public class OfficialDLCWindow extends JDialog {
 				"DEVELOPERS ONLY", JOptionPane.WARNING_MESSAGE);
 		setIconImages(ModManager.ICONS);
 		setTitle("Official DLC Manager");
-		setModal(true);
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(700, 350));
 
@@ -182,6 +183,7 @@ public class OfficialDLCWindow extends JDialog {
 				}
 			}
 		});
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	private class OfficialDLCInfo implements Comparable<OfficialDLCInfo> {

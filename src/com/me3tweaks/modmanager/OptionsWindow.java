@@ -39,16 +39,16 @@ public class OptionsWindow extends JDialog {
 
 	public OptionsWindow(JFrame callingWindow) {
 		setupWindow();
-		this.setLocationRelativeTo(callingWindow);
-		this.setVisible(true);
+		setLocationRelativeTo(callingWindow);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
-		this.setTitle("Mod Manager Options");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
-		this.setResizable(false);
+		setTitle("Mod Manager Options");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
+		setResizable(false);
 
 		JPanel optionsPanel = new JPanel();
 		optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.PAGE_AXIS));
@@ -389,7 +389,7 @@ public class OptionsWindow extends JDialog {
 		optionsPanel.add(logPatchInit);
 
 		optionsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		this.getContentPane().add(optionsPanel);
-		this.pack();
+		getContentPane().add(optionsPanel);
+		pack();
 	}
 }

@@ -74,18 +74,15 @@ public class SelectiveRestoreWindow extends JDialog {
 		// callingWindow.setEnabled(false);
 		this.BioGameDir = BioGameDir;
 		setupWindow();
-
-		this.pack();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Custom Restore");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setIconImages(ModManager.ICONS);
-		this.setPreferredSize(new Dimension(820, 440));
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setTitle("Custom Restore");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setIconImages(ModManager.ICONS);
+		setPreferredSize(new Dimension(820, 440));
 
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		infoLabel = new JLabel("<html>Select data to restore.</html>");
@@ -268,7 +265,8 @@ public class SelectiveRestoreWindow extends JDialog {
 				// methods will read this variable
 			}
 		});
-
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	/**

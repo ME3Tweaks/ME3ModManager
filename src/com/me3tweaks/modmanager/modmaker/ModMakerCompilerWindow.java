@@ -111,7 +111,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.code = code;
 		this.languages = languages;
 		setupWindow();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiling ModMaker Mod...");
 		new ModDownloadWorker().execute();
 
@@ -429,10 +428,12 @@ public class ModMakerCompilerWindow extends JDialog {
 	}
 
 	private void setupWindow() {
-		this.setTitle("ModMaker Compiler");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(420, 167));
-		this.setIconImages(ModManager.ICONS);
+		setTitle("ModMaker Compiler");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(420, 167));
+		setIconImages(ModManager.ICONS);
+		setResizable(false);
+
 
 		JPanel modMakerPanel = new JPanel();
 		modMakerPanel.setLayout(new BoxLayout(modMakerPanel, BoxLayout.PAGE_AXIS));
@@ -472,9 +473,10 @@ public class ModMakerCompilerWindow extends JDialog {
 		currentPanel.add(currentStepProgress, BorderLayout.SOUTH);
 		modMakerPanel.add(currentPanel);
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		setResizable(false);
-		this.getContentPane().add(modMakerPanel);
-		this.pack();
+		getContentPane().add(modMakerPanel);
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+
 	}
 
 	/**

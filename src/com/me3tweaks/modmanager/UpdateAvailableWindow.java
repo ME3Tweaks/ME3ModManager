@@ -54,7 +54,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	private JButton changelogButton;
 	private JPanel downloadPanel;
 
-	public UpdateAvailableWindow(JSONObject updateInfo, JFrame callingWindow) {
+	public UpdateAvailableWindow(JSONObject updateInfo) {
 		ModManager.debugLogger.writeMessage("Opening update available window");
 
 		this.updateInfo = updateInfo;
@@ -68,28 +68,25 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			manualLink = downloadLink2 == null ? downloadLink : downloadLink2;
 		}
 		ModManager.debugLogger.writeMessage("Update info:");
-		ModManager.debugLogger.writeMessage(" - Version: "+version);
-		ModManager.debugLogger.writeMessage(" - Build: "+build);
-		ModManager.debugLogger.writeMessage(" - Primary Download: "+downloadLink2);
-		ModManager.debugLogger.writeMessage(" - Fallback Download: "+downloadLink);
-		ModManager.debugLogger.writeMessage(" - Manual Download: "+manualLink);
-		ModManager.debugLogger.writeMessage(" - Changelog: "+changelogLink);
-		ModManager.debugLogger.writeMessage(" - "+version);
-
-
-		this.setTitle("Update Available");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		//this.setPreferredSize(new Dimension((int)width, (int)height));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		ModManager.debugLogger.writeMessage(" - Version: " + version);
+		ModManager.debugLogger.writeMessage(" - Build: " + build);
+		ModManager.debugLogger.writeMessage(" - Primary Download: " + downloadLink2);
+		ModManager.debugLogger.writeMessage(" - Fallback Download: " + downloadLink);
+		ModManager.debugLogger.writeMessage(" - Manual Download: " + manualLink);
+		ModManager.debugLogger.writeMessage(" - Changelog: " + changelogLink);
+		ModManager.debugLogger.writeMessage(" - " + version);
 		setupWindow();
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(callingWindow);
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
+		setTitle("Update Available");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
+
+
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
 		introLabel = new JLabel();
@@ -183,7 +180,9 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		versionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		changeLogPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		updatePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		this.getContentPane().add(updatePanel);
+		getContentPane().add(updatePanel);
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	void setStatusText(String text) {
@@ -284,7 +283,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			for (ThreadCommand latest : chunks) {
 				switch (latest.getCommand()) {
 				case "UPDATE_PROGRESS":
-					setProgress((Integer)latest.getData());
+					setProgress((Integer) latest.getData());
 					break;
 				case "UPDATE_STATUS":
 					setStatusText(latest.getMessage());

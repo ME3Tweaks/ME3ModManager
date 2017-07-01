@@ -521,7 +521,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					menuBar.add(helpMenu);
 					break;
 				case "SHOW_UPDATE_WINDOW":
-					new UpdateAvailableWindow((JSONObject) latest.getData(), ModManagerWindow.this);
+					new UpdateAvailableWindow((JSONObject) latest.getData());
 					break;
 				case "SET_STATUSBAR_TEXT":
 					labelStatus.setText(latest.getMessage());
@@ -935,70 +935,70 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						if (files[0].isDirectory()) {
 							// prompt
 							new FileDropWindow(ModManagerWindow.this, files[0]);
-						}
-						if (files[0].isFile()) {
-							new FileDropWindow(ModManagerWindow.this, files[0]);
-						}
+						} else {
+							//if (files[0].isFile()) {
+							//	new FileDropWindow(ModManagerWindow.this, files[0]);
+							//}
 
-						String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
-						switch (extension) {
-						case "7z":
-						case "zip":
-						case "rar":
-							new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
-							break;
-						case "pcc":
-							
-							break;
-						case "asi":
-							int exebuild = ModManager.checkforME3105(GetBioGameDir());
-							if (exebuild != 5) {
-								labelStatus.setText("ASI mods don't work with Mass Effect 3 1.0" + exebuild);
+							String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
+							switch (extension) {
+							case "7z":
+							case "zip":
+							case "rar":
+								new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
 								break;
-							}
-							if (!ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir())) {
-								labelStatus.setText("Binkw32 ASI loader not installed");
-								break;
-							}
-						case "xml":
-							new FileDropWindow(ModManagerWindow.this, files[0]);
-							break;
-						case "dlc":
-							new MountFileEditorWindow(files[0].toString());
-							break;
-						case "tlk":
-							TLKTool.decompileTLK(files[0]);
-							break;
-						case "bin": // read magic at beginning to find out
-							//what type // of // file this is 
-							byte[] buffer = new byte[4];
+							case "pcc":
 
-							try (InputStream is = new FileInputStream(files[0])) {
-								if (is.read(buffer) != buffer.length) { // do something 
-									
-									ModManager.debugLogger.writeMessage("Dropped file not a coalesced file.");
+								break;
+							case "asi":
+								int exebuild = ModManager.checkforME3105(GetBioGameDir());
+								if (exebuild != 5) {
+									labelStatus.setText("ASI mods don't work with Mass Effect 3 1.0" + exebuild);
+									break;
+								}
+								if (!ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir())) {
+									labelStatus.setText("Binkw32 ASI loader not installed");
+									break;
+								}
+							case "xml":
+								new FileDropWindow(ModManagerWindow.this, files[0]);
+								break;
+							case "dlc":
+								new MountFileEditorWindow(files[0].toString());
+								break;
+							case "tlk":
+								TLKTool.decompileTLK(files[0]);
+								break;
+							case "bin": // read magic at beginning to find out
+								//what type // of // file this is 
+								byte[] buffer = new byte[4];
+
+								try (InputStream is = new FileInputStream(files[0])) {
+									if (is.read(buffer) != buffer.length) { // do something 
+
+										ModManager.debugLogger.writeMessage("Dropped file not a coalesced file.");
+										labelStatus.setText("Dropped file is not a coalesced file");
+										break;
+									}
+									int magic = ResourceUtils.byteArrayToInt(buffer);
+									switch (magic) {
+									case ModManager.COALESCED_MAGIC_NUMBER:
+										new CoalescedWindow(files[0], false);
+										break;
+									}
+
+									is.close();
+								} catch (IOException e) {
+									ModManager.debugLogger.writeErrorWithException("I/O Exception reading coalesced magic number:", e);
 									labelStatus.setText("Dropped file is not a coalesced file");
-									break;
 								}
-								int magic = ResourceUtils.byteArrayToInt(buffer);
-								switch (magic) {
-								case ModManager.COALESCED_MAGIC_NUMBER:
-									new CoalescedWindow(files[0], false);
-									break;
-								}
-
-								is.close();
-							} catch (IOException e) {
-								ModManager.debugLogger.writeErrorWithException("I/O Exception reading coalesced magic number:", e);
-								labelStatus.setText("Dropped file is not a coalesced file");
+								break;
+							default:
+								labelStatus.setText("Extension not supported for Drag & Drop: " + extension);
+								break;
 							}
-							break;
-						default:
-							labelStatus.setText("Extension not supported for Drag & Drop: " + extension);
-							break;
 						}
 					}
-
 				} else {
 					labelStatus.setText("Drag and Drop requires a valid BioGame directory");
 					labelStatus.setVisible(true);

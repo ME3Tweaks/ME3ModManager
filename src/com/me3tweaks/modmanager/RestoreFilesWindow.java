@@ -61,10 +61,9 @@ public class RestoreFilesWindow extends JDialog {
 		this.restoreMode = restoreMode;
 		consoleQueue = new String[levelCount];
 		setupWindow();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		addToQueue("Restoring game files");
 		new RestoreDataJob().execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	/**
@@ -86,21 +85,20 @@ public class RestoreFilesWindow extends JDialog {
 		this.BioGameDir = BioGameDir;
 		consoleQueue = new String[levelCount];
 		setupWindow();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		addToQueue("Restoring game files");
 		restoreMode = operationType;
 		customTaskHeader = new String[] { header };
 		new RestoreDataJob().execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Restoring game files");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(350, 240));
-		this.setResizable(false);
-		this.setIconImages(ModManager.ICONS);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setTitle("Restoring game files");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(350, 240));
+		setResizable(false);
+		setIconImages(ModManager.ICONS);
 
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		// TODO Auto-generated method stub
@@ -133,7 +131,8 @@ public class RestoreFilesWindow extends JDialog {
 				// do something...
 			}
 		});
-		this.pack();
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	class RestoreDataJob extends SwingWorker<Boolean, String> {
@@ -750,8 +749,8 @@ public class RestoreFilesWindow extends JDialog {
 				if (!result) {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error occured during restore");
 					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-							"Errors occured during the file restoration process.\nAll or some of the files did not restore.\nCheck the logs for more information.", "Restoration Error",
-							JOptionPane.ERROR_MESSAGE);
+							"Errors occured during the file restoration process.\nAll or some of the files did not restore.\nCheck the logs for more information.",
+							"Restoration Error", JOptionPane.ERROR_MESSAGE);
 					dispose();
 					return;
 				}

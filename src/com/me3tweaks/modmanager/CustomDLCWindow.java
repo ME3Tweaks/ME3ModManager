@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -56,7 +57,7 @@ public class CustomDLCWindow extends JDialog {
 	private void setupWindow() {
 		setIconImages(ModManager.ICONS);
 		setTitle("Custom DLC Manager");
-		setModal(true);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(700, 350));
 

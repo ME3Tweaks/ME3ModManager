@@ -83,7 +83,6 @@ public class ModImportArchiveWindow extends JDialog {
 			return;
 		}
 		setupWindow();
-		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
 
@@ -97,7 +96,7 @@ public class ModImportArchiveWindow extends JDialog {
 	 */
 	public ModImportArchiveWindow(ModManagerWindow modManagerWindow, String file) {
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (filedrop mode)");
-		ModManager.debugLogger.writeMessage("Automating load of archive file: "+file);
+		ModManager.debugLogger.writeMessage("Automating load of archive file: " + file);
 
 		try {
 			ModManager.debugLogger.writeMessage("Loading 7-zip library");
@@ -129,6 +128,7 @@ public class ModImportArchiveWindow extends JDialog {
 		setTitle("Import compressed mods into Mod Manager");
 		setIconImages(ModManager.ICONS);
 		setPreferredSize(new Dimension(650, 400));
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		descriptionArea = new JTextArea();
 		descriptionArea.setLineWrap(true);
 		descriptionArea.setWrapStyleWord(true);
@@ -170,16 +170,8 @@ public class ModImportArchiveWindow extends JDialog {
 				}
 			}
 		};
-		modTable = new JTable(compressedModModel) {
-			@Override
-			public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-				Component component = super.prepareRenderer(renderer, row, column);
-				int rendererWidth = component.getPreferredSize().width;
-				TableColumn tableColumn = getColumnModel().getColumn(column);
-				tableColumn.setPreferredWidth(Math.max(rendererWidth + getIntercellSpacing().width, tableColumn.getPreferredWidth()));
-				return component;
-			}
-		};
+
+		modTable = new JTable(compressedModModel);
 		modTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
 			public void valueChanged(ListSelectionEvent lse) {
@@ -197,10 +189,14 @@ public class ModImportArchiveWindow extends JDialog {
 			}
 		});
 
-		modTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		modTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 		compressedModModel.addColumn("Import");
 		compressedModModel.addColumn("Mod Name");
+		modTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		modTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+		modTable.getColumnModel().getColumn(0).setMinWidth(70);
+		modTable.getColumnModel().getColumn(1).setMinWidth(130);
+		modTable.getColumnModel().getColumn(1).setPreferredWidth(Integer.MAX_VALUE);
+
 		JPanel actionPanel = new JPanel(new BorderLayout());
 
 		importButton = new JButton("Import Selected");
@@ -226,8 +222,6 @@ public class ModImportArchiveWindow extends JDialog {
 		panel.add(splitPane);
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(panel);
-		pack();
-		splitPane.setDividerLocation(0.5);
 
 		browseButton.addActionListener(new ActionListener() {
 
@@ -277,6 +271,9 @@ public class ModImportArchiveWindow extends JDialog {
 				}
 			}
 		});
+		pack();
+		splitPane.setDividerLocation(0.5);
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	public class ScanWorker extends SwingWorker<ArrayList<CompressedMod>, ThreadCommand> {
@@ -301,22 +298,26 @@ public class ModImportArchiveWindow extends JDialog {
 		}
 
 		protected void process(List<ThreadCommand> commands) {
-			
+
 			for (ThreadCommand command : commands) {
 				switch (command.getCommand()) {
 				case "PROGRESS_UPDATE":
-					setModalityType(ModalityType.APPLICATION_MODAL);
+					setModalityType(ModalityType.DOCUMENT_MODAL);
 					progressBar.setIndeterminate(false);
 					progressBar.setValue(Integer.parseInt((String) command.getMessage()));
 					break;
 				case "FOUND_MODFILE":
 					int data = (int) command.getData();
-					descriptionArea.setText("Scanning archive for Mod Manager mods...\nFound " + data + " potential mod" + (data != 1 ? "s" : "")+"\n\nThe progress bar may not move for a while for large mods.");
+					descriptionArea.setText("Scanning archive for Mod Manager mods...\nFound " + data + " potential mod" + (data != 1 ? "s" : "")
+							+ "\n\nThe progress bar may not move for a while for large mods.");
 					break;
 				case "POST_SUBTEXT":
 					String rside = descriptionArea.getText();
 					rside += "\n\nReading mod data from archive, please wait...";
 					descriptionArea.setText(rside);
+					break;
+				case "RELEASE_WINDOW":
+					setModalityType(ModalityType.MODELESS);
 					break;
 				}
 			}
@@ -338,7 +339,7 @@ public class ModImportArchiveWindow extends JDialog {
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "An error occured while reading this archive file.", "Error reaching archive file",
 						JOptionPane.ERROR_MESSAGE);
 			}
-			ModManager.debugLogger.writeMessage("[SCANWORKER] Found "+compressedMods.size()+" in archive. Displaying to user.");
+			ModManager.debugLogger.writeMessage("[SCANWORKER] Found " + compressedMods.size() + " in archive. Displaying to user.");
 
 			browseButton.setEnabled(true);
 
@@ -351,14 +352,15 @@ public class ModImportArchiveWindow extends JDialog {
 			if (compressedMods.size() > 0) {
 				importButton.setEnabled(true); //will stay false if no mods loaded
 				importButton.setText("Import Selected Mods");
+				descriptionArea.setText("Select a mod in the list to view its description.");
 			} else {
-				importButton.setEnabled(true); //will stay false if no mods loaded
+				importButton.setEnabled(false); //will stay false if no mods loaded
+				descriptionArea.setText("The selected archive does not contain any Mod Manager mods.");
 				importButton.setText("No mods in this archive");
 			}
 			progressBar.setIndeterminate(false);
 			progressBar.setVisible(false);
 			importButton.setVisible(true);
-			descriptionArea.setText("Select a mod in the list to view its description.");
 		}
 
 		public void publishUpdate(ThreadCommand threadCommand) {
@@ -380,7 +382,7 @@ public class ModImportArchiveWindow extends JDialog {
 			browseButton.setEnabled(false);
 			ModManager.debugLogger.writeMessage("[IMPORTWORKER] Starting ImportWorker. The following mods will be extracted: ");
 			for (CompressedMod cm : modsToImport) {
-				ModManager.debugLogger.writeMessage(" -- "+cm.modName);
+				ModManager.debugLogger.writeMessage(" -- " + cm.modName);
 			}
 		}
 
@@ -413,7 +415,7 @@ public class ModImportArchiveWindow extends JDialog {
 					}
 					break;
 				case "EXTRACTING_FILE":
-					descriptionArea.setText("Importing mods into Mod Manager...\n\nExtracting\n - "+command.getMessage());
+					descriptionArea.setText("Importing mods into Mod Manager...\n\nExtracting\n - " + command.getMessage());
 					break;
 				}
 			}
@@ -445,15 +447,15 @@ public class ModImportArchiveWindow extends JDialog {
 			if (!error) {
 				ModManager.debugLogger.writeMessage("[IMPORTWORKER] Import successful.");
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
+				//setModalityType(ModalityType.MODELESS);
 				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 				return;
 			} else {
 				ModManager.debugLogger.writeError("[IMPORTWORKER] Import was not fully successful");
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
-				JOptionPane.showMessageDialog(ModImportArchiveWindow.this,
-						"Error occured during mod import.\nSome mods may have successfully imported.",
-						"Import Unsuccessful", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Error occured during mod import.\nSome mods may have successfully imported.", "Import Unsuccessful",
+						JOptionPane.ERROR_MESSAGE);
 			}
 			descriptionArea.setText("Select an archive file to scan contents for Mod Manager mods.");
 			browseButton.setEnabled(true);

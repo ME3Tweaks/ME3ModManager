@@ -480,7 +480,6 @@ public class HelpMenu {
 		public int compareTo(SortableHelpElement other) {
 			Integer mypriority = getPriorityValue(element.getAttribute("sort"));
 			Integer otherpriority = getPriorityValue(other.element.getAttribute("sort"));
-			System.out.println("Priority value: " + mypriority.compareTo(otherpriority));
 			return mypriority.compareTo(otherpriority);
 		}
 
@@ -498,6 +497,5 @@ public class HelpMenu {
 				return 0;
 			}
 		}
-
 	}
 }

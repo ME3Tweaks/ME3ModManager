@@ -127,13 +127,13 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 	}
 
 	private void setupWindow() {
-		this.setTitle("Updating mod");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(300, 90));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
+		setTitle("Updating mod");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(300, 90));
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
+		pack();
 
 		JPanel panel = new JPanel(new BorderLayout());
 

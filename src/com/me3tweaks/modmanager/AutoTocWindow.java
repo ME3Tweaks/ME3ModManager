@@ -60,12 +60,7 @@ public class AutoTocWindow extends JDialog {
 		updatedGameTOCs = new HashMap<String, String>();
 		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: GAME-WIDE ===");
 		this.setTitle("Mod Manager AutoTOC");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+
 		new GameWideTOCWorker(biogameDir).execute();
 		this.setVisible(true);
 	}
@@ -86,10 +81,6 @@ public class AutoTocWindow extends JDialog {
 		this.mod = mod;
 		updatedGameTOCs = new HashMap<String, String>();
 		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: " + mode + "===");
-		this.setTitle("Mod Manager AutoTOC");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		switch (mode) {
 		case LOCALMOD_MODE:
 			setupWindow("Updating " + mod.getModName() + "'s PCConsoleTOC files");
@@ -103,14 +94,17 @@ public class AutoTocWindow extends JDialog {
 			dispose();
 			return;
 		}
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		new TOCWorker(mod, biogameDir).execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow(String labelText) {
+		setTitle("Mod Manager AutoTOC");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
+
 		JPanel aboutPanel = new JPanel(new BorderLayout());
 		infoLabel = new JLabel("<html>" + labelText + "</html>");
 		aboutPanel.add(infoLabel, BorderLayout.NORTH);
@@ -119,7 +113,9 @@ public class AutoTocWindow extends JDialog {
 		progressBar.setIndeterminate(false);
 		aboutPanel.add(progressBar, BorderLayout.CENTER);
 		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		this.getContentPane().add(aboutPanel);
+		getContentPane().add(aboutPanel);
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	/**

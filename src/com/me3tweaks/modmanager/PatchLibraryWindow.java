@@ -79,7 +79,6 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		if (mode == MANUAL_MODE) {
 			ModManager.debugLogger.writeMessage("Loading mixin library interface");
 			setupWindow();
-			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			new ME3TweaksLibraryUpdater(null, ModManagerWindow.ACTIVE_WINDOW.getPatchList(), PatchLibraryWindow.MANUAL_MODE).execute();
 			setVisible(true);
 		} else if (mode == AUTOUPDATE_MODE) {
@@ -148,21 +147,21 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	}
 
 	private void setupAutomatedWindow(JDialog callingDialog) {
-		this.setTitle("MixIn Library");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(250, 70));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
+		setTitle("MixIn Library");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(250, 70));
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
 		JPanel panel = new JPanel(new BorderLayout());
 
 		JLabel operationLabel = new JLabel("Getting latest MixIns from ME3Tweaks");
 
 		panel.add(operationLabel, BorderLayout.CENTER);
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		this.getContentPane().add(panel);
+		getContentPane().add(panel);
 		pack();
-		this.setLocationRelativeTo(callingDialog);
+		setLocationRelativeTo(callingDialog);
 	}
 
 	private void advertiseInstalls(JDialog callingDialog, ArrayList<Integer> mixinIds, Mod mod) {
@@ -270,11 +269,11 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	}
 
 	private void setupWindow() {
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("MixIn Library");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(600, 480));
-		this.setIconImages(ModManager.ICONS);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setTitle("MixIn Library");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(600, 480));
+		setIconImages(ModManager.ICONS);
 
 		JPanel contentPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -365,8 +364,8 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				}
 			}
 		});
-
 		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	@Override
