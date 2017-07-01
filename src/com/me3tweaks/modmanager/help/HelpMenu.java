@@ -11,15 +11,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-import java.util.HashMap;
-import java.util.Map;
-=======
 import java.util.Collections;
->>>>>>> Stashed changes
-=======
->>>>>>> e4379f724434d8782ee5c018c64dc503d3d04598
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -126,19 +118,11 @@ public class HelpMenu {
 		helpAbout = new JMenuItem("About Mod Manager");
 		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
 		helpGetLog = new JMenuItem("Copy log to clipboard");
 		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
-=======
 		helpGetLog = new JMenuItem("Generate Diagnostics Log");
 		helpGetLog.setToolTipText(
 				"<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
->>>>>>> Stashed changes
-=======
-		helpGetLog = new JMenuItem("Generate Diagnostics Log");
-		helpGetLog.setToolTipText("<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
->>>>>>> e4379f724434d8782ee5c018c64dc503d3d04598
 
 		helpLogViewer = new JMenuItem("View Mod Manager log");
 		helpLogViewer.setToolTipText("<html>View the current session log</html>");
@@ -202,14 +186,8 @@ public class HelpMenu {
 		helpGetLog.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!ModManager.logging) {
-<<<<<<< Updated upstream
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-							"You must enable logging via the Actions > Options menu before logs are generated.", "Logging disabled",
-							JOptionPane.ERROR_MESSAGE);
-=======
 					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "You must enable logging via the Actions > Options menu before logs are generated.",
 							"Logging disabled", JOptionPane.ERROR_MESSAGE);
->>>>>>> Stashed changes
 				} else {
 					copyLogToClipboard();
 				}
@@ -218,7 +196,6 @@ public class HelpMenu {
 		helpEmailFemShep.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-<<<<<<< Updated upstream
 				JOptionPane
 						.showMessageDialog(
 								ModManagerWindow.ACTIVE_WINDOW,
@@ -235,20 +212,6 @@ public class HelpMenu {
 										+ "Please note that I only speak English.<br><br>"
 										+ "You can email me at femshep@me3tweaks.com.</div></html>", "Contacting FemShep",
 								JOptionPane.INFORMATION_MESSAGE);
-=======
-				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-						"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>" + "Please email me if you have crashes or bugs, or use the forums.<br>"
-								+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
-								+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
-								+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
-								+ "3. Leave the default options unless instructed otherwise. Upload your log to pastebin.<br>"
-								+ "4. In your email, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
-								+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
-								+ "Please do not do any other operations as it makes the logs harder to read.<br>"
-								+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
-								+ "Please note that I only speak English.<br><br>" + "You can email me at femshep@me3tweaks.com.</div></html>",
-						"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
->>>>>>> Stashed changes
 			}
 		});
 		helpForums.addActionListener(new ActionListener() {
@@ -523,7 +486,7 @@ public class HelpMenu {
 		public int compareTo(SortableHelpElement other) {
 			Integer mypriority = getPriorityValue(element.getAttribute("sort"));
 			Integer otherpriority = getPriorityValue(other.element.getAttribute("sort"));
-			System.out.println("Priority value: "+mypriority.compareTo(otherpriority));
+			System.out.println("Priority value: " + mypriority.compareTo(otherpriority));
 			return mypriority.compareTo(otherpriority);
 		}
 
