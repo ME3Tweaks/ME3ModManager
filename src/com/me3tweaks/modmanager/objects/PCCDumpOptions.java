@@ -6,7 +6,7 @@ package com.me3tweaks.modmanager.objects;
  *
  */
 public class PCCDumpOptions {
-	public boolean scripts, coalesced, exports, imports, names, properties;
+	public boolean scripts, coalesced, exports, imports, names, properties,swfs;
 	public String gamePath;
 	public String outputFolder;
 }

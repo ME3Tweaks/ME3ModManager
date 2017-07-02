@@ -447,7 +447,6 @@ public class ModImportArchiveWindow extends JDialog {
 			if (!error) {
 				ModManager.debugLogger.writeMessage("[IMPORTWORKER] Import successful.");
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
-				//setModalityType(ModalityType.MODELESS);
 				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 				return;

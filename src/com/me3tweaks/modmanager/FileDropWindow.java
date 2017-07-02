@@ -4,13 +4,14 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -43,12 +44,12 @@ import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class FileDropWindow extends JDialog {
-	File droppedFile;
+	ArrayList<Path> droppedFiles;
 	boolean show = true;
 	private final Object lock = new Lock(); //threading wait() and notifyall();
 
-	public FileDropWindow(JFrame parentFrame, File file) {
-		droppedFile = file;
+	public FileDropWindow(JFrame parentFrame, ArrayList<Path> paths) {
+		this.droppedFiles = paths;
 		setupWindow2();
 		if (show) {
 			setVisible(true);
@@ -56,10 +57,15 @@ public class FileDropWindow extends JDialog {
 	}
 
 	private void setupWindow2() {
-		setTitle("Files drop task selector");
+		setTitle("Dropped files task selector");
 		setIconImages(ModManager.ICONS);
 
+		File droppedFile = droppedFiles.get(0).toFile();
 		if (droppedFile.isDirectory()) {
+			//only first directory is supported right now.
+			ArrayList<File> folder = new ArrayList<>();
+			folder.add(droppedFile);
+
 			JPanel panel = new JPanel(new GridBagLayout());
 			GridBagConstraints c = new GridBagConstraints();
 
@@ -80,17 +86,16 @@ public class FileDropWindow extends JDialog {
 			compileAllTLK.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
 			decompileAllTLK.setToolTipText("<html>Decompiles all TLK files using the TankMaster compiler tool included with Mod Manager.</html>");
 			decompileAllCoalesced
-					.setToolTipText("<html>Decompils all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
+					.setToolTipText("<html>Decompiles all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
 			decompressAllPcc.setToolTipText("<html>Decompresses all PCC files to their uncompressed state</html>");
 			compressAllPcc.setToolTipText("<html>Compresses all PCC files to their compressed state, using the game's method of compression</html>");
 			sideloadAllModMaker.setToolTipText("<html>Sideload all XML files as ModMaker mods and compile them in batch mode</html>");
 
 			compileAllTLK.addActionListener(new ActionListener() {
-
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose COMPILE_TLK operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK, null).execute();
+					new BatchWorker(folder, BatchWorker.COMPILE_TLK, null).execute();
 					dispose();
 				}
 			});
@@ -100,7 +105,7 @@ public class FileDropWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPILE_TLK operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_TLK, null).execute();
+					new BatchWorker(folder, BatchWorker.DECOMPILE_TLK, null).execute();
 					dispose();
 				}
 			});
@@ -110,7 +115,7 @@ public class FileDropWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose COMPILE_COAL operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPILE_COAL, null).execute();
+					new BatchWorker(folder, BatchWorker.COMPILE_COAL, null).execute();
 					dispose();
 				}
 			});
@@ -120,7 +125,7 @@ public class FileDropWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPILE_COAL operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_COAL, null).execute();
+					new BatchWorker(folder, BatchWorker.DECOMPILE_COAL, null).execute();
 					dispose();
 				}
 			});
@@ -130,7 +135,7 @@ public class FileDropWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose DECOMPRESS_PCC operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPRESS_PCC, null).execute();
+					new BatchWorker(folder, BatchWorker.DECOMPRESS_PCC, null).execute();
 					dispose();
 				}
 			});
@@ -140,7 +145,7 @@ public class FileDropWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose COMPRESS_PCC operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPRESS_PCC, null).execute();
+					new BatchWorker(folder, BatchWorker.COMPRESS_PCC, null).execute();
 					dispose();
 				}
 			});
@@ -150,7 +155,7 @@ public class FileDropWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					ModManager.debugLogger.writeMessage("User chose SIDELOAD_MODMAKER operation");
-					new BatchWorker(droppedFile, BatchWorker.SIDELOAD_MODMAKER, null).execute();
+					new BatchWorker(folder, BatchWorker.SIDELOAD_MODMAKER, null).execute();
 					dispose();
 				}
 			});
@@ -180,7 +185,7 @@ public class FileDropWindow extends JDialog {
 
 			JButton compileAllTLK = new JButton("Compile as TLK manifest");
 			JButton compileAllCoalesced = new JButton("Compile as coalesced manifest");
-			JButton sideloadAllModMaker = new JButton("Sideload as ModMaker delta");
+			JButton sideloadAllModMaker = new JButton("Sideload as ModMaker mod");
 
 			JPanel xmlFilePanel = new JPanel();
 			xmlFilePanel.setLayout(new BoxLayout(xmlFilePanel, BoxLayout.PAGE_AXIS));
@@ -189,17 +194,17 @@ public class FileDropWindow extends JDialog {
 			xmlFilePanel.setBorder(xmlBorder);
 
 			JPanel tlkXMLPanel = new JPanel();
-			TitledBorder tlkManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - TLK Manifest File");
+			TitledBorder tlkManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - TLK Manifest Files");
 			tlkXMLPanel.setBorder(tlkManifestBorder);
 			tlkXMLPanel.add(compileAllTLK);
 
 			JPanel coalescedXMLPanel = new JPanel();
-			TitledBorder coalescedManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - Coalesced Manifest File");
+			TitledBorder coalescedManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - Coalesced Manifest Files");
 			coalescedXMLPanel.setBorder(coalescedManifestBorder);
 			coalescedXMLPanel.add(compileAllCoalesced);
 
 			JPanel modmakerXMLPanel = new JPanel();
-			TitledBorder modmakerManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - ModMaker Mod Delta");
+			TitledBorder modmakerManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "XML - ModMaker mod delta files");
 			modmakerXMLPanel.setBorder(modmakerManifestBorder);
 			modmakerXMLPanel.add(sideloadAllModMaker);
 
@@ -208,12 +213,21 @@ public class FileDropWindow extends JDialog {
 			xmlFilePanel.add(modmakerXMLPanel);
 
 			panel.add(xmlFilePanel);
+
+			sideloadAllModMaker.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					ModManager.debugLogger.writeMessage("User chose SIDELOAD_MODMAKER operation");
+					new BatchWorker(droppedFile, BatchWorker.SIDELOAD_MODMAKER, null).execute();
+					dispose();
+				}
+			});
 			break;
 		}
 		case "pcc": {
 			JButton decompressAllPcc = new JButton("Decompress PCC file");
 			JButton compressAllPcc = new JButton("Compress PCC file");
-			JButton dumpGfxFiles = new JButton("Dump SWF/GFX GUI files");
 
 			JPanel pccFilePanel = new JPanel();
 			pccFilePanel.setLayout(new BoxLayout(pccFilePanel, BoxLayout.PAGE_AXIS));
@@ -232,7 +246,7 @@ public class FileDropWindow extends JDialog {
 			compressionPCCPanel.add(Box.createGlue());
 
 			JButton aipathfinding = new JButton("View AI Pathfinding in Map Pathfinding Viewer");
-			if (ArchUtils.getProcessor().is64Bit()) {
+			if (!ArchUtils.getProcessor().is64Bit()) {
 				aipathfinding.setEnabled(false);
 				aipathfinding.setToolTipText("Requires 64-bit Windows");
 			}
@@ -246,20 +260,20 @@ public class FileDropWindow extends JDialog {
 			readPCCPanel.add(dumppcc);
 			readPCCPanel.add(Box.createGlue());
 
-			JPanel swfPCCPanel = new JPanel();
-			swfPCCPanel.setLayout(new BoxLayout(swfPCCPanel, BoxLayout.LINE_AXIS));
-			TitledBorder swfBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - SWF/GFX GUI options");
-			swfPCCPanel.setBorder(swfBorder);
-
-			swfPCCPanel.add(Box.createGlue());
-			swfPCCPanel.add(dumpGfxFiles);
-			swfPCCPanel.add(Box.createGlue());
-
 			pccFilePanel.add(compressionPCCPanel);
 			pccFilePanel.add(readPCCPanel);
-			pccFilePanel.add(swfPCCPanel);
 
 			panel.add(pccFilePanel);
+
+			dumppcc.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					dispose();
+					new PCCDataDumperWindow(droppedFiles);
+				}
+			});
+
 			break;
 		}
 		case "bin": {
@@ -362,6 +376,15 @@ public class FileDropWindow extends JDialog {
 			tlkFilePanel.add(tlkDecompilePanel);
 
 			panel.add(tlkFilePanel);
+
+			decompileTLKButton.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					// TODO Auto-generated method stub
+
+				}
+			});
 			break;
 		}
 		case "txt": {
@@ -688,6 +711,12 @@ public class FileDropWindow extends JDialog {
 
 	}
 
+	/**
+	 * Folder based batch worker
+	 * 
+	 * @author Mgamerz
+	 *
+	 */
 	static class BatchWorker extends SwingWorker<Void, String> {
 
 		protected static final int COMPILE_TLK = 0;
@@ -699,38 +728,43 @@ public class FileDropWindow extends JDialog {
 		protected static final int SIDELOAD_MODMAKER = 6;
 
 		private int operation;
-		private File folder;
 		public final Object lock = new Lock(); //threading wait() and notifyall();
 		public boolean completed = false;
 		private StarterKitProgressDialog dialog;
+		private ArrayList<File> files;
 
-		public BatchWorker(File droppedFile, int operation, StarterKitProgressDialog dialog) {
+		//TODO: Make Batch Worker accept a a list of files/folders to parse instead of just calculating from directory
+		
+		public BatchWorker(ArrayList<File> files, int operation, StarterKitProgressDialog dialog) {
 			this.operation = operation;
-			this.folder = droppedFile;
+			this.files = files;
 			this.dialog = dialog; //can be null.
 		}
 
 		@Override
 		protected Void doInBackground() throws Exception {
-			SuffixFileFilter suff = null;
-			switch (operation) {
-			case DECOMPILE_TLK:
-				suff = new SuffixFileFilter(".tlk");
-				break;
-			case COMPRESS_PCC:
-			case DECOMPRESS_PCC:
-				suff = new SuffixFileFilter(".pcc");
-				break;
-			case SIDELOAD_MODMAKER:
-			case COMPILE_TLK:
-			case COMPILE_COAL:
-				suff = new SuffixFileFilter(".xml");
-				break;
+			if (files.get(0).isDirectory()) {
+				SuffixFileFilter suff = null;
+				switch (operation) {
+				case DECOMPILE_TLK:
+					suff = new SuffixFileFilter(".tlk");
+					break;
+				case COMPRESS_PCC:
+				case DECOMPRESS_PCC:
+					suff = new SuffixFileFilter(".pcc");
+					break;
+				case SIDELOAD_MODMAKER:
+				case COMPILE_TLK:
+				case COMPILE_COAL:
+					suff = new SuffixFileFilter(".xml");
+					break;
+				}
+				if (suff == null) {
+					return null;
+				}
+
+				files = FileUtils.listFiles(files.get(0), suff, FalseFileFilter.INSTANCE);
 			}
-			if (suff == null) {
-				return null;
-			}
-			Collection<File> files = FileUtils.listFiles(folder, suff, FalseFileFilter.INSTANCE);
 			int processed = 0;
 			for (File file : files) {
 				processed++;

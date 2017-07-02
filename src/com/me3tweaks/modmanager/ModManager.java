@@ -1435,7 +1435,7 @@ public class ModManager {
 	/**
 	 * Dumps the pcc using the specified options package.
 	 *
-	 * @param sourceSource
+	 * @param pcc
 	 *            PCC to dump
 	 * @param options
 	 *            Options package that is used to set the exe switches
@@ -1468,6 +1468,11 @@ public class ModManager {
 		if (options.properties) {
 			commandBuilder.add("--properties");
 		}
+		
+		if (options.swfs) {
+			commandBuilder.add("--swfs");
+		}
+		
 		commandBuilder.add("--outputfolder");
 		commandBuilder.add(options.outputFolder);
 

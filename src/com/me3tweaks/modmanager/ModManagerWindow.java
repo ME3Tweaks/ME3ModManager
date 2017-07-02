@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -930,25 +931,29 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// only works with first file
 				if (validateBIOGameDir()) {
 					if (files.length > 0 && files[0].exists()) {
+						//Verify all file types are the same.
+						String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
+						ArrayList<Path> paths = new ArrayList<>();
+						for (File file : files) {
+							String cextension = FilenameUtils.getExtension(file.getAbsolutePath());
+							if (!cextension.equals(extension)) {
+								labelStatus.setText("All dropped files must have same extension");
+								return;
+							}
+							paths.add(file.toPath());
+						}
+
 						ModManager.debugLogger.writeMessage("File was dropped onto Mod Manager Window: " + files[0]);
 
 						if (files[0].isDirectory()) {
 							// prompt
-							new FileDropWindow(ModManagerWindow.this, files[0]);
+							new FileDropWindow(ModManagerWindow.this, paths);
 						} else {
-							//if (files[0].isFile()) {
-							//	new FileDropWindow(ModManagerWindow.this, files[0]);
-							//}
-
-							String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
 							switch (extension) {
 							case "7z":
 							case "zip":
 							case "rar":
 								new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
-								break;
-							case "pcc":
-
 								break;
 							case "asi":
 								int exebuild = ModManager.checkforME3105(GetBioGameDir());
@@ -960,8 +965,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 									labelStatus.setText("Binkw32 ASI loader not installed");
 									break;
 								}
+							case "pcc":
 							case "xml":
-								new FileDropWindow(ModManagerWindow.this, files[0]);
+								new FileDropWindow(ModManagerWindow.this, paths);
 								break;
 							case "dlc":
 								new MountFileEditorWindow(files[0].toString());
@@ -1001,7 +1007,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				} else {
 					labelStatus.setText("Drag and Drop requires a valid BioGame directory");
-					labelStatus.setVisible(true);
 					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory to use drag and drop features.",
 							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}

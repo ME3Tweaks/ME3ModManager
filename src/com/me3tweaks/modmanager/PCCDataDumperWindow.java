@@ -40,6 +40,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.me3tweaks.modmanager.objects.PCCDumpOptions;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /**
  * Window controller for the pcc data dumping tool
@@ -48,6 +49,7 @@ import com.me3tweaks.modmanager.objects.ThreadCommand;
  *
  */
 public class PCCDataDumperWindow extends JDialog {
+	ArrayList<Path> files;
 	JLabel infoLabel;
 	boolean windowOpen = true;
 	JProgressBar progressBar;
@@ -58,7 +60,9 @@ public class PCCDataDumperWindow extends JDialog {
 	JCheckBox dumpExports;
 	JCheckBox dumpImports;
 	JCheckBox dumpNames;
+	JCheckBox dumpSWF;
 	final int threads = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1);
+	private JPanel dumpPanel;
 
 	/**
 	 * Manually invoked pcc data dumping window
@@ -70,14 +74,25 @@ public class PCCDataDumperWindow extends JDialog {
 		setVisible(true);
 	}
 
+	public PCCDataDumperWindow(ArrayList<Path> files) {
+		this.files = files;
+		ModManager.debugLogger.writeMessage("Opening PCCDataDumperWindow (with files)");
+		setupWindow();
+		setVisible(true);
+	}
+
 	private void setupWindow() {
 		setTitle("PCC Data Dumper");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		JLabel[] threadOperationLabels = new JLabel[threads]; //VMs won't be supported obviously
-		infoLabel = new JLabel(
-				"<html>Select the information you want to dump from game PCCs.<br>Dumping properties of PCCs can take a VERY LONG TIME.<br>To dump the entire game, it will take several hours.</html>");
+		if (files == null) {
+			infoLabel = new JLabel(
+					"<html>Select the information you want to dump from game PCCs.<br>Dumping properties of PCCs can take a VERY LONG TIME.<br>To dump specific files, drag and drop a folder of PCC files<br>(or a single pcc) onto the main Mod Manager window.</html>");
+		} else {
+			infoLabel = new JLabel("<html>Select the information you want to dump from the selected PCCs.<br>Dumping properties of PCCs can take a VERY LONG TIME.</html>");
+		}
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 
 		progressBar = new JProgressBar(0, 100);
@@ -119,25 +134,31 @@ public class PCCDataDumperWindow extends JDialog {
 		dumpExports = new JCheckBox("Exports");
 		dumpImports = new JCheckBox("Imports");
 		dumpNames = new JCheckBox("Name Table");
+		dumpSWF = new JCheckBox("SWFs (UI files)");
 
-		dumpScripts.setToolTipText("Dumps unrealscript functions with tokenized bytecode");
-		dumpCoalesced.setToolTipText("Dumps a [C] before exports that read their value from coalesced files");
+		dumpScripts.setToolTipText("Dumps unrealscript functions with tokenized bytecode.");
+		dumpCoalesced.setToolTipText("Dumps a [C] before exports that read their value from coalesced files.");
 		dumpProperties.setToolTipText("Dumps properties for each export. Will take a long time to cross reference data.");
 		dumpExports.setToolTipText("Dumps the export list. This value is automatically chosen if using properties or data.");
 		dumpImports.setToolTipText("Dumps the import list.");
 		dumpNames.setToolTipText("Dumps the name table.");
+		dumpSWF.setToolTipText(
+				"<html>Dumps SWF/GFxMovieInfo exports to SWF files that can be externally modified.<br>SWF files from PCCs will be placed into the dump folder inside a folder with the same name as the PCC, with the full object name as the filename.<br>Read the guide on ME3Tweaks for information on SWF editing.</html>");
 
 		checkBoxPanelLeft.add(dumpNames);
 		checkBoxPanelLeft.add(dumpImports);
+		checkBoxPanelLeft.add(dumpSWF);
 
 		checkBoxPanelRight.add(dumpExports);
 		checkBoxPanelRight.add(dumpCoalesced);
 		checkBoxPanelRight.add(dumpScripts);
 		checkBoxPanelRight.add(dumpProperties);
 
-		JCheckBox[] checkboxes = new JCheckBox[] { dumpNames, dumpImports, dumpExports, dumpCoalesced, dumpScripts, dumpProperties };
+		JCheckBox[] checkboxes = new JCheckBox[] { dumpNames, dumpImports, dumpExports, dumpCoalesced, dumpScripts, dumpProperties, dumpSWF };
 		for (JCheckBox cb : checkboxes) {
-			cb.setSelected(true);
+			if (cb != dumpSWF) {
+				cb.setSelected(true);
+			}
 		}
 		checkBoxPanel.add(checkBoxPanelLeft, BorderLayout.WEST);
 		checkBoxPanel.add(checkBoxPanelRight, BorderLayout.EAST);
@@ -158,19 +179,22 @@ public class PCCDataDumperWindow extends JDialog {
 				options.exports = dumpExports.isSelected();
 				options.imports = dumpImports.isSelected();
 				options.names = dumpNames.isSelected();
+				options.swfs = dumpSWF.isSelected();
 				options.properties = dumpProperties.isSelected();
 				options.outputFolder = ModManager.getPCCDumpFolder();
 				for (JCheckBox cb : checkboxes) {
 					cb.setEnabled(false);
 				}
-				new DumpPCCJob(options, threadOperationLabels).execute();
+				//files will be null if this window was not opened from drag and drop
+				new DumpPCCJob(options, threadOperationLabels, files).execute();
 			}
 		});
 
-		JPanel backupPanel = new JPanel(new BorderLayout());
-		backupPanel.add(dumpButton, BorderLayout.CENTER);
-		backupPanel.add(new JLabel("<html><center>PCC dumping is slow and will take several hours.<br>Dumps are placed in the data/PCCDumps folder.</center></html>", SwingConstants.CENTER), BorderLayout.SOUTH);
-		rootPanel.add(backupPanel, BorderLayout.SOUTH);
+		dumpPanel = new JPanel(new BorderLayout());
+		dumpPanel.add(dumpButton, BorderLayout.CENTER);
+		dumpPanel.add(new JLabel("<html><center>Property dumping may take several minutes per PCC.<br>Dumps are placed in the data/PCCDumps folder.</center></html>",
+				SwingConstants.CENTER), BorderLayout.SOUTH);
+		rootPanel.add(dumpPanel, BorderLayout.SOUTH);
 		rootPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(rootPanel);
 
@@ -187,28 +211,6 @@ public class PCCDataDumperWindow extends JDialog {
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
-	private void setupWindowAutomated(String dlcName) {
-		JPanel rootPanel = new JPanel(new BorderLayout());
-		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("Backing up " + dlcName + "...");
-		northPanel.add(infoLabel, BorderLayout.NORTH);
-
-		progressBar = new JProgressBar(0, 100);
-		progressBar.setStringPainted(true);
-		progressBar.setIndeterminate(true);
-		progressBar.setEnabled(false);
-		// progressBar.setPreferredSize(new Dimension(0, 28));
-		northPanel.add(progressBar, BorderLayout.SOUTH);
-		rootPanel.add(northPanel, BorderLayout.NORTH);
-		rootPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
-		add(rootPanel);
-		this.setTitle("PCC Data Dumper");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-	}
-
 	class DumpPCCJob extends SwingWorker<Boolean, ThreadCommand> {
 
 		private PCCDumpOptions options;
@@ -218,8 +220,9 @@ public class PCCDataDumperWindow extends JDialog {
 		ArrayList<Path> files = new ArrayList<Path>();
 		private JLabel[] threadOperationLabels;
 
-		public DumpPCCJob(PCCDumpOptions options, JLabel[] threadOperationLabels) {
+		public DumpPCCJob(PCCDumpOptions options, JLabel[] threadOperationLabels, ArrayList<Path> files) {
 			this.options = options;
+			this.files = files;
 			this.threadOperationLabels = threadOperationLabels;
 			threads = threadOperationLabels.length;
 			dumpButton.setEnabled(false);
@@ -302,6 +305,22 @@ public class PCCDataDumperWindow extends JDialog {
 			}
 		}
 
+		@Override
+		protected void done() {
+			infoLabel.setText("PCC dumping complete.");
+			JButton openPCCDumpFolder = new JButton("Open dump folder");
+			openPCCDumpFolder.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", ModManager.getPCCDumpFolder()));
+					dispose();
+				}
+			});
+			dumpPanel.remove(dumpButton);
+			dumpPanel.add(openPCCDumpFolder, BorderLayout.CENTER);
+		}
+
 		class DumpTask implements Callable<ProcessResult> {
 			private String filepath;
 			private PCCDumpOptions options;
@@ -313,14 +332,14 @@ public class PCCDataDumperWindow extends JDialog {
 
 			@Override
 			public ProcessResult call() throws Exception {
-				publish(new ThreadCommand("ASSIGN_TASK", FilenameUtils.getName(filepath)));
+				String taskname = FilenameUtils.getName(filepath) + " (" + ResourceUtils.humanReadableByteCount(new File(filepath).length(), true) + ")";
+				publish(new ThreadCommand("ASSIGN_TASK", taskname));
 				ProcessResult pr = ModManager.dumpPCC(filepath, options);
 				completed.incrementAndGet();
-				publish(new ThreadCommand("RELEASE_TASK", FilenameUtils.getName(filepath)));
+				publish(new ThreadCommand("RELEASE_TASK", taskname));
 				int progressval = (int) ((completed.get() / (files.size() * 1.0) * 100));
 				publish(new ThreadCommand("SET_PROGRESS", null, progressval));
 				publish(new ThreadCommand("UPDATE_STATUS", "Dumping PCC files... " + completed.get() + " of " + files.size()));
-
 				return pr;
 			}
 		}
