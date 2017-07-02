@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 
@@ -36,7 +37,7 @@ import net.iharder.dnd.FileDrop;
  * @author Mgamerz
  *
  */
-public class MapMeshGenerator extends JFrame implements ActionListener {
+public class MapMeshViewer extends JFrame implements ActionListener {
 	static String endentry = "=======================================================================";
 	private ArrayList<ReachSpec> reachspecs = new ArrayList<>();
 	private ArrayList<PathNode> pathnodes = new ArrayList<>();
@@ -51,15 +52,25 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 	String currentFile;
 	private JButton setCoordinatesButton;
 
-	public MapMeshGenerator() {
+	public MapMeshViewer() {
+		ModManager.debugLogger.writeMessage("Opening pathfinding viewer");
 		setupWindow();
-		setLocationRelativeTo(null);
 		setVisible(true);
 	}
 
+	/**
+	 * Open pathfinding viewer with the listed file
+	 * @param openfile file to open and view on start
+	 */
+	public MapMeshViewer(File openfile) {
+		ModManager.debugLogger.writeMessage("Opening pathfinding viewer with specified file: "+openfile);
+		setupWindow();
+		openFile(openfile);
+		setVisible(true);	}
+
 	private void setupWindow() {
 		// TODO Auto-generated method stub
-		this.setIconImages(ModManager.ICONS);
+		setIconImages(ModManager.ICONS);
 		JButton browse = new JButton("Open File");
 		browse.setFocusable(false);
 		mainPanel = new JPanel(new BorderLayout());
@@ -165,14 +176,14 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 		setTitle("Mod Manager Map Pathfinding Viewer");
 		setMinimumSize(new Dimension(800, 500));
 		pack();
-
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		browse.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				final JFileChooser fc = new JFileChooser();
 				//In response to a button click:
-				int returnVal = fc.showOpenDialog(MapMeshGenerator.this);
+				int returnVal = fc.showOpenDialog(MapMeshViewer.this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
 					openFile(file);
@@ -217,7 +228,7 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 							while (endindex.contains(":")) {
 								endindex = endindex.substring(endindex.indexOf(':') + 1).trim();
 							}
-							System.out.print("X: " + endindex);
+							//System.out.print("X: " + endindex);
 							newline = true;
 							findingXYZ.setX(Double.parseDouble(endindex));
 						}
@@ -227,7 +238,7 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 							while (endindex.contains(":")) {
 								endindex = endindex.substring(endindex.indexOf(':') + 1).trim();
 							}
-							System.out.print(" Y: " + endindex);
+							//System.out.print(" Y: " + endindex);
 							newline = true;
 
 							findingXYZ.setY(Double.parseDouble(endindex));
@@ -241,11 +252,11 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 							findingXYZ.setZ(Double.parseDouble(endindex));
 							newline = true;
 
-							System.out.print(" Z: " + endindex);
+							//System.out.print(" Z: " + endindex);
 						}
-						if (newline) {
-							System.out.println();
-						}
+						//if (newline) {
+						//	System.out.println();
+						//}
 					}
 
 					if (line.contains("TheWorld.PersistentLevel.PathNode(PathNode)") || line.contains("TheWorld.PersistentLevel.SFXEnemySpawnPoint(SFXEnemySpawnPoint)")
@@ -313,7 +324,7 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 
 					if (line.contains("TheWorld.PersistentLevel.ReachSpec(ReachSpec)") || line.contains("TheWorld.PersistentLevel.SlotToSlotReachSpec(SlotToSlotReachSpec)")) {
 						//System.out.println("ReachSpec: " + line);
-						findingreachspec = new MapMeshGenerator.ReachSpec();
+						findingreachspec = new MapMeshViewer.ReachSpec();
 						String index = line.trim().substring(line.indexOf('#') + 1, line.indexOf(' ')).trim();
 						findingreachspec.setIndex(Integer.parseInt(index));
 						if (line.contains("TheWorld.PersistentLevel.ReachSpec(ReachSpec)")) {
@@ -352,9 +363,9 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 				//System.out.println("New topmost: " + topmost);
 				//System.out.println("New leftmost: " + leftmost);
 			}
-			if (ModManager.IS_DEBUG) {
-				System.out.println(node);
-			}
+			//if (ModManager.IS_DEBUG) {
+			//	System.out.println(node);
+			//}
 		}
 
 		MapMeshPanel points = new MapMeshPanel(this, leftmost, topmost);
@@ -440,7 +451,7 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 			reachSpecIndexes.add(index);
 		}
 
-		public boolean resolveNodes(MapMeshGenerator map) {
+		public boolean resolveNodes(MapMeshViewer map) {
 			boolean first = true;
 			for (int rindex : reachSpecIndexes) {
 				if (!first)
@@ -533,7 +544,7 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 		}
 	}
 
-	public static PathNode getPathNodeByIndex(int endindex, MapMeshGenerator map) {
+	public static PathNode getPathNodeByIndex(int endindex, MapMeshViewer map) {
 		for (PathNode p : map.pathnodes) {
 			if (p.getIndex() == endindex) {
 				return p;
@@ -542,7 +553,7 @@ public class MapMeshGenerator extends JFrame implements ActionListener {
 		return null;
 	}
 
-	public static ReachSpec getReachSpecByIndex(int rindex, MapMeshGenerator map) {
+	public static ReachSpec getReachSpecByIndex(int rindex, MapMeshViewer map) {
 		for (ReachSpec r : map.reachspecs) {
 			if (r.index == rindex) {
 				return r;

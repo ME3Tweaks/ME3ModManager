@@ -13,11 +13,11 @@ import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import com.me3tweaks.modmanager.mapmesh.MapMeshGenerator.PathNode;
+import com.me3tweaks.modmanager.mapmesh.MapMeshViewer.PathNode;
 
 public class MapMeshPanel extends JPanel {
 
-	protected MapMeshGenerator fparent;
+	protected MapMeshViewer fparent;
 	private ArrayList<PathNode> nodes;
 
 	public JFrame getFparent() {
@@ -122,7 +122,7 @@ public class MapMeshPanel extends JPanel {
 	private static final int BASE_DELTA = -1000;
 	private static final double BASE_DIAMETER = 10;
 
-	public MapMeshPanel(MapMeshGenerator fParent, long centerx, long centery) {
+	public MapMeshPanel(MapMeshViewer fParent, long centerx, long centery) {
 		this.fparent = fParent;
 		setBackground(Color.LIGHT_GRAY);
 		setFocusable(true);
@@ -141,7 +141,6 @@ public class MapMeshPanel extends JPanel {
 				switch (e.getKeyCode()) {
 				case KeyEvent.VK_LEFT:
 					setXoffset(getXoffset() + -delta);
-					System.out.println("Key pressed: " + e.getKeyCode());
 					MapMeshPanel.this.repaint();
 					break;
 				case KeyEvent.VK_RIGHT:
@@ -167,7 +166,7 @@ public class MapMeshPanel extends JPanel {
 					setRelativeScale(-0.05);
 					break;
 				default:
-					System.out.println("Key not handled: " + e.getKeyCode());
+					break;
 				}
 			}
 		});

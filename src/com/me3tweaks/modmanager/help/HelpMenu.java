@@ -499,20 +499,5 @@ public class HelpMenu {
 				return 0;
 			}
 		}
-
-		private int getPriorityValue(String priority) {
-			if (priority == null || priority.equals(""))
-				return 0;
-			switch (priority) {
-			case "low":
-				return 1;
-			case "medium":
-				return 0;
-			case "high":
-				return -1;
-			default:
-				return 0;
-			}
-		}
 	}
 }

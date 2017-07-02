@@ -102,7 +102,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
 	public final static int MIN_REQUIRED_CMDLINE_REV = 1;
 
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 12; //1.0.0.X
+	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 15; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;

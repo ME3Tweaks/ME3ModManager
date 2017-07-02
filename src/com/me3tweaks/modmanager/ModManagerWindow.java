@@ -77,7 +77,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.help.HelpMenu;
-import com.me3tweaks.modmanager.mapmesh.MapMeshGenerator;
+import com.me3tweaks.modmanager.mapmesh.MapMeshViewer;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
@@ -943,9 +943,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							paths.add(file.toPath());
 						}
 
-						ModManager.debugLogger.writeMessage("File was dropped onto Mod Manager Window: " + files[0]);
+						String logMessage = "Files dropped onto Mod Manager window:";
+						for(Path p : paths) {
+							logMessage += "\n"+p.toString();
+						}
+						ModManager.debugLogger.writeMessage(logMessage);
 
-						if (files[0].isDirectory()) {
+						File f = paths.get(0).toFile();
+						System.out.println("Is directory: "+f.isDirectory());
+						
+						if (paths.get(0).toFile().isDirectory()) {
 							// prompt
 							new FileDropWindow(ModManagerWindow.this, paths);
 						} else {
@@ -965,6 +972,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 									labelStatus.setText("Binkw32 ASI loader not installed");
 									break;
 								}
+							case "txt":
 							case "pcc":
 							case "xml":
 								new FileDropWindow(ModManagerWindow.this, paths);
@@ -2346,7 +2354,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
 				if (ArchUtils.getProcessor().is64Bit()) {
-					new MapMeshGenerator();
+					new MapMeshViewer();
 				}
 			} else {
 				updateApplyButton();

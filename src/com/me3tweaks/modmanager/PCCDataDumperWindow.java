@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -84,6 +85,8 @@ public class PCCDataDumperWindow extends JDialog {
 	private void setupWindow() {
 		setTitle("PCC Data Dumper");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setIconImages(ModManager.ICONS);
+		setMinimumSize(new Dimension(200, 400));
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		JLabel[] threadOperationLabels = new JLabel[threads]; //VMs won't be supported obviously
@@ -164,7 +167,12 @@ public class PCCDataDumperWindow extends JDialog {
 		checkBoxPanel.add(checkBoxPanelRight, BorderLayout.EAST);
 		rootPanel.add(checkBoxPanel, BorderLayout.CENTER);
 
-		dumpButton = new JButton("Dump PCC information");
+		String text = (files == null ? "Dump PCC information (entire game)" : "Dump PCC information");
+		dumpButton = new JButton(text);
+		String tooltip = (files == null
+				? "<html>Dump information from all PCC files located in the BIOGame directory.<br>Patch_001.sfar will be extracted (but not modified) and dumped as well.</html>"
+				: "Dumps information from the PCCs that were used to open this window.");
+		dumpButton.setToolTipText(tooltip);
 		dumpButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				ModManager.debugLogger.writeMessage("Dumping pcc files...");
@@ -206,9 +214,8 @@ public class PCCDataDumperWindow extends JDialog {
 				// methods will read this variable
 			}
 		});
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	class DumpPCCJob extends SwingWorker<Boolean, ThreadCommand> {
@@ -232,11 +239,35 @@ public class PCCDataDumperWindow extends JDialog {
 		protected Boolean doInBackground() throws Exception {
 			// TODO Auto-generated method stub
 			publish(new ThreadCommand("UPDATE_STATUS", "Building list of PCC files..."));
-			//Files.find(Paths.get(options.gamePath), 999, (p, bfa) -> bfa.isRegularFile()).forEach();
-			if (files.size() == 0) {
+			if (files == null || files.size() == 0) {
 				Predicate<Path> predicate = p -> Files.isRegularFile(p) && p.toFile().getName().toLowerCase().endsWith(".pcc");
 				files = (ArrayList<Path>) Files.walk(Paths.get(options.gamePath + "\\BIOGame")).filter(predicate).collect(Collectors.toList());
+				
+				//Find testpatch, add it
+				File testpatch = new File(options.gamePath+"\\BIOGame\\Patches\\PCConsole\\Patch_001.sfar");
+				if (testpatch.exists()) {
+					//extract readonly
+					File testpatchfolder = new File(ModManager.getTempDir()+"\\TESTPATCH_PCCDUMP");
+					testpatchfolder.mkdirs();
+					
+					ArrayList<String> command = new ArrayList<String>();
+					command.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
+					command.add("--SFARPath");
+					command.add(testpatch.getAbsolutePath());
+					command.add("--ExtractEntireArchive");
+					command.add("--KeepaAchiveIntact");
+					command.add("--FlatFolderExtraction");
+					command.add("--OutputPath");
+					command.add(testpatchfolder.getAbsolutePath());
+					ProcessBuilder extractionCommand = new ProcessBuilder(command);
+					publish(new ThreadCommand("UPDATE_STATUS", "Extracting TESTPATCH..."));
+					ModManager.runProcess(extractionCommand);
+					
+					ArrayList<Path> testpatchfiles = (ArrayList<Path>) Files.walk(testpatchfolder.toPath()).filter(predicate).collect(Collectors.toList());
+					files.addAll(testpatchfiles);
+				}
 			}
+			ModManager.debugLogger.writeMessage("Number of files to dump: " + files.size());
 			publish(new ThreadCommand("UPDATE_STATUS", "Dumping PCC files..."));
 
 			ExecutorService autotocExecutor = Executors.newFixedThreadPool(threads);
@@ -294,7 +325,7 @@ public class PCCDataDumperWindow extends JDialog {
 						JLabel label = threadOperationLabels[i];
 						String text = label.getText();
 						String inUseText = "Thread " + (i + 1) + " - " + tc.getMessage();
-						if (text.equals(inUseText)) {
+						if (text.startsWith(inUseText)) {
 							//mark in use
 							label.setText("Thread " + (i + 1) + " - idle");
 							break;
@@ -307,6 +338,12 @@ public class PCCDataDumperWindow extends JDialog {
 
 		@Override
 		protected void done() {
+			try {
+				get();
+			} catch (ExecutionException | InterruptedException e) {
+				ModManager.debugLogger.writeErrorWithException("ERROR DUMPING FILES:", e);
+			}
+			ModManager.debugLogger.writeMessage("Dumping complete. Dumped " + completed.get() + " files");
 			infoLabel.setText("PCC dumping complete.");
 			JButton openPCCDumpFolder = new JButton("Open dump folder");
 			openPCCDumpFolder.addActionListener(new ActionListener() {

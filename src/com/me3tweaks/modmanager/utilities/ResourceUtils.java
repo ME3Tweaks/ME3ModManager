@@ -17,6 +17,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextPane;
@@ -474,6 +476,12 @@ public class ResourceUtils {
 		} catch (MalformedURLException e) {
 			ModManager.debugLogger.writeErrorWithException("Error opening page: " + url, e);
 		}
+	}
+
+	public static ArrayList<File> createOneItemFileList(File path) {
+		ArrayList<File> files = new ArrayList<>();
+		files.add(path);
+		return files;
 	}
 
 }

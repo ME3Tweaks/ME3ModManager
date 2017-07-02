@@ -504,7 +504,7 @@ public class StarterKitWindow extends JDialog {
 			//Compile TLK.
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 25));
 			publish(new ThreadCommand("SET_DIALOG_TEXT", "Compiling TLKs..."));
-			FileDropWindow.BatchWorker bw = new FileDropWindow.BatchWorker(cookedpcconsole, BatchWorker.COMPILE_TLK, dialog);
+			FileDropWindow.BatchWorker bw = new FileDropWindow.BatchWorker(ResourceUtils.createOneItemFileList(cookedpcconsole), BatchWorker.COMPILE_TLK, dialog);
 			bw.execute();
 			synchronized (bw.lock) {
 				while (!bw.completed) {
