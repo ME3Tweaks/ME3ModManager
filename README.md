@@ -3,4 +3,7 @@ Mass Effect 3 Mod Manager handles installing mods for Mass Effect 3 from basic c
 
 [More coming soon...]
 
-The main site is located at http://me3tweaks.com/modmanager.
+## For developers
+The master branch is code for the latest stable release. The dev branch is the working branch and contains the most up to date code but will be less stable and possibly non-functional. Pull requests move code from dev to master and include the changelog.
+
+Main website: http://me3tweaks.com/modmanager.

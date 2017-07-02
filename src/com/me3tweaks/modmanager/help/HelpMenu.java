@@ -118,6 +118,8 @@ public class HelpMenu {
 		helpAbout = new JMenuItem("About Mod Manager");
 		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
 
+		helpGetLog = new JMenuItem("Copy log to clipboard");
+		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
 		helpGetLog = new JMenuItem("Generate Diagnostics Log");
 		helpGetLog.setToolTipText(
 				"<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
@@ -481,6 +483,21 @@ public class HelpMenu {
 			Integer mypriority = getPriorityValue(element.getAttribute("sort"));
 			Integer otherpriority = getPriorityValue(other.element.getAttribute("sort"));
 			return mypriority.compareTo(otherpriority);
+		}
+
+		private int getPriorityValue(String priority) {
+			if (priority == null || priority.equals(""))
+				return 0;
+			switch (priority) {
+			case "low":
+				return 1;
+			case "medium":
+				return 0;
+			case "high":
+				return -1;
+			default:
+				return 0;
+			}
 		}
 
 		private int getPriorityValue(String priority) {

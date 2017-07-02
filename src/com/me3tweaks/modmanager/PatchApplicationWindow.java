@@ -121,7 +121,13 @@ public class PatchApplicationWindow extends JDialog {
 				}
 			}
 		});
+
 		pack();
+		if (callingDialog == null && callingDialog == null) {
+			this.setLocationRelativeTo(null);
+		} else {
+			this.setLocationRelativeTo(callingDialog == null ? callingFrame : callingDialog);
+		}
 	}
 
 	class PatchApplicationTask extends SwingWorker<Void, Object> {
