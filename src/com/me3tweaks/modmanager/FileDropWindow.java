@@ -252,54 +252,52 @@ public class FileDropWindow extends JDialog {
 			boolean foundXMLfiles = false;
 			boolean foundTLKfiles = false;
 			boolean foundBINfiles = false;
-			if (files.size() == 0) {
-				//no files
-			} else {
-				//figure out which buttons to enable
-				for (File f : files) {
-					String extension = FilenameUtils.getExtension(f.getAbsolutePath()).toLowerCase();
-					switch (extension) {
-					case "pcc":
-						foundPCCfiles = true;
-						break;
-					case "xml":
-						foundXMLfiles = true;
-						break;
-					case "tlk":
-						foundTLKfiles = true;
-						break;
-					case "bin":
-						foundBINfiles = true;
-						break;
-					}
+
+			//figure out which buttons to enable
+			for (File f : files) {
+				String extension = FilenameUtils.getExtension(f.getAbsolutePath()).toLowerCase();
+				switch (extension) {
+				case "pcc":
+					foundPCCfiles = true;
+					break;
+				case "xml":
+					foundXMLfiles = true;
+					break;
+				case "tlk":
+					foundTLKfiles = true;
+					break;
+				case "bin":
+					foundBINfiles = true;
+					break;
 				}
-				if (!foundPCCfiles) {
-					for (JButton b : pccButtons) {
-						b.setEnabled(false);
-						b.setToolTipText("No PCC files were found in the listed folder.");
-					}
+			}
+			if (!foundPCCfiles) {
+				for (JButton b : pccButtons) {
+					b.setEnabled(false);
+					b.setToolTipText("No PCC files were found in the listed folder.");
 				}
-				if (!foundXMLfiles) {
-					for (JButton b : xmlButtons) {
-						b.setEnabled(false);
-						b.setToolTipText("No XML files were found in the listed folder.");
-					}
+			}
+			if (!foundXMLfiles) {
+				for (JButton b : xmlButtons) {
+					b.setEnabled(false);
+					b.setToolTipText("No XML files were found in the listed folder.");
 				}
-				if (!foundTLKfiles) {
-					for (JButton b : tlkButtons) {
-						b.setEnabled(false);
-						b.setToolTipText("No TLK files were found in the listed folder.");
-					}
+			}
+			if (!foundTLKfiles) {
+				for (JButton b : tlkButtons) {
+					b.setEnabled(false);
+					b.setToolTipText("No TLK files were found in the listed folder.");
 				}
-				if (!foundBINfiles) {
-					for (JButton b : binButtons) {
-						b.setEnabled(false);
-						b.setToolTipText("No BIN files were found in the listed folder.");
-					}
+			}
+			if (!foundBINfiles) {
+				for (JButton b : binButtons) {
+					b.setEnabled(false);
+					b.setToolTipText("No BIN files were found in the listed folder.");
 				}
 			}
 		} else {
-			panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+			setResizable(false);
+			panel.setLayout(new BorderLayout());
 
 			ArrayList<File> filesToPass = new ArrayList<>();
 			ModManager.debugLogger.writeMessage("Files that will be passed to client workers:");
@@ -307,6 +305,16 @@ public class FileDropWindow extends JDialog {
 				filesToPass.add(f.toFile());
 				ModManager.debugLogger.writeMessage(f.toFile().getAbsolutePath());
 			}
+			String topLabelStr = "<html><center>" + filesToPass.size() + " files were dropped onto Mod Manager.<br>Select what you'd like to do with these files.</center></html>";
+			if (filesToPass.size() == 1) {
+				topLabelStr = "<html><center>" + droppedFile.getName() + "<br>Select what you'd like to do with this file.</center></html>";
+
+			}
+
+			JLabel topLabel = new JLabel(topLabelStr);
+
+			topLabel.setHorizontalAlignment(JLabel.CENTER);
+			panel.add(topLabel, BorderLayout.NORTH);
 			String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath()); //we already ensured all extensions are the same.
 			switch (extension) {
 			case "xml": {
@@ -340,7 +348,7 @@ public class FileDropWindow extends JDialog {
 				xmlFilePanel.add(tlkXMLPanel);
 				xmlFilePanel.add(modmakerXMLPanel);
 
-				panel.add(xmlFilePanel);
+				panel.add(xmlFilePanel, BorderLayout.CENTER);
 
 				compileTLK.addActionListener(new ActionListener() {
 
@@ -374,7 +382,9 @@ public class FileDropWindow extends JDialog {
 				});
 				break;
 			}
-			case "pcc": {
+			case "pcc":
+
+			{
 				JButton decompressAllPcc = new JButton("Decompress PCC file");
 				JButton compressPcc = new JButton("Compress PCC file");
 
@@ -412,7 +422,7 @@ public class FileDropWindow extends JDialog {
 				pccFilePanel.add(compressionPCCPanel);
 				pccFilePanel.add(readPCCPanel);
 
-				panel.add(pccFilePanel);
+				panel.add(pccFilePanel, BorderLayout.CENTER);
 
 				compressPcc.addActionListener(new ActionListener() {
 					@Override
@@ -448,7 +458,7 @@ public class FileDropWindow extends JDialog {
 				coalescedPanel.setBorder(coalescedBorder);
 				coalescedPanel.add(decompileCoalescedFile);
 
-				binFilePanel.add(coalescedPanel);
+				binFilePanel.add(coalescedPanel, BorderLayout.CENTER);
 
 				//Check if coalesced
 				byte[] buffer = new byte[4];
@@ -470,7 +480,7 @@ public class FileDropWindow extends JDialog {
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Error reading input binary file! (Coalesced Drop)", e);
 				}
-				panel.add(binFilePanel);
+				panel.add(binFilePanel, BorderLayout.CENTER);
 				decompileCoalescedFile.addActionListener(new ActionListener() {
 
 					@Override
@@ -503,7 +513,7 @@ public class FileDropWindow extends JDialog {
 
 				mountFilePanel.add(mountDLCOperationsPanel);
 
-				panel.add(mountFilePanel);
+				panel.add(mountFilePanel, BorderLayout.CENTER);
 
 				//No action listener.
 
@@ -513,27 +523,43 @@ public class FileDropWindow extends JDialog {
 				//This case is unused as there is nothing useful to batch in this.
 				//ModManagerWindow will automatically show the import window instead.
 				//Code left here in case it is useful in the future for something.
-				JButton installASIButton = new JButton("Install ASI (NOT IMPLEMENTED)");
+				JButton installASIButton = new JButton("Install ASI");
 				installASIButton.setAlignmentX(CENTER_ALIGNMENT);
 				JPanel asiFilePanel = new JPanel();
 				asiFilePanel.setLayout(new BoxLayout(asiFilePanel, BoxLayout.PAGE_AXIS));
-
 				TitledBorder asiBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "ASI Native Mod options");
 				asiFilePanel.setBorder(asiBorder);
 
-				JPanel asiInstallationPanel = new JPanel();
+				JPanel asiInstallationPanel = new JPanel(new BorderLayout());
 				TitledBorder coalescedBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "ASI - Native Mod");
 				asiInstallationPanel.setBorder(coalescedBorder);
-				asiInstallationPanel.setLayout(new BoxLayout(asiInstallationPanel, BoxLayout.PAGE_AXIS));
 				asiInstallationPanel.setAlignmentX(CENTER_ALIGNMENT);
 				JLabel warning = new JLabel("<html>Install ASI mods at your own risk, as they can execute native code.</html>");
 				warning.setAlignmentX(CENTER_ALIGNMENT);
 
-				asiInstallationPanel.add(warning);
-				asiInstallationPanel.add(installASIButton);
+				asiInstallationPanel.add(warning, BorderLayout.NORTH);
+				asiInstallationPanel.add(installASIButton, BorderLayout.CENTER);
 				asiFilePanel.add(asiInstallationPanel);
 
-				panel.add(asiFilePanel);
+				panel.add(asiFilePanel, BorderLayout.CENTER);
+
+				installASIButton.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						String copyDest = ModManager.appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent()) + "Binaries\\win32\\asi\\" + droppedFile.getName();
+						try {
+							FileUtils.copyFile(droppedFile, new File(copyDest));
+							ModManager.debugLogger.writeMessage("Installed dropped ASI File: " + droppedFile + " to " + copyDest);
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Installed " + droppedFile.getName());
+						} catch (IOException e1) {
+							ModManager.debugLogger.writeErrorWithException("ASI Mod install failed " + copyDest + ":", e1);
+							JOptionPane.showMessageDialog(null, "Unable to install ASI mod.\nYou may need to run Mod Manager as an administrator.", "Installation Failure",
+									JOptionPane.ERROR_MESSAGE);
+						}
+						dispose();
+					}
+				});
 				break;
 			}
 			case "tlk": {
@@ -545,15 +571,14 @@ public class FileDropWindow extends JDialog {
 				TitledBorder tlkFileBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "TLK file options");
 				tlkFilePanel.setBorder(tlkFileBorder);
 
-				JPanel tlkDecompilePanel = new JPanel();
+				JPanel tlkDecompilePanel = new JPanel(new BorderLayout());
 				TitledBorder tlkLocalizeBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "TLK - String localization file");
 				tlkDecompilePanel.setBorder(tlkLocalizeBorder);
-				tlkDecompilePanel.setLayout(new BoxLayout(tlkDecompilePanel, BoxLayout.PAGE_AXIS));
 
-				tlkDecompilePanel.add(decompileTLKButton);
+				tlkDecompilePanel.add(decompileTLKButton, BorderLayout.CENTER);
 				tlkFilePanel.add(tlkDecompilePanel);
 
-				panel.add(tlkFilePanel);
+				panel.add(tlkFilePanel, BorderLayout.CENTER);
 
 				decompileTLKButton.addActionListener(new ActionListener() {
 
@@ -584,11 +609,12 @@ public class FileDropWindow extends JDialog {
 				pathfindingDumpPanel.setBorder(pathfindingDumpBorder);
 				pathfindingDumpPanel.setAlignmentX(CENTER_ALIGNMENT);
 
-				pathfindingDumpPanel.add(pathfindingButton,BorderLayout.NORTH);
-				pathfindingDumpPanel.add(new JLabel("<html><center>"+droppedFiles.get(0).toFile().getAbsolutePath()+"</center></html>", SwingConstants.CENTER),BorderLayout.SOUTH);
+				pathfindingDumpPanel.add(pathfindingButton, BorderLayout.NORTH);
+				pathfindingDumpPanel.add(new JLabel("<html><center>" + droppedFiles.get(0).toFile().getAbsolutePath() + "</center></html>", SwingConstants.CENTER),
+						BorderLayout.SOUTH);
 				textFilePanel.add(pathfindingDumpPanel);
 
-				panel.add(textFilePanel);
+				panel.add(textFilePanel, BorderLayout.CENTER);
 
 				pathfindingButton.addActionListener(new ActionListener() {
 
@@ -636,285 +662,6 @@ public class FileDropWindow extends JDialog {
 		setMinimumSize(new Dimension(200, 200));
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-	}
-
-	private void setupWindow() {
-		setTitle("Batch Task Selector");
-		setIconImages(ModManager.ICONS);
-
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		GridBagConstraints c = new GridBagConstraints();
-
-		c.gridy = 0;
-		if (droppedFile.isDirectory()) {
-			JLabel headerLabel = new JLabel("<html><center>You dropped a folder onto Mod Manager:<br>" + droppedFile
-					+ "<br>Select what operation to perform on the contents of this folder.<br>Hover over each button to see a description.</html>");
-			panel.add(headerLabel, c);
-
-			JButton compileAllTLK = new JButton("Compile all TLK XML Manifests");
-
-			JButton decompileAllTLK = new JButton("Decompile all TLK files");
-			JButton compileAllCoalesced = new JButton("Compile all Coalesced manifest");
-			JButton decompileAllCoalesced = new JButton("Decompile all Coalesced files");
-			JButton decompressAllPcc = new JButton("Decompress all PCC files");
-			JButton compressAllPcc = new JButton("Compress all PCC files");
-			JButton sideloadAllModMaker = new JButton("Sideload all ModMaker XML files");
-
-			compileAllTLK.setToolTipText("<html>Treats each .xml file in the folder as a TankMaster TLK manifest.<br>Will attempt to compile all of them.</html>");
-			decompileAllTLK.setToolTipText("<html>Decompiles all TLK files using the TankMaster compiler tool included with Mod Manager.</html>");
-			decompileAllCoalesced
-					.setToolTipText("<html>Decompils all Coalesced.bin files (will use header info) using the TankMaster compiler tool included with Mod Manager.</html>");
-			decompressAllPcc.setToolTipText("<html>Decompresses all PCC files to their uncompressed state</html>");
-			compressAllPcc.setToolTipText("<html>Compresses all PCC files to their compressed state, using the game's method of compression</html>");
-			sideloadAllModMaker.setToolTipText("<html>Sideload all XML files as ModMaker mods and compile them in batch mode</html>");
-
-			compileAllTLK.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					ModManager.debugLogger.writeMessage("User chose COMPILE_TLK operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPILE_TLK, null).execute();
-					dispose();
-				}
-			});
-
-			decompileAllTLK.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					ModManager.debugLogger.writeMessage("User chose DECOMPILE_TLK operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_TLK, null).execute();
-					dispose();
-				}
-			});
-
-			compileAllCoalesced.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					ModManager.debugLogger.writeMessage("User chose COMPILE_COAL operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPILE_COAL, null).execute();
-					dispose();
-				}
-			});
-
-			decompileAllCoalesced.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					ModManager.debugLogger.writeMessage("User chose DECOMPILE_COAL operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPILE_COAL, null).execute();
-					dispose();
-				}
-			});
-
-			decompressAllPcc.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent arg0) {
-					ModManager.debugLogger.writeMessage("User chose DECOMPRESS_PCC operation");
-					new BatchWorker(droppedFile, BatchWorker.DECOMPRESS_PCC, null).execute();
-					dispose();
-				}
-			});
-
-			compressAllPcc.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent arg0) {
-					ModManager.debugLogger.writeMessage("User chose COMPRESS_PCC operation");
-					new BatchWorker(droppedFile, BatchWorker.COMPRESS_PCC, null).execute();
-					dispose();
-				}
-			});
-
-			sideloadAllModMaker.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent arg0) {
-					ModManager.debugLogger.writeMessage("User chose SIDELOAD_MODMAKER operation");
-					new BatchWorker(droppedFile, BatchWorker.SIDELOAD_MODMAKER, null).execute();
-					dispose();
-				}
-			});
-
-			c.gridy++;
-			panel.add(compileAllTLK, c);
-			c.gridy++;
-			panel.add(decompileAllTLK, c);
-			c.gridy++;
-			panel.add(compileAllCoalesced, c);
-			c.gridy++;
-			panel.add(decompileAllCoalesced, c);
-			panel.add(decompressAllPcc, c);
-			c.gridy++;
-			panel.add(compressAllPcc, c);
-			c.gridy++;
-			panel.add(sideloadAllModMaker, c);
-			c.gridy++;
-
-		} else {
-			String extension = FilenameUtils.getExtension(droppedFile.getAbsolutePath());
-			switch (extension) {
-			case "pcc": {
-				JLabel headerLabel = new JLabel("<html><center>" + droppedFile + "<br>Select what operation to perform with this file.<center></html>");
-				panel.add(headerLabel, c);
-
-				JButton decompressPCC = new JButton("Decompress PCC");
-				JButton compressPCC = new JButton("Compress PCC");
-
-				decompressPCC.addActionListener(new ActionListener() {
-
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						String name = FilenameUtils.getName(droppedFile.getAbsolutePath());
-						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Decompressing " + name);
-						ProcessResult pr = ModManager.decompressPCC(droppedFile, droppedFile);
-						if (pr.getReturnCode() == 0) {
-							ModManager.debugLogger.writeMessage("Deompressed " + name);
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Decompressed " + name);
-						} else {
-							ModManager.debugLogger.writeMessage("Failed to decompress " + name + "(" + pr.getReturnCode() + ")");
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to decompress " + name + "(" + pr.getReturnCode() + ")");
-
-						}
-						dispose();
-					}
-				});
-
-				compressPCC.addActionListener(new ActionListener() {
-
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						String name = FilenameUtils.getName(droppedFile.getAbsolutePath());
-						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compressing " + name);
-						ProcessResult pr = ModManager.compressPCC(droppedFile, droppedFile);
-						if (pr.getReturnCode() == 0) {
-							ModManager.debugLogger.writeMessage("Compressed " + name);
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compressed " + name);
-						} else {
-							ModManager.debugLogger.writeMessage("Failed to compressed " + name + "(" + pr.getReturnCode() + ")");
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to compress " + name + "(" + pr.getReturnCode() + ")");
-
-						}
-						dispose();
-					}
-				});
-
-				c.gridy++;
-				panel.add(decompressPCC, c);
-				c.gridy++;
-
-				panel.add(compressPCC, c);
-				c.gridy++;
-
-				break;
-			}
-			case "xml": {
-				JLabel headerLabel = new JLabel(
-						"<html>You dropped an XML file onto Mod Manager.<br>" + droppedFile + "<br>Select what operation to perform with this file.</html>");
-				panel.add(headerLabel, c);
-
-				JButton compileTLK = new JButton("Compile TLK (TLK Manifest (Tankmaster only))");
-				JButton compileCoalesced = new JButton("Compile Coalesced (Coalesced Manifest)");
-				JButton sideloadModMaker = new JButton("Sideload ModMaker mod (Mod Delta)");
-
-				compileTLK.addActionListener(new ActionListener() {
-
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						ProcessResult pr = TLKTool.compileTLK(droppedFile);
-						if (pr.getReturnCode() == 0) {
-							ModManager.debugLogger.writeMessage("Compiled dropped TLK manifest");
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiled TLK file");
-						} else {
-							ModManager.debugLogger.writeError("Error compiling dropped TLK manifest [" + pr.getReturnCode() + "]");
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error compiling TLK file [" + pr.getReturnCode() + "]");
-						}
-						dispose();
-					}
-				});
-
-				compileCoalesced.addActionListener(new ActionListener() {
-
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						ProcessResult pr = CoalescedWindow.compileCoalesced(droppedFile.getAbsolutePath());
-						if (pr.getReturnCode() == 0) {
-							ModManager.debugLogger.writeMessage("Compiled dropped coalesced manifest");
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiled Coalesced file");
-						} else {
-							ModManager.debugLogger.writeError("Error compiling dropped Coalesced manifest [" + pr.getReturnCode() + "]");
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error compiling Coalesced file [" + pr.getReturnCode() + "]");
-						}
-						dispose();
-					}
-				});
-				sideloadModMaker.addActionListener(new ActionListener() {
-
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						dispose();
-						ModManager.debugLogger.writeMessage("Sideloading dropped ModMaker mod");
-						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Sideloading ModMaker mod...");
-						new ModMakerCompilerWindow(droppedFile.getAbsolutePath(), ModMakerEntryWindow.getDefaultLanguages());
-					}
-				});
-
-				c.gridy++;
-				panel.add(compileTLK, c);
-				c.gridy++;
-
-				panel.add(compileCoalesced, c);
-				c.gridy++;
-
-				panel.add(sideloadModMaker, c);
-				c.gridy++;
-				break;
-			}
-			case "asi":
-				//install ASI file
-				if (!ModManagerWindow.validateBIOGameDir()) {
-					JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nASI mods can only be installed if the BIOGame directory is valid.",
-							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
-					show = false;
-					break;
-				}
-
-				JLabel headerLabel = new JLabel("<html>You dropped an ASI file onto Mod Manager.<br>" + droppedFile
-						+ "<br>Be sure you trust the author before you install this<br>as it can run arbitrary code.</html>");
-				panel.add(headerLabel, c);
-				JButton compileTLK = new JButton("Install ASI Mod");
-				compileTLK.addActionListener(new ActionListener() {
-
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						String copyDest = ModManager.appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent()) + "Binaries/win32/asi/" + droppedFile.getName();
-						try {
-							FileUtils.copyFile(droppedFile, new File(copyDest));
-							ModManager.debugLogger.writeMessage("Installed dropped ASI File: " + droppedFile + " to " + copyDest);
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Installed " + droppedFile.getName());
-						} catch (IOException e1) {
-							ModManager.debugLogger.writeErrorWithException("ASI Mod install failed " + copyDest + ":", e1);
-							JOptionPane.showMessageDialog(null, "Unable to install ASI mod.\nYou may need to run Mod Manager as an administrator.", "Installation Failure",
-									JOptionPane.ERROR_MESSAGE);
-						}
-						dispose();
-					}
-				});
-
-				c.gridy++;
-				panel.add(compileTLK, c);
-				c.gridy++;
-
-				break;
-			}
-
-		}
-		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
-		add(panel);
-		pack();
 	}
 
 	/**

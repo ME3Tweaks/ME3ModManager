@@ -423,7 +423,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			//checkForME3ExplorerUpdates();
 			checkForCommandLineToolUpdates();
-			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
+			if (isUpdate || ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
+				isUpdate = false; //no mas
 				checkForContentUpdates(force);
 			}
 			return null;
@@ -944,14 +945,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						}
 
 						String logMessage = "Files dropped onto Mod Manager window:";
-						for(Path p : paths) {
-							logMessage += "\n"+p.toString();
+						for (Path p : paths) {
+							logMessage += "\n" + p.toString();
 						}
 						ModManager.debugLogger.writeMessage(logMessage);
 
 						File f = paths.get(0).toFile();
-						System.out.println("Is directory: "+f.isDirectory());
-						
+
 						if (paths.get(0).toFile().isDirectory()) {
 							// prompt
 							new FileDropWindow(ModManagerWindow.this, paths);
@@ -963,15 +963,28 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								new ModImportArchiveWindow(ModManagerWindow.this, files[0].toString());
 								break;
 							case "asi":
+								ModManager.debugLogger.writeMessage("ASI was dropped onto ModManagerWindow - doing requirements check...");
 								int exebuild = ModManager.checkforME3105(GetBioGameDir());
 								if (exebuild != 5) {
 									labelStatus.setText("ASI mods don't work with Mass Effect 3 1.0" + exebuild);
 									break;
 								}
 								if (!ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir())) {
-									labelStatus.setText("Binkw32 ASI loader not installed");
+									labelStatus.setText("Binkw32 ASI loader not installed, see tools menu");
 									break;
 								}
+								String copyDest = ModManager.appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent()) + "Binaries\\win32\\asi\\" + files[0].getName();
+								ModManager.debugLogger.writeMessage("ASI Source: " + files[0].getAbsolutePath());
+								ModManager.debugLogger.writeMessage("ASI Dest:   " + copyDest);
+								if (copyDest.equalsIgnoreCase(files[0].getAbsolutePath())) {
+									ModManager.debugLogger.writeMessage("Source and destination files are the same.");
+									ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Source and destination files are the same.");
+									return;
+								}
+								ArrayList<Path> singlePath = new ArrayList<>();
+								singlePath.add(paths.get(0));
+								new FileDropWindow(ModManagerWindow.this, singlePath);
+								break;
 							case "txt":
 							case "pcc":
 							case "xml":
@@ -981,30 +994,40 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								new MountFileEditorWindow(files[0].toString());
 								break;
 							case "tlk":
-								TLKTool.decompileTLK(files[0]);
+								if (files.length == 1) {
+									ModManager.debugLogger.writeMessage("Decompiling " + files[0]);
+									TLKTool.decompileTLK(files[0]);
+									labelStatus.setText("Decompiled " + files[0].getName());
+								} else {
+									new FileDropWindow(ModManagerWindow.this, paths);
+								}
 								break;
 							case "bin": // read magic at beginning to find out
 								//what type // of // file this is 
-								byte[] buffer = new byte[4];
+								if (files.length == 1) {
+									byte[] buffer = new byte[4];
 
-								try (InputStream is = new FileInputStream(files[0])) {
-									if (is.read(buffer) != buffer.length) { // do something 
+									try (InputStream is = new FileInputStream(files[0])) {
+										if (is.read(buffer) != buffer.length) { // do something 
 
-										ModManager.debugLogger.writeMessage("Dropped file not a coalesced file.");
+											ModManager.debugLogger.writeMessage("Dropped file not a coalesced file.");
+											labelStatus.setText("Dropped file is not a coalesced file");
+											break;
+										}
+										int magic = ResourceUtils.byteArrayToInt(buffer);
+										switch (magic) {
+										case ModManager.COALESCED_MAGIC_NUMBER:
+											new CoalescedWindow(files[0], false);
+											break;
+										}
+
+										is.close();
+									} catch (IOException e) {
+										ModManager.debugLogger.writeErrorWithException("I/O Exception reading coalesced magic number:", e);
 										labelStatus.setText("Dropped file is not a coalesced file");
-										break;
 									}
-									int magic = ResourceUtils.byteArrayToInt(buffer);
-									switch (magic) {
-									case ModManager.COALESCED_MAGIC_NUMBER:
-										new CoalescedWindow(files[0], false);
-										break;
-									}
-
-									is.close();
-								} catch (IOException e) {
-									ModManager.debugLogger.writeErrorWithException("I/O Exception reading coalesced magic number:", e);
-									labelStatus.setText("Dropped file is not a coalesced file");
+								} else {
+									new FileDropWindow(ModManagerWindow.this, paths);
 								}
 								break;
 							default:
