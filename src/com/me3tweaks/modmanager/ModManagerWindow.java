@@ -106,6 +106,7 @@ import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI2;
+import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 
@@ -143,7 +144,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 
 	JMenuItem modDevStarterKit, moddevOfficialDLCManager;
-	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser, sqlGearParser;
+	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
@@ -1465,7 +1466,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		sqlPowerCustomActionParser = new JMenuItem("CustomAction Parser");
 		sqlPowerCustomActionParser2 = new JMenuItem("CustomAction Editor");
 		sqlConsumableParser = new JMenuItem("Consumable Parser");
-		sqlGearParser = new JMenuItem("Gear Parser");
 
 		sqlWavelistParser.addActionListener(this);
 		sqlDifficultyParser.addActionListener(this);
@@ -1473,14 +1473,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		sqlPowerCustomActionParser.addActionListener(this);
 		//sqlPowerCustomActionParser2.addActionListener(this); //Outputs SQL only. Disabled.
 		sqlConsumableParser.addActionListener(this);
-		sqlGearParser.addActionListener(this);
 
 		parsersMenu.add(sqlWavelistParser);
 		parsersMenu.add(sqlDifficultyParser);
 		parsersMenu.add(sqlAIWeaponParser);
 		parsersMenu.add(sqlPowerCustomActionParser);
 		parsersMenu.add(sqlConsumableParser);
-		parsersMenu.add(sqlGearParser);
 
 		toolsMenu.add(toolsUnpackDLC);
 		toolsMenu.add(toolsAutoTOCGame);
@@ -2644,20 +2642,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModXMLTools.generateXMLFileList(modModel.getElementAt(modList.getSelectedIndex()));
 		} else if (e.getSource() == sqlDifficultyParser) {
 			new DifficultyGUI();
-		} else
-
-		if (e.getSource() == sqlAIWeaponParser) {
+		} else if (e.getSource() == sqlWavelistParser) {
+			new WavelistGUI();
+		} else if (e.getSource() == sqlAIWeaponParser) {
 			new BioAIGUI();
-		} else
-
-		if (e.getSource() == sqlPowerCustomActionParser) {
+		} else if (e.getSource() == sqlPowerCustomActionParser) {
 			new PowerCustomActionGUI();
 		} else if (e.getSource() == sqlPowerCustomActionParser2) {
 			new PowerCustomActionGUI2();
 		} else if (e.getSource() == sqlConsumableParser) {
 			new ConsumableGUI();
-		} else if (e.getSource() == sqlGearParser) {
-			// new GearGUI();
 		} else if (e.getSource() == toolsInstallLauncherWV) {
 			int result = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW,
 					"LauncherWV has been deprecated.\nYou can install install it, but using the binkw32 bypass methods are far more reliable.\nContinue installing LauncherWV?",

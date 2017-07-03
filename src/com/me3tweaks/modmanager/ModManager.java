@@ -80,10 +80,11 @@ import com.sun.jna.platform.win32.WinReg;
 import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
+	public static boolean IS_DEBUG = true;
+
 	public static final String VERSION = "5.0 Beta 4";
 	public static long BUILD_NUMBER = 75L;
-	public static final String BUILD_DATE = "7/1/2017";
-	public static boolean IS_DEBUG = true;
+	public static final String BUILD_DATE = "7/3/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -777,11 +778,9 @@ public class ModManager {
 					JOptionPane.ERROR_MESSAGE);
 			return false;
 		} else if (exebuild != 5) {
-			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-					"Binkw32 bypass does not support any version of Mass Effect 3 except 1.05.\n" + (exebuild == 6
-							? "Downgrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this."
-							: "Upgrade your game to use 1.05. Pirated editions of the game are not supported."),
-					"Unsupported ME3 version", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Binkw32 bypass does not support any version of Mass Effect 3 except 1.05.\n" + (exebuild == 6
+					? "Downgrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this."
+					: "Upgrade your game to use 1.05. Pirated editions of the game are not supported."), "Unsupported ME3 version", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -806,7 +805,8 @@ public class ModManager {
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			} else {
 				JOptionPane.showMessageDialog(null,
-						"An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator or grant yourself write permissions from the tools menu.",
+						"An error occured extracting binkw32" + (asi ? "_asi" : "")
+								+ ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator or grant yourself write permissions from the tools menu.",
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			}
 			return false;
@@ -1467,14 +1467,42 @@ public class ModManager {
 		if (options.properties) {
 			commandBuilder.add("--properties");
 		}
-		
+
 		if (options.swfs) {
 			commandBuilder.add("--swfs");
 		}
-		
-		commandBuilder.add("--outputfolder");
-		commandBuilder.add(options.outputFolder);
 
+		String outputfolder = options.outputFolder;
+		//Calculate output folder
+		if (pcc.contains("BIOGame")) {
+			//Try to extract what is is.
+			System.out.println(pcc);
+			if (pcc.toLowerCase().contains("BIOGame\\CookedPCConsole\\".toLowerCase())) {
+				//Likely basegame.
+				outputfolder += "BASEGAME\\";
+				commandBuilder.add("--outputfolder");
+				commandBuilder.add(outputfolder);
+			} else if (pcc.contains("BIOGame\\DLC\\")) {
+				try {
+					int startOfDLCName = pcc.indexOf("BIOGame\\DLC\\") + 12;
+					String dlcname = pcc.substring(startOfDLCName, pcc.length());
+					int endOfDLCName = dlcname.indexOf("\\");
+					dlcname = dlcname.substring(0, endOfDLCName);
+					commandBuilder.add("--outputfolder");
+					commandBuilder.add(outputfolder + dlcname + "\\");
+				} catch (Exception e) {
+					ModManager.debugLogger.writeMessage("Unable to parse out the dlc directory name. Just dumping to the top level pcc dump folder.");
+					//Just dump to the top level folder
+					commandBuilder.add("--outputfolder");
+					commandBuilder.add(options.outputFolder);
+				}
+			}
+
+		} else {
+			//Just dump to the top level folder
+			commandBuilder.add("--outputfolder");
+			commandBuilder.add(options.outputFolder);
+		}
 		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
 		return ModManager.runProcess(decompressProcessBuilder, FilenameUtils.getName(pcc));
 	}

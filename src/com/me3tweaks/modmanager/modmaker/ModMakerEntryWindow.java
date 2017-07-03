@@ -27,7 +27,6 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -77,8 +76,8 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		boolean shouldshow = validateModMakerPrereqs();
 		if (shouldshow) {
 			setupWindow();
-			setVisible(true);
 			setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+			setVisible(true);
 		} else {
 			dispose();
 		}
@@ -169,7 +168,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		makeModButton.setToolTipText("Make a mod on ME3Tweaks Modmaker");
 
 		browseModsButton = new JButton("Browse mods");
-		browseModsButton.setToolTipText("Make a mod on ME3Tweaks Modmaker");
+		browseModsButton.setToolTipText("View published mods you can download");
 
 		sideloadButton = new JButton("Sideload mod");
 		sideloadButton.setToolTipText("Compile a mod from a ME3Tweaks Modmaker XML file");

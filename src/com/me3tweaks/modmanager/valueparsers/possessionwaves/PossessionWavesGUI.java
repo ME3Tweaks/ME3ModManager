@@ -45,7 +45,7 @@ public class PossessionWavesGUI extends JFrame implements ActionListener {
 	private void setupWindow() {
 		JPanel wavelistGUI = new JPanel(new BorderLayout());
 		JLabel instructionsLabel = new JLabel(
-				"<html>ME3CMM MP4 PossessionWaves Parser<br>Enter the PossessionWaves text below and then select an operation.</html>");
+				"<html>ME3CMM MP4 PossessionWaves Parser<br>Enter the PossessionWaves XML below and then select an operation.</html>");
 		wavelistGUI.add(instructionsLabel, BorderLayout.NORTH);
 		instructionsLabel
 				.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));

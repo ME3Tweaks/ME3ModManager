@@ -26,8 +26,9 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
@@ -38,6 +39,7 @@ import javax.swing.border.TitledBorder;
 
 import org.apache.commons.io.FilenameUtils;
 
+import com.me3tweaks.modmanager.PCCDataDumperWindow.DumpPCCJob.DumpTaskResult;
 import com.me3tweaks.modmanager.objects.PCCDumpOptions;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
@@ -49,7 +51,7 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
  * @author Mgamerz
  *
  */
-public class PCCDataDumperWindow extends JDialog {
+public class PCCDataDumperWindow extends JFrame {
 	ArrayList<Path> files;
 	JLabel infoLabel;
 	boolean windowOpen = true;
@@ -218,7 +220,7 @@ public class PCCDataDumperWindow extends JDialog {
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
-	class DumpPCCJob extends SwingWorker<Boolean, ThreadCommand> {
+	class DumpPCCJob extends SwingWorker<ArrayList<DumpTaskResult>, ThreadCommand> {
 
 		private PCCDumpOptions options;
 		public AtomicInteger completed = new AtomicInteger(0);
@@ -236,20 +238,20 @@ public class PCCDataDumperWindow extends JDialog {
 		}
 
 		@Override
-		protected Boolean doInBackground() throws Exception {
+		protected ArrayList<DumpTaskResult> doInBackground() throws Exception {
 			// TODO Auto-generated method stub
 			publish(new ThreadCommand("UPDATE_STATUS", "Building list of PCC files..."));
 			if (files == null || files.size() == 0) {
 				Predicate<Path> predicate = p -> Files.isRegularFile(p) && p.toFile().getName().toLowerCase().endsWith(".pcc");
 				files = (ArrayList<Path>) Files.walk(Paths.get(options.gamePath + "\\BIOGame")).filter(predicate).collect(Collectors.toList());
-				
+
 				//Find testpatch, add it
-				File testpatch = new File(options.gamePath+"\\BIOGame\\Patches\\PCConsole\\Patch_001.sfar");
+				File testpatch = new File(options.gamePath + "\\BIOGame\\Patches\\PCConsole\\Patch_001.sfar");
 				if (testpatch.exists()) {
 					//extract readonly
-					File testpatchfolder = new File(ModManager.getTempDir()+"\\TESTPATCH_PCCDUMP");
+					File testpatchfolder = new File(ModManager.getTempDir() + "\\TESTPATCH_PCCDUMP");
 					testpatchfolder.mkdirs();
-					
+
 					ArrayList<String> command = new ArrayList<String>();
 					command.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
 					command.add("--SFARPath");
@@ -262,7 +264,7 @@ public class PCCDataDumperWindow extends JDialog {
 					ProcessBuilder extractionCommand = new ProcessBuilder(command);
 					publish(new ThreadCommand("UPDATE_STATUS", "Extracting TESTPATCH..."));
 					ModManager.runProcess(extractionCommand);
-					
+
 					ArrayList<Path> testpatchfiles = (ArrayList<Path>) Files.walk(testpatchfolder.toPath()).filter(predicate).collect(Collectors.toList());
 					files.addAll(testpatchfiles);
 				}
@@ -271,30 +273,26 @@ public class PCCDataDumperWindow extends JDialog {
 			publish(new ThreadCommand("UPDATE_STATUS", "Dumping PCC files..."));
 
 			ExecutorService autotocExecutor = Executors.newFixedThreadPool(threads);
-			ArrayList<Future<ProcessResult>> futures = new ArrayList<Future<ProcessResult>>();
+			ArrayList<Future<DumpTaskResult>> futures = new ArrayList<Future<DumpTaskResult>>();
 			for (Path path : files) {
 				//submit jobs
 				DumpTask jtask = new DumpTask(path.toString(), options);
 				futures.add(autotocExecutor.submit(jtask));
 			}
 			autotocExecutor.shutdown();
+			ArrayList<DumpTaskResult> results = new ArrayList<>();
 			try {
 				autotocExecutor.awaitTermination(5, TimeUnit.MINUTES);
-				for (Future<ProcessResult> f : futures) {
-					ProcessResult pr = f.get();
-					if (pr.getReturnCode() != 0) {
-						ModManager.debugLogger.writeError("File failed to dump!");
-						//throw some sort of error here...
-					}
+				for (Future<DumpTaskResult> f : futures) {
+					DumpTaskResult pr = f.get();
+					results.add(pr);
 				}
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE DUMPING FILES: ", e);
-				return null;
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("UNKNOWN EXCEPTION OCCURED: ", e);
-				return null;
 			}
-			return null;
+			return results;
 		}
 
 		@Override
@@ -339,12 +337,27 @@ public class PCCDataDumperWindow extends JDialog {
 		@Override
 		protected void done() {
 			try {
-				get();
+				ArrayList<DumpTaskResult> results = get();
+				ArrayList<DumpTaskResult> failures = new ArrayList<>();
+				for (DumpTaskResult dtr : results) {
+					if (dtr.getResult().getReturnCode() != 0) {
+						//Something failed..
+						failures.add(dtr);
+					}
+				}
+				if (failures.size() > 0) {
+					//Something failed.
+					ModManager.debugLogger.writeError(failures.size()+" files failed to dump.");
+					infoLabel.setText("PCC dumping completed with errors.");
+					JOptionPane.showMessageDialog(PCCDataDumperWindow.this, failures.size() + " files failed to dump.\nSave a diagnostics log to disk to view failures.",
+							"Completed with errors", JOptionPane.ERROR_MESSAGE);
+				} else {
+					infoLabel.setText("PCC dumping complete.");
+				}
 			} catch (ExecutionException | InterruptedException e) {
 				ModManager.debugLogger.writeErrorWithException("ERROR DUMPING FILES:", e);
 			}
 			ModManager.debugLogger.writeMessage("Dumping complete. Dumped " + completed.get() + " files");
-			infoLabel.setText("PCC dumping complete.");
 			JButton openPCCDumpFolder = new JButton("Open dump folder");
 			openPCCDumpFolder.addActionListener(new ActionListener() {
 
@@ -358,7 +371,13 @@ public class PCCDataDumperWindow extends JDialog {
 			dumpPanel.add(openPCCDumpFolder, BorderLayout.CENTER);
 		}
 
-		class DumpTask implements Callable<ProcessResult> {
+		/**
+		 * Task for dumping a single PCC file
+		 * 
+		 * @author Mgamerz
+		 *
+		 */
+		class DumpTask implements Callable<DumpTaskResult> {
 			private String filepath;
 			private PCCDumpOptions options;
 
@@ -368,7 +387,7 @@ public class PCCDataDumperWindow extends JDialog {
 			}
 
 			@Override
-			public ProcessResult call() throws Exception {
+			public DumpTaskResult call() throws Exception {
 				String taskname = FilenameUtils.getName(filepath) + " (" + ResourceUtils.humanReadableByteCount(new File(filepath).length(), true) + ")";
 				publish(new ThreadCommand("ASSIGN_TASK", taskname));
 				ProcessResult pr = ModManager.dumpPCC(filepath, options);
@@ -377,9 +396,32 @@ public class PCCDataDumperWindow extends JDialog {
 				int progressval = (int) ((completed.get() / (files.size() * 1.0) * 100));
 				publish(new ThreadCommand("SET_PROGRESS", null, progressval));
 				publish(new ThreadCommand("UPDATE_STATUS", "Dumping PCC files... " + completed.get() + " of " + files.size()));
-				return pr;
+				return new DumpTaskResult(filepath, pr);
 			}
 		}
 
+		/**
+		 * Result object for the DumpTask Executor Service
+		 * 
+		 * @author Mgamerz
+		 *
+		 */
+		public class DumpTaskResult {
+			private String filepath;
+			private ProcessResult result;
+
+			public DumpTaskResult(String filepath, ProcessResult result) {
+				this.filepath = filepath;
+				this.result = result;
+			}
+
+			public String getFilepath() {
+				return filepath;
+			}
+
+			public ProcessResult getResult() {
+				return result;
+			}
+		}
 	}
 }

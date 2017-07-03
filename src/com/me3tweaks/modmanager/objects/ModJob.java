@@ -387,7 +387,7 @@ public class ModJob {
 	}
 
 	/**
-	 * Sets this job's source direcotry. For example, if the moddir ini flag is
+	 * Sets this job's source directory. For example, if the moddir ini flag is
 	 * set to MP (moddir = MP1), then this will set sourceDir to MP1.
 	 * 
 	 * @param sourceDir
