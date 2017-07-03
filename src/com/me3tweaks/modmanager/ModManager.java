@@ -100,7 +100,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 1;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 3;
 
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 15; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
@@ -2470,6 +2470,12 @@ public class ModManager {
 	 */
 	public static String getTestingDir() {
 		File file = new File(getDataDir() + "testing\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	public static String getTestpatchUnpackFolder() {
+		File file = new File(getDataDir() + "Patch_001_Extracted\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}

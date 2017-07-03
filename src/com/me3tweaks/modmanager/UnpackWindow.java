@@ -64,7 +64,7 @@ public class UnpackWindow extends JDialog {
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setIconImages(ModManager.ICONS);
-		
+
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		infoLabel = new JLabel("<html>Select DLCs to unpack.<br>Items in blue are not unpacked.</html>");
@@ -138,10 +138,20 @@ public class UnpackWindow extends JDialog {
 				continue;
 			} else {
 				if (dlcName.equals(ModType.TESTPATCH)) {
-					checkbox.setToolTipText("<html>TESTPATCH cannot be unpacked.</html>");
+					//Check existence
+					File patch001Sfar = new File(dlcPath + "\\Patch_001.sfar");
+					if (patch001Sfar.exists()) {
+						checkbox.setText(checkbox.getText() + "*");
+						checkbox.setToolTipText(
+								"<html>TESTPATCH cannot be unpacked.<br>Checking this box means it will do a read-only unpacking and place the files in the data/Patch_001_Extracted directory.</html>");
+					} else {
+						checkbox.setEnabled(false);
+						checkbox.setToolTipText("<html>Patch_001 (TESTPATCH) does not appear to be installed</html>");
+					}
+				} else {
+					checkbox.setEnabled(false);
+					checkbox.setToolTipText("<html>This DLC does not appear to be installed</html>");
 				}
-				ModManager.debugLogger.writeMessage(dlcName + " was not found.");
-				checkbox.setEnabled(false);
 				if (i < 8) {
 					checkBoxPanelLeft.add(checkbox);
 				} else {
@@ -149,6 +159,7 @@ public class UnpackWindow extends JDialog {
 				}
 				i++;
 				checkboxMap.put(dlcName, checkbox);
+
 				continue;
 			}
 		}
@@ -184,7 +195,7 @@ public class UnpackWindow extends JDialog {
 				// methods will read this variable
 			}
 		});
-		
+
 		pack();
 		setLocationRelativeTo(callingWindow);
 	}
@@ -195,10 +206,12 @@ public class UnpackWindow extends JDialog {
 		for (String dlcName : dlcNames) {
 			JCheckBox checkbox = checkboxMap.get(dlcName);
 			if (checkbox != null && checkbox.isSelected()) {
-				if (ModManager.logging) {
-					ModManager.debugLogger.writeMessage("Job added to unpack: " + checkbox.getText() + " at " + ModType.getDLCPath(checkbox.getText()));
+				String jobname = checkbox.getText();
+				if (jobname.endsWith("*")) {
+					jobname = jobname.substring(0, jobname.length() - 1);
 				}
-				jobs.add(checkbox.getText());
+				ModManager.debugLogger.writeMessage("Job added to unpack: " + jobname + " at " + ModType.getDLCPath(jobname));
+				jobs.add(jobname);
 			}
 		}
 
@@ -235,26 +248,40 @@ public class UnpackWindow extends JDialog {
 				String dlcPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
 				//check for backup
 				File mainSfar = new File(dlcPath + "Default.sfar");
+
 				File backupSfar = new File(dlcPath + "Default.sfar.bak");
 				int _continue = JOptionPane.YES_OPTION;
-				if (mainSfar.exists() && !backupSfar.exists()) {
-					_continue = JOptionPane.showConfirmDialog(UnpackWindow.this,
-							dlcName + " does not have an SFAR backup.\nYou will have to use Origin's repair feature if you unpack this DLC and want to restore it.\n\nUnpack this DLC?",
-							"DLC not backed up", JOptionPane.YES_NO_OPTION);
-				}
+				if (mainSfar.exists()) {
+					//Primary DLC
+					if (mainSfar.exists() && !backupSfar.exists()) {
+						_continue = JOptionPane.showConfirmDialog(UnpackWindow.this, dlcName
+								+ " does not have an SFAR backup.\nYou will have to use Origin's repair feature if you unpack this DLC and want to restore it.\n\nUnpack this DLC?",
+								"DLC not backed up", JOptionPane.YES_NO_OPTION); //should probably move this to the UI thread...
+					}
 
-				if (_continue == JOptionPane.YES_OPTION) {
-					publish("Unpacking " + dlcName);
-					processUnpackJob(dlcPath, dlcName);
+					if (_continue == JOptionPane.YES_OPTION) {
+						publish("Unpacking " + dlcName);
+						processUnpackJob(dlcPath, dlcName, false);
+					}
+					completed++;
+					publish(Integer.toString(completed));
+					continue;
 				}
-				completed++;
-				publish(Integer.toString(completed));
+				File patch001Sfar = new File(dlcPath + "Patch_001.sfar");
+				if (patch001Sfar.exists()) {
+					//TESTPATCH - read only extraction
+					publish("Unpacking " + dlcName);
+					processUnpackJob(dlcPath, dlcName, true);
+					completed++;
+					publish(Integer.toString(completed));
+					continue;
+				}
 			}
 			return true;
 
 		}
 
-		private boolean processUnpackJob(String fullDLCDirectory, String dlcName) {
+		private boolean processUnpackJob(String fullDLCDirectory, String dlcName, boolean testpatch) {
 			// TODO Auto-generated method stub
 			File dlcPath = new File(fullDLCDirectory);
 			// Check if directory exists
@@ -268,6 +295,9 @@ public class UnpackWindow extends JDialog {
 
 			// The folder exists.
 			File mainSfar = new File(fullDLCDirectory + "Default.sfar");
+			if (testpatch) {
+				mainSfar = new File(fullDLCDirectory + "Patch_001.sfar");
+			}
 
 			if (mainSfar.exists()) {
 				ArrayList<String> command = new ArrayList<String>();
@@ -275,9 +305,15 @@ public class UnpackWindow extends JDialog {
 				command.add("--SFARPath");
 				command.add(mainSfar.getAbsolutePath());
 				command.add("--ExtractEntireArchive");
+				if (testpatch) {
+					command.add("--KeepArchiveIntact");
+				}
 				command.add("--OutputPath");
-				command.add(new File(bioGameDir).getParent());
-
+				if (testpatch) {
+					command.add(ModManager.getTestpatchUnpackFolder());
+				} else {
+					command.add(new File(bioGameDir).getParent());
+				}
 				//Build command.
 				ProcessBuilder pb = new ProcessBuilder(command);
 				ProcessResult pr = ModManager.runProcess(pb);

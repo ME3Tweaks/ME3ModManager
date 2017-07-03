@@ -255,7 +255,7 @@ public class PCCDataDumperWindow extends JDialog {
 					command.add("--SFARPath");
 					command.add(testpatch.getAbsolutePath());
 					command.add("--ExtractEntireArchive");
-					command.add("--KeepaAchiveIntact");
+					command.add("--KeepArchiveIntact");
 					command.add("--FlatFolderExtraction");
 					command.add("--OutputPath");
 					command.add(testpatchfolder.getAbsolutePath());
