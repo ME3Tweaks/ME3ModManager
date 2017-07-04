@@ -72,6 +72,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Profile.Section;
 import org.ini4j.Wini;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -103,7 +104,6 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.utilities.Version;
 import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
-import com.me3tweaks.modmanager.valueparsers.consumable.ConsumableGUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI;
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI2;
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
@@ -144,7 +144,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
 
 	JMenuItem modDevStarterKit, moddevOfficialDLCManager;
-	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2, sqlConsumableParser;
+	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2;
 	JList<Mod> modList;
 	JProgressBar progressBar;
 	ListSelectionModel listSelectionModel;
@@ -161,7 +161,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem restoreCustomDLCManager;
 	private JMenuItem backupBasegameUnpacked;
 	private JMenuItem toolsUnpackDLC;
-	private JMenuItem toolTankmasterCoalFolder;
 	private JMenuItem toolTankmasterCoalUI;
 	private JMenuItem toolTankmasterTLK;
 	private JMenuItem modManagementOpenModsFolder;
@@ -174,6 +173,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenu restoreMenuAdvanced;
 	private boolean loadedFirstTime = false;
 	//private JMenu modUtilsMenu;
+	private JMenuItem toolMassEffectModder;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -416,6 +416,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			File jpatch = new File(ModManager.getToolsDir() + "jptch.exe");
 			if (!jpatch.exists()) {
 				ModManager.debugLogger.writeMessage("Environment Check: Jptch.exe doesn't exist - downloading mixin tools.");
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading MixIn Patching Tools"));
 				ME3TweaksUtils.downloadJDiffTools();
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded MixIn Patching Tools"));
 				ModManager.debugLogger.writeMessage("Environment Check: Downloaded MixIn tools");
@@ -427,9 +428,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			//checkForME3ExplorerUpdates();
 			checkForCommandLineToolUpdates();
 			if (isUpdate || ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
+				boolean forcedByUpdate = isUpdate;
 				isUpdate = false; //no mas
-				checkForContentUpdates(force);
+				checkForContentUpdates(force || forcedByUpdate == true);
 			}
+			checkForMassEffectModderUpdates();
 			return null;
 		}
 
@@ -469,50 +472,86 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		private void checkForContentUpdates(boolean force) {
 			// Check for updates
-			if (ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
-				if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0 || force) {
-					ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
-							+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK) + " since the last help/mods update check.");
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest help information"));
-					HelpMenu.getOnlineHelp();
-					publish(new ThreadCommand("UPDATE_HELP_MENU"));
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading ASI list from ME3Tweaks"));
-					ASIModWindow.getOnlineASIManifest();
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest MixIns"));
-					String updateStr = PatchLibraryWindow.getLatestMixIns();
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", updateStr));
-					if (modModel.getSize() > 0) {
-						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Checking for updates to mods"));
-						checkAllModsForUpdates(false);
-						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Mod update check complete"));
-					}
-					try {
-						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
-						ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
-						FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice-beta"), ModManager.getThirdPartyModDBFile());
-						ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile());
-						ModManager.debugLogger.writeMessage("Downloaded third party mod data from identification service");
-						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod identification info"));
-
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						ModManager.debugLogger.writeErrorWithException("Failed to download third party identification data: ", e);
-						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party mod identification info"));
-					}
-					if (validateBIOGameDir()) {
-						ArrayList<InstalledASIMod> outdatedASImods = ASIModWindow.getOutdatedASIMods(GetBioGameDir());
-						if (outdatedASImods.size() > 0) {
-							ModManager.debugLogger.writeMessage("At least one ASI is outdated, advertising update");
-							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "ASI mods are outdated"));
-							publish(new ThreadCommand("SHOW_OUTDATED_ASI_MODS", null, outdatedASImods));
-						} else {
-							ModManager.debugLogger.writeMessage("Installed ASIs are up to date (if any are installed)");
-						}
+			if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0 || force) {
+				ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
+						+ ModManager.getDurationBreakdown(System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK) + " since the last help/mods update check.");
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest help information"));
+				HelpMenu.getOnlineHelp();
+				publish(new ThreadCommand("UPDATE_HELP_MENU"));
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading ASI list from ME3Tweaks"));
+				ASIModWindow.getOnlineASIManifest();
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading latest MixIns"));
+				String updateStr = PatchLibraryWindow.getLatestMixIns();
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", updateStr));
+				if (modModel.getSize() > 0) {
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Checking for updates to mods"));
+					checkAllModsForUpdates(false);
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Mod update check complete"));
+				}
+				try {
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
+					ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
+					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice-beta"), ModManager.getThirdPartyModDBFile());
+					ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile(), StandardCharsets.UTF_8);
+					ModManager.debugLogger.writeMessage("Downloaded third party mod data from identification service");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod identification info"));
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					ModManager.debugLogger.writeErrorWithException("Failed to download third party identification data: ", e);
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party mod identification info"));
+				}
+				if (validateBIOGameDir()) {
+					ArrayList<InstalledASIMod> outdatedASImods = ASIModWindow.getOutdatedASIMods(GetBioGameDir());
+					if (outdatedASImods.size() > 0) {
+						ModManager.debugLogger.writeMessage("At least one ASI is outdated, advertising update");
+						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "ASI mods are outdated"));
+						publish(new ThreadCommand("SHOW_OUTDATED_ASI_MODS", null, outdatedASImods));
+					} else {
+						ModManager.debugLogger.writeMessage("Installed ASIs are up to date (if any are installed)");
 					}
 				}
+			}
+		}
+
+		/**
+		 * Checks for the latest github release of MEM and stores the values in
+		 * memory. The values are used when attempting to start MEM.
+		 */
+		private void checkForMassEffectModderUpdates() {
+			try {
+				String memEXELoc = ModManager.getMEMDirectory() + "MassEffectModder.exe";
+				File memEXE = new File(memEXELoc);
+				int localversion = 0;
+				if (memEXE.exists()) {
+					localversion = EXEFileInfo.getMajorVersionOfProgram(memEXELoc);
+				}
+
+				String memReleaseAPIEndpoint = "https://api.github.com/repos/MassEffectModder/MassEffectModder/releases/latest";
+				String response = IOUtils.toString(new URL(memReleaseAPIEndpoint), StandardCharsets.UTF_8);
+				JSONParser parser = new JSONParser();
+				JSONObject latestRelease = (JSONObject) parser.parse(response);
+				String version = (String) latestRelease.get("tag_name");
+				int serverVersion = 0;
+				try {
+					serverVersion = Integer.parseInt(version);
+					ModManager.MASSEFFECTMODDER_LATESTVERSION = serverVersion;
+					ModManager.debugLogger.writeMessage("Latest MEM version on github: v"+ModManager.MASSEFFECTMODDER_LATESTVERSION);
+				} catch (NumberFormatException e) {
+					return;
+				}
+
+				JSONArray assets = (JSONArray) latestRelease.get("assets");
+				if (assets.size() > 0) {
+					JSONObject releaseAsset = (JSONObject) assets.get(0);
+					ModManager.MASSEFFECTMODDER_DOWNLOADLINK = (String) releaseAsset.get("browser_download_url");
+				}
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException("I/O Exception when checking Github for MEM update check:", e);
+			} catch (ParseException e1) {
+				ModManager.debugLogger.writeErrorWithException("Error in JSON returned from Github for MEM update check:", e1);
 			}
 		}
 
@@ -1286,10 +1325,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionOptions = new JMenuItem("Options");
 		actionOptions.setToolTipText("Configure Mod Manager Options");
 
+		toolMassEffectModder = new JMenuItem("Mass Effect Modder");
+		if (ArchUtils.getProcessor().is64Bit()) {
+			toolMassEffectModder.setToolTipText(
+					"<html>Runs Mass Effect Modder.<br>Mass Effect Modder is a texturing tool for the Mass Effect series.<br>This tool is used to install ALOT and is much faster than ME3Explorer for installing textures.<br>Note: This is an external program and is not supported by ME3Tweaks.</html>");
+		} else {
+			toolMassEffectModder.setToolTipText("<html>Mass Effect Modder requires 64-bit Windows</html>");
+			toolMassEffectModder.setEnabled(false);
+		}
 		toolME3Explorer = new JMenuItem("ME3Explorer");
-		toolME3Explorer.setToolTipText("Runs the bundled ME3Explorer program");
-		toolTankmasterCoalFolder = new JMenuItem("TankMaster Coalesce Folder");
-		toolTankmasterCoalFolder.setToolTipText("Opens Tankmaster Coalesce folder");
+		toolME3Explorer.setToolTipText(
+				"<html>Runs ME3Explorer.<br>ME3Explorer is the primary tool for creating and editing Mass Effect 3 content.<br>Note: This is an external program and is not supported by ME3Tweaks.</html>");
 		toolTankmasterCoalUI = new JMenuItem("TankMaster Coalesce Interface");
 		toolTankmasterCoalUI.setToolTipText("Opens interface for Tankmaster's Coalesced compiler");
 		toolTankmasterTLK = new JMenuItem("TankMaster ME2/ME3 TLK Tool");
@@ -1447,7 +1493,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		devMenu.add(modDevStarterKit);
 		devMenu.add(moddevOfficialDLCManager);
 		devMenu.add(moddevUpdateXMLGenerator);
-		devMenu.add(toolTankmasterCoalFolder);
 		devMenu.add(toolTankmasterCoalUI);
 		devMenu.add(toolTankmasterTLK);
 
@@ -1459,8 +1504,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMapMeshViewer.addActionListener(this);
 		toolsPCCDataDumper.addActionListener(this);
 		toolME3Explorer.addActionListener(this);
+		toolMassEffectModder.addActionListener(this);
 		toolTankmasterTLK.addActionListener(this);
-		toolTankmasterCoalFolder.addActionListener(this);
 		toolTankmasterCoalUI.addActionListener(this);
 
 		parsersMenu = new JMenu("Coalesced Parsers");
@@ -1469,20 +1514,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		sqlAIWeaponParser = new JMenuItem("BioAI Parser");
 		sqlPowerCustomActionParser = new JMenuItem("CustomAction Parser");
 		sqlPowerCustomActionParser2 = new JMenuItem("CustomAction Editor");
-		sqlConsumableParser = new JMenuItem("Consumable Parser");
 
 		sqlWavelistParser.addActionListener(this);
 		sqlDifficultyParser.addActionListener(this);
 		sqlAIWeaponParser.addActionListener(this);
 		sqlPowerCustomActionParser.addActionListener(this);
 		//sqlPowerCustomActionParser2.addActionListener(this); //Outputs SQL only. Disabled.
-		sqlConsumableParser.addActionListener(this);
 
 		parsersMenu.add(sqlWavelistParser);
 		parsersMenu.add(sqlDifficultyParser);
 		parsersMenu.add(sqlAIWeaponParser);
 		parsersMenu.add(sqlPowerCustomActionParser);
-		parsersMenu.add(sqlConsumableParser);
 
 		toolsMenu.add(toolsUnpackDLC);
 		toolsMenu.add(toolsAutoTOCGame);
@@ -1490,10 +1532,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.add(toolsGrantWriteAccess);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolME3Config);
+		toolsMenu.add(toolMassEffectModder);
 		toolsMenu.add(toolME3Explorer);
 		toolsMenu.add(toolsPCCDataDumper);
 		toolsMenu.add(toolsMapMeshViewer);
-		toolsMenu.add(parsersMenu);
+		//toolsMenu.add(parsersMenu); not enough content for this to be useful.
 		toolsMenu.add(devMenu);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolsInstallLauncherWV);
@@ -2422,7 +2465,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							promptMessage = "Your local copy of ME3Explorer is out of date.\nLocal version: " + extVersionStr + "\nLatest version: "
 									+ ModManager.LATEST_ME3EXPLORER_VERSION + "\nDownload latest version?";
 							promptIcon = JOptionPane.WARNING_MESSAGE;
-							promptTitle = "Download required";
+							promptTitle = "Update Available";
 							prompt = true;
 						}
 					}
@@ -2459,8 +2502,68 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
 				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5.2 or higher in order to run.");
 			}
-		} else if (e.getSource() == toolTankmasterCoalFolder) {
-			ResourceUtils.openDir(ModManager.getTankMasterCompilerDir());
+		} else if (e.getSource() == toolMassEffectModder) {
+			if (ModManager.validateNETFrameworkIsInstalled()) {
+				updateApplyButton();
+				boolean prompt = false;
+				String extVersionStr = null;
+				File memEXE = new File(ModManager.getMEMDirectory() + "MassEffectModder.exe");
+				String promptMessage = "Placeholder";
+				String promptTitle = "Placeholder";
+				int promptIcon = JOptionPane.ERROR_MESSAGE;
+
+				if (!memEXE.exists()) {
+					promptMessage = "Mass Effect Modder is not included in Mod Manager and must be downloaded.\nMod Manager can download version "
+							+ ModManager.MASSEFFECTMODDER_LATESTVERSION + " for you.\nDownload?";
+					promptIcon = JOptionPane.WARNING_MESSAGE;
+					promptTitle = "Download required";
+					prompt = true;
+				} else {
+					if (ModManager.MASSEFFECTMODDER_LATESTVERSION > 0) {
+						int existingVersion = EXEFileInfo.getMajorVersionOfProgram(memEXE.getAbsolutePath());
+						if (existingVersion < ModManager.MASSEFFECTMODDER_LATESTVERSION) {
+							promptMessage = "Your local copy of Mass Effect Modder is out of date.\nLocal version: " + existingVersion + "\nLatest version: "
+									+ ModManager.MASSEFFECTMODDER_LATESTVERSION + "\nDownload latest version?";
+							promptIcon = JOptionPane.WARNING_MESSAGE;
+							promptTitle = "Update available";
+							prompt = true;
+						}
+					}
+				}
+				if (prompt) {
+					// Show update
+					int update = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW, promptMessage, promptTitle, JOptionPane.YES_NO_OPTION, promptIcon);
+					if (update == JOptionPane.YES_OPTION) {
+						new MassEffectModderUpdaterWindow(ModManager.MASSEFFECTMODDER_LATESTVERSION, true);
+					} else {
+						if (memEXE.exists()) {
+							ModManager.debugLogger.writeMessage("Launching Mass Effect Modder");
+							ProcessBuilder pb = new ProcessBuilder(memEXE.getAbsolutePath());
+							ModManager.runProcessDetached(pb);
+							labelStatus.setText("Launched Mass Effect Modder");
+
+						} else {
+							ModManager.debugLogger.writeMessage("Aboring MEM launch - does not exist locally");
+							labelStatus.setText("Mass Effect Modder not available");
+						}
+					}
+				} else {
+					if (memEXE.exists()) {
+						//run it
+						ModManager.debugLogger.writeMessage("Launching Mass Effect Modder");
+						ProcessBuilder pb = new ProcessBuilder(memEXE.getAbsolutePath());
+						ModManager.runProcessDetached(pb);
+						labelStatus.setText("Launched Mass Effect Modder");
+					}
+				}
+
+			} else {
+				updateApplyButton();
+				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
+				ModManager.debugLogger.writeMessage("Run MEM: .NET is not installed");
+				new NetFrameworkMissingWindow("Mass Effect Modder requires .NET 4.5.2 or higher in order to run.");
+			}
+
 		} else if (e.getSource() == modManagementOpenModsFolder) {
 			ResourceUtils.openDir(ModManager.getModsDir());
 		} else if (e.getSource() == modManagementClearPatchLibraryCache) {
@@ -2654,8 +2757,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new PowerCustomActionGUI();
 		} else if (e.getSource() == sqlPowerCustomActionParser2) {
 			new PowerCustomActionGUI2();
-		} else if (e.getSource() == sqlConsumableParser) {
-			new ConsumableGUI();
 		} else if (e.getSource() == toolsInstallLauncherWV) {
 			int result = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW,
 					"LauncherWV has been deprecated.\nYou can install install it, but using the binkw32 bypass methods are far more reliable.\nContinue installing LauncherWV?",

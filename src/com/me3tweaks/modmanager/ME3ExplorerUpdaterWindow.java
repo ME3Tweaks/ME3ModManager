@@ -50,22 +50,24 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 	private boolean startAfterFinish;
 
 	public ME3ExplorerUpdaterWindow(String versionStr, boolean startAfterFinish) {
-		this.setTitle("ME3Explorer Update");
 		this.startAfterFinish = startAfterFinish;
 		this.version = versionStr;
-
 		setupWindow();
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		DownloadTask task = new DownloadTask(ModManager.getTempDir());
 		task.addPropertyChangeListener(this);
 		ModManager.debugLogger.writeMessage("Downloading ME3Explorer " + versionStr);
 		task.execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
+		setTitle("ME3Explorer Update");
+		setIconImages(ModManager.ICONS);
+
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
@@ -88,11 +90,8 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 		panel.add(actionPanel, BorderLayout.CENTER);
 		panel.add(statusLabel, BorderLayout.SOUTH);
 		getContentPane().add(panel);
-		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		setResizable(false);
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		setIconImages(ModManager.ICONS);
 		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	/**
@@ -180,10 +179,10 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 					}
 				}
 			} catch (IOException ex) {
-				JOptionPane.showMessageDialog(ME3ExplorerUpdaterWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				ex.printStackTrace();
+				ModManager.debugLogger.writeErrorWithException("Error downloading ME3Explorer: ", ex);
 				setProgress(0);
 				error = true;
+				publish(new ThreadCommand("DOWNLOAD_ERROR", "Error downloading file:\n" + ex.getMessage()));
 				cancel(true);
 			}
 			return null;
@@ -199,6 +198,9 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 					break;
 				case "SET_STATUS_TEXT":
 					statusLabel.setText(tc.getMessage());
+					break;
+				case "DOWNLOAD_ERROR":
+					JOptionPane.showMessageDialog(ME3ExplorerUpdaterWindow.this, tc.getMessage(), "Download Error", JOptionPane.ERROR_MESSAGE);
 					break;
 				}
 			}
@@ -269,8 +271,7 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 				inputStream = httpConn.getInputStream();
 
 			} else {
-				throw new IOException("No file to download. Server replied HTTP code: " + responseCode);
-
+				throw new IOException("Error downloading file:\nServer replied with HTTP code: " + responseCode);
 			}
 		}
 

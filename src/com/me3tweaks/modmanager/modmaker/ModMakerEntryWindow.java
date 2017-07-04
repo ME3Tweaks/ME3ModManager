@@ -251,7 +251,6 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 				case "es_ES":
 					setlang = "Spanish";
 					break;
-					//TODO: Other languages
 				}
 				if (setlang != null) {
 					languageChoices.setSelectedItem(setlang);

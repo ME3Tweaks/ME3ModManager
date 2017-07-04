@@ -109,7 +109,7 @@ public class CoalescedWindow extends JFrame {
 
 		//Compile Panel
 		JPanel compilePanel = new JPanel(new GridBagLayout());
-		compilePanel.setBorder(new TitledBorder(new EtchedBorder(), "Compile a .bin file from .xml files"));
+		compilePanel.setBorder(new TitledBorder(new EtchedBorder(), "Compile a coalesced .bin file from a .xml manifest file"));
 		cInputField = new JTextField(55);
 		cInputField.setUI(new HintTextFieldUI("Select a .xml manifest file"));
 		JButton cBrowse = new JButton("Browse...");

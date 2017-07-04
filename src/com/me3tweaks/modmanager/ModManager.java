@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -80,7 +81,7 @@ import com.sun.jna.platform.win32.WinReg;
 import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 
 	public static final String VERSION = "5.0 Beta 5";
 	public static long BUILD_NUMBER = 75L;
@@ -101,7 +102,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 3;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 4;
 
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 15; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
@@ -123,6 +124,10 @@ public class ModManager {
 	public static String LATEST_ME3EXPLORER_VERSION;
 	public static boolean USE_WINDOWS_UI;
 	protected static boolean COMPRESS_COMPAT_OUTPUT = false;
+
+	public static String MASSEFFECTMODDER_DOWNLOADLINK;
+
+	public static int MASSEFFECTMODDER_LATESTVERSION;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGUAGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
@@ -2506,5 +2511,41 @@ public class ModManager {
 		File file = new File(getDataDir() + "Patch_001_Extracted\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
+	}
+
+	public static String getMEMDirectory() {
+		File file = new File(getDataDir() + "MassEffectModder\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * Downloads Mass Effect Modder. Runs on the current thread, so it may need
+	 * to be done in the background.
+	 * 
+	 * @return return code of extraction, -1 if download failed.
+	 */
+	public static int downloadMEM() {
+		File downloadedFile = new File(ModManager.getTempDir() + "MassEffectModderUpdate.7z");
+		try {
+			FileUtils.copyURLToFile(new URL(MASSEFFECTMODDER_DOWNLOADLINK), downloadedFile);
+		} catch (MalformedURLException e) {
+			//This wont't happen
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("IOException downloading MEM:", e);
+			return -1;
+		}
+		ModManager.debugLogger.writeMessage("Downloaded " + downloadedFile + ", " + downloadedFile.length() + " bytes.");
+
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
+		commandBuilder.add("-y"); // overwrite
+		commandBuilder.add("x"); // extract
+		commandBuilder.add(downloadedFile.getAbsolutePath());// 7z file
+		commandBuilder.add("-o" + ModManager.getMEMDirectory()); // extraction path
+		String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+		ModManager.debugLogger.writeMessage("Extracting MassEffectModder...");
+		ProcessBuilder pb = new ProcessBuilder(command);
+		return ModManager.runProcess(pb).getReturnCode();
 	}
 }

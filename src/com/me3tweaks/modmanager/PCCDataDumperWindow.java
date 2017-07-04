@@ -281,17 +281,37 @@ public class PCCDataDumperWindow extends JFrame {
 			}
 			autotocExecutor.shutdown();
 			ArrayList<DumpTaskResult> results = new ArrayList<>();
+			ArrayList<DumpTaskResult> retrySingleThreaded = new ArrayList<>();
 			try {
 				autotocExecutor.awaitTermination(5, TimeUnit.MINUTES);
 				for (Future<DumpTaskResult> f : futures) {
 					DumpTaskResult pr = f.get();
-					results.add(pr);
+					if (pr.getResult().getReturnCode() == 0) {
+						results.add(pr);
+					} else {
+						retrySingleThreaded.add(pr);
+					}
 				}
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE DUMPING FILES: ", e);
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("UNKNOWN EXCEPTION OCCURED: ", e);
 			}
+
+			for (DumpTaskResult tr : retrySingleThreaded) {
+				String filepath = tr.getFilepath();
+				ModManager.debugLogger.writeMessage("Retrying dump in single threaded mode on file: "+filepath);
+				String taskname = FilenameUtils.getName(filepath) + " (" + ResourceUtils.humanReadableByteCount(new File(filepath).length(), true) + ")";
+				publish(new ThreadCommand("ASSIGN_TASK", taskname));
+				ProcessResult pr = ModManager.dumpPCC(filepath, options);
+				completed.incrementAndGet();
+				publish(new ThreadCommand("RELEASE_TASK", taskname));
+				int progressval = (int) ((completed.get() / (files.size() * 1.0) * 100));
+				publish(new ThreadCommand("SET_PROGRESS", null, progressval));
+				publish(new ThreadCommand("UPDATE_STATUS", "Dumping PCC files... " + completed.get() + " of " + files.size()));
+				results.add(new DumpTaskResult(filepath, pr));
+			}
+
 			return results;
 		}
 
@@ -347,7 +367,7 @@ public class PCCDataDumperWindow extends JFrame {
 				}
 				if (failures.size() > 0) {
 					//Something failed.
-					ModManager.debugLogger.writeError(failures.size()+" files failed to dump.");
+					ModManager.debugLogger.writeError(failures.size() + " files failed to dump.");
 					infoLabel.setText("PCC dumping completed with errors.");
 					JOptionPane.showMessageDialog(PCCDataDumperWindow.this, failures.size() + " files failed to dump.\nSave a diagnostics log to disk to view failures.",
 							"Completed with errors", JOptionPane.ERROR_MESSAGE);
@@ -369,6 +389,7 @@ public class PCCDataDumperWindow extends JFrame {
 			});
 			dumpPanel.remove(dumpButton);
 			dumpPanel.add(openPCCDumpFolder, BorderLayout.CENTER);
+			revalidate();
 		}
 
 		/**
@@ -391,7 +412,9 @@ public class PCCDataDumperWindow extends JFrame {
 				String taskname = FilenameUtils.getName(filepath) + " (" + ResourceUtils.humanReadableByteCount(new File(filepath).length(), true) + ")";
 				publish(new ThreadCommand("ASSIGN_TASK", taskname));
 				ProcessResult pr = ModManager.dumpPCC(filepath, options);
-				completed.incrementAndGet();
+				if (pr.getReturnCode() == 0) {
+					completed.incrementAndGet();
+				}
 				publish(new ThreadCommand("RELEASE_TASK", taskname));
 				int progressval = (int) ((completed.get() / (files.size() * 1.0) * 100));
 				publish(new ThreadCommand("SET_PROGRESS", null, progressval));

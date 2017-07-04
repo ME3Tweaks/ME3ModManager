@@ -14,6 +14,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -25,14 +28,15 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 
 @SuppressWarnings("serial")
 public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyChangeListener {
 	//String downloadLink, updateScriptLink;
-	boolean error = false;
 	String version;
 	private String fileName;
 
@@ -59,7 +63,7 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("This version of Mod Manager requires MM Command Line Tools " + ModManager.getCommandLineToolsRequiredVersion() + ".");
+		introLabel = new JLabel("This version of Mod Manager requires Command Line Tools " + ModManager.getCommandLineToolsRequiredVersion() + ".");
 		statusLabel = new JLabel("Downloading new version...");
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
@@ -97,7 +101,7 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 	 * @author www.codejava.net
 	 *
 	 */
-	class DownloadTask extends SwingWorker<Void, Void> {
+	class DownloadTask extends SwingWorker<Boolean, ThreadCommand> {
 		private static final int BUFFER_SIZE = 4096;
 		private String saveDirectory;
 		//private SwingFileDownloadHTTP gui;
@@ -111,7 +115,7 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 		 * Executed in background thread
 		 */
 		@Override
-		protected Void doInBackground() throws Exception {
+		protected Boolean doInBackground() throws Exception {
 			//Download the update
 			try {
 
@@ -146,17 +150,49 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 
 				util.disconnect();
 
-				if (!buildUpdateScript()) {
-					cancel(true);
+				publish(new ThreadCommand("SET_PROGRESSBAR_INDETERMINATE"));
+				publish(new ThreadCommand("SET_STATUS_TEXT", "<html>Extracting Command Line Tools...</html>"));
+
+				ArrayList<String> commandBuilder = new ArrayList<String>();
+				commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
+				commandBuilder.add("-y"); // overwrite
+				commandBuilder.add("x"); // extract
+				commandBuilder.add(saveFilePath);// 7z file
+				commandBuilder.add("-o" + ModManager.getCommandLineToolsDir()); // extraction path
+				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+				ModManager.debugLogger.writeMessage("Extracting Command Line Tools...");
+				ProcessBuilder pb = new ProcessBuilder(command);
+				ProcessResult pr = ModManager.runProcess(pb);
+				FileUtils.deleteQuietly(new File(saveFilePath));
+				boolean removeOutdatedGUITransplanter = FileUtils.deleteQuietly(new File(ModManager.getToolsDir() + "GUITransplanter"));
+				if (removeOutdatedGUITransplanter) {
+					ModManager.debugLogger.writeMessage("Removed outdated GUITransplanter directory.");
 				}
+				return pr.getReturnCode() == 0;
 			} catch (IOException ex) {
-				JOptionPane.showMessageDialog(CommandLineToolsUpdaterWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				ex.printStackTrace();
+				ModManager.debugLogger.writeErrorWithException("Error downloading Command Line Tools: ", ex);
 				setProgress(0);
-				error = true;
-				cancel(true);
+				publish(new ThreadCommand("DOWNLOAD_ERROR", "Error downloading file:\n" + ex.getMessage()));
+				return false;
 			}
-			return null;
+		}
+
+		@Override
+		protected void process(List<ThreadCommand> chunks) {
+			for (ThreadCommand tc : chunks) {
+				String command = tc.getCommand();
+				switch (command) {
+				case "SET_PROGRESSBAR_INDETERMINATE":
+					downloadProgress.setIndeterminate(true);
+					break;
+				case "SET_STATUS_TEXT":
+					statusLabel.setText(tc.getMessage());
+					break;
+				case "DOWNLOAD_ERROR":
+					JOptionPane.showMessageDialog(CommandLineToolsUpdaterWindow.this, tc.getMessage(), "Download Error", JOptionPane.ERROR_MESSAGE);
+					break;
+				}
+			}
 		}
 
 		/**
@@ -165,11 +201,26 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 		@Override
 		protected void done() {
 			//TODO: Install update through the update script
-			if (!error) {
-				runUpdateScript();
-			} else {
-				dispose();
+			try {
+				boolean success = get();
+				if (success) {
+					ModManager.debugLogger.writeMessage("Command line tools downloaded.");
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Command Line Tools updated");
+				} else {
+					ModManager.debugLogger.writeError("Command line tools failed to download! Mod Manager will not work properly.");
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Command Line Tools failed to download");
+					JOptionPane.showMessageDialog(CommandLineToolsUpdaterWindow.this,
+							"A required update for Mod Manager Command Line Tools failed to download.\nMod Manager will not work properly without this update.", "Critical error",
+							JOptionPane.ERROR_MESSAGE);
+				}
+			} catch (InterruptedException | ExecutionException e) {
+				ModManager.debugLogger.writeError("Command line tools failed to download! Mod Manager will not work properly.");
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Command Line Tools failed to download");
+				JOptionPane.showMessageDialog(CommandLineToolsUpdaterWindow.this,
+						"A required update for Mod Manager Command Line Tools failed to download.\nMod Manager will not work properly without this update.", "Critical error",
+						JOptionPane.ERROR_MESSAGE);
 			}
+			dispose();
 		}
 	}
 
@@ -224,7 +275,7 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 				inputStream = httpConn.getInputStream();
 
 			} else {
-				throw new IOException("No file to download. Server replied HTTP code: " + responseCode);
+				throw new IOException("Server replied with HTTP code: " + responseCode);
 
 			}
 		}
@@ -241,126 +292,5 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 		public InputStream getInputStream() {
 			return this.inputStream;
 		}
-	}
-
-	public void runUpdateScript() {
-		// TODO Auto-generated method stub
-		String[] command = { "cmd.exe", "/c", ModManager.getTempDir() + "commandlinetoolsupdater.cmd" };
-		ProcessBuilder p = new ProcessBuilder(command);
-		ModManager.debugLogger.writeMessage("Upgrading Command Line Tools.");
-		ProcessResult pr = ModManager.runProcess(p);
-		if (pr.getReturnCode() != 0) {
-			ModManager.debugLogger.writeError("ERROR DOWNLOADING COMMAND LINE TOOLS!");
-		}
-		//TEST
-		ModManager.debugLogger.writeMessage("Extraction script has run, checking for command line tools...");
-		File f = new File(ModManager.getCommandLineToolsDir()+"FullAutoTOC.exe");
-		if (f.exists()) {
-			ModManager.debugLogger.writeMessage("Command Line Tools exists.");
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Command Line Tools downloaded");
-		} else {
-			ModManager.debugLogger.writeError("Command Line Tools did failed to extract!");
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Command Line Tools failed to download");
-		}
-		dispose();
-	}
-
-	/**
-	 * Builds the update script (.cmd) to run when swapping files.
-	 * 
-	 * @return True if created, false otherwise.
-	 */
-	private boolean buildUpdateScript() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("::Update script for Mod Manager Command Line Tools (Mod Manager Build " + ModManager.BUILD_NUMBER + ")");
-		sb.append("\r\n");
-		sb.append("\r\n");
-		sb.append("@echo off");
-		sb.append("\r\n");
-		sb.append("echo Command Line Tools Update Script, via Mod Manager Build " + ModManager.BUILD_NUMBER);
-		sb.append("\r\n");
-		sb.append("pushd data\\temp");
-		sb.append("\r\n");
-		sb.append("mkdir MMCOMMANDLINETOOLSNEWVERSION");
-		sb.append("\r\n");
-		sb.append("\r\n");
-		sb.append("::Extract update");
-		sb.append("\r\n\"");
-		sb.append(ModManager.getToolsDir());
-		sb.append("7z.exe\" -y x " + fileName + " -o\"" + ModManager.getTempDir() + "MMCOMMANDLINETOOLSNEWVERSION\"");
-		sb.append("\r\n");
-		sb.append("set MMCMDLINETOOLS=%errorlevel%");
-		sb.append("\r\n");
-		sb.append("if %MMCMDLINETOOLS% EQU 0 (");
-		sb.append("\r\n");
-		sb.append("    color 0A");
-		sb.append("\r\n");
-		sb.append("    echo Command Line Tools extracted successfully.");
-		sb.append("\r\n");
-		sb.append(")");
-		sb.append("\r\n");
-
-		sb.append("if %MMCMDLINETOOLS% EQU 1 (");
-		sb.append("\r\n");
-		sb.append("    color 06");
-		sb.append("\r\n");
-		sb.append("    echo Command Line Tools extracted with warnings.");
-		sb.append("\r\n");
-		sb.append(")");
-		sb.append("\r\n");
-
-		sb.append("if %MMCMDLINETOOLS% GEQ 2 (");
-		sb.append("\r\n");
-		sb.append("    color 0C");
-		sb.append("\r\n");
-		sb.append("    echo CommandLineTools did not extract succesfully. Please report this to FemShep.");
-		sb.append("\r\n");
-		sb.append("    pause");
-		sb.append("\r\n");
-		sb.append(")");
-		sb.append("\r\n");
-		sb.append("\r\n");
-		sb.append("::Check for build-in update script");
-		sb.append("\r\n");
-		sb.append("if exist MMCOMMANDLINETOOLSNEWVERSION\\commandlinetoolsupdater.cmd (");
-		sb.append("\r\n");
-		sb.append("CALL MMCOMMANDLINETOOLSNEWVERSION\\commandlinetoolsupdater.cmd");
-		sb.append("\r\n");
-		sb.append(")");
-		sb.append("\r\n");
-		sb.append("::Remove old folder, copy new one");
-		sb.append("if exist \"" + ModManager.getCommandLineToolsDir() + "\" rmdir /S /Q \"");
-		sb.append(ModManager.getCommandLineToolsDir());
-		sb.append("\"\r\n");
-		sb.append("xcopy /Q /Y /S MMCOMMANDLINETOOLSNEWVERSION \"" + ModManager.getCommandLineToolsDir() + "\"");
-		sb.append("\r\n");
-		sb.append("::Cleanup");
-		sb.append("\r\n");
-		sb.append("del /Q " + fileName);
-		sb.append("\r\n");
-		sb.append("rmdir /S /Q MMCOMMANDLINETOOLSNEWVERSION");
-		sb.append("\r\n");
-		sb.append("call :deleteSelf&exit /b");
-		sb.append("\r\n");
-		sb.append(":deleteSelf");
-		sb.append("\r\n");
-		sb.append("start /b \"\" cmd /c del \"%~f0\"&exit /b");
-
-		//sb.append("pause");
-		//sb.append("exit");
-		try {
-			String updatePath = new File(ModManager.getTempDir() + "commandlinetoolsupdater.cmd").getAbsolutePath();
-			Files.write(Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			ModManager.debugLogger.writeMessage("Couldn't generate the update script. Must abort.");
-			JOptionPane.showMessageDialog(CommandLineToolsUpdaterWindow.this, "Error building update script: " + e.getClass() + "\nCannot continue.", "Updater Error",
-					JOptionPane.ERROR_MESSAGE);
-			error = true;
-			e.printStackTrace();
-			dispose();
-			return false;
-		}
-		return true;
 	}
 }

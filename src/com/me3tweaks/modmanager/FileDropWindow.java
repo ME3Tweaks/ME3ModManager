@@ -385,49 +385,69 @@ public class FileDropWindow extends JDialog {
 			case "pcc":
 
 			{
-				JButton decompressAllPcc = new JButton("Decompress PCC file");
-				JButton compressPcc = new JButton("Compress PCC file");
+				JButton decompressAllPcc = new JButton("Decompress PCC files");
+				JButton compressAllPcc = new JButton("Compress PCC files");
+
+				decompressAllPcc.setToolTipText("Decompresses PCC files to their uncompressed state.");
+				compressAllPcc.setToolTipText("Compresses PCC files to their compressed state - this does not work on DLC files.");
 
 				JPanel pccFilePanel = new JPanel();
-				pccFilePanel.setLayout(new BoxLayout(pccFilePanel, BoxLayout.PAGE_AXIS));
+				pccFilePanel.setLayout(new BoxLayout(pccFilePanel, BoxLayout.LINE_AXIS));
 
 				TitledBorder xmlBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC File Operations");
 				pccFilePanel.setBorder(xmlBorder);
 
-				JPanel compressionPCCPanel = new JPanel();
-				compressionPCCPanel.setLayout(new BoxLayout(compressionPCCPanel, BoxLayout.LINE_AXIS));
+				JPanel compressionPCCPanel = new JPanel(new BorderLayout());
 				TitledBorder compressionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - Compression options");
 				compressionPCCPanel.setBorder(compressionBorder);
-				compressionPCCPanel.add(Box.createGlue());
-				compressionPCCPanel.add(decompressAllPcc);
-				compressionPCCPanel.add(Box.createGlue());
-				compressionPCCPanel.add(compressPcc);
-				compressionPCCPanel.add(Box.createGlue());
+				compressionPCCPanel.add(decompressAllPcc, BorderLayout.NORTH);
+				compressionPCCPanel.add(compressAllPcc, BorderLayout.SOUTH);
 
 				JButton aipathfinding = new JButton("View AI Pathfinding in Map Pathfinding Viewer");
+				aipathfinding.setToolTipText("View this file in the pathfinding viewer - file must contain path nodes (typically BioD)");
 				if (!ArchUtils.getProcessor().is64Bit()) {
 					aipathfinding.setEnabled(false);
 					aipathfinding.setToolTipText("Requires 64-bit Windows");
+				} else if (filesToPass.size() > 1) {
+					aipathfinding.setEnabled(false);
+					aipathfinding.setToolTipText("Drop only one file onto Mod Manager's window to use this drag and drop shortcut.");
 				}
 				JButton dumppcc = new JButton("Dump PCC info with PCC Data Dumper");
-				JPanel readPCCPanel = new JPanel();
+				JPanel readPCCPanel = new JPanel(new BorderLayout());
+				dumppcc.setToolTipText("Dump PCC information to disk in an easily readable format");
+				
 				TitledBorder coalescedManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - Data Viewers");
 				readPCCPanel.setBorder(coalescedManifestBorder);
-				readPCCPanel.add(Box.createGlue());
-				readPCCPanel.add(aipathfinding);
-				readPCCPanel.add(Box.createGlue());
-				readPCCPanel.add(dumppcc);
-				readPCCPanel.add(Box.createGlue());
+				readPCCPanel.add(aipathfinding, BorderLayout.NORTH);
+				readPCCPanel.add(dumppcc, BorderLayout.SOUTH);
 
 				pccFilePanel.add(compressionPCCPanel);
 				pccFilePanel.add(readPCCPanel);
 
 				panel.add(pccFilePanel, BorderLayout.CENTER);
 
-				compressPcc.addActionListener(new ActionListener() {
+				decompressAllPcc.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
 						//TODO - make it work with multiple files.
+						ModManager.debugLogger.writeMessage("User chose singular COMPRESS_PCC operation");
+						new BatchWorker(filesToPass, BatchWorker.DECOMPRESS_PCC, null).execute();
+						dispose();
+					}
+				});
+				
+				aipathfinding.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						ModManager.debugLogger.writeMessage("User chose singular PATHFINDING_VIEW operation");
+						dispose();
+						new MapMeshViewer(droppedFile);
+					}
+				});
+
+				compressAllPcc.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
 						ModManager.debugLogger.writeMessage("User chose singular COMPRESS_PCC operation");
 						new BatchWorker(filesToPass, BatchWorker.COMPRESS_PCC, null).execute();
 						dispose();
@@ -435,7 +455,6 @@ public class FileDropWindow extends JDialog {
 				});
 
 				dumppcc.addActionListener(new ActionListener() {
-
 					@Override
 					public void actionPerformed(ActionEvent e) {
 						dispose();
@@ -443,6 +462,7 @@ public class FileDropWindow extends JDialog {
 					}
 				});
 				break;
+
 			}
 			case "bin": {
 				JButton decompileCoalescedFile = new JButton("Decompile Coalesced File");

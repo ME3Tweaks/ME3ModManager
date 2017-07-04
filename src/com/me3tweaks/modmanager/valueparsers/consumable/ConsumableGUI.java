@@ -30,6 +30,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
+
 @SuppressWarnings("serial")
 public class ConsumableGUI extends JFrame implements ActionListener {
 	private static boolean isRunningAsMain = false;
@@ -44,15 +47,16 @@ public class ConsumableGUI extends JFrame implements ActionListener {
 	}
 
 	public ConsumableGUI() {
-		this.setTitle("ME3CMM Consumable Parser Tool");
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
-		this.setMinimumSize(new Dimension(490, 500));
-		this.setPreferredSize(new Dimension(490, 500));
+
 		setupWindow();
 		setVisible(true);
 	}
 
 	private void setupWindow() {
+		setTitle("ME3CMM Consumable Parser Tool");
+		setIconImages(ModManager.ICONS);
+		setMinimumSize(new Dimension(490, 500));
+		setPreferredSize(new Dimension(490, 500));
 		JPanel bioaiGUI = new JPanel(new BorderLayout());
 		JLabel instructionsLabel = new JLabel(
 				"<html>ME3CMM Consumable Parser<br>Enter the Consumables sections below, as XML, starting with a &lt;Section&gt; tag, and end with a closing section tag.</html>");
@@ -145,9 +149,9 @@ public class ConsumableGUI extends JFrame implements ActionListener {
 		splitPane.setDividerLocation(150 + splitPane.getInsets().top);
 
 		bioaiGUI.add(splitPane, BorderLayout.CENTER);
-		this.getContentPane().add(bioaiGUI);
+		getContentPane().add(bioaiGUI);
 
-		this.addWindowListener(new java.awt.event.WindowAdapter() {
+		addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
 				if (isRunningAsMain) {
@@ -157,7 +161,7 @@ public class ConsumableGUI extends JFrame implements ActionListener {
 		});
 
 		pack();
-
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		generateFork.setEnabled(false);
 		generateLoad.setEnabled(false);
 		generatePublish.setEnabled(false);
