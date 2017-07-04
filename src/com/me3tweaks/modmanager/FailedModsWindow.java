@@ -60,7 +60,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 
 	private void setupWindow() {
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		setTitle("Invalid Mods List");
+		setTitle("Invalid Mods");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setPreferredSize(new Dimension(600, 480));
 		setIconImages(ModManager.ICONS);
@@ -182,6 +182,10 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 						if (deleted) {
 							ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 							failedModsModel.remove(modelIndex);
+							if (failedModsModel.isEmpty()) {
+								ModManager.debugLogger.writeMessage("No invalid mods remaining - closing Invalid Mods window.");
+								dispose();
+							}
 						}
 					}
 				}
