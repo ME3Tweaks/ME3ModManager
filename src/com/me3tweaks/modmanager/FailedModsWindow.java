@@ -7,6 +7,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -26,6 +27,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.apache.commons.io.FileUtils;
+
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.ui.ModCellRenderer;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
@@ -43,20 +46,20 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 	private JTextArea failedModDesc;
 	private JButton restoreButton;
 	private JButton websiteButton;
+	private JButton deleteButton;
 
 	public FailedModsWindow() {
 		ModManager.debugLogger.writeMessage("Loading failed mods window");
 		setupWindow();
-		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
 
 	private void setupWindow() {
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Invalid Mods List");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(600, 480));
-		this.setIconImages(ModManager.ICONS);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setTitle("Invalid Mods List");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(600, 480));
+		setIconImages(ModManager.ICONS);
 
 		JPanel contentPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -93,9 +96,11 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		actionsPanel.setLayout(new BoxLayout(actionsPanel, BoxLayout.LINE_AXIS));
 		websiteButton = new JButton("Visit Mod Website");
 		restoreButton = new JButton("Restore online");
+		deleteButton = new JButton("Delete Mod");
 		websiteButton.setEnabled(false);
 		restoreButton.setEnabled(false);
-		
+		deleteButton.setEnabled(false);
+
 		websiteButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -140,10 +145,37 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 			}
 		});
 
+		deleteButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				int modelIndex = failedModList.getSelectedIndex();
+				if (modelIndex > -1) {
+					Mod mod = failedModsModel.get(modelIndex);
+					mod = new Mod(mod); //make clone
+					String modfolder = mod.getModPath();
+					int result = JOptionPane.showConfirmDialog(FailedModsWindow.this,
+							"Delete " + mod.getModName() + " from Mod Manager?\nThis will not remove the mod if it is installed.", "Confirm mod deletion",
+							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+					if (result == JOptionPane.YES_OPTION) {
+						ModManager.debugLogger.writeMessage("Deleting invalid mod folder at user request: "+modfolder);
+						boolean deleted = FileUtils.deleteQuietly(new File(modfolder));
+						if (deleted) {
+							ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+						}
+					}
+				}
+			}
+
+		});
+
 		actionsPanel.add(Box.createHorizontalGlue());
 		actionsPanel.add(websiteButton);
 		actionsPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 		actionsPanel.add(restoreButton);
+		actionsPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		actionsPanel.add(deleteButton);
 		c.gridy++;
 		c.weighty = 0;
 		c.fill = GridBagConstraints.HORIZONTAL;
@@ -151,10 +183,11 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		contentPanel.add(actionsPanel, c);
 
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
 		add(contentPanel);
 
-		// listeners
 		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	@Override
@@ -164,6 +197,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 				failedModDesc.setText("Select a mod on the left to see why it failed to load.");
 				websiteButton.setEnabled(false);
 				restoreButton.setEnabled(false);
+				deleteButton.setEnabled(false);
 			} else {
 				updateDescription();
 			}
@@ -196,6 +230,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		} else {
 			restoreButton.setEnabled(false);
 		}
+		deleteButton.setEnabled(true);
 		failedModDesc.setText(description);
 	}
 }

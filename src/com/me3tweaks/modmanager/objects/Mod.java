@@ -229,6 +229,14 @@ public class Mod implements Comparable<Mod> {
 		modDescription = modini.get("ModInfo", "moddesc");
 		//modDisplayDescription = modini.get("ModInfo", "moddesc");
 		modName = modini.get("ModInfo", "modname");
+		if (modName == null) {
+			//Attempt to extract name from the folder name
+			String foldername = new File(getModPath()).getName();
+			modName = foldername;
+			ModManager.debugLogger.writeError("Mod does not have a modname descriptor - marking invalid (" + modName + ")");
+			setFailedReason("This mod does not have a modname descriptor under the [ModInfo] header in its moddesc.ini file. The name displayed in this window is the extracted from the mod's foldername. All Mod Manager mods must have a moddname descriptor.");
+			return;
+		}
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------Reading " + modName + "--------------------", ModManager.LOG_MOD_INIT);
 		// Check if this mod has been made for Mod Manager 2.0 or legacy mode
 		modCMMVer = 1.0f;
@@ -2298,7 +2306,7 @@ public class Mod implements Comparable<Mod> {
 			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
 
 			for (AlternateCustomDLC altdlc : alternateCustomDLC) {
-				ModManager.debugLogger.writeMessageConditionally("Checking if Alternate DLC applies: " + altdlc,ModManager.LOG_MOD_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Checking if Alternate DLC applies: " + altdlc, ModManager.LOG_MOD_INIT);
 				String condition = altdlc.getCondition();
 				String conditionaldlc = altdlc.getConditionalDLC();
 				ArrayList<String> conditionaldlcs = altdlc.getConditionalDLCList();
@@ -2373,12 +2381,14 @@ public class Mod implements Comparable<Mod> {
 					switch (condition) {
 					case AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT:
 						if (!installedDLC.contains(conditionaldlc.toUpperCase())) {
-							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is not present", ModManager.LOG_MOD_INIT);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is not present",
+									ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 						} else {
-							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is present", ModManager.LOG_MOD_INIT);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is present",
+									ModManager.LOG_MOD_INIT);
 						}
 						break;
 					case AlternateCustomDLC.CONDITION_DLC_PRESENT:
@@ -2388,7 +2398,8 @@ public class Mod implements Comparable<Mod> {
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 						} else {
-							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is not present", ModManager.LOG_MOD_INIT);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is not present",
+									ModManager.LOG_MOD_INIT);
 						}
 						break;
 					}
