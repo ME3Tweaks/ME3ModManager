@@ -46,14 +46,7 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 	JProgressBar downloadProgress;
 
 	public CommandLineToolsUpdaterWindow() {
-		this.setTitle("Required Command Line Tools Update");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		DownloadTask task = new DownloadTask(ModManager.getTempDir());
 		task.addPropertyChangeListener(this);
 		ModManager.debugLogger.writeMessage("Downloading Mod Manager Command Line Tools");
@@ -62,6 +55,12 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 	}
 
 	private void setupWindow() {
+		setTitle("Required Command Line Tools Update");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
+
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
@@ -82,7 +81,9 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 		panel.add(updatePanel, BorderLayout.NORTH);
 		panel.add(actionPanel, BorderLayout.CENTER);
 		panel.add(statusLabel, BorderLayout.SOUTH);
-		this.getContentPane().add(panel);
+		getContentPane().add(panel);
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	/**
