@@ -1,5 +1,6 @@
 package com.me3tweaks.modmanager;
 
+import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -11,6 +12,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
@@ -24,6 +26,8 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -74,14 +78,28 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		for (Mod mod : ModManagerWindow.ACTIVE_WINDOW.getInvalidMods()) {
 			failedModsModel.addElement(mod);
 		}
-		lrSplitPane.setLeftComponent(new JScrollPane(failedModList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
+
+		JPanel leftPanel = new JPanel(new BorderLayout());
+		JScrollPane leftPane = new JScrollPane(failedModList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		leftPanel.add(leftPane, BorderLayout.CENTER);
+		TitledBorder invalidBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Invalid Mods");
+		leftPanel.setBorder(invalidBorder);
+
+		lrSplitPane.setLeftComponent(leftPanel);
 
 		failedModDesc = new JTextArea("Select a mod on the left to see why it failed to load.");
 
 		failedModDesc.setLineWrap(true);
 		failedModDesc.setWrapStyleWord(true);
 		failedModDesc.setEditable(false);
-		lrSplitPane.setRightComponent(new JScrollPane(failedModDesc, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
+
+		JPanel rightPanel = new JPanel(new BorderLayout());
+		JScrollPane rightPane = new JScrollPane(failedModDesc, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		rightPanel.add(rightPane, BorderLayout.CENTER);
+		TitledBorder failureBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Failure reason");
+		rightPanel.setBorder(failureBorder);
+
+		lrSplitPane.setRightComponent(rightPanel);
 
 		c.weighty = 1;
 		c.weightx = 1;
@@ -159,10 +177,11 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 							"Delete " + mod.getModName() + " from Mod Manager?\nThis will not remove the mod if it is installed.", "Confirm mod deletion",
 							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {
-						ModManager.debugLogger.writeMessage("Deleting invalid mod folder at user request: "+modfolder);
+						ModManager.debugLogger.writeMessage("Deleting invalid mod folder at user request: " + modfolder);
 						boolean deleted = FileUtils.deleteQuietly(new File(modfolder));
 						if (deleted) {
 							ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+							failedModsModel.remove(modelIndex);
 						}
 					}
 				}
@@ -187,6 +206,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		add(contentPanel);
 
 		pack();
+		lrSplitPane.setDividerLocation(150 + lrSplitPane.getInsets().top);
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
@@ -198,6 +218,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 				websiteButton.setEnabled(false);
 				restoreButton.setEnabled(false);
 				deleteButton.setEnabled(false);
+				deleteButton.setToolTipText("Select a mod on the left");
 			} else {
 				updateDescription();
 			}
@@ -221,16 +242,21 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 			description += "\n\nThe mod lists a website: " + mod.getModSite()
 					+ ". Click the Visit Website button to go to it, you may be able to find additional assistance there.";
 			websiteButton.setEnabled(true);
+			websiteButton.setToolTipText(mod.getModSite());
 		} else {
 			websiteButton.setEnabled(false);
+			websiteButton.setToolTipText("This mod does not list a website for end-users to go to for support");
 		}
 		if (mod.isME3TweaksUpdatable()) {
 			description += "\n\nThis mod can attempt a restore via the ME3Tweaks updater service. Select Restore Online to force this mod to perform an update and match the version on the server.\nIf the issue is from additional files, the service won't be able to fix it.";
 			restoreButton.setEnabled(true);
+			restoreButton.setToolTipText("Attempt online recovery of this mod by forcing an update");
 		} else {
 			restoreButton.setEnabled(false);
+			restoreButton.setToolTipText("This mod cannot attempt a current restore in its current state");
 		}
 		deleteButton.setEnabled(true);
+		deleteButton.setToolTipText("Delete this mod from Mod Manager's library");
 		failedModDesc.setText(description);
 	}
 }

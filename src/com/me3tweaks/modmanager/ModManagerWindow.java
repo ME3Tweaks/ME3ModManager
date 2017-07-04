@@ -277,8 +277,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
+		ModManager.debugLogger.writeMessage("Running startup NetworkThread.");
 		new NetworkThread(false).execute();
-		ModManager.debugLogger.writeMessage("Mod Manager GUI: Initialize() has completed.");
+		ModManager.debugLogger.writeMessage("Mod Manager GUI: InitializeWindow() has completed.");
 	}
 
 	/**
@@ -310,21 +311,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						updateDir.mkdirs();
 						FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7z.exe"));
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 7z Unzipper into tools directory"));
-						ModManager.debugLogger.writeMessage("Downloaded missing 7z.exe file for updating Mod Manager");
+						ModManager.debugLogger.writeMessage("Environment Check: Downloaded missing 7z.exe file for updating Mod Manager");
 
 					} catch (IOException e) {
-						ModManager.debugLogger.writeErrorWithException("Error downloading 7z.exe into tools folder", e);
+						ModManager.debugLogger.writeErrorWithException("Environment Check: Error downloading 7z.exe into tools folder", e);
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7z"));
 					}
 				} else {
-					ModManager.debugLogger.writeMessage("7z.exe is present in tools/ directory");
+					ModManager.debugLogger.writeMessage("Environment Check: 7z.exe is present in tools/ directory");
 				}
 			}
 
 			File f7zdll = new File(ModManager.getToolsDir() + "7z.dll");
 			if (!f7zdll.exists()) {
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z Unzipper library"));
-				ModManager.debugLogger.writeMessage("7z.dll does not exist at the following path, downloading new copy: " + f7zdll.getAbsolutePath());
+				ModManager.debugLogger.writeMessage("Environment Check: 7z.dll does not exist at the following path, downloading new copy: " + f7zdll.getAbsolutePath());
 				String url = "https://me3tweaks.com/modmanager/tools/7z.dll";
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
@@ -334,31 +335,31 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("Downloaded missing 7z.dll file for updating Mod Manager");
 
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Error downloading 7z dll into tools folder", e);
+					ModManager.debugLogger.writeErrorWithException("Environment Check: Error downloading 7z dll into tools folder", e);
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7z dll"));
 				}
 			} else {
-				ModManager.debugLogger.writeMessage("7z.dll is present in tools/ directory");
+				ModManager.debugLogger.writeMessage("Environment Check: 7z.dll is present in tools/ directory");
 			}
 
 			File lzma = new File(ModManager.getToolsDir() + "lzma.exe");
 			if (!lzma.exists()) {
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading LZMA tool"));
-				ModManager.debugLogger.writeMessage("lzma.exe does not exist at the following path, downloading new copy: " + lzma.getAbsolutePath());
+				ModManager.debugLogger.writeMessage("Environment Check: lzma.exe does not exist at the following path, downloading new copy: " + lzma.getAbsolutePath());
 				String url = "https://me3tweaks.com/modmanager/tools/lzma.exe";
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
 					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "lzma.exe"));
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded lzma.exe into tools directory"));
-					ModManager.debugLogger.writeMessage("Downloaded missing lzma.exe file for preparing mod updates");
+					ModManager.debugLogger.writeMessage("Environment Check: Downloaded missing lzma.exe file for preparing mod updates");
 
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Error downloading lzma into tools folder", e);
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading lzma"));
 				}
 			} else {
-				ModManager.debugLogger.writeMessage("lzma.exe is present in tools/ directory");
+				ModManager.debugLogger.writeMessage("Environment Check: lzma.exe is present in tools/ directory");
 			}
 
 			// Tankmaster TLK, Coalesce
@@ -367,7 +368,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			if (!tmtlk.exists() || !tmc.exists()) {
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading Tankmaster Tools"));
-				ModManager.debugLogger.writeMessage("Tankmaster's TLK/COALESCE tools are missing, downloading new copy: " + tmtlk.getAbsolutePath());
+				ModManager.debugLogger.writeMessage("Environment Check: Tankmaster's TLK/COALESCE tools are missing, downloading new copy: " + tmtlk.getAbsolutePath());
 				String url = "https://me3tweaks.com/modmanager/tools/tankmastertools.7z";
 				try {
 					File updateDir = new File(ModManager.getTempDir());
@@ -392,12 +393,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					for (String arg : command) {
 						sb.append(arg + " ");
 					}
-					ModManager.debugLogger.writeMessage("Extracting Tankmaster Tools.");
+					ModManager.debugLogger.writeMessage("Environment Check: Extracting Tankmaster Tools.");
 					ProcessBuilder pb = new ProcessBuilder(command);
 					ProcessResult pr = ModManager.runProcess(pb);
 					int returncode = pr.getReturnCode();
 
-					ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (returncode == 0));
+					ModManager.debugLogger.writeMessage("Environment Check: Unzip completed successfully (code 0): " + (returncode == 0));
 					if (returncode == 0) {
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded Tankmaster Tools into data directory"));
 					} else {
@@ -405,18 +406,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 					FileUtils.deleteQuietly(new File(ModManager.getTempDir() + "tankmastertools.7z"));
 				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Error downloading 7z into tools folder", e);
+					ModManager.debugLogger.writeErrorWithException("Environment Check: Error downloading 7z into tools folder", e);
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Error downloading 7z for updating"));
 				}
 			} else {
-				ModManager.debugLogger.writeMessage("Tankmaster tools exist locally already.");
+				ModManager.debugLogger.writeMessage("Environment Check: Tankmaster tools exist locally already.");
 			}
 
 			File jpatch = new File(ModManager.getToolsDir() + "jptch.exe");
 			if (!jpatch.exists()) {
-				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading MixIn Patching Tools"));
+				ModManager.debugLogger.writeMessage("Environment Check: Jptch.exe doesn't exist - downloading mixin tools.");
 				ME3TweaksUtils.downloadJDiffTools();
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded MixIn Patching Tools"));
+				ModManager.debugLogger.writeMessage("Environment Check: Downloaded MixIn tools");
 			}
 
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
@@ -439,14 +441,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				String fullautotoc = ModManager.getCommandLineToolsDir() + "FullAutoTOC.exe";
 				File f = new File(fullautotoc);
 				if (!f.exists()) {
-					ModManager.debugLogger.writeMessage("Mod Manager Command Line Tools are missing. Downloading from GitHub.");
+					ModManager.debugLogger.writeMessage("Environment Check: Mod Manager Command Line Tools are missing. Downloading from GitHub.");
 					new CommandLineToolsUpdaterWindow();
 				} else {
 					int main = EXEFileInfo.getMajorVersionOfProgram(fullautotoc);
 					int minor = EXEFileInfo.getMinorVersionOfProgram(fullautotoc);
 					int build = EXEFileInfo.getBuildOfProgram(fullautotoc);
 					int rev = EXEFileInfo.getRevisionOfProgram(fullautotoc);
-					ModManager.debugLogger.writeMessage("Command Line Tools Version: " + main + "." + minor + "." + build + "." + rev);
+					ModManager.debugLogger.writeMessage("Environment Check: Command Line Tools Version: " + main + "." + minor + "." + build + "." + rev);
 
 					Version installedVersion = new Version(main + "." + minor + "." + build + "." + rev);
 					Version minVersion = new Version(ModManager.MIN_REQUIRED_CMDLINE_MAIN + "." + ModManager.MIN_REQUIRED_CMDLINE_MINOR + "."
@@ -454,14 +456,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 					if (installedVersion.compareTo(minVersion) < 0) {
 						// we must update it
-						ModManager.debugLogger.writeMessage("Command Line Tools out of date - required version: " + minVersion.toString());
+						ModManager.debugLogger.writeMessage("Environment Check: Command Line Tools out of date - required version: " + minVersion.toString());
 						new CommandLineToolsUpdaterWindow();
 					} else {
-						ModManager.debugLogger.writeMessage("Current Command Line Tools version satisfies requirements for Mod Manager");
+						ModManager.debugLogger.writeMessage("Environment Check: Current Command Line Tools version satisfies requirements for Mod Manager");
 					}
 				}
 			} else {
-				ModManager.debugLogger.writeMessage("No command line update link - no point checking for updates.");
+				ModManager.debugLogger.writeMessage("Environment Check: No command line update link - no point checking for updates.");
 			}
 		}
 
@@ -589,7 +591,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							hashMismatch = true;
 							ModManager.debugLogger.writeMessage("Local hash (" + currentHash + ") does not match server hash (" + buildHash + ")");
 						} else {
-							ModManager.debugLogger.writeMessage("Local hash matches server hash: " + buildHash);
+							if (buildHash != null) {
+								ModManager.debugLogger.writeMessage("Server build hash: " + buildHash);
+							} else {
+								ModManager.debugLogger.writeMessage("ME3Tweaks does not list a hash for this build. Skipping minor update check.");
+							}
 						}
 					} catch (Exception e1) {
 						ModManager.debugLogger.writeErrorWithException("Unable to hash ME3CMM.exe:", e1);
@@ -724,7 +730,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to download new GUI Transplanter"));
 						}
 					} else {
-						ModManager.debugLogger.writeMessage("GUI Transplanter is up to date (1.0.0." + build + ")");
+						ModManager.debugLogger.writeMessage("GUI Transplanter is up to date (1.0.0." + build + " is at or above the listed server latest version)");
 					}
 				} else {
 					ModManager.debugLogger.writeMessage("No GUI Transplanter tool downloaded, skipping update check for it");
@@ -1070,7 +1076,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		northPanel.add(titlePanel, BorderLayout.NORTH);
 		northPanel.add(cookedDirPanel, BorderLayout.CENTER);
 
-		ModManager.debugLogger.writeMessage("Preparing ModList UI");
+		ModManager.debugLogger.writeMessage("Configuring modList and modModel");
 		// ModsList
 		JPanel modsListPanel = new JPanel(new BorderLayout());
 		// JLabel availableModsLabel = new JLabel(" Available Mods:");
@@ -1122,8 +1128,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modList.setModel(modModel);
 
 		// load patches
-		ModManager.debugLogger.writeMessage("Loading mixins");
-
 		setPatchList(ModManager.getPatchesFromDirectory());
 		ModManager.debugLogger.writeMessage("Mixins have loaded.");
 

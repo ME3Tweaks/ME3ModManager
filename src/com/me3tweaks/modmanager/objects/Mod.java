@@ -226,19 +226,25 @@ public class Mod implements Comparable<Mod> {
 	 */
 	private void readDesc(Wini modini) throws InvalidFileFormatException, IOException {
 		String modFolderPath = ModManager.appendSlash(modDescFile.getParent());
-		modDescription = modini.get("ModInfo", "moddesc");
 		//modDisplayDescription = modini.get("ModInfo", "moddesc");
 		modName = modini.get("ModInfo", "modname");
+		String delayedFailure = null;
 		if (modName == null) {
 			//Attempt to extract name from the folder name
 			String foldername = new File(getModPath()).getName();
 			modName = foldername;
-			ModManager.debugLogger.writeError("Mod does not have a modname descriptor - marking invalid (" + modName + ")");
-			setFailedReason("This mod does not have a modname descriptor under the [ModInfo] header in its moddesc.ini file. The name displayed in this window is the extracted from the mod's foldername. All Mod Manager mods must have a moddname descriptor.");
-			return;
+			ModManager.debugLogger.writeError("Mod does not have a modname descriptor - marking invalid (" + modName + ") - will delay failing until update code is parsed.");
+			delayedFailure = "This mod does not have a modname descriptor under the [ModInfo] header in its moddesc.ini file. The name displayed in this window is the extracted from the mod's foldername. All Mod Manager mods must have a moddname descriptor.";
 		}
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------Reading " + modName + "--------------------", ModManager.LOG_MOD_INIT);
-		// Check if this mod has been made for Mod Manager 2.0 or legacy mode
+
+		modDescription = modini.get("ModInfo", "moddesc");
+		if (modDescription == null) {
+			ModManager.debugLogger.writeError("Mod does not have a modname descriptor - marking invalid (" + modName + ") - will delay failing until update code is parsed.");
+			delayedFailure = "This mod does not have a moddesc descriptor under the [ModInfo] header in its moddesc.ini file. All Mod Manager mods must have a moddesc descriptor, which is the description shown to users in the right pane of the main Mod Manager window.";
+		}
+
+		// Check if this mod has been made for Mod Manager 2.0+ or legacy mode
 		modCMMVer = 1.0f;
 		try {
 			String versionStr = modini.get("ModManager", "cmmver");
@@ -259,6 +265,23 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeMessageConditionally("Detected mod version: " + modVersion, ModManager.LOG_MOD_INIT);
 		}
 
+		// Add Devsite
+		if (modini.get("ModInfo", "modsite") != null) {
+			modSite = modini.get("ModInfo", "modsite");
+			ModManager.debugLogger.writeMessageConditionally("Detected developer site", ModManager.LOG_MOD_INIT);
+		}
+
+		// Load modmaker update code
+		if (modini.get("ModInfo", "modid") != null) {
+			try {
+				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
+				ModManager.debugLogger.writeMessageConditionally("Detected modmaker code", ModManager.LOG_MOD_INIT);
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer: " + modini.get("ModInfo", "modid"));
+			}
+		}
+
+		// Load classic update code
 		if (modini.get("ModInfo", "updatecode") != null) {
 			try {
 				classicCode = Integer.parseInt(modini.get("ModInfo", "updatecode"));
@@ -266,6 +289,20 @@ public class Mod implements Comparable<Mod> {
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeError("Classic update code is not an integer. Defaulting to 0");
 			}
+		}
+
+		if (classicCode > 0 && modmakerCode > 0) {
+			//can't have both
+			ModManager.debugLogger.writeError(modName + " has both a classic update code and a ModMaker update code - this is not allowed, marking as invalid.");
+			setFailedReason(
+					"This mod has both a modid and updatecode descriptor under the [ModInfo] header. These descriptors are used for checking for updates and are mutually exclusive, so this mod has been marked as invalid. To fix this, remove one of the descriptors from moddesc.ini.");
+			return;
+		}
+
+		if (delayedFailure != null) {
+			ModManager.debugLogger.writeError("Delayed failure loading " + modName + ": " + delayedFailure);
+			setFailedReason(delayedFailure);
+			return;
 		}
 
 		// Add MP Change
@@ -277,21 +314,6 @@ public class Mod implements Comparable<Mod> {
 		if (modini.get("ModInfo", "moddev") != null) {
 			modAuthor = modini.get("ModInfo", "moddev");
 			ModManager.debugLogger.writeMessageConditionally("Detected developer name", ModManager.LOG_MOD_INIT);
-		}
-		// Add Devsite
-		if (modini.get("ModInfo", "modsite") != null) {
-			modSite = modini.get("ModInfo", "modsite");
-			ModManager.debugLogger.writeMessageConditionally("Detected developer site", ModManager.LOG_MOD_INIT);
-		}
-
-		// Add Modmaker
-		if (modini.get("ModInfo", "modid") != null) {
-			try {
-				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
-				ModManager.debugLogger.writeMessageConditionally("Detected modmaker code", ModManager.LOG_MOD_INIT);
-			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer: " + modini.get("ModInfo", "modid"));
-			}
 		}
 
 		// Backwards compatibility for mods that are built to target older
@@ -2299,7 +2321,8 @@ public class Mod implements Comparable<Mod> {
 	public boolean addCustomDLCAlternates(String biogamedir) {
 		if (alternateFiles.size() > 0 && ModManagerWindow.validateBIOGameDir()) {
 			boolean altApplied = false;
-			ModManager.debugLogger.writeMessage(getModName() + ": Checking automatic alternate custom dlc list to see if applicable and will apply if conditions are right");
+			ModManager.debugLogger.writeMessageConditionally(
+					getModName() + ": Checking automatic alternate custom dlc list to see if applicable and will apply if conditions are right", ModManager.LOG_MOD_INIT);
 			//get list of installed DLC
 			ArrayList<String> installedDLC = ModManager.getInstalledDLC(biogamedir);
 			HashMap<String, String> headerFolderMap = ModType.getHeaderFolderMap();
@@ -2435,7 +2458,7 @@ public class Mod implements Comparable<Mod> {
 			}
 			break;
 		case AlternateCustomDLC.OPERATION_ADD_CUSTOMDLC_JOB:
-			ModManager.debugLogger.writeMessage("Condition match, adding custom DLC folder: " + altdlc.getDestDLC());
+			ModManager.debugLogger.writeMessageConditionally("Condition match, adding custom DLC folder: " + altdlc.getDestDLC(), ModManager.LOG_MOD_INIT);
 			job.getSourceFolders().add(altdlc.getAltDLC());
 			job.getDestFolders().add(altdlc.getDestDLC());
 			List<File> addsourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
