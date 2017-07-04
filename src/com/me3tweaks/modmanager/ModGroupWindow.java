@@ -141,8 +141,7 @@ public class ModGroupWindow extends JDialog implements ListSelectionListener {
 						new ModInstallWindow(ModGroupWindow.this, mod);
 					}
 					ModGroup mg = modGroupModel.getElementAt(modGroupsList.getSelectedIndex());
-
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '" + mg.getModGroupName() + "' was installed");
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '" + mg.getModGroupName() + "' has been installed");
 					dispose();
 				} else {
 					JOptionPane.showMessageDialog(ModGroupWindow.this, "Batch installation of mods requires a valid biogame directory.","BIOGame Directory invalid", JOptionPane.ERROR_MESSAGE);

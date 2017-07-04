@@ -1326,7 +1326,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionOptions.setToolTipText("Configure Mod Manager Options");
 
 		toolMassEffectModder = new JMenuItem("Mass Effect Modder");
-		if (ArchUtils.getProcessor().is64Bit()) {
+		if (ResourceUtils.is64BitWindows()) {
 			toolMassEffectModder.setToolTipText(
 					"<html>Runs Mass Effect Modder.<br>Mass Effect Modder is a texturing tool for the Mass Effect series.<br>This tool is used to install ALOT and is much faster than ME3Explorer for installing textures.<br>Note: This is an external program and is not supported by ME3Tweaks.</html>");
 		} else {
@@ -1453,7 +1453,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		toolsMapMeshViewer = new JMenuItem("Map Pathfinding Viewer");
 		toolsMapMeshViewer.setToolTipText("<html>Parses the output of the GUI Transplanter dumping tool and can show pathfinding nodes for a map.<br>VERY EXPERIMENTAL.</html>");
-		if (!ArchUtils.getProcessor().is64Bit()) {
+		if (!ResourceUtils.is64BitWindows()) {
 			toolsMapMeshViewer.setEnabled(false);
 			toolsMapMeshViewer.setToolTipText("<html>Requires 64-bit Windows</html>");
 		}
@@ -2421,7 +2421,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == toolsMapMeshViewer) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
-				if (ArchUtils.getProcessor().is64Bit()) {
+				if (ResourceUtils.is64BitWindows()) {
 					new MapMeshViewer();
 				}
 			} else {
@@ -2643,18 +2643,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (new File(command).exists()) {
 					ProcessBuilder p = new ProcessBuilder(command);
 					ModManager.debugLogger.writeMessage("Launching ME3 Config tool: " + command);
-					try {
-						p.start();
-					} catch (IOException e1) {
-						ModManager.debugLogger.writeErrorWithException("Unable to launch ME3 config tool:", e1);
-					}
+					ModManager.runProcessDetached(p);
 				} else {
 					ModManager.debugLogger.writeError("Config tool is missing! Not found at " + path);
-					JOptionPane.showMessageDialog(null, "The config tool executable doesn't exist where it should:\n" + path, "Missing Config Tool exe", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "The config tool executable doesn't exist where it should:\n" + path, "Missing Config Tool", JOptionPane.ERROR_MESSAGE);
 				}
 			} else {
 				labelStatus.setText("ME3 Config tool requires a valid BIOGame directory");
-				labelStatus.setVisible(true);
 				JOptionPane.showMessageDialog(null,
 						"The BIOGame directory is not valid.\nCannot open the ME3 Config tool if Mod Manager doesn't know where Mass Effect 3 is.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);

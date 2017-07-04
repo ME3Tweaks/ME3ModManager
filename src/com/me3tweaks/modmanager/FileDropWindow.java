@@ -405,7 +405,7 @@ public class FileDropWindow extends JDialog {
 
 				JButton aipathfinding = new JButton("View AI Pathfinding in Map Pathfinding Viewer");
 				aipathfinding.setToolTipText("View this file in the pathfinding viewer - file must contain path nodes (typically BioD)");
-				if (!ArchUtils.getProcessor().is64Bit()) {
+				if (!ResourceUtils.is64BitWindows()) {
 					aipathfinding.setEnabled(false);
 					aipathfinding.setToolTipText("Requires 64-bit Windows");
 				} else if (filesToPass.size() > 1) {
@@ -415,7 +415,7 @@ public class FileDropWindow extends JDialog {
 				JButton dumppcc = new JButton("Dump PCC info with PCC Data Dumper");
 				JPanel readPCCPanel = new JPanel(new BorderLayout());
 				dumppcc.setToolTipText("Dump PCC information to disk in an easily readable format");
-				
+
 				TitledBorder coalescedManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - Data Viewers");
 				readPCCPanel.setBorder(coalescedManifestBorder);
 				readPCCPanel.add(aipathfinding, BorderLayout.NORTH);
@@ -435,7 +435,7 @@ public class FileDropWindow extends JDialog {
 						dispose();
 					}
 				});
-				
+
 				aipathfinding.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
@@ -465,7 +465,7 @@ public class FileDropWindow extends JDialog {
 
 			}
 			case "bin": {
-				JButton decompileCoalescedFile = new JButton("Decompile Coalesced File");
+				JButton decompileCoalescedFile = new JButton("Decompile Coalesced Files");
 
 				JPanel binFilePanel = new JPanel();
 				binFilePanel.setLayout(new BoxLayout(binFilePanel, BoxLayout.PAGE_AXIS));
@@ -483,29 +483,32 @@ public class FileDropWindow extends JDialog {
 				//Check if coalesced
 				byte[] buffer = new byte[4];
 
-				try (InputStream is = new FileInputStream(droppedFile.getAbsolutePath())) {
-					if (is.read(buffer) != buffer.length) {
-						// do something
-						decompileCoalescedFile.setEnabled(false);
-						decompileCoalescedFile.setToolTipText("Dropped file is not a coalesced file.");
-						return;
+				for (File eachFile : filesToPass) {
+					try (InputStream is = new FileInputStream(eachFile.getAbsolutePath())) {
+						if (is.read(buffer) != buffer.length) {
+							// do something
+							decompileCoalescedFile.setEnabled(false);
+							decompileCoalescedFile.setToolTipText("One of the dropped files is not a coalesced file.");
+							ModManager.debugLogger.writeMessage(eachFile+" is is not long enough to be a coalesced file.");
+							return;
+						}
+						int magic = ResourceUtils.byteArrayToInt(buffer);
+						if (magic != ModManager.COALESCED_MAGIC_NUMBER) {
+							//not a coalesced file
+							decompileCoalescedFile.setEnabled(false);
+							decompileCoalescedFile.setToolTipText("One of the dropped files is not a coalesced file.");
+							ModManager.debugLogger.writeMessage(eachFile+"'s magic number does not match a coalesced file.");
+						}
+						is.close();
+					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("Error reading input binary file! (Coalesced Drop)", e);
 					}
-					int magic = ResourceUtils.byteArrayToInt(buffer);
-					if (magic != ModManager.COALESCED_MAGIC_NUMBER) {
-						//not a coalesced file
-						decompileCoalescedFile.setEnabled(false);
-						decompileCoalescedFile.setToolTipText("Dropped file is not a coalesced file.");
-					}
-					is.close();
-				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Error reading input binary file! (Coalesced Drop)", e);
 				}
 				panel.add(binFilePanel, BorderLayout.CENTER);
 				decompileCoalescedFile.addActionListener(new ActionListener() {
 
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						//TODO - make it work with multiple files.
 						ModManager.debugLogger.writeMessage("User chose singular DECOMPILE_COAL operation");
 						new BatchWorker(filesToPass, BatchWorker.DECOMPILE_COAL, null).execute();
 						dispose();
@@ -614,7 +617,7 @@ public class FileDropWindow extends JDialog {
 			}
 			case "txt": {
 				JButton pathfindingButton = new JButton("Open file in Map Pathfinding Viewer");
-				if (!ArchUtils.getProcessor().is64Bit()) {
+				if (!ResourceUtils.is64BitWindows()) {
 					pathfindingButton.setEnabled(false);
 					pathfindingButton.setToolTipText("Requires 64-bit Windows");
 				}

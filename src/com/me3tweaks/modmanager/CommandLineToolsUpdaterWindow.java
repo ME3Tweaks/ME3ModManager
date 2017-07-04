@@ -33,6 +33,8 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.utilities.EXEFileInfo;
+import com.me3tweaks.modmanager.utilities.Version;
 
 @SuppressWarnings("serial")
 public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyChangeListener {
@@ -167,6 +169,29 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 				boolean removeOutdatedGUITransplanter = FileUtils.deleteQuietly(new File(ModManager.getToolsDir() + "GUITransplanter"));
 				if (removeOutdatedGUITransplanter) {
 					ModManager.debugLogger.writeMessage("Removed outdated GUITransplanter directory.");
+				}
+
+				//Check to make sure version satisfies requirements
+				String fullautotoc = ModManager.getCommandLineToolsDir() + "FullAutoTOC.exe";
+				File f = new File(fullautotoc);
+				if (!f.exists()) {
+					ModManager.debugLogger.writeError("Download/extraction failed - FullAutoTOC.exe is missing!");
+				} else {
+					int main = EXEFileInfo.getMajorVersionOfProgram(fullautotoc);
+					int minor = EXEFileInfo.getMinorVersionOfProgram(fullautotoc);
+					int build = EXEFileInfo.getBuildOfProgram(fullautotoc);
+					int rev = EXEFileInfo.getRevisionOfProgram(fullautotoc);
+					Version installedVersion = new Version(main + "." + minor + "." + build + "." + rev);
+					Version minVersion = new Version(ModManager.MIN_REQUIRED_CMDLINE_MAIN + "." + ModManager.MIN_REQUIRED_CMDLINE_MINOR + "."
+							+ ModManager.MIN_REQUIRED_CMDLINE_BUILD + "." + ModManager.MIN_REQUIRED_CMDLINE_REV);
+
+					if (installedVersion.compareTo(minVersion) < 0) {
+						//we're still out of date...
+						ModManager.debugLogger.writeError("Downloaded command line tools does not satisfy requirements: " + installedVersion + ", needs " + minVersion);
+						publish(new ThreadCommand("DOWNLOAD_ERROR",
+								"The downloaded version of Command Line Tools does not satisfy the requirements for this version of Mod Manager.\nMod Manager will not function correctly without the correct version of Command Line Tools.\nContact FemShep about this issue - this means this build is not fully ready for release."));
+						return false;
+					}
 				}
 				return pr.getReturnCode() == 0;
 			} catch (IOException ex) {

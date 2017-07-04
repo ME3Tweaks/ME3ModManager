@@ -484,4 +484,16 @@ public class ResourceUtils {
 		return files;
 	}
 
+	/**
+	 * Returns if this is 64-bit windows (OS, not VM).
+	 * @return true if 64bit, false otherwise
+	 */
+	public static boolean is64BitWindows() {
+		if (System.getProperty("os.name").contains("Windows")) {
+			return (System.getenv("ProgramFiles(x86)") != null);
+		} else {
+			return (System.getProperty("os.arch").indexOf("64") != -1);
+		}
+	}
+
 }

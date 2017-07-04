@@ -16,11 +16,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
-import org.apache.commons.lang3.ArchUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
-import com.me3tweaks.modmanager.utilities.DebugLogger;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class OptionsWindow extends JDialog {
@@ -140,7 +139,7 @@ public class OptionsWindow extends JDialog {
 				}
 			}
 		});
-		if (ArchUtils.getProcessor().is64Bit()){
+		if (!ResourceUtils.is64BitWindows()){
 			compressCompatibilityGeneratorOutput.setEnabled(false);
 			compressCompatibilityGeneratorOutput.setToolTipText("Compressing output requires 64-bit version of Windows");
 		}

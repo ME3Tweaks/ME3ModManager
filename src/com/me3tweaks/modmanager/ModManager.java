@@ -85,7 +85,7 @@ public class ModManager {
 
 	public static final String VERSION = "5.0 Beta 5";
 	public static long BUILD_NUMBER = 75L;
-	public static final String BUILD_DATE = "7/3/2017";
+	public static final String BUILD_DATE = "7/4/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -104,7 +104,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
 	public final static int MIN_REQUIRED_CMDLINE_REV = 4;
 
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 15; //1.0.0.X
+	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 16; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
