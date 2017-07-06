@@ -2056,16 +2056,6 @@ public class Mod implements Comparable<Mod> {
 	 *         one
 	 */
 	public String getBasegameCoalesced() {
-		/*
-		 * if (modsCoal()){ return ModManager.appendSlash(modPath) +
-		 * "Coalesced.bin"; } for (ModJob job : jobs) { System.out.println(
-		 * "GETBASECOAL SCANNING: "+job.getJobName()); for (int i = 0; i <
-		 * job.filesToReplace.size(); i++){ String file =
-		 * job.filesToReplace.get(i); file = file.replaceAll("\\\\", "/");
-		 * //make sure all are the same (since the yall work) if
-		 * (file.toLowerCase().equals("".toLowerCase())){ return
-		 * job.newFiles.get(i); } } } return null;
-		 */
 		return getModTaskPath("\\BIOGame\\CookedPCConsole\\Coalesced.bin", ModType.BASEGAME);
 	}
 

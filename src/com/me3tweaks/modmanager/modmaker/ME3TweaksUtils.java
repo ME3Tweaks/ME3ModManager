@@ -687,7 +687,7 @@ public class ME3TweaksUtils {
 		        String keyStr = (String)key;
 		        JSONObject modinfo = (JSONObject) dbObj.get(keyStr);
 		        String mountpriority = (String) modinfo.get("mountpriority");
-		        System.out.println(mountpriority);
+		        //System.out.println(mountpriority);
 		        if (mountpriority.equalsIgnoreCase(priorityString)) {
 					return new ThirdPartyModInfo(keyStr,modinfo);
 		        }

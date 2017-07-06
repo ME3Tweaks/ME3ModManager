@@ -66,7 +66,6 @@ import javax.swing.event.ListSelectionListener;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArchUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.ini4j.InvalidFileFormatException;
@@ -135,8 +134,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
 			modManagementPatchLibary, modManagementClearPatchLibraryCache, modManagementModGroupsManager;
-	//JMenuItem modutilsHeader, modutilsInfoEditor, modNoDeltas, modutilsVerifyDeltas, modutilsInstallCustomKeybinds, modutilsAutoTOC, modutilsCheckforupdate, modutilsRestoreMod,
-	//		modutilsDeleteMod;
 	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32,
 			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config, toolsMapMeshViewer, toolsPCCDataDumper;
 	JMenuItem backupBackupDLC, backupCreateGDB;
@@ -538,7 +535,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				try {
 					serverVersion = Integer.parseInt(version);
 					ModManager.MASSEFFECTMODDER_LATESTVERSION = serverVersion;
-					ModManager.debugLogger.writeMessage("Latest MEM version on github: v"+ModManager.MASSEFFECTMODDER_LATESTVERSION);
+					ModManager.debugLogger.writeMessage("Latest MEM version on github: v" + ModManager.MASSEFFECTMODDER_LATESTVERSION);
 				} catch (NumberFormatException e) {
 					return;
 				}
@@ -1681,8 +1678,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			modutilsInstallCustomKeybinds.setToolTipText("<html>Replace BioInput.xml in the BASEGAME Coalesced file</html>");
 		}
 
-		JMenuItem modutilsInfoEditor = new JMenuItem("Edit name/description");
-		modutilsInfoEditor.setToolTipText("Rename this mod and change the description shown in the descriptions window");
+		JMenuItem modutilsInfoEditor = new JMenuItem("Edit name/description/site");
+		modutilsInfoEditor.setToolTipText("Rename this mod and change the description/site shown in the description pane");
 
 		//Variants
 		JMenuItem modNoDeltas = new JMenuItem("No included variants");
@@ -1867,7 +1864,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			moddevUpdateXMLGenerator.setText("Cannot prepare " + mod.getModName() + " for ME3Tweaks Updater Service");
 			modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 		}
+		//DEPLOYMENt
+		JMenuItem modutilsDeploy = new JMenuItem("Compress mod for deployment");
+		modutilsDeploy.setToolTipText("<html>Compresses the mod into a ready-to-deploy file.</html>");
 
+		//DELETE MOD
 		JMenuItem modutilsDeleteMod = new JMenuItem("Delete mod from library");
 		modutilsDeleteMod.setToolTipText("<html>Delete this mod from Mod Manager.<br>This does not remove this mod if it is installed</html>");
 
@@ -1883,6 +1884,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		menuItems.add(modutilsInstallCustomKeybinds);
 		menuItems.add(modutilsInfoEditor);
 		menuItems.add(modutilsAutoTOC);
+		menuItems.add(modutilsDeploy);
 		menuItems.add(new JSeparator());
 		menuItems.add(modutilsDeleteMod);
 
@@ -1890,7 +1892,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Mod mod = modModel.getElementAt(modList.getSelectedIndex());
 				if (mod.getModMakerCode() <= 0 || validateBIOGameDir()) {
 					if (mod.getModMakerCode() <= 0 || ModManager.validateNETFrameworkIsInstalled()) {
 						ModManager.debugLogger.writeMessage("Running single mod update check on " + mod.getModName());
@@ -1942,7 +1943,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			public void actionPerformed(ActionEvent e) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Verifying deltas");
-					Mod mod = modModel.get(modList.getSelectedIndex());
 					for (ModDelta delta : mod.getModDeltas()) {
 						new DeltaWindow(mod, delta, true, false);
 					}
@@ -1960,7 +1960,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Reverting a delta.");
-					new DeltaWindow(modModel.get(modList.getSelectedIndex()));
+					new DeltaWindow(mod);
 				} else {
 					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
 					ModManager.debugLogger.writeMessage("Revert Delta: Missing .NET Framework");
@@ -2011,18 +2011,41 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ModManager.debugLogger.writeMessage("User clicked Delete Mod on " + modModel.get(modList.getSelectedIndex()).getModName());
+				ModManager.debugLogger.writeMessage("User clicked Delete Mod on " + mod.getModName());
 				int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
 						"Deleting this mod will remove it from Mod Manager's library.\nThis does not remove the mod if it is installed.\nThis operation cannot be reversed.\nDelete "
-								+ modModel.get(modList.getSelectedIndex()).getModName() + "?",
+								+ mod.getModName() + "?",
 						"Confirm Mod Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				if (result == JOptionPane.OK_OPTION) {
 					ModManager.debugLogger.writeMessage("Deleting mod: " + modModel.get(modList.getSelectedIndex()).getModPath());
-					if (FileUtils.deleteQuietly(new File(modModel.get(modList.getSelectedIndex()).getModPath()))) {
+					if (FileUtils.deleteQuietly(new File(mod.getModPath()))) {
 						modWebsiteLink.setVisible(false);
 						reloadModlist();
 					}
 				}
+			}
+		});
+
+		modutilsDeploy.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ModManager.debugLogger.writeMessage("Compressing mod for deployment: " + mod.getModPath());
+				String outputfile = ModManager.compressModForDeployment(mod);
+				ArrayList<String> showInExplorerProcess = new ArrayList<String>();
+				File outfile = new File(outputfile);
+				ModManager.debugLogger.writeMessage("Checking for output file: " + outfile);
+				if (outfile.exists()) {
+					labelStatus.setText("Mod ready for deployment");
+					showInExplorerProcess.add("explorer.exe");
+					showInExplorerProcess.add("/select,\"" + outputfile + "\"");
+					ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
+					ModManager.runProcessDetached(pb);
+				} else {
+					labelStatus.setText("Mod failed to compress for deployment - see logs");
+					ModManager.debugLogger.writeError("Mod failed to compress (output file does not exist!)");
+				}
+
 			}
 		});
 

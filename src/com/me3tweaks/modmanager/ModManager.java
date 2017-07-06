@@ -81,7 +81,7 @@ import com.sun.jna.platform.win32.WinReg;
 import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 
 	public static final String VERSION = "5.0 Beta 5";
 	public static long BUILD_NUMBER = 75L;
@@ -2518,34 +2518,35 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-
-	/**
-	 * Downloads Mass Effect Modder. Runs on the current thread, so it may need
-	 * to be done in the background.
-	 * 
-	 * @return return code of extraction, -1 if download failed.
-	 */
-	public static int downloadMEM() {
-		File downloadedFile = new File(ModManager.getTempDir() + "MassEffectModderUpdate.7z");
-		try {
-			FileUtils.copyURLToFile(new URL(MASSEFFECTMODDER_DOWNLOADLINK), downloadedFile);
-		} catch (MalformedURLException e) {
-			//This wont't happen
-		} catch (IOException e) {
-			ModManager.debugLogger.writeErrorWithException("IOException downloading MEM:", e);
-			return -1;
-		}
-		ModManager.debugLogger.writeMessage("Downloaded " + downloadedFile + ", " + downloadedFile.length() + " bytes.");
-
+	
+	public static String getDeploymentDirectory() {
+		File file = new File(getDataDir() + "Deployed Mods\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+	public static String compressModForDeployment(Mod mod) {
+		ModManager.debugLogger.writeMessage("Compressing "+mod.getModName() + " for deployment");
+		
+		String outputpath = getDeploymentDirectory() + mod.getModName()+"_"+mod.getVersion()+".7z";
+		ModManager.debugLogger.writeMessage("Deploying "+mod.getModName());
+		
 		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add("cmd");
+		commandBuilder.add("/c");
+		commandBuilder.add("start");
+		commandBuilder.add("/wait");
 		commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
-		commandBuilder.add("-y"); // overwrite
-		commandBuilder.add("x"); // extract
-		commandBuilder.add(downloadedFile.getAbsolutePath());// 7z file
-		commandBuilder.add("-o" + ModManager.getMEMDirectory()); // extraction path
-		String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-		ModManager.debugLogger.writeMessage("Extracting MassEffectModder...");
-		ProcessBuilder pb = new ProcessBuilder(command);
-		return ModManager.runProcess(pb).getReturnCode();
+		commandBuilder.add("a"); //add
+		commandBuilder.add(outputpath); //destfile
+		commandBuilder.add(mod.getModPath());//inputfile
+		commandBuilder.add("-mmt2");
+		//commandBuilder.add("-m0=lzma2:d384m"); //lzma2 (7z)
+		commandBuilder.add("-mx=9"); //max compression
+		commandBuilder.add("-aoa"); //overwrite/update
+		ModManager.debugLogger.writeMessage("Compressing mod - output to "+outputpath);
+		ProcessBuilder pb = new ProcessBuilder(commandBuilder);
+		FileUtils.deleteQuietly(new File(outputpath));
+		ModManager.runProcess(pb).getReturnCode();
+		return outputpath;
 	}
 }

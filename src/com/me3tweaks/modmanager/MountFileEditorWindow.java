@@ -459,7 +459,6 @@ public class MountFileEditorWindow extends JDialog {
 		data[TLKOFFSET_2 + 2] = bytes[2];
 		data[TLKOFFSET_2 + 3] = bytes[3];
 		data[MPSPFLAG_OFFSET] = flag.getValue();
-		System.out.println(DatatypeConverter.printHexBinary(data));
 		try {
 			FileUtils.writeByteArrayToFile(new File(location), data);
 			return true;
