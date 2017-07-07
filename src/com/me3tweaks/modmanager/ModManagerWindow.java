@@ -300,9 +300,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			{
 				File f7z = new File(ModManager.getToolsDir() + "7z.exe");
 				if (!f7z.exists()) {
-					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z Unzipper"));
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z"));
 					ModManager.debugLogger.writeMessage("7z.exe does not exist at the following path, downloading new copy: " + f7z.getAbsolutePath());
-					String url = "https://me3tweaks.com/modmanager/tools/7z.exe";
+					String url = "https://me3tweaks.com/modmanager/tools/7z";
+					if (ResourceUtils.is64BitWindows()) {
+						url += "64";
+					}
+					url += ".exe";
 					try {
 						File updateDir = new File(ModManager.getToolsDir());
 						updateDir.mkdirs();
@@ -321,9 +325,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			File f7zdll = new File(ModManager.getToolsDir() + "7z.dll");
 			if (!f7zdll.exists()) {
-				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z Unzipper library"));
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z library"));
 				ModManager.debugLogger.writeMessage("Environment Check: 7z.dll does not exist at the following path, downloading new copy: " + f7zdll.getAbsolutePath());
-				String url = "https://me3tweaks.com/modmanager/tools/7z.dll";
+				String url = "https://me3tweaks.com/modmanager/tools/7z";
+				if (ResourceUtils.is64BitWindows()) {
+					url += "64";
+				}
+				url += ".dll";
+
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
@@ -2038,7 +2047,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (outfile.exists()) {
 					labelStatus.setText("Mod ready for deployment");
 					showInExplorerProcess.add("explorer.exe");
-					showInExplorerProcess.add("/select,\"" + outputfile + "\"");
+					showInExplorerProcess.add("/select,");
+					showInExplorerProcess.add("\"" + outputfile + "\"");
 					ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
 					ModManager.runProcessDetached(pb);
 				} else {

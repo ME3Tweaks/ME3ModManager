@@ -2518,18 +2518,19 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-	
+
 	public static String getDeploymentDirectory() {
 		File file = new File(getDataDir() + "Deployed Mods\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
+
 	public static String compressModForDeployment(Mod mod) {
-		ModManager.debugLogger.writeMessage("Compressing "+mod.getModName() + " for deployment");
-		
-		String outputpath = getDeploymentDirectory() + mod.getModName()+"_"+mod.getVersion()+".7z";
-		ModManager.debugLogger.writeMessage("Deploying "+mod.getModName());
-		
+		ModManager.debugLogger.writeMessage("Compressing " + mod.getModName() + " for deployment");
+
+		String outputpath = getDeploymentDirectory() + mod.getModName() + "_" + mod.getVersion() + ".7z";
+		ModManager.debugLogger.writeMessage("Deploying " + mod.getModName());
+
 		ArrayList<String> commandBuilder = new ArrayList<String>();
 		commandBuilder.add("cmd");
 		commandBuilder.add("/c");
@@ -2539,14 +2540,20 @@ public class ModManager {
 		commandBuilder.add("a"); //add
 		commandBuilder.add(outputpath); //destfile
 		commandBuilder.add(mod.getModPath());//inputfile
-		commandBuilder.add("-mmt2");
+
+		int numcores = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
+		if (!ResourceUtils.is64BitWindows()) {
+			numcores = 1;
+		}
+
+		commandBuilder.add("-mmt" + numcores);
 		//commandBuilder.add("-m0=lzma2:d384m"); //lzma2 (7z)
 		commandBuilder.add("-mx=9"); //max compression
 		commandBuilder.add("-aoa"); //overwrite/update
-		ModManager.debugLogger.writeMessage("Compressing mod - output to "+outputpath);
+		ModManager.debugLogger.writeMessage("Compressing mod - output to " + outputpath);
 		ProcessBuilder pb = new ProcessBuilder(commandBuilder);
-		FileUtils.deleteQuietly(new File(outputpath));
-		ModManager.runProcess(pb).getReturnCode();
+		//FileUtils.deleteQuietly(new File(outputpath));
+		//ModManager.runProcess(pb).getReturnCode();
 		return outputpath;
 	}
 }
