@@ -555,7 +555,6 @@ public class LogOptionsWindow extends JDialog {
 				try {
 					//compress with lzma
 					String logfile = saveLogToDisk(fname, false);
-					logfile = "C:\\Users\\Michael\\workspace\\modmanager3\\data\\logs\\512KBTest.txt";
 					String outputFile = logfile + ".lzma";
 					String[] procargs = { ModManager.getToolsDir() + "lzma.exe", "e", logfile, outputFile, "-d26", "-mt" + Runtime.getRuntime().availableProcessors() };
 					ProcessBuilder p = new ProcessBuilder(procargs);
