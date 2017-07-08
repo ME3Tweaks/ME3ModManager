@@ -60,19 +60,18 @@ public class KeybindsInjectionWindow extends JDialog {
 		this.mod = mod;
 		this.automated = automated;
 		setupWindow();
-		//has basegame coal already
-		this.setLocationRelativeTo(callingWindow);
+		setLocationRelativeTo(callingWindow);
 		new KeybindsInjectionWorker().execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
-		this.setTitle("Custom Keybinds Injector");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(380, 90));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
+		setTitle("Custom Keybinds Injector");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(380, 90));
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
 
 		JPanel bindingsPanel = new JPanel();
 		bindingsPanel.setLayout(new BoxLayout(bindingsPanel, BoxLayout.PAGE_AXIS));
@@ -88,8 +87,8 @@ public class KeybindsInjectionWindow extends JDialog {
 		bindingsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 		bindingsPanel.add(progressbar);
 		bindingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		this.getContentPane().add(bindingsPanel);
-		this.pack();
+		getContentPane().add(bindingsPanel);
+		pack();
 	}
 
 	class KeybindsInjectionWorker extends SwingWorker<Boolean, String> {

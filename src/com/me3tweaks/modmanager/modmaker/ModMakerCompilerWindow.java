@@ -80,11 +80,16 @@ import com.me3tweaks.modmanager.valueparsers.waveclass.WaveClass;
 import com.me3tweaks.modmanager.valueparsers.wavelist.Wave;
 
 @SuppressWarnings("serial")
+/**
+ * ModMaker Compiler Window + Compiler.
+ * 
+ * @author Mgamerz
+ *
+ */
 public class ModMakerCompilerWindow extends JDialog {
 	boolean modExists = false, error = false;
 	String code, modName, modDescription, modId, modDev, modVer;
 	private static double TOTAL_STEPS = 9;
-	public static String DOWNLOADED_XML_FILENAME = ModManager.getCompilingDir() + "mod_info";
 	private int stepsCompleted = 1;
 	private double modMakerVersion;
 	ArrayList<String> requiredCoals = new ArrayList<String>();
@@ -171,13 +176,11 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		private void getModInfo() {
-			//String link = "http://www.me3tweaks.com/modmaker/download.php?id="
-			//		+ code;
 			int mmcode = 0;
 			try {
 				mmcode = Integer.parseInt(code);
 			} catch (Exception e) {
-				//nothing
+				// It's a sideload
 			}
 			String link = null;
 			String lzmalink = null;
@@ -190,7 +193,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Fetching mod from " + lzmalink);
 			} else {
 				//Sideload
-				ModManager.debugLogger.writeMessage("================SKIP DOWNLOAD, USING SIDELOAD METHOD==============");
+				ModManager.debugLogger.writeMessage("================SIDELOADING MODMAKER MOD==============");
 				ModManager.debugLogger.writeMessage("Sideloading mod from " + code);
 			}
 			try {
@@ -204,7 +207,7 @@ public class ModMakerCompilerWindow extends JDialog {
 						publish(new ThreadCommand("UPDATE_INFO", "<html>Decompressing mod delta</html>"));
 						if (ResourceUtils.decompressLZMAFile(lzmafile.getAbsolutePath(), null)) {
 							//decompressed OK
-							modDelta = FileUtils.readFileToString(new File(downloadedfile));
+							modDelta = FileUtils.readFileToString(new File(downloadedfile), StandardCharsets.UTF_8);
 							FileUtils.deleteQuietly(new File(downloadedfile));
 							FileUtils.deleteQuietly(lzmafile);
 						} else {
@@ -229,7 +232,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					}
 				} else {
 					//load sideload
-					modDelta = FileUtils.readFileToString(new File(code));
+					modDelta = FileUtils.readFileToString(new File(code), StandardCharsets.UTF_8);
 				}
 				//File has been downloaded
 				if (mmcode != 0) {
@@ -434,7 +437,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		setIconImages(ModManager.ICONS);
 		setResizable(false);
 
-
 		JPanel modMakerPanel = new JPanel();
 		modMakerPanel.setLayout(new BoxLayout(modMakerPanel, BoxLayout.PAGE_AXIS));
 		JPanel infoPane = new JPanel();
@@ -569,15 +571,15 @@ public class ModMakerCompilerWindow extends JDialog {
 	 * Runs the Coalesced files through Tankmasters decompiler
 	 */
 	public void decompileMods() {
-		// TODO Auto-generated method stub
-
 		new DecompilerWorker(requiredCoals, currentStepProgress).execute();
-	} /*
-		 * 
-		 * /** Decompiles a coalesced into .xml files using tankmaster's tools.
-		 * 
-		 * @author Michael
-		 */
+	}
+
+	/**
+	 * 
+	 * /** Decompiles a coalesced into .xml files using tankmaster's tools.
+	 * 
+	 * @author Mgamerz
+	 */
 
 	class DecompilerWorker extends SwingWorker<Void, Integer> {
 		private ArrayList<String> coalsToDecompile;
@@ -660,6 +662,11 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 	}
 
+	/**
+	 * Runs the modified coalesced files through Tankmaster's compiler
+	 * @author Mgamerz
+	 *
+	 */
 	class CompilerWorker extends SwingWorker<Void, Integer> {
 		private ArrayList<String> coalsToCompile;
 		private JProgressBar progress;
@@ -678,7 +685,11 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		protected Void doInBackground() throws Exception {
-			ExecutorService compilerExecutor = Executors.newFixedThreadPool(4);
+			int cores = Runtime.getRuntime().availableProcessors();
+			if (cores > 4) {
+				cores = 4;
+			}
+			ExecutorService compilerExecutor = Executors.newFixedThreadPool(cores);
 			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
 			for (String coalesced : coalsToCompile) {
 				CoalescedCompilerTask cct = new CoalescedCompilerTask(coalesced, COMPLETED, this);
@@ -1821,8 +1832,8 @@ public class ModMakerCompilerWindow extends JDialog {
 			//SOMETHING WENT WRONG!
 			ModManager.debugLogger.writeMessage("Mod failed validation. Setting error flag to true.");
 			error = true;
-			JOptionPane.showMessageDialog(this,
-					modName + " was not successfully created.\nGenerate a diagnostics log from the help menu and search for errors.\nContact FemShep if you need help via the forums.",
+			JOptionPane.showMessageDialog(this, modName
+					+ " was not successfully created.\nGenerate a diagnostics log from the help menu and search for errors.\nContact FemShep if you need help via the forums.",
 					"Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
 		/*
@@ -1885,15 +1896,13 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
 							//loader installed, no balance changes replacer
-							JOptionPane.showMessageDialog(this,
-									"<html><div style=\"width: 400px\">" + modName
-											+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>",
+							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">" + modName
+									+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>",
 									"Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 						}
 					} else {
-						JOptionPane.showMessageDialog(this,
-								"<html><div style=\"width: 400px\">" + modName
-										+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>",
+						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">" + modName
+								+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>",
 								"ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 					}
 					break;

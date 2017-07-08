@@ -624,7 +624,7 @@ public class ModManager {
 		}
 
 		// cleanup
-		File mod_info = new File(ModMakerCompilerWindow.DOWNLOADED_XML_FILENAME);
+		File mod_info = new File("mod_info");
 		mod_info.delete();
 		File tlk = new File("tlk");
 		File toc = new File("toc");
@@ -634,10 +634,8 @@ public class ModManager {
 			FileUtils.deleteDirectory(tlk);
 			FileUtils.deleteDirectory(coalesceds);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("Unable to cleanup old stuff.", e);
 		}
-
 	}
 
 	public static ModList getModsFromDirectory() {
@@ -2567,6 +2565,7 @@ public class ModManager {
 		commandBuilder.add("cmd");
 		commandBuilder.add("/c");
 		commandBuilder.add("start");
+		commandBuilder.add("Mod Manager Mod Compressor");
 		commandBuilder.add("/wait");
 		commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
 		commandBuilder.add("a"); //add
