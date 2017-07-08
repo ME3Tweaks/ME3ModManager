@@ -228,7 +228,7 @@ public class ModInstallWindow extends JDialog {
 	private void setupWindow(ArrayList<Mod> mods) {
 		setTitle("Applying Mod" + (mods.size() > 1 ? "s" : ""));
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		setPreferredSize(new Dimension(320, 220));
+		setPreferredSize(new Dimension(320, batchPackage != null ? 250 : 220));
 		setIconImages(ModManager.ICONS);
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());

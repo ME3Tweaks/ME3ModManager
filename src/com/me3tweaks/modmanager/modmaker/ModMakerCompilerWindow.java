@@ -1146,20 +1146,8 @@ public class ModMakerCompilerWindow extends JDialog {
 															ModManager.debugLogger.writeMessageConditionally("Wavelist match on " + existing.difficulty, ModManager.LOG_MODMAKER);
 															newValue = importing.createWaveString(); //doens't really matter, but makes me feel good my code works
 														} else {
-															//CHECK FOR COLLECTOR PLAT WAVE 5.
+															//CHECK FOR COLLECTOR PLAT WAVE 5. It has a bug where the dolevel is 3 even though it is plat.
 															String cplatwave5 = "(Difficulty=DO_Level3,Enemies=( (EnemyType=\"WAVE_COL_Scion\"), (EnemyType=\"WAVE_COL_Praetorian\", MinCount=1, MaxCount=1), (EnemyType=\"WAVE_CER_Phoenix\", MinCount=2, MaxCount=2), (EnemyType=\"WAVE_CER_Phantom\", MinCount=3, MaxCount=3) ))";
-															/*
-															 * if (path.equals(
-															 * "sfxwave_horde_collector5 sfxwave_horde_collector&enemies"
-															 * ) && importing.
-															 * difficulty.equals
-															 * ("DO_Level3")) {
-															 * System.out.
-															 * println("BREAK");
-															 * 
-															 * }
-															 */
-															//System.out.println(itemToModify.getTextContent());
 															if (itemToModify.getTextContent().equals(cplatwave5)
 																	&& path.equals("sfxwave_horde_collector5 sfxwave_horde_collector&enemies")
 																	&& importing.difficulty.equals("DO_Level4")) {

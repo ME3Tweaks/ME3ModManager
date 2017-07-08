@@ -292,7 +292,7 @@ public class ImportEntryWindow extends JDialog {
 					urib.setParameters(params);
 					HttpClient httpClient = HttpClientBuilder.create().build();
 					URI uri = urib.build();
-					System.out.println("Sending telemetry via GET: " + uri.toString());
+					//System.out.println("Sending telemetry via GET: " + uri.toString());
 					//Execute and get the response.
 					HttpGet get = new HttpGet(uri);
 					HttpResponse response = httpClient.execute(get);
