@@ -40,11 +40,10 @@ public class AboutWindow2 extends JDialog {
 
 	public AboutWindow2() {
         super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		Platform.setImplicitExit(false);
 		setupWindow();
 		setVisible(true);
 	}
-
-	private FadeTransition fadeIn = new FadeTransition(Duration.millis(2000));
 
 	private void setupWindow() {
 		setResizable(false);
@@ -62,8 +61,6 @@ public class AboutWindow2 extends JDialog {
 			@Override
 			public void run() {
 				initFX(fxPanel);
-				fadeIn.playFromStart();
-
 			}
 		});
 	}

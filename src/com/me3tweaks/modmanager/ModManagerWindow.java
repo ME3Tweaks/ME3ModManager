@@ -2036,11 +2036,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			dirChooser.setDialogTitle("Select BIOGame directory");
 			dirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			//
-			// disable the "All files" option.
-			//
 			dirChooser.setAcceptAllFileFilterUsed(false);
-			//
 			if (dirChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 				checkForValidBioGame(dirChooser);
 			} else {
@@ -2960,6 +2956,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	/**
 	 * Checks that the user has chosen a correct biogame directory.
+	 * If the selection is valid it is added to the list of BIOGAME_DIRECTORIES file.
 	 */
 	private void checkForValidBioGame(JFileChooser dirChooser) {
 		String chosenPath = dirChooser.getSelectedFile().toString();
@@ -2991,10 +2988,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			comboboxBiogameDir.removeItemListener(BIOGAME_ITEM_LISTENER);
 			comboboxBiogameDir.removeAllItems();
-			comboboxBiogameDir.addItem(dirChooser.getSelectedFile().toString());
+			comboboxBiogameDir.addItem(dirChooser.getSelectedFile().toString()); //our selected item
 
 			for (String biodir : biogameDirectories) {
-				comboboxBiogameDir.addItem(biodir);
+				comboboxBiogameDir.addItem(biodir); //all the others
 			}
 
 			biogameDirectories.add(0, dirChooser.getSelectedFile().toString());
@@ -3112,11 +3109,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 *            Directory of ME3 BIOGame folder
 	 */
 	private void saveBiogamePath(ArrayList<String> installDir) {
-		ModManager.debugLogger.writeMessage("Saving list of BIOGame path to settings: " + installDir);
+		ModManager.debugLogger.writeMessage("Saving list of BIOGame paths.");
 		try {
 			FileWriter writer = new FileWriter(ModManager.getSavedBIOGameDirectoriesFile());
 
 			for (String str : installDir) {
+				ModManager.debugLogger.writeMessage(" - "+str);
 				writer.write(str);
 				writer.write("\n");
 			}
@@ -3127,18 +3125,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeErrorWithException("Failed to save biogame directories!", e);
 		}
 	}
-
-	/*
-	 * Wini ini; try { ini = ModManager.LoadSettingsINI(true); Section settings
-	 * = ini.get("Settings"); settings.remove("biogame_dir");
-	 * settings.putAll("biogame_dir", installDir.toArray(new
-	 * String[installDir.size()])); ini.store();
-	 * ModManager.debugLogger.writeMessage("Saved BIOGame path to settings."); }
-	 * catch (InvalidFileFormatException e) { e.printStackTrace(); } catch
-	 * (IOException e) { ModManager.debugLogger.
-	 * writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved."
-	 * , e); }
-	 */
 
 	/**
 	 * Installs the mod.
