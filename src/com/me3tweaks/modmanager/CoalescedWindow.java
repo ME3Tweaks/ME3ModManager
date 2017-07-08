@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -36,7 +37,6 @@ public class CoalescedWindow extends JFrame {
 
 	public CoalescedWindow() {
 		setupWindow();
-		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
 
@@ -150,6 +150,7 @@ public class CoalescedWindow extends JFrame {
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(panel);
 		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 
 		dBrowse.addActionListener(new ActionListener() {
 
@@ -163,10 +164,6 @@ public class CoalescedWindow extends JFrame {
 					binChooser.setCurrentDirectory(new File("."));
 				}
 				binChooser.setDialogTitle("Select .bin to decompile");
-				//binChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-				//
-				// disable the "All files" option.
-				//
 				binChooser.setAcceptAllFileFilterUsed(false);
 				binChooser.setFileFilter(new FileNameExtensionFilter("Coalesced files (.bin)", "bin"));
 

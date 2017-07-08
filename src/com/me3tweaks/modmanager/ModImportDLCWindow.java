@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,6 +39,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 	protected boolean reloadWhenClosed;
 
 	public ModImportDLCWindow(JFrame callingWindow, String biogameDir) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening ModImportWindow (DLC Import)");
 		this.biogameDir = biogameDir;
 		setupWindow(callingWindow);

@@ -70,6 +70,7 @@ public class SelectiveRestoreWindow extends JDialog {
 	 * @param BioGameDir
 	 */
 	public SelectiveRestoreWindow(String BioGameDir) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("==============STARTING THE SELECTIVE RESTORE WINDOW==============");
 		// callingWindow.setEnabled(false);
 		this.BioGameDir = BioGameDir;
@@ -78,7 +79,6 @@ public class SelectiveRestoreWindow extends JDialog {
 	}
 
 	private void setupWindow() {
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setTitle("Custom Restore");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setIconImages(ModManager.ICONS);

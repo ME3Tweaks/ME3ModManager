@@ -47,6 +47,7 @@ public class CustomDLCWindow extends JDialog {
 	private ArrayList<MountFile> mountList;
 
 	public CustomDLCWindow(String bioGameDir) {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening custom DLC window.");
 		this.bioGameDir = bioGameDir;
 		setupWindow();
@@ -57,15 +58,13 @@ public class CustomDLCWindow extends JDialog {
 	private void setupWindow() {
 		setIconImages(ModManager.ICONS);
 		setTitle("Custom DLC Manager");
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(700, 350));
 
 		mountList = new ArrayList<MountFile>();
 
 		JPanel panel = new JPanel(new BorderLayout());
-		JLabel infoLabel = new JLabel(
-				"<html><center>Installed Custom DLCs<br>Disabled DLCs start with an x. Mass Effect 3 only loads DLCs that start with DLC_.</center></html>");
+		JLabel infoLabel = new JLabel("<html><center>Installed Custom DLCs<br>Disabled DLCs start with an x. Mass Effect 3 only loads DLCs that start with DLC_.</center></html>");
 		infoLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		panel.add(infoLabel, BorderLayout.NORTH);
 
@@ -74,8 +73,7 @@ public class CustomDLCWindow extends JDialog {
 			@Override
 			public boolean accept(File current, String name) {
 				System.out.println(name);
-				return new File(current, name).isDirectory()
-						&& (name.toLowerCase().startsWith("xdlc_") || name.toLowerCase().startsWith("dlc_"));
+				return new File(current, name).isDirectory() && (name.toLowerCase().startsWith("xdlc_") || name.toLowerCase().startsWith("dlc_"));
 			}
 		});
 
@@ -132,23 +130,21 @@ public class CustomDLCWindow extends JDialog {
 			data[i][COL_FOLDER] = mount.getAssociatedDLCName();
 			data[i][COL_NAME] = mount.getAssociatedModName();
 			data[i][COL_MOUNT_PRIORITY] = mount.getMountPriority();
-			data[i][COL_TOGGLE] = mount.getAssociatedDLCName().toLowerCase().startsWith("xdlc_")
-					? CustomDLCManagerToggleButtonColumn.STR_ENABLE : CustomDLCManagerToggleButtonColumn.STR_DISABLE;
+			data[i][COL_TOGGLE] = mount.getAssociatedDLCName().toLowerCase().startsWith("xdlc_") ? CustomDLCManagerToggleButtonColumn.STR_ENABLE
+					: CustomDLCManagerToggleButtonColumn.STR_DISABLE;
 			data[i][COL_ACTION] = "Delete DLC";
 		}
 
 		Action delete = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				if (ModManager.isMassEffect3Running()) {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-							"Mass Effect 3 must be closed before you can delete DLC.", "MassEffect3.exe is running",
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete DLC.", "MassEffect3.exe is running",
 							JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());
-				String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator
-						+ table.getModel().getValueAt(modelRow, COL_FOLDER));
+				String path = ModManager.appendSlash(mainDlcDir.getAbsolutePath() + File.separator + table.getModel().getValueAt(modelRow, COL_FOLDER));
 				ModManager.debugLogger.writeMessage("Deleting Custom DLC folder: " + path);
 				if (FileUtils.deleteQuietly(new File(path))) {
 					((DefaultTableModel) table.getModel()).removeRow(modelRow);
@@ -162,8 +158,7 @@ public class CustomDLCWindow extends JDialog {
 		Action toggle = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				if (ModManager.isMassEffect3Running()) {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-							"Mass Effect 3 must be closed before you can enable or disable DLC.",
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can enable or disable DLC.",
 							"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
@@ -188,8 +183,7 @@ public class CustomDLCWindow extends JDialog {
 				File toggledPath = new File(mainDlcDir.getAbsolutePath() + File.separator + newname);
 				if (currentPath.renameTo(toggledPath)) {
 					DefaultTableModel tm = (DefaultTableModel) table.getModel();
-					tm.setValueAt(disabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE
-							: CustomDLCManagerToggleButtonColumn.STR_DISABLE, modelRow, COL_TOGGLE);
+					tm.setValueAt(disabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE : CustomDLCManagerToggleButtonColumn.STR_DISABLE, modelRow, COL_TOGGLE);
 					tm.setValueAt(newname, modelRow, COL_FOLDER);
 				}
 			}
@@ -204,8 +198,7 @@ public class CustomDLCWindow extends JDialog {
 		table.setRowHeight(30);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_NEXT_COLUMN);
 		ButtonColumn buttonColumn = new ButtonColumn(table, delete, COL_ACTION);
-		CustomDLCManagerToggleButtonColumn buttonColumn2 = new CustomDLCManagerToggleButtonColumn(table, toggle,
-				COL_TOGGLE);
+		CustomDLCManagerToggleButtonColumn buttonColumn2 = new CustomDLCManagerToggleButtonColumn(table, toggle, COL_TOGGLE);
 
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
@@ -221,12 +214,10 @@ public class CustomDLCWindow extends JDialog {
 		if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
 			bypassmessage = "Your game has does not have a DLC bypass installed. Custom DLC will not authorize.";
 		}
-		JLabel mpLabel = new JLabel(
-				"<html><div style=\"text-align: center;\">" + bypassmessage
-						+ "<br>You can check for Custom DLC conflicts using the Custom DLC Conflict Detector tool in the Mod Management menu.</div></html>",
-				SwingConstants.CENTER);
+		JLabel mpLabel = new JLabel("<html><div style=\"text-align: center;\">" + bypassmessage + "</div></html>", SwingConstants.CENTER);
 		mpLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		JPanel toggleAllPanel = new JPanel();
+		JButton viewConflictsButton = new JButton("View conflicts");
 		JButton enableAllButton = new JButton("Enable All Custom DLC");
 		JButton disableAllButton = new JButton("Disable All Custom DLC");
 
@@ -236,15 +227,14 @@ public class CustomDLCWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
 				if (ModManager.isMassEffect3Running()) {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-							"Mass Effect 3 must be closed before you can enable or disable DLC.",
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can enable or disable DLC.",
 							"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				DefaultTableModel tm = (DefaultTableModel) table.getModel();
 				boolean enabling = e.getSource() == enableAllButton;
 
-				for(int row = 0;row < tm.getRowCount();row++) {
+				for (int row = 0; row < tm.getRowCount(); row++) {
 					//for(int col = 0;col < dm2.getColumnCount();col++) {
 					//	System.out.println(dm2.getValueAt(row, col));
 					//}
@@ -256,22 +246,31 @@ public class CustomDLCWindow extends JDialog {
 					if (dlcname.toUpperCase().startsWith("DLC_") && enabling) {
 						continue; //skip
 					}
-					
-					String newname = enabling ? dlcname.substring(1) : "x"+dlcname;
+
+					String newname = enabling ? dlcname.substring(1) : "x" + dlcname;
 
 					File currentPath = new File(path);
 					File toggledPath = new File(mainDlcDir.getAbsolutePath() + File.separator + newname);
 					if (currentPath.renameTo(toggledPath)) {
-						tm.setValueAt(!enabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE
-								: CustomDLCManagerToggleButtonColumn.STR_DISABLE, row, COL_TOGGLE);
+						tm.setValueAt(!enabling ? CustomDLCManagerToggleButtonColumn.STR_ENABLE : CustomDLCManagerToggleButtonColumn.STR_DISABLE, row, COL_TOGGLE);
 						tm.setValueAt(newname, row, COL_FOLDER);
 					}
 				}
-				
+
 			}
 
 		};
 
+		viewConflictsButton.setToolTipText("View conflicts between Custom DLCs (and GUI mods)");
+		viewConflictsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		viewConflictsButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new CustomDLCConflictWindow();
+			}
+		});
+		
 		enableAllButton.setToolTipText("Enable all Custom DLC listed in this window");
 		enableAllButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		enableAllButton.addActionListener(toggleAll);
@@ -281,6 +280,8 @@ public class CustomDLCWindow extends JDialog {
 		disableAllButton.setToolTipText("Disable all Custom DLC listed in this window");
 		toggleAllPanel.setLayout(new BoxLayout(toggleAllPanel, BoxLayout.X_AXIS));
 		toggleAllPanel.add(Box.createHorizontalGlue());
+		toggleAllPanel.add(viewConflictsButton);
+		toggleAllPanel.add(Box.createRigidArea(new Dimension(15, 15)));
 		toggleAllPanel.add(enableAllButton);
 		toggleAllPanel.add(Box.createRigidArea(new Dimension(15, 15)));
 		toggleAllPanel.add(disableAllButton);

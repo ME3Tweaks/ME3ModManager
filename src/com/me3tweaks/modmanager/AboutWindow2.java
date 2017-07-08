@@ -39,6 +39,7 @@ public class AboutWindow2 extends JDialog {
 	private Dimension WINDOW_SIZE = new Dimension(550, 415);
 
 	public AboutWindow2() {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
 		setVisible(true);
 	}
@@ -46,9 +47,9 @@ public class AboutWindow2 extends JDialog {
 	private FadeTransition fadeIn = new FadeTransition(Duration.millis(2000));
 
 	private void setupWindow() {
+		setResizable(false);
 		setTitle("About Mod Manager");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setIconImages(ModManager.ICONS);
 		setPreferredSize(WINDOW_SIZE);
 		JFXPanel fxPanel = new JFXPanel();

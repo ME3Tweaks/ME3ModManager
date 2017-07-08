@@ -83,7 +83,12 @@ public class ASIModWindow extends JDialog {
 	private ArrayList<InstalledASIMod> installedASIs;
 	private JTable table;
 
+	/**
+	 * Main constructor. Use when opening the ASI Mod Window.
+	 * @param gamedir
+	 */
 	public ASIModWindow(String gamedir) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening ASI window.");
 		this.gamedir = ModManager.appendSlash(gamedir);
 		String asidir = this.gamedir + "Binaries/win32/asi";
@@ -96,8 +101,11 @@ public class ASIModWindow extends JDialog {
 		setVisible(true);
 	}
 
+	/**
+	 * Empty constructor. Used to access non-static variables.
+	 */
 	public ASIModWindow() {
-		// TODO Auto-generated constructor stub
+		//Empty constuctor - used to access local variables
 	}
 
 	private void setupWindow() {

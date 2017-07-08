@@ -54,16 +54,16 @@ public class ModGroupWindow extends JDialog implements ListSelectionListener {
 	private JButton createButton;
 
 	public ModGroupWindow() {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
 		setVisible(true);
 	}
 
 	private void setupWindow() {
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Batch Mod Installer");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(500, 375));
-		this.setIconImages(ModManager.ICONS);
+		setTitle("Batch Mod Installer");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(500, 375));
+		setIconImages(ModManager.ICONS);
 
 		JPanel contentPanel = new JPanel(new BorderLayout());
 

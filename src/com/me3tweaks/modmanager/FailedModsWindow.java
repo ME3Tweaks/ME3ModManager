@@ -53,13 +53,13 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 	private JButton deleteButton;
 
 	public FailedModsWindow() {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Loading failed mods window");
 		setupWindow();
 		setVisible(true);
 	}
 
 	private void setupWindow() {
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setTitle("Invalid Mods");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setPreferredSize(new Dimension(600, 480));

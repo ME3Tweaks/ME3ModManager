@@ -40,6 +40,7 @@ public class OfficialDLCWindow extends JDialog {
 	boolean somethingChanged;
 
 	public OfficialDLCWindow(String bioGameDir) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening Official DLC window.");
 		this.bioGameDir = bioGameDir;
 		setupWindow();
@@ -53,7 +54,6 @@ public class OfficialDLCWindow extends JDialog {
 		setIconImages(ModManager.ICONS);
 		setTitle("Official DLC Manager");
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(700, 350));
 

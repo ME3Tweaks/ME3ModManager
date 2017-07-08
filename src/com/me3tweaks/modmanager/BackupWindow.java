@@ -60,7 +60,7 @@ public class BackupWindow extends JDialog {
 	 * @param BioGameDir
 	 */
 	public BackupWindow(ModManagerWindow callingWindow, String BioGameDir) {
-		// callingWindow.setEnabled(false);
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		this.callingWindow = callingWindow;
 		this.BioGameDir = BioGameDir;
 		checkboxMap = new HashMap<String, JCheckBox>();
@@ -76,12 +76,12 @@ public class BackupWindow extends JDialog {
 	 *            DLC to backup
 	 */
 	public BackupWindow(ModManagerWindow callingWindow, String bioGameDir, String dlcName) {
-		// callingWindow.setEnabled(false);
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		
 		this.callingWindow = callingWindow;
 		this.BioGameDir = bioGameDir;
 		checkboxMap = new HashMap<String, JCheckBox>();
 
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("DLC Backup");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(260, 77));
@@ -94,13 +94,13 @@ public class BackupWindow extends JDialog {
 	}
 
 	private void setupWindow() {
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setTitle("Backup DLCs");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		
+
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html>Select DLCs to backup.<br>This will create backup .sfar files for you.<br>This backup tool only backs up original DLC files, not modified ones.</html>");
+		infoLabel = new JLabel(
+				"<html>Select DLCs to backup.<br>This will create backup .sfar files for you.<br>This backup tool only backs up original DLC files, not modified ones.</html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 
 		progressBar = new JProgressBar(0, 100);
@@ -141,7 +141,7 @@ public class BackupWindow extends JDialog {
 				i++;
 				checkbox.setToolTipText("DLC not installed");
 				checkboxMap.put(dlcName, checkbox);
-				ModManager.debugLogger.writeMessage("DLC does not appear installed: "+dlcName);
+				ModManager.debugLogger.writeMessage("DLC does not appear installed: " + dlcName);
 				continue;
 			}
 
@@ -242,9 +242,7 @@ public class BackupWindow extends JDialog {
 		for (String dlcName : dlcNames) {
 			JCheckBox checkbox = checkboxMap.get(dlcName);
 			if (checkbox != null && checkbox.isSelected()) {
-				if (ModManager.logging) {
-					ModManager.debugLogger.writeMessage("Job added to backup: " + checkbox.getText() + " at " + ModType.getDLCPath(checkbox.getText()));
-				}
+				ModManager.debugLogger.writeMessage("Job added to backup: " + checkbox.getText() + " at " + ModType.getDLCPath(checkbox.getText()));
 				jobs.add(checkbox.getText());
 			}
 		}
@@ -298,9 +296,7 @@ public class BackupWindow extends JDialog {
 			// Check if directory exists
 			if (!dlcPath.exists()) {
 				// Maybe DLC is not installed?
-				if (ModManager.logging) {
-					ModManager.debugLogger.writeMessage(fullDLCDirectory + " does not exist. It might not be installed (this should have been caught!");
-				}
+				ModManager.debugLogger.writeMessage(fullDLCDirectory + " does not exist. It might not be installed (this should have been caught!");
 				return false;
 			}
 

@@ -83,9 +83,9 @@ import com.sun.jna.win32.W32APIOptions;
 public class ModManager {
 	public static boolean IS_DEBUG = true;
 
-	public static final String VERSION = "5.0 Beta 5";
+	public static final String VERSION = "5.0 Beta 7";
 	public static long BUILD_NUMBER = 75L;
-	public static final String BUILD_DATE = "7/4/2017";
+	public static final String BUILD_DATE = "7/7/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -102,7 +102,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 4;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 5;
 
 	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 16; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
@@ -1913,6 +1913,7 @@ public class ModManager {
 	 *         if one occured
 	 */
 	public static ProcessResult runProcess(ProcessBuilder p) {
+		final StringWriter writer = new StringWriter();
 		try {
 			StringBuilder sb = new StringBuilder();
 			List<String> list = p.command();
@@ -1924,7 +1925,6 @@ public class ModManager {
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
 			//handle stdout
-			final StringWriter writer = new StringWriter();
 			new Thread(new Runnable() {
 				public void run() {
 					try {
@@ -1940,11 +1940,18 @@ public class ModManager {
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
 			ModManager.debugLogger.writeMessage("Process output: " + writer.toString());
+			String output = writer.toString();
 			writer.close();
-			return new ProcessResult(returncode, null);
+			return new ProcessResult(returncode, output, null);
 		} catch (IOException | InterruptedException e) {
 			ModManager.debugLogger.writeErrorWithException("Process exception occured:", e);
-			return new ProcessResult(0, e);
+			String output = writer.toString();
+			try {
+				writer.close();
+			} catch (IOException e1) {
+				//don't care.
+			}
+			return new ProcessResult(-1, output, e);
 		}
 	}
 
@@ -2242,6 +2249,8 @@ public class ModManager {
 	 * @return ProcessResult of the process
 	 */
 	public static ProcessResult runProcess(ProcessBuilder p, String prefix) {
+		final StringWriter writer = new StringWriter();
+
 		try {
 			StringBuilder sb = new StringBuilder();
 			List<String> list = p.command();
@@ -2253,7 +2262,6 @@ public class ModManager {
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
 			//handle stdout
-			final StringWriter writer = new StringWriter();
 			new Thread(new Runnable() {
 				public void run() {
 					try {
@@ -2269,11 +2277,18 @@ public class ModManager {
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("[" + prefix + "]Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
 			ModManager.debugLogger.writeMessage("[" + prefix + "]Process output: " + writer.toString());
+			String output = writer.toString();
 			writer.close();
-			return new ProcessResult(returncode, null);
+			return new ProcessResult(returncode, output, null);
 		} catch (IOException | InterruptedException e) {
 			ModManager.debugLogger.writeErrorWithException("[" + prefix + "]Process exception occured:", e);
-			return new ProcessResult(0, e);
+			String output = writer.toString();
+			try {
+				writer.close();
+			} catch (IOException e1) {
+				//don't care.
+			}
+			return new ProcessResult(-1, output, e);
 		}
 	}
 
@@ -2457,6 +2472,7 @@ public class ModManager {
 				}
 			} catch (IOException e) {
 				ModManager.debugLogger.writeMessage("User does not have write permissions (create) to file: " + testfile);
+				ModManager.debugLogger.writeException(e);
 				return false;
 			}
 		}
@@ -2470,14 +2486,18 @@ public class ModManager {
 	/**
 	 * Returns the PCC dumping folder.
 	 * 
-	 * @return data/pccdumps
+	 * @return data\pccdumps\
 	 */
 	public static String getPCCDumpFolder() {
 		File file = new File(getDataDir() + "PCCdumps\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-
+	/**
+	 * Gets the directory that contains the batch installation groups.
+	 * 
+	 * @return data\modgroups\
+	 */
 	public static String getModGroupsFolder() {
 		File file = new File(getDataDir() + "modgroups\\");
 		file.mkdirs();
@@ -2485,7 +2505,7 @@ public class ModManager {
 	}
 
 	/**
-	 * Gets the directory that modmaker xml files are cached to, with a \\ on
+	 * Gets the directory that modmaker xml files are cached to, with a \ on
 	 * the end.
 	 * 
 	 * @return cache directory path
@@ -2499,7 +2519,7 @@ public class ModManager {
 	/**
 	 * Gets the directory for running tests in Mod Manager.
 	 * 
-	 * @return data/testing with a slash on the end.
+	 * @return data\testing\ with a slash on the end.
 	 */
 	public static String getTestingDir() {
 		File file = new File(getDataDir() + "testing\\");
@@ -2507,31 +2527,69 @@ public class ModManager {
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * 
+	 * @return data\Patch_001_Extracted\
+	 */
 	public static String getTestpatchUnpackFolder() {
 		File file = new File(getDataDir() + "Patch_001_Extracted\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-
+	
+	/**
+	 * 
+	 * @return data\MassEffectModder\
+	 */
 	public static String getMEMDirectory() {
 		File file = new File(getDataDir() + "MassEffectModder\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * 
+	 * @return data\Deployed Mods\
+	 */
 	public static String getDeploymentDirectory() {
 		File file = new File(getDataDir() + "Deployed Mods\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * Compresses the selected mod for deployment by staging the mod and then compressing the staged mod - this prevents additional files from being included in the mod.
+	 * More ram you have = more compressed the mod will be.
+	 * @param mod Mod to stage
+	 * @return Path to output file
+	 */
 	public static String compressModForDeployment(Mod mod) {
-		ModManager.debugLogger.writeMessage("Compressing " + mod.getModName() + " for deployment");
-
 		String outputpath = getDeploymentDirectory() + mod.getModName() + "_" + mod.getVersion() + ".7z";
 		ModManager.debugLogger.writeMessage("Deploying " + mod.getModName());
 
+		//Get amount of memory
+		int dictsize = 64; //Default size - definitely not the best, but we'll default to 32-bit.
+
+		if (ResourceUtils.is64BitWindows()) {
+			ModManager.debugLogger.writeMessage("64-bit Windows - calculating dictionary size that *should* work on this computer...");
+			String[] memorycommand = new String[] { "wmic", "ComputerSystem", "get", "TotalPhysicalMemory" };
+			ProcessBuilder pb = new ProcessBuilder(memorycommand);
+			ProcessResult pr = ModManager.runProcess(pb);
+			String output = pr.getOutput();
+
+			String[] lines = output.split("\\n");
+			if (lines.length == 3) {
+				String memsizebytes = lines[1].replaceAll("[^0-9]", "");
+				long bytecount = Long.parseLong(memsizebytes);
+				String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
+				ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
+				dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
+				ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
+			}
+		}
+
 		ArrayList<String> commandBuilder = new ArrayList<String>();
+
 		commandBuilder.add("cmd");
 		commandBuilder.add("/c");
 		commandBuilder.add("start");
@@ -2541,19 +2599,14 @@ public class ModManager {
 		commandBuilder.add(outputpath); //destfile
 		commandBuilder.add(mod.getModPath());//inputfile
 
-		int numcores = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
-		if (!ResourceUtils.is64BitWindows()) {
-			numcores = 1;
-		}
-
-		commandBuilder.add("-mmt" + numcores);
-		//commandBuilder.add("-m0=lzma2:d384m"); //lzma2 (7z)
+		//commandBuilder.add("-mmt" + numcores); //let it multithread itself.
 		commandBuilder.add("-mx=9"); //max compression
 		commandBuilder.add("-aoa"); //overwrite/update
+		commandBuilder.add("-md" + dictsize + "m");
 		ModManager.debugLogger.writeMessage("Compressing mod - output to " + outputpath);
 		ProcessBuilder pb = new ProcessBuilder(commandBuilder);
-		//FileUtils.deleteQuietly(new File(outputpath));
-		//ModManager.runProcess(pb).getReturnCode();
+		FileUtils.deleteQuietly(new File(outputpath));
+		ModManager.runProcess(pb).getReturnCode();
 		return outputpath;
 	}
 }

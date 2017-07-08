@@ -35,6 +35,11 @@ public class AboutWindow2Controller {
 	private void openCommonsLangPage() {
 		ResourceUtils.openWebpage("https://commons.apache.org/proper/commons-lang/");
 	}
+	
+	@FXML
+	private void openZlibPage() {
+		ResourceUtils.openWebpage("https://zlib.net/");
+	}
 
 	@FXML
 	private void openCommonsValidatorPage() {

@@ -597,10 +597,9 @@ public class Mod implements Comparable<Mod> {
 
 							if (af.getSubtituteFile() != null) {
 								//check location
-								//af.setSubstituteFile(ResourceUtils.normalizeFilePath(af.getSubtituteFile(), false));
 								String subfile = ModManager.appendSlash(getModPath()) + af.getSubtituteFile();
 								File f = new File(subfile);
-								if (!f.exists()) {
+								if (!f.exists() && !ignoreLoadErrors) {
 									ModManager.debugLogger.writeError(
 											"This error is from the OFFICIAL headers, so it only applies to official BioWare DLC or the basegame. Substitute file doesn't exist: "
 													+ f.getAbsolutePath());
@@ -994,7 +993,7 @@ public class Mod implements Comparable<Mod> {
 		}
 
 		//Resolve Official Alternates
-		if (modCMMVer >= 4.5) {
+		if (modCMMVer >= 4.5 && !ignoreLoadErrors) { //modpath will be null if we are inspecting a compressed mod. So just ignore this step.
 			for (ModJob job : jobs) {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
 					continue;

@@ -41,6 +41,7 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 	private JComboBox<String> cmmTargeComboBox;
 
 	public ModInfoEditorWindow(Mod mod) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening ModInfoEditorWindow.");
 		this.mod = mod;
 		setupWindow();
@@ -52,7 +53,6 @@ public class ModInfoEditorWindow extends JDialog implements ActionListener {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setMinimumSize(new Dimension(380, 365));
 		//setResizable(false);
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setIconImages(ModManager.ICONS);
 
 		JPanel contentPanel = new JPanel(new BorderLayout());

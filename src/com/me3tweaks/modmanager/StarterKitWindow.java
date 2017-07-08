@@ -138,7 +138,7 @@ public class StarterKitWindow extends JDialog {
 		SwingLink knowndlcLink = new SwingLink("Click here to see Mod Manager's mount priority telemetry data", "https://me3tweaks.com/mods/known_dlc_mods");
 		knowndlcLink.setHorizontalAlignment(JLabel.CENTER);
 		JLabel plsUseModManager = new JLabel(
-				"<html><center>Consider using Mod Manager to deploy your mods if you make them with starter kit.<br>Just zip up the mod's folder (including moddesc.ini) and distribute it. Users can still manually install by copying the mod folder.</center></html>",
+				"<html><center>You can deploy your mod by going to Mod Utils > Compress mod for deployment.<br>Only files this mod uses will be added.</center></html>",
 				SwingConstants.CENTER);
 
 		flagModel.addElement(new MountFlag("SP | Does not require DLC in save file", 8));
@@ -336,15 +336,16 @@ public class StarterKitWindow extends JDialog {
 				throw new NumberFormatException();
 			}
 		} catch (NumberFormatException e) {
-			showErrorMessage("Invalid Mount Priority. Value must be between 1 and 4800.\nIf your DLC mod needs higher priority to work properly, you can edit the mount file to make it work.\nThis limit to prevent priority issues with larger content mods.");
+			showErrorMessage(
+					"Invalid Mount Priority. Value must be between 1 and 4800.\nIf your DLC mod needs higher priority to work properly, you can edit the mount file to make it work.\nThis limit to prevent priority issues with larger content mods.");
 			return false;
 		}
 
 		ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfoByMountID(priorityString);
 		if (tpmi != null) {
-			int result = JOptionPane.showConfirmDialog(StarterKitWindow.this,
-					"<html><div style='width: 400px'>The mod you are creating has the same mount priority as " + tpmi.getModname()
-							+ ". You should change this priority to prevent conflicts.<br><br>When mount priorities conflict, the game behaves in an undefined manner.<br>Change mount priority?</div></html>",
+			int result = JOptionPane.showConfirmDialog(StarterKitWindow.this, "<html><div style='width: 400px'>The mod you are creating has the same mount priority as "
+					+ tpmi.getModname()
+					+ ". You should change this priority to prevent conflicts.<br><br>When mount priorities conflict, the game behaves in an undefined manner.<br>Change mount priority?</div></html>",
 					"Conflicting Mount Priority", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
 			if (result == JOptionPane.YES_OPTION) {
 				return false;
@@ -448,8 +449,8 @@ public class StarterKitWindow extends JDialog {
 				String output = cookedPath + "DLC_MOD_" + internaldlcname + "_" + lang + ".xml";
 				ModManager.ExportResource("/StarterKitTLK.xml", output);
 				String replaceOutput = FileUtils.readFileToString(new File(output), "UTF-8");
-				ModManager.debugLogger.writeMessage("DEBUGGING: LANGUAGE INPUT TEXT WAS READ AS:");
-				ModManager.debugLogger.writeMessage(replaceOutput);
+				//ModManager.debugLogger.writeMessage("DEBUGGING: LANGUAGE INPUT TEXT WAS READ AS:");
+				//ModManager.debugLogger.writeMessage(replaceOutput);
 				String langcode = "";
 				switch (lang) {
 				case "INT":
@@ -495,11 +496,12 @@ public class StarterKitWindow extends JDialog {
 				replaceOutput = replaceOutput.replaceAll("%MALEID%", Integer.toString(currid));
 				currid++;
 				replaceOutput = replaceOutput.replaceAll("%FEMALEID%", Integer.toString(currid));
-				ModManager.debugLogger.writeMessage("----------------------");
-				ModManager.debugLogger.writeMessage("AFTER TRANSFORMATION, OUTPUT IS NOW:");
-				ModManager.debugLogger.writeMessage(replaceOutput);
+				//ModManager.debugLogger.writeMessage("----------------------");
+				//ModManager.debugLogger.writeMessage("AFTER TRANSFORMATION, OUTPUT IS NOW:");
+				//ModManager.debugLogger.writeMessage(replaceOutput);
 
 				FileUtils.writeStringToFile(new File(output), replaceOutput, StandardCharsets.UTF_8);
+				ModManager.debugLogger.writeMessage("Wrote updated TLK XML file: " + output);
 			}
 			//Compile TLK.
 			publish(new ThreadCommand("SET_DIALOG_PROGRESS", null, 25));
@@ -653,13 +655,12 @@ public class StarterKitWindow extends JDialog {
 					ResourceUtils.openDir(generatedMod.getModPath());
 					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 					ModManagerWindow.ACTIVE_WINDOW.highlightMod(generatedMod);
-					JOptionPane.showMessageDialog(callingDialog,
-							modname + " has been created.\nPlace files into the mod's DLC_MOD_" + internaldlcname
-									+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
+					JOptionPane.showMessageDialog(callingDialog, modname + " has been created.\nPlace files into the mod's DLC_MOD_" + internaldlcname
+							+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
 							modname + " created", JOptionPane.INFORMATION_MESSAGE);
 				} else {
-					JOptionPane.showMessageDialog(callingDialog,
-							modname + " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the diagnostics log attached.",
+					JOptionPane.showMessageDialog(callingDialog, modname
+							+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the diagnostics log attached.",
 							modname + " not created", JOptionPane.ERROR_MESSAGE);
 				}
 			}
@@ -686,7 +687,7 @@ public class StarterKitWindow extends JDialog {
 			setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 			setIconImages(ModManager.ICONS);
 			setPreferredSize(size);
-			
+
 			JPanel aboutPanel = new JPanel(new BorderLayout());
 			infoLabel = new JLabel("<html>Placeholder text</html>", SwingConstants.CENTER);
 			aboutPanel.add(infoLabel, BorderLayout.NORTH);

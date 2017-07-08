@@ -37,6 +37,8 @@ public class OptionsWindow extends JDialog {
 	private JCheckBox autoFixControllerModMaker;
 
 	public OptionsWindow(JFrame callingWindow) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		ModManager.debugLogger.writeMessage("Opening Options Window");
 		setupWindow();
 		setLocationRelativeTo(callingWindow);
 		setVisible(true);
@@ -45,7 +47,6 @@ public class OptionsWindow extends JDialog {
 	private void setupWindow() {
 		setTitle("Mod Manager Options");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setIconImages(ModManager.ICONS);
 		setResizable(false);
 

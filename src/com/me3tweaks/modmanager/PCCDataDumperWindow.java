@@ -94,7 +94,7 @@ public class PCCDataDumperWindow extends JFrame {
 		JLabel[] threadOperationLabels = new JLabel[threads]; //VMs won't be supported obviously
 		if (files == null) {
 			infoLabel = new JLabel(
-					"<html>Select the information you want to dump from game PCCs.<br>Dumping properties of PCCs can take a VERY LONG TIME.<br>To dump specific files, drag and drop a folder of PCC files<br>(or a single pcc) onto the main Mod Manager window.</html>");
+					"<html>Select the information you want to dump from game PCCs.<br>To dump specific files, drag and drop a folder containing PCC<br>files or specific PCC files onto the main Mod Manager window.</html>");
 		} else {
 			infoLabel = new JLabel("<html>Select the information you want to dump from the selected PCCs.<br>Dumping properties of PCCs can take a VERY LONG TIME.</html>");
 		}

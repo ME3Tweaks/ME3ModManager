@@ -36,7 +36,7 @@ public class AlternateCustomDLC {
 	}
 
 	/**
-	 * Constructs a Alternate Custom DLC object. This is the original constructor introduced in Mod Manager 4.4, and only works with Custom DLC.
+	 * Constructs an Alternate Custom DLC object. This is the original constructor introduced in Mod Manager 4.4, and only works with Custom DLC.
 	 * @param altfileText String to parse
 	 */
 	public AlternateCustomDLC(String altfileText) {
@@ -55,26 +55,6 @@ public class AlternateCustomDLC {
 		friendlyName = ValueParserLib.getStringProperty(altfileText, "FriendlyName", true);
 	}
 	
-/*	/**
-	 * Constructs a alternate installation option for non-Custom DLC things.
-	 * @param altfileText Text to parse
-	 * @param jobHeader Job that this object targets
-	 *//*
-	public AlternateCustomDLC(String altfileText, String jobHeader) {
-		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
-		if (!condition.equals(CONDITION_MANUAL)) {
-			isValid = false; //Alternate Custom DLC targetting official DLC or basegame must be manually chosen.
-			return;
-		}
-		operation = ValueParserLib.getStringProperty(altfileText, "ModOperation", false);
-		if (!operation.equals(arg0))
-		
-		altDLC = ValueParserLib.getStringProperty(altfileText, "ModAltDLC", false);
-		description = ValueParserLib.getStringProperty(altfileText, "Description", true);
-		destDLC = ValueParserLib.getStringProperty(altfileText,"ModDestDLC", false);
-		friendlyName = ValueParserLib.getStringProperty(altfileText, "FriendlyName", true);
-	}*/
-	
 	/**
 	 * Returns if this is a valid Alternate Custom DLC object. This value is only set when using non-custom dlc options (targetting official file replacements)
 	 * @return true if valid, false if not valid
@@ -92,7 +72,6 @@ public class AlternateCustomDLC {
 		while (strok.hasMoreTokens()) {
 			String dlc = strok.nextToken();
 			conditionalDLCs.add(dlc);
-			//System.out.println("Read conditional DLC in multi dlc "+dlc);
 		}
 	}
 

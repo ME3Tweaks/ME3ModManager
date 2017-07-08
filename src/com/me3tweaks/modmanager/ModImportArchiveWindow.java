@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -67,11 +68,13 @@ public class ModImportArchiveWindow extends JDialog {
 	private JTable modTable;
 	private DefaultTableModel compressedModModel;
 	private ArrayList<CompressedMod> compressedMods = new ArrayList<CompressedMod>();
+	private JScrollPane descScroller;
 
 	/**
 	 * Standard, user triggered opening
 	 */
 	public ModImportArchiveWindow() {
+        super(null, Dialog.ModalityType.MODELESS);
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (manual mode)");
 		try {
 			ModManager.debugLogger.writeMessage("Loading 7-zip library");
@@ -95,6 +98,7 @@ public class ModImportArchiveWindow extends JDialog {
 	 *            file dropped
 	 */
 	public ModImportArchiveWindow(ModManagerWindow modManagerWindow, String file) {
+        super(null, Dialog.ModalityType.MODELESS);
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (filedrop mode)");
 		ModManager.debugLogger.writeMessage("Automating load of archive file: " + file);
 
@@ -183,6 +187,7 @@ public class ModImportArchiveWindow extends JDialog {
 					} else {
 						CompressedMod mod = compressedMods.get(selectedModIndex);
 						descriptionArea.setText(mod.getModDescription());
+						descriptionArea.setCaretPosition(0);
 					}
 
 				}
@@ -193,9 +198,9 @@ public class ModImportArchiveWindow extends JDialog {
 		compressedModModel.addColumn("Mod Name");
 		modTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		modTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-		modTable.getColumnModel().getColumn(0).setMinWidth(70);
+		modTable.getColumnModel().getColumn(0).setMaxWidth(60);
 		modTable.getColumnModel().getColumn(1).setMinWidth(130);
-		modTable.getColumnModel().getColumn(1).setPreferredWidth(Integer.MAX_VALUE);
+		//modTable.getColumnModel().getColumn(1).setPreferredWidth(Integer.MAX_VALUE);
 
 		JPanel actionPanel = new JPanel(new BorderLayout());
 
@@ -215,7 +220,7 @@ public class ModImportArchiveWindow extends JDialog {
 		leftsidePanel.add(actionPanel, BorderLayout.SOUTH);
 
 		//RIGHT SIDE
-		JScrollPane descScroller = new JScrollPane(descriptionArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		descScroller = new JScrollPane(descriptionArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftsidePanel, descScroller);
 		leftsidePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -309,7 +314,7 @@ public class ModImportArchiveWindow extends JDialog {
 				case "FOUND_MODFILE":
 					int data = (int) command.getData();
 					descriptionArea.setText("Scanning archive for Mod Manager mods...\nFound " + data + " potential mod" + (data != 1 ? "s" : "")
-							+ "\n\nThe progress bar may not move for a while for large mods.");
+							+ "\n\nThe progress bar may not move for a while for large mods or mods compressed as a 7z file.");
 					break;
 				case "POST_SUBTEXT":
 					String rside = descriptionArea.getText();
@@ -370,7 +375,6 @@ public class ModImportArchiveWindow extends JDialog {
 	}
 
 	public class ImportWorker extends SwingWorker<Boolean, ThreadCommand> {
-
 		private ArrayList<CompressedMod> modsToImport;
 		private String archiveFilePath;
 
@@ -449,6 +453,10 @@ public class ModImportArchiveWindow extends JDialog {
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
 				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+				if (modsToImport.size() == 1) {
+					//Highlight it
+					
+				}
 				return;
 			} else {
 				ModManager.debugLogger.writeError("[IMPORTWORKER] Import was not fully successful");

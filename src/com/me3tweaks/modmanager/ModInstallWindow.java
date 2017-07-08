@@ -66,20 +66,24 @@ public class ModInstallWindow extends JDialog {
 	public final static String CUSTOMDLC_METADATA_FILE = "_metacmm.txt";
 
 	public ModInstallWindow(JFrame callingWindow, ArrayList<Mod> mods) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		initWindow(callingWindow, mods);
 	}
 
 	public ModInstallWindow(JDialog callingWindow, ArrayList<Mod> mods) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		initWindow(callingWindow, mods);
 	}
 
 	public ModInstallWindow(JDialog callingWindow, Mod mod) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ArrayList<Mod> mods = new ArrayList<Mod>();
 		mods.add(mod);
 		initWindow(callingWindow, mods);
 	}
 
 	public ModInstallWindow(JFrame callingWindow, Mod mod) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ArrayList<Mod> mods = new ArrayList<Mod>();
 		mods.add(mod);
 		initWindow(callingWindow, mods);
@@ -88,7 +92,6 @@ public class ModInstallWindow extends JDialog {
 	private void initWindow(Component callingWindow, ArrayList<Mod> mods) {
 		// callingWindow.setEnabled(false);
 		this.bioGameDir = ModManagerWindow.GetBioGameDir();
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setTitle("Applying Mod" + (mods.size() > 1 ? "s" : ""));
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		this.setPreferredSize(new Dimension(320, 220));

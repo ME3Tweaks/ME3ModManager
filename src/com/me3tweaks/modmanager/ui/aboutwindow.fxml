@@ -85,6 +85,7 @@
          <Hyperlink onAction="#openMEMPage" text="Mass Effect Modder" />
          <Hyperlink onAction="#openME3ExplorerPage" text="ME3Explorer" />
          <Hyperlink onAction="#openTankmasterPage" text="Tankmaster TLK &amp; Coalesce" />
+         <Hyperlink onAction="#openZlibPage" text="zlib" />
       </children>
       <padding>
          <Insets left="5.0" right="5.0" />

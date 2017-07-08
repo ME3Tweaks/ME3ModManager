@@ -25,6 +25,7 @@ import com.me3tweaks.modmanager.ModManagerWindow;
 public class ResourceWindowHelpModal extends JDialog {
 
 	public ResourceWindowHelpModal(HelpItemPackage pack) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow(pack);
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
@@ -33,7 +34,6 @@ public class ResourceWindowHelpModal extends JDialog {
 	public void setupWindow(HelpItemPackage pack) {
 		this.setTitle(pack.getModalTitle());
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		this.setIconImages(ModManager.ICONS);
 
 		JPanel panel = new JPanel();

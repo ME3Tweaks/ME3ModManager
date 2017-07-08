@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -66,6 +67,7 @@ public class MountFileEditorWindow extends JDialog {
 	 * Opens a blank mount file editor.
 	 */
 	public MountFileEditorWindow() {
+        super(null, Dialog.ModalityType.MODELESS);
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
@@ -78,6 +80,7 @@ public class MountFileEditorWindow extends JDialog {
 	 *            mount to load
 	 */
 	public MountFileEditorWindow(String target) {
+        super(null, Dialog.ModalityType.MODELESS);
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		lInputField.setText(target);

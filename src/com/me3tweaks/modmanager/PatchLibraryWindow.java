@@ -229,7 +229,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			}
 		}
 
-		str += "\n\nApply these MixIns to the mod?\n\nYou can automatically accept MixIns through the Options panel.";
+		str += "\n\nMixIns are patches that are applied to game files that alter them, but may considerably increase the size of the mod. Mods that are designed with MixIns are typically balanced around them, so it is encouraged to apply them. Your game should be in a unmodded state during this step, so files not in the MixIn cache can be cached and correctly patched.\n\nApply these MixIns to the mod?\n\nYou can turn on automatic MixIn acceptance in the Options screen from the Actions menu.";
 		//show prompt
 		ModManager.debugLogger.writeMessage("Prompting user for install of mixins");
 
@@ -239,7 +239,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			JScrollPane scrollPane = new JScrollPane(textArea);
 			textArea.setLineWrap(true);
 			textArea.setWrapStyleWord(true);
-			scrollPane.setPreferredSize(new Dimension(500, 500));
+			scrollPane.setPreferredSize(new Dimension(500, 350));
 			textArea.setCaretPosition(0);
 			textArea.setEditable(false);
 			response = JOptionPane.showConfirmDialog(null, scrollPane, "Recommended MixIns", JOptionPane.YES_NO_OPTION);

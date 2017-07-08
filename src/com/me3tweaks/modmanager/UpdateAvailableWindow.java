@@ -55,8 +55,8 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	private JPanel downloadPanel;
 
 	public UpdateAvailableWindow(JSONObject updateInfo) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening update available window");
-
 		this.updateInfo = updateInfo;
 		build = (long) updateInfo.get("latest_build_number");
 		version = (String) updateInfo.get("latest_version_hr");
@@ -83,9 +83,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		setTitle("Update Available");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setResizable(false);
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setIconImages(ModManager.ICONS);
-
 
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));

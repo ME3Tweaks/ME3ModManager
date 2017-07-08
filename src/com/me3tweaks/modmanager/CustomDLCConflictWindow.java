@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Cursor;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
@@ -82,6 +83,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			"SFXWeapon_AssaultRifle_Spitfire.pcc", "SFXWeapon_SMG_Collector_LOC_INT.pcc", "Startup_DLC_CON_MAPMOD_INT.pcc" }));
 
 	public CustomDLCConflictWindow() {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
@@ -523,7 +525,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			skg.setModdev("Mod Manager Build " + ModManager.BUILD_NUMBER);
 			skg.setMountflag(new MountFlag(null, 0x8));
 			skg.setInternaldlcname(internalName);
-			String desc = "User generated compatibility pack made to inject new interface files into the conflicting files from the following mods:\n";
+			String desc = "User generated compatibility pack made to inject proper interface files into the conflicting files from the following mods:\n";
 
 			TreeSet<String> conflictingDLC = new TreeSet<String>();
 			for (CustomDLC dlc : secondPriorityUIConflictFiles.values()) {
@@ -536,6 +538,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			Date date = new Date();
 			desc += dateFormat.format(date);
+			desc += " with Mod Manager " + ModManager.VERSION + " - Build " + ModManager.BUILD_NUMBER + ".";
 
 			skg.setModdesc(desc);
 			skg.setModname(modName);
@@ -588,7 +591,7 @@ public class CustomDLCConflictWindow extends JDialog {
 
 			//publish(new ThreadCommand("SET_STATUS_TEXT", "Locating GUI library"));
 
-			ModManager.debugLogger.writeMessage("Copy of 2nd tier fields completed. Locating GUI library");
+			ModManager.debugLogger.writeMessage("Copy of 2nd tier fields completed.");
 
 			//Run ME3-GUI-Transplanter over CookedPCConsole files
 			i = 0;
@@ -597,6 +600,19 @@ public class CustomDLCConflictWindow extends JDialog {
 			}
 			for (String transplantFile : transplantFiles) {
 				publish(new ThreadCommand("SET_PROGRESS", null, i / transplantFiles.size()));
+
+				boolean isBlacklisted = false;
+				for (String doNotTransplantInto : blacklistedGUIconflictfiles) {
+					if (FilenameUtils.getName(transplantFile).equalsIgnoreCase(doNotTransplantInto)) {
+						ModManager.debugLogger.writeMessage("Ignoring blacklisted transplant target: "+doNotTransplantInto+" - Promoting it directly above GUI mods.");
+						isBlacklisted = true;
+						break; //This file is blacklisted - just leave it be.
+					}
+				}
+				if (isBlacklisted) {
+					i++;
+					continue;
+				}
 				/*
 				 * if (new File(transplantFile).getName().equals(
 				 * "BioD_Nor_203aGalaxyMap.pcc")) { i++; ModManager.debugLogger.

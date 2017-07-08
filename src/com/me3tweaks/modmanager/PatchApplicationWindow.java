@@ -38,6 +38,7 @@ public class PatchApplicationWindow extends JDialog {
 	public final Object lock = new Lock(); //threading wait() and notifyall();
 
 	public PatchApplicationWindow(JDialog callingDialog, ArrayList<Patch> patches, Mod mod) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Starting mix-in applier.");
 		this.callingDialog = callingDialog;
 		this.mod = mod;
@@ -76,6 +77,7 @@ public class PatchApplicationWindow extends JDialog {
 	}
 
 	public PatchApplicationWindow(JFrame callingFrame, ArrayList<Patch> patches, Mod mod) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Starting mix-in applier.");
 		this.callingFrame = callingFrame;
 		this.patches = patches;
@@ -96,7 +98,6 @@ public class PatchApplicationWindow extends JDialog {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setPreferredSize(new Dimension(320, 70));
 		setResizable(false);
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setIconImages(ModManager.ICONS);
 		if (callingDialog == null && callingDialog == null) {
 			setLocationRelativeTo(null);

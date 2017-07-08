@@ -51,6 +51,7 @@ public class AutoTocWindow extends JDialog {
 	 * @param biogameDir
 	 */
 	public AutoTocWindow(String biogameDir) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		if (ModManager.isMassEffect3Running()) {
 			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed in order to run AutoTOC on it.", "MassEffect3.exe is running",
 					JOptionPane.ERROR_MESSAGE);
@@ -77,6 +78,7 @@ public class AutoTocWindow extends JDialog {
 	 *            Directory of biogame. Can be null.
 	 */
 	public AutoTocWindow(Mod mod, int mode, String biogameDir) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		this.mode = mode;
 		this.mod = mod;
 		updatedGameTOCs = new HashMap<String, String>();
@@ -102,7 +104,6 @@ public class AutoTocWindow extends JDialog {
 		setTitle("Mod Manager AutoTOC");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setResizable(false);
-		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setIconImages(ModManager.ICONS);
 
 		JPanel aboutPanel = new JPanel(new BorderLayout());
@@ -329,7 +330,6 @@ public class AutoTocWindow extends JDialog {
 						} else {
 							//increment number of files to update
 							numtoc++;
-							ModManager.debugLogger.writeMessage("Number of files in TOC: " + numtoc + ", replace " + file);
 						}
 					}
 					for (String file : job.addFiles) {

@@ -3,6 +3,7 @@ package com.me3tweaks.modmanager.objects;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -45,7 +46,9 @@ public class ModDelta {
 
 	/**
 	 * Copy constructor
-	 * @param delta Delta to copy
+	 * 
+	 * @param delta
+	 *            Delta to copy
 	 */
 	public ModDelta(ModDelta delta) {
 		deltaFilepath = delta.deltaFilepath;
@@ -76,7 +79,7 @@ public class ModDelta {
 		ModManager.debugLogger.writeMessageConditionally("Loading delta: " + file, ModManager.LOG_MOD_INIT);
 		String deltaText;
 		try {
-			deltaText = FileUtils.readFileToString(new File(file));
+			deltaText = FileUtils.readFileToString(new File(file), StandardCharsets.UTF_8);
 		} catch (IOException e1) {
 			validDelta = false;
 			ModManager.debugLogger.writeErrorWithException("Delta could not be read from the filesystem.", e1);

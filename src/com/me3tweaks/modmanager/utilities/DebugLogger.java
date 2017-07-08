@@ -89,7 +89,7 @@ public class DebugLogger {
 			// TODO Auto-generated catch block
 			logFile = null;
 			ModManager.logging = false;
-			System.out.println("Log failed to write! Cannot write log due to IOException");
+			System.err.println("Log failed to write! Cannot write log due to IOException");
 			e.printStackTrace();
 		}
 	}

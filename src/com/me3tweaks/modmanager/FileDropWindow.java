@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -55,6 +56,8 @@ public class FileDropWindow extends JDialog {
 	private final Object lock = new Lock(); //threading wait() and notifyall();
 
 	public FileDropWindow(JFrame parentFrame, ArrayList<Path> paths) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+
 		this.droppedFiles = paths;
 		setupWindow2();
 		if (show) {

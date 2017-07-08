@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager.objects;
 
 public class ProcessResult {
 	private int returnCode;
+	private String output;
 	private Exception error;
 
 	/**
@@ -20,9 +21,10 @@ public class ProcessResult {
 		return error != null;
 	}
 
-	public ProcessResult(int returnCode, Exception e) {
+	public ProcessResult(int returnCode, String output, Exception e) {
 		super();
 		this.returnCode = returnCode;
+		this.output = output;
 		this.error = e;
 	}
 
@@ -32,5 +34,9 @@ public class ProcessResult {
 	 */
 	public Throwable getError() {
 		return error;
+	}
+
+	public String getOutput() {
+		return output;
 	}
 }

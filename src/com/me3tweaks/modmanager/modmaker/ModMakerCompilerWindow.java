@@ -678,31 +678,10 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 
 		protected Void doInBackground() throws Exception {
-			int coalsCompiled = 0;
-			String path = ModManager.getCompilingDir();
-			/*
-			 * for (String coal : coalsToCompile) { String compilerPath =
-			 * ModManager.getTankMasterCompilerDir() +
-			 * "MassEffect3.Coalesce.exe"; ProcessBuilder compileProcessBuilder
-			 * = new ProcessBuilder(compilerPath, path +
-			 * "\\coalesceds\\" + FilenameUtils.removeExtension(coal) + "
-			 * \\" + FilenameUtils.removeExtension(coal) + ".xml", "--mode=ToBin
-			 * "); //log it
-			 * ModManager.debugLogger.writeMessage("Executing compile command: "
-			 * + compilerPath + " " + path +
-			 * "\\coalesceds\\" + FilenameUtils.removeExtension(coal) + "\\" +
-			 * FilenameUtils.removeExtension(coal) + ".xml --mode=ToBin");
-			 * compileProcessBuilder.redirectErrorStream(true);
-			 * compileProcessBuilder.redirectOutput(ProcessBuilder.Redirect.
-			 * INHERIT); Process compileProcess = compileProcessBuilder.start();
-			 * compileProcess.waitFor(); coalsCompiled++;
-			 * this.publish(coalsCompiled); }
-			 */
-
 			ExecutorService compilerExecutor = Executors.newFixedThreadPool(4);
 			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
 			for (String coalesced : coalsToCompile) {
-				CoalescedCompilerTask cct = new CoalescedCompilerTask(coalesced, this);
+				CoalescedCompilerTask cct = new CoalescedCompilerTask(coalesced, COMPLETED, this);
 				futures.add(compilerExecutor.submit(cct));
 			}
 
@@ -714,7 +693,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (result == false) {
 						error = true;
 						ModManager.debugLogger.writeError("A coalesced file failed to compile.");
-						throw new Exception("A coalesced file failed to compile. Check the logs.");
+						throw new Exception("A coalesced file failed to compile. Check Mod Manager logs.");
 					}
 				} catch (ExecutionException e) {
 					ModManager.debugLogger.writeErrorWithException("EXECUTION EXCEPTION WHILE COMPILING COALESCED FILE (AFTER EXECUTOR FINISHED): ", e);
@@ -726,13 +705,9 @@ public class ModMakerCompilerWindow extends JDialog {
 
 		@Override
 		protected void process(List<Integer> numCompleted) {
-			/*
-			 * if (numCoals > numCompleted.get(0)) {
-			 * currentOperationLabel.setText("Recompiling " +
-			 * coalsToCompile.get(numCompleted.get(0))); }
-			 */
 			progress.setIndeterminate(false);
-			progress.setValue((int) (100 / ((double) numCoals / numCompleted.get(0)) + 0.5)); //crazy rounding trick for integer.
+			int progressVal = (int) ((COMPLETED.get() * 100.0) / numCoals);
+			progress.setValue(progressVal);
 		}
 
 		protected void done() {
@@ -760,8 +735,8 @@ public class ModMakerCompilerWindow extends JDialog {
 			new TLKWorker(progress, languages).execute();
 		}
 
-		public void publishProgress(int numberdone) {
-			publish(numberdone);
+		public void publishProgress() {
+			publish(1); //don't care
 		}
 	}
 
@@ -1887,7 +1862,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		if (!error) {
 			//PROCESS MIXINS
 			if (requiredMixinIds.size() > 0 || dynamicMixins.size() > 0) {
-				currentOperationLabel.setText("Preparing MixIns");
+				currentOperationLabel.setText("Applying MixIns");
 				ModManager.debugLogger.writeMessage("Mod delta recommends MixIns, running PatchLibraryWindow()");
 				PatchLibraryWindow plw = new PatchLibraryWindow(this, requiredMixinIds, dynamicMixins, newMod);
 				for (DynamicPatch dp : dynamicMixins) {
@@ -1938,7 +1913,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			ModManagerWindow.ACTIVE_WINDOW.highlightMod(newMod);
-			JOptionPane.showMessageDialog(this, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
 
 		}
 	}
@@ -2081,10 +2056,12 @@ public class ModMakerCompilerWindow extends JDialog {
 	class CoalescedCompilerTask implements Callable<Boolean> {
 		private String coalescedFile;
 		private CompilerWorker compilerWorker;
+		private AtomicInteger COMPLETED;
 
-		public CoalescedCompilerTask(String coalescedFile, CompilerWorker compilerWorker) {
+		public CoalescedCompilerTask(String coalescedFile, AtomicInteger COMPLETED, CompilerWorker compilerWorker) {
 			this.coalescedFile = coalescedFile;
 			this.compilerWorker = compilerWorker;
+			this.COMPLETED = COMPLETED;
 		}
 
 		@Override
@@ -2096,8 +2073,12 @@ public class ModMakerCompilerWindow extends JDialog {
 			command.add(compilerdir + "\\coalesceds\\" + FilenameUtils.removeExtension(coalescedFile) + "\\" + FilenameUtils.removeExtension(coalescedFile) + ".xml");
 			command.add("--mode=ToBin");
 			ProcessBuilder compileProcessBuilder = new ProcessBuilder(command);
-			compilerWorker.publishProgress(compilerWorker.COMPLETED.incrementAndGet());
-			return ModManager.runProcess(compileProcessBuilder, FilenameUtils.removeExtension(coalescedFile)).getReturnCode() == 0;
+			compilerWorker.publishProgress();
+			boolean result = ModManager.runProcess(compileProcessBuilder, FilenameUtils.removeExtension(coalescedFile)).getReturnCode() == 0;
+			if (result) {
+				COMPLETED.incrementAndGet();
+			}
+			return result;
 		}
 	}
 

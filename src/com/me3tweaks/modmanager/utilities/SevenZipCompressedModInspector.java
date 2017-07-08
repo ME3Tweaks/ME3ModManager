@@ -97,7 +97,7 @@ public class SevenZipCompressedModInspector {
 			return new ISequentialOutStream() {
 
 				public int write(byte[] data) throws SevenZipException {
-					ModManager.debugLogger.writeMessage("Decompressing chunk to " + finaldir);
+					//ModManager.debugLogger.writeMessage("Decompressing chunk to " + finaldir);
 					FileOutputStream fos = null;
 					try {
 

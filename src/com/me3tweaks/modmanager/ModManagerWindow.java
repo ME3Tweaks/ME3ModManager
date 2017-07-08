@@ -30,6 +30,7 @@ import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
@@ -124,7 +125,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	public static ArrayList<Integer> forceUpdateOnReloadList = new ArrayList<Integer>();
 	private static String PRELOADED_BIOGAME_DIR;
 	boolean isUpdate;
-	public JComboBox<String> fieldBiogameDir;
+	public JComboBox<String> comboboxBiogameDir;
 	JTextArea fieldDescription;
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
@@ -169,7 +170,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem toolsAutoTOCGame;
 	private JMenu restoreMenuAdvanced;
 	private boolean loadedFirstTime = false;
-	//private JMenu modUtilsMenu;
 	private JMenuItem toolMassEffectModder;
 
 	/**
@@ -185,7 +185,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ACTIVE_WINDOW = null;
 		}
 		this.isUpdate = isUpdate;
-		ModManager.debugLogger.writeMessage("Starting Mod Manager UI (ModManagerWindow)");
+		ModManager.debugLogger.writeMessage("Setting up Mod Manager Window");
 		try {
 			initializeWindow();
 			ACTIVE_WINDOW = this;
@@ -205,59 +205,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			return;
 		}
 		validateBIOGameDir();
-
-		ModManager.debugLogger.writeMessage("Mod Manager GUI: Now setting visible.");
+		ModManager.debugLogger.writeMessage("Mod Manager Window UI: Now setting visible.");
 		try {
-			this.setVisible(true);
+			setVisible(true);
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
-			ModManager.debugLogger.writeError("Mod Manager hit exception!");
-			if (ModManager.logging) {
-				JOptionPane.showMessageDialog(null,
-						"<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error<br>" + e.getMessage() + "<br>"
-								+ "<br>This has been logged to the me3cmm_last_run_log.txt file.<br>The application will attempt to ignore this error.</div></html>",
-						"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
-			} else {
-				JOptionPane.showMessageDialog(null, "<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error<br>" + e.getMessage() + "<br>"
-						+ "<br>The application will attempt to ignore this error.</div></html>", "Mod Manager Error", JOptionPane.ERROR_MESSAGE);
-			}
+			JOptionPane.showMessageDialog(null,
+					"<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error:<br>" + e.getMessage() + "<br>"
+							+ "<br>This has been logged to the me3cmm_last_run_log.txt file.<br>The application will attempt to ignore this error.</div></html>",
+					"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
 		}
-	}
-
-	/**
-	 * This method scans all mod files and sees if any ones have imported
-	 * patches that need to be applied.
-	 * 
-	 * DEPRECATED.
-	 * 
-	 * @return should reload mods and patches
-	 */
-	private boolean processPendingPatches() {
-		boolean reload = false;
-		ArrayList<String> modsBuild = new ArrayList<String>();
-		for (int i = 0; i < modModel.size(); i++) {
-			Mod mod = modModel.getElementAt(i);
-			if (mod.getRequiredPatches().size() > 0) {
-				ModManager.debugLogger.writeMessage("Mod being built with included MixIns:");
-				reload = true;
-				new PatchApplicationWindow(this, mod.getRequiredPatches(), mod);
-				modsBuild.add(mod.getModName());
-			}
-		}
-		if (reload) {
-			String dispStr = "The following mods had included mixins and have been built for use:\n";
-			for (String str : modsBuild) {
-				dispStr += " - " + str + "\n";
-			}
-			JOptionPane.showMessageDialog(null, dispStr);
-			dispose();
-		}
-		return reload;
 	}
 
 	private void initializeWindow() {
 		setupWindow();
-		this.pack();
+		pack();
 		setLocationRelativeTo(null);
 		if (isUpdate) {
 			JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER
@@ -276,7 +238,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		ModManager.debugLogger.writeMessage("Running startup NetworkThread.");
 		new NetworkThread(false).execute();
-		ModManager.debugLogger.writeMessage("Mod Manager GUI: InitializeWindow() has completed.");
+		ModManager.debugLogger.writeMessage("Mod Manager Window UI: InitializeWindow() has completed.");
 	}
 
 	/**
@@ -952,26 +914,32 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void setupWindow() {
-		this.setTitle("Mass Effect 3 Mod Manager");
-		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		this.setIconImages(ModManager.ICONS);
+		setTitle("Mass Effect 3 Mod Manager");
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setIconImages(ModManager.ICONS);
 		Dimension minSize = new Dimension(560, 520);
-		this.setPreferredSize(minSize);
-		this.setMinimumSize(minSize);
+		setPreferredSize(minSize);
+		setMinimumSize(minSize);
 		ArrayList<String> directories = ModManager.getSavedBIOGameDirectories();
 
-		fieldBiogameDir = new JComboBox<String>(directories.toArray(new String[directories.size()]));
+		comboboxBiogameDir = new JComboBox<String>(directories.toArray(new String[directories.size()]));
 		ModManager.debugLogger.writeMessage("Setting active biogame directory from registry...");
 		String registrykey = ModManager.LookupGamePathViaRegistryKey(true);
+		boolean useAddInstead = comboboxBiogameDir.getModel().getSize() > 0;
 		if (registrykey != null) {
 			int index = directories.indexOf(registrykey);
 			if (index >= 0) {
-				fieldBiogameDir.setSelectedIndex(index);
+				comboboxBiogameDir.setSelectedIndex(index);
+				registrykey = new File(registrykey).getParent();
+				boolean hasWritePermissions = ModManager.checkWritePermissions(registrykey) && ModManager.checkWritePermissions(registrykey + "\\BIOGame")
+						&& ModManager.checkWritePermissions(registrykey + "\\BIOGame\\CookedPCConsole");
+				if (!hasWritePermissions) {
+					showFolderPermissionsGrantDialog(registrykey);
+				}
 			}
 		}
-		//PRELOADED_BIOGAME_DIR = getInitialBiogameDirText();
-		PRELOADED_BIOGAME_DIR = fieldBiogameDir.getItemAt(0);//getInitialBiogameDirText();
 
+		PRELOADED_BIOGAME_DIR = comboboxBiogameDir.getItemAt(0);
 		BIOGAME_ITEM_LISTENER = new BiogameDirChangeListener();
 
 		// Menubar
@@ -1108,14 +1076,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
 				"Mass Effect 3 BIOGame Directory (Installation Target)");
 
-		buttonBioGameDir = new JButton("Browse...");
+		buttonBioGameDir = new JButton(useAddInstead ? "Add Target" : "Browse...");
 		buttonBioGameDir.setToolTipText(
 				"<html>Add a new BIOGame directory target.<br>This is located in the installation directory for Mass Effect 3.<br>Typically this is in the Origin Games folder.</html>");
-		buttonBioGameDir.setPreferredSize(new Dimension(90, 14));
+		buttonBioGameDir.setPreferredSize(new Dimension(useAddInstead ? 105 : 90, 14));
 
 		buttonBioGameDir.addActionListener(this);
 		cookedDirPanel.setBorder(cookedDirTitle);
-		cookedDirPanel.add(fieldBiogameDir, BorderLayout.CENTER);
+		cookedDirPanel.add(comboboxBiogameDir, BorderLayout.CENTER);
 		cookedDirPanel.add(buttonBioGameDir, BorderLayout.EAST);
 
 		northPanel.add(titlePanel, BorderLayout.NORTH);
@@ -1263,7 +1231,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					.setText("No mods are available in the Mod Manager library. Download some ModMaker mods or import mods through the Mod Management menu to get started.");
 		}
 
-		fieldBiogameDir.addItemListener(new BiogameDirChangeListener());
+		comboboxBiogameDir.addItemListener(new BiogameDirChangeListener());
 		ModManager.debugLogger.writeMessage("Mod Manager GUI: SetupWindow() has completed.");
 	}
 
@@ -2039,22 +2007,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				ModManager.debugLogger.writeMessage("Running autotoc before compressing mod");
+				new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, GetBioGameDir());
+
 				ModManager.debugLogger.writeMessage("Compressing mod for deployment: " + mod.getModPath());
-				String outputfile = ModManager.compressModForDeployment(mod);
-				ArrayList<String> showInExplorerProcess = new ArrayList<String>();
-				File outfile = new File(outputfile);
-				ModManager.debugLogger.writeMessage("Checking for output file: " + outfile);
-				if (outfile.exists()) {
-					labelStatus.setText("Mod ready for deployment");
-					showInExplorerProcess.add("explorer.exe");
-					showInExplorerProcess.add("/select,");
-					showInExplorerProcess.add("\"" + outputfile + "\"");
-					ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
-					ModManager.runProcessDetached(pb);
-				} else {
-					labelStatus.setText("Mod failed to compress for deployment - see logs");
-					ModManager.debugLogger.writeError("Mod failed to compress (output file does not exist!)");
-				}
+				new ModDeploymentThread(mod).execute();
 
 			}
 		});
@@ -2072,9 +2029,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (tryDir.exists()) {
 					dirChooser.setCurrentDirectory(new File(GetBioGameDir()));
 				} else {
-					if (ModManager.logging) {
-						ModManager.debugLogger.writeMessage("Directory " + GetBioGameDir() + " does not exist, defaulting to working directory.");
-					}
+					ModManager.debugLogger.writeMessage("Directory " + GetBioGameDir() + " does not exist, defaulting to working directory.");
 				}
 			} else {
 				dirChooser.setCurrentDirectory(new java.io.File("."));
@@ -2089,9 +2044,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (dirChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 				checkForValidBioGame(dirChooser);
 			} else {
-				if (ModManager.logging) {
-					ModManager.debugLogger.writeMessage("No directory selected...");
-				}
+				ModManager.debugLogger.writeMessage("No directory selected...");
 			}
 		} else if (e.getSource() == modManagementModMaker) {
 			if (validateBIOGameDir()) {
@@ -2692,7 +2645,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Opening Unpack DLC window");
 					updateApplyButton();
-					new UnpackWindow(this, GetBioGameDir());
+					new UnpackWindow(this);
 				} else {
 					updateApplyButton();
 					labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
@@ -2711,7 +2664,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == toolsOpenME3Dir) {
 			openME3Dir();
 		} else if (e.getSource() == toolsGrantWriteAccess) {
-			File f = new File((String) fieldBiogameDir.getSelectedItem());
+			File f = new File((String) comboboxBiogameDir.getSelectedItem());
 			f = f.getParentFile();
 			String username = Advapi32Util.getUserName();
 			ModManager.GrantPermissionsToDirectory(f.getAbsolutePath() + "\\", username);
@@ -3025,7 +2978,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// we're OK
 			}
 
-			ComboBoxModel<String> model = fieldBiogameDir.getModel();
+			ComboBoxModel<String> model = comboboxBiogameDir.getModel();
 			ArrayList<String> biogameDirectories = new ArrayList<String>();
 			int size = model.getSize();
 			for (int i = 0; i < size; i++) {
@@ -3036,12 +2989,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				biogameDirectories.add(element);
 				//System.out.println("Element at " + i + " = " + element);
 			}
-			fieldBiogameDir.removeItemListener(BIOGAME_ITEM_LISTENER);
-			fieldBiogameDir.removeAllItems();
-			fieldBiogameDir.addItem(dirChooser.getSelectedFile().toString());
+			comboboxBiogameDir.removeItemListener(BIOGAME_ITEM_LISTENER);
+			comboboxBiogameDir.removeAllItems();
+			comboboxBiogameDir.addItem(dirChooser.getSelectedFile().toString());
 
 			for (String biodir : biogameDirectories) {
-				fieldBiogameDir.addItem(biodir);
+				comboboxBiogameDir.addItem(biodir);
 			}
 
 			biogameDirectories.add(0, dirChooser.getSelectedFile().toString());
@@ -3049,8 +3002,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			saveBiogamePath(biogameDirectories);
 			labelStatus.setText("Set game target directory");
 			labelStatus.setVisible(true);
-			fieldBiogameDir.setSelectedItem(dirChooser.getSelectedFile().toString());
-			fieldBiogameDir.addItemListener(BIOGAME_ITEM_LISTENER);
+			comboboxBiogameDir.setSelectedItem(dirChooser.getSelectedFile().toString());
+			comboboxBiogameDir.addItemListener(BIOGAME_ITEM_LISTENER);
 			validateBIOGameDir();
 		} else {
 			JOptionPane.showMessageDialog(null, "Invalid Mass Effect 3 BIOGame folder selected:\n" + dirChooser.getSelectedFile().toString(), "Invalid ME3 BIOGame Directory",
@@ -3065,7 +3018,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @return True if valid, false otherwise
 	 */
 	public static boolean validateBIOGameDir() {
-		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
+		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir != null) {
 			ModManagerWindow.PRELOADED_BIOGAME_DIR = ModManagerWindow.GetBioGameDir();
 		}
 
@@ -3125,7 +3078,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 *            true to on, false to off
 	 */
 	private static void setBottomButtonState(boolean b) {
-		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
+		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir != null) {
 			ModManagerWindow.ACTIVE_WINDOW.buttonApplyMod.setEnabled(b);
 			ModManagerWindow.ACTIVE_WINDOW.buttonStartGame.setEnabled(b);
 		}
@@ -3138,7 +3091,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @param highlight
 	 */
 	private static void setBioDirHighlight(boolean highlight) {
-		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir != null) {
+		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir != null) {
 			if (highlight) {
 				TitledBorder cookedDirTitle = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mass Effect 3 BIOGame Directory (INVALID)",
 						TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, UIManager.getDefaults().getFont("titledBorder.font"), Color.RED);
@@ -3150,45 +3103,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManagerWindow.ACTIVE_WINDOW.cookedDirPanel.setBorder(cookedDirTitle);
 			}
 		}
-	}
-
-	/**
-	 * Gets the initial string to place into the biogame dir part of mod
-	 * manager. Will default to a reasonably well guessed value if it can't read
-	 * from settings or registry.
-	 * 
-	 * This method is used when loading mod manager as the field will not be
-	 * available for reading. It is not used to manage the list.
-	 * 
-	 * @return
-	 */
-	private String getInitialBiogameDirText() {
-		ModManager.debugLogger.writeMessage("Getting location of Mass Effect 3 directory to populate BioGameDir text field.");
-		String defaultDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
-		String setDir = "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame\\";
-		String os = System.getProperty("os.name");
-
-		ArrayList<String> biogameDirectories = ModManager.getSavedBIOGameDirectories();
-		if (biogameDirectories.size() == 0) {
-			try {
-				//LEGACY: Attempt to read from WINI.
-				Wini settingsini = ModManager.LoadSettingsINI();
-
-				Section names = settingsini.get("Settings");
-				setDir = names.get("biogame_dir");
-
-				ModManager.debugLogger.writeMessage("DEPRECATED: ME3CMM.ini has saved the biogame directory to (blank/null if doesn't exist): " + setDir);
-				if ((setDir == null || setDir.equals("")) && os.contains("Windows")) {
-					setDir = ModManager.LookupGamePathViaRegistryKey(true);
-				}
-			} catch (Throwable e) {
-				ModManager.debugLogger.writeErrorWithException("Error occured while attempting to get/set the biogame directory! Could be the JNA crash.", e);
-				return "C:\\Program Files (x86)\\Origin Games\\Mass Effect 3\\BIOGame";
-			}
-			ModManager.debugLogger.writeMessage("Directory that will be set: " + (setDir != null && !setDir.equals("") ? setDir : defaultDir));
-			return (setDir != null && !setDir.equals("")) ? setDir : defaultDir;
-		}
-		return biogameDirectories.get(0);
 	}
 
 	/**
@@ -3634,11 +3548,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	public static String GetBioGameDir() {
-		if (ModManagerWindow.ACTIVE_WINDOW == null || ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir == null
-				|| ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getSelectedItem() == null) {
+		if (ModManagerWindow.ACTIVE_WINDOW == null || ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir == null
+				|| ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir.getSelectedItem() == null) {
 			return ModManagerWindow.PRELOADED_BIOGAME_DIR;
 		} else {
-			return ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getSelectedItem().toString();
+			return ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir.getSelectedItem().toString();
 		}
 	}
 
@@ -3701,6 +3615,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
+	/**
+	 * Shows the write permissions dialog and will execute the windows command
+	 * to grant permissions to the current user if accepted.
+	 * 
+	 * @param folder
+	 *            Folder to grant write permissions to.
+	 */
 	private void showFolderPermissionsGrantDialog(String folder) {
 		String username = Advapi32Util.getUserName();
 		String message = "Your user account (" + username + ") does not have write permissions to the game directory:\n";
@@ -3711,7 +3632,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (result == JOptionPane.YES_OPTION) {
 			if (ModManager.GrantPermissionsToDirectory(folder, username)) {
 				ModManager.debugLogger.writeMessage("Granted permissions to folder: " + folder);
-				labelStatus.setText("Granted write permissions to game directory");
+				if (labelStatus != null) { //Can be null if permissions check is running at startup.
+					labelStatus.setText("Granted write permissions to game directory");
+				}
 			}
 		}
 	}
@@ -3730,8 +3653,160 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				Mod mod = modModel.getElementAt(i);
 				if (mod.getDescFile().equals(searchmod.getDescFile()) && searchmod.getDescFile() != null) {
 					modList.setSelectedIndex(i);
+					modList.ensureIndexIsVisible(i);
 					return;
 				}
+			}
+		}
+	}
+
+	class ModDeploymentThread extends SwingWorker<Boolean, ThreadCommand> {
+		Mod mod;
+		private File outfile;
+
+		public ModDeploymentThread(Mod mod) {
+			this.mod = mod;
+			labelStatus.setText("Staging mod for deployment...");
+		}
+
+		@Override
+		protected Boolean doInBackground() throws Exception {
+			String stagingdir = ModManager.getTempDir() + "Deployment Staging\\" + new File(mod.getModPath()).getName() + "\\";
+			File stagingdirfile = new File(stagingdir);
+			FileUtils.deleteQuietly(stagingdirfile);
+			stagingdirfile.mkdirs();
+			System.out.println("Staging dir: " + stagingdir);
+
+			//Identify files the mod uses.
+			String modbasepath = mod.getModPath();
+			int stagedfilecount = 0;
+			for (ModJob job : mod.jobs) {
+				//Files to replace
+				for (String str : job.getFilesToReplace()) {
+					String relativepath = ResourceUtils.getRelativePath(str, modbasepath, File.separator);
+					String outputpath = stagingdir + relativepath;
+					ModManager.debugLogger.writeMessage("Copying mod file to staging: " + str + " -> " + outputpath);
+					FileUtils.copyFile(new File(str), new File(outputpath));
+					stagedfilecount++;
+					publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+				}
+
+				//Files to add
+				for (String str : job.getFilesToAdd()) {
+					String relativepath = ResourceUtils.getRelativePath(str, modbasepath, File.separator);
+					String outputpath = stagingdir + relativepath;
+					ModManager.debugLogger.writeMessage("Copying mod file to staging: " + relativepath);
+					FileUtils.copyFile(new File(str), new File(outputpath));
+					stagedfilecount++;
+					publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+				}
+
+				//Manual Alternates
+				for (AlternateFile af : job.getAlternateFiles()) {
+					String substitutefile = af.getSubtituteFile();
+					if (substitutefile != null) {
+						String outputpath = stagingdir + substitutefile;
+						ModManager.debugLogger.writeMessage("Copying [MANUAL SUB] mod file to staging: " + substitutefile + " -> " + outputpath);
+						FileUtils.copyFile(new File(mod.getModPath() + substitutefile), new File(outputpath));
+						stagedfilecount++;
+						publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+					}
+					String altfile = af.getAltFile();
+					if (altfile != null) {
+						String outputpath = stagingdir + altfile;
+						ModManager.debugLogger.writeMessage("Copying [MANUAL ALT] mod file to staging: " + altfile + " -> " + outputpath);
+						FileUtils.copyFile(new File(mod.getModPath() + altfile), new File(outputpath));
+						stagedfilecount++;
+						publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+					}
+				}
+			}
+
+			//Automatically applied alternates
+			for (AlternateFile af : mod.getAlternateFiles()) {
+				String substitutefile = af.getSubtituteFile();
+				if (substitutefile != null) {
+					String outputpath = stagingdir + substitutefile;
+					ModManager.debugLogger.writeMessage("Copying [AUTO SUB] mod file to staging: " + substitutefile + " -> " + outputpath);
+					FileUtils.copyFile(new File(mod.getModPath() + substitutefile), new File(outputpath));
+					stagedfilecount++;
+					publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+				}
+				String altfile = af.getAltFile();
+				if (altfile != null) {
+					String outputpath = stagingdir + altfile;
+					ModManager.debugLogger.writeMessage("Copying [AUTO ALT] mod file to staging: " + altfile + " -> " + outputpath);
+					FileUtils.copyFile(new File(mod.getModPath() + altfile), new File(outputpath));
+					stagedfilecount++;
+					publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+				}
+			}
+
+			//Variants/Deltas
+			for (ModDelta d : mod.getModDeltas()) {
+				String relativepath = ResourceUtils.getRelativePath(d.getDeltaFilepath(), modbasepath, File.separator);
+				String outputpath = stagingdir + relativepath;
+				ModManager.debugLogger.writeMessage("Copying [DELTA] mod file to staging: " + d.getDeltaFilepath() + " -> " + outputpath);
+				FileUtils.copyFile(new File(d.getDeltaFilepath()), new File(outputpath));
+				stagedfilecount++;
+				publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+			}
+
+			String stagingini = stagingdir + "moddesc.ini";
+			FileUtils.copyFile(new File(mod.getDescFile()), new File(stagingini));
+
+			ModManager.debugLogger.writeMessage("Testing staged mod");
+			Mod testmod = new Mod(stagingini);
+			if (!testmod.isValidMod()) {
+				ModManager.debugLogger.writeError("Staged mod is not valid. Cannot compress.");
+				return false;
+			} else {
+				ModManager.debugLogger.writeMessage("Staged mod is valid.");
+			}
+
+			publish(new ThreadCommand("UPDATE_STATUS", "Deploying - memory usage will be high temporarily"));
+
+			String outputfile = ModManager.compressModForDeployment(testmod);
+			outfile = new File(outputfile);
+			ModManager.debugLogger.writeMessage("Thread exiting - result of compression method: " + outfile.exists());
+			FileUtils.deleteDirectory(stagingdirfile);
+			return outfile.exists();
+		}
+
+		@Override
+		protected void process(List<ThreadCommand> chunks) {
+			for (ThreadCommand latest : chunks) {
+				switch (latest.getCommand()) {
+				case "UPDATE_STATUS":
+					labelStatus.setText(latest.getMessage());
+					break;
+
+				}
+			}
+		}
+
+		protected void done() {
+			try {
+				boolean result = get();
+				if (result && outfile != null) {
+					ModManager.debugLogger.writeMessage("SUCCESS COMPRESSING MOD.");
+					ArrayList<String> showInExplorerProcess = new ArrayList<String>();
+					labelStatus.setText("Mod ready for deployment");
+					showInExplorerProcess.add("explorer.exe");
+					showInExplorerProcess.add("/select,");
+					showInExplorerProcess.add("\"" + outfile.getAbsolutePath() + "\"");
+					ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
+					ModManager.runProcessDetached(pb);
+				} else {
+					labelStatus.setText("Mod failed to compress for deployment - see logs");
+					ModManager.debugLogger.writeError("Mod failed to compress (output file does not exist!)");
+
+					ModManager.debugLogger.writeError("FAILURE COMPRESSING MOD.");
+				}
+			} catch (InterruptedException |
+
+					ExecutionException e) {
+				ModManager.debugLogger.writeErrorWithException("Exception in ModDeploymentThread:", e);
 			}
 		}
 	}

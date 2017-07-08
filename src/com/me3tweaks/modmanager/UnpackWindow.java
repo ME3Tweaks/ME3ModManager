@@ -28,6 +28,7 @@ import javax.swing.border.TitledBorder;
 
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 public class UnpackWindow extends JDialog {
@@ -37,12 +38,9 @@ public class UnpackWindow extends JDialog {
 	boolean windowOpen = true;
 	HashMap<String, JCheckBox> checkboxMap;
 	String currentText;
-	String BioGameDir;
 	JPanel checkBoxPanel;
 	JProgressBar progressBar;
 	JButton unpackButton;
-
-	ModManagerWindow callingWindow;
 
 	/**
 	 * Manually invoked unpack window
@@ -50,16 +48,17 @@ public class UnpackWindow extends JDialog {
 	 * @param callingWindow
 	 * @param BioGameDir
 	 */
-	public UnpackWindow(ModManagerWindow callingWindow, String BioGameDir) {
+	public UnpackWindow(ModManagerWindow callingWindow) {
 		// callingWindow.setEnabled(false);
-		this.callingWindow = callingWindow;
-		this.BioGameDir = BioGameDir;
 		checkboxMap = new HashMap<String, JCheckBox>();
 		setupWindow();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
+		File bg = new File(ModManagerWindow.GetBioGameDir());
+		long freespace = bg.getFreeSpace();
+		String freespaceStr = ResourceUtils.humanReadableByteCount(freespace, true);
 		setTitle("Unpack DLCs");
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -67,7 +66,7 @@ public class UnpackWindow extends JDialog {
 
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html>Select DLCs to unpack.<br>Items in blue are not unpacked.</html>");
+		infoLabel = new JLabel("<html>Select DLCs to unpack. Items in blue are not unpacked.<br>Unpacking all DLC requires about 30GB - you have "+freespaceStr+" free.<br></html>");
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 
 		progressBar = new JProgressBar(0, 100);
@@ -94,7 +93,7 @@ public class UnpackWindow extends JDialog {
 		for (String dlcName : headerArray) {
 			JCheckBox checkbox = new JCheckBox(dlcName);
 			// checkBoxPanel.add(checkbox);
-			String filepath = ModManager.appendSlash(BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
+			String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
 			File dlcPath = new File(filepath);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
@@ -176,7 +175,7 @@ public class UnpackWindow extends JDialog {
 							JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-				new UnpackDLCJob(BioGameDir, getJobs(), false).execute();
+				new UnpackDLCJob(ModManagerWindow.GetBioGameDir(), getJobs(), false).execute();
 			}
 		});
 
@@ -197,7 +196,7 @@ public class UnpackWindow extends JDialog {
 		});
 
 		pack();
-		setLocationRelativeTo(callingWindow);
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	private String[] getJobs() {
@@ -225,6 +224,7 @@ public class UnpackWindow extends JDialog {
 		String[] jobs;
 		boolean closeOnComplete;
 		ArrayList<String> failedUnpacks;
+		boolean hasTestPatch = false;
 
 		protected UnpackDLCJob(String bioGameDir, String[] jobs, boolean closeOnComplete) {
 			if (unpackButton != null) {
@@ -269,6 +269,7 @@ public class UnpackWindow extends JDialog {
 				}
 				File patch001Sfar = new File(dlcPath + "Patch_001.sfar");
 				if (patch001Sfar.exists()) {
+					hasTestPatch = true;
 					//TESTPATCH - read only extraction
 					publish("Unpacking " + dlcName);
 					processUnpackJob(dlcPath, dlcName, true);
@@ -282,14 +283,11 @@ public class UnpackWindow extends JDialog {
 		}
 
 		private boolean processUnpackJob(String fullDLCDirectory, String dlcName, boolean testpatch) {
-			// TODO Auto-generated method stub
 			File dlcPath = new File(fullDLCDirectory);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
 				// Maybe DLC is not installed?
-				if (ModManager.logging) {
-					ModManager.debugLogger.writeError(fullDLCDirectory + " does not exist. It might not be installed (this should have been caught!");
-				}
+				ModManager.debugLogger.writeError(fullDLCDirectory + " does not exist. It might not be installed (this should have been caught!");
 				return false;
 			}
 
@@ -345,6 +343,14 @@ public class UnpackWindow extends JDialog {
 			progressBar.setIndeterminate(false);
 			showFailedUnpacks();
 			finishUnpack(completed);
+			if (hasTestPatch) {
+				//Open Explorer
+				ArrayList<String> showInExplorerProcess = new ArrayList<>();
+				showInExplorerProcess.add("explorer.exe");
+				showInExplorerProcess.add("\"" + ModManager.getTestpatchUnpackFolder() + "\"");
+				ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
+				ModManager.runProcessDetached(pb);
+			}
 			if (closeOnComplete) {
 				dispose();
 			}
@@ -371,8 +377,7 @@ public class UnpackWindow extends JDialog {
 
 	protected void finishUnpack(int completed) {
 		ModManager.debugLogger.writeMessage("Finished unpacking DLCs.");
-		callingWindow.labelStatus.setText(completed + " DLCs unpacked.");
-		callingWindow.labelStatus.setVisible(true);
+		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(completed + " DLCs unpacked.");
 		if (unpackButton != null) {
 			unpackButton.setEnabled(true);
 			infoLabel.setText("Unpacking completed.");
