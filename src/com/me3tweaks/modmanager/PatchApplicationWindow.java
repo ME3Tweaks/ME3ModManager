@@ -116,7 +116,7 @@ public class PatchApplicationWindow extends JDialog {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(WindowEvent e) {
-				System.out.println("Exit Mixin Application");
+				ModManager.debugLogger.writeMessage("Exiting MixIn Application window");
 				if (pat != null) {
 					pat.cancel(false);
 				}

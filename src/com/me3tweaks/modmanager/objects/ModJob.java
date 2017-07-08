@@ -339,9 +339,6 @@ public class ModJob {
 	 */
 	public boolean addNewFileTask(String sourceFile, String targetPath, boolean ignoreExistenceErrors) {
 		File file = new File(sourceFile);
-		if (!file.exists()) {
-			System.out.println("BREAKAGE.");
-		}
 		if (!file.exists() && !ignoreExistenceErrors) {
 			ModManager.debugLogger.writeError("Source file doesn't exist: " + sourceFile);
 			return false;

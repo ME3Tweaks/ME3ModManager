@@ -148,7 +148,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						basegamejob = job;
 						String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
-						System.out.println(relativepath);
+						//System.out.println(relativepath);
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)),
 								new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Coalesced.bin"));
 						job.addFileReplace(mod.getModPath() + relativepath + "Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin", false);
@@ -234,7 +234,7 @@ public class KeybindsInjectionWindow extends JDialog {
 							mp5job = job;
 							String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
 							String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
-							System.out.println(relativepath);
+							//System.out.println(relativepath);
 							FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
 									new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Default_DLC_CON_MP5.bin"));
 							destinationMP5coal = origMod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin";
@@ -414,7 +414,7 @@ public class KeybindsInjectionWindow extends JDialog {
 
 		@Override
 		protected void process(List<String> status) {
-			System.out.println("Steps completed: " + stepsCompleted + "/" + TOTAL_STEPS);
+			//System.out.println("Steps completed: " + stepsCompleted + "/" + TOTAL_STEPS);
 			infoLabel.setText(status.get(status.size() - 1));
 			progressbar.setIndeterminate(false);
 			progressbar.setValue((int) (100 / (TOTAL_STEPS / (float) stepsCompleted)));

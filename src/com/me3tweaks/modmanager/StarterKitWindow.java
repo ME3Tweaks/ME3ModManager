@@ -222,7 +222,7 @@ public class StarterKitWindow extends JDialog {
 								return;
 							}
 						}
-						System.out.println(result);
+						//System.out.println(result);
 					}
 					//validate...
 					int internaltlkidval = Integer.parseInt(internalTLKId.getText().trim());
@@ -555,7 +555,7 @@ public class StarterKitWindow extends JDialog {
 			tlkpathfile.mkdirs();
 			List<File> files = (List<File>) FileUtils.listFiles(cookedpcconsole, new String[] { "xml" }, false);
 			for (File file : files) {
-				System.out.println(file);
+				//System.out.println(file);
 				FileUtils.moveFile(file, new File(tlkpath + FilenameUtils.getName(file.getAbsolutePath())));
 			}
 

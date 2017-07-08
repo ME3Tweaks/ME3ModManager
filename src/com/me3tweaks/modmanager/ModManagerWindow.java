@@ -3154,13 +3154,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (mod.getJobs().length > 0) {
 			checkBackedUp(mod);
-			new ModInstallWindow(this, mod);
+			new ModInstallWindow(this, mod, null);
 		} else {
 			ModManager.debugLogger.writeMessage("No dlc mod job, finishing mod installation");
 		}
 		return true;
 	}
 
+	/**
+	 * Checks to make sure DLC has been backed up before mod installation
+	 * 
+	 * @param mod
+	 *            Mod to check backups for
+	 */
 	private void checkBackedUp(Mod mod) {
 		ModJob[] jobs = mod.getJobs();
 		for (ModJob job : jobs) {
@@ -3675,7 +3681,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			File stagingdirfile = new File(stagingdir);
 			FileUtils.deleteQuietly(stagingdirfile);
 			stagingdirfile.mkdirs();
-			System.out.println("Staging dir: " + stagingdir);
+			//System.out.println("Staging dir: " + stagingdir);
 
 			//Identify files the mod uses.
 			String modbasepath = mod.getModPath();

@@ -244,15 +244,7 @@ public class ModXMLTools {
 					for (String delfile : up.getFilesToDelete()) {
 						File newfile = new File(compressedfulloutputfolder + delfile);
 						if (newfile.exists()) {
-							/*
-							 * ModManager.debugLogger.writeMessage(
-							 * "Deleting unnecessary file from full server package: "
-							 * + delfile); FileUtils.deleteQuietly(new
-							 * File(compressedfulloutputfolder + delfile));
-							 * FileUtils.copyFile(new File(delfile), new
-							 * File(compressedfulloutputfolder + delfile));
-							 */
-							System.out.println("Update package says to delete existing file: " + delfile);
+							ModManager.debugLogger.writeMessage("Update package says to delete existing file: " + delfile);
 						}
 					}
 				}
@@ -555,7 +547,7 @@ public class ModXMLTools {
 					continue;
 				}
 				File blacklistedlocalfile = new File(modpath + blacklisted);
-				System.out.println("Checking for blacklisted file: " + blacklistedlocalfile + " exits? " + blacklistedlocalfile.exists());
+				ModManager.debugLogger.writeMessage("Checking for blacklisted file: " + blacklistedlocalfile + " exits? " + blacklistedlocalfile.exists());
 
 				if (blacklistedlocalfile.exists()) {
 					ModManager.debugLogger.writeMessage("Blacklisted file exists and will be deleted: " + blacklisted);

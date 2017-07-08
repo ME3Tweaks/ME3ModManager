@@ -2,7 +2,6 @@ package com.me3tweaks.modmanager;
 
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
@@ -10,12 +9,10 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -1481,7 +1478,6 @@ public class ModManager {
 		//Calculate output folder
 		if (pcc.contains("BIOGame")) {
 			//Try to extract what is is.
-			System.out.println(pcc);
 			if (pcc.toLowerCase().contains("BIOGame\\CookedPCConsole\\".toLowerCase())) {
 				//Likely basegame.
 				outputfolder += "BASEGAME\\";
@@ -1565,7 +1561,7 @@ public class ModManager {
 			// END OF
 			// BASEGAME======================================================
 		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
-			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
+			ModManager.debugLogger.writeError("Fetching files from CustomDLC is not supported.");
 			return null;
 		} else {
 			// DLC===============================================================
@@ -1601,36 +1597,10 @@ public class ModManager {
 
 			commandBuilder.add(targetPath);
 			commandBuilder.add(copyToLocation);
-			StringBuilder sb = new StringBuilder();
-			for (String arg : commandBuilder) {
-				if (arg.contains(" ")) {
-					sb.append("\"" + arg + "\" ");
-				} else {
-					sb.append(arg + " ");
-				}
-			}
-			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());
-
 			ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
-			// patchProcessBuilder.redirectErrorStream(true);
-			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-			Process extractionProcess;
-			try {
-				extractionProcess = extractionProcessBuilder.start();
-				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
-				String line;
-				while ((line = reader.readLine()) != null)
-					System.out.println(line);
-				int result = extractionProcess.waitFor();
-				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
-				return copyToLocation;
-			} catch (IOException e) {
-				ModManager.debugLogger.writeException(e);
-			} catch (InterruptedException e) {
-				ModManager.debugLogger.writeException(e);
-			}
+			ModManager.runProcess(extractionProcessBuilder);
+			return copyToLocation;
 		}
-		return null;
 	}
 
 	/**
@@ -2493,6 +2463,7 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
+
 	/**
 	 * Gets the directory that contains the batch installation groups.
 	 * 
@@ -2505,8 +2476,8 @@ public class ModManager {
 	}
 
 	/**
-	 * Gets the directory that modmaker xml files are cached to, with a \ on
-	 * the end.
+	 * Gets the directory that modmaker xml files are cached to, with a \ on the
+	 * end.
 	 * 
 	 * @return cache directory path
 	 */
@@ -2536,7 +2507,7 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-	
+
 	/**
 	 * 
 	 * @return data\MassEffectModder\
@@ -2558,9 +2529,12 @@ public class ModManager {
 	}
 
 	/**
-	 * Compresses the selected mod for deployment by staging the mod and then compressing the staged mod - this prevents additional files from being included in the mod.
-	 * More ram you have = more compressed the mod will be.
-	 * @param mod Mod to stage
+	 * Compresses the selected mod for deployment by staging the mod and then
+	 * compressing the staged mod - this prevents additional files from being
+	 * included in the mod. More ram you have = more compressed the mod will be.
+	 * 
+	 * @param mod
+	 *            Mod to stage
 	 * @return Path to output file
 	 */
 	public static String compressModForDeployment(Mod mod) {

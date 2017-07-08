@@ -54,7 +54,7 @@ public class ModGroupWindow extends JDialog implements ListSelectionListener {
 	private JButton createButton;
 
 	public ModGroupWindow() {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		setupWindow();
 		setVisible(true);
 	}
@@ -135,16 +135,31 @@ public class ModGroupWindow extends JDialog implements ListSelectionListener {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (ModManagerWindow.validateBIOGameDir()) {
+					boolean wasCanceled = false;
+					ModInstallWindow.BatchPackage bp = new ModInstallWindow.BatchPackage();
+					bp.totalBatchMods = groupContentsModel.size();
+					
 					for (int i = 0; i < groupContentsModel.size(); i++) {
 						Mod mod = groupContentsModel.get(i);
 						mod = new Mod(mod.getDescFile()); //This is so that automatic configuration of the mod being installed can take place.
-						new ModInstallWindow(ModGroupWindow.this, mod);
+						bp.currentBatchInstallationNumber++;
+						ModInstallWindow miw = new ModInstallWindow(ModGroupWindow.this, mod, bp);
+						if (!miw.shouldContinueBatchInstallation()) {
+							wasCanceled = true;
+							break;
+						}
 					}
 					ModGroup mg = modGroupModel.getElementAt(modGroupsList.getSelectedIndex());
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '" + mg.getModGroupName() + "' has been installed");
+
+					if (!wasCanceled) {
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod group '" + mg.getModGroupName() + "' has been installed");
+					} else {
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Batch installation canceled");
+					}
 					dispose();
 				} else {
-					JOptionPane.showMessageDialog(ModGroupWindow.this, "Batch installation of mods requires a valid biogame directory.","BIOGame Directory invalid", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModGroupWindow.this, "Batch installation of mods requires a valid biogame directory.", "BIOGame Directory invalid",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});

@@ -562,7 +562,6 @@ public class LogOptionsWindow extends JDialog {
 					String log = Base64.getEncoder().encodeToString(FileUtils.readFileToByteArray(new File(outputFile)));
 					HttpClient httpclient = HttpClients.createDefault();
 					HttpPost httppost = new HttpPost("https://me3tweaks.com/modmanager/tools/loguploader-compress");
-					System.out.println(log);
 					// Request parameters and other properties.
 					List<NameValuePair> params = new ArrayList<NameValuePair>(2);
 					params.add(new BasicNameValuePair("MMVersion", ModManager.VERSION));

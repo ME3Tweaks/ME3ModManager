@@ -101,7 +101,6 @@ public class LogWindow extends JFrame {
 					String line = lines[i];
 					if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
 						logArea.setCaretPosition(caretpos);
-						System.out.println("Set caret pos to "+caretpos);
 						caretpos += line.length();
 						caretline++;
 						break;
@@ -132,7 +131,6 @@ public class LogWindow extends JFrame {
 		Scanner scanner = new Scanner(log);
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
-			System.out.println("Parsing log line " + line);
 			if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
 				ResourceUtils.appendToPane(logArea, line, Color.RED);
 			} else {

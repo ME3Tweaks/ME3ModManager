@@ -72,7 +72,6 @@ public class CustomDLCWindow extends JDialog {
 		String[] directories = mainDlcDir.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
-				System.out.println(name);
 				return new File(current, name).isDirectory() && (name.toLowerCase().startsWith("xdlc_") || name.toLowerCase().startsWith("dlc_"));
 			}
 		});

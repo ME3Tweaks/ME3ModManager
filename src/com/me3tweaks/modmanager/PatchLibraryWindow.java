@@ -370,7 +370,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
-		System.out.println("values have changed.");
+		//System.out.println("values have changed.");
 		if (e.getValueIsAdjusting() == false) {
 			if (patchList.getSelectedIndex() == -1) {
 				patchDesc.setText("Select one or more mixins (ctrl+click) on the left to see their descriptions.");
@@ -388,7 +388,9 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		List<Patch> selectedPatches = patchList.getSelectedValuesList();
 		boolean isFirst = true;
 		for (Patch patch : selectedPatches) {
-			System.out.println(patch.convertToME3TweaksSQLInsert());
+			if (ModManager.IS_DEBUG) {
+				System.out.println(patch.convertToME3TweaksSQLInsert());
+			}
 			if (isFirst) {
 				isFirst = false;
 			} else {

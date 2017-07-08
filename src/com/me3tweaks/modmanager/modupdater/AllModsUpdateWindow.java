@@ -152,7 +152,6 @@ public class AllModsUpdateWindow extends JDialog {
 					completedUpdates.add(upackage);
 				}
 				while (muw.isShowing()) {
-					System.out.println("sleepin");
 					Thread.sleep(350);
 				}
 				publish(new ThreadCommand("NUM_REMAINING", null, --numToGo));
