@@ -1835,6 +1835,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JMenuItem modutilsDeploy = new JMenuItem("Deploy Mod");
 		modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
 
+		//OPEN MOD FOLDER
+		JMenuItem modutilsOpenFolder = new JMenuItem("Open mod folder");
+		modutilsOpenFolder.setToolTipText("<html>Opens this mod's folder in File Explorer.<br>" + mod.getModPath() + "</html>");
+
 		//DELETE MOD
 		JMenuItem modutilsDeleteMod = new JMenuItem("Delete mod from library");
 		modutilsDeleteMod.setToolTipText("<html>Delete this mod from Mod Manager.<br>This does not remove this mod if it is installed</html>");
@@ -1853,6 +1857,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		menuItems.add(modutilsAutoTOC);
 		menuItems.add(modutilsDeploy);
 		menuItems.add(new JSeparator());
+		menuItems.add(modutilsOpenFolder);
 		menuItems.add(modutilsDeleteMod);
 
 		modutilsCheckforupdate.addActionListener(new ActionListener() {
@@ -2003,6 +2008,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Compressing mod for deployment: " + mod.getModPath());
 				new ModDeploymentThread(mod).execute();
 
+			}
+		});
+		
+		modutilsOpenFolder.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ResourceUtils.openFolderInExplorer("\""+mod.getModPath()+"\"");
 			}
 		});
 

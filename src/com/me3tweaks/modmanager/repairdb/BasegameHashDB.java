@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager.repairdb;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -52,7 +53,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 	private static Statement stmt = null;
 
 	public BasegameHashDB(JFrame callingWindow, String basePath, boolean showGUI) throws SQLException {
-		this.callingWindow = callingWindow;
+		this.callingWindow = callingWindow == null ? ModManagerWindow.ACTIVE_WINDOW : callingWindow;
 		this.showGUI = showGUI;
 		this.basePath = basePath;
 		if (showGUI) {
@@ -339,7 +340,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 						if (numFiles > (int) tc.getData()) {
 							this.progress.setIndeterminate(false);
 							String fileName = ResourceUtils.getRelativePath(filesToHash.get((int) tc.getData()).getAbsolutePath(), basePath, File.separator);
-							infoLabel.setText("<html>Updated file information for:<br>" + fileName + "</html>");
+							infoLabel.setText("<html>Updating file information for:<br>" + fileName + "</html>");
 						}
 						progress.setValue((int) ((int) tc.getData() * 100.0 / numFiles));
 						break;
@@ -413,26 +414,31 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 
 	public RepairFileInfo getFileInfo(String relativePath) {
 		if (databaseLoaded) {
-			try {
-				String selectString = "SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(?)";
-				PreparedStatement stmt;
-				stmt = dbConnection.prepareStatement(selectString);
-				ModManager.debugLogger.writeMessage("Querying database: SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(" + relativePath.toUpperCase() + ")");
-				stmt.setString(1, relativePath.toUpperCase());
-				stmt.execute();
-				ResultSet srs = stmt.getResultSet();
-				if (!srs.next()) {
-					return null; //not in the db...
-				} else {
-					RepairFileInfo rfi = new RepairFileInfo();
-					rfi.filePath = relativePath;
-					rfi.filesize = srs.getLong("filesize");
-					rfi.md5 = srs.getString("hash");
-					return rfi;
+			if (isBasegameTableCreated()) {
+				try {
+					String selectString = "SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(?)";
+					PreparedStatement stmt;
+					stmt = dbConnection.prepareStatement(selectString);
+					ModManager.debugLogger.writeMessage("Querying database: SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(" + relativePath.toUpperCase() + ")");
+					stmt.setString(1, relativePath.toUpperCase());
+					stmt.execute();
+					ResultSet srs = stmt.getResultSet();
+					if (!srs.next()) {
+						return null; //not in the db...
+					} else {
+						RepairFileInfo rfi = new RepairFileInfo();
+						rfi.filePath = relativePath;
+						rfi.filesize = srs.getLong("filesize");
+						rfi.md5 = srs.getString("hash");
+						return rfi;
+					}
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					ModManager.debugLogger.writeErrorWithException("Error getting file info from database for " + relativePath, e);
 				}
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				ModManager.debugLogger.writeErrorWithException("Error getting file info from database for " + relativePath, e);
+			} else {
+				ModManager.debugLogger.writeMessage("Game repair database is not created.");
+				return null;
 			}
 		}
 		return null;

@@ -82,9 +82,9 @@ import javafx.application.Platform;
 public class ModManager {
 	public static boolean IS_DEBUG = false;
 
-	public static final String VERSION = "5.0 RC";
+	public static final String VERSION = "5.0 RC2";
 	public static long BUILD_NUMBER = 75L;
-	public static final String BUILD_DATE = "7/10/2017";
+	public static final String BUILD_DATE = "7/11/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;

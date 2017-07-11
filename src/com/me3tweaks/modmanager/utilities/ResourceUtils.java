@@ -496,4 +496,12 @@ public class ResourceUtils {
 		}
 	}
 
+	/**
+	 * Opens the specified folder in explorer. Do not quote the item being passed here, it will be quoted when run.
+	 * @param folder folder path to open in explorer
+	 */
+	public static void openFolderInExplorer(String folder) {
+		ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", "\""+folder+"\""));
+	}
+
 }

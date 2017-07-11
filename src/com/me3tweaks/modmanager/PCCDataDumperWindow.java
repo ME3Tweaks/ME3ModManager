@@ -383,7 +383,7 @@ public class PCCDataDumperWindow extends JFrame {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", ModManager.getPCCDumpFolder()));
+					ResourceUtils.openFolderInExplorer(ModManager.getPCCDumpFolder());
 					dispose();
 				}
 			});

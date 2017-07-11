@@ -345,11 +345,7 @@ public class UnpackWindow extends JDialog {
 			finishUnpack(completed);
 			if (hasTestPatch) {
 				//Open Explorer
-				ArrayList<String> showInExplorerProcess = new ArrayList<>();
-				showInExplorerProcess.add("explorer.exe");
-				showInExplorerProcess.add("\"" + ModManager.getTestpatchUnpackFolder() + "\"");
-				ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
-				ModManager.runProcessDetached(pb);
+				ResourceUtils.openFolderInExplorer(ModManager.getTestpatchUnpackFolder());
 			}
 			if (closeOnComplete) {
 				dispose();

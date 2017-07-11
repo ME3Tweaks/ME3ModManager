@@ -142,7 +142,7 @@ public class ModInstallWindow extends JDialog {
 		boolean installMod = validateRequiredModulesAreAvailable(callingWindow, mods);
 		if (installMod) {
 			new InjectionCommander(mods).execute();
-			this.setVisible(true);
+			setVisible(true);
 		} else {
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod install cancelled");
 			dispose();
@@ -280,15 +280,15 @@ public class ModInstallWindow extends JDialog {
 		}
 		getContentPane().add(rootPanel);
 		pack();
-		
+
 		addWindowListener(new WindowAdapter() {
-		    @Override
-		    public void windowClosing(WindowEvent e) {
-		    	if (!installFinished) {
-		    		continueBatchInstallation = false;
-		    		ModManager.debugLogger.writeMessage("User clicked X on install window");
-		    	}
-		    }
+			@Override
+			public void windowClosing(WindowEvent e) {
+				if (!installFinished) {
+					continueBatchInstallation = false;
+					ModManager.debugLogger.writeMessage("User clicked X on install window");
+				}
+			}
 		});
 	}
 
@@ -361,16 +361,18 @@ public class ModInstallWindow extends JDialog {
 
 				checkedDB = true;
 			}
-			if (precheckGameDB(precheckJobs)) {
-				ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod install.");
-				skipTOC = true;
-				return false;
-			} else {
-				ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
-			}
 
 			if (!checkedDB) {
-				ModManager.debugLogger.writeMessage("Mod only adds files to basegame/adds custom DLC. The Game DB check has been skipped");
+				ModManager.debugLogger.writeMessage("Mod only adds files to basegame/adds custom DLC. The Game DB check will be skipped");
+			} else {
+				if (precheckGameDB(precheckJobs)) {
+					ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod install.");
+					skipTOC = true;
+					continueBatchInstallation = false;
+					return false;
+				} else {
+					ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
+				}
 			}
 
 			ModManager.debugLogger.writeMessage("Processing mod jobs in job queue.");
@@ -486,6 +488,7 @@ public class ModInstallWindow extends JDialog {
 						ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.", e);
 						e = e.getNextException();
 					}
+					return true;
 				}
 				if (bghDB == null) {
 					//cannot continue
@@ -503,6 +506,7 @@ public class ModInstallWindow extends JDialog {
 				JOptionPane.showMessageDialog(ModInstallWindow.this,
 						"The game repair database has not been created.\nMods that affect the basegame or official DLC require the game repair database to install.",
 						"No Game Repair Database", JOptionPane.ERROR_MESSAGE);
+				continueBatchInstallation = false;
 				return true; //open DB window
 			}
 
@@ -512,7 +516,7 @@ public class ModInstallWindow extends JDialog {
 					continue;
 				}
 				publish("Checking database on " + job.getJobName());
-				if (job.getJobType() == ModJob.BASEGAME) {
+				if (job.getJobType() == ModJob.BASEGAME && job.getFilesToReplaceTargets().size() > 0) {
 					//BGDB files are required
 					ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
 					int numFilesToReplace = filesToReplace.size();
@@ -1349,7 +1353,7 @@ public class ModInstallWindow extends JDialog {
 				}
 			} else {
 				if (!hasException) {
-					ModManager.debugLogger.writeMessage("Installation canceled by user because game repair database update is required (or connection failed and auto canceled.");
+					ModManager.debugLogger.writeMessage("Installation canceled by user because game repair database update is required (or connection failed and auto canceled).");
 					if (bghDB != null) {
 						bghDB.shutdownDB();
 						bghDB = null;
