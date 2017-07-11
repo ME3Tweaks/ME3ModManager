@@ -129,7 +129,7 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 				// set file information on the GUI
 				fileName = FilenameUtils.getName(ModManager.COMMANDLINETOOLS_URL);
 
-				String saveFilePath = saveDirectory + File.separator + fileName;
+				String saveFilePath = saveDirectory + fileName;
 
 				InputStream inputStream = util.getInputStream();
 				// opens an output stream to save into file

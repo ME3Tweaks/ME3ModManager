@@ -480,7 +480,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading tips service data"));
 					ModManager.debugLogger.writeMessage("Downloading tips from ME3Tweaks Tips Service");
 					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/modmanager/tools/tipsservice"), ModManager.getTipsServiceFile());
-					ModManager.TIPS_SERVICE_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile(), StandardCharsets.UTF_8);
+					ModManager.TIPS_SERVICE_JSON = FileUtils.readFileToString(ModManager.getTipsServiceFile(), StandardCharsets.UTF_8);
 					ModManager.debugLogger.writeMessage("Downloaded tips service json");
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded tips service data"));
 					publish(new ThreadCommand("SET_TIP"));
