@@ -242,7 +242,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 			scrollPane.setPreferredSize(new Dimension(500, 350));
 			textArea.setCaretPosition(0);
 			textArea.setEditable(false);
-			response = JOptionPane.showConfirmDialog(null, scrollPane, "Recommended MixIns", JOptionPane.YES_NO_OPTION);
+			response = JOptionPane.showConfirmDialog(callingDialog, scrollPane, "Recommended MixIns", JOptionPane.YES_NO_OPTION);
 
 		} else {
 			response = JOptionPane.YES_OPTION;

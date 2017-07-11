@@ -508,9 +508,9 @@ public class CustomDLCConflictWindow extends JDialog {
 			} else {
 				//check version
 				int version = EXEFileInfo.getRevisionOfProgram(transplanterpath);
-				if (version < ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD) {
+				if (version < ModManager.MIN_REQUIRED_CMDLINE_REV) {
 					ModManager.debugLogger.writeError(
-							"Outdated transplanter detected - aborting install. Local: " + version + ", required: 1.0.0." + ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD);
+							"Outdated transplanter detected - aborting install. Local: " + version + ", required: 1.0.0." + ModManager.MIN_REQUIRED_CMDLINE_REV);
 					publish(new ThreadCommand("OUTDATED_TRANSPLANTER", Integer.toString(version)));
 					return false;
 				}
@@ -709,9 +709,9 @@ public class CustomDLCConflictWindow extends JDialog {
 					break;
 				case "OUTDATED_TRANSPLANTER":
 					JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
-							"To build GUI compatibility packages, you need to have GUI Transplanter 1.0.0." + ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD
+							"To build GUI compatibility packages, you need to have Transplanter-CLI 1.0.0." + ModManager.MIN_REQUIRED_CMDLINE_REV
 									+ " or higher.\nYour local version is 1.0.0." + tc.getMessage()
-									+ ".\nMod Manager will automatically update this tool as it checks for updates at startup.",
+									+ ".\nThis tool is included as part of Mod Manager Command Line Tools. Check the version of the file in data/tools/ModManagerCommandLine.",
 							"Outdated GUI Transplanter", JOptionPane.ERROR_MESSAGE);
 					break;
 				case "ERROR_PCC_VERIFY_FAILED":

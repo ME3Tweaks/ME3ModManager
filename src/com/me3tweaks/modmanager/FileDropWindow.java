@@ -12,17 +12,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -40,7 +36,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.lang3.ArchUtils;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.StarterKitWindow.StarterKitProgressDialog;
@@ -56,7 +51,7 @@ public class FileDropWindow extends JDialog {
 	private final Object lock = new Lock(); //threading wait() and notifyall();
 
 	public FileDropWindow(JFrame parentFrame, ArrayList<Path> paths) {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 
 		this.droppedFiles = paths;
 		setupWindow2();
@@ -492,7 +487,7 @@ public class FileDropWindow extends JDialog {
 							// do something
 							decompileCoalescedFile.setEnabled(false);
 							decompileCoalescedFile.setToolTipText("One of the dropped files is not a coalesced file.");
-							ModManager.debugLogger.writeMessage(eachFile+" is is not long enough to be a coalesced file.");
+							ModManager.debugLogger.writeMessage(eachFile + " is is not long enough to be a coalesced file.");
 							return;
 						}
 						int magic = ResourceUtils.byteArrayToInt(buffer);
@@ -500,7 +495,7 @@ public class FileDropWindow extends JDialog {
 							//not a coalesced file
 							decompileCoalescedFile.setEnabled(false);
 							decompileCoalescedFile.setToolTipText("One of the dropped files is not a coalesced file.");
-							ModManager.debugLogger.writeMessage(eachFile+"'s magic number does not match a coalesced file.");
+							ModManager.debugLogger.writeMessage(eachFile + "'s magic number does not match a coalesced file.");
 						}
 						is.close();
 					} catch (IOException e) {
@@ -744,7 +739,12 @@ public class FileDropWindow extends JDialog {
 					return null;
 				}
 
-				files = (ArrayList<File>) FileUtils.listFiles(files.get(0), suff, FalseFileFilter.INSTANCE);
+				File directory = files.get(0);
+				files = new ArrayList<File>();
+				for (File f : FileUtils.listFiles(directory, suff, FalseFileFilter.INSTANCE)) {
+					//Can't cast LinkedLIst to ArrayList, apparently. What a PITA.
+					files.add(f);
+				}
 			}
 			int processed = 0;
 			for (File file : files) {
@@ -807,12 +807,20 @@ public class FileDropWindow extends JDialog {
 
 		@Override
 		protected void done() {
+			try {
+				get(); //will trigger exceptions if one occured
+				if (ModManagerWindow.ACTIVE_WINDOW != null)
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Batch operation completed");
+			} catch (ExecutionException | InterruptedException e) {
+				ModManager.debugLogger.writeErrorWithException("Error generating starter kit mod:", e);
+				if (ModManagerWindow.ACTIVE_WINDOW != null)
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Batch operation failed - see logs");
+			}
 			completed = true;
 			synchronized (lock) {
 				lock.notifyAll();
 			}
-			if (ModManagerWindow.ACTIVE_WINDOW != null)
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Batch operation completed");
+
 		}
 	}
 }

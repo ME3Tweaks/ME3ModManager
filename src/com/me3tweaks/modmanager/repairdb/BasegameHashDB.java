@@ -24,6 +24,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 
 import org.apache.commons.io.FileUtils;
@@ -31,12 +32,11 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.utilities.DebugLogger;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class BasegameHashDB extends JFrame implements ActionListener {
-	static boolean isRunningAsMain = false;
 	private String basePath;
 	JLabel infoLabel;
 	JTextArea consoleArea;
@@ -51,16 +51,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 	JFrame callingWindow;
 	private static Statement stmt = null;
 
-	public static void main(String[] args) throws SQLException {
-		isRunningAsMain = true;
-		//init the debug logger.
-		ModManager.debugLogger = new DebugLogger();
-		ModManager.debugLogger.initialize();
-		ModManager.logging = true;
-		new BasegameHashDB(null, "I:/Origin Games/Mass Effect 3/", true); //debug only
-	}
-
-	public BasegameHashDB(JFrame callingWindow, String basePath, boolean showGUI) throws SQLException{
+	public BasegameHashDB(JFrame callingWindow, String basePath, boolean showGUI) throws SQLException {
 		this.callingWindow = callingWindow;
 		this.showGUI = showGUI;
 		this.basePath = basePath;
@@ -84,7 +75,9 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 	}
 
 	private void setupWindow() {
-		
+		setTitle("Game Repair Database");
+		setIconImages(ModManager.ICONS);
+
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
 		// TODO Auto-generated method stub
@@ -110,28 +103,33 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		consoleArea = new JTextArea();
 		consoleArea.setLineWrap(true);
 		consoleArea.setWrapStyleWord(true);
-		consoleArea.setText("The game repair database allows Mod Manager to quickly restore files by checking against their hash. The database contains a list of your game files' hashes, and this is used to verify integrity of files for restoring/backing up. This is how Origin does game repairs.\n\nThis process does not create a backup of your files.");
+		consoleArea.setText(
+				"The game repair database allows Mod Manager to quickly restore files by checking against their hash. The database contains a list of your game files' hashes, and this is used to verify integrity of files for restoring/backing up. This is how Origin does game repairs.\n\nThis process does not create a backup of your files.");
 		consoleArea.setEditable(false);
-		JScrollPane jsp = new JScrollPane(consoleArea,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		JScrollPane jsp = new JScrollPane(consoleArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 		rootPanel.add(jsp, BorderLayout.CENTER);
 		getContentPane().add(rootPanel);
-		this.setPreferredSize(new Dimension(425, 200));
-		this.setMinimumSize(new Dimension(300, 150));
+		int extraheight = 0;
+		if (UIManager.getLookAndFeel().getID().equals("Windows")) {
+			extraheight = 60;
+		}
 
-		this.addWindowListener(new java.awt.event.WindowAdapter() {
+		Dimension size = new Dimension(425, 220 + extraheight);
+
+		setPreferredSize(size);
+		setMinimumSize(size);
+		consoleArea.setCaretPosition(0);
+
+		addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
 				shutdownDB();
-				if (isRunningAsMain) {
-					System.exit(0);
-				}
 			}
 		});
-		setTitle("Game Repair Database");
-		this.setIconImages(ModManager.ICONS);
+
 		pack();
-		this.setLocationRelativeTo(callingWindow);
+		setLocationRelativeTo(callingWindow);
 	}
 
 	public boolean loadDatabase() throws SQLException {
@@ -139,7 +137,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		// connect method #1 - embedded driver
 		File databases = new File(ModManager.getDatabaseDir());
 		databases.mkdirs();
-		String repairInfoURL = "jdbc:derby:data/databases/repairinfo;create=true";
+		String repairInfoURL = "jdbc:derby:repairinfo;create=true"; //derby home is in data/databases
 		dbConnection = DriverManager.getConnection(repairInfoURL);
 		if (dbConnection != null) {
 			if (progressBar != null) {
@@ -174,7 +172,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		hmw.execute();
 	}
 
-	class HashmapWorker extends SwingWorker<Void, Integer> {
+	class HashmapWorker extends SwingWorker<Void, ThreadCommand> {
 		private ArrayList<File> filesToHash;
 		private JProgressBar progress;
 		private int numFiles;
@@ -226,13 +224,15 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 						//ModManager.debugLogger.writeError("Skipping cmmbackup file " + file);
 						continue; //skip backups folder
 					}
-					if (file.getName().equalsIgnoreCase("PCConsoleTOC.bin")){
+					if (file.getName().equalsIgnoreCase("PCConsoleTOC.bin")) {
 						continue; //skip PCConsoleTOC as they'll be updated outside of mod installs. Especially the basegame one.
 					}
 					filesToHash.add(file);
 				}
 			}
-			this.numFiles = filesToHash.size();
+			publish(new ThreadCommand("UPDATE_BUTTON", "Updating database"));
+
+			numFiles = filesToHash.size();
 			PreparedStatement insertStatement, selectStatement, updateStatement = null;
 			DatabaseMetaData dbmd = dbConnection.getMetaData();
 			ResultSet rs = dbmd.getTables(null, null, "BASEGAMEFILES", null);
@@ -280,7 +280,8 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 					//INSERT - ITS NOT THERE.
 					try {
 						String md5 = MD5Checksum.getMD5Checksum(file.getAbsolutePath());
-						ModManager.debugLogger.writeMessage("INSERT INTO basegamefiles (filepath, hash, filesize) VALUES (UPPER("+fileKey.toUpperCase()+"),"+md5+","+file.length()+")");
+						ModManager.debugLogger.writeMessage(
+								"INSERT INTO basegamefiles (filepath, hash, filesize) VALUES (UPPER(" + fileKey.toUpperCase() + ")," + md5 + "," + file.length() + ")");
 						insertStatement.setString(1, fileKey.toUpperCase());
 						insertStatement.setString(2, md5);
 						insertStatement.setLong(3, file.length());
@@ -292,7 +293,8 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 					//UPDATE SINCE IT EXISTS.
 					try {
 						String md5 = MD5Checksum.getMD5Checksum(file.getAbsolutePath());
-						ModManager.debugLogger.writeMessage("UPDATE basegamefiles SET hash="+md5+", filesize="+file.length()+" WHERE filepath=UPPER("+fileKey.toUpperCase()+")");
+						ModManager.debugLogger
+								.writeMessage("UPDATE basegamefiles SET hash=" + md5 + ", filesize=" + file.length() + " WHERE filepath=UPPER(" + fileKey.toUpperCase() + ")");
 						updateStatement.setString(1, md5);
 						updateStatement.setLong(2, file.length());
 						updateStatement.setString(3, fileKey.toUpperCase());
@@ -318,21 +320,31 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 					}
 				}
 				filesProcessed++;
-				this.publish(filesProcessed);
+				publish(new ThreadCommand("UPDATE_PROGRESS", null, filesProcessed));
 			}
 			ModManager.debugLogger.writeMessage("Shutting down game repair db thread");
 			return null;
 		}
 
 		@Override
-		protected void process(List<Integer> numCompleted) {
+		protected void process(List<ThreadCommand> commands) {
 			if (showGUI) {
-				if (numFiles > numCompleted.get(0)) {
-					this.progress.setIndeterminate(false);
-					String fileName = ResourceUtils.getRelativePath(filesToHash.get(numCompleted.get(0)).getAbsolutePath(), basePath, File.separator);
-					infoLabel.setText("<html>Updated file information for:<br>" + fileName + "</html>");
+				for (ThreadCommand tc : commands) {
+					String command = tc.getCommand();
+					switch (command) {
+					case "UPDATE_BUTTON":
+						startMap.setText(tc.getMessage());
+						break;
+					case "UPDATE_PROGRESS":
+						if (numFiles > (int) tc.getData()) {
+							this.progress.setIndeterminate(false);
+							String fileName = ResourceUtils.getRelativePath(filesToHash.get((int) tc.getData()).getAbsolutePath(), basePath, File.separator);
+							infoLabel.setText("<html>Updated file information for:<br>" + fileName + "</html>");
+						}
+						progress.setValue((int) ((int) tc.getData() * 100.0 / numFiles));
+						break;
+					}
 				}
-				progress.setValue((int) (100 / (numFiles / (float) numCompleted.get(0))));
 			}
 		}
 
@@ -371,12 +383,15 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 			} else {
 				if (showGUI) {
 					infoLabel.setText("Database can't be loaded.");
-					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
-							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and delete the<br>data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
+							+ "Only one connection to the local repair database is allowed at a time.<br>"
+							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and delete the<br>data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+							"Database Failure", JOptionPane.ERROR_MESSAGE);
 					dispose();
 				}
 			}
 		}
+
 	}
 
 	@Override
@@ -402,7 +417,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				String selectString = "SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(?)";
 				PreparedStatement stmt;
 				stmt = dbConnection.prepareStatement(selectString);
-				ModManager.debugLogger.writeMessage("Querying database: SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(" + relativePath.toUpperCase()+")");
+				ModManager.debugLogger.writeMessage("Querying database: SELECT * FROM BASEGAMEFILES WHERE filepath = UPPER(" + relativePath.toUpperCase() + ")");
 				stmt.setString(1, relativePath.toUpperCase());
 				stmt.execute();
 				ResultSet srs = stmt.getResultSet();

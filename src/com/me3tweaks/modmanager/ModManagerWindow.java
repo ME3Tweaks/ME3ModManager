@@ -69,6 +69,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.apache.derby.iapi.services.loader.GeneratedMethod;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Profile.Section;
 import org.ini4j.Wini;
@@ -456,6 +457,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					checkAllModsForUpdates(false);
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Mod update check complete"));
 				}
+
+				//THIRD PARTY MOD IDENTIFICATION SERVICE
 				try {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
 					ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
@@ -471,6 +474,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeErrorWithException("Failed to download third party identification data: ", e);
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party mod identification info"));
 				}
+
+				//TIPS SERVICE
+				try {
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading tips service data"));
+					ModManager.debugLogger.writeMessage("Downloading tips from ME3Tweaks Tips Service");
+					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/modmanager/tools/tipsservice"), ModManager.getTipsServiceFile());
+					ModManager.TIPS_SERVICE_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile(), StandardCharsets.UTF_8);
+					ModManager.debugLogger.writeMessage("Downloaded tips service json");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded tips service data"));
+					publish(new ThreadCommand("SET_TIP"));
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					ModManager.debugLogger.writeErrorWithException("Failed to download tips service data: ", e);
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get tips service data"));
+				}
+
 				if (validateBIOGameDir()) {
 					ArrayList<InstalledASIMod> outdatedASImods = ASIModWindow.getOutdatedASIMods(GetBioGameDir());
 					if (outdatedASImods.size() > 0) {
@@ -547,8 +569,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					message += "\n\nOpen the ASI Mod Management window to update them under Mod Management.";
 					JOptionPane.showMessageDialog(ModManagerWindow.this, message, "ASI mod update available", JOptionPane.WARNING_MESSAGE);
 					break;
+				case "SET_TIP":
+					if (modList.isSelectionEmpty() && fieldDescription.getText().equals(selectAModDescription)) {
+						fieldDescription.setText(getNoSelectedModDescription());
+					}
+					break;
 				}
-
 			}
 		}
 
@@ -567,7 +593,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeMessage("Checking for update...");
 			// Check for update
 			try {
-				String update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
+				String update_check_link = "https://me3tweaks.com/modmanager/updatecheck-testing?currentversion=" + ModManager.BUILD_NUMBER;
 				String serverJSON = null;
 				try {
 					serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
@@ -612,7 +638,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 
 				long latest_build = (long) latest_object.get("latest_build_number");
-				String latestCommandLineToolsLink = (String) latest_object.get("latest_commandlinetools_link");
+
+				String arch = ResourceUtils.is64BitWindows() ? "_x64" : "_x86";
+
+				String latestCommandLineToolsLink = (String) latest_object.get("latest_commandlinetools_link" + arch);
 				ModManager.LATEST_ME3EXPLORER_VERSION = (String) latest_object.get("latest_me3explorer_version");
 				ModManager.LATEST_ME3EXPLORER_URL = (String) latest_object.get("latest_me3explorer_download_link");
 
@@ -705,52 +734,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		 */
 		private void checkForGUIupdates(JSONObject serversJSON) {
 			Object obj = serversJSON.get("latest_guitransplanter");
-			long latestGUITransplanter = ModManager.MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD;
-			if (obj != null) {
-				latestGUITransplanter = Long.parseLong((String) obj);
-				String cliPath = ModManager.getGUITransplanterCLI(false);
-				// update GUI Transplanter
-				File cli = new File(cliPath);
-				if (cli.exists()) {
-					ModManager.debugLogger.writeMessage("Checking for updates for GUI Transplanter.");
-					int build = EXEFileInfo.getRevisionOfProgram(cliPath);
-					ModManager.debugLogger.writeMessage("The local build of GUI Transplanter is currently 1.0.0." + build + ".");
-					if (build < latestGUITransplanter) {
-						// download
-						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading update for GUI Transplanter"));
-						ModManager.debugLogger.writeMessage("GUI Transplanter is out of date from server. Local " + build + " vs server " + latestGUITransplanter);
-						File transplanterFolder = cli.getParentFile();
-						FileUtils.deleteQuietly(transplanterFolder);
-						ModManager.debugLogger.writeMessage("Downloading new GUI Transplanter");
-						String newcli = ModManager.getGUITransplanterCLI(true);
-						if (newcli != null) {
-							int newbuild = EXEFileInfo.getRevisionOfProgram(cliPath);
-							if (newbuild == latestGUITransplanter) {
-								ModManager.debugLogger.writeMessage("Downloaded latest GUI Transplanter build: " + newbuild);
-								publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated GUI Transplanter"));
-							} else {
-								ModManager.debugLogger.writeError("Failed to download proper updated build. Instead we downloaded: " + newbuild);
-								publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to download new GUI Transplanter"));
-							}
-						} else {
-							ModManager.debugLogger.writeError("Failed to download GUI Transplanter");
-							publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to download new GUI Transplanter"));
-						}
-					} else {
-						ModManager.debugLogger.writeMessage("GUI Transplanter is up to date (1.0.0." + build + " is at or above the listed server latest version)");
-					}
-				} else {
-					ModManager.debugLogger.writeMessage("No GUI Transplanter tool downloaded, skipping update check for it");
-				}
-			}
-
 			String uiLibPath = ModManager.getGUILibraryFor("DLC_CON_UIScaling", false);
 			{
 				File uiLibVersionFile = new File(uiLibPath + "libraryversion.txt");
 				ModManager.debugLogger.writeMessage("Checking for UISCALING GUI library version file at " + uiLibVersionFile);
 				if (uiLibVersionFile.exists()) {
 					try {
-						String uilibverstr = FileUtils.readFileToString(uiLibVersionFile);
+						String uilibverstr = FileUtils.readFileToString(uiLibVersionFile, StandardCharsets.UTF_8);
 						double libver = Double.parseDouble(uilibverstr);
 						ModManager.debugLogger.writeMessage("Local UISCALING library version: " + libver);
 						obj = serversJSON.get("latest_uiscaling_guilibrary");
@@ -762,7 +752,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updating Interface Scaling Mod GUI library"));
 								String newLib = ModManager.getGUILibraryFor("DLC_CON_UIScaling", true);
 								if (newLib != null) {
-									String newlibverstr = FileUtils.readFileToString(uiLibVersionFile);
+									String newlibverstr = FileUtils.readFileToString(uiLibVersionFile, StandardCharsets.UTF_8);
 									double newlibver = Double.parseDouble(newlibverstr);
 									if (newlibver == serverver) {
 										ModManager.debugLogger.writeMessage("Downloaded latest Interface Scaling Mod GUI Library: " + newlibver);
@@ -1149,7 +1139,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		// JLabel descriptionLabel = new JLabel("Mod Description:");
 		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description");
 		descriptionPanel.setBorder(descriptionBorder);
-		fieldDescription = new JTextArea(selectAModDescription);
+		fieldDescription = new JTextArea(getNoSelectedModDescription());
 		fieldDescription.setDropTarget(null);
 		scrollDescription = new JScrollPane(fieldDescription);
 
@@ -1842,8 +1832,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 		}
 		//DEPLOYMENt
-		JMenuItem modutilsDeploy = new JMenuItem("Compress mod for deployment");
-		modutilsDeploy.setToolTipText("<html>Compresses the mod into a ready-to-deploy file.</html>");
+		JMenuItem modutilsDeploy = new JMenuItem("Deploy Mod");
+		modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
 
 		//DELETE MOD
 		JMenuItem modutilsDeleteMod = new JMenuItem("Delete mod from library");
@@ -2358,9 +2348,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else if (e.getSource() == actionReload) {
 			// Reload this jframe
 			new ModManagerWindow(false);
-		} else
-
-		if (e.getSource() == actionExit) {
+		} else if (e.getSource() == modManagementCheckallmodsforupdate) {
+			if (!validateBIOGameDir()) {
+				JOptionPane.showMessageDialog(this, "Your BIOGame directory is not correctly set.\nOnly non-ModMaker mods will be checked for updates.",
+						"Invalid BIOGame Directory", JOptionPane.WARNING_MESSAGE);
+			}
+			checkAllModsForUpdates(true);
+		} else if (e.getSource() == actionExit) {
 			ModManager.debugLogger.writeMessage("User selected exit from Actions Menu");
 			System.exit(0);
 		} else if (e.getSource() == buttonApplyMod) {
@@ -2955,8 +2949,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	/**
-	 * Checks that the user has chosen a correct biogame directory.
-	 * If the selection is valid it is added to the list of BIOGAME_DIRECTORIES file.
+	 * Checks that the user has chosen a correct biogame directory. If the
+	 * selection is valid it is added to the list of BIOGAME_DIRECTORIES file.
 	 */
 	private void checkForValidBioGame(JFileChooser dirChooser) {
 		String chosenPath = dirChooser.getSelectedFile().toString();
@@ -3114,7 +3108,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			FileWriter writer = new FileWriter(ModManager.getSavedBIOGameDirectoriesFile());
 
 			for (String str : installDir) {
-				ModManager.debugLogger.writeMessage(" - "+str);
+				ModManager.debugLogger.writeMessage(" - " + str);
 				writer.write(str);
 				writer.write("\n");
 			}
@@ -3204,7 +3198,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
 				}
-				fieldDescription.setText(selectAModDescription);
+				fieldDescription.setText(getNoSelectedModDescription());
 				modUtilsMenu.setEnabled(false);
 				modUtilsMenu.setToolTipText("Select a mod to enable this menu");
 				moddevUpdateXMLGenerator.setText("Prepare mod for ME3Tweaks Updater Service");
@@ -3273,6 +3267,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 
 			}
+		}
+	}
+
+	/**
+	 * Gets selected mod description, with a tip.
+	 * 
+	 * @return description with tip if tips service is loaded
+	 */
+	private String getNoSelectedModDescription() {
+		String description = selectAModDescription;
+		String tip = ME3TweaksUtils.getME3TweaksTip();
+		if (tip.equals("")) {
+			return description;
+		} else {
+			return description + "\n\n-------------------------\n" + tip;
 		}
 	}
 
@@ -3783,16 +3792,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (result && outfile != null) {
 					ModManager.debugLogger.writeMessage("SUCCESS COMPRESSING MOD.");
 					ArrayList<String> showInExplorerProcess = new ArrayList<String>();
-					labelStatus.setText("Mod ready for deployment");
+					labelStatus.setText("Mod deployment succeeded");
 					showInExplorerProcess.add("explorer.exe");
 					showInExplorerProcess.add("/select,");
 					showInExplorerProcess.add("\"" + outfile.getAbsolutePath() + "\"");
 					ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
 					ModManager.runProcessDetached(pb);
 				} else {
-					labelStatus.setText("Mod failed to compress for deployment - see logs");
+					labelStatus.setText("Mod failed deployment - see logs");
 					ModManager.debugLogger.writeError("Mod failed to compress (output file does not exist!)");
-
 					ModManager.debugLogger.writeError("FAILURE COMPRESSING MOD.");
 				}
 			} catch (InterruptedException |

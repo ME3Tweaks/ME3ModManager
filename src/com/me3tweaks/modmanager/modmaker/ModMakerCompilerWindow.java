@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager.modmaker;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -113,6 +114,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	 *            languages to compile
 	 */
 	public ModMakerCompilerWindow(String code, ArrayList<String> languages) {
+		super(null, Dialog.ModalityType.MODELESS);
 		this.code = code;
 		this.languages = languages;
 		setupWindow();
@@ -134,11 +136,11 @@ public class ModMakerCompilerWindow extends JDialog {
 	 *            languages to compile
 	 */
 	public ModMakerCompilerWindow(Mod mod, ArrayList<String> languages) {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		this.code = Integer.toString(mod.getModMakerCode());
 		this.languages = languages;
 		this.mod = mod;
 		setupWindow();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		new ModDownloadWorker().execute();
 
 		if (!error) {
@@ -155,10 +157,10 @@ public class ModMakerCompilerWindow extends JDialog {
 	 *            Delta to apply
 	 */
 	public ModMakerCompilerWindow(Mod mod, ModDelta delta) {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		this.mod = mod;
 
 		setupWindow();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		new ModDownloadWorker().execute();
 
 		if (!error) {

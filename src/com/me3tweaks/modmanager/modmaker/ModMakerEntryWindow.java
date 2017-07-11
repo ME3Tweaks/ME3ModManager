@@ -69,14 +69,11 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	private JButton sideloadButton;
 
 	public ModMakerEntryWindow() {
+		super(null, Dialog.ModalityType.MODELESS);
 		this.biogameDir = ModManagerWindow.GetBioGameDir();
-		this.setTitle("ME3Tweaks ModMaker");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
 		boolean shouldshow = validateModMakerPrereqs();
 		if (shouldshow) {
 			setupWindow();
-			setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 			setVisible(true);
 		} else {
 			dispose();
@@ -85,6 +82,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	}
 
 	private void setupWindow() {
+		setTitle("ME3Tweaks ModMaker");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setResizable(false);
 		setIconImages(ModManager.ICONS);
@@ -373,7 +371,6 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 				}
-				this.setModalityType(Dialog.ModalityType.MODELESS);
 				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.startModMaker(chosenFile, languages);
 			}

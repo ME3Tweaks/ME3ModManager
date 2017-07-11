@@ -265,6 +265,17 @@ public class StarterKitWindow extends JDialog {
 		add(panel);
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+
+		if (ModManager.IS_DEBUG) {
+			//Debug - fill fields
+			modName.setText("DEBUG MOD");
+			modDeveloper.setText("DEBUG DEV");
+			internalDLCName.setText("DEBUG_MOD");
+			internalDisplayName.setText("DEBUG MODULE");
+			internalTLKId.setText("85602340");
+			modDescription.setText("DEBUG DESCRIPTION");
+			mountPriority.setText("200");
+		}
 	}
 
 	private boolean validateFields() {
@@ -407,12 +418,18 @@ public class StarterKitWindow extends JDialog {
 		private StarterKitProgressDialog dialog;
 		private JDialog callingDialog;
 
+		/**
+		 * Background thread constructor for starter kit.
+		 * @param createButton Reference to create button. Will be disabled. Can be null.
+		 * @param progressBar Progress bar to update.
+		 * @param callingDialog
+		 */
 		public StarterKitGenerator(JComponent createButton, JComponent progressBar, JDialog callingDialog) {
 			this.createButton = createButton;
 			this.progressBar = progressBar;
 			this.callingDialog = callingDialog;
 			if (createButton != null) {
-				createButton.setVisible(false);
+				createButton.setEnabled(false);
 			}
 			if (progressBar != null) {
 				progressBar.setVisible(true);
@@ -656,11 +673,11 @@ public class StarterKitWindow extends JDialog {
 					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 					ModManagerWindow.ACTIVE_WINDOW.highlightMod(generatedMod);
 					JOptionPane.showMessageDialog(callingDialog, modname + " has been created.\nPlace files into the mod's DLC_MOD_" + internaldlcname
-							+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder.\nBe sure to run AutoTOC on the mod before installation.",
+							+ " folder to add game files to the mod.\nReload Mod Manager before installing so it refreshes the list of files in the folder for installing.\nWhen your mod is ready for deployment, you can compress it (without the extra files) using the Deploy Mod option in the Mod Utils menu.",
 							modname + " created", JOptionPane.INFORMATION_MESSAGE);
 				} else {
 					JOptionPane.showMessageDialog(callingDialog, modname
-							+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with the diagnostics log attached.",
+							+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with a diagnostics log attached.",
 							modname + " not created", JOptionPane.ERROR_MESSAGE);
 				}
 			}

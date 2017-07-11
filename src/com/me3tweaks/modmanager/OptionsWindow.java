@@ -124,11 +124,11 @@ public class OptionsWindow extends JDialog {
 				ModManager.COMPRESS_COMPAT_OUTPUT = compressCompatibilityGeneratorOutput.isSelected();
 				if (compressCompatibilityGeneratorOutput.isSelected()) {
 					ModManager.debugLogger.writeMessage("Setting compat generator output to compressed");
-					ini.put("Settings", "compresscompatibilitygeneratorouput", "1");
+					ini.put("Settings", "compresscompatibilitygeneratoroutput", "1");
 					ModManager.COMPRESS_COMPAT_OUTPUT = true;
 				} else {
 					ModManager.debugLogger.writeMessage("Setting compat generator output to decompressed");
-					ini.put("Settings", "compresscompatibilitygeneratorouput", "0");
+					ini.put("Settings", "compresscompatibilitygeneratoroutput", "0");
 					ModManager.COMPRESS_COMPAT_OUTPUT = false;
 				}
 				try {

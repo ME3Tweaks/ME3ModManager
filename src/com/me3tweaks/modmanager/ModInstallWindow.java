@@ -6,6 +6,9 @@ import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -71,6 +74,7 @@ public class ModInstallWindow extends JDialog {
 	private JButton batchCancellationButton;
 	private BatchPackage batchPackage;
 	public final static String CUSTOMDLC_METADATA_FILE = "_metacmm.txt";
+	private boolean installFinished = false;
 
 	public ModInstallWindow(JFrame callingWindow, ArrayList<Mod> mods, BatchPackage batchpackage) {
 		super(null, Dialog.ModalityType.APPLICATION_MODAL);
@@ -276,6 +280,16 @@ public class ModInstallWindow extends JDialog {
 		}
 		getContentPane().add(rootPanel);
 		pack();
+		
+		addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(WindowEvent e) {
+		    	if (!installFinished) {
+		    		continueBatchInstallation = false;
+		    		ModManager.debugLogger.writeMessage("User clicked X on install window");
+		    	}
+		    }
+		});
 	}
 
 	/**
@@ -1331,6 +1345,7 @@ public class ModInstallWindow extends JDialog {
 							}
 						}
 					}
+					installFinished = true;
 				}
 			} else {
 				if (!hasException) {

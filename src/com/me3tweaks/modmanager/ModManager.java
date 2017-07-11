@@ -80,11 +80,11 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.application.Platform;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 
-	public static final String VERSION = "5.0 Beta 8";
+	public static final String VERSION = "5.0 RC";
 	public static long BUILD_NUMBER = 75L;
-	public static final String BUILD_DATE = "7/8/2017";
+	public static final String BUILD_DATE = "7/10/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -101,9 +101,8 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 5;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 20;
 
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 16; //1.0.0.X
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
@@ -127,6 +126,8 @@ public class ModManager {
 	public static String MASSEFFECTMODDER_DOWNLOADLINK;
 
 	public static int MASSEFFECTMODDER_LATESTVERSION;
+
+	public static String TIPS_SERVICE_JSON;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGUAGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
@@ -148,7 +149,9 @@ public class ModManager {
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
 
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
-
+			
+			System.setProperty("derby.system.home", new File(ModManager.getDatabaseDir()).getAbsolutePath()); //move derby.log
+			
 			File settings = new File(ModManager.SETTINGS_FILENAME);
 			if (!settings.exists()) {
 				settings.createNewFile();
@@ -205,23 +208,28 @@ public class ModManager {
 					}
 				}
 
-				// .NET encforcement check
-				String compressCompatOutput = settingsini.get("Settings", "enforcedotnetrequirement");
-				int compressCompatOutputInt = 0;
-				if (compressCompatOutput != null && !compressCompatOutput.equals("")) {
-					try {
-						compressCompatOutputInt = Integer.parseInt(compressCompatOutput);
-						if (compressCompatOutputInt > 0) {
-							// logging is on
-							debugLogger.writeMessage("Compressing GUI Compatibility Generator output is ON");
-							COMPRESS_COMPAT_OUTPUT = true;
-						} else {
-							debugLogger.writeMessage("Compressing GUI Compatibility Generator output is OFF");
-							COMPRESS_COMPAT_OUTPUT = false;
+				// GUI Compatibility Pack - Compress output
+				if (ResourceUtils.is64BitWindows()) {
+					String compressCompatOutput = settingsini.get("Settings", "compresscompatibilitygeneratoroutput");
+					int compressCompatOutputInt = 0;
+					if (compressCompatOutput != null && !compressCompatOutput.equals("")) {
+						try {
+							compressCompatOutputInt = Integer.parseInt(compressCompatOutput);
+							if (compressCompatOutputInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("Compressing GUI Compatibility Generator output is ON");
+								COMPRESS_COMPAT_OUTPUT = true;
+							} else {
+								debugLogger.writeMessage("Compressing GUI Compatibility Generator output is OFF");
+								COMPRESS_COMPAT_OUTPUT = false;
+							}
+						} catch (NumberFormatException e) {
+							ModManager.debugLogger.writeError("Number format exception reading the compress output compat generator check flag, defaulting to false");
 						}
-					} catch (NumberFormatException e) {
-						ModManager.debugLogger.writeError("Number format exception reading the compress output compat generator check flag, defaulting to false");
 					}
+				} else {
+					debugLogger.writeMessage("32-bit Windows - forcing gui compatibility output to decompressed.");
+					COMPRESS_COMPAT_OUTPUT = false;
 				}
 
 				// Auto Update Check
@@ -464,6 +472,13 @@ public class ModManager {
 				ModManager.debugLogger.writeMessage("No third party identification service JSON found. May not have been downloaded yet...");
 			}
 
+			if (ModManager.getTipsServiceFile().exists()) {
+				ModManager.debugLogger.writeMessage("Loading ME3Tweaks Tips Service JSON into memory");
+				ModManager.TIPS_SERVICE_JSON = FileUtils.readFileToString(ModManager.getTipsServiceFile(), StandardCharsets.UTF_8);
+			} else {
+				ModManager.debugLogger.writeMessage("No tips service JSON found. May not have been downloaded yet...");
+			}
+
 			ModManager.debugLogger.writeMessage("========End of startup=========");
 		} catch (
 
@@ -524,6 +539,15 @@ public class ModManager {
 	}
 
 	/**
+	 * Gets the path where the tips service json is located.
+	 * 
+	 * @return data/<me3tweaksservicescache>/tipservice.json
+	 */
+	public static File getTipsServiceFile() {
+		return new File(getME3TweaksServicesCache() + "tipsservice.json");
+	}
+
+	/**
 	 * Moves folders to data/ and mods/ from configurations prior to Build 40
 	 */
 	private static void doFileSystemUpdate() {
@@ -532,56 +556,6 @@ public class ModManager {
 		File modsDir = new File(ModManager.getModsDir());
 		if (!modsDir.exists()) {
 			modsDir.mkdirs();
-		}
-
-		ModManager.debugLogger.writeMessage("==Looking for mods in running directory, will move valid ones to mods/==");
-		ModList modList = getMods(System.getProperty("user.dir"));
-		ArrayList<Mod> modsToMove = modList.getValidMods();
-		for (Mod mod : modsToMove) {
-			try {
-				FileUtils.moveDirectory(new File(mod.getModPath()), new File(ModManager.getModsDir() + mod.getModName()));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE MOD TO mods/ DIRECTORY!");
-				ModManager.debugLogger.writeException(e);
-			}
-		}
-
-		// Move ME3Explorer
-		ModManager.debugLogger.writeMessage("Checking if using old ME3Explorer dir");
-		File me3expDir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "ME3Explorer/");
-		if (me3expDir.exists()) {
-			ModManager.debugLogger.writeMessage("Moving ME3Explorer to data/");
-			try {
-				FileUtils.moveDirectory(me3expDir, new File(ModManager.getME3ExplorerEXEDirectory()));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE ME3EXPLORER TO /data/ME3EXPLORER!");
-				ModManager.debugLogger.writeException(e);
-			}
-		}
-
-		// Move TankMaster Compiler
-		ModManager.debugLogger.writeMessage("Checking if using old tankmaster compiler dir");
-		File tcoalDiD = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "Tankmaster Compiler/");
-		if (tcoalDiD.exists()) {
-			ModManager.debugLogger.writeMessage("Moving TankMaster Compiler to data/");
-			try {
-				FileUtils.moveDirectory(tcoalDiD, new File(ModManager.getTankMasterCompilerDir()));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE TANKMASTER COMPILER TO data/ DIRECTORY!");
-				ModManager.debugLogger.writeException(e);
-			}
-		}
-		// Move TankMaster TLK
-		ModManager.debugLogger.writeMessage("Checking if using old tankmaster tlk dir");
-		File tlkdir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "Tankmaster TLK/");
-		if (tlkdir.exists()) {
-			ModManager.debugLogger.writeMessage("Moving TankMaster TLK to data/");
-			try {
-				FileUtils.moveDirectory(tlkdir, new File(ModManager.getTankMasterTLKDir()));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE TANKMASTER TLK TO data/ DIRECTORY!");
-				ModManager.debugLogger.writeException(e);
-			}
 		}
 
 		// move update folder
@@ -611,7 +585,7 @@ public class ModManager {
 			}
 		}
 
-		// move coalesced.original folder
+		// move coalesced.original
 		ModManager.debugLogger.writeMessage("Checking if should move coalesced.original");
 		File coalOrig = new File("Coalesced.original");
 		if (coalOrig.exists()) {
@@ -935,10 +909,10 @@ public class ModManager {
 	/**
 	 * Returns the path to the Mod Manager Command Line Tools directory.
 	 * 
-	 * @return data/tools/ModMangerCommandLine
+	 * @return data/tools/ModMangerCommandLine/(x64/x86)/
 	 */
 	public static String getCommandLineToolsDir() {
-		return getToolsDir() + "ModManagerCommandLine\\";
+		return getToolsDir() + "ModManagerCommandLine\\" + (ResourceUtils.is64BitWindows() ? "x64" : "x86") + "\\";
 	}
 
 	/**
