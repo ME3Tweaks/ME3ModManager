@@ -138,7 +138,7 @@ public class StarterKitWindow extends JDialog {
 		SwingLink knowndlcLink = new SwingLink("Click here to see Mod Manager's mount priority telemetry data", "https://me3tweaks.com/mods/known_dlc_mods");
 		knowndlcLink.setHorizontalAlignment(JLabel.CENTER);
 		JLabel plsUseModManager = new JLabel(
-				"<html><center>You can deploy your mod by going to Mod Utils > Compress mod for deployment.<br>Only files this mod uses will be added.</center></html>",
+				"<html><center>You can deploy your mod by going to Mod Utils > Deploy Mod.<br>Only files this mod uses will be added.</center></html>",
 				SwingConstants.CENTER);
 
 		flagModel.addElement(new MountFlag("SP | Does not require DLC in save file", 8));

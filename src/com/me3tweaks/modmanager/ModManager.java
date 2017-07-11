@@ -80,7 +80,7 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.application.Platform;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 
 	public static final String VERSION = "5.0 RC";
 	public static long BUILD_NUMBER = 75L;
