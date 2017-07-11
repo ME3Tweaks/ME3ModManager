@@ -601,6 +601,8 @@ public class ModManager {
 		// cleanup
 		File mod_info = new File("mod_info");
 		mod_info.delete();
+		File derbylog = new File("derby.log");
+		derbylog.delete();
 		File tlk = new File("tlk");
 		File toc = new File("toc");
 		File coalesceds = new File("coalesceds");
