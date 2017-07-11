@@ -2015,7 +2015,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ResourceUtils.openFolderInExplorer("\""+mod.getModPath()+"\"");
+				ResourceUtils.openFolderInExplorer(mod.getModPath());
 			}
 		});
 
