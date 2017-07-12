@@ -261,7 +261,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		@Override
 		public Void doInBackground() {
 			{
-				File f7z = new File(ModManager.getToolsDir() + "7z.exe");
+				File f7z = new File(ModManager.get7zExePath());
 				if (!f7z.exists()) {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z"));
 					ModManager.debugLogger.writeMessage("7z.exe does not exist at the following path, downloading new copy: " + f7z.getAbsolutePath());
@@ -273,7 +273,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					try {
 						File updateDir = new File(ModManager.getToolsDir());
 						updateDir.mkdirs();
-						FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7z.exe"));
+						FileUtils.copyURLToFile(new URL(url), new File(ModManager.get7zExePath()));
 						publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 7z Unzipper into tools directory"));
 						ModManager.debugLogger.writeMessage("Environment Check: Downloaded missing 7z.exe file for updating Mod Manager");
 
@@ -286,7 +286,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 
-			File f7zdll = new File(ModManager.getToolsDir() + "7z.dll");
+			File f7zdll = new File(ModManager.get7zDllPath());
 			if (!f7zdll.exists()) {
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z library"));
 				ModManager.debugLogger.writeMessage("Environment Check: 7z.dll does not exist at the following path, downloading new copy: " + f7zdll.getAbsolutePath());
@@ -299,7 +299,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				try {
 					File updateDir = new File(ModManager.getToolsDir());
 					updateDir.mkdirs();
-					FileUtils.copyURLToFile(new URL(url), new File(ModManager.getToolsDir() + "7z.dll"));
+					FileUtils.copyURLToFile(new URL(url), new File(ModManager.get7zDllPath()));
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 7z Unzipper dll into tools directory"));
 					ModManager.debugLogger.writeMessage("Downloaded missing 7z.dll file for updating Mod Manager");
 

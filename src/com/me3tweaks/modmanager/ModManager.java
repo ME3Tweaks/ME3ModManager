@@ -80,9 +80,9 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.application.Platform;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 
-	public static final String VERSION = "5.0 RC2";
+	public static final String VERSION = "5.0 RC3";
 	public static long BUILD_NUMBER = 75L;
 	public static final String BUILD_DATE = "7/11/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -949,7 +949,7 @@ public class ModManager {
 
 			//run 7za on it
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
+			commandBuilder.add(ModManager.get7zExePath());
 			commandBuilder.add("-y"); //overwrite
 			commandBuilder.add("x"); //extract
 			commandBuilder.add(ModManager.getTempDir() + "guitransplanter.7z");//7z file
@@ -2054,7 +2054,7 @@ public class ModManager {
 
 			//run 7za on it
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
+			commandBuilder.add(ModManager.get7zExePath());
 			commandBuilder.add("-y"); //overwrite
 			commandBuilder.add("x"); //extract
 			commandBuilder.add(ModManager.getTempDir() + "guilibrary.7z");//7z file
@@ -2502,6 +2502,22 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
+	
+	/**
+	 * 
+	 * @return data\tools\ModManagerCommandLine\<arch>\7z.exe
+	 */
+	public static String get7zExePath() {
+		return getCommandLineToolsDir() + "7z.exe";
+	}
+	
+	/**
+	 * 
+	 * @return data\tools\ModManagerCommandLine\<arch>\7z.dll
+	 */
+	public static String get7zDllPath() {
+		return getCommandLineToolsDir() + "7z.dll";
+	}
 
 	/**
 	 * Compresses the selected mod for deployment by staging the mod and then
@@ -2544,7 +2560,7 @@ public class ModManager {
 		commandBuilder.add("start");
 		commandBuilder.add("Mod Manager Mod Compressor");
 		commandBuilder.add("/wait");
-		commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
+		commandBuilder.add(ModManager.get7zExePath());
 		commandBuilder.add("a"); //add
 		commandBuilder.add(outputpath); //destfile
 		commandBuilder.add(mod.getModPath());//inputfile

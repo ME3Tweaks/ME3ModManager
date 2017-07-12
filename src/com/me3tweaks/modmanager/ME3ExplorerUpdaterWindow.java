@@ -162,7 +162,7 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 
 				FileUtils.deleteQuietly(new File(ModManager.getME3ExplorerEXEDirectory()));
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
+				commandBuilder.add(ModManager.get7zExePath());
 				commandBuilder.add("-y"); // overwrite
 				commandBuilder.add("x"); // extract
 				commandBuilder.add(saveFilePath);// 7z file
