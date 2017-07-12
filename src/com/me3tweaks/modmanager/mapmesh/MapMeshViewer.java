@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 
@@ -28,6 +27,8 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.objects.PCCDumpOptions;
+import com.me3tweaks.modmanager.objects.ProcessResult;
 
 import net.iharder.dnd.FileDrop;
 
@@ -60,13 +61,16 @@ public class MapMeshViewer extends JFrame implements ActionListener {
 
 	/**
 	 * Open pathfinding viewer with the listed file
-	 * @param openfile file to open and view on start
+	 * 
+	 * @param openfile
+	 *            file to open and view on start
 	 */
 	public MapMeshViewer(File openfile) {
-		ModManager.debugLogger.writeMessage("Opening pathfinding viewer with specified file: "+openfile);
+		ModManager.debugLogger.writeMessage("Opening pathfinding viewer with specified file: " + openfile);
 		setupWindow();
-		openFile(openfile);
-		setVisible(true);	}
+		takeActionOnFile(openfile);
+		setVisible(true);
+	}
 
 	private void setupWindow() {
 		// TODO Auto-generated method stub
@@ -130,43 +134,8 @@ public class MapMeshViewer extends JFrame implements ActionListener {
 				if (files.length > 0) {
 					File f = files[0];
 					if (f.exists() && f.isFile()) {
-						String extension = FilenameUtils.getExtension(f.getAbsolutePath());
 						ModManager.debugLogger.writeMessage("File dropped onto Map Mesh Viewer: " + f);
-						ModManager.debugLogger.writeMessage("Extension: " + extension);
-						switch (extension) {
-						case "txt":
-							openFile(f);
-							break;
-						case "pcc":
-							String transplanter = ModManager.getGUITransplanterCLI(true);
-							if (transplanter != null) {
-								viewinFileLabel.setText("Parsing file - this will take a few seconds...");
-								Executors.newSingleThreadExecutor().execute(new Runnable() {
-									@Override
-									public void run() {
-										String biogamedir = ModManagerWindow.GetBioGameDir();
-										String directory = new File(biogamedir).getParent();
-										String[] command = { transplanter, "--inputfile", f.getAbsolutePath(), "--gamedir", directory, "--dumppathfindingfile", "--outputfolder",
-												ModManager.getPCCDumpFolder() };
-										ProcessBuilder pb = new ProcessBuilder(command);
-										ModManager.runProcess(pb);
-										File outfile = new File(ModManager.getPCCDumpFolder() + FilenameUtils.getBaseName(f.getAbsolutePath()) + ".txt");
-										if (outfile.exists()) {
-											SwingUtilities.invokeLater(new Runnable() {
-												@Override
-												public void run() {
-													openFile(outfile);
-												}
-											});
-										} else {
-											ModManager.debugLogger.writeError("Output file does not exist: " + outfile);
-										}
-									}
-								});
-
-							}
-							break;
-						}
+						takeActionOnFile(f);
 					}
 				}
 			}
@@ -190,7 +159,58 @@ public class MapMeshViewer extends JFrame implements ActionListener {
 				}
 			}
 		});
+	}
 
+	/**
+	 * Shared action on file
+	 * 
+	 * @param f
+	 *            file to take action on
+	 */
+	private void takeActionOnFile(File f) {
+		String extension = FilenameUtils.getExtension(f.getAbsolutePath());
+		ModManager.debugLogger.writeMessage("File dropped onto Map Mesh Viewer: " + f);
+		ModManager.debugLogger.writeMessage("Extension: " + extension);
+		switch (extension) {
+		case "txt":
+			openFile(f);
+			break;
+		case "pcc":
+			String transplanter = ModManager.getGUITransplanterCLI(true);
+			if (transplanter != null) {
+				viewinFileLabel.setText("Parsing file - this will take a few seconds...");
+				Executors.newSingleThreadExecutor().execute(new Runnable() {
+					@Override
+					public void run() {
+						String biogamedir = ModManagerWindow.GetBioGameDir();
+						String directory = new File(biogamedir).getParent();
+						PCCDumpOptions options = new PCCDumpOptions();
+						options.coalesced = false;
+						options.exports = true;
+						options.gamePath = directory;
+						options.names = true;
+						options.properties = true;
+						options.scripts = false;
+						options.outputFolder = ModManager.getPCCDumpFolder();
+						ProcessResult pr = ModManager.dumpPCC(f.getAbsolutePath(), options);
+						if (pr.getReturnCode() == 0) {
+							File outfile = new File(ModManager.getPCCDumpFolder() + FilenameUtils.getBaseName(f.getAbsolutePath()) + ".txt");
+							if (outfile.exists()) {
+								SwingUtilities.invokeLater(new Runnable() {
+									@Override
+									public void run() {
+										openFile(outfile);
+									}
+								});
+							} else {
+								ModManager.debugLogger.writeError("Output file does not exist: " + outfile);
+							}
+						}
+					}
+				});
+			}
+			break;
+		}
 	}
 
 	protected void openFile(File file) {
@@ -408,7 +428,7 @@ public class MapMeshViewer extends JFrame implements ActionListener {
 
 		@Override
 		public String toString() {
-			return "Pathnode "+x+","+y+","+z;
+			return "Pathnode " + x + "," + y + "," + z;
 		}
 
 		public ArrayList<PathNode> getConnectingNodes() {
