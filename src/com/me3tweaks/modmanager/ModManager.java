@@ -81,8 +81,11 @@ import javafx.application.Platform;
 
 public class ModManager {
 	public static boolean IS_DEBUG = false;
+	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
+
+	
 	public static final String VERSION = "5.0";
-	public static long BUILD_NUMBER = 75L;
+	public static long BUILD_NUMBER = 72L;
 	public static final String BUILD_DATE = "7/12/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
@@ -920,8 +923,8 @@ public class ModManager {
 	 * Downloads Transplanter if not already downloaded. Returns path if
 	 * downloaded, null if not found locally after download attempt.
 	 *
-	 * @param download
-	 * @return
+	 * @param download Download transplanter from ME3Tweaks if not available locally
+	 * @return path to transplanter, null if none can be acquired
 	 */
 	public static String getGUITransplanterCLI(boolean download) {
 		File transplanterexe = new File(getGUITransplanterDir() + "Transplanter-CLI.exe");

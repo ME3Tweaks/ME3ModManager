@@ -347,7 +347,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 					// run 7za on it
 					ArrayList<String> commandBuilder = new ArrayList<String>();
-					commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
+					commandBuilder.add(ModManager.get7zExePath());
 					commandBuilder.add("-y"); // overwrite
 					commandBuilder.add("x"); // extract
 					commandBuilder.add(ModManager.getTempDir() + "tankmastertools.7z");// 7z
@@ -359,9 +359,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 					// Debug stuff
 					StringBuilder sb = new StringBuilder();
-					for (String arg : command) {
-						sb.append(arg + " ");
-					}
 					ModManager.debugLogger.writeMessage("Environment Check: Extracting Tankmaster Tools.");
 					ProcessBuilder pb = new ProcessBuilder(command);
 					ProcessResult pr = ModManager.runProcess(pb);

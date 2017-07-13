@@ -164,7 +164,7 @@ public class MassEffectModderUpdaterWindow extends JDialog implements PropertyCh
 				publish(new ThreadCommand("SET_STATUS_TEXT", "<html>Extracting Mass Effect Modder...<br>Mass Effect Modder is not part of Mod Manager.</html>"));
 
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getToolsDir() + "7z.exe");
+				commandBuilder.add(ModManager.get7zExePath());
 				commandBuilder.add("-y"); // overwrite
 				commandBuilder.add("x"); // extract
 				commandBuilder.add(saveFilePath);// 7z file
