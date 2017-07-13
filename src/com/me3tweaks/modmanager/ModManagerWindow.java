@@ -459,7 +459,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				try {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
 					ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
-					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice-beta"), ModManager.getThirdPartyModDBFile());
+					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice?highprioritysupport=true"), ModManager.getThirdPartyModDBFile());
 					ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile(), StandardCharsets.UTF_8);
 					ModManager.debugLogger.writeMessage("Downloaded third party mod data from identification service");
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod identification info"));
@@ -590,7 +590,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeMessage("Checking for update...");
 			// Check for update
 			try {
-				String update_check_link = "https://me3tweaks.com/modmanager/updatecheck-testing?currentversion=" + ModManager.BUILD_NUMBER;
+				String update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 				String serverJSON = null;
 				try {
 					serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
