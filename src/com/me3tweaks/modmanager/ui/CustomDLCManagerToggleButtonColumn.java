@@ -133,6 +133,7 @@ public class CustomDLCManagerToggleButtonColumn extends AbstractCellEditor imple
 		if (value == null) {
 			return defaultCell;
 		}
+
 		if (value instanceof String) {
 			defaultCell.setText("");
 			defaultCell.setBackground(null);
@@ -169,7 +170,7 @@ public class CustomDLCManagerToggleButtonColumn extends AbstractCellEditor imple
 			renderButton.setText(value.toString());
 			renderButton.setIcon(null);
 		}
-
+		renderButton.setForeground(Color.BLACK);
 		return renderButton;
 	}
 
