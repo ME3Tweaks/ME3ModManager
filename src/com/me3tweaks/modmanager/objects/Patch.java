@@ -255,12 +255,6 @@ public class Patch implements Comparable<Patch> {
 		//If the files are not the right size we will not apply.
 		ModManager.debugLogger.writeMessage("=============APPLY PATCH " + getPatchName() + "=============");
 		try {
-
-			File jpatch = new File(ModManager.getToolsDir() + "jptch.exe");
-			if (!jpatch.exists()) {
-				ME3TweaksUtils.downloadJDiffTools();
-			}
-
 			if (!ModManager.hasPristineTOC(targetModule, ME3TweaksUtils.HEADER)) {
 				ME3TweaksUtils.downloadPristineTOC(targetModule, ME3TweaksUtils.HEADER);
 			}
@@ -342,6 +336,8 @@ public class Patch implements Comparable<Patch> {
 					} else {
 						job = new ModJob(ModType.getDLCPath(targetModule), targetModule, null);
 					}
+					job.setOwningMod(mod);
+
 					File modulefolder = new File(ModManager.appendSlash(mod.getModPath() + standardFolder));
 					modulefolder.mkdirs();
 					ModManager.debugLogger.writeMessage("Adding PCConsoleTOC.bin to new job");
@@ -559,14 +555,6 @@ public class Patch implements Comparable<Patch> {
 		File copyTo = new File("server/" + serverfolder + "/patch.jsf");
 		File dirHeader = copyTo.getParentFile();
 		dirHeader.mkdirs();
-		if (ModManager.IS_DEBUG) {
-			/*
-			 * try { FileUtils.copyFile(new File(patchFolderPath + "patch.jsf"),
-			 * copyTo); System.out.println("Copied to "
-			 * +copyTo.getAbsolutePath()); } catch (IOException e) { // TODO
-			 * Auto-generated catch block e.printStackTrace(); }
-			 */
-		}
 		return sb.toString();
 	}
 

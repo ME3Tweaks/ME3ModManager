@@ -194,7 +194,9 @@ public class Mod implements Comparable<Mod> {
 		requiredPatches = new ArrayList<Patch>();
 		modDeltas = new ArrayList<ModDelta>();
 		for (ModJob job : mod.jobs) {
-			jobs.add(new ModJob(job));
+			ModJob newjob = new ModJob(job);
+			newjob.setOwningMod(this);
+			jobs.add(newjob);
 		}
 		for (String str : mod.sideloadOnlyTargets) {
 			sideloadOnlyTargets.add(str);
@@ -224,14 +226,34 @@ public class Mod implements Comparable<Mod> {
 	 */
 	private void readDesc(Wini modini) throws InvalidFileFormatException, IOException {
 		String modFolderPath = ModManager.appendSlash(modDescFile.getParent());
-		modDescription = modini.get("ModInfo", "moddesc");
 		//modDisplayDescription = modini.get("ModInfo", "moddesc");
 		modName = modini.get("ModInfo", "modname");
+		String delayedFailure = null;
+		if (modName == null) {
+			//Attempt to extract name from the folder name
+			String foldername = new File(getModPath()).getName();
+			modName = foldername;
+			ModManager.debugLogger.writeError("Mod does not have a modname descriptor - marking invalid (" + modName + ") - will delay failing until update code is parsed.");
+			delayedFailure = "This mod does not have a modname descriptor under the [ModInfo] header in its moddesc.ini file. The name displayed in this window is the extracted from the mod's foldername. All Mod Manager mods must have a moddname descriptor.";
+		}
 		ModManager.debugLogger.writeMessageConditionally("-------MOD----------------Reading " + modName + "--------------------", ModManager.LOG_MOD_INIT);
-		// Check if this mod has been made for Mod Manager 2.0 or legacy mode
+
+		modDescription = modini.get("ModInfo", "moddesc");
+		if (modDescription == null) {
+			ModManager.debugLogger.writeError("Mod does not have a modname descriptor - marking invalid (" + modName + ") - will delay failing until update code is parsed.");
+			delayedFailure = "This mod does not have a moddesc descriptor under the [ModInfo] header in its moddesc.ini file. All Mod Manager mods must have a moddesc descriptor, which is the description shown to users in the right pane of the main Mod Manager window.";
+		}
+
+		// Check if this mod has been made for Mod Manager 2.0+ or legacy mode
 		modCMMVer = 1.0f;
 		try {
-			modCMMVer = Float.parseFloat(modini.get("ModManager", "cmmver"));
+			String versionStr = modini.get("ModManager", "cmmver");
+			if (versionStr == null) {
+				ModManager.debugLogger.writeMessageConditionally("Didn't read a ModManager version of the mod. Setting modtype to legacy", ModManager.LOG_MOD_INIT);
+				modCMMVer = 1.0f;
+			} else {
+				modCMMVer = Float.parseFloat(versionStr);
+			}
 		} catch (NumberFormatException e) {
 			ModManager.debugLogger.writeMessageConditionally("Didn't read a ModManager version of the mod. Setting modtype to legacy", ModManager.LOG_MOD_INIT);
 			modCMMVer = 1.0f;
@@ -243,6 +265,23 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeMessageConditionally("Detected mod version: " + modVersion, ModManager.LOG_MOD_INIT);
 		}
 
+		// Add Devsite
+		if (modini.get("ModInfo", "modsite") != null) {
+			modSite = modini.get("ModInfo", "modsite");
+			ModManager.debugLogger.writeMessageConditionally("Detected developer site", ModManager.LOG_MOD_INIT);
+		}
+
+		// Load modmaker update code
+		if (modini.get("ModInfo", "modid") != null) {
+			try {
+				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
+				ModManager.debugLogger.writeMessageConditionally("Detected modmaker code", ModManager.LOG_MOD_INIT);
+			} catch (NumberFormatException e) {
+				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer: " + modini.get("ModInfo", "modid"));
+			}
+		}
+
+		// Load classic update code
 		if (modini.get("ModInfo", "updatecode") != null) {
 			try {
 				classicCode = Integer.parseInt(modini.get("ModInfo", "updatecode"));
@@ -250,6 +289,20 @@ public class Mod implements Comparable<Mod> {
 			} catch (NumberFormatException e) {
 				ModManager.debugLogger.writeError("Classic update code is not an integer. Defaulting to 0");
 			}
+		}
+
+		if (classicCode > 0 && modmakerCode > 0) {
+			//can't have both
+			ModManager.debugLogger.writeError(modName + " has both a classic update code and a ModMaker update code - this is not allowed, marking as invalid.");
+			setFailedReason(
+					"This mod has both a modid and updatecode descriptor under the [ModInfo] header. These descriptors are used for checking for updates and are mutually exclusive, so this mod has been marked as invalid. To fix this, remove one of the descriptors from moddesc.ini.");
+			return;
+		}
+
+		if (delayedFailure != null) {
+			ModManager.debugLogger.writeError("Delayed failure loading " + modName + ": " + delayedFailure);
+			setFailedReason(delayedFailure);
+			return;
 		}
 
 		// Add MP Change
@@ -261,21 +314,6 @@ public class Mod implements Comparable<Mod> {
 		if (modini.get("ModInfo", "moddev") != null) {
 			modAuthor = modini.get("ModInfo", "moddev");
 			ModManager.debugLogger.writeMessageConditionally("Detected developer name", ModManager.LOG_MOD_INIT);
-		}
-		// Add Devsite
-		if (modini.get("ModInfo", "modsite") != null) {
-			modSite = modini.get("ModInfo", "modsite");
-			ModManager.debugLogger.writeMessageConditionally("Detected developer site", ModManager.LOG_MOD_INIT);
-		}
-
-		// Add Modmaker
-		if (modini.get("ModInfo", "modid") != null) {
-			try {
-				modmakerCode = Integer.parseInt(modini.get("ModInfo", "modid"));
-				ModManager.debugLogger.writeMessageConditionally("Detected modmaker code", ModManager.LOG_MOD_INIT);
-			} catch (NumberFormatException e) {
-				ModManager.debugLogger.writeError("ModMaker code failed to resolve to an integer: " + modini.get("ModInfo", "modid"));
-			}
 		}
 
 		// Backwards compatibility for mods that are built to target older
@@ -304,6 +342,7 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 			}
 			ModJob job = new ModJob();
+			job.setOwningMod(this);
 			job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin", ignoreLoadErrors);
 			addTask(ModType.BASEGAME, job);
 
@@ -442,6 +481,7 @@ public class Mod implements Comparable<Mod> {
 						newJob.TESTPATCH = true;
 					}
 				}
+				newJob.setOwningMod(this);
 				newJob.setSourceDir(iniModDir);
 				if (newStrok != null && oldStrok != null) {
 					while (newStrok.hasMoreTokens()) {
@@ -480,7 +520,7 @@ public class Mod implements Comparable<Mod> {
 					while (addStrok.hasMoreTokens()) {
 						String addFile = addStrok.nextToken();
 						String targetFile = addTargetStrok.nextToken();
-						System.out.println("Add file target: " + targetFile);
+						//System.out.println("Add file target: " + targetFile);
 						if (!addFile.equals(getSfarFilename(targetFile))) {
 							ModManager.debugLogger.writeError("[ADDFILE]Filenames failed to match, mod marked as invalid: " + addFile + " vs " + getSfarFilename(targetFile));
 							setFailedReason("Mod specifies an addfile/addfiles target task in (" + modHeader + "), but the filenames for source vs targets doesn't match: "
@@ -554,22 +594,22 @@ public class Mod implements Comparable<Mod> {
 							AlternateFile af = new AlternateFile(alt);
 							af.setModFile(ResourceUtils.normalizeFilePath(af.getModFile(), false));
 							ModManager.debugLogger.writeMessageConditionally("Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);
-							
+
 							if (af.getSubtituteFile() != null) {
 								//check location
-								//af.setSubstituteFile(ResourceUtils.normalizeFilePath(af.getSubtituteFile(), false));
 								String subfile = ModManager.appendSlash(getModPath()) + af.getSubtituteFile();
 								File f = new File(subfile);
-								if (!f.exists()) {
+								if (!f.exists() && !ignoreLoadErrors) {
 									ModManager.debugLogger.writeError(
 											"This error is from the OFFICIAL headers, so it only applies to official BioWare DLC or the basegame. Substitute file doesn't exist: "
 													+ f.getAbsolutePath());
-									setFailedReason("The moddesc indicates there should be files installed differently depending on certain conditions, but a listed substitute file doesn't exist. The error occurs in the ["
-											+ modHeader + "] header altfiles text. The missing file is :" + f.getAbsolutePath()
-											+ "\n\nThis may not affect your specific ME3 enviroment, but the mod has been marked as invalid to avoid possible issues.");
+									setFailedReason(
+											"The moddesc indicates there should be files installed differently depending on certain conditions, but a listed substitute file doesn't exist. The error occurs in the ["
+													+ modHeader + "] header altfiles text. The missing file is :" + f.getAbsolutePath()
+													+ "\n\nThis may not affect your specific ME3 enviroment, but the mod has been marked as invalid to avoid possible issues.");
 									return;
 								} else {
-									ModManager.debugLogger.writeMessageConditionally("Alternate for official headers has valid substitute file: "+f, ModManager.LOG_MOD_INIT);
+									ModManager.debugLogger.writeMessageConditionally("Alternate for official headers has valid substitute file: " + f, ModManager.LOG_MOD_INIT);
 								}
 							}
 							newJob.getAlternateFiles().add(af);
@@ -610,6 +650,7 @@ public class Mod implements Comparable<Mod> {
 				}
 
 				ModJob newJob = new ModJob();
+				newJob.setOwningMod(this);
 				newJob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
 				newJob.setJobType(ModJob.CUSTOMDLC);
 				newJob.setSourceFolders(new ArrayList<String>());
@@ -786,6 +827,7 @@ public class Mod implements Comparable<Mod> {
 						ModManager.debugLogger.writeMessageConditionally("Coalesced.bin is OK", ModManager.LOG_MOD_INIT);
 					}
 					ModJob job = new ModJob();
+					job.setOwningMod(this);
 					job.addFileReplace(file.getAbsolutePath(), "\\BIOGame\\CookedPCConsole\\Coalesced.bin", ignoreLoadErrors);
 					addTask(ModType.BASEGAME, job);
 				}
@@ -847,36 +889,6 @@ public class Mod implements Comparable<Mod> {
 		if (modCMMVer > ModManager.MODDESC_VERSION_SUPPORT) {
 			ModManager.debugLogger.writeError("Mod is for newer version of Mod Manager, may have issues with this version.");
 		}
-		//check for patches directory
-		if (modCMMVer >= 2 && !ignoreLoadErrors /*
-												 * don't bother with patches on
-												 * compressed
-												 */) {
-			File patchesdir = new File(modFolderPath + "patches/");
-			if (patchesdir.isDirectory()) {
-				ModManager.debugLogger.writeMessageConditionally("Mod has unprocessed patches! Importing patches now.", ModManager.LOG_MOD_INIT);
-				File[] directories = patchesdir.listFiles(File::isDirectory);
-				for (File directory : directories) {
-					String path = directory.getAbsolutePath();
-					File patchDesc = new File(ModManager.appendSlash(path) + "patchdesc.ini");
-					System.out.println("Checking for file at " + patchDesc);
-					if (!patchDesc.exists()) {
-						continue;
-					}
-					Patch subPatch = new Patch(patchDesc.getAbsolutePath(), ModManager.appendSlash(path) + "patch.jsf");
-					if (subPatch.isValid()) {
-						ModManager.debugLogger.writeMessageConditionally("Valid patch: " + subPatch.getPatchName() + ", importing to library and processing",
-								ModManager.LOG_MOD_INIT);
-						subPatch = subPatch.importPatch();
-						requiredPatches.add(subPatch);
-					}
-				}
-				if (patchesdir.list().length <= 0) {
-					ModManager.debugLogger.writeMessageConditionally("All patches imported. Deleting patches directory.", ModManager.LOG_MOD_INIT);
-					FileUtils.deleteDirectory(patchesdir);
-				}
-			}
-		}
 
 		//Read deltas
 		File dir = new File(modFolderPath + DELTAS_FOLDER);
@@ -912,10 +924,11 @@ public class Mod implements Comparable<Mod> {
 
 		//Verify alternates and apply automatic ones
 		if (alternateFiles != null && !ignoreLoadErrors) {
-			ModManager.debugLogger.writeMessage("Verifying automatic alternate files are valid for this mod");
+			ModManager.debugLogger.writeMessageConditionally("Verifying automatic alternate files are valid for this mod", ModManager.LOG_MOD_INIT);
 			HashMap<String, ArrayList<String>> autoOriginalFiles = new HashMap<String, ArrayList<String>>(); //header to altfiles map
 			for (AlternateFile af : alternateFiles) {
-				ModManager.debugLogger.writeMessage("Verifying " + af.getAltFile() + " on " + af.getCondition() + " of " + af.getConditionalDLC());
+				ModManager.debugLogger.writeMessageConditionally("Verifying " + af.getAltFile() + " on " + af.getCondition() + " of " + af.getConditionalDLC(),
+						ModManager.LOG_MOD_INIT);
 				if (af.isValidLocally(modPath)) {
 					//Verify pass
 					//ModManager.debugLogger.writeMessageConditionally("This mod has " + modDeltas.size() + " deltas.", ModManager.LOG_MOD_INIT);
@@ -950,7 +963,7 @@ public class Mod implements Comparable<Mod> {
 		}
 
 		//Resolve Official Alternates
-		if (modCMMVer >= 4.5) {
+		if (modCMMVer >= 4.5 && !ignoreLoadErrors) { //modpath will be null if we are inspecting a compressed mod. So just ignore this step.
 			for (ModJob job : jobs) {
 				if (job.getJobType() == ModJob.CUSTOMDLC) {
 					continue;
@@ -1085,7 +1098,7 @@ public class Mod implements Comparable<Mod> {
 		if (modCMMVer > ModManager.MODDESC_VERSION_SUPPORT) {
 			modDisplayDescription += ", which is not fully supported by this version of Mod Manager. Update Mod Manager for full support.";
 		}
-		if (classicCode > 0 /* && ModManager.IS_DEBUG */) {
+		if (classicCode > 0) {
 			modDisplayDescription += "\nUpdate code: " + classicCode;
 		}
 
@@ -1100,7 +1113,6 @@ public class Mod implements Comparable<Mod> {
 
 		// Add Modmaker
 		if (modmakerCode > 0) {
-			//modmakerCode = modini.get("ModInfo", "modid");
 			modDisplayDescription += "\nModMaker code: " + modmakerCode;
 		}
 
@@ -1317,99 +1329,6 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	/**
-	 * Gets the list of files that conflict with the specified mod, in terms of
-	 * files to replace.
-	 * 
-	 * @param other
-	 *            Other mod to compare against
-	 * @return hashmap of job names mapped to a list of strings of conflicting
-	 *         file names
-	 */
-	public HashMap<String, ArrayList<String>> getAddConflictsWithMod(Mod other) {
-		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
-		for (ModJob job : jobs) {
-			System.out.println("ADDCONF: JOB PASS:" + job.getJobName());
-			ModJob otherCorrespondingJob = null;
-			for (ModJob otherjob : other.jobs) {
-				if (otherjob.equals(job)) {
-					System.out.println("ADDCONF: FOUND SAME JOB: " + job.getJobName());
-					otherCorrespondingJob = otherjob;
-					break;
-				}
-			}
-			if (otherCorrespondingJob == null) {
-				System.out.println("ADDCONF: NO CORR JOB");
-				continue;
-			}
-			// scanned for matching job. Found it. Iterate over files...
-			for (String file : job.getFilesToAddTargets()) {
-				for (String otherfile : otherCorrespondingJob.getFilesToAddTargets()) {
-					if (file.equals(otherfile)) {
-						if (conflicts.containsKey(job.getJobName())) {
-							conflicts.get(job.getJobName()).add(file);
-							ModManager.debugLogger.writeMessage("ADDING TO ADD CONFLICT LIST: " + file);
-						} else {
-							ArrayList<String> conflictFiles = new ArrayList<String>();
-							conflictFiles.add(file);
-							conflicts.put(job.getJobName(), conflictFiles);
-						}
-					}
-				}
-			}
-		}
-		if (conflicts.size() <= 0) {
-			System.out.println("ADDCONF: CONF SIZE 0");
-			return null;
-		}
-		System.out.println("ADDCONF: RET NOT NULL");
-		return conflicts;
-	}
-
-	/**
-	 * Gets the list of files that conflict with the specified mod, in terms of
-	 * files to remove.
-	 * 
-	 * @param other
-	 *            Other mod to compare against
-	 * @return hashmap of job names mapped to a list of strings of conflicting
-	 *         file names
-	 */
-	public HashMap<String, ArrayList<String>> getRemoveConflictsWithMod(Mod other) {
-		HashMap<String, ArrayList<String>> conflicts = new HashMap<String, ArrayList<String>>();
-		for (ModJob job : jobs) {
-			ModJob otherCorrespondingJob = null;
-			for (ModJob otherjob : other.jobs) {
-				if (otherjob.equals(job)) {
-					otherCorrespondingJob = otherjob;
-					break;
-				}
-			}
-			if (otherCorrespondingJob == null) {
-				continue;
-			}
-			// scanned for matching job. Found it. Iterate over files...
-			for (String file : job.getFilesToRemoveTargets()) {
-				for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
-					if (file.equals(otherfile)) {
-						if (conflicts.containsKey(job.getJobName())) {
-							conflicts.get(job.getJobName()).add(file);
-							ModManager.debugLogger.writeMessage("ADDING TO CONFLICT LIST: " + file);
-						} else {
-							ArrayList<String> conflictFiles = new ArrayList<String>();
-							conflictFiles.add(file);
-							conflicts.put(job.getJobName(), conflictFiles);
-						}
-					}
-				}
-			}
-		}
-		if (conflicts.size() <= 0) {
-			return null;
-		}
-		return conflicts;
-	}
-
-	/**
 	 * Creates a moddesc.ini string that should be written to a file that
 	 * describes this mod object.
 	 * 
@@ -1510,7 +1429,7 @@ public class Mod implements Comparable<Mod> {
 				isFirst = true;
 				StringBuilder rfsb = new StringBuilder();
 				for (String file : job.getFilesToReplaceTargets()) {
-					System.out.println("appending: " + file);
+					//System.out.println("appending: " + file);
 					if (isFirst) {
 						isFirst = false;
 					} else {
@@ -1638,151 +1557,6 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	/**
-	 * Merges this mod with another, ignoring conflict files from the parameter
-	 * mod. This mod is the one merged into (this mod object is returned)
-	 * 
-	 * @param other
-	 *            Other mod to merge with
-	 * @return
-	 */
-	public Mod mergeWith(Mod other, String newName) {
-		ModManager.debugLogger.writeMessage("Merging mods: " + getModName() + " <= " + other.getModName());
-		this.modName = newName;
-		HashMap<String, ArrayList<String>> ignoreReplaceFiles = getReplaceConflictsWithMod(other);
-		HashMap<String, ArrayList<String>> ignoreAddFiles = getAddConflictsWithMod(other);
-		HashMap<String, ArrayList<String>> ignoreReplaceRemoveFiles = getReplaceRemoveConflictsWithMod(other);
-		HashMap<String, ArrayList<String>> ignoreAddRemoveFiles = getAddRemoveConflictsWithMod(other);
-
-		//HashMap<String, ArrayList<String>> ignoreRemoveFiles = getRemoveConflictsWithMod(other);
-
-		for (ModJob otherjob : other.jobs) {
-			ModJob myCorrespendingJob = null;
-			for (ModJob job : jobs) {
-				if (otherjob.equals(job)) {
-					//find jobs that match each other in both mods
-					myCorrespendingJob = job;
-					break;
-				}
-			}
-			if (myCorrespendingJob == null) {
-				//no match, just merge entire job
-				ModManager.debugLogger.writeMessage("Merging entire job: " + otherjob.getJobName());
-				jobs.add(otherjob);
-				continue;
-			}
-
-			//MERGE REPLACE FILES
-			ArrayList<String> otherNewFiles = otherjob.getFilesToReplace();
-			ArrayList<String> otherReplacePaths = otherjob.getFilesToReplaceTargets();
-			for (int i = 0; i < otherNewFiles.size(); i++) {
-				String otherfile = otherNewFiles.get(i);
-				ModManager.debugLogger.writeMessage("Merging job: " + myCorrespendingJob.getJobName());
-
-				//Check for bigger other TOC (means it likely has extra files)
-				if (FilenameUtils.getName(otherfile).equalsIgnoreCase("PCConsoleTOC.bin")) {
-					for (int z = 0; z < myCorrespendingJob.getFilesToReplace().size(); z++) {
-						String myJobFile = myCorrespendingJob.getFilesToReplace().get(z);
-						System.out.println("My job files: " + myJobFile);
-						if (FilenameUtils.getName(myJobFile).equalsIgnoreCase("PCConsoleTOC.bin")) {
-							//comparing 2 of the same TOC files
-							File myToc = new File(myJobFile);
-							File otherToc = new File(otherfile);
-							if (otherToc.length() > myToc.length()) {
-								//other has more files. we sould use it instead
-								ModManager.debugLogger.writeMessage("Other job has bigger TOC, using that one instead. Likely adds a file");
-								myCorrespendingJob.getFilesToReplace().set(z, otherfile);
-								break;
-							}
-						}
-					}
-				}
-
-				if (ignoreReplaceFiles != null && ignoreReplaceFiles.get(otherjob.getJobName()) != null
-						&& ignoreReplaceFiles.get(otherjob.getJobName()).contains(otherReplacePaths.get(i))) {
-					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherReplacePaths.get(i));
-					continue;
-				} else {
-					if (FilenameUtils.getName(otherfile).equalsIgnoreCase("PCConsoleTOC.bin")) {
-						ModManager.debugLogger.writeMessage("CHECKING IF SHOULD ADD TOC, EXIST IN THIS JOB ALREADY: " + myCorrespendingJob.hasTOC());
-						// check if its there already
-						if (myCorrespendingJob.hasTOC()) {
-							continue;// skip toc
-						}
-					}
-					ModManager.debugLogger.writeMessage("Merging file replace: " + otherfile);
-					myCorrespendingJob.addFileReplace(otherfile, otherReplacePaths.get(i), ignoreLoadErrors);
-				}
-			}
-
-			//MERGE ADD FILES
-			ArrayList<String> otherAddFiles = otherjob.getFilesToAdd();
-			ArrayList<String> otherAddFilesTargets = otherjob.getFilesToAddTargets();
-			for (int i = 0; i < otherAddFiles.size(); i++) {
-				String otherfile = otherAddFiles.get(i);
-				ModManager.debugLogger.writeMessage("CURRENT JOB: " + myCorrespendingJob.getJobName());
-				//skip add/add conflict
-				if (ignoreAddFiles != null && ignoreAddFiles.get(otherjob.getJobName()) != null
-						&& ignoreAddFiles.get(otherjob.getJobName()).contains(otherAddFilesTargets.get(i))) {
-					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherAddFilesTargets.get(i));
-					continue;
-				}
-				//skip add/remove conflict
-				if (ignoreAddRemoveFiles != null && ignoreAddRemoveFiles.get(otherjob.getJobName()) != null
-						&& ignoreAddRemoveFiles.get(otherjob.getJobName()).contains(otherAddFilesTargets.get(i))) {
-					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherAddFilesTargets.get(i));
-					continue;
-				} else {
-					if (FilenameUtils.getName(otherfile).equalsIgnoreCase("PCConsoleTOC.bin")) {
-						ModManager.debugLogger.writeMessage("CHECKING IF SHOULD ADD TOC, EXIST IN THIS JOB ALREADY: " + myCorrespendingJob.hasTOC());
-						// check if its there already
-						if (myCorrespendingJob.hasTOC()) {
-							continue;// skip toc
-						}
-					}
-					ModManager.debugLogger.writeMessage("Merging file add: " + otherfile);
-					myCorrespendingJob.addNewFileTask(otherfile, otherAddFilesTargets.get(i), ignoreLoadErrors);
-				}
-			}
-
-			//MERGE REMOVE FILES
-			ArrayList<String> otherRemoveFiles = otherjob.getFilesToRemoveTargets();
-			for (int i = 0; i < otherRemoveFiles.size(); i++) {
-				ModManager.debugLogger.writeMessage("CURRENT JOB: " + myCorrespendingJob.getJobName());
-
-				//ignore replace/remove conflict
-				if (ignoreReplaceRemoveFiles != null && ignoreReplaceRemoveFiles.get(otherjob.getJobName()) != null
-						&& ignoreReplaceRemoveFiles.get(otherjob.getJobName()).contains(otherRemoveFiles.get(i))) {
-					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherRemoveFiles.get(i));
-					continue;
-				}
-
-				//ignore add/remove conflict
-				if (ignoreAddRemoveFiles != null && ignoreAddRemoveFiles.get(otherjob.getJobName()) != null
-						&& ignoreAddRemoveFiles.get(otherjob.getJobName()).contains(otherRemoveFiles.get(i))) {
-					ModManager.debugLogger.writeMessage("SKIPPING CONFLICT MERGE: " + otherRemoveFiles.get(i));
-					continue;
-				} else {
-					ModManager.debugLogger.writeMessage("Merging file remove: " + otherRemoveFiles.get(i));
-					myCorrespendingJob.addRemoveFileTask(otherRemoveFiles.get(i));
-				}
-			}
-		}
-
-		//MERGE DELTAS
-		for (ModDelta delta : other.getModDeltas()) {
-			modDeltas.add(delta);
-		}
-
-		if (other.modCMMVer > modCMMVer) {
-			//upgrade to highest cmm ver
-			modCMMVer = other.modCMMVer;
-		}
-
-		modmakerCode = 0; //disable modmaker updates
-		return this;
-	}
-
-	/**
 	 * Creates a new mod package in a folder with the same name as this mod.
 	 * Copies files to the new directory based on the name of this mod. Creates
 	 * a moddesc.ini file based on jobs in this mod.
@@ -1876,7 +1650,7 @@ public class Mod implements Comparable<Mod> {
 			new DeltaWindow(newMod, delta, true, true);
 		}
 		if (newMod.isValidMod()) {
-			new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+			new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
 		} else {
 			return null;
 		}
@@ -1917,7 +1691,6 @@ public class Mod implements Comparable<Mod> {
 			return false;
 		}
 		for (ModJob job : jobs) {
-			System.out.println(job);
 			if (job.getJobType() == ModJob.CUSTOMDLC) {
 				return true;
 			}
@@ -1955,7 +1728,7 @@ public class Mod implements Comparable<Mod> {
 	}
 
 	public String getDescFile() {
-		return getModPath() + File.separator + "moddesc.ini";
+		return getModPath() + "moddesc.ini";
 	}
 
 	public double getCMMVer() {
@@ -2014,16 +1787,6 @@ public class Mod implements Comparable<Mod> {
 	 *         one
 	 */
 	public String getBasegameCoalesced() {
-		/*
-		 * if (modsCoal()){ return ModManager.appendSlash(modPath) +
-		 * "Coalesced.bin"; } for (ModJob job : jobs) { System.out.println(
-		 * "GETBASECOAL SCANNING: "+job.getJobName()); for (int i = 0; i <
-		 * job.filesToReplace.size(); i++){ String file =
-		 * job.filesToReplace.get(i); file = file.replaceAll("\\\\", "/");
-		 * //make sure all are the same (since the yall work) if
-		 * (file.toLowerCase().equals("".toLowerCase())){ return
-		 * job.newFiles.get(i); } } } return null;
-		 */
 		return getModTaskPath("\\BIOGame\\CookedPCConsole\\Coalesced.bin", ModType.BASEGAME);
 	}
 
@@ -2279,14 +2042,15 @@ public class Mod implements Comparable<Mod> {
 	public boolean addCustomDLCAlternates(String biogamedir) {
 		if (alternateFiles.size() > 0 && ModManagerWindow.validateBIOGameDir()) {
 			boolean altApplied = false;
-			ModManager.debugLogger.writeMessage(getModName() + ": Checking automatic alternate custom dlc list to see if applicable and will apply if conditions are right");
+			ModManager.debugLogger.writeMessageConditionally(
+					getModName() + ": Checking automatic alternate custom dlc list to see if applicable and will apply if conditions are right", ModManager.LOG_MOD_INIT);
 			//get list of installed DLC
 			ArrayList<String> installedDLC = ModManager.getInstalledDLC(biogamedir);
 			HashMap<String, String> headerFolderMap = ModType.getHeaderFolderMap();
 			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
 
 			for (AlternateCustomDLC altdlc : alternateCustomDLC) {
-				ModManager.debugLogger.writeMessage("Checking if Alternate DLC applies: " + altdlc);
+				ModManager.debugLogger.writeMessageConditionally("Checking if Alternate DLC applies: " + altdlc, ModManager.LOG_MOD_INIT);
 				String condition = altdlc.getCondition();
 				String conditionaldlc = altdlc.getConditionalDLC();
 				ArrayList<String> conditionaldlcs = altdlc.getConditionalDLCList();
@@ -2316,23 +2080,27 @@ public class Mod implements Comparable<Mod> {
 					switch (condition) {
 					case AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT:
 						if (!installedDLC.containsAll(remappedHeaders)) {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as at least one DLC in condition is present: " + altdlc);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as at least one DLC in condition is present: " + altdlc,
+									ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 
 						} else {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc,
+									ModManager.LOG_MOD_INIT);
 						}
 						break;
 					case AlternateCustomDLC.CONDITION_ANY_DLC_NOT_PRESENT:
 						if (!installedDLC.containsAll(remappedHeaders)) {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as at least one DLC in condition are not present: " + altdlc);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as at least one DLC in condition are not present: " + altdlc,
+									ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 						} else {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc);
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc,
+									ModManager.LOG_MOD_INIT);
 						}
 						break;
 					default:
@@ -2354,26 +2122,28 @@ public class Mod implements Comparable<Mod> {
 							}
 						}
 					}
-					ModManager.debugLogger.writeMessage("Checking condition...");
 					switch (condition) {
 					case AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT:
 						if (!installedDLC.contains(conditionaldlc.toUpperCase())) {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is not present");
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is not present",
+									ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 						} else {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is present");
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is present",
+									ModManager.LOG_MOD_INIT);
 						}
 						break;
 					case AlternateCustomDLC.CONDITION_DLC_PRESENT:
 						if (installedDLC.contains(conditionaldlc.toUpperCase())) {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is present");
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as " + conditionaldlc + " is present", ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 						} else {
-							ModManager.debugLogger.writeMessage(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is not present");
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as " + conditionaldlc + " is not present",
+									ModManager.LOG_MOD_INIT);
 						}
 						break;
 					}
@@ -2390,7 +2160,7 @@ public class Mod implements Comparable<Mod> {
 		String destdlc = altdlc.getDestDLC();
 		switch (altdlc.getOperation()) {
 		case AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER:
-			ModManager.debugLogger.writeMessage("Condition match, adding additional layer for DLC folder: " + altdlc.getDestDLC());
+			ModManager.debugLogger.writeMessageConditionally("Condition match, adding additional layer for DLC folder: " + altdlc.getDestDLC(), ModManager.LOG_MOD_INIT);
 			job.getSourceFolders().add(altdlc.getAltDLC());
 			job.getDestFolders().add(altdlc.getDestDLC());
 			List<File> sourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
@@ -2409,7 +2179,7 @@ public class Mod implements Comparable<Mod> {
 			}
 			break;
 		case AlternateCustomDLC.OPERATION_ADD_CUSTOMDLC_JOB:
-			ModManager.debugLogger.writeMessage("Condition match, adding custom DLC folder: " + altdlc.getDestDLC());
+			ModManager.debugLogger.writeMessageConditionally("Condition match, adding custom DLC folder: " + altdlc.getDestDLC(), ModManager.LOG_MOD_INIT);
 			job.getSourceFolders().add(altdlc.getAltDLC());
 			job.getDestFolders().add(altdlc.getDestDLC());
 			List<File> addsourceFiles = (List<File>) FileUtils.listFiles(sf, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
@@ -2439,13 +2209,14 @@ public class Mod implements Comparable<Mod> {
 	public boolean applyAutomaticAlternates(String biogamedir) {
 		if (alternateFiles.size() > 0) {
 			boolean altApplied = false;
-			ModManager.debugLogger.writeMessage(getModName() + ": Checking automatic alternate files list to see if applicable and will apply if conditions are right");
+			ModManager.debugLogger.writeMessageConditionally(getModName() + ": Checking automatic alternate files list to see if applicable and will apply if conditions are right",
+					ModManager.LOG_MOD_INIT);
 			//get list of installed DLC
 			ArrayList<String> installedDLC = ModManager.getInstalledDLC(biogamedir);
 			ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
 
 			for (AlternateFile af : alternateFiles) {
-				ModManager.debugLogger.writeMessage("Checking if Alt file applies: " + af);
+				ModManager.debugLogger.writeMessageConditionally("Checking if Alt file applies: " + af, ModManager.LOG_MOD_INIT);
 				String condition = af.getCondition();
 				String conditionaldlc = af.getConditionalDLC();
 				if (!installedDLC.contains(conditionaldlc)) {
@@ -2519,9 +2290,10 @@ public class Mod implements Comparable<Mod> {
 			}
 			String fileToRemove = ResourceUtils.normalizeFilePath(getModPath() + fileToRemovePath, false);
 			String fileToRemoveTarget = ResourceUtils.normalizeFilePath(af.getModFile(), false);
-			/*if (job.getJobType() == ModJob.CUSTOMDLC) {
-				fileToRemove = fileToRemoveTarget;
-			}*/
+			/*
+			 * if (job.getJobType() == ModJob.CUSTOMDLC) { fileToRemove =
+			 * fileToRemoveTarget; }
+			 */
 			boolean ftr = job.getFilesToReplace().remove(fileToRemove);
 			boolean ftrt = job.getFilesToReplaceTargets().remove(fileToRemoveTarget);
 			if (ftr ^ ftrt) {

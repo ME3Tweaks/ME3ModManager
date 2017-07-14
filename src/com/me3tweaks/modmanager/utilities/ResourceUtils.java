@@ -13,9 +13,12 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextPane;
@@ -100,14 +103,12 @@ public class ResourceUtils {
 								PrintStream ps = new PrintStream(baos);
 								e.printStackTrace(ps);
 								try {
-									ModManager.debugLogger
-											.writeError("Error while decompressing LZMA: " + baos.toString("utf-8"));
+									ModManager.debugLogger.writeError("Error while decompressing LZMA: " + baos.toString("utf-8"));
 								} catch (UnsupportedEncodingException e1) {
 									// this shouldn't happen.
 								}
 							} catch (IOException e) {
-								ModManager.debugLogger
-										.writeErrorWithException("IOException while extracting " + lzmaFile, e);
+								ModManager.debugLogger.writeErrorWithException("IOException while extracting " + lzmaFile, e);
 								e.printStackTrace();
 							} finally {
 								try {
@@ -116,8 +117,7 @@ public class ResourceUtils {
 										fos.close();
 									}
 								} catch (IOException e) {
-									ModManager.debugLogger.writeErrorWithException("Could not close FileOutputStream",
-											e);
+									ModManager.debugLogger.writeErrorWithException("Could not close FileOutputStream", e);
 								}
 							}
 							return data.length; // Return amount of consumed
@@ -267,8 +267,7 @@ public class ResourceUtils {
 		StringBuffer common = new StringBuffer();
 
 		int commonIndex = 0;
-		while (commonIndex < target.length && commonIndex < base.length
-				&& target[commonIndex].equals(base[commonIndex])) {
+		while (commonIndex < target.length && commonIndex < base.length && target[commonIndex].equals(base[commonIndex])) {
 			common.append(target[commonIndex] + pathSeparator);
 			commonIndex++;
 		}
@@ -277,8 +276,7 @@ public class ResourceUtils {
 			// No single common path element. This most
 			// likely indicates differing drive letters, like C: and D:.
 			// These paths cannot be relativized.
-			throw new PathResolutionException(
-					"No common path element found for '" + normalizedTargetPath + "' and '" + normalizedBasePath + "'");
+			throw new PathResolutionException("No common path element found for '" + normalizedTargetPath + "' and '" + normalizedBasePath + "'");
 		}
 
 		// The number of directories we have to backtrack depends on whether the
@@ -328,8 +326,7 @@ public class ResourceUtils {
 		return str.replaceAll("\\\\", "/"); // string regex string again.
 	}
 
-	private final static String[] hexSymbols = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d",
-			"e", "f" };
+	private final static String[] hexSymbols = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
 	public final static int BITS_PER_HEX_DIGIT = 4;
 
 	public static String toHexFromByte(final byte b) {
@@ -365,8 +362,7 @@ public class ResourceUtils {
 		if (buffer.length != 4) {
 			return -1;
 		}
-		return (buffer[0] << 24) & 0xff000000 | (buffer[1] << 16) & 0x00ff0000 | (buffer[2] << 8) & 0x0000ff00
-				| (buffer[3] << 0) & 0x000000ff;
+		return (buffer[0] << 24) & 0xff000000 | (buffer[1] << 16) & 0x00ff0000 | (buffer[2] << 8) & 0x0000ff00 | (buffer[3] << 0) & 0x000000ff;
 	}
 
 	/**
@@ -386,10 +382,8 @@ public class ResourceUtils {
 		return absolutePath.replaceAll("/", "\\\\");
 	}
 
-	public static BufferedImage getScaledInstance(BufferedImage img, int targetWidth, int targetHeight, Object hint,
-			boolean higherQuality) {
-		int type = (img.getTransparency() == Transparency.OPAQUE) ? BufferedImage.TYPE_INT_RGB
-				: BufferedImage.TYPE_INT_ARGB;
+	public static BufferedImage getScaledInstance(BufferedImage img, int targetWidth, int targetHeight, Object hint, boolean higherQuality) {
+		int type = (img.getTransparency() == Transparency.OPAQUE) ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
 		BufferedImage ret = (BufferedImage) img;
 		int w, h;
 		if (higherQuality) {
@@ -467,6 +461,50 @@ public class ResourceUtils {
 			return string;
 		}
 		return string.replaceAll(br, "\n");
+	}
+
+	/**
+	 * Opens a web page from the specified string
+	 * 
+	 * @param url
+	 *            URL
+	 */
+	public static void openWebpage(String url) {
+		// TODO Auto-generated method stub
+		try {
+			openWebpage(new URL(url));
+		} catch (MalformedURLException e) {
+			ModManager.debugLogger.writeErrorWithException("Error opening page: " + url, e);
+		}
+	}
+
+	public static ArrayList<File> createOneItemFileList(File path) {
+		ArrayList<File> files = new ArrayList<>();
+		files.add(path);
+		return files;
+	}
+
+	/**
+	 * Returns if this is 64-bit windows (OS, not VM).
+	 * @return true if 64bit, false otherwise
+	 */
+	public static boolean is64BitWindows() {
+		if (ModManager.FORCE_32BIT_MODE) {
+			return false;
+		}
+		if (System.getProperty("os.name").contains("Windows")) {
+			return (System.getenv("ProgramFiles(x86)") != null);
+		} else {
+			return (System.getProperty("os.arch").indexOf("64") != -1);
+		}
+	}
+
+	/**
+	 * Opens the specified folder in explorer. Do not quote the item being passed here, it will be quoted when run.
+	 * @param folder folder path to open in explorer
+	 */
+	public static void openFolderInExplorer(String folder) {
+		ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", "\""+folder+"\""));
 	}
 
 }

@@ -97,10 +97,8 @@ public class ModXMLTools {
 			for (String blf : mod.getBlacklistedFiles()) {
 				File f = new File(mod.getModPath() + blf);
 				if (f.exists()) {
-					ModManager.debugLogger
-							.writeError("A blacklisted file "
-									+ f
-									+ " exists in mod folder. Blacklisted files will be deleted when the mod is applied. Remove this file from your distribution or remove the blacklisting in moddesc");
+					ModManager.debugLogger.writeError("A blacklisted file " + f
+							+ " exists in mod folder. Blacklisted files will be deleted when the mod is applied. Remove this file from your distribution or remove the blacklisting in moddesc");
 					publish(new ThreadCommand("Mod has a blacklisted file (check moddesc)", "ERROR"));
 					return "";
 				}
@@ -111,8 +109,7 @@ public class ModXMLTools {
 				UrlValidator urlValidator = new UrlValidator(schemes);
 				if (!urlValidator.isValid(mod.getSideloadURL())) {
 					if (mod.getSideloadOnlyTargets().size() > 0) {
-						ModManager.debugLogger
-								.writeError("Mod has invalid sideload URL, and some files are marked for sideloading only. Aborting manifest generation");
+						ModManager.debugLogger.writeError("Mod has invalid sideload URL, and some files are marked for sideloading only. Aborting manifest generation");
 						publish(new ThreadCommand("Invalid Sideload URL. Manifest requires valid sideload URL", null));
 						return "";
 					} else {
@@ -131,8 +128,8 @@ public class ModXMLTools {
 
 			}
 
-			File manifestFile = new File(System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Manifests"
-					+ File.separator + foldername + ".xml");
+			File manifestFile = new File(
+					System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Manifests" + File.separator + foldername + ".xml");
 
 			//SIMULATE REVERSE UPDATE
 			//CHECK FOR FILE EXISTENCE IN MOD UPDATE FOLDER, LZMA HASHES.
@@ -190,12 +187,12 @@ public class ModXMLTools {
 			//Compressing mod to /serverupdate
 
 			long startTime = System.currentTimeMillis();
-			String sideloadoutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Sideload"
-					+ File.separator + foldername + File.separator;
-			String compressedfulloutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Full"
-					+ File.separator + foldername + File.separator;
-			String compressedupdateoutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator
-					+ "UpdateDelta" + File.separator + foldername + File.separator;
+			String sideloadoutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Sideload" + File.separator + foldername
+					+ File.separator;
+			String compressedfulloutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Full" + File.separator + foldername
+					+ File.separator;
+			String compressedupdateoutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "UpdateDelta" + File.separator
+					+ foldername + File.separator;
 
 			if (!manifestFile.exists()) {
 				compressedupdateoutputfolder = compressedfulloutputfolder; //don't use update folder
@@ -220,14 +217,11 @@ public class ModXMLTools {
 				String outputFile = compressedupdateoutputfolder + relativePath + ".lzma";
 				new File(outputFile).getParentFile().mkdirs();
 
-				String[] procargs = { ModManager.getToolsDir() + "lzma.exe", "e", srcFile, outputFile, "-d26",
-						"-mt" + Runtime.getRuntime().availableProcessors() };
+				String[] procargs = { ModManager.getToolsDir() + "lzma.exe", "e", srcFile, outputFile, "-d26", "-mt" + Runtime.getRuntime().availableProcessors() };
 				ProcessBuilder p = new ProcessBuilder(procargs);
 				ModManager.runProcess(p);
 				processed++;
 			}
-			
-			
 
 			//Update the full distribution folder (assuming we are doing a delta build)
 			if (!compressedfulloutputfolder.equals(compressedupdateoutputfolder)) {
@@ -250,15 +244,7 @@ public class ModXMLTools {
 					for (String delfile : up.getFilesToDelete()) {
 						File newfile = new File(compressedfulloutputfolder + delfile);
 						if (newfile.exists()) {
-							/*
-							 * ModManager.debugLogger.writeMessage(
-							 * "Deleting unnecessary file from full server package: "
-							 * + delfile); FileUtils.deleteQuietly(new
-							 * File(compressedfulloutputfolder + delfile));
-							 * FileUtils.copyFile(new File(delfile), new
-							 * File(compressedfulloutputfolder + delfile));
-							 */
-							System.out.println("Update package says to delete existing file: " + delfile);
+							ModManager.debugLogger.writeMessage("Update package says to delete existing file: " + delfile);
 						}
 					}
 				}
@@ -317,8 +303,8 @@ public class ModXMLTools {
 
 				String sideload7z = ModManager.appendSlash(new File(sideloadoutputfolder).getParent()) + foldername + "-sideload.7z";
 				FileUtils.deleteQuietly(new File(sideload7z));
-				String[] procargs = { "cmd", "/c", "start", "Building Sideload Package", ModManager.getToolsDir() + "7za", "a", "-r", "-mx9", "-mmt",
-						sideload7z, sideloadoutputfolder };
+				String[] procargs = { "cmd", "/c", "start", "Building Sideload Package", ModManager.getToolsDir() + "7z", "a", "-r", "-mx9", "-mmt", sideload7z,
+						sideloadoutputfolder };
 				ProcessBuilder p = new ProcessBuilder(procargs);
 				ModManager.runProcess(p);
 			}
@@ -398,12 +384,7 @@ public class ModXMLTools {
 	 *         applicable update operation
 	 */
 	public static UpdatePackage validateLatestAgainstServer(Mod mod) {
-		String updateURL;
-		if (ModManager.IS_DEBUG) {
-			updateURL = "http://webdev-mgamerz.c9.io/mods/getlatest";
-		} else {
-			updateURL = "https://me3tweaks.com/mods/getlatest";
-		}
+		String updateURL = "https://me3tweaks.com/mods/getlatest";
 		ModManager.debugLogger.writeMessage("=========Checking for update of " + mod.getModName() + "=========");
 		if (mod.getModMakerCode() > 0) {
 			Document doc = getOnlineInfo(updateURL, true, mod.getModMakerCode());
@@ -417,18 +398,13 @@ public class ModXMLTools {
 	}
 
 	public static ArrayList<UpdatePackage> validateLatestAgainstServer(ArrayList<Mod> mods, AllModsDownloadTask allModsDownloadTask) {
-		String updateURL;
-		if (ModManager.IS_DEBUG) {
-			updateURL = "http://webdev-mgamerz.c9.io/mods/getlatest_batch";
-		} else {
-			updateURL = "https://me3tweaks.com/mods/getlatest_batch";
-		}
+		String updateURL = "https://me3tweaks.com/mods/getlatest_batch";
 		ModManager.debugLogger.writeMessage("Checking for updates of the following mods:");
 		ArrayList<Mod> modmakerMods = new ArrayList<>();
 		ArrayList<Mod> classicMods = new ArrayList<>();
 		for (Mod mod : mods) {
-			ModManager.debugLogger.writeMessage(mod.getModMakerCode() > 0 ? mod.getModMakerCode() + " " + mod.getModName() + " " + mod.getVersion()
-					+ "(ModMaker)" : mod.getClassicUpdateCode() + " " + mod.getModName() + " " + mod.getVersion() + " (Classic)");
+			ModManager.debugLogger.writeMessage(mod.getModMakerCode() > 0 ? mod.getModMakerCode() + " " + mod.getModName() + " " + mod.getVersion() + "(ModMaker)"
+					: mod.getClassicUpdateCode() + " " + mod.getModName() + " " + mod.getVersion() + " (Classic)");
 			if (mod.getModMakerCode() > 0) {
 				modmakerMods.add(mod);
 			} else {
@@ -482,13 +458,11 @@ public class ModXMLTools {
 			String serverModName = modElem.getAttribute("name");
 			String changelog = modElem.getAttribute("changelog");
 			if (mod.getVersion() >= serverModVer) {
-				ModManager.debugLogger.writeMessage(mod.getModName() + " up to date. Local version: " + mod.getVersion() + " Server Version: "
-						+ serverModVer);
+				ModManager.debugLogger.writeMessage(mod.getModName() + " up to date. Local version: " + mod.getVersion() + " Server Version: " + serverModVer);
 				return null; // not an update
 			} else {
-				ModManager.debugLogger.writeMessage(mod.getModName() + " - ModMaker Mod is outdated, local:" + mod.getVersion() + " server: "
-						+ serverModVer);
-				return new UpdatePackage(mod, serverModName, serverModVer,changelog);
+				ModManager.debugLogger.writeMessage(mod.getModName() + " - ModMaker Mod is outdated, local:" + mod.getVersion() + " server: " + serverModVer);
+				return new UpdatePackage(mod, serverModName, serverModVer, changelog);
 			}
 		} else {
 			ModManager.debugLogger.writeMessage("XML document from server was null.");
@@ -535,9 +509,9 @@ public class ModXMLTools {
 			} catch (XPathExpressionException e1) {
 				ModManager.debugLogger.writeErrorWithException("Error trying to find sideload url in manifest:", e1);
 			}
-			
+
 			NodeList serverFileList = modElem.getElementsByTagName("sourcefile");
-			
+
 			//Build list of file objects for comparison
 			int numTotalFiles = serverFileList.getLength();
 			int numCheckedFiles = 0;
@@ -568,13 +542,12 @@ public class ModXMLTools {
 				String blacklisted = fileElem.getTextContent();
 				if (blacklisted.contains("..")) {
 					//Malicious attempt possible
-					ModManager.debugLogger
-							.writeError("Server indicates a file with path .. is blacklisted. The file path indicated on the server is: "
-									+ blacklisted + "\nThis may be a malicious piece of data from the server. This file will be skipped");
+					ModManager.debugLogger.writeError("Server indicates a file with path .. is blacklisted. The file path indicated on the server is: " + blacklisted
+							+ "\nThis may be a malicious piece of data from the server. This file will be skipped");
 					continue;
 				}
 				File blacklistedlocalfile = new File(modpath + blacklisted);
-				System.out.println("Checking for blacklisted file: " + blacklistedlocalfile + " exits? " + blacklistedlocalfile.exists());
+				ModManager.debugLogger.writeMessage("Checking for blacklisted file: " + blacklistedlocalfile + " exits? " + blacklistedlocalfile.exists());
 
 				if (blacklistedlocalfile.exists()) {
 					ModManager.debugLogger.writeMessage("Blacklisted file exists and will be deleted: " + blacklisted);
@@ -604,8 +577,8 @@ public class ModXMLTools {
 				// check size
 				if (localFile.length() != mf.getSize()) {
 					newFiles.add(mf);
-					ModManager.debugLogger.writeMessage(mf.getRelativePath() + " size has changed (local: " + localFile.length() + " | server: "
-							+ mf.getSize() + "), adding to update list");
+					ModManager.debugLogger
+							.writeMessage(mf.getRelativePath() + " size has changed (local: " + localFile.length() + " | server: " + mf.getSize() + "), adding to update list");
 					continue;
 				}
 
@@ -645,21 +618,20 @@ public class ModXMLTools {
 				}
 			}
 
-			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: "
-					+ filesToRemove.size());
+			ModManager.debugLogger.writeMessage("Update check complete, number of outdated/missing files: " + newFiles.size() + ", files to remove: " + filesToRemove.size());
 			if (newFiles.size() == 0 && filesToRemove.size() == 0) {
 				//server lists update, but local copy matches server
 				return null;
 			}
-			UpdatePackage up = new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder,changelog);
+			UpdatePackage up = new UpdatePackage(mod, serverModVer, newFiles, filesToRemove, serverFolder, changelog);
 			if (sideloadURL != null) {
 				up.setSideloadURL(sideloadURL);
 			}
 			for (ManifestModFile mf : newFiles) {
 				if (mf.isSideloadOnly()) {
 					//REQUIRES SIDELOAD!
-					ModManager.debugLogger
-							.writeError("This mod has a file marked for update that the developer has specified as sideload-only. The update cannot proceed until all sideload only files match their server counterparts. Advertising sideload update. The URL for the sideloading is "
+					ModManager.debugLogger.writeError(
+							"This mod has a file marked for update that the developer has specified as sideload-only. The update cannot proceed until all sideload only files match their server counterparts. Advertising sideload update. The URL for the sideloading is "
 									+ sideloadURL);
 					up.setRequiresSideload(true);
 				}

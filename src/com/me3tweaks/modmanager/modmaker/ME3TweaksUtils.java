@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -17,6 +19,12 @@ import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 
+/**
+ * Utilities class for interfacing with ME3Tweaks and ModMaker
+ * 
+ * @author Mgamerz
+ *
+ */
 public class ME3TweaksUtils {
 	public static final int FILENAME = 0;
 	public static final int HEADER = 1;
@@ -621,15 +629,18 @@ public class ME3TweaksUtils {
 	}
 
 	/**
-	 * Retrieves a Custom DLC mod's name by using the ME3Tweaks Third Party Mod Name Service
-	 * @param customdlcfoldername Custom DLC Folder name
+	 * Retrieves a Custom DLC mod's name by using the ME3Tweaks Third Party Mod
+	 * Name Service
+	 * 
+	 * @param customdlcfoldername
+	 *            Custom DLC Folder name
 	 * @return Unknown Mod if not found, otherwise the listed name.
 	 */
 	public static String getThirdPartyModName(String customdlcfoldername) {
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
 			return "Unknown Mod";
 		}
-		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: "+customdlcfoldername);
+		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: " + customdlcfoldername);
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);
@@ -646,17 +657,20 @@ public class ME3TweaksUtils {
 
 		return "Unknown Mod";
 	}
-	
+
 	/**
-	 * Retreives information about a 3rd party mod based on its folder name. Returns null if not in the database.
-	 * @param customdlcfoldername Folder to search against
+	 * Retreives information about a 3rd party mod based on its folder name.
+	 * Returns null if not in the database.
+	 * 
+	 * @param customdlcfoldername
+	 *            Folder to search against
 	 * @return
 	 */
 	public static ThirdPartyModInfo getThirdPartyModInfo(String customdlcfoldername) {
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
 			return null;
 		}
-		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: "+customdlcfoldername);
+		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: " + customdlcfoldername);
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);
@@ -664,7 +678,7 @@ public class ME3TweaksUtils {
 			if (modinfo == null) {
 				return null;
 			} else {
-				return new ThirdPartyModInfo(customdlcfoldername,modinfo);
+				return new ThirdPartyModInfo(customdlcfoldername, modinfo);
 			}
 		} catch (ParseException e) {
 			ModManager.debugLogger.writeErrorWithException("Failed to parse 3rd party mod information: ", e);
@@ -677,24 +691,51 @@ public class ME3TweaksUtils {
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
 			return null;
 		}
-		ModManager.debugLogger.writeMessage("Looking up mod information by mount priority using the 3rd party mod id service: "+priorityString);
+		ModManager.debugLogger.writeMessage("Looking up mod information by mount priority using the 3rd party mod id service: " + priorityString);
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);
-			
-		    for (Object key : dbObj.keySet()) {
-		        //based on you key types
-		        String keyStr = (String)key;
-		        JSONObject modinfo = (JSONObject) dbObj.get(keyStr);
-		        String mountpriority = (String) modinfo.get("mountpriority");
-		        System.out.println(mountpriority);
-		        if (mountpriority.equalsIgnoreCase(priorityString)) {
-					return new ThirdPartyModInfo(keyStr,modinfo);
-		        }
-		    }
+
+			for (Object key : dbObj.keySet()) {
+				//based on you key types
+				String keyStr = (String) key;
+				JSONObject modinfo = (JSONObject) dbObj.get(keyStr);
+				String mountpriority = (String) modinfo.get("mountpriority");
+				//System.out.println(mountpriority);
+				if (mountpriority.equalsIgnoreCase(priorityString)) {
+					return new ThirdPartyModInfo(keyStr, modinfo);
+				}
+			}
 		} catch (ParseException e) {
 			ModManager.debugLogger.writeErrorWithException("Failed to parse 3rd party mod information: ", e);
 		}
-	    return null;
+		return null;
+	}
+
+	/**
+	 * Gets a random ME3Tweaks Tip from the tips service
+	 * @return random tip string, blank string if service not available or error occured.
+	 */
+	public static String getME3TweaksTip() {
+		if (ModManager.TIPS_SERVICE_JSON == null) {
+			return "";
+		}
+		
+		try {
+			JSONParser parser = new JSONParser();
+			JSONObject dbObj = (JSONObject) parser.parse(ModManager.TIPS_SERVICE_JSON);
+			JSONArray tipsArray = (JSONArray) dbObj.get("tips");
+			ArrayList<String> tips = new ArrayList<String>();
+			for (Object value : tipsArray.toArray()) {
+				//based on you key types
+				tips.add((String) value);
+			}
+			Random rand = new Random();
+			int  n = rand.nextInt(tips.size());
+			return tips.get(n);
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Failed to parse tips: ", e);
+		}
+		return "";
 	}
 }

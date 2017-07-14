@@ -1,17 +1,26 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -20,7 +29,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -45,43 +56,93 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
 /**
- * Window that injects the files into the game/dlc.
+ * Window that injects the files into the game/dlc. Takes ArrayList<Mod> as list
+ * of mods to install. However, this went unused (all instances only use 1 mod
+ * in the list), but was left behind because of the extensive changes it made.
  * 
  * @author Mgamerz
  *
  */
 public class ModInstallWindow extends JDialog {
-	JLabel infoLabel;
-	String bioGameDir;
-	final int levelCount = 7;
-	JTextArea consoleArea;
-	String consoleQueue[];
-	String currentText;
-	JProgressBar progressBar;
-	ModManagerWindow callingWindow;
+	private boolean continueBatchInstallation = true;
+	private JLabel infoLabel;
+	private String bioGameDir;
+	private final int levelCount = 7;
+	private JTextArea consoleArea;
+	private String consoleQueue[];
+	private JProgressBar progressBar;
+	private JButton batchCancellationButton;
+	private BatchPackage batchPackage;
 	public final static String CUSTOMDLC_METADATA_FILE = "_metacmm.txt";
+	private boolean installFinished = false;
 
-	public ModInstallWindow(ModManagerWindow callingWindow, String bioGameDir, Mod mod) {
-		// callingWindow.setEnabled(false);
-		this.callingWindow = callingWindow;
-		this.bioGameDir = bioGameDir;
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Applying Mod");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(320, 220));
+	public ModInstallWindow(JFrame callingWindow, ArrayList<Mod> mods, BatchPackage batchpackage) {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		this.batchPackage = batchpackage;
+		initWindow(callingWindow, mods);
+	}
+
+	public ModInstallWindow(JDialog callingWindow, ArrayList<Mod> mods, BatchPackage batchpackage) {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		this.batchPackage = batchpackage;
+		initWindow(callingWindow, mods);
+	}
+
+	/**
+	 * Install a single mod, with an optional batch package.
+	 * 
+	 * @param callingWindow
+	 *            Dialog to center against
+	 * @param mod
+	 *            Mod to install
+	 * @param batchpackage
+	 *            Batch package. Used to slightly modify the UI for batch
+	 *            installation mode. Can be null.
+	 */
+	public ModInstallWindow(JDialog callingWindow, Mod mod, BatchPackage batchpackage) {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		this.batchPackage = batchpackage;
+		ArrayList<Mod> mods = new ArrayList<Mod>();
+		mods.add(mod);
+		initWindow(callingWindow, mods);
+	}
+
+	/**
+	 * Install a single mod, with an optional batch package.
+	 * 
+	 * @param callingWindow
+	 *            Frame to center against
+	 * @param mod
+	 *            Mod to install
+	 * @param batchpackage
+	 *            Batch package. Used to slightly modify the UI for batch
+	 *            installation mode. Can be null.
+	 */
+	public ModInstallWindow(JFrame callingWindow, Mod mod, BatchPackage batchpackage) {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		this.batchPackage = batchpackage;
+		ArrayList<Mod> mods = new ArrayList<Mod>();
+		mods.add(mod);
+		initWindow(callingWindow, mods);
+	}
+
+	private void initWindow(Component callingWindow, ArrayList<Mod> mods) {
+		this.bioGameDir = ModManagerWindow.GetBioGameDir();
+
 		consoleQueue = new String[levelCount];
+		setupWindow(mods);
 
-		setupWindow(mod);
+		if (callingWindow instanceof JFrame) {
+			setLocationRelativeTo((JFrame) callingWindow);
+		} else {
+			setLocationRelativeTo((JDialog) callingWindow);
+		}
 
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(callingWindow);
-
-		checkModCMMVersion(mod);
-		boolean installMod = validateRequiredModulesAreAvailable(callingWindow, mod);
+		checkModCMMVersion(callingWindow, mods);
+		boolean installMod = validateRequiredModulesAreAvailable(callingWindow, mods);
 		if (installMod) {
-			new InjectionCommander(mod).execute();
-			this.setVisible(true);
+			new InjectionCommander(mods).execute();
+			setVisible(true);
 		} else {
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod install cancelled");
 			dispose();
@@ -91,14 +152,18 @@ public class ModInstallWindow extends JDialog {
 	/**
 	 * Checks to make sure that the MODDESC can be fully parsed.
 	 * 
-	 * @param mod
+	 * @param mods
 	 *            mod to check against
 	 */
-	private void checkModCMMVersion(Mod mod) {
-		if (mod.getCMMVer() > ModManager.MODDESC_VERSION_SUPPORT) {
-			JOptionPane.showMessageDialog(callingWindow,
-					"This mod specifies it requires a newer version of Mod Manager: " + mod.getCMMVer() + ".\nMod Manager will attempt to install the mod but it may not work.",
-					"Outdated Mod Manager", JOptionPane.WARNING_MESSAGE);
+	private void checkModCMMVersion(Component callingWindow, ArrayList<Mod> mods) {
+		for (Mod mod : mods) {
+			if (mod.getCMMVer() > ModManager.MODDESC_VERSION_SUPPORT) {
+				JOptionPane
+						.showMessageDialog(callingWindow,
+								mod.getModName() + "'s moddesc.ini file indicates it uses a higher version of the moddesc specification than this build supports: "
+										+ mod.getCMMVer() + ".\nMod Manager will attempt to install the mod but it may not work.",
+								"Outdated Mod Manager", JOptionPane.WARNING_MESSAGE);
+			}
 		}
 	}
 
@@ -108,28 +173,49 @@ public class ModInstallWindow extends JDialog {
 	 * 
 	 * @return true if all are available or user ignored missing
 	 */
-	private boolean validateRequiredModulesAreAvailable(ModManagerWindow callingWindow, Mod mod) {
+	private boolean validateRequiredModulesAreAvailable(Component callingWindow, ArrayList<Mod> mods) {
 		ArrayList<ModJob> missingModules = new ArrayList<ModJob>();
-		for (ModJob job : mod.jobs) {
-			if (job.getJobType() == ModJob.DLC) {
-				String me3exppath = ModManager.getME3ExplorerEXEDirectory(false);
-				if (me3exppath.equals("")) {
-					//me3explorer is missing
-					ModManager.debugLogger.writeError("Unable to find ME3Explorer, cancelling mod install");
-					JOptionPane.showMessageDialog(null, "Installation of mods requires ME3Explorer in the data directory.\nMod installation cannot continue.",
-							"Required Component Missing", JOptionPane.ERROR_MESSAGE);
-					return false;
-				}
+		StringBuilder sb = new StringBuilder();
+		for (Mod mod : mods) {
+			for (ModJob job : mod.jobs) {
+				if (job.getJobType() == ModJob.DLC) {
+					String commandlinetoolsdir = ModManager.getCommandLineToolsDir();
+					File fullautotoc = new File(commandlinetoolsdir + "FullAutoTOC.exe");
+					File sfarinjector = new File(commandlinetoolsdir + "SFARTools-Inject.exe");
+					if (!fullautotoc.exists() || !sfarinjector.exists()) {
+						dispose();
+						ModManager.debugLogger.writeError("Mod Manager Command Line tools are not available. Aborting installation");
+						JOptionPane.showMessageDialog(null,
+								"Installation of mods requires the Mod Manager Command Line tools library.\nThis will automatically download on startup when connected to the internet.\nMod installation cannot continue.",
+								"Required Component Missing", JOptionPane.ERROR_MESSAGE);
+						return false;
+					}
 
-				//check that sfar is available
-				String sfarName = "Default.sfar";
-				if (job.TESTPATCH) {
-					sfarName = "Patch_001.sfar";
+					//check that sfar is available
+					String sfarName = "Default.sfar";
+					if (job.TESTPATCH) {
+						sfarName = "Patch_001.sfar";
+					}
+					String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
+					File sfar = new File(sfarPath);
+					if (!sfar.exists()) {
+						ModManager.debugLogger.writeMessage("Installation module is missing: " + sfar);
+						missingModules.add(job);
+					}
 				}
-				String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
-				File sfar = new File(sfarPath);
-				if (!sfar.exists()) {
-					missingModules.add(job);
+			}
+
+			//module is missing
+			sb.append(mod.getModName() + " has jobs for the following missing DLC.\nIf the mod descriptor details the job description, they will be listed below.\n");
+			for (ModJob job : missingModules) {
+				ModManager.debugLogger.writeMessage(mod.getModName() + " requires missing DLC Module: " + job.getJobName());
+				sb.append(" - ");
+				sb.append(job.getJobName());
+				sb.append("\n");
+				if (job.getRequirementText() != null && !job.getRequirementText().equals("")) {
+					sb.append("   - ");
+					sb.append(job.getRequirementText());
+					sb.append("\n");
 				}
 			}
 		}
@@ -137,31 +223,30 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Mod has all required DLCs available");
 			return true;
 		}
-
-		//module is missing
-		StringBuilder sb = new StringBuilder();
-		sb.append("This mod has tasks for the following missing DLC.\nIf the mod descriptor details the job description, they will be listed below.\n");
-		for (ModJob job : missingModules) {
-			ModManager.debugLogger.writeMessage("Mod requires missing DLC Module: " + job.getJobName());
-			sb.append(" - ");
-			sb.append(job.getJobName());
-			sb.append("\n");
-			if (job.getRequirementText() != null && !job.getRequirementText().equals("")) {
-				sb.append("   - ");
-				sb.append(job.getRequirementText());
-				sb.append("\n");
-			}
-		}
 		sb.append("\nThese jobs will be skipped. Continue with the mod install?");
 		int result = JOptionPane.showConfirmDialog(callingWindow, sb.toString(), "Missing DLC", JOptionPane.WARNING_MESSAGE);
 		ModManager.debugLogger.writeMessage(result == JOptionPane.YES_OPTION ? "User continuing install even with missing DLC modules" : "User canceled Mod Install");
 		return result == JOptionPane.YES_OPTION;
 	}
 
-	private void setupWindow(Mod mod) {
+	private void setupWindow(ArrayList<Mod> mods) {
+		setTitle("Applying Mod" + (mods.size() > 1 ? "s" : ""));
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(320, batchPackage != null ? 250 : 220));
+		setIconImages(ModManager.ICONS);
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html><center>Now Installing<br>"+mod.getModName()+"</center></html>",SwingConstants.CENTER);
+		if (mods.size() == 1) {
+			if (batchPackage != null) {
+				infoLabel = new JLabel("<html><center>Now Installing [" + batchPackage.currentBatchInstallationNumber + "/" + batchPackage.totalBatchMods + "]<br>"
+						+ mods.get(0).getModName() + "</center></html>", SwingConstants.CENTER);
+			} else {
+				infoLabel = new JLabel("<html><center>Now Installing<br>" + mods.get(0).getModName() + "</center></html>", SwingConstants.CENTER);
+			}
+		} else {
+			infoLabel = new JLabel("<html><center>Now Installing<br>" + mods.size() + " mods</center></html>", SwingConstants.CENTER);
+
+		}
 		northPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
@@ -178,7 +263,33 @@ public class ModInstallWindow extends JDialog {
 		consoleArea.setEditable(false);
 
 		rootPanel.add(consoleArea, BorderLayout.CENTER);
+
+		if (batchPackage != null) {
+			batchCancellationButton = new JButton("Cancel batch installation");
+			batchCancellationButton.setToolTipText("Cancels batch mod installation. Installation of this mod will complete and then batch installation will stop.");
+			batchCancellationButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					batchCancellationButton.setEnabled(false);
+					batchCancellationButton.setText("Canceling batch installation");
+					continueBatchInstallation = false;
+					ModManager.debugLogger.writeMessage("BATCH INSTALLATION CANCEL BUTTON WAS PRESSED. ABORTING FURTHER BATCH MODS");
+				}
+			});
+			rootPanel.add(batchCancellationButton, BorderLayout.SOUTH);
+		}
 		getContentPane().add(rootPanel);
+		pack();
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				if (!installFinished) {
+					continueBatchInstallation = false;
+					ModManager.debugLogger.writeMessage("User clicked X on install window");
+				}
+			}
+		});
 	}
 
 	/**
@@ -192,30 +303,32 @@ public class ModInstallWindow extends JDialog {
 		double numjobs = 0;
 		double taskSteps = 0;
 		double completedTaskSteps = 0;
-		Mod mod;
-		ModJob[] jobs;
 		ArrayList<String> failedJobs;
 		private BasegameHashDB bghDB;
 		private boolean installCancelled = false;
 		private boolean failedLoadingDB = false;
-		private boolean alternatesApplied;
-		private ArrayList<String> outdatedinstalledfolders;
+		private HashMap<String, String> outdatedinstalledfolders;
 		private boolean skipTOC = false;
+		private ArrayList<Mod> mods;
 
-		protected InjectionCommander(Mod mod) {
-			this.mod = new Mod(mod); //clone before applying alternates and optional addins
-			ModManager.debugLogger.writeMessage("========Installing " + this.mod.getModName() + "========");
-			ModManager.debugLogger.writeMessage("Applying alternate files before parsing jobs");
-			alternatesApplied = this.mod.applyAutomaticAlternates(bioGameDir);
-			alternatesApplied |= this.mod.applyManualAlternates(bioGameDir); //Must be separate or it might short circuit in compilation!
-			if (alternatesApplied) {
-				ModManager.debugLogger.writeMessage("At least one alternate file was applied, install now requires pre-toc.");
+		protected InjectionCommander(ArrayList<Mod> mods) {
+			this.mods = new ArrayList<Mod>();
+			for (Mod mod : mods) {
+				this.mods.add(new Mod(mod)); //CLONE
 			}
-			ModManager.debugLogger.writeMessage("Finshing applying alternate files. Now checking for manually selected addins...");
-			this.mod.applyManualCustomDLCs();
-			ModManager.debugLogger.writeMessage("Finished applying addins. Preparing to start the injection thread.");
-			this.jobs = this.mod.getJobs();
-			numjobs = jobs.length;
+			ModManager.debugLogger.writeMessage("========Installing Mod(s) - Preprocessor========");
+			numjobs = 0;
+			for (Mod mod : this.mods) {
+				ModManager.debugLogger.writeMessage("Preprocessing: " + mod.getModName());
+				ModManager.debugLogger.writeMessage(" - Applying Automatic and Manual Alternate files to mod object");
+				mod.applyAutomaticAlternates(bioGameDir);
+				mod.applyManualAlternates(bioGameDir);
+				ModManager.debugLogger.writeMessage("App");
+				ModManager.debugLogger.writeMessage(" - Applying Manual Custom DLCs to mod object");
+				mod.applyManualCustomDLCs();
+				numjobs += mod.jobs.size();
+			}
+
 			failedJobs = new ArrayList<String>();
 			ModManager.debugLogger.writeMessage("Starting the InjectionCommander thread. Number of jobs to do: " + numjobs);
 		}
@@ -232,35 +345,40 @@ public class ModInstallWindow extends JDialog {
 			} else {
 				ModManager.debugLogger.writeMessage("A DLC bypass is installed");
 			}
-			
-			
 
 			boolean checkedDB = false;
-			for (ModJob job : jobs) {
+			ArrayList<ModJob> precheckJobs = new ArrayList<>();
+			for (Mod mod : mods) {
+				precheckJobs.addAll(mod.jobs);
+			}
+			for (ModJob job : precheckJobs) {
 				if (job.getJobName().equals(ModType.CUSTOMDLC) || job.getJobName().equals(ModType.TESTPATCH)) {
 					continue;
 				}
 				if ((job.getJobName().equals(ModType.BASEGAME) && job.getFilesToReplaceTargets().size() == 0 && job.getFilesToRemoveTargets().size() == 0)) {
 					continue;
 				}
+
 				checkedDB = true;
-				if (precheckGameDB(jobs)) {
+			}
+
+			if (!checkedDB) {
+				ModManager.debugLogger.writeMessage("Mod only adds files to basegame/adds custom DLC. The Game DB check will be skipped");
+			} else {
+				if (precheckGameDB(precheckJobs)) {
 					ModManager.debugLogger.writeMessage("Precheck DB method has returned true, indicating user wants to open repair DB and cancel mod install.");
 					skipTOC = true;
+					continueBatchInstallation = false;
 					return false;
 				} else {
 					ModManager.debugLogger.writeMessage("Precheck DB method has returned false, everything is OK and mod install will continue");
 				}
-				break;
-			}
-			if (!checkedDB) {
-				ModManager.debugLogger.writeMessage("Mod only adds files to basegame/adds custom DLC. The Game DB check has been skipped");
 			}
 
 			ModManager.debugLogger.writeMessage("Processing mod jobs in job queue.");
 			ExecutorService modinstallExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			ArrayList<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
-			for (ModJob job : jobs) {
+			for (ModJob job : precheckJobs) {
 				//submit jobs
 				JobTask jtask = new JobTask(job);
 				futures.add(modinstallExecutor.submit(jtask));
@@ -289,14 +407,16 @@ public class ModInstallWindow extends JDialog {
 		}
 
 		private void checkForOutdatedDLC() {
-			if (mod.getOutdatedDLCModules().size() > 0) {
-				outdatedinstalledfolders = new ArrayList<>();
-				ArrayList<String> installedDLC = ModManager.getInstalledDLC(bioGameDir);
-				for (String installeddlcitem : installedDLC) {
-					for (String outdateditem : mod.getOutdatedDLCModules()) {
-						if (installeddlcitem.toUpperCase().equals(outdateditem.toUpperCase())) {
-							//outdated item is still installed.
-							outdatedinstalledfolders.add(outdateditem);
+			for (Mod mod : mods) {
+				if (mod.getOutdatedDLCModules().size() > 0) {
+					outdatedinstalledfolders = new HashMap<String, String>();
+					ArrayList<String> installedDLC = ModManager.getInstalledDLC(bioGameDir);
+					for (String installeddlcitem : installedDLC) {
+						for (String outdateditem : mod.getOutdatedDLCModules()) {
+							if (installeddlcitem.toUpperCase().equals(outdateditem.toUpperCase())) {
+								//outdated item is still installed.
+								outdatedinstalledfolders.put(mod.getModName(), outdateditem);
+							}
 						}
 					}
 				}
@@ -334,9 +454,9 @@ public class ModInstallWindow extends JDialog {
 				//end of each callable...
 				if (result) {
 					completed.incrementAndGet();
-					ModManager.debugLogger.writeMessage("Successfully finished mod job.");
+					ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Successfully finished mod job.");
 				} else {
-					ModManager.debugLogger.writeMessage("Mod job failed: " + job.getDLCFilePath());
+					ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Mod job failed: " + job.getDLCFilePath());
 					failedJobs.add(job.getDLCFilePath());
 				}
 				publish(Integer.toString(completed.get()));
@@ -353,7 +473,7 @@ public class ModInstallWindow extends JDialog {
 		 * @return true if user clicks YES to open DB window, false if they
 		 *         don't (or all is Ok)
 		 */
-		private boolean precheckGameDB(ModJob[] jobs) {
+		private boolean precheckGameDB(ArrayList<ModJob> jobs) {
 			ModManager.debugLogger.writeMessage("---PRECHECKING GAME DATABASE---");
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
@@ -368,20 +488,25 @@ public class ModInstallWindow extends JDialog {
 						ModManager.debugLogger.writeErrorWithException("DB FAILED TO LOAD.", e);
 						e = e.getNextException();
 					}
+					return true;
 				}
 				if (bghDB == null) {
 					//cannot continue
 					failedLoadingDB = true;
-					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
-							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
+							+ "Only one connection to the local repair database is allowed at a time.<br>"
+							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+							"Database Failure", JOptionPane.ERROR_MESSAGE);
 					return true;
 				}
 
 			}
 			//check if DB exists
 			if (!bghDB.isBasegameTableCreated()) {
-				JOptionPane.showMessageDialog(ModInstallWindow.this, "The game repair database has not been created.\nMods that affect the basegame or official DLC require the game repair database to install.",
+				JOptionPane.showMessageDialog(ModInstallWindow.this,
+						"The game repair database has not been created.\nMods that affect the basegame or official DLC require the game repair database to install.",
 						"No Game Repair Database", JOptionPane.ERROR_MESSAGE);
+				continueBatchInstallation = false;
 				return true; //open DB window
 			}
 
@@ -391,7 +516,7 @@ public class ModInstallWindow extends JDialog {
 					continue;
 				}
 				publish("Checking database on " + job.getJobName());
-				if (job.getJobType() == ModJob.BASEGAME) {
+				if (job.getJobType() == ModJob.BASEGAME && job.getFilesToReplaceTargets().size() > 0) {
 					//BGDB files are required
 					ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
 					int numFilesToReplace = filesToReplace.size();
@@ -407,9 +532,8 @@ public class ModInstallWindow extends JDialog {
 						if (rfi == null) {
 							ModManager.debugLogger.writeMessage("File not in GameDB, showing prompt: " + relative);
 							// file is missing. Basegame DB likely hasn't been made
-							int reply = JOptionPane.showConfirmDialog(null,
-									"<html>" + relative
-											+ " is not in the game repair database.<br>In order to restore basegame files and unpacked DLC files this database needs to be created or updated.<br>Open the database window?</html>",
+							int reply = JOptionPane.showConfirmDialog(null, "<html>" + relative
+									+ " is not in the game repair database.<br>In order to restore basegame files and unpacked DLC files this database needs to be created or updated.<br>Open the database window?</html>",
 									"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 							if (reply == JOptionPane.NO_OPTION) {
 								return false;
@@ -509,7 +633,7 @@ public class ModInstallWindow extends JDialog {
 					// install file.
 					File unpacked = new File(me3dir + fileToReplace);
 					Path originalpath = Paths.get(unpacked.toString());
-					if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+					if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin")) {
 						try {
 							publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 							Path newfilepath = Paths.get(newFile);
@@ -626,9 +750,6 @@ public class ModInstallWindow extends JDialog {
 		 */
 		private boolean processDLCJob(ModJob job) {
 			ModManager.debugLogger.writeMessage("===Processing a dlc job: " + job.getJobName() + "===");
-			if (job.getJobName().equals("LEVIATHAN")) {
-				System.out.println("BREAK");
-			}
 			File bgdir = new File(ModManager.appendSlash(bioGameDir));
 			String me3dir = ModManager.appendSlash(bgdir.getParent());
 
@@ -701,7 +822,7 @@ public class ModInstallWindow extends JDialog {
 				// install file.
 				File unpacked = new File(me3dir + fileToReplace);
 				Path originalpath = Paths.get(unpacked.toString());
-				if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin") || !ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
+				if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin")) {
 
 					try {
 						Path newfilepath = Paths.get(newFile);
@@ -834,9 +955,8 @@ public class ModInstallWindow extends JDialog {
 					// validate file to backup.
 					boolean justInstall = false;
 					if (rfi == null) {
-						int reply = JOptionPane.showOptionDialog(null,
-								"<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
-										+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
+						int reply = JOptionPane.showOptionDialog(null, "<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
+								+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
 								"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
 								new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
 						switch (reply) {
@@ -938,8 +1058,8 @@ public class ModInstallWindow extends JDialog {
 			if (job.getFilesToReplaceTargets().size() > 0) {
 
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcinject");
+				commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Inject.exe");
+				commandBuilder.add("--sfarpath");
 				String sfarName = "Default.sfar";
 				if (job.TESTPATCH) {
 					sfarName = "Patch_001.sfar";
@@ -952,6 +1072,9 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
+				commandBuilder.add("--replacefiles");
+				commandBuilder.add("--files");
+
 				ArrayList<String> filesToReplace = job.getFilesToReplaceTargets();
 				ArrayList<String> newFiles = job.getFilesToReplace();
 				ModManager.debugLogger.writeMessage("Number of files to replace: " + filesToReplace.size());
@@ -959,20 +1082,12 @@ public class ModInstallWindow extends JDialog {
 				publish("Updating " + filesToReplace.size() + " files in " + job.getJobName());
 				for (int i = 0; i < filesToReplace.size(); i++) {
 					commandBuilder.add(filesToReplace.get(i));
+
 					String newFile = newFiles.get(i);
 					commandBuilder.add(newFile);
 				}
-
-				// System.out.println("Building command");
-				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-				// Debug stuff
-				StringBuilder sb = new StringBuilder();
-				for (String arg : command) {
-					sb.append(arg + " ");
-				}
-				ModManager.debugLogger.writeMessage("Executing injection command: " + sb.toString());
 				int returncode = 1;
-				ProcessBuilder pb = new ProcessBuilder(command);
+				ProcessBuilder pb = new ProcessBuilder(commandBuilder);
 				ModManager.debugLogger.writeMessage("Executing process for DLC Injection Job.");
 				// p = Runtime.getRuntime().exec(command);
 				ProcessResult pr = ModManager.runProcess(pb);
@@ -984,8 +1099,8 @@ public class ModInstallWindow extends JDialog {
 			//ADD FILE TASK
 			if (job.getFilesToAdd().size() > 0) {
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcaddfiles");
+				commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Inject.exe");
+				commandBuilder.add("--sfarpath");
 				String sfarName = "Default.sfar";
 				if (job.TESTPATCH) {
 					sfarName = "Patch_001.sfar";
@@ -998,6 +1113,8 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
+				commandBuilder.add("--addfiles");
+				commandBuilder.add("--files");
 				ArrayList<String> filesToAdd = job.getFilesToAdd();
 				ArrayList<String> filesToAddTargets = job.getFilesToAddTargets();
 				ModManager.debugLogger.writeMessage("Number of files to add: " + filesToAdd.size());
@@ -1013,11 +1130,11 @@ public class ModInstallWindow extends JDialog {
 				for (String arg : command) {
 					sb.append(arg + " ");
 				}
-				ModManager.debugLogger.writeMessage("Executing injection command: " + sb.toString());
+				ModManager.debugLogger.writeMessage("[" + job.getJobName() + "] Executing injection");
 				int returncode = 1;
 				ProcessBuilder pb = new ProcessBuilder(command);
 				ModManager.debugLogger.writeMessage("Executing process for SFAR File Injection (Adding files).");
-				ProcessResult pr = ModManager.runProcess(pb);
+				ProcessResult pr = ModManager.runProcess(pb, job.getJobName());
 				returncode = pr.getReturnCode();
 				ModManager.debugLogger.writeMessage("ProcessSFARJob ADD FILES returned 0: " + (returncode == 0));
 				result = (returncode == 0) && result;
@@ -1026,8 +1143,8 @@ public class ModInstallWindow extends JDialog {
 			//REMOVE FILE TASK
 			if (job.getFilesToRemoveTargets().size() > 0) {
 				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(true) + "ME3Explorer.exe");
-				commandBuilder.add("-dlcremovefiles");
+				commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Inject.exe");
+				commandBuilder.add("--sfarpath");
 				String sfarName = "Default.sfar";
 				if (job.TESTPATCH) {
 					sfarName = "Patch_001.sfar";
@@ -1040,6 +1157,8 @@ public class ModInstallWindow extends JDialog {
 					return true;
 				}
 				commandBuilder.add(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName);
+				commandBuilder.add("--deletefiles");
+				commandBuilder.add("--files");
 				ArrayList<String> filesToRemove = job.getFilesToRemoveTargets();
 				ModManager.debugLogger.writeMessage("Number of files to remove: " + filesToRemove.size());
 
@@ -1105,30 +1224,10 @@ public class ModInstallWindow extends JDialog {
 			}
 			//autotoc if necessary, create metadata file
 			for (String str : job.getDestFolders()) {
-				if (alternatesApplied) {
-					if (!ModManager.POST_INSTALL_AUTOTOC_INSTEAD) {
-						publish("Automatically modified " + str + ", updating PCConsoleTOC");
-						//needs TOC on customDLC
-						ArrayList<String> commandBuilder = new ArrayList<String>();
-						// <exe> -toceditorupdate <TOCFILE> <FILENAME> <SIZE>
-						commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-						commandBuilder.add("-autotoc");
-						commandBuilder.add(dlcdir + File.separator + str);
-						String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-						ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Updating PCConsoleTOC for CustomDLC that had alternate applied");
-						int returncode = 1;
-						ProcessBuilder pb = new ProcessBuilder(command);
-						ProcessResult pr = ModManager.runProcess(pb);
-						returncode = pr.getReturnCode();
-						if (returncode != 0 || pr.hadError()) {
-							ModManager.debugLogger.writeError("[" + job.getJobName() + "]ME3Explorer returned a non 0 code (or threw error) running AutoTOC: " + returncode);
-						}
-					}
-				}
 				try {
 					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
 					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Writing custom DLC metadata file: " + metadatapath);
-					FileUtils.writeStringToFile(new File(metadatapath), mod.getModName() + " " + mod.getVersion());
+					FileUtils.writeStringToFile(new File(metadatapath), job.getOwningMod().getModName() + " " + job.getOwningMod().getVersion(), StandardCharsets.UTF_8);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("[CUSTOMDLC JOB]Couldn't write custom dlc metadata file:", e);
 				}
@@ -1173,13 +1272,14 @@ public class ModInstallWindow extends JDialog {
 			}
 
 			if (outdatedinstalledfolders != null && outdatedinstalledfolders.size() > 0) {
-				for (String outdated : outdatedinstalledfolders) {
-					int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
-							"<html><div style='width: 400px'>" + mod.getModName() + "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "("
-									+ ME3TweaksUtils.getThirdPartyModName(outdated)
-									+ ") is not compatible/no longer necessary for this mod. The mod indicates they should be deleted as they may conflict with this mod.<br><br>Delete the Custom DLC folder "
-									+ outdated + "?</div></html>",
-							"Outdated CustomDLC detected", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+				for (Map.Entry<String, String> entry : outdatedinstalledfolders.entrySet()) {
+					String modname = entry.getKey();
+					String outdated = entry.getValue();
+
+					int result = JOptionPane.showConfirmDialog(ModInstallWindow.this, "<html><div style='width: 400px'>" + modname
+							+ "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "(" + ME3TweaksUtils.getThirdPartyModName(outdated)
+							+ ") is not compatible/no longer necessary for this mod. The mod indicates they should be deleted as they may conflict with this mod.<br><br>Delete the Custom DLC folder "
+							+ outdated + "?</div></html>", "Outdated CustomDLC detected", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {
 						String deleteFolder = bioGameDir + "DLC/" + outdated;
 						ModManager.debugLogger.writeMessage("Deleting outdated custom DLC: " + deleteFolder);
@@ -1201,7 +1301,7 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("No outdated custom dlc to remove, continuing install...");
 			}
 
-			if (ModManager.POST_INSTALL_AUTOTOC_INSTEAD && !skipTOC) {
+			if (!skipTOC) {
 				ModManager.debugLogger.writeMessage("Running Game-Wide AutoTOC after mod install");
 				new AutoTocWindow(bioGameDir);
 			}
@@ -1212,48 +1312,55 @@ public class ModInstallWindow extends JDialog {
 					StringBuilder sb = new StringBuilder();
 					sb.append(
 							"Failed to process mod installation.\nSome parts of the install may have succeeded.\nCheck the log file by copying it to the clipboard in the help menu.");
-					callingWindow.labelStatus.setText("Failed to install at least 1 part of mod");
-					ModManager.debugLogger.writeMessage(
-							mod.getModName() + " failed to fully install. Jobs required to copmlete: " + numjobs + ", while injectioncommander only reported " + completed);
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to install at least 1 part of mod");
+					ModManager.debugLogger
+							.writeMessage("Some mods failed to fully install. Jobs required to copmlete: " + numjobs + ", while injectioncommander only reported " + completed);
 					JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
 				} else {
 					// we're good
-					callingWindow.labelStatus.setText(" " + mod.getModName() + " installed");
-					for (ModJob job : jobs) {
-						if (job.getJobType() == ModJob.BALANCE_CHANGES) {
-							if (ModManager.checkIfASIBinkBypassIsInstalled(bioGameDir)) {
-								if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
-									ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
+					if (mods.size() > 1) {
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(mods.size() + " mods installed");
+					} else {
+						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(mods.get(0).getModName() + " installed");
+					}
+					for (Mod mod : mods) {
+						for (ModJob job : mod.jobs) {
+							if (job.getJobType() == ModJob.BALANCE_CHANGES) {
+								if (ModManager.checkIfASIBinkBypassIsInstalled(bioGameDir)) {
+									if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
+										ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
+										int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
+												"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
+												"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+										if (result == JOptionPane.YES_OPTION) {
+											new ASIModWindow(new File(bioGameDir).getParent());
+										}
+									}
+								} else {
+									//loader not in
+									ModManager.debugLogger.writeMessage("ASI loader not installed. Advertising install");
 									int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
-											"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
-											"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+											"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the binkw32 ASI loader installed as well as the Balance Changes Replacer ASI.\nOpen the ASI management window to install these?",
+											"ASI Loader + ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 									if (result == JOptionPane.YES_OPTION) {
 										new ASIModWindow(new File(bioGameDir).getParent());
 									}
 								}
-							} else {
-								//loader not in
-								ModManager.debugLogger.writeMessage("ASI loader not installed. Advertising install");
-								int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
-										"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the binkw32 ASI loader installed as well as the Balance Changes Replacer ASI.\nOpen the ASI management window to install these?",
-										"ASI Loader + ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-								if (result == JOptionPane.YES_OPTION) {
-									new ASIModWindow(new File(bioGameDir).getParent());
-								}
 							}
 						}
 					}
+					installFinished = true;
 				}
 			} else {
 				if (!hasException) {
-					ModManager.debugLogger.writeMessage("Installation canceled by user because game repair database update is required (or connection failed and auto canceled.");
+					ModManager.debugLogger.writeMessage("Installation canceled by user because game repair database update is required (or connection failed and auto canceled).");
 					if (bghDB != null) {
 						bghDB.shutdownDB();
 						bghDB = null;
 					}
 					System.gc();//force shutdown the old DB
 
-					callingWindow.labelStatus.setText("Mod install canceled");
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod install canceled");
 					dispose();
 					if (!failedLoadingDB) {
 						File bgdir = new File(ModManager.appendSlash(bioGameDir));
@@ -1268,8 +1375,10 @@ public class ModInstallWindow extends JDialog {
 						}
 						if (bghDB == null) {
 							//cannot continue
-							JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local repair database is allowed at a time.<br>"
-									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
+									+ "Only one connection to the local repair database is allowed at a time.<br>"
+									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+									"Database Failure", JOptionPane.ERROR_MESSAGE);
 
 						}
 					}
@@ -1282,7 +1391,7 @@ public class ModInstallWindow extends JDialog {
 		}
 
 		protected void finishInstall() {
-			ModManager.debugLogger.writeMessage("=========Finished installing " + mod.getModName() + "==========");
+			ModManager.debugLogger.writeMessage("=========Finished installing mod(s)==========");
 			dispose();
 		}
 	}
@@ -1308,5 +1417,18 @@ public class ModInstallWindow extends JDialog {
 
 	private void updateInfo() {
 		consoleArea.setText(getConsoleString());
+	}
+
+	/**
+	 * Returns true on all non-batch installations, always. Returns true if
+	 * cancel button was not pressed in batch mode, false if it was not clicked.
+	 */
+	public boolean shouldContinueBatchInstallation() {
+		return continueBatchInstallation;
+	}
+
+	public static class BatchPackage {
+		public int totalBatchMods;
+		public int currentBatchInstallationNumber;
 	}
 }

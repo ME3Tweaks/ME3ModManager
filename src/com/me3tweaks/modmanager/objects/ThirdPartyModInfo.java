@@ -4,7 +4,7 @@ import org.json.simple.JSONObject;
 
 public class ThirdPartyModInfo {
 	private String modname, modauthor, customDLCfolder, moddescription, modsite;
-	private short mountpriority;
+	private int mountpriority; //unsigned short
 	/**
 	 * Copy constructor
 	 * @param modname
@@ -33,6 +33,7 @@ public class ThirdPartyModInfo {
 		String priority = (String) modinfo.get("mountpriority");
 		this.mountpriority = Short.parseShort(priority);
 	}
+	
 
 	public String getModname() {
 		return modname;
@@ -74,11 +75,11 @@ public class ThirdPartyModInfo {
 		this.modsite = modsite;
 	}
 
-	public short getMountPriority() {
+	public int getMountPriority() {
 		return mountpriority;
 	}
 
-	public void setMountpriority(short mountpriority) {
+	public void setMountpriority(int mountpriority) {
 		this.mountpriority = mountpriority;
 	}
 }

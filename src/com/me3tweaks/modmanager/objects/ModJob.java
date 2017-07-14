@@ -21,6 +21,7 @@ public class ModJob {
 	public static final int DLC = 0;
 	public static final int CUSTOMDLC = 2;
 	public static final int BALANCE_CHANGES = 3;
+	private Mod owningMod;
 
 	@Override
 	public String toString() {
@@ -338,9 +339,6 @@ public class ModJob {
 	 */
 	public boolean addNewFileTask(String sourceFile, String targetPath, boolean ignoreExistenceErrors) {
 		File file = new File(sourceFile);
-		if (!file.exists()) {
-			System.out.println("BREAKAGE.");
-		}
 		if (!file.exists() && !ignoreExistenceErrors) {
 			ModManager.debugLogger.writeError("Source file doesn't exist: " + sourceFile);
 			return false;
@@ -386,7 +384,7 @@ public class ModJob {
 	}
 
 	/**
-	 * Sets this job's source direcotry. For example, if the moddir ini flag is
+	 * Sets this job's source directory. For example, if the moddir ini flag is
 	 * set to MP (moddir = MP1), then this will set sourceDir to MP1.
 	 * 
 	 * @param sourceDir
@@ -419,5 +417,13 @@ public class ModJob {
 
 	public void setAddFilesReadOnlyTargets(ArrayList<String> addFilesReadOnlyTargets) {
 		this.addFilesReadOnlyTargets = addFilesReadOnlyTargets;
+	}
+	
+	public Mod getOwningMod() {
+		return owningMod;
+	}
+
+	public void setOwningMod(Mod mod) {
+		owningMod = mod;
 	}
 }

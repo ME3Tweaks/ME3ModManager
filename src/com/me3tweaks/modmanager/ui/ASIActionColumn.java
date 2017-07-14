@@ -187,6 +187,7 @@ public class ASIActionColumn extends AbstractCellEditor implements TableCellRend
 			renderButton.setIcon(null);
 		}
 
+		renderButton.setForeground(Color.BLACK);
 		return renderButton;
 	}
 

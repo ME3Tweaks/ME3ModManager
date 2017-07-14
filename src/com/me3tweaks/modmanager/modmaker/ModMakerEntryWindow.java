@@ -27,7 +27,6 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -58,8 +57,6 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	private static final String ITALIAN = "Italian";
 	private static final String GERMAN = "German";
 	private static final String JAPANESE = "Japanese";
-	private static final int DIALOG_WIDTH = 400;
-	private static final int DIALOG_HEIGHT = 245;
 	JLabel infoLabel;
 	JButton downloadButton;
 	JTextField codeField;
@@ -67,22 +64,17 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	private JComboBox<String> languageChoices;
 	private String[] languages = { ALL_LANG, ENGLISH, RUSSIAN, SPANISH, POLISH, FRENCH, ITALIAN, GERMAN, JAPANESE };
 	boolean hasDLCBypass = false;
-	ModManagerWindow callingWindow;
 	private JButton makeModButton;
 	private JButton browseModsButton;
 	private JButton sideloadButton;
 
-	public ModMakerEntryWindow(JFrame callingWindow, String biogameDir) {
-		this.callingWindow = (ModManagerWindow) callingWindow;
-		this.biogameDir = biogameDir;
-		this.setTitle("ME3Tweaks ModMaker");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
+	public ModMakerEntryWindow() {
+		super(null, Dialog.ModalityType.MODELESS);
+		this.biogameDir = ModManagerWindow.GetBioGameDir();
 		boolean shouldshow = validateModMakerPrereqs();
 		if (shouldshow) {
 			setupWindow();
-			this.setVisible(true);
-			this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+			setVisible(true);
 		} else {
 			dispose();
 		}
@@ -90,6 +82,11 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	}
 
 	private void setupWindow() {
+		setTitle("ME3Tweaks ModMaker");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setResizable(false);
+		setIconImages(ModManager.ICONS);
+		
 		JPanel modMakerPanel = new JPanel();
 		modMakerPanel.setLayout(new BoxLayout(modMakerPanel, BoxLayout.Y_AXIS));
 		JPanel infoPane = new JPanel();
@@ -98,8 +95,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		JLabel modmakerLogoLabel = null;
 		try {
 			modmakerLogo = ImageIO.read(ModMakerEntryWindow.class.getResourceAsStream("/resource/modmaker.png"));
-			modmakerLogo = ResourceUtils.getScaledInstance(
-					modmakerLogo, 290, 109, RenderingHints.VALUE_INTERPOLATION_BILINEAR, true);
+			modmakerLogo = ResourceUtils.getScaledInstance(modmakerLogo, 290, 109, RenderingHints.VALUE_INTERPOLATION_BILINEAR, true);
 			modmakerLogoLabel = new JLabel(new ImageIcon(modmakerLogo));
 			modmakerLogoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		} catch (Exception e1) {
@@ -170,7 +166,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		makeModButton.setToolTipText("Make a mod on ME3Tweaks Modmaker");
 
 		browseModsButton = new JButton("Browse mods");
-		browseModsButton.setToolTipText("Make a mod on ME3Tweaks Modmaker");
+		browseModsButton.setToolTipText("View published mods you can download");
 
 		sideloadButton = new JButton("Sideload mod");
 		sideloadButton.setToolTipText("Compile a mod from a ME3Tweaks Modmaker XML file");
@@ -184,7 +180,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		getCodePane.add(Box.createRigidArea(new Dimension(10, 5)));
 		getCodePane.add(sideloadButton);
 		getCodePane.add(Box.createHorizontalGlue());
-		modMakerPanel.add(Box.createRigidArea(new Dimension(10,5)));
+		modMakerPanel.add(Box.createRigidArea(new Dimension(10, 5)));
 		modMakerPanel.add(getCodePane);
 		modMakerPanel.add(Box.createVerticalGlue());
 		if (!hasDLCBypass) {
@@ -213,26 +209,51 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		add(modMakerPanel);
-
-		setResizable(false);
-		setIconImages(ModManager.ICONS);
+		
 		pack();
-		setLocationRelativeTo(callingWindow);
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 
 		//set combobox from settings
-		Wini settingsini;
-		try {
-			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-			String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
-			if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
-				//language setting exists
-				languageChoices.setSelectedItem(modmakerLanguage);
+		Wini settingsini = ModManager.LoadSettingsINI();
+		String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
+		if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
+			//language setting exists
+			languageChoices.setSelectedItem(modmakerLanguage);
+		} else {
+			//Attempt lookup via registry.
+			String locale = ModManager.LookupGameLanguageViaRegistryKey();
+			if (locale != null) {
+				String setlang = null;
+				switch (locale) {
+				case "en_US":
+					setlang = "English";
+					break;
+				case "pl_PL":
+					setlang = "Polish";
+					break;
+				case "fr_FR":
+					setlang = "French";
+					break;
+				case "ru_RU":
+					setlang = "Russian";
+					break;
+				case "it_IT":
+					setlang = "Italian";
+					break;
+				case "ja":
+					setlang = "Japanese";
+					break;
+				case "de_DE":
+					setlang = "German";
+					break;
+				case "es_ES":
+					setlang = "Spanish";
+					break;
+				}
+				if (setlang != null) {
+					languageChoices.setSelectedItem(setlang);
+				}
 			}
-		} catch (InvalidFileFormatException e) {
-			ModManager.debugLogger.writeMessage("Invalid INI! Did the user modify it by hand?");
-			e.printStackTrace();
-		} catch (IOException e) {
-			ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting is stored to disk.");
 		}
 	}
 
@@ -249,23 +270,26 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			File tankMasterCompiler = new File(ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe");
 			if (!tankMasterCompiler.exists()) {
 				dispose();
+				ModManager.debugLogger.writeError("Tankmaster's compiler not detected. Abort. Searched at: " + tankMasterCompiler.toString());
 				JOptionPane.showMessageDialog(null,
-						"<html>You need TankMaster's Coalesced Compiler in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 3 in the TankMaster Compiler folder.</html>",
+						"<html>You need TankMaster's Coalesced Compiler in order to use ModMaker.<br><br>It should have been bundled with Mod Manager in the data/tankmaster_coalesce folder.</html>",
 						"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 
-				ModManager.debugLogger.writeMessage("Tankmaster's compiler not detected. Abort. Searched at: " + tankMasterCompiler.toString());
 				return false;
 			}
 			ModManager.debugLogger.writeMessage("Detected TankMaster coalesced compiler");
 
-			String me3explorerdir = ModManager.getME3ExplorerEXEDirectory(false);
-			if (me3explorerdir == null) {
+			String commandlinetoolsdir = ModManager.getCommandLineToolsDir();
+			File pccdecompress = new File(commandlinetoolsdir + "PCCDecompress.exe");
+			File sfarextractor = new File(commandlinetoolsdir + "SFARTools-Extract.exe");
+			if (!pccdecompress.exists() || !sfarextractor.exists()) {
 				dispose();
+				ModManager.debugLogger.writeError("Mod Manager Command Line tools not present, aborting.");
+
 				JOptionPane.showMessageDialog(null,
-						"<html>You need ME3Explorer in order to use ModMaker.<br><br>It should have been bundled with Mod Manager 4 in the data/ME3Explorer folder.</html>",
+						"<html>Mod Manager's Command Line library is not installed. Mod Manager should automatically download this on startup from Github.</html>",
 						"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 
-				ModManager.debugLogger.writeMessage("ME3Explorer not detected. Abort.");
 				return false;
 			}
 		} catch (Exception e) {
@@ -323,13 +347,8 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	 */
 	private void sideloadModmaker(ArrayList<String> languages) {
 		JFileChooser dirChooser = new JFileChooser();
-		String home = System.getProperty("user.home");
-		File file = new File(home + "/Downloads");
-		if (file.exists()) {
-			dirChooser.setCurrentDirectory(file);
-		} else {
-			dirChooser.setCurrentDirectory(new java.io.File("."));
-		}
+		File file = new File(ModManager.getModmakerCacheDir());
+		dirChooser.setCurrentDirectory(file);
 		dirChooser.setDialogTitle("Select ModMaker XML file");
 		dirChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		dirChooser.setAcceptAllFileFilterUsed(false);
@@ -343,22 +362,17 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 				shouldContinue = installBypass();
 			}
 			if (shouldContinue) {
-				Wini ini;
+				Wini ini = ModManager.LoadSettingsINI();
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
 					ini.put("Settings", "modmaker_language", languageChoices.getSelectedItem());
 					ini.store();
 				} catch (InvalidFileFormatException e) {
-					e.printStackTrace();
+					ModManager.debugLogger.writeErrorWithException("Invalid file format exception writing settings ini: ", e);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 				}
-				this.setModalityType(Dialog.ModalityType.MODELESS);
 				dispose();
-				callingWindow.startModMaker(chosenFile, languages);
+				ModManagerWindow.ACTIVE_WINDOW.startModMaker(chosenFile, languages);
 			}
 		}
 	}
@@ -412,20 +426,13 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	 */
 	public static ArrayList<String> getDefaultLanguages() {
 		String defaultLang = ALL_LANG;
-		Wini settingsini;
-		try {
-			settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-			String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
-			if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
-				//language setting exists
-				defaultLang = modmakerLanguage;
-			}
-		} catch (InvalidFileFormatException e) {
-			ModManager.debugLogger.writeMessage("Invalid INI! Did the user modify it by hand?");
-			e.printStackTrace();
-		} catch (IOException e) {
-			ModManager.debugLogger.writeMessage("I/O Error reading settings file. It may not exist yet. It will be created when a setting is stored to disk.");
+		Wini settingsini = ModManager.LoadSettingsINI();
+		String modmakerLanguage = settingsini.get("Settings", "modmaker_language");
+		if (modmakerLanguage != null && !modmakerLanguage.equals("")) {
+			//language setting exists
+			defaultLang = modmakerLanguage;
 		}
+
 		return getLanguages(defaultLang);
 	}
 
@@ -455,7 +462,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			} catch (IOException e) {
 				ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 			}
-			callingWindow.startModMaker(codeField.getText().toString(), languages);
+			ModManagerWindow.ACTIVE_WINDOW.startModMaker(codeField.getText().toString(), languages);
 		}
 	}
 

@@ -112,7 +112,6 @@ public class LogOptionsWindow extends JDialog {
 		customdlcconflictsoption.setSelected(false);
 		customdlcconflictsoption.setSelected(true);
 
-
 		me3logfile = new JCheckBox("ME3Logger Contents (Game crash info)");
 		me3logfile.setToolTipText("<html>Imports the ME3Logger contents into the log. If this bypass/ASI was not installed (or the file does not exist), this does nothing</html>");
 		me3logfile.setSelected(true);
@@ -143,7 +142,15 @@ public class LogOptionsWindow extends JDialog {
 				shareViaFile.setEnabled(false);
 				// TODO Auto-generated method stub
 				String log = generateLog();
-				new PasteBinUploaderDialog(log, fname.getText(), LogOptionsWindow.this);
+				if (log.length() > 512000) { //512KB (not KiB!)
+					saveLogToDisk(fname.getText().trim(), true);
+					JOptionPane.showMessageDialog(LogOptionsWindow.this,
+							"The log file is too big for Pastebin. It has been saved locally to disk instead.\nUpload the log to something like Google Drive or Dropbox and share the link from there.",
+							"Log too big for pastebin", JOptionPane.ERROR_MESSAGE);
+					dispose();
+				} else {
+					new PasteBinUploaderDialog(fname.getText(), LogOptionsWindow.this);
+				}
 			}
 		});
 		shareViaFile.addActionListener(new ActionListener() {
@@ -171,7 +178,7 @@ public class LogOptionsWindow extends JDialog {
 			}
 		});
 
-		options = new JCheckBox[] { installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile };
+		options = new JCheckBox[] { sessionoption, installeddlcoption, filetreeoption, dlcbypassinformation, customdlcconflictsoption, me3logfile };
 
 		sessionoption.setAlignmentX(Component.LEFT_ALIGNMENT);
 		installeddlcoption.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -221,7 +228,7 @@ public class LogOptionsWindow extends JDialog {
 			FileUtils.writeStringToFile(logfile, log);
 			//dispose();
 			if (showWinExp) {
-				Process p = new ProcessBuilder("explorer.exe", "/select,", logfile.getAbsolutePath()).start();
+				new ProcessBuilder("explorer.exe", "/select,", logfile.getAbsolutePath()).start();
 			}
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Log file written to disk");
 			return logfile.getAbsolutePath();
@@ -271,14 +278,14 @@ public class LogOptionsWindow extends JDialog {
 						String hash = MD5Checksum.getMD5Checksum(executable.getAbsolutePath());
 						if (acceptableHashes.contains(hash.toLowerCase())) {
 							log += "EXE passed hash check. Hash of EXE is " + hash + "\n";
-							ModManager.debugLogger.writeMessage("EXE has passed hash check: "+hash);
+							ModManager.debugLogger.writeMessage("EXE has passed hash check: " + hash);
 						} else {
 							log += "EXE did not pass hash check. Hash of EXE is " + hash + "\n";
-							ModManager.debugLogger.writeError("EXE has failed hash check: "+hash);
+							ModManager.debugLogger.writeError("EXE has failed hash check: " + hash);
 						}
 					} catch (Exception e) {
 						log += "Error checking game executable. Skipping check.\n";
-						ModManager.debugLogger.writeErrorWithException("EXE was unable to be checked due to some error:",e);
+						ModManager.debugLogger.writeErrorWithException("EXE was unable to be checked due to some error:", e);
 					}
 				}
 				log += "\n";
@@ -408,7 +415,8 @@ public class LogOptionsWindow extends JDialog {
 
 	/**
 	 * Gets a string representing all installed DLC
-	 * @return string 
+	 * 
+	 * @return string
 	 */
 	private String getInstalledDLC() {
 		ModManager.debugLogger.writeMessage("Getting list of installed DLC...");
@@ -438,7 +446,7 @@ public class LogOptionsWindow extends JDialog {
 							metaname = FileUtils.readFileToString(metacmm, Charset.defaultCharset());
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
-							ModManager.debugLogger.writeErrorWithException("Error reading metacmm file ("+metacmm+"):", e);
+							ModManager.debugLogger.writeErrorWithException("Error reading metacmm file (" + metacmm + "):", e);
 							metaname = "[Can't read metacmm.txt]";
 						}
 						installeddlcstr += dir + " (" + metaname + ", installed by Mod Manager)\n";
@@ -511,36 +519,33 @@ public class LogOptionsWindow extends JDialog {
 
 	private class PasteBinUploaderDialog extends JDialog {
 
-		public PasteBinUploaderDialog(String log, String fname, LogOptionsWindow low) {
+		public PasteBinUploaderDialog(String fname, LogOptionsWindow low) {
 			setupAutomatedWindow(low);
-			new PastebinUploaderThread(log, fname, low).execute();
+			new PastebinUploaderThread(fname, low).execute();
 			setVisible(true);
 		}
 
 		private void setupAutomatedWindow(JDialog callingDialog) {
-			this.setTitle("Uploading log");
-			this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-			this.setResizable(false);
-			this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-			this.setIconImages(ModManager.ICONS);
+			setTitle("Uploading log");
+			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+			setResizable(false);
+			setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+			setIconImages(ModManager.ICONS);
 			JPanel panel = new JPanel(new BorderLayout());
-
 			JLabel operationLabel = new JLabel("Uploading log to PasteBin...");
-
 			panel.add(operationLabel, BorderLayout.CENTER);
 			panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-			this.getContentPane().add(panel);
+			getContentPane().add(panel);
 			pack();
-			this.setLocationRelativeTo(callingDialog);
+			setLocationRelativeTo(callingDialog);
 		}
 
 		class PastebinUploaderThread extends SwingWorker<Boolean, Void> {
-			private String log, fname;
+			private String fname;
 			private LogOptionsWindow low;
 			private String pastebinlink;
 
-			public PastebinUploaderThread(String log, String fname, LogOptionsWindow low) {
-				this.log = log;
+			public PastebinUploaderThread(String fname, LogOptionsWindow low) {
 				this.low = low;
 				this.fname = fname;
 			}
@@ -557,7 +562,6 @@ public class LogOptionsWindow extends JDialog {
 					String log = Base64.getEncoder().encodeToString(FileUtils.readFileToByteArray(new File(outputFile)));
 					HttpClient httpclient = HttpClients.createDefault();
 					HttpPost httppost = new HttpPost("https://me3tweaks.com/modmanager/tools/loguploader-compress");
-					System.out.println(log);
 					// Request parameters and other properties.
 					List<NameValuePair> params = new ArrayList<NameValuePair>(2);
 					params.add(new BasicNameValuePair("MMVersion", ModManager.VERSION));
@@ -614,14 +618,11 @@ public class LogOptionsWindow extends JDialog {
 						ModManager.debugLogger.writeError("Pastebin thread NOT OK!");
 						if (pastebinlink != null && pastebinlink.equals("")) {
 							JOptionPane.showMessageDialog(LogOptionsWindow.this,
-									"An error occured uploading the log to the server.\nThe server responded, but there was nothing in the message. You should contact femshep as this shouldn't happen.\n\nYou can use the save to disk option and upload that as a backup for log sharing.",
+									"An error occured uploading the log to the server.\nThe server responded, but there was nothing in the message. You should contact FemSHep as this shouldn't happen.\n\nYou can use the save to disk option and upload that as a backup for log sharing.",
 									"Upload Error", JOptionPane.ERROR_MESSAGE);
 						} else {
-							JOptionPane
-									.showMessageDialog(LogOptionsWindow.this,
-											"An error occured uploading the log to the server.\nThe server responded with the following:\n" + pastebinlink
-													+ "\n\nYou can use the save to disk option and upload that as a backup for log sharing.",
-											"Upload Error", JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(LogOptionsWindow.this, "An error occured uploading the log to the server.\n" + pastebinlink
+									+ "\n\nYou can use the save to disk option and upload that as a backup for log sharing.", "Upload Error", JOptionPane.ERROR_MESSAGE);
 						}
 					}
 				} catch (ExecutionException e) {

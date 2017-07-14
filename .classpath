@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="dlcpatcher"/>
+	<classpathentry kind="src" path="starterkit"/>
+	<classpathentry kind="lib" path="libraries/commons-io-2.5.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="https://commons.apache.org/proper/commons-io/javadocs/api-2.5/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libraries/derby.jar"/>
+	<classpathentry kind="lib" path="libraries/ini4j-0.5.2.jar"/>
+	<classpathentry kind="lib" path="libraries/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="libraries/commons-logging-1.2.jar"/>
+	<classpathentry kind="lib" path="libraries/sevenzipjbinding-AllWindows.jar"/>
+	<classpathentry kind="lib" path="libraries/sevenzipjbinding.jar"/>
+	<classpathentry kind="lib" path="libraries/filedrop.jar"/>
+	<classpathentry kind="lib" path="libraries/commons-validator-1.6.jar"/>
+	<classpathentry kind="lib" path="libraries/httpclient-4.5.3.jar"/>
+	<classpathentry kind="lib" path="libraries/httpcore-4.4.6.jar"/>
+	<classpathentry kind="lib" path="libraries/commons-lang3-3.6.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="https://commons.apache.org/proper/commons-lang/javadocs/api-release"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libraries/jna-4.4.0.jar"/>
+	<classpathentry kind="lib" path="libraries/jna-platform-4.4.0.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/Java 8 32-bit"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

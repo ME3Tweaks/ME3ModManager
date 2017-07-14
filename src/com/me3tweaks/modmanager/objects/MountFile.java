@@ -180,7 +180,6 @@ public class MountFile implements Comparable<MountFile> {
 		if (filepath != null) {
 			return MountFileEditorWindow.getMountDescription(new File(this.filepath));
 		} else {
-			System.out.println("reas");
 			return reason;
 		}
 	}

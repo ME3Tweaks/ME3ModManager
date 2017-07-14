@@ -18,37 +18,35 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 
+import com.me3tweaks.modmanager.ModManagerWindow;
+
 public class WavelistGUI extends JFrame implements ActionListener {
 	JTextArea input, output;
 	JButton submit, generateInsert, copy;
 	JComboBox<String> factionlist;
 	JComboBox<Integer> wavenumlist;
 	String[] difficulties = { "DO_Level1", "DO_Level2", "DO_Level3", "DO_Level4" };
-	String[] factions = {"Cerberus", "Cerberus2", "Geth", "Geth2", "Reaper", "Reaper2", "Collector"};
-	Integer[] waves = {1,2,3,4,5,6,7,8,9,10,11};
-
+	String[] factions = { "Cerberus", "Cerberus2", "Geth", "Geth2", "Reaper", "Reaper2", "Collector" };
+	Integer[] waves = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
 	public static void main(String[] args) throws IOException {
 		new WavelistGUI();
 	}
 
 	public WavelistGUI() {
-		this.setTitle("ME3CMM Wavelist Parser Tool");
-		this.setIconImage(Toolkit.getDefaultToolkit().getImage(
-				getClass().getResource("/resource/icon32.png")));
-		this.setMinimumSize(new Dimension(490, 500));
-		this.setPreferredSize(new Dimension(490, 500));
 		setupWindow();
 		setVisible(true);
 	}
 
 	private void setupWindow() {
+		setTitle("ME3CMM Wavelist Parser Tool");
+		setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resource/icon32.png")));
+		setMinimumSize(new Dimension(490, 500));
+		setPreferredSize(new Dimension(490, 500));
 		JPanel wavelistGUI = new JPanel(new BorderLayout());
-		JLabel instructionsLabel = new JLabel(
-				"<html>ME3CMM Wavelist Parser<br>Enter the Wavelist text below and then select an operation.</html>");
+		JLabel instructionsLabel = new JLabel("<html>ME3CMM Wavelist Parser<br>Enter the Wavelist XML below and then select an operation.</html>");
 		wavelistGUI.add(instructionsLabel, BorderLayout.NORTH);
-		instructionsLabel
-				.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		instructionsLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		JPanel inputPanel = new JPanel(new BorderLayout());
 		input = new JTextArea(6, 45);
@@ -65,6 +63,8 @@ public class WavelistGUI extends JFrame implements ActionListener {
 		wavenumlist = new JComboBox<Integer>(waves);
 		generateInsert = new JButton("Generate SQL");
 		generateInsert.addActionListener(this);
+		generateInsert.setEnabled(false);
+		generateInsert.setToolTipText("SQL output is disabled");
 		SQLPanel.add(factionlist, BorderLayout.NORTH);
 		SQLPanel.add(wavenumlist, BorderLayout.CENTER);
 		SQLPanel.add(generateInsert, BorderLayout.SOUTH);
@@ -87,17 +87,16 @@ public class WavelistGUI extends JFrame implements ActionListener {
 		outputPanel.add(output, BorderLayout.CENTER);
 		outputPanel.add(copy, BorderLayout.SOUTH);
 
-		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-				inputPanel, outputPanel);
+		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, inputPanel, outputPanel);
 		wavelistGUI.add(splitPane, BorderLayout.CENTER);
-		this.getContentPane().add(wavelistGUI);
+		getContentPane().add(wavelistGUI);
 		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	public static void diffString(String str1, String str2) {
 		if (str1.length() != str2.length()) {
-			System.out.println("Strings are not the same length: "
-					+ str1.length() + " vs " + str2.length());
+			System.out.println("Strings are not the same length: " + str1.length() + " vs " + str2.length());
 
 			return;
 		}
@@ -105,8 +104,7 @@ public class WavelistGUI extends JFrame implements ActionListener {
 			if (str1.charAt(i) == str2.charAt(i)) {
 				continue;
 			} else {
-				System.out.println("Difference at index " + i + ", str1: "
-						+ str1.charAt(i) + ", str2: " + str2.charAt(i));
+				System.out.println("Difference at index " + i + ", str1: " + str1.charAt(i) + ", str2: " + str2.charAt(i));
 			}
 		}
 	}
@@ -126,9 +124,9 @@ public class WavelistGUI extends JFrame implements ActionListener {
 			generateSQL();
 		} else if (e.getSource() == copy) {
 			String myString = output.getText();
-			StringSelection stringSelection = new StringSelection (myString);
-			Clipboard clpbrd = Toolkit.getDefaultToolkit ().getSystemClipboard ();
-			clpbrd.setContents (stringSelection, null);
+			StringSelection stringSelection = new StringSelection(myString);
+			Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
+			clpbrd.setContents(stringSelection, null);
 		}
 	}
 
@@ -144,7 +142,7 @@ public class WavelistGUI extends JFrame implements ActionListener {
 		}
 		//get enemy
 		String faction = ((String) factionlist.getSelectedItem()).toLowerCase();
-		
+
 		StringBuilder sb = new StringBuilder();
 		sb.append("INSERT INTO modmaker_wavelists VALUES (\n");
 		sb.append("\t1, /*GENESIS MOD ID*/\n");
@@ -157,68 +155,68 @@ public class WavelistGUI extends JFrame implements ActionListener {
 		sb.append("\t");
 		sb.append(wavenumlist.getSelectedItem());
 		sb.append(", /*wave_num*/\n");
-		
+
 		//baseenemy
 		sb.append("\t\"");
 		sb.append(biogameNameToSQLName(wave.getBaseEnemy()));
 		sb.append("\", /*baseenemy*/\n");
-		
+
 		int enemyindex = 2;
 		while (enemyindex <= 5) {
 			if (wave.enemies.size() < enemyindex) {
 				sb.append("\tnull, /*enemy ");
 				sb.append(enemyindex);
 				sb.append("*/\n");
-				
+
 				sb.append("\tnull, /*enemy ");
 				sb.append(enemyindex);
 				sb.append(" min */\n");
-				
+
 				sb.append("\tnull, /*enemy ");
 				sb.append(enemyindex);
-				sb.append(" max */\n");	
-				
+				sb.append(" max */\n");
+
 				sb.append("\tnull, /*enemy ");
 				sb.append(enemyindex);
-				sb.append(" maxperwave */\n");	
+				sb.append(" maxperwave */\n");
 			} else {
 				sb.append("\t\"");
-				sb.append(biogameNameToSQLName(wave.enemies.get(enemyindex-1).enemyname));
+				sb.append(biogameNameToSQLName(wave.enemies.get(enemyindex - 1).enemyname));
 				sb.append("\", /*enemy ");
 				sb.append(enemyindex);
 				sb.append("*/\n");
-				
+
 				sb.append("\t");
-				sb.append(wave.enemies.get(enemyindex-1).min);
+				sb.append(wave.enemies.get(enemyindex - 1).min);
 				sb.append(", /*enemy ");
 				sb.append(enemyindex);
 				sb.append(" min */\n");
-				
+
 				sb.append("\t");
-				sb.append(wave.enemies.get(enemyindex-1).max);
+				sb.append(wave.enemies.get(enemyindex - 1).max);
 				sb.append(", /*enemy ");
 				sb.append(enemyindex);
-				sb.append(" max */\n");	
-				
+				sb.append(" max */\n");
+
 				sb.append("\t");
-				sb.append(wave.enemies.get(enemyindex-1).maxperwave);
+				sb.append(wave.enemies.get(enemyindex - 1).maxperwave);
 				sb.append(", /*enemy ");
 				sb.append(enemyindex);
-				sb.append(" maxperwave */\n");	
+				sb.append(" maxperwave */\n");
 			}
-			
+
 			enemyindex++;
 		}
-		
+
 		sb.append("\tfalse, /*modified*/\n");
 		sb.append("\tfalse /*genesis modified*/\n");
 		sb.append(");"); //end of SQL statement
-		
+
 		output.setText(sb.toString());
 	}
-	
+
 	private String diffToSQLDiff(String difficulty) {
-		switch(difficulty){
+		switch (difficulty) {
 		case "DO_Level1":
 			return "bronze";
 		case "DO_Level2":
@@ -233,7 +231,7 @@ public class WavelistGUI extends JFrame implements ActionListener {
 	}
 
 	private String biogameNameToSQLName(String biogamename) {
-		switch(biogamename){
+		switch (biogamename) {
 		case "WAVE_CER_AssaultTrooper":
 			return "assaulttrooper";
 		case "WAVE_CER_Centurion":
@@ -283,7 +281,7 @@ public class WavelistGUI extends JFrame implements ActionListener {
 		case "WAVE_COL_Scion":
 			return "scion";
 		case "WAVE_COL_Praetorian":
-			return" praetorian";
+			return " praetorian";
 		default:
 			return "UNDEFINED ENEMY";
 		}

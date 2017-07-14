@@ -1,23 +1,20 @@
 package com.me3tweaks.modmanager;
 
-import java.awt.Desktop;
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.StringWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
@@ -63,6 +61,7 @@ import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModList;
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.PCCDumpOptions;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.utilities.DebugLogger;
@@ -78,14 +77,18 @@ import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinReg;
 import com.sun.jna.win32.W32APIOptions;
 
-public class ModManager {
-	public static final String VERSION = "4.5.5";
-	public static long BUILD_NUMBER = 74L;
-	public static final String BUILD_DATE = "7/1/2017";
+import javafx.application.Platform;
 
-	public static DebugLogger debugLogger;
+public class ModManager {
 	public static boolean IS_DEBUG = false;
+	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
+
+	
+	public static final String VERSION = "5.0";
+	public static long BUILD_NUMBER = 75L;
+	public static final String BUILD_DATE = "7/12/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
+	public static DebugLogger debugLogger;
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
 																// version
@@ -97,16 +100,15 @@ public class ModManager {
 	public static boolean AUTO_UPDATE_CONTENT = true;
 	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
 	public static long LAST_AUTOUPDATE_CHECK;
-	public static final int MIN_REQUIRED_ME3EXPLORER_MAIN = 2;
-	public static final int MIN_REQUIRED_ME3EXPLORER_MINOR = 0;
-	public final static int MIN_REQUIRED_ME3EXPLORER_REV = 6;
-	public static final int MIN_REQUIRED_ME3GUITRANSPLANTER_BUILD = 8; //1.0.0.X
-	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 378389; //4.5.0
-	public static boolean POST_INSTALL_AUTOTOC_INSTEAD = true;
+	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
+	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
+	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 20;
+
+	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
-	public static boolean AUTO_UPDATE_ME3EXPLORER = true;
 	public static boolean NET_FRAMEWORK_IS_INSTALLED = false;
 	public static long SKIP_UPDATES_UNTIL_BUILD = 0;
 	public static int AUTO_CHECK_INTERVAL_DAYS = 2;
@@ -116,10 +118,21 @@ public class ModManager {
 	public static boolean PERFORM_DOT_NET_CHECK = true;
 	public static boolean MODMAKER_CONTROLLER_MOD_ADDINS = false;
 	public static String THIRD_PARTY_MOD_JSON;
+	public static boolean LOG_MODMAKER = false;
+	public static String COMMANDLINETOOLS_URL;
+	public static String LATEST_ME3EXPLORER_URL;
+	public static String LATEST_ME3EXPLORER_VERSION;
+	public static boolean USE_WINDOWS_UI;
+	protected static boolean COMPRESS_COMPAT_OUTPUT = false;
+
+	public static String MASSEFFECTMODDER_DOWNLOADLINK;
+
+	public static int MASSEFFECTMODDER_LATESTVERSION;
+
+	public static String TIPS_SERVICE_JSON;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
-	public static final String[] SUPPORTED_GAME_LANGAUGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
-
+	public static final String[] SUPPORTED_GAME_LANGUAGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
 
 	public static final class Lock {
 	} //threading wait() and notifyall();
@@ -129,77 +142,44 @@ public class ModManager {
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
 		try {
-			System.out.println("Starting Mod Manager");
-			// SETUI LOOK
-			try {
-				// Set cross-platform Java L&F (also called "Metal")
-				UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-			} catch (Exception e) {
-				System.err.println("Couldn't set the UI interface style");
-			}
+			System.out.println("Starting Mod Manager " + ModManager.VERSION);
+			System.out.println("Debugging mode is " + (ModManager.IS_DEBUG ? "enabled" : "disabled"));
 
 			ICONS = new ArrayList<Image>();
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon32.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
 
-			//JVM Check
-			if (!System.getProperty("sun.arch.data.model").equals("32")) {
-				ModManager.debugLogger.writeError("Running in "+System.getProperty("sun.arch.data.model")+"-bit java!");
-				JOptionPane.showMessageDialog(null, "Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to isntall 32-bit java.", "Untested JVM", JOptionPane.ERROR_MESSAGE);
-				//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
-				//System.exit(1);
-			}
-			
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
-
+			
+			System.setProperty("derby.system.home", new File(ModManager.getDatabaseDir()).getAbsolutePath()); //move derby.log
+			
 			File settings = new File(ModManager.SETTINGS_FILENAME);
 			if (!settings.exists()) {
 				settings.createNewFile();
 				Wini settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
 				settingsini.put("Settings", "initialmodmanagerversionbuild", ModManager.VERSION + "-b" + ModManager.BUILD_NUMBER);
+				settingsini.put("Settings", "usewindowsui", "1"); //Default to Windows UI
 				settingsini.store();
 			}
 
-			// Set and get debugging mode from wini
-			if (ModManager.IS_DEBUG) {
+			try {
+				Wini settingsini = ModManager.LoadSettingsINI();
 				debugLogger.initialize();
 				logging = true;
-				debugLogger.writeMessage("Starting logger, this is a debugging build.");
-			}
+				debugLogger.writeMessage("Starting logger. Logger was able to start up with no issues.");
+				debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build Date " + BUILD_DATE);
+				debugLogger.writeMessage("--------Mod Manager Main Startup--------");
 
-			Wini settingsini;
-			try {
-				settingsini = new Wini(new File(ModManager.SETTINGS_FILENAME));
-				{
-					if (!ModManager.IS_DEBUG) {
-						String logStr = settingsini.get("Settings", "logging_mode");
-						int logInt = 0;
-						if (logStr != null && !logStr.equals("")) {
-							try {
-								logInt = Integer.parseInt(logStr);
-								if (logInt > 0) {
-									// logging is on
-									debugLogger.initialize();
-									logging = true;
-									debugLogger.writeMessage("Starting logger. Logger was able to start up with no issues.");
-									debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build Date " + BUILD_DATE);
-								} else {
-									debugLogger.writeMessage("Logging mode disabled");
-								}
-							} catch (NumberFormatException e) {
-								debugLogger.writeMessage("Number format exception reading the log mode - log mode disabled");
-							}
-						} else {
-							debugLogger.initialize();
-							logging = true;
-							debugLogger.writeMessage("Logging variable not set, defaulting to true. Starting logger. Mod Manager version " + ModManager.VERSION + "; Build "
-									+ ModManager.BUILD_NUMBER + "; Build date " + BUILD_DATE);
-						}
-					}
+				//JVM Check
+				if (!System.getProperty("sun.arch.data.model").equals("32") && !IS_DEBUG) {
+					ModManager.debugLogger.writeError("Running in " + System.getProperty("sun.arch.data.model") + "-bit java!");
+					JOptionPane.showMessageDialog(null,
+							"Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to install 32-bit java.",
+							"Untested JVM", JOptionPane.ERROR_MESSAGE);
+					//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
+					//System.exit(1);
 				}
-
-				debugLogger.writeMessage("--------Mod Manager Init--------");
 
 				String verString = settingsini.get("Settings", "initialmodmanagerversionbuild");
 				if (verString == null || verString.equals("")) {
@@ -226,9 +206,36 @@ public class ModManager {
 						}
 					} catch (NumberFormatException e) {
 						ModManager.debugLogger.writeError("Number format exception reading the .NET enforcement check flag, defaulting to enabled");
+
 					}
 				}
+
+				// GUI Compatibility Pack - Compress output
+				if (ResourceUtils.is64BitWindows()) {
+					String compressCompatOutput = settingsini.get("Settings", "compresscompatibilitygeneratoroutput");
+					int compressCompatOutputInt = 0;
+					if (compressCompatOutput != null && !compressCompatOutput.equals("")) {
+						try {
+							compressCompatOutputInt = Integer.parseInt(compressCompatOutput);
+							if (compressCompatOutputInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("Compressing GUI Compatibility Generator output is ON");
+								COMPRESS_COMPAT_OUTPUT = true;
+							} else {
+								debugLogger.writeMessage("Compressing GUI Compatibility Generator output is OFF");
+								COMPRESS_COMPAT_OUTPUT = false;
+							}
+						} catch (NumberFormatException e) {
+							ModManager.debugLogger.writeError("Number format exception reading the compress output compat generator check flag, defaulting to false");
+						}
+					}
+				} else {
+					debugLogger.writeMessage("32-bit Windows - forcing gui compatibility output to decompressed.");
+					COMPRESS_COMPAT_OUTPUT = false;
+				}
+
 				// Auto Update Check
+
 				String updateStr = settingsini.get("Settings", "checkforupdates");
 				int updateInt = 0;
 				if (updateStr != null && !updateStr.equals("")) {
@@ -245,7 +252,27 @@ public class ModManager {
 					} catch (NumberFormatException e) {
 						ModManager.debugLogger.writeError("Number format exception reading the update check flag, defaulting to enabled");
 					}
+
 				}
+
+				String windowsUIStr = settingsini.get("Settings", "usewindowsui");
+				int windowsUIint = 0;
+				if (windowsUIStr != null && !windowsUIStr.equals("")) {
+					try {
+						windowsUIint = Integer.parseInt(windowsUIStr);
+						if (windowsUIint > 0) {
+							// logging is on
+							debugLogger.writeMessage("Windows UI L&F is enabled");
+							ModManager.USE_WINDOWS_UI = true;
+						} else {
+							debugLogger.writeMessage("Using default UI");
+							ModManager.USE_WINDOWS_UI = false;
+						}
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeError("Number format exception reading the UI flag, defaulting to cross platform (Default)");
+					}
+				}
+
 				String superDebugStr = settingsini.get("Settings", "superdebug");
 				if (superDebugStr != null && superDebugStr.equals("SUPERDEBUG")) {
 					debugLogger.writeMessage("Forcing SUPERDEBUG mode on");
@@ -263,26 +290,6 @@ public class ModManager {
 				if (autoupdate != null && autoupdate.toLowerCase().equals("false")) {
 					debugLogger.writeMessage("Disabling mod auto-updates");
 					AUTO_UPDATE_CONTENT = false;
-				}
-
-				// Autodownload ME3Explorer updates
-				String autoupdateme3explorerStr = settingsini.get("Settings", "autodownloadme3explorer");
-				int autoupdateme3explorerInt = 0;
-				if (autoupdateme3explorerStr != null && !autoupdateme3explorerStr.equals("")) {
-					try {
-						autoupdateme3explorerInt = Integer.parseInt(autoupdateme3explorerStr);
-						if (autoupdateme3explorerInt > 0) {
-							// logging is on
-							debugLogger.writeMessage("ME3Explorer updates are auto enabled");
-							AUTO_UPDATE_ME3EXPLORER = true;
-						} else {
-							debugLogger.writeError("ME3Explorer updates are disabled - errors related to ME3EXplorer out of date ARE NOT SUPPORTED!");
-							AUTO_UPDATE_ME3EXPLORER = false;
-						}
-					} catch (NumberFormatException e) {
-						debugLogger.writeError("Number format exception reading the me3explorer update preference - turning on by default");
-						AUTO_UPDATE_ME3EXPLORER = true;
-					}
 				}
 
 				// Autoinject keybinds
@@ -344,27 +351,6 @@ public class ModManager {
 						SKIP_UPDATES_UNTIL_BUILD = 0;
 					}
 				}
-				{
-					// AutoTOC game files after install
-					String autotocPostInstallStr = settingsini.get("Settings", "performautotocaftermodinstall");
-					int autotocPostInstallInt = 0;
-					if (autotocPostInstallStr != null && !autotocPostInstallStr.equals("")) {
-						try {
-							autotocPostInstallInt = Integer.parseInt(autotocPostInstallStr);
-							if (autotocPostInstallInt > 0) {
-								// logging is on
-								debugLogger.writeMessage("AutoTOC post install is enabled");
-								POST_INSTALL_AUTOTOC_INSTEAD = true;
-							} else {
-								debugLogger.writeMessage("AutoTOC post install is disabled");
-								POST_INSTALL_AUTOTOC_INSTEAD = false;
-							}
-						} catch (NumberFormatException e) {
-							debugLogger.writeError("Number format exception reading the autotoc post install flag - defaulting to enabled");
-							POST_INSTALL_AUTOTOC_INSTEAD = true;
-						}
-					}
-				}
 
 				// Controller mod fixes
 				String controllerModUserStr = settingsini.get("Settings", "controllermoduser");
@@ -403,6 +389,26 @@ public class ModManager {
 					} catch (NumberFormatException e) {
 						debugLogger.writeError("Number format exception reading the log mod init - setting to disabled");
 						LOG_MOD_INIT = false;
+					}
+				}
+
+				// Log Mod Startup
+				String modmakerlogStr = settingsini.get("Settings", "logmodmaker");
+				int modmakerlogStartupInt = 0;
+				if (modmakerlogStr != null && !modmakerlogStr.equals("")) {
+					try {
+						modmakerlogStartupInt = Integer.parseInt(modmakerlogStr);
+						if (modmakerlogStartupInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Modmaker Compiler logging is enabled");
+							LOG_MODMAKER = true;
+						} else {
+							debugLogger.writeMessage("Modmaker Compiler logging is disabled");
+							LOG_MODMAKER = false;
+						}
+					} catch (NumberFormatException e) {
+						debugLogger.writeError("Number format exception reading the log modmaker setting - setting to disabled");
+						LOG_MODMAKER = false;
 					}
 				}
 
@@ -463,13 +469,22 @@ public class ModManager {
 
 			if (ModManager.getThirdPartyModDBFile().exists()) {
 				ModManager.debugLogger.writeMessage("Loading third party identification service JSON into memory");
-				ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile());
+				ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile(), StandardCharsets.UTF_8);
 			} else {
 				ModManager.debugLogger.writeMessage("No third party identification service JSON found. May not have been downloaded yet...");
 			}
 
+			if (ModManager.getTipsServiceFile().exists()) {
+				ModManager.debugLogger.writeMessage("Loading ME3Tweaks Tips Service JSON into memory");
+				ModManager.TIPS_SERVICE_JSON = FileUtils.readFileToString(ModManager.getTipsServiceFile(), StandardCharsets.UTF_8);
+			} else {
+				ModManager.debugLogger.writeMessage("No tips service JSON found. May not have been downloaded yet...");
+			}
+
 			ModManager.debugLogger.writeMessage("========End of startup=========");
-		} catch (Throwable e) {
+		} catch (
+
+		Throwable e) {
 			Wini ini;
 			try {
 				File settings = new File(ModManager.SETTINGS_FILENAME);
@@ -506,6 +521,16 @@ public class ModManager {
 						"Startup Error", JOptionPane.WARNING_MESSAGE);
 			}
 		}
+		// SETUI LOOK
+		try {
+			if (ModManager.USE_WINDOWS_UI) {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} else {
+				UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+			}
+		} catch (Exception e) {
+			System.err.println("Couldn't set the UI interface style");
+		}
 		try {
 			new ModManagerWindow(isUpdate);
 		} catch (Throwable e) {
@@ -515,14 +540,13 @@ public class ModManager {
 		}
 	}
 
-	private static void deferred() {
-		try {
-			//put code here and deferred() in main to pre-execute testing values
-			isMassEffect3Running();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		System.exit(0);
+	/**
+	 * Gets the path where the tips service json is located.
+	 * 
+	 * @return data/<me3tweaksservicescache>/tipservice.json
+	 */
+	public static File getTipsServiceFile() {
+		return new File(getME3TweaksServicesCache() + "tipsservice.json");
 	}
 
 	/**
@@ -534,56 +558,6 @@ public class ModManager {
 		File modsDir = new File(ModManager.getModsDir());
 		if (!modsDir.exists()) {
 			modsDir.mkdirs();
-		}
-
-		ModManager.debugLogger.writeMessage("==Looking for mods in running directory, will move valid ones to mods/==");
-		ModList modList = getMods(System.getProperty("user.dir"));
-		ArrayList<Mod> modsToMove = modList.getValidMods();
-		for (Mod mod : modsToMove) {
-			try {
-				FileUtils.moveDirectory(new File(mod.getModPath()), new File(ModManager.getModsDir() + mod.getModName()));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE MOD TO mods/ DIRECTORY!");
-				ModManager.debugLogger.writeException(e);
-			}
-		}
-
-		// Move ME3Explorer
-		ModManager.debugLogger.writeMessage("Checking if using old ME3Explorer dir");
-		File me3expDir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "ME3Explorer/");
-		if (me3expDir.exists()) {
-			ModManager.debugLogger.writeMessage("Moving ME3Explorer to data/");
-			try {
-				FileUtils.moveDirectory(me3expDir, new File(ModManager.getME3ExplorerEXEDirectory(false)));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE ME3EXPLORER TO /data/ME3EXPLORER!");
-				ModManager.debugLogger.writeException(e);
-			}
-		}
-
-		// Move TankMaster Compiler
-		ModManager.debugLogger.writeMessage("Checking if using old tankmaster compiler dir");
-		File tcoalDiD = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "Tankmaster Compiler/");
-		if (tcoalDiD.exists()) {
-			ModManager.debugLogger.writeMessage("Moving TankMaster Compiler to data/");
-			try {
-				FileUtils.moveDirectory(tcoalDiD, new File(ModManager.getTankMasterCompilerDir()));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE TANKMASTER COMPILER TO data/ DIRECTORY!");
-				ModManager.debugLogger.writeException(e);
-			}
-		}
-		// Move TankMaster TLK
-		ModManager.debugLogger.writeMessage("Checking if using old tankmaster tlk dir");
-		File tlkdir = new File(ModManager.appendSlash(System.getProperty("user.dir")) + "Tankmaster TLK/");
-		if (tlkdir.exists()) {
-			ModManager.debugLogger.writeMessage("Moving TankMaster TLK to data/");
-			try {
-				FileUtils.moveDirectory(tlkdir, new File(ModManager.getTankMasterTLKDir()));
-			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE TANKMASTER TLK TO data/ DIRECTORY!");
-				ModManager.debugLogger.writeException(e);
-			}
 		}
 
 		// move update folder
@@ -613,7 +587,7 @@ public class ModManager {
 			}
 		}
 
-		// move coalesced.original folder
+		// move coalesced.original
 		ModManager.debugLogger.writeMessage("Checking if should move coalesced.original");
 		File coalOrig = new File("Coalesced.original");
 		if (coalOrig.exists()) {
@@ -627,8 +601,10 @@ public class ModManager {
 		}
 
 		// cleanup
-		File mod_info = new File(ModMakerCompilerWindow.DOWNLOADED_XML_FILENAME);
+		File mod_info = new File("mod_info");
 		mod_info.delete();
+		File derbylog = new File("derby.log");
+		derbylog.delete();
 		File tlk = new File("tlk");
 		File toc = new File("toc");
 		File coalesceds = new File("coalesceds");
@@ -637,10 +613,8 @@ public class ModManager {
 			FileUtils.deleteDirectory(tlk);
 			FileUtils.deleteDirectory(coalesceds);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			ModManager.debugLogger.writeErrorWithException("Unable to cleanup old stuff.", e);
 		}
-
 	}
 
 	public static ModList getModsFromDirectory() {
@@ -675,7 +649,7 @@ public class ModManager {
 			// files
 			for (int i = 0; i < subdirs.length; i++) {
 				File searchSubDirDesc = new File(ModManager.appendSlash(subdirs[i].toString()) + "moddesc.ini");
-				System.out.println("Searching for file: " + searchSubDirDesc);
+				//System.out.println("Searching for file: " + searchSubDirDesc);
 				if (searchSubDirDesc.exists()) {
 					Mod validatingMod = new Mod(ModManager.appendSlash(subdirs[i].getAbsolutePath()) + "moddesc.ini");
 					if (validatingMod.isValidMod()) {
@@ -783,11 +757,9 @@ public class ModManager {
 					JOptionPane.ERROR_MESSAGE);
 			return false;
 		} else if (exebuild != 5) {
-			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-					"Binkw32 bypass does not support any version of Mass Effect 3 except 1.05.\n" + (exebuild == 6
-							? "Downgrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this."
-							: "Upgrade your game to use 1.05. Pirated editions of the game are not supported."),
-					"Unsupported ME3 version", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Binkw32 bypass does not support any version of Mass Effect 3 except 1.05.\n" + (exebuild == 6
+					? "Downgrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this."
+					: "Upgrade your game to use 1.05. Pirated editions of the game are not supported."), "Unsupported ME3 version", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -812,7 +784,8 @@ public class ModManager {
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			} else {
 				JOptionPane.showMessageDialog(null,
-						"An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+						"An error occured extracting binkw32" + (asi ? "_asi" : "")
+								+ ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator or grant yourself write permissions from the tools menu.",
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			}
 			return false;
@@ -921,7 +894,7 @@ public class ModManager {
 	 * @return
 	 */
 	public static String getModsDir() {
-		return appendSlash(System.getProperty("user.dir")) + "mods/";
+		return appendSlash(System.getProperty("user.dir")) + "mods\\";
 	}
 
 	/**
@@ -930,19 +903,28 @@ public class ModManager {
 	 * @return
 	 */
 	public static String getDataDir() {
-		return appendSlash(System.getProperty("user.dir")) + "data/";
+		return appendSlash(System.getProperty("user.dir")) + "data\\";
 	}
 
 	public static String getGUITransplanterDir() {
-		return getToolsDir() + "GUITransplanter/";
+		return getCommandLineToolsDir();
+	}
+
+	/**
+	 * Returns the path to the Mod Manager Command Line Tools directory.
+	 * 
+	 * @return data/tools/ModMangerCommandLine/(x64/x86)/
+	 */
+	public static String getCommandLineToolsDir() {
+		return getToolsDir() + "ModManagerCommandLine\\" + (ResourceUtils.is64BitWindows() ? "x64" : "x86") + "\\";
 	}
 
 	/**
 	 * Downloads Transplanter if not already downloaded. Returns path if
 	 * downloaded, null if not found locally after download attempt.
 	 *
-	 * @param download
-	 * @return
+	 * @param download Download transplanter from ME3Tweaks if not available locally
+	 * @return path to transplanter, null if none can be acquired
 	 */
 	public static String getGUITransplanterCLI(boolean download) {
 		File transplanterexe = new File(getGUITransplanterDir() + "Transplanter-CLI.exe");
@@ -959,7 +941,7 @@ public class ModManager {
 	}
 
 	private static boolean downloadGUITransplanter() {
-		String url = "https://me3tweaks.com/modmanager/tools/GUITRANSPLANTER.7z";
+		String url = "https://me3tweaks.com/modmanager/tools/GUITRANSPLANTER-MM5.7z";
 		ModManager.debugLogger.writeMessage("Downloading GUI Transplanter: " + url);
 		try {
 			File updateDir = new File(ModManager.getTempDir());
@@ -969,7 +951,7 @@ public class ModManager {
 
 			//run 7za on it
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getToolsDir() + "7za.exe");
+			commandBuilder.add(ModManager.get7zExePath());
 			commandBuilder.add("-y"); //overwrite
 			commandBuilder.add("x"); //extract
 			commandBuilder.add(ModManager.getTempDir() + "guitransplanter.7z");//7z file
@@ -1012,6 +994,55 @@ public class ModManager {
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	public static ArrayList<String> getSavedBIOGameDirectories() {
+		ArrayList<String> directories = new ArrayList<>();
+		File file = new File(getDataDir() + "BIOGAME_DIRECTORIES");
+		if (file.exists()) {
+			Scanner scanner;
+			try {
+				scanner = new Scanner(file);
+				while (scanner.hasNextLine()) {
+					String directory = scanner.nextLine();
+					if (!(new File(directory).exists())) {
+						continue; //skip
+					}
+					directories.add(directory);
+				}
+				scanner.close();
+			} catch (FileNotFoundException e) {
+				ModManager.debugLogger.writeError("BIOGAME_DIRECTORIES file does not exist.");
+			}
+		}
+		if (directories.size() == 0) {
+			Wini ini = ModManager.LoadSettingsINI();
+			String setDir = ini.get("Settings", "biogame_dir");
+			ModManager.debugLogger.writeMessage("FALLBACK: ME3CMM.ini has saved the biogame directory to (blank/null if doesn't exist): " + setDir);
+			if (setDir != null) {
+				File dir = new File(setDir);
+				if (dir.exists()) {
+					directories.add(setDir);
+					try {
+						ModManager.debugLogger.writeMessage("Upgrading biogame directory to BIOGAME_DIRECTORIES file.");
+						FileUtils.writeLines(file, directories);
+						ini.remove("Settings", "biogame_dir");
+						ini.store();
+					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("ERROR UPGRADING ME3CMM.ini bigame_dir to BIOGAME_DIRECTORIES:", e);
+					}
+					return directories;
+				}
+			}
+
+			//Haven't found any yet... look it up
+			String regpath = ModManager.LookupGamePathViaRegistryKey(true);
+			if (regpath != null && new File(regpath).exists()) {
+				directories.add(regpath);
+			}
+		}
+		return directories;
+
+	}
+
 	/**
 	 * Returns data/me3tweaksservicescache/
 	 *
@@ -1026,17 +1057,10 @@ public class ModManager {
 	/**
 	 * Gets ME3Explorer directory, with slash on the end
 	 *
-	 * @param showDialog
-	 *            set to true to show dialog if me3explorer is not found
 	 * @return
 	 */
-	public static String getME3ExplorerEXEDirectory(boolean showDialog) {
+	public static String getME3ExplorerEXEDirectory() {
 		File me3expdir = new File(getDataDir() + "ME3Explorer/");
-		if (!me3expdir.exists() && showDialog) {
-			JOptionPane.showMessageDialog(null, "Unable to find ME3Explorer in the data directory.\nME3Explorer is required for Mod Manager to work properly.", "ME3Explorer Error",
-					JOptionPane.ERROR_MESSAGE);
-			return "";
-		}
 		return appendSlash(me3expdir.getAbsolutePath());
 	}
 
@@ -1249,13 +1273,16 @@ public class ModManager {
 	 * Returns path to the found item or null if none could be found.
 	 *
 	 * @param targetPath
+	 *            Path inside of a module. E.g.
+	 *            /DLC/DLC_CON_MP4/CookedPCConsole/Test.pcc
 	 * @param targetModule
+	 *            MP4
 	 * @return
 	 */
 	public static String getPatchSource(String targetPath, String targetModule) {
 		ModManager.debugLogger.writeMessage("Looking for patch source: " + targetPath + " in module " + targetModule);
 		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator + targetPath);
-		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		String bioGameDir = ModManager.appendSlash(ModManagerWindow.GetBioGameDir());
 		if (sourceDestination.exists()) {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
@@ -1278,7 +1305,7 @@ public class ModManager {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
 			}
 			ModManager.debugLogger.writeMessage("File decompressed to location, and ready? : " + sourceDestination.exists());
-			return sourceDestination.getAbsolutePath();
+			return sourceDestination.exists() ? sourceDestination.getAbsolutePath() : null;
 			// END OF
 			// BASEGAME======================================================
 		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
@@ -1287,7 +1314,7 @@ public class ModManager {
 		} else {
 			// DLC===============================================================
 			// Check if its unpacked
-			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
+			String gamedir = appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent());
 			File unpackedFile = new File(gamedir + targetPath);
 			if (unpackedFile.exists()) {
 				try {
@@ -1306,67 +1333,57 @@ public class ModManager {
 			if (targetModule.equals(ModType.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + ModManager.appendSlash(ModType.getDLCPath(targetModule))
-					+ sfarName;
-
-			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("-dlcextract");
-			commandBuilder.add(sfarPath);
-			commandBuilder.add(targetPath);
-			commandBuilder.add(sourceDestination.getAbsolutePath());
-			StringBuilder sb = new StringBuilder();
-			for (String arg : commandBuilder) {
-				if (arg.contains(" ")) {
-					sb.append("\"" + arg + "\" ");
-				} else {
-					sb.append(arg + " ");
-				}
-			}
-			sourceDestination.getParentFile().mkdirs();
-			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());
-
-			ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
+			ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
 			// patchProcessBuilder.redirectErrorStream(true);
 			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-			Process extractionProcess;
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
-
-			try {
-				extractionProcess = extractionProcessBuilder.start();
-				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
-				String line;
-				while ((line = reader.readLine()) != null)
-					System.out.println(line);
-				int result = extractionProcess.waitFor();
-				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
-				if (result == 0) {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
-				} else {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
-				}
+			if (pr.getReturnCode() == 0) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
+				ModManager.debugLogger.writeMessage("Caching complete for file " + sourceDestination.getName());
 				return sourceDestination.getAbsolutePath();
-			} catch (IOException e) {
-				ModManager.debugLogger.writeException(e);
-			} catch (InterruptedException e) {
-				ModManager.debugLogger.writeException(e);
+
+			} else {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+				ModManager.debugLogger.writeError("Caching failed (non 0 return code) for file " + sourceDestination.getName());
+				return null;
+
 			}
 		}
-		return null;
+	}
+
+	public static ProcessResult ExtractFileFromSFAR(String sfarPath, String targetPath, String extractionDirectory) {
+		// TODO Auto-generated method stub
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
+		commandBuilder.add("--SFARPath");
+		commandBuilder.add(sfarPath);
+		commandBuilder.add("--ExtractFilenames");
+		commandBuilder.add(targetPath);
+		commandBuilder.add("--OutputPath");
+		commandBuilder.add(extractionDirectory);
+		commandBuilder.add("--FlatFolderExtraction");
+
+		ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
+		return ModManager.runProcess(extractionProcessBuilder);
 	}
 
 	/**
 	 * Decompresses the PCC to the listed destination, location can be the same.
+	 * If the PCC file is already decompressed, the file is copied instead.
 	 *
 	 * @param sourceSource
+	 *            PCC to decompress
 	 * @param sourceDestination
-	 * @return
+	 *            Place to put decompressed pcc
+	 * @return result of the decomrpession process
 	 */
 	public static ProcessResult decompressPCC(File sourceSource, File sourceDestination) {
 		ArrayList<String> commandBuilder = new ArrayList<String>();
-		commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-		commandBuilder.add("-decompresspcc");
+		commandBuilder.add(ModManager.getCommandLineToolsDir() + "PCCDecompress.exe");
+		commandBuilder.add("--inputfile");
 		commandBuilder.add(sourceSource.getAbsolutePath());
+		commandBuilder.add("--outputfile");
 		commandBuilder.add(sourceDestination.getAbsolutePath());
 		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
 		return ModManager.runProcess(decompressProcessBuilder);
@@ -1382,12 +1399,90 @@ public class ModManager {
 	 */
 	public static ProcessResult compressPCC(File sourceSource, File sourceDestination) {
 		ArrayList<String> commandBuilder = new ArrayList<String>();
-		commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-		commandBuilder.add("-compresspcc");
+		commandBuilder.add(ModManager.getCommandLineToolsDir() + "PCCDecompress.exe");
+		commandBuilder.add("--inputfile");
 		commandBuilder.add(sourceSource.getAbsolutePath());
+		commandBuilder.add("--outputfile");
 		commandBuilder.add(sourceDestination.getAbsolutePath());
+		commandBuilder.add("--compress");
+
 		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
 		return ModManager.runProcess(decompressProcessBuilder);
+	}
+
+	/**
+	 * Dumps the pcc using the specified options package.
+	 *
+	 * @param pcc
+	 *            PCC to dump
+	 * @param options
+	 *            Options package that is used to set the exe switches
+	 * 
+	 * @return Process result of dump
+	 */
+	public static ProcessResult dumpPCC(String pcc, PCCDumpOptions options) {
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(ModManager.getGUITransplanterCLI(false));
+		commandBuilder.add("--inputfile");
+		commandBuilder.add(pcc);
+		commandBuilder.add("--gamedir");
+		commandBuilder.add(options.gamePath);
+		commandBuilder.add("--extract");
+		if (options.names) {
+			commandBuilder.add("--names");
+		}
+		if (options.imports) {
+			commandBuilder.add("--imports");
+		}
+		if (options.exports) {
+			commandBuilder.add("--exports");
+		}
+		if (options.coalesced) {
+			commandBuilder.add("--coalesced");
+		}
+		if (options.scripts) {
+			commandBuilder.add("--scripts");
+		}
+		if (options.properties) {
+			commandBuilder.add("--properties");
+		}
+
+		if (options.swfs) {
+			commandBuilder.add("--swfs");
+		}
+
+		String outputfolder = options.outputFolder;
+		//Calculate output folder
+		if (pcc.contains("BIOGame")) {
+			//Try to extract what is is.
+			if (pcc.toLowerCase().contains("BIOGame\\CookedPCConsole\\".toLowerCase())) {
+				//Likely basegame.
+				outputfolder += "BASEGAME\\";
+				commandBuilder.add("--outputfolder");
+				commandBuilder.add(outputfolder);
+			} else if (pcc.contains("BIOGame\\DLC\\")) {
+				try {
+					int startOfDLCName = pcc.indexOf("BIOGame\\DLC\\") + 12;
+					String dlcname = pcc.substring(startOfDLCName, pcc.length());
+					int endOfDLCName = dlcname.indexOf("\\");
+					dlcname = dlcname.substring(0, endOfDLCName);
+					commandBuilder.add("--outputfolder");
+					commandBuilder.add(outputfolder + dlcname + "\\");
+				} catch (Exception e) {
+					ModManager.debugLogger.writeMessage("Unable to parse out the dlc directory name. Just dumping to the top level pcc dump folder.");
+					//Just dump to the top level folder
+					commandBuilder.add("--outputfolder");
+					commandBuilder.add(options.outputFolder);
+				}
+			}
+
+		} else {
+			//Just dump to the top level folder
+			commandBuilder.add("--outputfolder");
+			commandBuilder.add(options.outputFolder);
+		}
+		ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
+		return ModManager.runProcess(decompressProcessBuilder, FilenameUtils.getName(pcc));
 	}
 
 	/**
@@ -1404,49 +1499,18 @@ public class ModManager {
 	 */
 	public static String getGameFile(String targetPath, String targetModule, String copyToLocation) {
 		ModManager.debugLogger.writeMessage("Getting game file (will use unpacked if possible) from " + targetModule + ", with relative path " + targetPath);
-		String bioGameDir = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText());
+		String bioGameDir = ModManager.appendSlash(ModManagerWindow.GetBioGameDir());
 		File destFile = new File(copyToLocation);
 		FileUtils.deleteQuietly(destFile);
 		new File(destFile.getParent()).mkdirs();
 
 		if (targetModule.equals(ModType.BASEGAME)) {
 			if (targetPath.endsWith(".pcc")) {
-				// we must use PCCEditor2 to decompress the file using the
-				// --decompress-pcc command line arg, and specify where it will be decompressed to
-				//get source directory via relative path chaining
 				File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath);
-				// run ME3EXPLORER --decompress-pcc
-				ArrayList<String> commandBuilder = new ArrayList<String>();
-				commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-				commandBuilder.add("-decompresspcc");
-				commandBuilder.add(sourceSource.getAbsolutePath());
-				commandBuilder.add(copyToLocation);
-				StringBuilder sb = new StringBuilder();
-				for (String arg : commandBuilder) {
-					sb.append("\"" + arg + "\" ");
-				}
-				ModManager.debugLogger.writeMessage("Executing ME3EXPLORER Decompressor command (into library): " + sb.toString());
-
-				ProcessBuilder decompressProcessBuilder = new ProcessBuilder(commandBuilder);
-				// patchProcessBuilder.redirectErrorStream(true);
-				// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-				Process decompressProcess;
-				try {
-					ModManager.debugLogger.writeMessage("===ME3EXPLORER PCC REPACKER===");
-					decompressProcess = decompressProcessBuilder.start();
-					BufferedReader reader = new BufferedReader(new InputStreamReader(decompressProcess.getInputStream()));
-					String line;
-					while ((line = reader.readLine()) != null)
-						ModManager.debugLogger.writeMessage(line);
-					int result = decompressProcess.waitFor();
-					ModManager.debugLogger.writeMessage("===END OF PCC REPACKER===");
-
-					ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
-				} catch (IOException e) {
-					ModManager.debugLogger.writeException(e);
-					return null;
-				} catch (InterruptedException e) {
-					ModManager.debugLogger.writeException(e);
+				File destinationFile = new File(copyToLocation);
+				ModManager.decompressPCC(sourceSource, destinationFile);
+				if (!destinationFile.exists()) {
+					ModManager.debugLogger.writeError("PCC Decompressor did not successfully place the file into the library.");
 					return null;
 				}
 				return copyToLocation;
@@ -1474,12 +1538,12 @@ public class ModManager {
 			// END OF
 			// BASEGAME======================================================
 		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
-			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
+			ModManager.debugLogger.writeError("Fetching files from CustomDLC is not supported.");
 			return null;
 		} else {
 			// DLC===============================================================
 			// Check if its unpacked
-			String gamedir = appendSlash(new File(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()).getParent());
+			String gamedir = appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent());
 			File unpackedFile = new File(gamedir + targetPath);
 			if (unpackedFile.exists()) {
 				try {
@@ -1500,45 +1564,20 @@ public class ModManager {
 			if (targetModule.equals(ModType.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.ACTIVE_WINDOW.fieldBiogameDir.getText()) + ModManager.appendSlash(ModType.getDLCPath(targetModule))
-					+ sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
 
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getME3ExplorerEXEDirectory(false) + "ME3Explorer.exe");
-			commandBuilder.add("-dlcextract");
+			commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
+			commandBuilder.add("--sfarpath");
 			commandBuilder.add(sfarPath);
+			commandBuilder.add("--sfarpath");
+
 			commandBuilder.add(targetPath);
 			commandBuilder.add(copyToLocation);
-			StringBuilder sb = new StringBuilder();
-			for (String arg : commandBuilder) {
-				if (arg.contains(" ")) {
-					sb.append("\"" + arg + "\" ");
-				} else {
-					sb.append(arg + " ");
-				}
-			}
-			ModManager.debugLogger.writeMessage("Executing ME3EXPLORER DLCEditor2 Extraction command: " + sb.toString());
-
 			ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
-			// patchProcessBuilder.redirectErrorStream(true);
-			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-			Process extractionProcess;
-			try {
-				extractionProcess = extractionProcessBuilder.start();
-				BufferedReader reader = new BufferedReader(new InputStreamReader(extractionProcess.getInputStream()));
-				String line;
-				while ((line = reader.readLine()) != null)
-					System.out.println(line);
-				int result = extractionProcess.waitFor();
-				ModManager.debugLogger.writeMessage("ME3Explorer process finished, return code: " + result);
-				return copyToLocation;
-			} catch (IOException e) {
-				ModManager.debugLogger.writeException(e);
-			} catch (InterruptedException e) {
-				ModManager.debugLogger.writeException(e);
-			}
+			ModManager.runProcess(extractionProcessBuilder);
+			return copyToLocation;
 		}
-		return null;
 	}
 
 	/**
@@ -1547,7 +1586,7 @@ public class ModManager {
 	 * @return
 	 */
 	public static ArrayList<Patch> getPatchesFromDirectory() {
-		ModManager.debugLogger.writeMessage("Loading Patches from patchlibrary");
+		ModManager.debugLogger.writeMessage("Loading MixIns from data directory.");
 		File modsDir = new File(getPatchesDir() + "patches/");
 		// This filter only returns directories
 		FileFilter fileFilter = new FileFilter() {
@@ -1571,7 +1610,7 @@ public class ModManager {
 					}
 				}
 			}
-			ModManager.debugLogger.writeMessage("Loaded "+validPatches.size()+" MixIns.");
+			ModManager.debugLogger.writeMessage("Loaded " + validPatches.size() + " MixIns.");
 
 		}
 		Collections.sort(validPatches);
@@ -1712,7 +1751,6 @@ public class ModManager {
 		return sb.toString();
 	}
 
-
 	/**
 	 * Returns directory that contains folders of patches
 	 *
@@ -1789,6 +1827,30 @@ public class ModManager {
 	}
 
 	/**
+	 * Runs a process already built via processbuilder. This method simply runs
+	 * the EXE and does not wait for it, nor does it print any of its output.
+	 *
+	 * @param p
+	 *            Process to build and run
+	 */
+	public static void runProcessDetached(ProcessBuilder p) {
+		try {
+			StringBuilder sb = new StringBuilder();
+			List<String> list = p.command();
+			for (String arg : list) {
+				sb.append(arg);
+				sb.append(" ");
+			}
+			ModManager.debugLogger.writeMessage("runProcessDetached(): " + sb.toString());
+			p.start();
+			return;
+		} catch (IOException e) {
+			ModManager.debugLogger.writeErrorWithException("Process exception occured:", e);
+			return;
+		}
+	}
+
+	/**
 	 * Runs a process already build via processbuilder, prints timing info and
 	 * returns the result
 	 *
@@ -1798,6 +1860,7 @@ public class ModManager {
 	 *         if one occured
 	 */
 	public static ProcessResult runProcess(ProcessBuilder p) {
+		final StringWriter writer = new StringWriter();
 		try {
 			StringBuilder sb = new StringBuilder();
 			List<String> list = p.command();
@@ -1809,7 +1872,6 @@ public class ModManager {
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
 			//handle stdout
-			final StringWriter writer = new StringWriter();
 			new Thread(new Runnable() {
 				public void run() {
 					try {
@@ -1825,11 +1887,18 @@ public class ModManager {
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
 			ModManager.debugLogger.writeMessage("Process output: " + writer.toString());
+			String output = writer.toString();
 			writer.close();
-			return new ProcessResult(returncode, null);
+			return new ProcessResult(returncode, output, null);
 		} catch (IOException | InterruptedException e) {
 			ModManager.debugLogger.writeErrorWithException("Process exception occured:", e);
-			return new ProcessResult(0, e);
+			String output = writer.toString();
+			try {
+				writer.close();
+			} catch (IOException e1) {
+				//don't care.
+			}
+			return new ProcessResult(-1, output, e);
 		}
 	}
 
@@ -1987,7 +2056,7 @@ public class ModManager {
 
 			//run 7za on it
 			ArrayList<String> commandBuilder = new ArrayList<String>();
-			commandBuilder.add(ModManager.getToolsDir() + "7za.exe");
+			commandBuilder.add(ModManager.get7zExePath());
 			commandBuilder.add("-y"); //overwrite
 			commandBuilder.add("x"); //extract
 			commandBuilder.add(ModManager.getTempDir() + "guilibrary.7z");//7z file
@@ -2086,6 +2155,11 @@ public class ModManager {
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * Checks if MassEffect3.exe is currently running. Uses native code.
+	 * 
+	 * @return
+	 */
 	public static boolean isMassEffect3Running() {
 		try {
 			Kernel32 kernel32 = (Kernel32) Native.loadLibrary(Kernel32.class, W32APIOptions.UNICODE_OPTIONS);
@@ -2111,7 +2185,19 @@ public class ModManager {
 		}
 	}
 
+	/**
+	 * Runs the process specified by p, and logs output with the specified
+	 * prefix. Returns the process result.
+	 * 
+	 * @param p
+	 *            ProcessBuilder object to run
+	 * @param prefix
+	 *            Prefix for logs
+	 * @return ProcessResult of the process
+	 */
 	public static ProcessResult runProcess(ProcessBuilder p, String prefix) {
+		final StringWriter writer = new StringWriter();
+
 		try {
 			StringBuilder sb = new StringBuilder();
 			List<String> list = p.command();
@@ -2123,7 +2209,6 @@ public class ModManager {
 			long startTime = System.currentTimeMillis();
 			Process process = p.start();
 			//handle stdout
-			final StringWriter writer = new StringWriter();
 			new Thread(new Runnable() {
 				public void run() {
 					try {
@@ -2139,11 +2224,357 @@ public class ModManager {
 			long endTime = System.currentTimeMillis();
 			ModManager.debugLogger.writeMessage("[" + prefix + "]Process finished with code " + returncode + ", took " + (endTime - startTime) + " ms.");
 			ModManager.debugLogger.writeMessage("[" + prefix + "]Process output: " + writer.toString());
+			String output = writer.toString();
 			writer.close();
-			return new ProcessResult(returncode, null);
+			return new ProcessResult(returncode, output, null);
 		} catch (IOException | InterruptedException e) {
 			ModManager.debugLogger.writeErrorWithException("[" + prefix + "]Process exception occured:", e);
-			return new ProcessResult(0, e);
+			String output = writer.toString();
+			try {
+				writer.close();
+			} catch (IOException e1) {
+				//don't care.
+			}
+			return new ProcessResult(-1, output, e);
 		}
+	}
+
+	/**
+	 * Reads me3cmm.ini from disk. If it does not exist, it is created. In
+	 * almost all instances this should work - if on read only media it won't,
+	 * but that's not really my concern.
+	 * 
+	 * @return Wini object for ME3CMM.ini
+	 */
+	public static Wini LoadSettingsINI() {
+		File settings = new File(ModManager.SETTINGS_FILENAME);
+		if (!settings.exists()) {
+			try {
+				settings.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				ModManager.debugLogger.writeErrorWithException("ERROR WRITING NEW SETTINGS FILE:", e);
+			}
+		}
+		Wini ini = null;
+		try {
+			ini = new Wini(settings);
+			ini.load(settings);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ModManager.debugLogger.writeErrorWithException("ERROR READING CONFIG FILE... WE'RE PROBABLY GOING TO CRASH.", e);
+		}
+
+		return ini;
+	}
+
+	/**
+	 * Looks up the game's installation directory using the windows registry
+	 * 
+	 * @param appendBiogame
+	 *            appends BIOGame to the end, if found.
+	 * @return
+	 */
+	public static String LookupGamePathViaRegistryKey(boolean appendBiogame) {
+		String installDir = null;
+		String _32bitpath = "SOFTWARE\\BioWare\\Mass Effect 3";
+		String _64bitpath = "SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
+		ModManager.debugLogger.writeMessage("Looking up location of game using registry...");
+		try {
+			installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _64bitpath, "Install Dir");
+			ModManager.debugLogger.writeMessage("Game location found - via 64bit key.");
+		} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
+			ModManager.debugLogger.writeMessage("Exception looking at 64 registry key: " + _64bitpath);
+		}
+
+		if (installDir == null) {
+			// try 32bit key
+			try {
+				ModManager.debugLogger.writeMessage("64-bit registry key not found. Attemping to find via 32-bit registy key");
+				installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _32bitpath, "Install Dir");
+				ModManager.debugLogger.writeMessage("Game location found - via 32bit key.");
+			} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
+				ModManager.debugLogger.writeMessage("Exception looking at 32bit registry key: " + _32bitpath);
+			}
+		}
+		if (installDir != null) {
+			installDir = ModManager.appendSlash(installDir);
+			ModManager.debugLogger.writeMessage("Found mass effect 3 location in registry: " + installDir);
+			if (appendBiogame) {
+				installDir += "BIOGame";
+			}
+		} else {
+			ModManager.debugLogger.writeError("Could not find Mass Effect 3 registry key in both 32 and 64 bit locations.");
+		}
+
+		return installDir;
+	}
+
+	/**
+	 * Looks up the game's language through the registry.
+	 * 
+	 * @return language code if found, null if not found
+	 */
+	public static String LookupGameLanguageViaRegistryKey() {
+		String locale = null;
+		String _32bitpath = "SOFTWARE\\BioWare\\Mass Effect 3";
+		String _64bitpath = "SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
+		ModManager.debugLogger.writeMessage("Looking up location of game using registry...");
+		try {
+			locale = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _64bitpath, "Locale");
+			ModManager.debugLogger.writeMessage("Locale found - via 64bit key.");
+		} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
+			ModManager.debugLogger.writeMessage("Exception looking at 64 registry key: " + _64bitpath);
+		}
+
+		if (locale == null) {
+			// try 32bit key
+			try {
+				ModManager.debugLogger.writeMessage("64-bit registry key not found. Attemping to find via 32-bit registy key");
+				locale = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, _32bitpath, "Locale");
+				ModManager.debugLogger.writeMessage("Game location found - via 32bit key.");
+			} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
+				ModManager.debugLogger.writeMessage("Exception looking at 32bit registry key: " + _32bitpath);
+			}
+		}
+		if (locale != null) {
+			ModManager.debugLogger.writeMessage("Found mass effect 3 locale in registry: " + locale);
+		} else {
+			ModManager.debugLogger.writeError("Could not find Mass Effect 3 registry key in both 32 and 64 bit locations.");
+		}
+
+		return locale;
+	}
+
+	/**
+	 * Runs autotoc on the listed folders.
+	 * 
+	 * @param folders
+	 *            Folders to generate PCConsoleTOC files for
+	 * @return AutoTOC'd folders
+	 */
+	public static ProcessResult runAutoTOCOnFolders(ArrayList<String> folders) {
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+		commandBuilder.add(ModManager.getCommandLineToolsDir() + "FullAutoTOC.exe");
+		commandBuilder.add("--tocfolders");
+		for (String folder : folders) {
+			commandBuilder.add(folder);
+		}
+
+		String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+		ProcessBuilder pb = new ProcessBuilder(command);
+		return ModManager.runProcess(pb);
+	}
+
+	/**
+	 * Returns data/BIOGAME_DIRECTORIES.
+	 * 
+	 * @return Path to the BIOGAME_DIRECTORIES file.
+	 */
+	public static String getSavedBIOGameDirectoriesFile() {
+		return ModManager.getDataDir() + "BIOGAME_DIRECTORIES";
+	}
+
+	public static boolean GrantPermissionsToDirectory(String directory, String username) {
+		if (directory.endsWith("\\") || directory.endsWith("/")) {
+			directory = directory.substring(0, directory.length() - 1);
+		}
+		ArrayList<String> command = new ArrayList<String>();
+		command.add(ModManager.getCommandLineToolsDir() + "elevate.exe");
+		command.add("-c");
+		command.add("-n");
+		command.add("-w");
+		command.add("icacls");
+		command.add(directory);
+		command.add("/t");
+		command.add("/grant");
+		command.add(username + ":(OI)(CI)F");
+		ModManager.debugLogger.writeMessage("Granting permissions to the current user for selected directory: " + directory);
+		ProcessBuilder pb = new ProcessBuilder(command);
+		ProcessResult pr = ModManager.runProcess(pb);
+		return pr.getReturnCode() == 0;
+	}
+
+	public static boolean checkWritePermissions(String selectedGamePath) {
+		File testfile = new File(selectedGamePath + "\\MODMANAGER_PERMISSIONSTEST");
+		if (testfile.exists()) {
+			boolean deleted = testfile.delete();
+			if (deleted) {
+				ModManager.debugLogger.writeMessage("User has write permissions to file: " + testfile);
+				return true;
+			} else {
+				ModManager.debugLogger.writeMessage("User does not have write permissions to file: " + testfile);
+				return false;
+			}
+		} else {
+			try {
+				boolean created = testfile.createNewFile();
+				if (created) {
+					testfile.delete();
+					ModManager.debugLogger.writeMessage("User has write permissions (create) to file: " + testfile);
+					return true;
+				} else {
+					ModManager.debugLogger.writeMessage("User does not have write permissions (create) to file: " + testfile);
+					return false;
+				}
+			} catch (IOException e) {
+				ModManager.debugLogger.writeMessage("User does not have write permissions (create) to file: " + testfile);
+				ModManager.debugLogger.writeException(e);
+				return false;
+			}
+		}
+	}
+
+	public static String getCommandLineToolsRequiredVersion() {
+		return ModManager.MIN_REQUIRED_CMDLINE_MAIN + "." + ModManager.MIN_REQUIRED_CMDLINE_MINOR + "." + ModManager.MIN_REQUIRED_CMDLINE_BUILD + "."
+				+ ModManager.MIN_REQUIRED_CMDLINE_REV;
+	}
+
+	/**
+	 * Returns the PCC dumping folder.
+	 * 
+	 * @return data\pccdumps\
+	 */
+	public static String getPCCDumpFolder() {
+		File file = new File(getDataDir() + "PCCdumps\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * Gets the directory that contains the batch installation groups.
+	 * 
+	 * @return data\modgroups\
+	 */
+	public static String getModGroupsFolder() {
+		File file = new File(getDataDir() + "modgroups\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * Gets the directory that modmaker xml files are cached to, with a \ on the
+	 * end.
+	 * 
+	 * @return cache directory path
+	 */
+	public static String getModmakerCacheDir() {
+		File file = new File(getDataDir() + "modmaker\\cache\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * Gets the directory for running tests in Mod Manager.
+	 * 
+	 * @return data\testing\ with a slash on the end.
+	 */
+	public static String getTestingDir() {
+		File file = new File(getDataDir() + "testing\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * 
+	 * @return data\Patch_001_Extracted\
+	 */
+	public static String getTestpatchUnpackFolder() {
+		File file = new File(getDataDir() + "Patch_001_Extracted\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * 
+	 * @return data\MassEffectModder\
+	 */
+	public static String getMEMDirectory() {
+		File file = new File(getDataDir() + "MassEffectModder\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+
+	/**
+	 * 
+	 * @return data\Deployed Mods\
+	 */
+	public static String getDeploymentDirectory() {
+		File file = new File(getDataDir() + "Deployed Mods\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
+	
+	/**
+	 * 
+	 * @return data\tools\ModManagerCommandLine\<arch>\7z.exe
+	 */
+	public static String get7zExePath() {
+		return getCommandLineToolsDir() + "7z.exe";
+	}
+	
+	/**
+	 * 
+	 * @return data\tools\ModManagerCommandLine\<arch>\7z.dll
+	 */
+	public static String get7zDllPath() {
+		return getCommandLineToolsDir() + "7z.dll";
+	}
+
+	/**
+	 * Compresses the selected mod for deployment by staging the mod and then
+	 * compressing the staged mod - this prevents additional files from being
+	 * included in the mod. More ram you have = more compressed the mod will be.
+	 * 
+	 * @param mod
+	 *            Mod to stage
+	 * @return Path to output file
+	 */
+	public static String compressModForDeployment(Mod mod) {
+		String outputpath = getDeploymentDirectory() + mod.getModName() + "_" + mod.getVersion() + ".7z";
+		ModManager.debugLogger.writeMessage("Deploying " + mod.getModName());
+
+		//Get amount of memory
+		int dictsize = 64; //Default size - definitely not the best, but we'll default to 32-bit.
+
+		if (ResourceUtils.is64BitWindows()) {
+			ModManager.debugLogger.writeMessage("64-bit Windows - calculating dictionary size that *should* work on this computer...");
+			String[] memorycommand = new String[] { "wmic", "ComputerSystem", "get", "TotalPhysicalMemory" };
+			ProcessBuilder pb = new ProcessBuilder(memorycommand);
+			ProcessResult pr = ModManager.runProcess(pb);
+			String output = pr.getOutput();
+
+			String[] lines = output.split("\\n");
+			if (lines.length == 3) {
+				String memsizebytes = lines[1].replaceAll("[^0-9]", "");
+				long bytecount = Long.parseLong(memsizebytes);
+				String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
+				ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
+				dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
+				ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
+			}
+		}
+
+		ArrayList<String> commandBuilder = new ArrayList<String>();
+
+		commandBuilder.add("cmd");
+		commandBuilder.add("/c");
+		commandBuilder.add("start");
+		commandBuilder.add("Mod Manager Mod Compressor");
+		commandBuilder.add("/wait");
+		commandBuilder.add(ModManager.get7zExePath());
+		commandBuilder.add("a"); //add
+		commandBuilder.add(outputpath); //destfile
+		commandBuilder.add(mod.getModPath());//inputfile
+
+		//commandBuilder.add("-mmt" + numcores); //let it multithread itself.
+		commandBuilder.add("-mx=9"); //max compression
+		commandBuilder.add("-aoa"); //overwrite/update
+		commandBuilder.add("-md" + dictsize + "m");
+		ModManager.debugLogger.writeMessage("Compressing mod - output to " + outputpath);
+		ProcessBuilder pb = new ProcessBuilder(commandBuilder);
+		FileUtils.deleteQuietly(new File(outputpath));
+		ModManager.runProcess(pb).getReturnCode();
+		return outputpath;
 	}
 }

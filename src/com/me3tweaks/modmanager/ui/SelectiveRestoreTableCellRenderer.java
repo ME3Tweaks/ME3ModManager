@@ -6,6 +6,7 @@ import java.awt.Font;
 
 import javax.swing.JLabel;
 import javax.swing.JTable;
+import javax.swing.UIManager;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import com.me3tweaks.modmanager.SelectiveRestoreWindow;
@@ -19,6 +20,11 @@ public class SelectiveRestoreTableCellRenderer extends DefaultTableCellRenderer 
 		JLabel c = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 		if (value == null)
 			return c;
+
+		if (UIManager.getLookAndFeel().getID().equals("Windows")) {
+			c.setForeground(Color.BLACK);
+		}
+
 		setHorizontalAlignment(JLabel.CENTER);
 		switch (column) {
 		case SelectiveRestoreWindow.COL_MODIFIED:

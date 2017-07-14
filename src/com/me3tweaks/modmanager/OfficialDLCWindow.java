@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -39,10 +40,10 @@ public class OfficialDLCWindow extends JDialog {
 	boolean somethingChanged;
 
 	public OfficialDLCWindow(String bioGameDir) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening Official DLC window.");
 		this.bioGameDir = bioGameDir;
 		setupWindow();
-		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
 
@@ -52,7 +53,7 @@ public class OfficialDLCWindow extends JDialog {
 				"DEVELOPERS ONLY", JOptionPane.WARNING_MESSAGE);
 		setIconImages(ModManager.ICONS);
 		setTitle("Official DLC Manager");
-		setModal(true);
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setPreferredSize(new Dimension(800, 600));
 		setMinimumSize(new Dimension(700, 350));
 
@@ -178,12 +179,11 @@ public class OfficialDLCWindow extends JDialog {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
 				if (somethingChanged) {
-					JOptionPane.showMessageDialog(OfficialDLCWindow.this, "The DLC configuration has changed.\nMods will reload to update their configuration.",
-							"Mods require reloading", JOptionPane.INFORMATION_MESSAGE);
-					new ModManagerWindow(false);
+					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 				}
 			}
 		});
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	private class OfficialDLCInfo implements Comparable<OfficialDLCInfo> {

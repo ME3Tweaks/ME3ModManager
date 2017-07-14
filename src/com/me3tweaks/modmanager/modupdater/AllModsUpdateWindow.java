@@ -65,15 +65,12 @@ public class AllModsUpdateWindow extends JDialog {
 	}
 
 	private void setupWindow() {
-		this.setTitle("Mod Updater");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(320, 70));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
-		this.pack();
-		this.setLocationRelativeTo(callingWindow);
-
+		setTitle("Mod Updater");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(320, 70));
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
 		JPanel panel = new JPanel(new BorderLayout());
 
 		statusLabel = new JLabel("Downloading server manifest");
@@ -90,12 +87,13 @@ public class AllModsUpdateWindow extends JDialog {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(WindowEvent e) {
-				System.out.println("Dialog is closing");
 				if (amdt != null) {
 					amdt.cancel(false);
 				}
 			}
 		});
+		pack();
+		setLocationRelativeTo(callingWindow);
 	}
 
 	void setStatusText(String text) {
@@ -154,7 +152,6 @@ public class AllModsUpdateWindow extends JDialog {
 					completedUpdates.add(upackage);
 				}
 				while (muw.isShowing()) {
-					System.out.println("sleepin");
 					Thread.sleep(350);
 				}
 				publish(new ThreadCommand("NUM_REMAINING", null, --numToGo));
@@ -314,7 +311,7 @@ public class AllModsUpdateWindow extends JDialog {
 						JOptionPane.INFORMATION_MESSAGE);
 			}
 
-			new ModManagerWindow(false);
+			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 		}
 
 		public void setManifestDownloaded() {

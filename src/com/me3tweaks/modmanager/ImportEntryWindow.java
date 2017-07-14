@@ -234,7 +234,7 @@ public class ImportEntryWindow extends JDialog {
 		setLocationRelativeTo(callingDialog);
 	}
 
-	class ImportWorker extends SwingWorker<Void, ThreadCommand> {
+	class ImportWorker extends SwingWorker<Mod, ThreadCommand> {
 		private String modDesc;
 		private String modAuthor;
 		private String modSite;
@@ -253,7 +253,7 @@ public class ImportEntryWindow extends JDialog {
 		}
 
 		@Override
-		protected Void doInBackground() throws Exception {
+		protected Mod doInBackground() throws Exception {
 			File importF = new File(importPath);
 			numFiles = 0;
 			File mountFile = null;
@@ -292,7 +292,7 @@ public class ImportEntryWindow extends JDialog {
 					urib.setParameters(params);
 					HttpClient httpClient = HttpClientBuilder.create().build();
 					URI uri = urib.build();
-					System.out.println("Sending telemetry via GET: " + uri.toString());
+					//System.out.println("Sending telemetry via GET: " + uri.toString());
 					//Execute and get the response.
 					HttpGet get = new HttpGet(uri);
 					HttpResponse response = httpClient.execute(get);
@@ -301,7 +301,6 @@ public class ImportEntryWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since this is optional we will ignore this error: ", e);
 				}
 			}
-
 			String localModPath = ModManager.getModsDir() + modName;
 			File localModPathFile = new File(localModPath);
 			localModPathFile.mkdirs();
@@ -314,22 +313,6 @@ public class ImportEntryWindow extends JDialog {
 			progressBar.setIndeterminate(false);
 
 			publish(new ThreadCommand("PROGRESSBAR_DETERMINATE"));
-			/*
-			 * try (Stream<Path> stream = Files.walk(importF.toPath())) {
-			 * stream.forEach(path -> {
-			 * 
-			 * try { Path destinationPath =
-			 * Paths.get(path.toString().replace(importF.toString(),
-			 * importF.toString())); Files.copy(path, destinationPath);
-			 * publish(new ThreadCommand("SINGLE_FILE_COPIED")); } catch
-			 * (Exception e) { ModManager.debugLogger.
-			 * writeErrorWithException("EXCEPTION COPYING FILE " +
-			 * path.toString(), e); } });
-			 * 
-			 * } catch (IOException e1) { // TODO Auto-generated catch block
-			 * ModManager.debugLogger.
-			 * writeErrorWithException("EXCEPTION IMPORTING MOD:", e1); }
-			 */
 			final Path targetPath = exportF.toPath(); // target
 			final Path sourcePath = importF.toPath();// source
 			Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
@@ -357,6 +340,7 @@ public class ImportEntryWindow extends JDialog {
 			mod.setSite(modSite);
 
 			ModJob dlcJob = new ModJob();
+			dlcJob.setOwningMod(mod);
 			dlcJob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
 			dlcJob.setJobType(ModJob.CUSTOMDLC);
 			dlcJob.setSourceFolders(new ArrayList<String>());
@@ -375,8 +359,9 @@ public class ImportEntryWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Mod imported OK.");
 			} else {
 				ModManager.debugLogger.writeMessage("Mod failed import.");
+				return null;
 			}
-			return null;
+			return mod;
 		}
 
 		protected void process(List<ThreadCommand> commands) {
@@ -402,21 +387,36 @@ public class ImportEntryWindow extends JDialog {
 
 		@Override
 		public void done() {
+			Mod mod = null;
+			Exception ex = null;
 			try {
-				get();
-				result = OK;
-				JOptionPane.showMessageDialog(ImportEntryWindow.this, modName + " has been imported into Mod Manager.", "Mod Imported", JOptionPane.INFORMATION_MESSAGE);
+				mod = get();
+				if (mod != null) {
+					result = OK;
+				}
 			} catch (Exception e) {
 				result = ERROR;
-				ModManager.debugLogger.writeErrorWithException("Exception importing DLC:", e);
-				JOptionPane.showMessageDialog(ImportEntryWindow.this, "Error occured importing this mod:\n" + (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()),
-						"Import Error", JOptionPane.ERROR_MESSAGE);
+				ex = e;
 			}
 			ModManager.debugLogger.writeMessage("Import of mod complete. Result code: " + result);
 			dispose();
 			if (result == OK) {
 				callingWindow.dispose();
-				new ModManagerWindow(false);
+				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+				ModManagerWindow.ACTIVE_WINDOW.highlightMod(mod);
+				JOptionPane.showMessageDialog(ImportEntryWindow.this, modName + " has been imported into Mod Manager.", "Mod Imported", JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				if (ex != null) {
+					ModManager.debugLogger.writeErrorWithException("Importing mod failed importing DLC:", ex);
+					JOptionPane.showMessageDialog(ImportEntryWindow.this,
+							"Error occured importing this mod:\n" + (ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage()), "Import Error",
+							JOptionPane.ERROR_MESSAGE);
+				} else {
+					ModManager.debugLogger.writeError("The imported mod could not be loaded!");
+					JOptionPane.showMessageDialog(ImportEntryWindow.this, "The mod that was imported could not be loaded. This may be an issue with Mod Manager.", "Import Error",
+							JOptionPane.ERROR_MESSAGE);
+				}
+
 			}
 		}
 
@@ -428,12 +428,13 @@ public class ImportEntryWindow extends JDialog {
 	 * @return
 	 */
 	public boolean inputValidate() {
-		if (modNameField.getText().equals("")) {
+		if (modNameField.getText().trim().equals("")) {
 			JOptionPane.showMessageDialog(this, "You must set a Mod Name.", "Mod Name Required", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		try {
-			File.createTempFile(modNameField.getText(), "tmp");
+			File f = File.createTempFile(modNameField.getText(), "tmp");
+			f.delete();
 		} catch (IOException e) {
 			//illegal characters in name likely
 			JOptionPane.showMessageDialog(this, "Illegal characters in the mod name.\nThis OS cannot make a folder with the mod name you specified, please change it.",

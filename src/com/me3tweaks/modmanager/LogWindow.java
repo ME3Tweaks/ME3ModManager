@@ -2,6 +2,7 @@ package com.me3tweaks.modmanager;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -100,7 +101,6 @@ public class LogWindow extends JFrame {
 					String line = lines[i];
 					if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
 						logArea.setCaretPosition(caretpos);
-						System.out.println("Set caret pos to "+caretpos);
 						caretpos += line.length();
 						caretline++;
 						break;
@@ -119,7 +119,7 @@ public class LogWindow extends JFrame {
 		buttonPanel.add(copyLog);
 		buttonPanel.add(Box.createHorizontalGlue());
 
-		JScrollPane scrollPane = new JScrollPane(logArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		JScrollPane scrollPane = new JScrollPane(logArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		mainPanel.add(scrollPane, BorderLayout.CENTER);
 		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -131,7 +131,6 @@ public class LogWindow extends JFrame {
 		Scanner scanner = new Scanner(log);
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
-			System.out.println("Parsing log line " + line);
 			if (line.startsWith(DebugLogger.ERROR_PREFIX) || line.startsWith(DebugLogger.EN_EXCEPTION_PREFIX)) {
 				ResourceUtils.appendToPane(logArea, line, Color.RED);
 			} else {

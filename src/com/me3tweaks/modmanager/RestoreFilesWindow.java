@@ -61,10 +61,9 @@ public class RestoreFilesWindow extends JDialog {
 		this.restoreMode = restoreMode;
 		consoleQueue = new String[levelCount];
 		setupWindow();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		addToQueue("Restoring game files");
 		new RestoreDataJob().execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	/**
@@ -86,21 +85,20 @@ public class RestoreFilesWindow extends JDialog {
 		this.BioGameDir = BioGameDir;
 		consoleQueue = new String[levelCount];
 		setupWindow();
-		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		addToQueue("Restoring game files");
 		restoreMode = operationType;
 		customTaskHeader = new String[] { header };
 		new RestoreDataJob().execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setTitle("Restoring game files");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(350, 240));
-		this.setResizable(false);
-		this.setIconImages(ModManager.ICONS);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setTitle("Restoring game files");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(350, 240));
+		setResizable(false);
+		setIconImages(ModManager.ICONS);
 
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		// TODO Auto-generated method stub
@@ -133,7 +131,8 @@ public class RestoreFilesWindow extends JDialog {
 				// do something...
 			}
 		});
-		this.pack();
+		pack();
+		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	class RestoreDataJob extends SwingWorker<Boolean, String> {
@@ -617,6 +616,7 @@ public class RestoreFilesWindow extends JDialog {
 						publish(taskTitle + ": Restoring " + backup.getName());
 						Files.copy(Paths.get(backup.toString()), Paths.get(ModManager.appendSlash(me3dir) + relative), StandardCopyOption.REPLACE_EXISTING);
 					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("Exception occured restoring " + backup.toString() + ":", e);
 						return false;
 					}
 				}
@@ -745,7 +745,15 @@ public class RestoreFilesWindow extends JDialog {
 		protected void done() {
 			try {
 				boolean result = get();
-				ModManager.debugLogger.writeMessage("RESULT OF RESTORATION THREAD:" + result);
+				ModManager.debugLogger.writeMessage("RESULT OF RESTORATION THREAD: " + result);
+				if (!result) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error occured during restore");
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+							"Errors occured during the file restoration process.\nAll or some of the files did not restore.\nCheck the logs for more information.",
+							"Restoration Error", JOptionPane.ERROR_MESSAGE);
+					dispose();
+					return;
+				}
 				finishRestore();
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Restore thread had an error.", e);
@@ -790,7 +798,6 @@ public class RestoreFilesWindow extends JDialog {
 				break;
 			}
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(status);
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setVisible(true);
 			dispose();
 		}
 	}

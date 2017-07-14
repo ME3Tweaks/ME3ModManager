@@ -38,7 +38,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.me3tweaks.modmanager.AboutWindow;
+import com.me3tweaks.modmanager.AboutWindow2;
 import com.me3tweaks.modmanager.LogOptionsWindow;
 import com.me3tweaks.modmanager.LogWindow;
 import com.me3tweaks.modmanager.ModManager;
@@ -196,22 +196,18 @@ public class HelpMenu {
 		helpEmailFemShep.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JOptionPane
-						.showMessageDialog(
-								ModManagerWindow.ACTIVE_WINDOW,
-								"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>"
-										+ "Please email me if you have crashes or bugs, or use the forums.<br>"
-										+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
-										+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
-										+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
-										+ "3. Leave the default options unless instructed otherwise. Upload your log to pastebin.<br>"
-										+ "4. In your email, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
-										+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
-										+ "Please do not do any other operations as it makes the logs harder to read.<br>"
-										+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
-										+ "Please note that I only speak English.<br><br>"
-										+ "You can email me at femshep@me3tweaks.com.</div></html>", "Contacting FemShep",
-								JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+						"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>" + "Please email me if you have crashes or bugs, or use the forums.<br>"
+								+ "If you have a crash or a bug I will need the Mod Manager log.<br><br>"
+								+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
+								+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
+								+ "3. Leave the default options unless instructed otherwise. Upload your log to pastebin.<br>"
+								+ "4. In your email, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
+								+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
+								+ "Please do not do any other operations as it makes the logs harder to read.<br>"
+								+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
+								+ "Please note that I only speak English.<br><br>" + "You can email me at femshep@me3tweaks.com.</div></html>",
+						"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 		helpForums.addActionListener(new ActionListener() {
@@ -236,7 +232,7 @@ public class HelpMenu {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new AboutWindow(ModManagerWindow.ACTIVE_WINDOW);
+				new AboutWindow2();
 			}
 		});
 
@@ -486,7 +482,6 @@ public class HelpMenu {
 		public int compareTo(SortableHelpElement other) {
 			Integer mypriority = getPriorityValue(element.getAttribute("sort"));
 			Integer otherpriority = getPriorityValue(other.element.getAttribute("sort"));
-			System.out.println("Priority value: " + mypriority.compareTo(otherpriority));
 			return mypriority.compareTo(otherpriority);
 		}
 
@@ -504,6 +499,5 @@ public class HelpMenu {
 				return 0;
 			}
 		}
-
 	}
 }

@@ -38,11 +38,13 @@ public class PatchApplicationWindow extends JDialog {
 	public final Object lock = new Lock(); //threading wait() and notifyall();
 
 	public PatchApplicationWindow(JDialog callingDialog, ArrayList<Patch> patches, Mod mod) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Starting mix-in applier.");
 		this.callingDialog = callingDialog;
 		this.mod = mod;
 		this.patches = prioritizePatches(patches);
 		setupWindow();
+		setLocationRelativeTo(callingDialog);
 		pat = new PatchApplicationTask();
 		pat.execute();
 		setVisible(true);
@@ -75,6 +77,7 @@ public class PatchApplicationWindow extends JDialog {
 	}
 
 	public PatchApplicationWindow(JFrame callingFrame, ArrayList<Patch> patches, Mod mod) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Starting mix-in applier.");
 		this.callingFrame = callingFrame;
 		this.patches = patches;
@@ -91,12 +94,16 @@ public class PatchApplicationWindow extends JDialog {
 
 	private void setupWindow() {
 		failedPatches = new ArrayList<Patch>();
-		this.setTitle("MixIn Installer");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(320, 70));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
+		setTitle("MixIn Installer");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(320, 70));
+		setResizable(false);
+		setIconImages(ModManager.ICONS);
+		if (callingDialog == null && callingDialog == null) {
+			setLocationRelativeTo(null);
+		} else {
+			setLocationRelativeTo(callingDialog == null ? callingFrame : callingDialog);
+		}
 		JPanel panel = new JPanel(new BorderLayout());
 
 		operationLabel = new JLabel("Applying mixins to " + mod.getModName() + "[0/0]");
@@ -104,12 +111,12 @@ public class PatchApplicationWindow extends JDialog {
 		panel.add(operationLabel, BorderLayout.NORTH);
 		panel.add(statusLabel, BorderLayout.SOUTH);
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		this.getContentPane().add(panel);
+		getContentPane().add(panel);
 
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(WindowEvent e) {
-				System.out.println("Exit Mixin Application");
+				ModManager.debugLogger.writeMessage("Exiting MixIn Application window");
 				if (pat != null) {
 					pat.cancel(false);
 				}
@@ -182,12 +189,14 @@ public class PatchApplicationWindow extends JDialog {
 												+ " failed to apply even after deleting the extracted copy.\nThe file installed in the game does not work with this MixIn because the file sizes are different.",
 										"MixIn cannot be installed", JOptionPane.ERROR_MESSAGE);
 							} else {
-								int result = JOptionPane.showConfirmDialog(PatchApplicationWindow.this,
-										patch.getPatchName()
-												+ " failed to apply because the source file to patch was not the right size.\nThis means the file was likely modified in the game directory before it was extracted for patching or had a finalizer applied to it.\n\nMod Manager can delete this file and try to extract a new copy on the next application of this MixIn.\nIf this fails, make sure you restore to vanilla before applying this MixIn again.\n\nDelete source file? Files in the game are not modified by this operation.",
-										"MixIn failed to apply", JOptionPane.YES_NO_OPTION);
-								if (result == JOptionPane.YES_OPTION) {
-									FileUtils.deleteQuietly(new File(patch.getSourceFilePath(mod)));
+								if (patch != null) {
+									int result = JOptionPane.showConfirmDialog(PatchApplicationWindow.this,
+											patch.getPatchName()
+													+ " failed to apply because the source file to patch was not the right size.\nThis means the file was likely modified in the game directory before it was extracted for patching or had a finalizer applied to it.\n\nMod Manager can delete this file and try to extract a new copy on the next application of this MixIn.\nIf this fails, make sure you restore to vanilla before applying this MixIn again.\n\nDelete source file? Files in the game are not modified by this operation.",
+											"MixIn failed to apply", JOptionPane.YES_NO_OPTION);
+									if (result == JOptionPane.YES_OPTION) {
+										FileUtils.deleteQuietly(new File(patch.getSourceFilePath(mod)));
+									}
 								}
 							}
 						} else {
@@ -196,13 +205,13 @@ public class PatchApplicationWindow extends JDialog {
 							case Patch.APPLY_FAILED_MODDESC_NOT_UPDATED:
 								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
 										patch.getPatchName()
-												+ " failed to apply because the moddesc.ini file was not updated.\nThis is an error in Mod Manager, please report it with a Mod Manager log.",
+												+ " failed to apply because the moddesc.ini file was not updated.\nThis is an error in Mod Manager, please report it with a Mod Manager diagnostics log.",
 										"MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
 								break;
 							case Patch.APPLY_FAILED_NO_SOURCE_FILE:
 								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
 										patch.getPatchName()
-												+ " failed to apply because a source file could not be aquired.\nThis typically means the MixIn descriptor is not correct, please report this to FemShep.",
+												+ " failed to apply because a valid source file could not be acquired.\nCheck the logs for more information.",
 										"MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
 								break;
 							case Patch.APPLY_FAILED_OTHERERROR:

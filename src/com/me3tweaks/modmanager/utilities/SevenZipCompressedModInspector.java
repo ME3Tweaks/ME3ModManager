@@ -97,7 +97,7 @@ public class SevenZipCompressedModInspector {
 			return new ISequentialOutStream() {
 
 				public int write(byte[] data) throws SevenZipException {
-					ModManager.debugLogger.writeMessage("Decompressing chunk to " + finaldir);
+					//ModManager.debugLogger.writeMessage("Decompressing chunk to " + finaldir);
 					FileOutputStream fos = null;
 					try {
 
@@ -165,7 +165,6 @@ public class SevenZipCompressedModInspector {
 			this.parentPathsToExtract = parentPathsToExtract;
 			this.numTotalItems = numTotalItems;
 			this.scanworker = scanworker;
-			System.out.println("Starting decompress to memory");
 		}
 
 		private HashMap<String, ByteArrayInOutStream> getOutputStreams() {
@@ -197,8 +196,7 @@ public class SevenZipCompressedModInspector {
 					try {
 						fos.write(data);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						ModManager.debugLogger.writeErrorWithException("Error extracting for scan:", e);
 					} finally {
 						try {
 							if (fos != null) {
@@ -219,7 +217,7 @@ public class SevenZipCompressedModInspector {
 
 		public void setOperationResult(ExtractOperationResult extractOperationResult) throws SevenZipException {
 			if (extractOperationResult != ExtractOperationResult.OK) {
-				System.err.println("Extraction error");
+				ModManager.debugLogger.writeError("Error occured extraction mods for scanning.");
 			}
 		}
 

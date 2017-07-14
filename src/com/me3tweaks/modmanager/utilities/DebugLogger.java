@@ -63,12 +63,12 @@ public class DebugLogger {
 						//Cleanup temp dir
 						if (!ModManager.MOD_MANAGER_UPDATE_READY) {
 							File tempFolder = new File(ModManager.getTempDir());
-							if(tempFolder.isDirectory() && tempFolder.list().length > 0){
+							if (tempFolder.isDirectory() && tempFolder.list().length > 0) {
 								FileUtils.cleanDirectory(tempFolder);
 								ModManager.debugLogger.writeMessage("Temp folder is not empty, cleaning up...");
 							}
 						}
-						
+
 						DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 						Date date = new Date();
 						writeMessage("Logger shutting down. Time: " + dateFormat.format(date));
@@ -89,7 +89,7 @@ public class DebugLogger {
 			// TODO Auto-generated catch block
 			logFile = null;
 			ModManager.logging = false;
-			System.out.println("Log failed to write! Cannot write log due to IOException");
+			System.err.println("Log failed to write! Cannot write log due to IOException");
 			e.printStackTrace();
 		}
 	}
@@ -100,7 +100,7 @@ public class DebugLogger {
 
 	class FlushTask extends TimerTask {
 		public void run() {
-			currentMessages = messagesBeforeFlush+1;
+			currentMessages = messagesBeforeFlush + 1;
 			checkIfFlushNeeded();
 		}
 	}
@@ -108,7 +108,9 @@ public class DebugLogger {
 	public synchronized void writeMessage(String message) {
 		if (ModManager.logging) {
 			try {
-				System.out.println("[L]: " + message);
+				if (ModManager.IS_DEBUG) {
+					System.out.println("[L]: " + message);
+				}
 				if (fw != null) {
 					fw.write(message);
 					fw.write(System.getProperty("line.separator"));
@@ -129,7 +131,9 @@ public class DebugLogger {
 	public synchronized void writeException(Throwable e) {
 		if (ModManager.logging) {
 			try {
-				System.err.println("[L-E]: " + ExceptionUtils.getStackTrace(e));
+				if (ModManager.IS_DEBUG) {
+					System.err.println("[L-E]: " + ExceptionUtils.getStackTrace(e));
+				}
 				if (fw != null) {
 					fw.write(ERROR_PREFIX + "" + ExceptionUtils.getStackTrace(e));
 					fw.write(System.getProperty("line.separator"));
@@ -150,7 +154,9 @@ public class DebugLogger {
 	public synchronized void writeError(String message) {
 		if (ModManager.logging) {
 			try {
-				System.err.println("[L:E]: " + message);
+				if (ModManager.IS_DEBUG) {
+					System.err.println("[L:E]: " + message);
+				}
 				if (fw != null) {
 					fw.write(ERROR_PREFIX + ": ");
 					fw.write(message);
@@ -171,6 +177,17 @@ public class DebugLogger {
 
 	private void checkIfFlushNeeded() {
 		if (ModManager.logging && currentMessages > messagesBeforeFlush && fw != null) {
+			try {
+				fw.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			currentMessages = 0;
+		}
+	}
+	
+	public void flush() {
+		if (ModManager.logging && fw != null) {
 			try {
 				fw.flush();
 			} catch (IOException e) {

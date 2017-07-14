@@ -60,19 +60,18 @@ public class KeybindsInjectionWindow extends JDialog {
 		this.mod = mod;
 		this.automated = automated;
 		setupWindow();
-		//has basegame coal already
-		this.setLocationRelativeTo(callingWindow);
+		setLocationRelativeTo(callingWindow);
 		new KeybindsInjectionWorker().execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
-		this.setTitle("Custom Keybinds Injector");
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setPreferredSize(new Dimension(380, 90));
-		this.setResizable(false);
-		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-		this.setIconImages(ModManager.ICONS);
+		setTitle("Custom Keybinds Injector");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setPreferredSize(new Dimension(380, 90));
+		setResizable(false);
+		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setIconImages(ModManager.ICONS);
 
 		JPanel bindingsPanel = new JPanel();
 		bindingsPanel.setLayout(new BoxLayout(bindingsPanel, BoxLayout.PAGE_AXIS));
@@ -88,8 +87,8 @@ public class KeybindsInjectionWindow extends JDialog {
 		bindingsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 		bindingsPanel.add(progressbar);
 		bindingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		this.getContentPane().add(bindingsPanel);
-		this.pack();
+		getContentPane().add(bindingsPanel);
+		pack();
 	}
 
 	class KeybindsInjectionWorker extends SwingWorker<Boolean, String> {
@@ -148,7 +147,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						basegamejob = job;
 						String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
 						String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
-						System.out.println(relativepath);
+						//System.out.println(relativepath);
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)),
 								new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Coalesced.bin"));
 						job.addFileReplace(mod.getModPath() + relativepath + "Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin", false);
@@ -161,6 +160,7 @@ public class KeybindsInjectionWindow extends JDialog {
 					//no basegame header, but has tasks, and does not mod coal
 					//means it doesn't modify basegame files at all so we can just add the header and set modver to 3 (or max of both in case of 2 as modcoal was not set)
 					ModJob job = new ModJob();
+					job.setOwningMod(mod);
 					File basegamefolder = new File(ModManager.appendSlash(mod.getModPath()) + "BASEGAME");
 					basegamefolder.mkdirs();
 					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.BASEGAME, ME3TweaksUtils.HEADER)),
@@ -233,7 +233,7 @@ public class KeybindsInjectionWindow extends JDialog {
 							mp5job = job;
 							String jobFolder = ModManager.appendSlash(new File(job.getFilesToReplace().get(0)).getParentFile().getAbsolutePath());
 							String relativepath = ModManager.appendSlash(ResourceUtils.getRelativePath(jobFolder, mod.getModPath(), File.separator));
-							System.out.println(relativepath);
+							//System.out.println(relativepath);
 							FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
 									new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Default_DLC_CON_MP5.bin"));
 							destinationMP5coal = origMod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin";
@@ -247,6 +247,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						//no mp5 header, but has tasks, and does not mod coal
 						//means it doesn't modify mp5 files at all so we can just add the header and set modver to 3 (or max of both in case of 2 as modcoal was not set)
 						ModJob job = new ModJob(ModType.getDLCPath(ModType.MP5), ModType.MP5, "Required to fix Talon Mercenary Keybinds");
+						job.setOwningMod(mod);
 						File mp5folder = new File(ModManager.appendSlash(mod.getModPath()) + "MP5");
 						mp5folder.mkdirs();
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModType.MP5, ME3TweaksUtils.HEADER)),
@@ -412,7 +413,7 @@ public class KeybindsInjectionWindow extends JDialog {
 
 		@Override
 		protected void process(List<String> status) {
-			System.out.println("Steps completed: " + stepsCompleted + "/" + TOTAL_STEPS);
+			//System.out.println("Steps completed: " + stepsCompleted + "/" + TOTAL_STEPS);
 			infoLabel.setText(status.get(status.size() - 1));
 			progressbar.setIndeterminate(false);
 			progressbar.setValue((int) (100 / (TOTAL_STEPS / (float) stepsCompleted)));
@@ -445,7 +446,8 @@ public class KeybindsInjectionWindow extends JDialog {
 							"An error occured inserting your keybinds into into " + mod.getModName() + ".\nThe Mod Manager log will have more information.", "Injection Failed",
 							JOptionPane.ERROR_MESSAGE);
 				}
-				new ModManagerWindow(false);
+				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+				ModManagerWindow.ACTIVE_WINDOW.highlightMod(mod);
 			}
 		}
 	}
