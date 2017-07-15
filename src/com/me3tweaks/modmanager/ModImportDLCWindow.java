@@ -96,6 +96,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 					dlcfoldername = dlcfoldername.substring(0, dlcfoldername.indexOf(' '));
 				}
 				String folder = mainDlcDir.getAbsolutePath() + File.separator + dlcfoldername;
+				dispose();
 				ImportEntryWindow iew = new ImportEntryWindow(ModImportDLCWindow.this, model.get(dlcModlist.getSelectedIndex()), folder);
 				if (iew.getResult() == ImportEntryWindow.OK) {
 					reloadWhenClosed = true;
