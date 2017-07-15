@@ -319,116 +319,129 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 		}
 
+		/**
+		 * Parses information from the server - pre-step
+		 */
 		protected void parseModInfo() {
-			ModManager.debugLogger.writeMessage("============Parsing modinfo==============");
-			NodeList infoNodeList = doc.getElementsByTagName("ModInfo");
-			infoElement = (Element) infoNodeList.item(0); //it'll be the only element. Hopefully!
-			NodeList nameElement = infoElement.getElementsByTagName("Name");
-			modName = nameElement.item(0).getTextContent();
-			ModManager.debugLogger.writeMessage("Mod Name: " + modName);
+			try {
+				ModManager.debugLogger.writeMessage("============Parsing modinfo==============");
+				NodeList infoNodeList = doc.getElementsByTagName("ModInfo");
+				infoElement = (Element) infoNodeList.item(0); //it'll be the only element. Hopefully!
+				NodeList nameElement = infoElement.getElementsByTagName("Name");
+				modName = nameElement.item(0).getTextContent();
+				ModManager.debugLogger.writeMessage("Mod Name: " + modName);
 
-			publish(new ThreadCommand("UPDATE_INFO", "Preparing to compile " + modName));
-			NodeList descElement = infoElement.getElementsByTagName("Description");
-			modDescription = descElement.item(0).getTextContent();
-			ModManager.debugLogger.writeMessage("Mod Description: " + modDescription);
+				publish(new ThreadCommand("UPDATE_INFO", "Preparing to compile " + modName));
+				NodeList descElement = infoElement.getElementsByTagName("Description");
+				modDescription = descElement.item(0).getTextContent();
+				ModManager.debugLogger.writeMessage("Mod Description: " + modDescription);
 
-			NodeList devElement = infoElement.getElementsByTagName("Author");
-			modDev = devElement.item(0).getTextContent();
-			ModManager.debugLogger.writeMessage("Mod Dev: " + modDev);
+				NodeList devElement = infoElement.getElementsByTagName("Author");
+				modDev = devElement.item(0).getTextContent();
+				ModManager.debugLogger.writeMessage("Mod Dev: " + modDev);
 
-			NodeList versionElement = infoElement.getElementsByTagName("Revision");
-			if (versionElement.getLength() > 0) {
-				modVer = versionElement.item(0).getTextContent();
-				ModManager.debugLogger.writeMessage("Mod Version: " + modVer);
-			}
+				NodeList versionElement = infoElement.getElementsByTagName("Revision");
+				if (versionElement.getLength() > 0) {
+					modVer = versionElement.item(0).getTextContent();
+					ModManager.debugLogger.writeMessage("Mod Version: " + modVer);
+				}
 
-			NodeList idElement = infoElement.getElementsByTagName("id");
-			modId = idElement.item(0).getTextContent();
-			ModManager.debugLogger.writeMessage("ModMaker ID: " + modId);
+				NodeList idElement = infoElement.getElementsByTagName("id");
+				modId = idElement.item(0).getTextContent();
+				ModManager.debugLogger.writeMessage("ModMaker ID: " + modId);
 
-			NodeList modmakerVersionElement = infoElement.getElementsByTagName("ModMakerVersion");
-			String modModMakerVersion = modmakerVersionElement.item(0).getTextContent();
-			ModManager.debugLogger.writeMessage("Mod information file was built using modmaker " + modModMakerVersion);
+				NodeList modmakerVersionElement = infoElement.getElementsByTagName("ModMakerVersion");
+				String modModMakerVersion = modmakerVersionElement.item(0).getTextContent();
+				ModManager.debugLogger.writeMessage("Mod information file was built using modmaker " + modModMakerVersion);
 
-			modMakerVersion = Double.parseDouble(modModMakerVersion);
-			if (modMakerVersion > ModManager.MODMAKER_VERSION_SUPPORT) {
-				//ERROR! We can't compile this version.
-				ModManager.debugLogger.writeError("This version of mod manager does not support the server version of ModMaker that was used to compile this mod delta.");
-				ModManager.debugLogger.writeError("FATAL ERROR: This version supports up to ModMaker version: " + ModManager.MODMAKER_VERSION_SUPPORT);
-				ModManager.debugLogger.writeError("FATAL ERROR: This mod was built with ModMaker version: " + modModMakerVersion);
-				publish(new ThreadCommand("ERROR",
-						"<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>"));
-				error = true;
-				return;
-			}
+				modMakerVersion = Double.parseDouble(modModMakerVersion);
+				if (modMakerVersion > ModManager.MODMAKER_VERSION_SUPPORT) {
+					//ERROR! We can't compile this version.
+					ModManager.debugLogger.writeError("This version of mod manager does not support the server version of ModMaker that was used to compile this mod delta.");
+					ModManager.debugLogger.writeError("FATAL ERROR: This version supports up to ModMaker version: " + ModManager.MODMAKER_VERSION_SUPPORT);
+					ModManager.debugLogger.writeError("FATAL ERROR: This mod was built with ModMaker version: " + modModMakerVersion);
+					publish(new ThreadCommand("ERROR",
+							"<html>This mod was built with a newer version of ModMaker than this version of Mod Manager can support.<br>You need to download the latest copy of Mod Manager to compile this mod.</html>"));
+					error = true;
+					return;
+				}
 
-			//Get required mixins and dynamic mixins
-			NodeList mixinNodeList = doc.getElementsByTagName("MixInData");
-			if (mixinNodeList.getLength() > 0) {
-				Element mixinsElement = (Element) mixinNodeList.item(0);
-				{
-					NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
-					for (int j = 0; j < mixinsNodeList.getLength(); j++) {
-						Node mixinNode = mixinsNodeList.item(j);
-						if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
-							requiredMixinIds.add(mixinNode.getTextContent());
-							ModManager.debugLogger.writeMessage("Mod recommends mixin with id " + mixinNode.getTextContent());
+				//Get required mixins and dynamic mixins
+				NodeList mixinNodeList = doc.getElementsByTagName("MixInData");
+				if (mixinNodeList.getLength() > 0) {
+					Element mixinsElement = (Element) mixinNodeList.item(0);
+					{
+						NodeList mixinsNodeList = mixinsElement.getElementsByTagName("MixIn");
+						for (int j = 0; j < mixinsNodeList.getLength(); j++) {
+							Node mixinNode = mixinsNodeList.item(j);
+							if (mixinNode.getNodeType() == Node.ELEMENT_NODE) {
+								requiredMixinIds.add(mixinNode.getTextContent());
+								ModManager.debugLogger.writeMessage("Mod recommends mixin with id " + mixinNode.getTextContent());
+							}
 						}
 					}
-				}
-				NodeList dynamicmixinsNodeList = mixinsElement.getElementsByTagName("DynamicMixIn");
-				for (int j = 0; j < dynamicmixinsNodeList.getLength(); j++) {
-					Node dynamicmixinNode = dynamicmixinsNodeList.item(j);
-					if (dynamicmixinNode.getNodeType() == Node.ELEMENT_NODE) {
-						DynamicPatch dp;
-						try {
-							dp = new DynamicPatch(dynamicmixinNode);
-							dynamicMixins.add(dp);
-							ModManager.debugLogger.writeMessage("Mod contains dynamic mixin: " + dp.getFinalPatch().getPatchName());
-						} catch (DOMException | IOException e) {
-							ModManager.debugLogger.writeErrorWithException("Error preparing dynamic mixin, skipping:", e);
+					System.out.println("Parsing dynamic mixins.");
+					NodeList dynamicmixinsNodeList = mixinsElement.getElementsByTagName("DynamicMixIn");
+					for (int j = 0; j < dynamicmixinsNodeList.getLength(); j++) {
+						System.out.println("Dynamic Mixin Node " + j);
+						Node dynamicmixinNode = dynamicmixinsNodeList.item(j);
+						if (dynamicmixinNode.getNodeType() == Node.ELEMENT_NODE) {
+							DynamicPatch dp;
+							try {
+								System.out.println("Creating dynamicpatch...");
+								dp = new DynamicPatch(dynamicmixinNode);
+								System.out.println("Created dynamicpatch");
+
+								dynamicMixins.add(dp);
+								ModManager.debugLogger.writeMessage("Mod contains dynamic mixin: " + dp.getFinalPatch().getPatchName());
+							} catch (DOMException | IOException e) {
+								ModManager.debugLogger.writeErrorWithException("Error preparing dynamic mixin, skipping:", e);
+							}
 						}
 					}
+					System.out.println("Done parsing dynamic mixins");
 				}
-			}
 
-			//Check the name
-			File moddir = new File(ModManager.getModsDir() + modName);
-			if (moddir.isDirectory()) {
-				try {
-					ModManager.debugLogger.writeMessage("Removing existing mod directory, will recreate when complete");
-					FileUtils.deleteDirectory(moddir);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					ModManager.debugLogger.writeException(e);
+				//Check the name
+				File moddir = new File(ModManager.getModsDir() + modName);
+				if (moddir.isDirectory()) {
+					try {
+						ModManager.debugLogger.writeMessage("Removing existing mod directory, will recreate when complete");
+						FileUtils.deleteDirectory(moddir);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						ModManager.debugLogger.writeException(e);
+					}
 				}
-			}
 
-			//Debug remove
-			publish(new ThreadCommand("UPDATE_INFO", "Compiling " + modName + "..."));
-			NodeList dataNodeList = doc.getElementsByTagName("ModData");
-			dataElement = (Element) dataNodeList.item(0);
-			NodeList fileNodeList = dataElement.getChildNodes();
-			//Find the coals it needs, iterate over the files list.
-			for (int i = 0; i < fileNodeList.getLength(); i++) {
-				Node fileNode = fileNodeList.item(i);
-				if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
-					//filters out the #text nodes. Don't know what those really are.
-					String intCoalName = fileNode.getNodeName();
-					ModManager.debugLogger.writeMessage("ini file descriptor found in mod: " + intCoalName);
-					requiredCoals.add(ME3TweaksUtils.internalNameToCoalFilename(intCoalName));
+				//Debug remove
+				publish(new ThreadCommand("UPDATE_INFO", "Compiling " + modName + "..."));
+				NodeList dataNodeList = doc.getElementsByTagName("ModData");
+				dataElement = (Element) dataNodeList.item(0);
+				NodeList fileNodeList = dataElement.getChildNodes();
+				//Find the coals it needs, iterate over the files list.
+				for (int i = 0; i < fileNodeList.getLength(); i++) {
+					Node fileNode = fileNodeList.item(i);
+					if (fileNode.getNodeType() == Node.ELEMENT_NODE) {
+						//filters out the #text nodes. Don't know what those really are.
+						String intCoalName = fileNode.getNodeName();
+						ModManager.debugLogger.writeMessage("ini file descriptor found in mod: " + intCoalName);
+						requiredCoals.add(ME3TweaksUtils.internalNameToCoalFilename(intCoalName));
+					}
 				}
+
+				// Check Coalesceds
+				File coalDir = new File(ModManager.getCompilingDir() + "coalesceds");
+				coalDir.mkdirs(); // creates if it doens't exist. otherwise nothing.
+				ArrayList<String> coals = new ArrayList<String>(requiredCoals); //copy
+
+				currentOperationLabel.setText("Downloading Coalesced files...");
+				currentStepProgress.setIndeterminate(false);
+				// Check and download
+				new CoalDownloadWorker(coals, currentStepProgress).execute();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeException(e);
 			}
-
-			// Check Coalesceds
-			File coalDir = new File(ModManager.getCompilingDir() + "coalesceds");
-			coalDir.mkdirs(); // creates if it doens't exist. otherwise nothing.
-			ArrayList<String> coals = new ArrayList<String>(requiredCoals); //copy
-
-			currentOperationLabel.setText("Downloading Coalesced files...");
-			currentStepProgress.setIndeterminate(false);
-			// Check and download
-			new CoalDownloadWorker(coals, currentStepProgress).execute();
 		}
 	}
 
@@ -666,6 +679,7 @@ public class ModMakerCompilerWindow extends JDialog {
 
 	/**
 	 * Runs the modified coalesced files through Tankmaster's compiler
+	 * 
 	 * @author Mgamerz
 	 *
 	 */
@@ -1898,8 +1912,8 @@ public class ModMakerCompilerWindow extends JDialog {
 					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
 							//loader installed, no balance changes replacer
-							JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">" + modName
-									+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from\nthe ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>",
+							JOptionPane.showMessageDialog(this, "<html>" + modName
+									+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from<br>the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</html>",
 									"Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
 						}
 					} else {

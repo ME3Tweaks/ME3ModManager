@@ -80,11 +80,10 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.application.Platform;
 
 public class ModManager {
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	
-	public static final String VERSION = "5.0";
+	public static final String VERSION = "5.0 MR1";
 	public static long BUILD_NUMBER = 75L;
 	public static final String BUILD_DATE = "7/12/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
@@ -151,9 +150,9 @@ public class ModManager {
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
 
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
-			
+
 			System.setProperty("derby.system.home", new File(ModManager.getDatabaseDir()).getAbsolutePath()); //move derby.log
-			
+
 			File settings = new File(ModManager.SETTINGS_FILENAME);
 			if (!settings.exists()) {
 				settings.createNewFile();
@@ -923,7 +922,8 @@ public class ModManager {
 	 * Downloads Transplanter if not already downloaded. Returns path if
 	 * downloaded, null if not found locally after download attempt.
 	 *
-	 * @param download Download transplanter from ME3Tweaks if not available locally
+	 * @param download
+	 *            Download transplanter from ME3Tweaks if not available locally
 	 * @return path to transplanter, null if none can be acquired
 	 */
 	public static String getGUITransplanterCLI(boolean download) {
@@ -2504,7 +2504,7 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-	
+
 	/**
 	 * 
 	 * @return data\tools\ModManagerCommandLine\<arch>\7z.exe
@@ -2512,7 +2512,7 @@ public class ModManager {
 	public static String get7zExePath() {
 		return getCommandLineToolsDir() + "7z.exe";
 	}
-	
+
 	/**
 	 * 
 	 * @return data\tools\ModManagerCommandLine\<arch>\7z.dll
@@ -2576,5 +2576,97 @@ public class ModManager {
 		FileUtils.deleteQuietly(new File(outputpath));
 		ModManager.runProcess(pb).getReturnCode();
 		return outputpath;
+	}
+
+	/**
+	 * Tries to find a resource for a target path inside of a target module.
+	 * This method searches inside the cmmbackup directory. Returns path to the
+	 * found item or null if none could be found.
+	 *
+	 * @param targetPath
+	 *            Path inside of a module. E.g.
+	 *            /DLC/DLC_CON_MP4/CookedPCConsole/Test.pcc
+	 * @param targetModule
+	 *            Headername, e.g. MP4
+	 * @return
+	 */
+	public static String getBackupPatchSource(String targetPath, String targetModule) {
+		String cmmbackup = new File(ModManagerWindow.GetBioGameDir()).getParent() + "\\cmmbackup";
+		System.out.println(cmmbackup);
+
+		ModManager.debugLogger.writeMessage("Looking for backup patch source: " + targetPath + " in module " + targetModule);
+		File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator + targetPath);
+		if (sourceDestination.exists()) {
+			ModManager.debugLogger.writeMessage("Patch source is already in library.");
+			return sourceDestination.getAbsolutePath();
+		}
+
+		String backupDir = ModManager.appendSlash(cmmbackup);
+
+		if (targetModule.equals(ModType.BASEGAME)) {
+			// we must decompress the file
+			//get source directory via relative path chaining
+			File sourceSource = new File(backupDir + targetPath);
+			if (sourceSource.exists()) {
+				sourceDestination.getParentFile().mkdirs();
+
+				// run PCC Decompressor
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
+				ProcessResult pr = ModManager.decompressPCC(sourceSource, sourceDestination);
+				if (pr.getReturnCode() == 0) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
+				} else {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+				}
+				ModManager.debugLogger.writeMessage("File decompressed to location, and ready? : " + sourceDestination.exists());
+				return sourceDestination.exists() ? sourceDestination.getAbsolutePath() : null;
+			} else {
+				ModManager.debugLogger.writeMessage("Could not find file in cmmbackup for patch fetch : " + sourceSource.getAbsolutePath());
+				return null;
+			}
+			// END OF
+			// BASEGAME======================================================
+		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
+			return null;
+		} else {
+			// DLC===============================================================
+			// Check if its unpacked
+			String gamedir = appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent());
+			File unpackedFile = new File(gamedir + targetPath);
+			if (unpackedFile.exists()) {
+				try {
+					FileUtils.copyFile(unpackedFile, sourceDestination);
+					ModManager.debugLogger.writeMessage("Copied unpacked file into patch library");
+					return sourceDestination.getAbsolutePath();
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Unable to copy unpacked file into patch source library:", e);
+					return null;
+				}
+			}
+
+			// use the sfar
+			// get .sfar path
+			String sfarName = "Default.sfar";
+			if (targetModule.equals(ModType.TESTPATCH)) {
+				sfarName = "Patch_001.sfar";
+			}
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
+			ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
+			// patchProcessBuilder.redirectErrorStream(true);
+			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+			if (pr.getReturnCode() == 0) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
+				ModManager.debugLogger.writeMessage("Caching complete for file " + sourceDestination.getName());
+				return sourceDestination.getAbsolutePath();
+
+			} else {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+				ModManager.debugLogger.writeError("Caching failed (non 0 return code) for file " + sourceDestination.getName());
+				return null;
+
+			}
+		}
 	}
 }

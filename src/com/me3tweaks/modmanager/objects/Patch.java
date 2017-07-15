@@ -42,7 +42,7 @@ public class Patch implements Comparable<Patch> {
 	private boolean isDynamic = false;
 
 	public Patch(String descriptorPath, String patchPath) {
-		ModManager.debugLogger.writeMessageConditionally("Loading patch: " + descriptorPath,ModManager.LOG_PATCH_INIT);
+		ModManager.debugLogger.writeMessageConditionally("Loading patch: " + descriptorPath, ModManager.LOG_PATCH_INIT);
 		readPatch(descriptorPath);
 		setPatchPath(patchPath);
 	}
@@ -275,9 +275,21 @@ public class Patch implements Comparable<Patch> {
 				//copy sourcefile to mod dir
 				File libraryFile = new File(modSourceFile);
 				if (libraryFile.length() != targetSize) {
-					ModManager.debugLogger.writeError("File that is going to be patched does not match patch descriptor size (" + libraryFile.length()
-							+ " vs one can be applied to: " + targetSize + ")! Unable to apply patch");
-					return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
+					libraryFile.delete();
+					ModManager.debugLogger.writeMessage("Initial file fetch file is not the correct size - library file deleted. Attempting lookup via cmmbackup");
+					//Check if this is backed up - we might be able to pull a backup file instead
+					modSourceFile = ModManager.getBackupPatchSource(targetPath, targetModule);
+					if (modSourceFile != null) {
+						libraryFile = new File(modSourceFile);
+						if (libraryFile.length() != targetSize) {
+							ModManager.debugLogger.writeError("Backup file that was fetched does not match patch descriptor size (" + libraryFile.length()
+									+ " vs one can be applied to: " + targetSize + ")! Unable to apply patch");
+							return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
+						}
+					} else {
+						ModManager.debugLogger.writeError("No file that was the correct size could be used for patching.");
+						return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
+					}
 				}
 
 				File modFile = new File(ModManager.appendSlash(mod.getModPath()) + Mod.getStandardFolderName(targetModule) + File.separator + FilenameUtils.getName(targetPath));
@@ -305,7 +317,7 @@ public class Patch implements Comparable<Patch> {
 						//ADD PATCH FILE TO JOB
 						File modFilePath = new File(ModManager.appendSlash(mod.getModPath()) + relativepath + filename);
 						ModManager.debugLogger.writeMessage("Adding new mod task => " + targetModule + ": add " + modFilePath.getAbsolutePath());
-						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath,false);
+						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath, false);
 
 						//CHECK IF JOB HAS TOC - SOME MIGHT NOT, FOR SOME WEIRD REASON
 						//copy toc
@@ -319,7 +331,7 @@ public class Patch implements Comparable<Patch> {
 						String tocTask = mod.getModTaskPath(ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)), targetModule);
 						if (tocTask == null) {
 							//add toc replacejob
-							job.addFileReplace(tocFile.getAbsolutePath(), targetPath,false);
+							job.addFileReplace(tocFile.getAbsolutePath(), targetPath, false);
 						}
 						break;
 					}
@@ -344,14 +356,14 @@ public class Patch implements Comparable<Patch> {
 					File tocSource = new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER));
 					File tocDest = new File(modulefolder + File.separator + "PCConsoleTOC.bin");
 					FileUtils.copyFile(tocSource, tocDest);
-					job.addFileReplace(tocDest.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)),false);
+					job.addFileReplace(tocDest.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)), false);
 
 					ModManager.debugLogger.writeMessage("Adding " + filename + " to new job");
 					/*
 					 * File modFile = new File(modulefolder + File.separator +
 					 * filename); FileUtils.copyFile(libraryFile, modFile);
 					 */
-					job.addFileReplace(modFile.getAbsolutePath(), targetPath,false);
+					job.addFileReplace(modFile.getAbsolutePath(), targetPath, false);
 					mod.addTask(targetModule, job);
 					mod.modCMMVer = newCmmVer;
 				}

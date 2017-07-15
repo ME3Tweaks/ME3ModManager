@@ -15,7 +15,6 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -27,6 +26,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
@@ -43,11 +43,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.utilities.datatypeconverter.DatatypeConverter;
 
 public class TLKTool {
 
-	static int[] ignoredIds = new int[] { 320166, 180997, 330510, 340843, 340858, 351755, 371720, 372162, 375050, 579961, 581459, 589952, 627586,
-			699487, 699498, 699522, 717634, 717644, 727788, 727789 };
+	static int[] ignoredIds = new int[] { 320166, 180997, 330510, 340843, 340858, 351755, 371720, 372162, 375050, 579961, 581459, 589952, 627586, 699487, 699498, 699522, 717634,
+			717644, 727788, 727789 };
 
 	static class TLKNode {
 
@@ -63,7 +64,9 @@ public class TLKTool {
 	}
 
 	public static void main(String[] args) throws Exception {
-		performFix();
+
+		buildITAFromINTSPController();
+		//performFix();
 		//replacementScan();
 		//compileTLK("E:\\MPTLK\\mp5");
 		//decompileTLK("E:\\MPTLK\\mp5");
@@ -72,20 +75,152 @@ public class TLKTool {
 		//nonINTME2ToolScan();
 		//initialScanME2Tool();
 		//subsetScan();
-		
+
 		//compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
 		//String folderpath = "C:\\Users\\\Desktop\\tlk\\BIOGame_ITA\\";
 		//combineIntoSingleFile(folderpath);
 	}
 
+	private static void buildITAFromINTSPController() throws Exception {
+		HashMap<Integer, String> englishTLKEntries = new HashMap<Integer, String>();
+		HashMap<Integer, String> italianTLKEntries = new HashMap<Integer, String>();
+		HashMap<Integer, String> englishControllerTLKEntries = new HashMap<Integer, String>();
+
+		//Get english files and parse them
+		File englishDir = new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\BIOGame_INT");
+		File[] engishFiles = englishDir.listFiles((dir, name) -> {
+			return name.toLowerCase().endsWith(".xml");
+		});
+
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		XPathFactory xPathfactory = XPathFactory.newInstance();
+		XPath xpath = xPathfactory.newXPath();
+		XPathExpression expr = xpath.compile("/TlkFile/Strings/String");
+
+		for (File f : engishFiles) {
+			Document doc = builder.parse(f);
+			NodeList nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+			for (int i = 0; i < nl.getLength(); i++) {
+				Node n = nl.item(i);
+				String idStr = n.getAttributes().getNamedItem("id").getTextContent();
+				String content = n.getTextContent();
+				Integer id = Integer.parseInt(idStr);
+				englishTLKEntries.put(id, content);
+			}
+		}
+
+		System.out.println("English: " + englishTLKEntries.size() + " items");
+
+		File italianDir = new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\BIOGame_ITA");
+		File[] italianFiles = italianDir.listFiles((dir, name) -> {
+			return name.toLowerCase().endsWith(".xml");
+		});
+		for (File f : italianFiles) {
+			Document doc = builder.parse(f);
+			NodeList nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+			for (int i = 0; i < nl.getLength(); i++) {
+				Node n = nl.item(i);
+				String idStr = n.getAttributes().getNamedItem("id").getTextContent();
+				String content = n.getTextContent();
+				Integer id = Integer.parseInt(idStr);
+				italianTLKEntries.put(id, content);
+			}
+		}
+
+		System.out.println("Italian: " + italianTLKEntries.size() + " items");
+
+		File controllerDir = new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\DLC_CON_XBX_INT");
+		File[] controllerFiles = controllerDir.listFiles((dir, name) -> {
+			return name.toLowerCase().endsWith(".xml");
+		});
+		for (File f : controllerFiles) {
+			Document doc = builder.parse(f);
+			NodeList nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+			for (int i = 0; i < nl.getLength(); i++) {
+				Node n = nl.item(i);
+				String idStr = n.getAttributes().getNamedItem("id").getTextContent();
+				String content = n.getTextContent();
+				Integer id = Integer.parseInt(idStr);
+				englishControllerTLKEntries.put(id, content);
+			}
+		}
+
+		System.out.println("Controller: " + englishControllerTLKEntries.size() + " items");
+		ArrayList<Integer> manualModifications = new ArrayList<>();
+		ArrayList<Integer> idsToCopy = new ArrayList<>();
+		int numMissing = 0;
+		for (Map.Entry<Integer, String> entry : englishControllerTLKEntries.entrySet()) {
+			boolean matchFound = false;
+			Integer controllerStrId = entry.getKey();
+			String controllerStr = entry.getValue();
+			for (Map.Entry<Integer, String> englishEntry : englishTLKEntries.entrySet()) {
+				Integer intStrId = englishEntry.getKey();
+				String intStr = englishEntry.getValue();
+				if (intStr.equals(controllerStr)) {
+					System.out.println("Found match: " + intStrId);
+					idsToCopy.add(intStrId);
+					matchFound = true;
+					break;
+				}
+			}
+			if (!matchFound) {
+				//Will require manual tuning...
+				boolean containsKey = italianTLKEntries.containsKey(controllerStrId);
+				if (containsKey) {
+					manualModifications.add(controllerStrId);
+					idsToCopy.add(controllerStrId);
+				} else {
+					System.err.println("No match found for controller str: " + controllerStrId + " " + controllerStr);
+					numMissing++;
+				}
+			}
+		}
+		System.out.println("Number of manual entries: " + numMissing);
+
+		//Build output file.
+		Document doc = builder.newDocument();
+		Element rootElement = doc.createElement("TlkFile");
+		rootElement.setAttribute("name", "DLC_CON_XBX_ITA/DLC_CON_XBX_ITA0.xml");
+		doc.appendChild(rootElement);
+		Element strings = doc.createElement("Strings");
+		rootElement.appendChild(strings);
+
+		for (int id : idsToCopy) {
+			Element strElem = doc.createElement("String");
+			String content = italianTLKEntries.get(id);
+			if (manualModifications.contains(id)) {
+				content = "MANUAL!!! " + content;
+			}
+			strElem.setTextContent(content);
+			strElem.setAttribute("id", Integer.toString(id));
+			strings.appendChild(strElem);
+		}
+
+		//write the content into xml file
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer = transformerFactory.newTransformer();
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+		DOMSource source = new DOMSource(doc);
+
+		StreamResult result = new StreamResult(new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\DLC_CON_XBX_ITA0.xml"));
+		transformer.transform(source, result);
+
+		System.out.println("Done. Manual modifications for the following IDs are required:");
+		for (int id : manualModifications) {
+			System.out.println(" - " + id);
+		}
+	}
+
 	private static void performFix() throws FileNotFoundException {
 		Scanner scanner = new Scanner(new File("C:\\Users\\Michael\\Desktop\\set.txt"));
-		while (scanner.hasNextLine()){
+		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
-			StringTokenizer stk = new StringTokenizer(line," ");
+			StringTokenizer stk = new StringTokenizer(line, " ");
 			String id = stk.nextToken();
 			String cat = stk.nextToken();
-			String out = "UPDATE dynamicmixinlibrary SET category = "+cat+" WHERE id = "+id+";";
+			String out = "UPDATE dynamicmixinlibrary SET category = " + cat + " WHERE id = " + id + ";";
 			System.out.println(out);
 		}
 	}
@@ -106,33 +241,32 @@ public class TLKTool {
 			twoprev = prev;
 			prev = current;
 			current = val;
-			
+
 			if (current == ESC) {
-				System.out.println("Read ESC at "+bytepos);
+				System.out.println("Read ESC at " + bytepos);
 			}
-			
+
 			if (readingdata) {
-				switch(op) {
+				switch (op) {
 				case MOD:
 					//read until end
 					break;
 				}
 			}
-			
+
 			if (current == MOD && prev == ESC && twoprev != ESC) {
-				System.out.println("Read OP MOD at "+bytepos);
+				System.out.println("Read OP MOD at " + bytepos);
 				readingdata = true;
 				bytepos++;
 				continue;
 			}
 			if (current == EQL && prev == ESC && twoprev != ESC) {
-				System.out.println("Read OP EQL at "+bytepos);
+				System.out.println("Read OP EQL at " + bytepos);
 				readingdata = true;
 				bytepos++;
 				continue;
 			}
-			
-			
+
 			bytepos++;
 		}
 	}
@@ -329,7 +463,8 @@ public class TLKTool {
 	}
 
 	/**
-	 * Scans and creates a replacement of command strings. Works with Tankmaster TLK
+	 * Scans and creates a replacement of command strings. Works with Tankmaster
+	 * TLK
 	 * 
 	 * @param inputFile
 	 * @param outputFile
@@ -632,8 +767,7 @@ public class TLKTool {
 				Integer useId = pullFromOrigLang.get(idAsInt);
 				if (useId != null) {
 					//retreive from oriignal TLK
-					NodeList originalTLKNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String[@id=" + useId + "]",
-							basegameTlk.getDocumentElement(), XPathConstants.NODESET);
+					NodeList originalTLKNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String[@id=" + useId + "]", basegameTlk.getDocumentElement(), XPathConstants.NODESET);
 					if (originalTLKNodes.getLength() > 0) {
 
 						//inBG
@@ -642,8 +776,7 @@ public class TLKTool {
 						continue;
 					}
 					//check citadel
-					NodeList citTLKNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String[@id='" + useId + "']", citTlk.getDocumentElement(),
-							XPathConstants.NODESET);
+					NodeList citTLKNodes = (NodeList) xpath.evaluate("/TlkFile/Strings/String[@id='" + useId + "']", citTlk.getDocumentElement(), XPathConstants.NODESET);
 					if (citTLKNodes.getLength() > 0) {
 						Element idElem = (Element) citTLKNodes.item(0);
 						oStringElem.setTextContent(idElem.getTextContent());
@@ -751,9 +884,9 @@ public class TLKTool {
 
 				Element oStringElem = (Element) singleNode;
 				String content = oStringElem.getTextContent();
-				if (content.contains("XBox") || content.contains("Logo_Dolby") || content.contains("[Exit]")
-						|| content.contains("Logo_DTS_DigitalEntertainment") || content.contains("TEMP") || content.contains("UNRECOVERABLE DATA")
-						|| content.contains("Logo_NVIDIA_PhysX") || content.contains("Laughter") || content.contains("unintelligible")) {
+				if (content.contains("XBox") || content.contains("Logo_Dolby") || content.contains("[Exit]") || content.contains("Logo_DTS_DigitalEntertainment")
+						|| content.contains("TEMP") || content.contains("UNRECOVERABLE DATA") || content.contains("Logo_NVIDIA_PhysX") || content.contains("Laughter")
+						|| content.contains("unintelligible")) {
 					singleNode.getParentNode().removeChild(singleNode);
 				}
 			}
@@ -781,8 +914,7 @@ public class TLKTool {
 	 * 
 	 * @throws Exception
 	 */
-	private static void comparisonScan() throws ParserConfigurationException, SAXException, IOException, XPathExpressionException,
-			TransformerException {
+	private static void comparisonScan() throws ParserConfigurationException, SAXException, IOException, XPathExpressionException, TransformerException {
 		String origFolder = "E:\\Google Drive\\SP Controller Support\\TLK\\original_tlk\\";
 		String moonFolder = "E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\";
 		ArrayList<String> languageKeys = new ArrayList<String>();
@@ -1156,10 +1288,12 @@ public class TLKTool {
 			p.waitFor();
 		}
 	}
+
 	/**
 	 * Compiles a TLK file from a .xml file (tankmaster)
+	 * 
 	 * @param file
-	 * @return 
+	 * @return
 	 */
 	public static ProcessResult compileTLK(File file) {
 		ArrayList<String> commandBuilder = new ArrayList<String>();
@@ -1175,8 +1309,11 @@ public class TLKTool {
 		return ModManager.runProcess(pb);
 	}
 
-	/**Decompiles a TLK file
-	 * @return */
+	/**
+	 * Decompiles a TLK file
+	 * 
+	 * @return
+	 */
 	public static ProcessResult decompileTLK(File file) {
 		ArrayList<String> commandBuilder = new ArrayList<String>();
 
