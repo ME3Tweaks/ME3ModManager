@@ -77,6 +77,7 @@ public class ImportEntryWindow extends JDialog {
 	private JProgressBar progressBar;
 
 	public ImportEntryWindow(JDialog modImportWindow, String diplayname, String importPath) {
+        super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window (Data Entry)");
 		this.importDisplayStr = diplayname;
 		this.importPath = importPath;

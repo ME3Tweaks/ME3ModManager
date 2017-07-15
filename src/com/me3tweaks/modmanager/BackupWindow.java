@@ -65,6 +65,7 @@ public class BackupWindow extends JDialog {
 		this.BioGameDir = BioGameDir;
 		checkboxMap = new HashMap<String, JCheckBox>();
 		setupWindow();
+		setVisible(true);
 	}
 
 	/**
@@ -90,7 +91,7 @@ public class BackupWindow extends JDialog {
 		setupWindowAutomated(dlcName);
 
 		new backupDLCJob(BioGameDir, new String[] { dlcName }, true).execute();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	private void setupWindow() {
