@@ -16,7 +16,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 
-import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -32,14 +31,13 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.MountFlagCellRenderer;
-import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import com.me3tweaks.modmanager.utilities.datatypeconverter.DatatypeConverter;
 
 public class MountFileEditorWindow extends JDialog {
 	private static final int MOUNTDLC_LENGTH = 108;

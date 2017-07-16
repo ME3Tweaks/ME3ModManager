@@ -352,10 +352,8 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		protected void done() {
 			// Coals decompiled
 			if (showGUI) {
-				progress.setValue(100);
-				infoLabel.setText("<html>The repair database has been updated.</html>");
-				startMap.setEnabled(true);
-				startMap.setText("Database updated");
+				dispose();
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("The repair database has been updated");
 			}
 			ModManager.debugLogger.writeMessage("Hashmap created.");
 		}
@@ -383,7 +381,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 				}
 			} else {
 				if (showGUI) {
-					infoLabel.setText("Database can't be loaded.");
+					infoLabel.setText("Database failed to load.");
 					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
 							+ "Only one connection to the local repair database is allowed at a time.<br>"
 							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and delete the<br>data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",

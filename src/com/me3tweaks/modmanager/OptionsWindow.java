@@ -88,13 +88,12 @@ public class OptionsWindow extends JDialog {
 		});
 
 		useWindowsUI = new JCheckBox("Use Windows style UI");
-		useWindowsUI.setToolTipText("<html>Instructs Java to use the Windows look and feel. This is experimental and is not fully supported.</html>");
+		useWindowsUI.setToolTipText("<html>Make Mod Manager use a Microsoft Windows style interface rather than the default cross-platform style</html>");
 		useWindowsUI.setSelected(ModManager.USE_WINDOWS_UI);
 		useWindowsUI.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				Wini ini = ModManager.LoadSettingsINI();
-
 				ModManager.USE_WINDOWS_UI = useWindowsUI.isSelected();
 				if (useWindowsUI.isSelected()) {
 					ModManager.debugLogger.writeMessage("Enabling Windows UI");
