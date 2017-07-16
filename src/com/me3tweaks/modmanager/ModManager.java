@@ -80,12 +80,12 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.application.Platform;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0 MR1";
-	public static long BUILD_NUMBER = 75L;
-	public static final String BUILD_DATE = "7/12/2017";
+	public static final String VERSION = "5.0.1";
+	public static long BUILD_NUMBER = 76L;
+	public static final String BUILD_DATE = "7/16/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -102,7 +102,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 21;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 22;
 
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
@@ -1287,25 +1287,28 @@ public class ModManager {
 			ModManager.debugLogger.writeMessage("Patch source is already in library.");
 			return sourceDestination.getAbsolutePath();
 		} else {
-			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath() + "), fetching from original location.");
+			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath() + "), fetching from game directory.");
 		}
 		if (targetModule.equals(ModType.BASEGAME)) {
 			// we must use PCCEditor2 to decompress the file using the
 			// -decompresspcc command line arg
 			//get source directory via relative path chaining
 			File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath);
-			sourceDestination.getParentFile().mkdirs();
+			if (sourceSource.exists()) {
+				sourceDestination.getParentFile().mkdirs();
 
-			// run ME3EXPLORER --decompress-pcc
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
-			ProcessResult pr = ModManager.decompressPCC(sourceSource, sourceDestination);
-			if (pr.getReturnCode() == 0) {
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
-			} else {
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+				// run ME3EXPLORER --decompress-pcc
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
+				ProcessResult pr = ModManager.decompressPCC(sourceSource, sourceDestination);
+				if (pr.getReturnCode() == 0) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
+				} else {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+				}
+				ModManager.debugLogger.writeMessage("File decompressed to location, and ready? : " + sourceDestination.exists());
 			}
-			ModManager.debugLogger.writeMessage("File decompressed to location, and ready? : " + sourceDestination.exists());
 			return sourceDestination.exists() ? sourceDestination.getAbsolutePath() : null;
+
 			// END OF
 			// BASEGAME======================================================
 		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
@@ -1334,20 +1337,25 @@ public class ModManager {
 				sfarName = "Patch_001.sfar";
 			}
 			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
-			ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
-			// patchProcessBuilder.redirectErrorStream(true);
-			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-			if (pr.getReturnCode() == 0) {
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
-				ModManager.debugLogger.writeMessage("Caching complete for file " + sourceDestination.getName());
-				return sourceDestination.getAbsolutePath();
+			if (new File(sfarPath).exists()) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
+				ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
+				// patchProcessBuilder.redirectErrorStream(true);
+				// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+				if (pr.getReturnCode() == 0) {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
+					ModManager.debugLogger.writeMessage("Caching complete for file " + sourceDestination.getName());
+					return sourceDestination.getAbsolutePath();
 
+				} else {
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
+					ModManager.debugLogger.writeError("Caching failed (non 0 return code) for file " + sourceDestination.getName());
+					return null;
+				}
 			} else {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching failed for file " + sourceDestination.getName());
-				ModManager.debugLogger.writeError("Caching failed (non 0 return code) for file " + sourceDestination.getName());
+				ModManager.debugLogger.writeError("Caching failed (DLC not installed) for file " + sourceDestination.getName());
 				return null;
-
 			}
 		}
 	}
@@ -2631,31 +2639,19 @@ public class ModManager {
 			return null;
 		} else {
 			// DLC===============================================================
+			// Pull from SFAR.bak
 			// Check if its unpacked
 			String gamedir = appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent());
-			File unpackedFile = new File(gamedir + targetPath);
-			if (unpackedFile.exists()) {
-				try {
-					FileUtils.copyFile(unpackedFile, sourceDestination);
-					ModManager.debugLogger.writeMessage("Copied unpacked file into patch library");
-					return sourceDestination.getAbsolutePath();
-				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Unable to copy unpacked file into patch source library:", e);
-					return null;
-				}
-			}
 
 			// use the sfar
 			// get .sfar path
-			String sfarName = "Default.sfar";
+			String sfarName = "Default.sfar.bak";
 			if (targetModule.equals(ModType.TESTPATCH)) {
-				sfarName = "Patch_001.sfar";
+				sfarName = "Patch_001.sfar.bak";
 			}
 			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
 			ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
-			// patchProcessBuilder.redirectErrorStream(true);
-			// patchProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 			if (pr.getReturnCode() == 0) {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Cached " + sourceDestination.getName());
 				ModManager.debugLogger.writeMessage("Caching complete for file " + sourceDestination.getName());

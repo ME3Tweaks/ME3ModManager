@@ -380,17 +380,13 @@ public class ModMakerCompilerWindow extends JDialog {
 							}
 						}
 					}
-					System.out.println("Parsing dynamic mixins.");
 					NodeList dynamicmixinsNodeList = mixinsElement.getElementsByTagName("DynamicMixIn");
 					for (int j = 0; j < dynamicmixinsNodeList.getLength(); j++) {
-						System.out.println("Dynamic Mixin Node " + j);
 						Node dynamicmixinNode = dynamicmixinsNodeList.item(j);
 						if (dynamicmixinNode.getNodeType() == Node.ELEMENT_NODE) {
 							DynamicPatch dp;
 							try {
-								System.out.println("Creating dynamicpatch...");
 								dp = new DynamicPatch(dynamicmixinNode);
-								System.out.println("Created dynamicpatch");
 
 								dynamicMixins.add(dp);
 								ModManager.debugLogger.writeMessage("Mod contains dynamic mixin: " + dp.getFinalPatch().getPatchName());
@@ -399,7 +395,6 @@ public class ModMakerCompilerWindow extends JDialog {
 							}
 						}
 					}
-					System.out.println("Done parsing dynamic mixins");
 				}
 
 				//Check the name

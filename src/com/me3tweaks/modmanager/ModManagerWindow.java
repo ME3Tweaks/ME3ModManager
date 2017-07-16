@@ -459,7 +459,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				try {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
 					ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
-					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice?highprioritysupport=true"), ModManager.getThirdPartyModDBFile());
+					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice?highprioritysupport=true"),
+							ModManager.getThirdPartyModDBFile());
 					ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile(), StandardCharsets.UTF_8);
 					ModManager.debugLogger.writeMessage("Downloaded third party mod data from identification service");
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod identification info"));
@@ -2007,9 +2008,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			}
 		});
-		
+
 		modutilsOpenFolder.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				ResourceUtils.openFolderInExplorer(mod.getModPath());
@@ -2760,7 +2761,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				return;
 			}
 			if (validateBIOGameDir()) {
-				if (validateVC2012()) {
+				if (validateVC2015()) {
 					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
 							"<html><div style='width: 300px'>Installing the ASI version of binkw32.dll bypass will load .asi files and run 3rd party code. Any .asi file in the same folder as MassEffect3.exe and within a subfolder named asi will be loaded at game startup. The code in these asi files will then be run like any program on your computer.<br><br>Ensure you trust the developer you download and install ASI mods from.<br><br>If you have no idea what this means, you should use the default non-asi binkw32.dll bypass option.<br><br>Install the ASI version of binkw32 bypass?</div></html>",
 							"Potential security risk", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
@@ -2769,13 +2770,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						installBinkw32Bypass(true);
 					}
 				} else {
-					labelStatus.setText("Binkw32 ASI Bypass requires Visual C++ 2012 x86");
+					labelStatus.setText("Binkw32 ASI Bypass requires Visual C++ 2015 x86");
 					labelStatus.setVisible(true);
 					JOptionPane.showMessageDialog(null,
-							"The Binkw32 ASI Bypass requires Visual C++ 2012 x86 redistributable.\nIf you are sure you have this installed, turn off the .NET version check in Mod Manager options.",
-							"ASI loader requires VC2012 x86", JOptionPane.ERROR_MESSAGE);
+							"Binkw32 ASI Bypass requires Visual C++ 2015 (or higher) x86.\nAfter you close this dialog, your browser will open and download the installer for Visual C++ 2017 from Microsoft.",
+							"ASI loader requires VC++ 2015 x86 or higher", JOptionPane.ERROR_MESSAGE);
 					try {
-						ResourceUtils.openWebpage(new URL("https://www.microsoft.com/en-us/download/details.aspx?id=30679"));
+						ResourceUtils.openWebpage(new URL("https://download.microsoft.com/download/7/a/6/7a68af9f-3761-4781-809b-b6df0f56d24c/vc_redist.x86.exe"));
 					} catch (MalformedURLException e1) {
 						ModManager.debugLogger.writeErrorWithException("Unable to open VC++ download page:", e1);
 					}
@@ -2820,25 +2821,34 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
-	private boolean validateVC2012() {
+	private boolean validateVC2015() {
 		if (!ModManager.PERFORM_DOT_NET_CHECK) {
 			return true;
 		}
 		try {
-			String x86VC2012 = "SOFTWARE\\Classes\\Installer\\Dependencies\\{33d1fd90-4274-48a1-9bc1-97e33d9c2d6f}";
-			String installDir = null;
-			ModManager.debugLogger.writeMessage("Scanning registry for Visual C++ 2012 x86");
-			installDir = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, x86VC2012, "Version");
-
-			if (installDir == null) {
-				return false;
-			}
-
-			if (installDir.equals("11.0.61030.0")) {
-				return true;
+			String x86VC2015 = "SOFTWARE\\Classes\\Installer\\Dependencies\\{e2803110-78b3-4664-a479-3611a381656a}";
+			String x86VC2017 = "Installer\\Dependencies\\,,x86,14.0,bundle";
+			try {
+				ModManager.debugLogger.writeMessage("Looking up VC2015...");
+				Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, x86VC2015, "Version");
+				ModManager.debugLogger.writeMessage("VC2015 appears to be installed");
+				return true; //VC 2015
+			} catch (Exception e) {
+				ModManager.debugLogger.writeMessage("Looking up VC2017...");
+				String vc2017ver = Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, x86VC2017, "Version");
+				ModManager.debugLogger.writeMessage("VC2017 appears to be installed: "+vc2017ver);
+				Version vcVer = new Version(vc2017ver);
+				Version min = new Version("14.10.25008.0");
+				if (vcVer.compareTo(min) >= 0) {
+					return true;
+				} else {
+					return false;
+				}
 			}
 		} catch (Throwable e) {
-			ModManager.debugLogger.writeErrorWithException("Error occured while attempting to get VC2012 installation status! Could be the JNA crash.", e);
+			ModManager.debugLogger.writeErrorWithException(
+					"Error occured while attempting to get VC2015 installation status! Could be the JNA crash, or the registry key doesn't exist (which means it is not installed).",
+					e);
 		}
 		return false;
 	}

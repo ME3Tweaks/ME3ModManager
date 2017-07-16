@@ -13,6 +13,8 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManager.Lock;
+import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -24,6 +26,8 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
  *
  */
 public class Patch implements Comparable<Patch> {
+	public final Object lock = new Lock(); //threading wait() and notifyall();
+
 	public static final int APPLY_SUCCESS = 0;
 	public static final int APPLY_FAILED_OTHERERROR = -1;
 	public static final int APPLY_FAILED_MODDESC_NOT_UPDATED = 1;
@@ -268,8 +272,12 @@ public class Patch implements Comparable<Patch> {
 
 				if (modSourceFile == null) {
 					//couldn't copy or extract file, have nothing we can patch
-					ModManager.debugLogger.writeMessage(mod.getModName() + "'s patch " + getPatchName() + " was not able to acquire a source file to patch.");
-					return APPLY_FAILED_NO_SOURCE_FILE;
+					ModManager.debugLogger.writeMessage("Unable to acquire file using original path. Attempting to pull from backup.");
+					modSourceFile = ModManager.getBackupPatchSource(targetPath, targetModule);
+					if (modSourceFile == null) {
+						ModManager.debugLogger.writeMessage(mod.getModName() + "'s patch " + getPatchName() + " was not able to acquire a source file to patch.");
+						return APPLY_FAILED_NO_SOURCE_FILE;
+					}
 				}
 
 				//copy sourcefile to mod dir
