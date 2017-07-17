@@ -8,10 +8,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,8 +66,10 @@ public class TLKTool {
 	}
 
 	public static void main(String[] args) throws Exception {
-
+		orderINTFile();
 		buildITAFromINTSPController();
+		replacePCPlaceholdersWithXbox();
+		verifySameIds();
 		//performFix();
 		//replacementScan();
 		//compileTLK("E:\\MPTLK\\mp5");
@@ -79,6 +83,108 @@ public class TLKTool {
 		//compileTLK("E:\\Google Drive\\SP Controller Support\\TLK\\moonshine_tlk\\");
 		//String folderpath = "C:\\Users\\\Desktop\\tlk\\BIOGame_ITA\\";
 		//combineIntoSingleFile(folderpath);
+	}
+
+	private static void verifySameIds() throws Exception {
+		// TODO Auto-generated method stub
+		File intFile = new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\DLC_CON_XBX_INT0.xml");
+		File itaFile = new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\DLC_CON_XBX_ITA0.xml");
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		XPathFactory xPathfactory = XPathFactory.newInstance();
+		XPath xpath = xPathfactory.newXPath();
+		XPathExpression expr = xpath.compile("/TlkFile/Strings/String");
+
+		ArrayList<Integer> englishIds = new ArrayList<>();
+		Document doc = builder.parse(intFile);
+		NodeList nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+		for (int i = 0; i < nl.getLength(); i++) {
+			Node n = nl.item(i);
+			String idStr = n.getAttributes().getNamedItem("id").getTextContent();
+			String content = n.getTextContent();
+			Integer id = Integer.parseInt(idStr);
+			englishIds.add(id);
+		}
+
+		ArrayList<Integer> italianIds = new ArrayList<>();
+		doc = builder.parse(itaFile);
+		nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+		for (int i = 0; i < nl.getLength(); i++) {
+			Node n = nl.item(i);
+			String idStr = n.getAttributes().getNamedItem("id").getTextContent();
+			String content = n.getTextContent();
+			Integer id = Integer.parseInt(idStr);
+			italianIds.add(id);
+		}
+
+		Collections.sort(italianIds);
+		Collections.sort(englishIds);
+
+		System.out.println("English controller file count: " + englishIds.size());
+		System.out.println("Italian controller file count: " + italianIds.size());
+
+		if (italianIds.size() != englishIds.size()) {
+			System.err.println("SIZE MISMATCH!");
+			System.exit(0);
+		}
+
+		int wrongcount = 0;
+		for (int i = 0; i < englishIds.size(); i++) {
+			int englishid = englishIds.get(i);
+			int italianid = italianIds.get(i);
+			if (englishid != italianid) {
+				wrongcount++;
+				System.err.println("English ID does not match Italian ID: " + englishid + " vs " + italianid);
+			}
+		}
+		System.out.println("Number wrong: " + wrongcount);
+
+	}
+
+	private static void orderINTFile() throws Exception {
+		TreeMap<Integer, String> englishTLKEntries = new TreeMap<Integer, String>();
+
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		XPathFactory xPathfactory = XPathFactory.newInstance();
+		XPath xpath = xPathfactory.newXPath();
+		XPathExpression expr = xpath.compile("/TlkFile/Strings/String");
+		File f = new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\DLC_CON_XBX_INT0.xml");
+		Document doc = builder.parse(f);
+		NodeList nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+		for (int i = 0; i < nl.getLength(); i++) {
+			Node n = nl.item(i);
+			String idStr = n.getAttributes().getNamedItem("id").getTextContent();
+			String content = n.getTextContent();
+			Integer id = Integer.parseInt(idStr);
+			englishTLKEntries.put(id, content);
+		}
+
+		//output new file
+		Document outdoc = builder.newDocument();
+		Element rootElement = outdoc.createElement("TlkFile");
+		rootElement.setAttribute("name", "DLC_CON_XBX_INT/DLC_CON_XBX_INT0.xml");
+		outdoc.appendChild(rootElement);
+		Element strings = outdoc.createElement("Strings");
+		rootElement.appendChild(strings);
+		for (Map.Entry<Integer, String> englishEntry : englishTLKEntries.entrySet()) {
+			Integer intStrId = englishEntry.getKey();
+			String intStr = englishEntry.getValue();
+			Element strElem = outdoc.createElement("String");
+			strElem.setTextContent(intStr);
+			strElem.setAttribute("id", Integer.toString(intStrId));
+			strings.appendChild(strElem);
+		}
+
+		//write the content into xml file
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer = transformerFactory.newTransformer();
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+		DOMSource source = new DOMSource(outdoc);
+
+		StreamResult result = new StreamResult(new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\DLC_CON_XBX_INT0_Ordered.xml"));
+		transformer.transform(source, result);
 	}
 
 	private static void buildITAFromINTSPController() throws Exception {
@@ -142,13 +248,17 @@ public class TLKTool {
 				String idStr = n.getAttributes().getNamedItem("id").getTextContent();
 				String content = n.getTextContent();
 				Integer id = Integer.parseInt(idStr);
+				if (id >= 135000000) {
+					continue; //skip.
+				}
 				englishControllerTLKEntries.put(id, content);
 			}
 		}
 
 		System.out.println("Controller: " + englishControllerTLKEntries.size() + " items");
 		ArrayList<Integer> manualModifications = new ArrayList<>();
-		ArrayList<Integer> idsToCopy = new ArrayList<>();
+		//ArrayList<Integer> idsToCopy = new ArrayList<>(); 
+		ArrayList<TLKIDPair> idsToCopy = new ArrayList<>();
 		int numMissing = 0;
 		for (Map.Entry<Integer, String> entry : englishControllerTLKEntries.entrySet()) {
 			boolean matchFound = false;
@@ -159,7 +269,7 @@ public class TLKTool {
 				String intStr = englishEntry.getValue();
 				if (intStr.equals(controllerStr)) {
 					System.out.println("Found match: " + intStrId);
-					idsToCopy.add(intStrId);
+					idsToCopy.add(new TLKIDPair(intStrId, controllerStrId));
 					matchFound = true;
 					break;
 				}
@@ -169,13 +279,15 @@ public class TLKTool {
 				boolean containsKey = italianTLKEntries.containsKey(controllerStrId);
 				if (containsKey) {
 					manualModifications.add(controllerStrId);
-					idsToCopy.add(controllerStrId);
+					idsToCopy.add(new TLKIDPair(controllerStrId, controllerStrId)); //copy exact ID over.
 				} else {
-					System.err.println("No match found for controller str: " + controllerStrId + " " + controllerStr);
+					System.err.println("No match found for controller str, copying directly: " + controllerStrId + " " + controllerStr);
 					numMissing++;
 				}
 			}
 		}
+
+		Collections.sort(idsToCopy);
 		System.out.println("Number of manual entries: " + numMissing);
 
 		//Build output file.
@@ -186,16 +298,46 @@ public class TLKTool {
 		Element strings = doc.createElement("Strings");
 		rootElement.appendChild(strings);
 
-		for (int id : idsToCopy) {
+		for (TLKIDPair id : idsToCopy) {
 			Element strElem = doc.createElement("String");
-			String content = italianTLKEntries.get(id);
-			if (manualModifications.contains(id)) {
-				content = "MANUAL!!! " + content;
+			String content = italianTLKEntries.get(id.getIdSource());
+			if (manualModifications.contains(id.getIdTarget())) {
+				content = "[NEEDS ITALIAN REVIEW] " + content;
 			}
 			strElem.setTextContent(content);
-			strElem.setAttribute("id", Integer.toString(id));
+			strElem.setAttribute("id", Integer.toString(id.getIdTarget()));
 			strings.appendChild(strElem);
 		}
+
+		Element strElem = doc.createElement("String");
+		String content = "SP Native Controller Support DLC Module";
+		strElem.setTextContent(content);
+		strElem.setAttribute("id", Integer.toString(135000000));
+		strings.appendChild(strElem);
+
+		strElem = doc.createElement("String");
+		content = "DLC_CON_XBX";
+		strElem.setTextContent(content);
+		strElem.setAttribute("id", Integer.toString(135000001));
+		strings.appendChild(strElem);
+
+		strElem = doc.createElement("String");
+		content = "it-it";
+		strElem.setTextContent(content);
+		strElem.setAttribute("id", Integer.toString(135000002));
+		strings.appendChild(strElem);
+
+		strElem = doc.createElement("String");
+		content = "Male";
+		strElem.setTextContent(content);
+		strElem.setAttribute("id", Integer.toString(135000003));
+		strings.appendChild(strElem);
+
+		strElem = doc.createElement("String");
+		content = "Female";
+		strElem.setTextContent(content);
+		strElem.setAttribute("id", Integer.toString(135000004));
+		strings.appendChild(strElem);
 
 		//write the content into xml file
 		TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -211,6 +353,29 @@ public class TLKTool {
 		for (int id : manualModifications) {
 			System.out.println(" - " + id);
 		}
+	}
+
+	static class TLKIDPair implements Comparable<TLKIDPair> {
+		private int idSource, idTarget;
+
+		public TLKIDPair(int id1, int id2) {
+			this.idSource = id1;
+			this.idTarget = id2;
+		}
+
+		public int getIdSource() {
+			return idSource;
+		}
+
+		public int getIdTarget() {
+			return idTarget;
+		}
+
+		@Override
+		public int compareTo(TLKIDPair o) {
+			return new Integer(getIdTarget()).compareTo(o.getIdTarget());
+		}
+
 	}
 
 	private static void performFix() throws FileNotFoundException {
@@ -848,6 +1013,78 @@ public class TLKTool {
 			// send DOM to file
 			tr.transform(new DOMSource(origDoc), new StreamResult(new FileOutputStream(savename)));
 		}
+	}
+
+	private static void replacePCPlaceholdersWithXbox() throws Exception {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		XPathFactory xPathfactory = XPathFactory.newInstance();
+		XPath xpath = xPathfactory.newXPath();
+		XPathExpression expr = xpath.compile("/TlkFile/Strings/String");
+		File f = new File("E:\\Google Drive\\Mass Effect 3 Modding\\TLK\\SP Controller - ITA\\DLC_CON_XBX_ITA0.xml");
+		Document doc = builder.parse(f);
+		NodeList nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+		int fixed = 0;
+		for (int i = 0; i < nl.getLength(); i++) {
+			Node n = nl.item(i);
+			String idStr = n.getAttributes().getNamedItem("id").getTextContent();
+			String originalcontent = n.getTextContent();
+			Integer id = Integer.parseInt(idStr);
+			String content = originalcontent.replace("([Shared_ShowMap])", "[XBoxB_Btn_A]");
+			content = content.replace("([Mouse_Btn_R])", "[XBoxB_Btn_LT]");
+			content = content.replace("[Mouse_Btn_R]", "[XBoxB_Btn_LT]");
+			content = content.replace("([Shared_Shoot])", "[XBoxB_Btn_RT]");
+			content = content.replace("([Shared_Action])", "[XBoxB_Btn_A]");
+			content = content.replace("([PC_MoveForward])", "[XBoxB_Btn_LSUp]");
+			content = content.replace("([Shared_Melee])", "[XBoxB_Btn_B]");
+			content = content.replace("([Shared_Aim])", "[XBoxB_Btn_LT]");
+			content = content.replace("([PC_StrafeLeft])", "[XBoxB_Btn_LSLeft]");
+			content = content.replace("([PC_StrafeRight])", "[XBoxB_Btn_LSRight]");
+			content = content.replace("([Shared_SquadFollow])", "[XBoxB_Btn_DPadD]");
+			content = content.replace("([Shared_SquadAttack])", "[XBoxB_Btn_DPadU]");
+			content = content.replace("([Shared_CoverTurn])", "[XBoxB_Btn_L3]");
+			content = content.replace("([Shared_ExitAtlas])", "[XBoxB_Btn_B]");
+			content = content.replace("([PC_HotKey5])", "[XBoxB_Btn_DPadU]");
+			content = content.replace("([PC_HotKey6])", "[XBoxB_Btn_DPadR]");
+			content = content.replace("([PC_HotKey7])", "[XBoxB_Btn_DPadD]");
+			content = content.replace("([PC_HotKey8])", "[XBoxB_Btn_DPadL]");
+			content = content.replace("([Shared_SquadMove1])", "[XBoxB_Btn_DPadL]");
+			content = content.replace("([Shared_SquadMove2])", "[XBoxB_Btn_DPadR]");
+			content = content.replace("([PC_EnterCommandMenu])", "[XBoxB_Btn_R3]");
+			content = content.replace("([PC_SwapWeapon])", "[XBoxB_Btn_X]");
+			content = content.replace("([Shared_Menu])", "[XBoxB_Btn_Start]");
+			content = content.replace("([PC_Reload])", "[XBoxB_Btn_X]");
+			content = content.replace("([PC_HotKey1])", "[XBoxB_Btn_LB]");
+			content = content.replace("([PC_HotKey2])", "[XBoxB_Btn_RB]");
+			content = content.replace("([PC_HotKey3])", "[XBoxB_Btn_Y]");
+			content = content.replace("([PC_MoveBackward])", "[XBoxB_Btn_LSDown]");
+			content = content.replace("([PC_NextWeapon])", "[XBoxB_Btn_X]");
+
+			//NON () items
+			content = content.replace("[Shared_Shoot]", "[XBoxB_Btn_RT]");
+			content = content.replace("[Shared_Action]", "[XBoxB_Btn_A]");
+			content = content.replace("[Shared_Melee]", "[XBoxB_Btn_B]");
+			content = content.replace("[Shared_Aim]", "[XBoxB_Btn_LT]");
+			content = content.replace("[Q]", "[XBoxB_Btn_DPadL]"); //distract guard
+
+			n.setTextContent(content);
+
+			if (!content.equals(originalcontent)) {
+				fixed++;
+				System.out.println("Automatic fix applied to " + id);
+			}
+		}
+		System.out.println("Fixed " + fixed + " items");
+
+		Transformer tr = TransformerFactory.newInstance().newTransformer();
+		tr.setOutputProperty(OutputKeys.INDENT, "yes");
+		tr.setOutputProperty(OutputKeys.METHOD, "xml");
+		tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		tr.setOutputProperty(OutputKeys.VERSION, "1.0");
+		tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+		// send DOM to file
+		tr.transform(new DOMSource(doc), new StreamResult(new FileOutputStream(f)));
 	}
 
 	/**

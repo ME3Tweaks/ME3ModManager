@@ -1669,7 +1669,8 @@ public class ModManager {
 		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
 		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 		try {
-			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d" };
+			// Original ASI hash, July 8 2017 v3 hash
+			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d" }; 
 			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (asihashlist.contains(binkhash) && bink23.exists()) {
