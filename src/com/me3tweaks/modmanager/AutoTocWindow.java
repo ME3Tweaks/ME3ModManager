@@ -51,7 +51,7 @@ public class AutoTocWindow extends JDialog {
 	 * @param biogameDir
 	 */
 	public AutoTocWindow(String biogameDir) {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		if (ModManager.isMassEffect3Running()) {
 			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed in order to run AutoTOC on it.", "MassEffect3.exe is running",
 					JOptionPane.ERROR_MESSAGE);
@@ -78,7 +78,7 @@ public class AutoTocWindow extends JDialog {
 	 *            Directory of biogame. Can be null.
 	 */
 	public AutoTocWindow(Mod mod, int mode, String biogameDir) {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		this.mode = mode;
 		this.mod = mod;
 		updatedGameTOCs = new HashMap<String, String>();
@@ -174,15 +174,17 @@ public class AutoTocWindow extends JDialog {
 						return true; //skip, this is done AFTER mod has been installed, and will run outside of autotoc window.
 					}
 					ArrayList<String> folders = new ArrayList<>();
+					int tocd = 0;
 					for (String srcFolder : job.getSourceFolders()) {
 						folders.add(mod.getModPath() + srcFolder);
+						tocd++;
 					}
 					ProcessResult pr = ModManager.runAutoTOCOnFolders(folders);
 					int returncode = pr.getReturnCode();
 					if (returncode != 0 || pr.hadError()) {
 						ModManager.debugLogger.writeError("Command line AutoTOC did not return with code 0! An error has occured.");
 					} else {
-						completed.incrementAndGet();
+						completed.addAndGet(tocd);
 						ModManager.debugLogger
 								.writeMessage("[" + job.getJobName() + "]Number of completed tasks: " + completed + ", num left to do: " + (numtoc - completed.get()));
 						publish(Integer.toString(completed.get()));
@@ -255,14 +257,6 @@ public class AutoTocWindow extends JDialog {
 					commandBuilder.add(tocPath);
 					commandBuilder.add("--tocupdates");
 
-					/*
-					 * for (AbstractMap.SimpleEntry<String, Long> tocEntryMap :
-					 * batchJob.getNameSizePairs()) {
-					 * commandBuilder.add(tocEntryMap.getKey()); //internal
-					 * filename (if in DLC)
-					 * commandBuilder.add(Long.toString(tocEntryMap.getValue()))
-					 * ; }
-					 */
 					ModManager.debugLogger.writeMessage("[" + job.getJobName() + "]Performing a batch TOC update on the following files:\n");
 					String str = "";
 					int numinbatch = 0;
@@ -297,7 +291,6 @@ public class AutoTocWindow extends JDialog {
 				if (job.getFilesToReplace().size() == 0) {
 					return true;
 				}
-
 				return false;
 			}
 		}

@@ -26,11 +26,14 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
@@ -2836,7 +2839,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} catch (Exception e) {
 				ModManager.debugLogger.writeMessage("Looking up VC2017...");
 				String vc2017ver = Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, x86VC2017, "Version");
-				ModManager.debugLogger.writeMessage("VC2017 appears to be installed: "+vc2017ver);
+				ModManager.debugLogger.writeMessage("VC2017 appears to be installed: " + vc2017ver);
 				Version vcVer = new Version(vc2017ver);
 				Version min = new Version("14.10.25008.0");
 				if (vcVer.compareTo(min) >= 0) {
@@ -2982,7 +2985,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ResourceUtils.getRelativePath(localpath, chosenPath, File.separator);
 				// common path
 				JOptionPane.showMessageDialog(null,
-						"Mod Manager's executable cannot be located in the Mass Effect 3 game directory, or any of its subdirectories.\nMove the Mod Manager folder out of the game directory, as Mod Manager will not work until you do this.",
+						"Mod Manager will not work if it is run from the Mass Effect 3 game directory, or any of its subdirectories.\nMove the Mod Manager folder out of the game directory, as Mod Manager will not work until you do this.",
 						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
 				return;
 			} catch (ResourceUtils.PathResolutionException e) {
@@ -3070,7 +3073,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 				// common path
 				JOptionPane.showMessageDialog(null,
-						"Mod Manager cannot be located in the Mass Effect 3 game directory.\nMove Mod Manager out of the game directory and restart Mod Manager.",
+						"Mod Manager will not work when running from inside a Mass Effect 3 game directory.\nMove Mod Manager out of the game directory and restart Mod Manager.",
 						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
 				ModManager.debugLogger.writeError("Mod Manager is located in the game directory! Shutting down to avoid issues.");
 				System.exit(1);
@@ -3758,6 +3761,30 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					String outputpath = stagingdir + altfile;
 					ModManager.debugLogger.writeMessage("Copying [AUTO ALT] mod file to staging: " + altfile + " -> " + outputpath);
 					FileUtils.copyFile(new File(mod.getModPath() + altfile), new File(outputpath));
+					stagedfilecount++;
+					publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+				}
+			}
+
+			//Alternate Custom DLC
+			ArrayList<String> altDLCFoldersToStage = new ArrayList<>();
+			for (AlternateCustomDLC altdlc : mod.getAlternateCustomDLC()) {
+				String altDLCRelativePath = altdlc.getAltDLC();
+				if (!altDLCFoldersToStage.contains(altDLCRelativePath)) {
+					altDLCFoldersToStage.add(altDLCRelativePath);
+				}
+			}
+
+			for (String folder : altDLCFoldersToStage) {
+				Predicate<Path> predicate = p -> Files.isRegularFile(p);
+				String altdlcpath = mod.getModPath() + folder;
+				ArrayList<Path> files = (ArrayList<Path>) Files.walk(Paths.get(altdlcpath)).filter(predicate).collect(Collectors.toList());
+				for (Path p : files) {
+					File altfile = p.toFile();
+					String relativePath = ResourceUtils.getRelativePath(altfile.getAbsolutePath(), mod.getModPath(), File.separator);
+					String outputpath = stagingdir + relativePath;
+					ModManager.debugLogger.writeMessage("Copying [ALTERNATE DLC] mod file to staging: " + altfile + " -> " + outputpath);
+					FileUtils.copyFile(altfile, new File(outputpath));
 					stagedfilecount++;
 					publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
 				}
