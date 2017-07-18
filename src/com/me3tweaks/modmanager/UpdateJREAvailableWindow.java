@@ -34,6 +34,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import org.apache.commons.lang3.ArchUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
@@ -43,45 +44,32 @@ import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 @SuppressWarnings("serial")
-public class UpdateAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
-	String downloadLink, downloadLink2, updateScriptLink, manualLink, changelogLink;
+public class UpdateJREAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
+	String downloadLink, updateScriptLink;
 	boolean error = false;
 	String version;
-	long build;
 	JLabel introLabel, versionsLabel, changelogLabel, sizeLabel;
-	JButton updateButton, notNowButton, nextUpdateButton, manualDownloadButton;
+	JButton updateButton, notNowButton;
 	JSONObject updateInfo;
 	JProgressBar downloadProgress;
-	private JButton changelogButton;
 	private JPanel downloadPanel;
 
-	public UpdateAvailableWindow(JSONObject updateInfo) {
+	public UpdateJREAvailableWindow(JSONObject updateInfo) {
 		super(null, Dialog.ModalityType.APPLICATION_MODAL);
-		ModManager.debugLogger.writeMessage("Opening update available window");
+		ModManager.debugLogger.writeMessage("Opening JRE update available window");
 		this.updateInfo = updateInfo;
-		build = (long) updateInfo.get("latest_build_number");
-		version = (String) updateInfo.get("latest_version_hr");
-		downloadLink = (String) updateInfo.get("download_link");
-		downloadLink2 = (String) updateInfo.get("download_link2");
-		manualLink = (String) updateInfo.get("manual_link");
-		changelogLink = (String) updateInfo.get("changelog_link");
-		if (manualLink == null) {
-			manualLink = downloadLink2 == null ? downloadLink : downloadLink2;
-		}
-		ModManager.debugLogger.writeMessage("Update info:");
+		version = (String) updateInfo.get("jre_latest_version_hr");
+		downloadLink = (String) updateInfo.get("jre_download_link");
+
+		ModManager.debugLogger.writeMessage("JRE Update info:");
 		ModManager.debugLogger.writeMessage(" - Version: " + version);
-		ModManager.debugLogger.writeMessage(" - Build: " + build);
-		ModManager.debugLogger.writeMessage(" - Primary Download: " + downloadLink2);
-		ModManager.debugLogger.writeMessage(" - Fallback Download: " + downloadLink);
-		ModManager.debugLogger.writeMessage(" - Manual Download: " + manualLink);
-		ModManager.debugLogger.writeMessage(" - Changelog: " + changelogLink);
-		ModManager.debugLogger.writeMessage(" - " + version);
+		ModManager.debugLogger.writeMessage(" - Primary Download: " + downloadLink);
 		setupWindow();
 		setVisible(true);
 	}
 
 	private void setupWindow() {
-		setTitle("Update Available");
+		setTitle("JRE Update Available");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setResizable(false);
 		setIconImages(ModManager.ICONS);
@@ -89,44 +77,21 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
 		introLabel = new JLabel();
-		String latest_version_hr = (String) updateInfo.get("latest_version_hr");
-		long latest_build_number = (long) updateInfo.get("latest_build_number");
+		introLabel.setText("<html>An update for Mod Manager's Java Runtime is available.</html>");
 
-		//calculate local hash
-		String buildHash = (String) updateInfo.get("build_md5");
-		boolean hashMismatch = false;
-		try {
-			String currentHash = MD5Checksum.getMD5Checksum("ME3CMM.exe");
-			if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
-				//hash mismatch
-				hashMismatch = true;
-			}
-		} catch (Exception e) {
-			//ModManager.debugLogger.writeErrorWithException("Unable to hash ME3CMM.exe:", e1);
+		String bitnessUpgrade = "";
+		if (ArchUtils.getProcessor().isX86() && ResourceUtils.is64BitWindows()) {
+			bitnessUpgrade = "<br>This will upgrade Mod Manager from 32-bit java to 64-bit java.";
 		}
 
-		if (hashMismatch && latest_build_number == ModManager.BUILD_NUMBER) {
-			introLabel.setText("A minor update for Mod Manager is available.");
-		} else {
-			introLabel.setText("An update for Mod Manager is available from ME3Tweaks.");
-		}
+		versionsLabel = new JLabel("<html>Local Version: " + System.getProperty("java.version") + "<br>" + "Latest Version: " + version + bitnessUpgrade + "</html>");
 
-		versionsLabel = new JLabel("<html>Local Version: " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER + ")<br>" + "Latest Version: " + latest_version_hr
-				+ " (Build " + latest_build_number + ")</html>");
-
-		String release_notes = (String) updateInfo.get("release_notes");
+		String release_notes = (String) updateInfo.get("jre_latest_release_notes");
 		changelogLabel = new JLabel("<html><div style=\"width:270px;\">" + release_notes + "</div></html>");
 		updateButton = new JButton("Install Update");
 		updateButton.addActionListener(this);
 		notNowButton = new JButton("Not now");
 		notNowButton.addActionListener(this);
-		nextUpdateButton = new JButton("Skip this build");
-		nextUpdateButton.addActionListener(this);
-		manualDownloadButton = new JButton("Manual Download");
-		manualDownloadButton.addActionListener(this);
-		changelogButton = new JButton("View full changelog");
-		changelogButton.addActionListener(this);
-
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
 		downloadProgress.setIndeterminate(true);
@@ -149,9 +114,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		updatePanel.add(versionPanel);
 
 		changeLogPanel.add(changelogLabel);
-		if (changelogLink != null && !changelogLink.equals("")) {
-			changeLogPanel.add(changelogButton);
-		}
 
 		updatePanel.add(changeLogPanel);
 		updatePanel.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -159,8 +121,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		JPanel actionPanel = new JPanel();
 		actionPanel.setLayout(new BoxLayout(actionPanel, BoxLayout.X_AXIS));
 		actionPanel.add(updateButton);
-		actionPanel.add(manualDownloadButton);
-		actionPanel.add(nextUpdateButton);
 		actionPanel.add(Box.createHorizontalGlue());
 		actionPanel.setBorder(new TitledBorder(new EtchedBorder(), "Actions"));
 		actionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -230,21 +190,11 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 				HTTPDownloadUtil util = new HTTPDownloadUtil();
 				//downloadLink = "https://me3tweaks.com/modmanager/updates/62/ME3CMM.7z";
 				//downloadLink2 = "https://github.com/Mgamerz/me3modmanager/releases/download/4.4/ME3CMM.7z";
-				try {
-					publish(new ThreadCommand("UPDATE_STATUS", "Downloading update..."));
-					util.downloadFile(downloadLink2 == null ? downloadLink : downloadLink2);
-				} catch (FileNotFoundException e) {
-					if (downloadLink2 != null) {
-						//try downloadLink
-						publish(new ThreadCommand("UPDATE_STATUS", "Downloading update via fallback..."));
-						ModManager.debugLogger.writeMessage("Primary download link failed (" + downloadLink2 + "), falling back to ME3Tweaks");
-						util.downloadFile(downloadLink);
-					}
-				}
-				// set file information on the GUI
 				publish(new ThreadCommand("UPDATE_STATUS", "Downloading update..."));
+				util.downloadFile(downloadLink);
+				// set file information on the GUI
 
-				String saveFilePath = saveDirectory + File.separator + "ME3CMM.7z";
+				String saveFilePath = saveDirectory + File.separator + "JRE.7z";
 
 				InputStream inputStream = util.getInputStream();
 				// opens an output stream to save into file
@@ -253,7 +203,6 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 				byte[] buffer = new byte[BUFFER_SIZE];
 				int bytesRead = -1;
 				totalBytesRead = 0;
-				int percentCompleted = 0;
 				fileSize = util.getContentLength();
 
 				while ((bytesRead = inputStream.read(buffer)) != -1) {
@@ -271,7 +220,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 				}
 			} catch (IOException ex) {
 				ModManager.debugLogger.writeErrorWithException("ERROR DOWNLOADING UPDATE: ", ex);
-				JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				publish(new ThreadCommand("UPDATE_PROGRESS", null, new Integer(0)));
 				error = true;
 				cancel(true);
@@ -393,47 +342,11 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		if (e.getSource() == updateButton) {
 			ModManager.debugLogger.writeMessage("User has accepted the update");
 			updateButton.setEnabled(false);
-			manualDownloadButton.setEnabled(false);
-			nextUpdateButton.setEnabled(false);
 			downloadPanel.setVisible(true);
 			pack();
 			DownloadTask task = new DownloadTask(ModManager.getTempDir());
 			task.addPropertyChangeListener(this);
 			task.execute();
-		} else if (e.getSource() == nextUpdateButton) {
-			ModManager.debugLogger.writeMessage("User is skipping this build");
-			JOptionPane.showMessageDialog(this, "Outdated builds of Mod Manager are not supported.\nYou can make this update visible again in the options window.",
-					"Unsupported Warning", JOptionPane.WARNING_MESSAGE);
-			//write to ini that we don't want update
-			Wini ini;
-			try {
-				File settings = new File(ModManager.SETTINGS_FILENAME);
-				if (!settings.exists())
-					settings.createNewFile();
-				ini = new Wini(settings);
-				ini.put("Settings", "nextupdatedialogbuild", build + 1);
-				ModManager.debugLogger.writeMessage("Ignoring current update, will show again when build " + (build + 1) + " is released.");
-				ini.store();
-			} catch (InvalidFileFormatException ex) {
-				ex.printStackTrace();
-			} catch (IOException ex) {
-				ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
-			}
-			dispose();
-		} else if (e.getSource() == manualDownloadButton) {
-			try {
-				ResourceUtils.openWebpage(new URI(manualLink));
-				dispose();
-			} catch (URISyntaxException e1) {
-				ModManager.debugLogger.writeException(e1);
-			}
-			dispose();
-		} else if (e.getSource() == changelogButton) {
-			try {
-				ResourceUtils.openWebpage(new URI(changelogLink));
-			} catch (URISyntaxException e1) {
-				ModManager.debugLogger.writeException(e1);
-			}
 		}
 	}
 
@@ -446,12 +359,12 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		try {
 			ProcessBuilder pb = new ProcessBuilder(command);
 			pb.start();
-			ModManager.debugLogger.writeMessage("Upgrading to build " + build + ", shutting down.");
+			ModManager.debugLogger.writeMessage("Upgrading JRE.");
 			ModManager.MOD_MANAGER_UPDATE_READY = true; //do not delete temp
 			System.exit(0);
 		} catch (IOException e) {
 			ModManager.debugLogger.writeErrorWithException("FAILED TO RUN AUTO UPDATER:", e);
-			JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
+			JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
 					"Updating Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -463,7 +376,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	 */
 	private boolean buildUpdateScript() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("::Update script for Mod Manager " + ModManager.VERSION + " (Build " + build + ")");
+		sb.append("::Update script for Mod Manager JRE");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("@echo off");
@@ -484,7 +397,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("::Extract update");
 		sb.append("\r\n\"");
 		sb.append(ModManager.get7zExePath());
-		sb.append("\" -y x \"" + ModManager.getTempDir() + "ME3CMM.7z\" -o\"" + ModManager.getTempDir() + "NewVersion\"");
+		sb.append("\" -y x \"" + ModManager.getTempDir() + "JRE.7z\" -o\"" + ModManager.getTempDir() + "NewJREVersion\"");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("set MODMAN=%errorlevel%");
@@ -493,7 +406,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("    color 0A");
 		sb.append("\r\n");
-		sb.append("    echo Mod Manager extracted successfully.");
+		sb.append("    echo Mod Manager JRE extracted successfully.");
 		sb.append("\r\n");
 		sb.append(")");
 		sb.append("\r\n");
@@ -502,7 +415,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("    color 06");
 		sb.append("\r\n");
-		sb.append("    echo Mod Manager extracted with warnings.");
+		sb.append("    echo Mod Manager JRE extracted with warnings.");
 		sb.append("\r\n");
 		sb.append(")");
 		sb.append("\r\n");
@@ -511,30 +424,22 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("    color 0C");
 		sb.append("\r\n");
-		sb.append("    echo Mod Manager did not extract succesfully. Please report this to FemShep.");
+		sb.append("    echo Mod Manager JRE did not extract succesfully. Please report this to FemShep.");
 		sb.append("\r\n");
 		sb.append("    pause");
 		sb.append("\r\n");
 		sb.append(")");
 		sb.append("\r\n");
-		sb.append("::Check for build-in update script");
-		sb.append("\r\n");
-		sb.append("if exist \"" + ModManager.getTempDir() + "NewVersion\\update.cmd\" (");
-		sb.append("\r\n");
-		sb.append("CALL \"" + ModManager.getTempDir() + "NewVersion\\update.cmd\"");
-		sb.append("\r\n");
-		sb.append(")");
-		sb.append("\r\n");
 		sb.append("::Update the files");
 		sb.append("\r\n");
-		sb.append("xcopy /Y /S \"" + ModManager.getTempDir() + "NewVersion\" \"" + System.getProperty("user.dir") + "\"");
+		sb.append("xcopy /Y /S \"" + ModManager.getTempDir() + "NewJREVersion\" \"" + System.getProperty("user.dir") + "\"");
 		sb.append("\r\n");
 
 		sb.append("::Cleanup");
 		sb.append("\r\n");
-		sb.append("del /Q \"" + ModManager.getTempDir() + "ME3CMM.7z\"");
+		sb.append("del /Q \"" + ModManager.getTempDir() + "JRE.7z\"");
 		sb.append("\r\n");
-		sb.append("rmdir /S /Q \"" + ModManager.getTempDir() + "NewVersion\"");
+		sb.append("rmdir /S /Q \"" + ModManager.getTempDir() + "NewJREVersion\"");
 		sb.append("\r\n");
 		sb.append("::Run Mod Manager");
 		sb.append("\r\n");
@@ -542,12 +447,8 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		//sb.append("pause");
 		sb.append("\r\n");
-		if (build == ModManager.BUILD_NUMBER) {
-			sb.append("ME3CMM.exe --minor-update-from ");
-		} else {
-			sb.append("ME3CMM.exe --update-from ");
-		}
-		sb.append(ModManager.BUILD_NUMBER);
+		sb.append("ME3CMM.exe --jre-update-from ");
+		sb.append(System.getProperty("java.version"));
 		sb.append("\r\n");
 		sb.append("endlocal");
 		sb.append("\r\n");
@@ -565,7 +466,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeMessage("Couldn't generate the update script. Must abort.");
-			JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error building update script: " + e.getClass() + "\nCannot continue.", "Updater Error",
+			JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error building update script: " + e.getClass() + "\nCannot continue.", "Updater Error",
 					JOptionPane.ERROR_MESSAGE);
 			error = true;
 			e.printStackTrace();
