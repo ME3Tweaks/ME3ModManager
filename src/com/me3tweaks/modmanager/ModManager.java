@@ -77,12 +77,12 @@ import com.sun.jna.platform.win32.WinReg;
 import com.sun.jna.win32.W32APIOptions;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
 	public static final String VERSION = "5.0.2";
 	public static long BUILD_NUMBER = 77L;
-	public static final String BUILD_DATE = "7/16/2017";
+	public static final String BUILD_DATE = "7/18/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;

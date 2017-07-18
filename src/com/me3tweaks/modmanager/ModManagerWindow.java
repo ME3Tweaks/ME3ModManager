@@ -3028,13 +3028,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			chosenPath = new File(chosenPath).getParent();
 			// Check to make sure mod manager folder is not a subset
 			String localpath = System.getProperty("user.dir");
+			ModManager.debugLogger.writeMessage("Checking if biogame directory is a subdirectory of the game: " + chosenPath);
+			ModManager.debugLogger.writeMessage("CMM Directory: " + localpath);
 			try {
-				ResourceUtils.getRelativePath(localpath, chosenPath, File.separator);
-				// common path
-				JOptionPane.showMessageDialog(null,
-						"Mod Manager will not work if it is run from the Mass Effect 3 game directory, or any of its subdirectories.\nMove the Mod Manager folder out of the game directory, as Mod Manager will not work until you do this.",
-						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
-				return;
+				String relativePath = ResourceUtils.getRelativePath(localpath, chosenPath, File.separator);
+				if (!relativePath.contains("..")) {
+					ModManager.debugLogger.writeMessage("Relative path detected: " + relativePath);
+					// common path
+					JOptionPane.showMessageDialog(null,
+							"Mod Manager will not work if it is run from the Mass Effect 3 game directory, or any of its subdirectories.\nMove the Mod Manager folder out of the game directory, as Mod Manager will not work until you do this.",
+							"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 			} catch (ResourceUtils.PathResolutionException e) {
 				// we're OK
 			}
