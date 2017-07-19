@@ -642,7 +642,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			JSONObject latest_object = null;
 			// Check for update
 			try {
-				String update_check_link = "https://me3tweaks.com/modmanager/updatecheck-testing?currentversion=" + ModManager.BUILD_NUMBER;
+				String update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
 				String serverJSON = null;
 				try {
 					serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
