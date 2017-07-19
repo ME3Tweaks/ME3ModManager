@@ -522,6 +522,7 @@ public class RestoreFilesWindow extends JDialog {
 			String backupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\";
 			String dlcbackupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\BIOGame\\DLC";
 			File backupdir = new File(backupfolder);
+			backupdir.mkdirs();
 			if (backupdir.exists()) {
 				Collection<File> backupfiles = FileUtils.listFiles(new File(backupfolder), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 				for (File backup : backupfiles) {
@@ -621,6 +622,7 @@ public class RestoreFilesWindow extends JDialog {
 					}
 				}
 			} else {
+				ModManager.debugLogger.writeMessage("Backup directory does not exist: " + backupdir);
 				return false;
 			}
 			completed++;
