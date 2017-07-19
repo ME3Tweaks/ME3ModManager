@@ -56,7 +56,6 @@ import org.ini4j.Wini;
 import org.w3c.dom.Document;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
-import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModList;
@@ -77,15 +76,13 @@ import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinReg;
 import com.sun.jna.win32.W32APIOptions;
 
-import javafx.application.Platform;
-
 public class ModManager {
 	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0.1";
-	public static long BUILD_NUMBER = 76L;
-	public static final String BUILD_DATE = "7/16/2017";
+	public static final String VERSION = "5.0.2";
+	public static long BUILD_NUMBER = 77L;
+	public static final String BUILD_DATE = "7/18/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -125,7 +122,6 @@ public class ModManager {
 	protected static boolean COMPRESS_COMPAT_OUTPUT = false;
 
 	public static String MASSEFFECTMODDER_DOWNLOADLINK;
-
 	public static int MASSEFFECTMODDER_LATESTVERSION;
 
 	public static String TIPS_SERVICE_JSON;
@@ -137,6 +133,7 @@ public class ModManager {
 	} //threading wait() and notifyall();
 
 	public static void main(String[] args) {
+
 		loadLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
@@ -168,17 +165,13 @@ public class ModManager {
 				logging = true;
 				debugLogger.writeMessage("Starting logger. Logger was able to start up with no issues.");
 				debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + "; Build " + ModManager.BUILD_NUMBER + "; Build Date " + BUILD_DATE);
-				debugLogger.writeMessage("--------Mod Manager Main Startup--------");
-
-				//JVM Check
-				if (!System.getProperty("sun.arch.data.model").equals("32") && !IS_DEBUG) {
-					ModManager.debugLogger.writeError("Running in " + System.getProperty("sun.arch.data.model") + "-bit java!");
-					JOptionPane.showMessageDialog(null,
-							"Mod Manager is tested against 32-bit Java.\nThere are known issues with 64-bit Java with Mod Manager, due to bugs in the JNA library that Mod Manager uses.\n64-bit Java usage is not supported by FemShep - if you have issues I will ask you to install 32-bit java.",
-							"Untested JVM", JOptionPane.ERROR_MESSAGE);
-					//ResourceUtils.openWebpage(new URL("https://java.com/en/download/manual.jsp"));
-					//System.exit(1);
+				debugLogger.writeMessage("JVM can use a maximum of " + ResourceUtils.humanReadableByteCount(Runtime.getRuntime().maxMemory(), true) + " of memory");
+				if (ModManager.isUsingBundledJRE()) {
+					debugLogger.writeMessage("Using bundled 64-bit JRE.");
+				} else {
+					debugLogger.writeMessage("Using system JRE, not the bundled version.");
 				}
+				debugLogger.writeMessage("--------Mod Manager Main Startup--------");
 
 				String verString = settingsini.get("Settings", "initialmodmanagerversionbuild");
 				if (verString == null || verString.equals("")) {
@@ -1670,7 +1663,7 @@ public class ModManager {
 		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 		try {
 			// Original ASI hash, July 8 2017 v3 hash
-			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d" }; 
+			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d" };
 			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (asihashlist.contains(binkhash) && bink23.exists()) {
@@ -2560,6 +2553,7 @@ public class ModManager {
 				String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
 				ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
 				dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
+				dictsize = Math.max(dictsize, 256); //avoid out of memory error on 32-bit java
 				ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
 			}
 		}
@@ -2665,5 +2659,31 @@ public class ModManager {
 
 			}
 		}
+	}
+
+	/**
+	 * Checks if Mod Manager is running from the bundled JRE, or an installed
+	 * system one.
+	 * 
+	 * @return true if using the JRE from data/jre-x64. false if using any other
+	 *         JRE.
+	 */
+	public static boolean isUsingBundledJRE() {
+		String jrepath = System.getProperty("java.home");
+		String modmanpath = System.getProperty("user.dir");
+		String relpath = "data\\jre-x64";
+		try {
+			String calculatedRelativePath = ResourceUtils.getRelativePath(jrepath, modmanpath, File.separator);
+			if (calculatedRelativePath.equals(relpath)) {
+				return true;
+			}
+		} catch (Exception e) {
+			return false;
+		}
+		return false;
+	}
+
+	public static String getBundledJREPath() {
+		return getDataDir() + "jre-x64\\";
 	}
 }

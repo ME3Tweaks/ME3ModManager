@@ -383,6 +383,7 @@ public class ModImportArchiveWindow extends JDialog {
 			this.archiveFilePath = archiveFilePath;
 			this.modsToImport = modsToImport;
 			descriptionArea.setText("Importing mods into Mod Manager...");
+			progressBar.setIndeterminate(true);
 			browseButton.setEnabled(false);
 			ModManager.debugLogger.writeMessage("[IMPORTWORKER] Starting ImportWorker. The following mods will be extracted: ");
 			for (CompressedMod cm : modsToImport) {
@@ -401,6 +402,7 @@ public class ModImportArchiveWindow extends JDialog {
 			for (ThreadCommand command : commands) {
 				switch (command.getCommand()) {
 				case "PROGRESS_UPDATE":
+					progressBar.setIndeterminate(false);
 					progressBar.setValue(Integer.parseInt((String) command.getMessage()));
 					break;
 				case "SIDELOAD_OR_NEW_PROMPT":

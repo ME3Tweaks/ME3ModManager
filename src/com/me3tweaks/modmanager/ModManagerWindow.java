@@ -70,6 +70,8 @@ import javax.swing.event.ListSelectionListener;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArchUtils;
+import org.apache.commons.lang3.arch.Processor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.derby.iapi.services.loader.GeneratedMethod;
@@ -392,7 +394,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
-				checkForModManagerUpdates();
+				JSONObject latestinfo = checkForModManagerUpdates();
+				checkForJREUpdates(latestinfo);
 			}
 			//checkForME3ExplorerUpdates();
 			checkForCommandLineToolUpdates();
@@ -589,9 +592,54 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		private Void checkForModManagerUpdates() {
+		private void checkForJREUpdates(JSONObject latest_object) {
+			if (!ResourceUtils.is64BitWindows()) {
+				return;
+			}
+
+			if (latest_object == null) {
+				return;
+			}
+
+			String latestjavaexehash = (String) latest_object.get("jre_latest_version");
+
+			if (ModManager.isUsingBundledJRE() || ResourceUtils.is64BitWindows() && ArchUtils.getProcessor().isX86()) {
+				//32-bit JVM on 64-bit windows - should check
+				//I using the bundled x64 JRE  - should check
+				boolean hashMismatch = false;
+				File f = new File(ModManager.getBundledJREPath() + "bin\\java.exe");
+				if (f.exists()) {
+					//get hash
+					String bundledHash = "";
+					try {
+						bundledHash = MD5Checksum.getMD5Checksum(f.getAbsolutePath());
+					} catch (Exception e) {
+						ModManager.debugLogger.writeErrorWithException("Unable to hash java.exe. Due to the significance of this issue, we are not going to attempt a JRE update.",
+								e);
+						return;
+					}
+					if (!bundledHash.equals(latestjavaexehash)) {
+						hashMismatch = true;
+						ModManager.debugLogger.writeMessage("Bundled JRE hash does not match server - likely out of date.");
+					}
+				} else {
+					//doesn't exist - failed hash check
+					hashMismatch = true;
+					ModManager.debugLogger.writeMessage("Bundled JRE does not exist, but we should be using one.");
+				}
+
+				if (hashMismatch) {
+					new UpdateJREAvailableWindow(latest_object);
+				} else {
+					ModManager.debugLogger.writeMessage("No JRE upgrade recommended");
+				}
+			}
+		}
+
+		private JSONObject checkForModManagerUpdates() {
 			labelStatus.setText("Checking for Mod Manager updates");
 			ModManager.debugLogger.writeMessage("Checking for update...");
+			JSONObject latest_object = null;
 			// Check for update
 			try {
 				String update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
@@ -604,17 +652,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeException(e);
 					labelStatus.setText("Error checking for update (check logs)");
 					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-					return null;
+					return latest_object;
 				}
 				if (serverJSON == null) {
 					ModManager.debugLogger.writeError("No response from server");
 					labelStatus.setText("Updater: No response from server");
 					ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-					return null;
+					return latest_object;
 				}
 
 				JSONParser parser = new JSONParser();
-				JSONObject latest_object = (JSONObject) parser.parse(serverJSON);
+				latest_object = (JSONObject) parser.parse(serverJSON);
 				String buildHash = (String) latest_object.get("build_md5");
 				boolean hashMismatch = false;
 				if (new File("ME3CMM.exe").exists()) {
@@ -656,9 +704,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					if (latestCommandLineToolsLink != null) {
 						ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
 					}
-					return null;
+					return latest_object;
 				}
-
 				if (latest_build == ModManager.BUILD_NUMBER && !hashMismatch) {
 					// build is same as server version
 					labelStatus.setVisible(true);
@@ -669,7 +716,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					if (latestCommandLineToolsLink != null) {
 						ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
 					}
-					return null;
+					return latest_object;
 				}
 
 				ModManager.debugLogger
@@ -724,7 +771,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeErrorWithException("Error parsing server response:", e);
 			}
 			ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
-			return null;
+			return latest_object;
 		}
 
 		/**
@@ -2981,13 +3028,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			chosenPath = new File(chosenPath).getParent();
 			// Check to make sure mod manager folder is not a subset
 			String localpath = System.getProperty("user.dir");
+			ModManager.debugLogger.writeMessage("Checking if biogame directory is a subdirectory of the game: " + chosenPath);
+			ModManager.debugLogger.writeMessage("CMM Directory: " + localpath);
 			try {
-				ResourceUtils.getRelativePath(localpath, chosenPath, File.separator);
-				// common path
-				JOptionPane.showMessageDialog(null,
-						"Mod Manager will not work if it is run from the Mass Effect 3 game directory, or any of its subdirectories.\nMove the Mod Manager folder out of the game directory, as Mod Manager will not work until you do this.",
-						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
-				return;
+				String relativePath = ResourceUtils.getRelativePath(localpath, chosenPath, File.separator);
+				if (!relativePath.contains("..")) {
+					ModManager.debugLogger.writeMessage("Relative path detected: " + relativePath);
+					// common path
+					JOptionPane.showMessageDialog(null,
+							"Mod Manager will not work if it is run from the Mass Effect 3 game directory, or any of its subdirectories.\nMove the Mod Manager folder out of the game directory, as Mod Manager will not work until you do this.",
+							"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 			} catch (ResourceUtils.PathResolutionException e) {
 				// we're OK
 			}
@@ -3598,12 +3650,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("Selected path: " + selectedGamePath);
 					if (currentpath != null && !currentpath.equalsIgnoreCase(selectedGamePath)) {
 						//Update registry key.
-						boolean is64bit = false;
-						if (System.getProperty("os.name").contains("Windows")) {
-							is64bit = (System.getenv("ProgramFiles(x86)") != null);
-						} else {
-							is64bit = (System.getProperty("os.arch").indexOf("64") != -1);
-						}
+						boolean is64bit = ResourceUtils.is64BitWindows();
 						String keypath = is64bit ? "HKLM\\SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3" : "HKLM\\SOFTWARE\\BioWare\\Mass Effect 3";
 						ArrayList<String> command = new ArrayList<String>();
 						command.add(ModManager.getCommandLineToolsDir() + "elevate.exe");
