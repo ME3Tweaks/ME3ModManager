@@ -275,7 +275,7 @@ public class RestoreFilesWindow extends JDialog {
 
 		private boolean processDeleteUnpackedFiles(String[] dlcHeaders) {
 			completed = 0;
-			ArrayList<String> filestodelete = getUnpackedFilesList(dlcHeaders);
+			ArrayList<String> filestodelete = SelectiveRestoreWindow.getUnpackedFilesList(dlcHeaders);
 			numjobs = filestodelete.size();
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
 			String dlcbackupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\BIOGame\\DLC\\";
@@ -288,8 +288,8 @@ public class RestoreFilesWindow extends JDialog {
 				completed++;
 				publish(Integer.toString(completed));
 			}
+			
 			ModManager.debugLogger.writeMessage("===Deleting unpacked backup folders files===");
-
 			for (String header : dlcHeaders) {
 				File dlcBackupDirectory = new File(dlcbackupfolder + dlcFolders.get(header));
 				if (dlcBackupDirectory.exists()) {
@@ -390,7 +390,7 @@ public class RestoreFilesWindow extends JDialog {
 			}
 			if (bghDB == null) {
 				//cannot continue
-				JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
+				JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
 						+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
@@ -411,7 +411,7 @@ public class RestoreFilesWindow extends JDialog {
 							RepairFileInfo rfi = bghDB.getFileInfo(relative);
 							boolean restoreAnyways = false;
 							if (rfi == null) {
-								int reply = JOptionPane.showOptionDialog(null,
+								int reply = JOptionPane.showOptionDialog(RestoreFilesWindow.this,
 										"<html>The file:<br>" + relative + "<br>is not in the repair database. "
 												+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
 										"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
@@ -430,7 +430,7 @@ public class RestoreFilesWindow extends JDialog {
 								//verify the file
 								if (backup.length() != rfi.filesize) {
 									//MISMATCH!
-									int reply = JOptionPane.showOptionDialog(null,
+									int reply = JOptionPane.showOptionDialog(RestoreFilesWindow.this,
 											"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
 													+ backup.length() + " bytes (backup) vs " + rfi.filesize + " bytes (database)<br><br>"
 													+ "This file could be corrupted or modified since the database was created.<br>"
@@ -455,7 +455,7 @@ public class RestoreFilesWindow extends JDialog {
 									String hash = MD5Checksum.getMD5Checksum(backup.getAbsolutePath());
 									if (!hash.equals(rfi.md5)) {
 										ModManager.debugLogger.writeError("Hash of backup failed: DB Lists: " + rfi.md5 + ", Backup file has: " + hash);
-										int reply = JOptionPane.showOptionDialog(null,
+										int reply = JOptionPane.showOptionDialog(RestoreFilesWindow.this,
 												"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
 														+ "The backup file has changed since the database was created.<br>"
 														+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
@@ -514,7 +514,7 @@ public class RestoreFilesWindow extends JDialog {
 			}
 			if (bghDB == null) {
 				//cannot continue
-				JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
+				JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
 						+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
@@ -544,7 +544,7 @@ public class RestoreFilesWindow extends JDialog {
 						RepairFileInfo rfi = bghDB.getFileInfo(relative);
 						boolean restoreAnyways = false;
 						if (rfi == null) {
-							int reply = JOptionPane.showOptionDialog(null,
+							int reply = JOptionPane.showOptionDialog(RestoreFilesWindow.this,
 									"<html>The file:<br>" + relative + "<br>is not in the repair database. "
 											+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
 									"Restoring Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
@@ -563,7 +563,7 @@ public class RestoreFilesWindow extends JDialog {
 							//verify the file
 							if (backup.length() != rfi.filesize) {
 								//MISMATCH!
-								int reply = JOptionPane.showOptionDialog(null,
+								int reply = JOptionPane.showOptionDialog(RestoreFilesWindow.this,
 										"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>" + backup.length()
 												+ " bytes (backup) vs " + rfi.filesize + " bytes (database)<br><br>"
 												+ "This file could be corrupted or modified since the database was created.<br>"
@@ -588,7 +588,7 @@ public class RestoreFilesWindow extends JDialog {
 								String hash = MD5Checksum.getMD5Checksum(backup.getAbsolutePath());
 								if (!hash.equals(rfi.md5)) {
 									ModManager.debugLogger.writeError("Hash of backup failed: DB Lists: " + rfi.md5 + ", Backup file has: " + hash);
-									int reply = JOptionPane.showOptionDialog(null,
+									int reply = JOptionPane.showOptionDialog(RestoreFilesWindow.this,
 											"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
 													+ "This file has changed since the database was created.<br>"
 													+ "Restoring this file may overwrite your default setup if you use custom mods like texture swaps.<br></html>",
@@ -701,9 +701,9 @@ public class RestoreFilesWindow extends JDialog {
 			if (backupSfar == null) {
 				//no backup!
 				publish(jobName + ": No backup exists, cannot restore.");
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(RestoreFilesWindow.this,
 						"<html>No backup for " + jobName
-								+ " exists, you'll have to restore through Origin's Repair Game.<br>Select Tools>Backup DLC to avoid this issue after the game is restored.</html>",
+								+ " exists, you'll have to restore through Origin's Repair Game.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
 						"Error", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}

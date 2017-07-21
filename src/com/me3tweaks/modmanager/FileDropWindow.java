@@ -575,8 +575,8 @@ public class FileDropWindow extends JDialog {
 							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Installed " + droppedFile.getName());
 						} catch (IOException e1) {
 							ModManager.debugLogger.writeErrorWithException("ASI Mod install failed " + copyDest + ":", e1);
-							JOptionPane.showMessageDialog(null, "Unable to install ASI mod.\nYou may need to run Mod Manager as an administrator.", "Installation Failure",
-									JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(FileDropWindow.this, "Unable to install ASI mod.\nYou may need to run Mod Manager as an administrator.",
+									"Installation Failure", JOptionPane.ERROR_MESSAGE);
 						}
 						dispose();
 					}

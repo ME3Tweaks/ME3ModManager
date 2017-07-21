@@ -80,8 +80,8 @@ public class ModManager {
 	public static boolean IS_DEBUG = true;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0.2";
-	public static long BUILD_NUMBER = 77L;
+	public static final String VERSION = "5.0.3";
+	public static long BUILD_NUMBER = 78L;
 	public static final String BUILD_DATE = "7/18/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
@@ -416,7 +416,8 @@ public class ModManager {
 					long oldbuild = Long.parseLong(args[1]);
 					if (oldbuild >= ModManager.BUILD_NUMBER) {
 						// SOMETHING WAS WRONG!
-						JOptionPane.showMessageDialog(null, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed",
+								JOptionPane.ERROR_MESSAGE);
 						ModManager.debugLogger.writeMessage("UPDATE FAILED!");
 					} else {
 						// update ok
@@ -437,7 +438,7 @@ public class ModManager {
 					long oldbuild = Long.parseLong(args[1]);
 					if (oldbuild == ModManager.BUILD_NUMBER) {
 						// SOMETHING WAS WRONG!
-						JOptionPane.showMessageDialog(null, "Minor update was applied.", "Update OK", JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Minor update was applied.", "Update OK", JOptionPane.INFORMATION_MESSAGE);
 						ModManager.debugLogger.writeMessage("MINOR UPDATE OK!");
 					}
 				} catch (NumberFormatException e) {
@@ -454,7 +455,7 @@ public class ModManager {
 			}
 
 			if (checkIfCMMPatchIsTooLong()) {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"Mod Manager has detected that it running from a location with a long filepath.\nMod Manager caches files using their relative game directory path.\nYou may consider moving Mod Manager higher up this file system's hierarchy\nto avoid issues with Windows path limitations.",
 						"Windows Path Limitation Warning", JOptionPane.WARNING_MESSAGE);
 			}
@@ -500,14 +501,14 @@ public class ModManager {
 			}
 			debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
 			if (emergencyMode) {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
 								+ "Logging mode was attempted to be turned on, but failed. Logging for this session has been enabled.<br>"
 								+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
 								+ "Something is very wrong and Mod Manager will likely not function properly.</html>",
 						"Critical Startup Error", JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
 								+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>" + "Logging mode has been automatically turned on.</html>",
 						"Startup Error", JOptionPane.WARNING_MESSAGE);
@@ -527,8 +528,9 @@ public class ModManager {
 			new ModManagerWindow(isUpdate);
 		} catch (Throwable e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught throwable during runtime:", e);
-			JOptionPane.showMessageDialog(null, "Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.",
-					"Mod Manager has crashed", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.", "Mod Manager has crashed",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -697,8 +699,9 @@ public class ModManager {
 		ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
 		File bgdir = new File(biogamedir);
 		if (!bgdir.exists()) {
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.",
-					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -712,11 +715,12 @@ public class ModManager {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			if (isAdmin()) {
-				JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nPlease report this to FemShep.", "Launcher_WV.exe error",
-						JOptionPane.ERROR_MESSAGE);
-			} else {
-				JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nPlease report this to FemShep.",
 						"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
+			} else {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+						"An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.", "Launcher_WV.exe error",
+						JOptionPane.ERROR_MESSAGE);
 			}
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
 			return false;
@@ -772,10 +776,11 @@ public class ModManager {
 		} catch (Exception e1) {
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
 			if (isAdmin()) {
-				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nPlease report this to FemShep.",
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+						"An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nPlease report this to FemShep.",
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"An error occured extracting binkw32" + (asi ? "_asi" : "")
 								+ ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator or grant yourself write permissions from the tools menu.",
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);

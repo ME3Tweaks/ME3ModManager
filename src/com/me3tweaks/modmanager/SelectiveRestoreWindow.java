@@ -8,6 +8,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -70,7 +73,7 @@ public class SelectiveRestoreWindow extends JDialog {
 	 * @param BioGameDir
 	 */
 	public SelectiveRestoreWindow(String BioGameDir) {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("==============STARTING THE SELECTIVE RESTORE WINDOW==============");
 		// callingWindow.setEnabled(false);
 		this.BioGameDir = BioGameDir;
@@ -96,7 +99,8 @@ public class SelectiveRestoreWindow extends JDialog {
 		Action restoreSfar = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				if (ModManager.isMassEffect3Running()) {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore SFARs.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore SFARs.", "MassEffect3.exe is running",
+							JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				JTable table = (JTable) e.getSource();
@@ -110,7 +114,8 @@ public class SelectiveRestoreWindow extends JDialog {
 		Action restoreUnpacked = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				if (ModManager.isMassEffect3Running()) {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore unpacked files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore unpacked files.",
+							"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				JTable table = (JTable) e.getSource();
@@ -124,7 +129,8 @@ public class SelectiveRestoreWindow extends JDialog {
 		Action deleteUnpacked = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				if (ModManager.isMassEffect3Running()) {
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete unpacked files.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete unpacked files.",
+							"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				JTable table = (JTable) e.getSource();
@@ -187,7 +193,8 @@ public class SelectiveRestoreWindow extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if (ModManager.isMassEffect3Running()) {
-						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete the local server balance changes file.","MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can delete the local server balance changes file.",
+								"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 					new RestoreFilesWindow(BioGameDir, RestoreMode.BALANCE_CHANGES);
@@ -277,19 +284,19 @@ public class SelectiveRestoreWindow extends JDialog {
 		HashMap<String, Long> sizesMap = ModType.getSizesMap();
 		HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
 
-		int i = -1;
+		int rowIndex = -1;
 		// Add and enable/disable DLC checkboxes and add to hashmap
 		for (String dlcName : headerArray) {
-			i++;
-			table.setValueAt(ME3TweaksUtils.headerNameToShortDLCFolderName(dlcName), i, COL_INTNAME);
-			table.setValueAt(dlcName, i, COL_HUMNAME);
+			rowIndex++;
+			table.setValueAt(ME3TweaksUtils.headerNameToShortDLCFolderName(dlcName), rowIndex, COL_INTNAME);
+			table.setValueAt(dlcName, rowIndex, COL_HUMNAME);
 
 			String filepath = ModManager.appendSlash(BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
 			File dlcPath = new File(filepath);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
 				ModManager.debugLogger.writeMessage(dlcName + " DLC folder not present.");
-				setDLCNotInstalled(i);
+				setDLCNotInstalled(rowIndex);
 				continue;
 			}
 
@@ -301,28 +308,28 @@ public class SelectiveRestoreWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Looking for Default.sfar, Patch_001.sfar in " + filepath);
 			if (mainSfar.exists() || testpatchSfar.exists()) {
 				//SFAR exists.
-				table.setValueAt("YES", i, COL_INSTALLED);
+				table.setValueAt("YES", rowIndex, COL_INSTALLED);
 				//check for backups
 				if (!mainSfarbackup.exists() && !testpatchSfarbackup.exists()) {
-					table.setValueAt("NO", i, COL_BACKEDUP);
-					table.setValueAt("NO BACKUP", i, COL_ACTION_SFAR);
+					table.setValueAt("NO", rowIndex, COL_BACKEDUP);
+					table.setValueAt("NO BACKUP", rowIndex, COL_ACTION_SFAR);
 				} else {
-					table.setValueAt("YES", i, COL_BACKEDUP);
-					table.setValueAt("RESTORE", i, COL_ACTION_SFAR);
+					table.setValueAt("YES", rowIndex, COL_BACKEDUP);
+					table.setValueAt("RESTORE", rowIndex, COL_ACTION_SFAR);
 				}
 
 				if (mainSfar.exists()) {
 					if (mainSfar.length() != sizesMap.get(dlcName)) {
-						table.setValueAt("MODIFIED" + (mainSfar.length() > sizesMap.get(dlcName) ? "+" : "-"), i, COL_MODIFIED);
+						table.setValueAt("MODIFIED" + (mainSfar.length() > sizesMap.get(dlcName) ? "+" : "-"), rowIndex, COL_MODIFIED);
 
 					} else {
-						table.setValueAt("ORIGINAL", i, COL_MODIFIED);
+						table.setValueAt("ORIGINAL", rowIndex, COL_MODIFIED);
 					}
 				} else {
 					if (testpatchSfar.length() != sizesMap.get(dlcName) && testpatchSfar.length() != ModType.TESTPATCH_16_SIZE) {
-						table.setValueAt("MODIFIED" + (testpatchSfar.length() > sizesMap.get(dlcName) ? "+" : "-"), i, COL_MODIFIED);
+						table.setValueAt("MODIFIED" + (testpatchSfar.length() > sizesMap.get(dlcName) ? "+" : "-"), rowIndex, COL_MODIFIED);
 					} else {
-						table.setValueAt("ORIGINAL", i, COL_MODIFIED);
+						table.setValueAt("ORIGINAL", rowIndex, COL_MODIFIED);
 					}
 				}
 
@@ -335,17 +342,17 @@ public class SelectiveRestoreWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Calculating num of unpacked files: " + backupdir);
 				if (backupdir.exists()) {
 					Collection<File> backupfiles = FileUtils.listFiles(backupdir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-					table.setValueAt(backupfiles.size(), i, COL_ACTION_UNPACKED);
+					table.setValueAt(backupfiles.size(), rowIndex, COL_ACTION_UNPACKED);
 
 				} else {
-					table.setValueAt(0, i, COL_ACTION_UNPACKED);
+					table.setValueAt(0, rowIndex, COL_ACTION_UNPACKED);
 				}
 				ArrayList<String> unpackedFiles = getUnpackedFilesList(new String[] { dlcName });
-				table.setValueAt(unpackedFiles.size(), i, COL_ACTION_DEL_UNPACKED);
+				table.setValueAt(unpackedFiles.size(), rowIndex, COL_ACTION_DEL_UNPACKED);
 				continue;
 			} else {
 				ModManager.debugLogger.writeMessage(dlcName + " folder exists, but SFAR is not present.");
-				setDLCNotInstalled(i);
+				setDLCNotInstalled(rowIndex);
 				continue;
 			}
 		}
@@ -362,22 +369,30 @@ public class SelectiveRestoreWindow extends JDialog {
 		table.setValueAt("N/A", i, COL_BACKEDUP);
 	}
 
-	private ArrayList<String> getUnpackedFilesList(String[] dlcHeaders) {
+	public static ArrayList<String> getUnpackedFilesList(String[] dlcHeaders) {
 		ArrayList<String> filepaths = new ArrayList<String>();
 
 		for (String header : dlcHeaders) {
-			String dlcFolderPath = ModManager.appendSlash(BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(header));
+			String dlcFolderPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(header));
 			File dlcDirectory = new File(dlcFolderPath);
+
 			if (dlcDirectory.exists()) {
-				File files[] = dlcDirectory.listFiles();
-				for (File file : files) {
-					if (file.isFile()) {
-						String filepath = file.getAbsolutePath();
-						if (!filepath.endsWith(".sfar") && !filepath.endsWith(".bak")) {
-							filepaths.add(filepath);
-						}
+				try {
+					Files.walk(Paths.get(dlcDirectory.getAbsolutePath()))
+							.filter(p -> !p.toString().endsWith(".sfar") && !p.toString().endsWith(".bak") && !p.toFile().isDirectory()).forEach(p -> filepaths.add(p.toString()));
+					for (String str : filepaths) {
+						System.out.println("UNPACKED FILE: " + str);
 					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					ModManager.debugLogger.writeErrorWithException("ERROR LISTING UNPACKED FILES FOR DLC: " + header, e);
 				}
+				/*
+				 * File files[] = dlcDirectory.listFiles(); for (File file :
+				 * files) { if (file.isFile()) { String filepath =
+				 * file.getAbsolutePath(); if (!filepath.endsWith(".sfar") &&
+				 * !filepath.endsWith(".bak")) { filepaths.add(filepath); } } }
+				 */
 				//Find Movies folder
 				File moviesFolder = new File(ModManager.appendSlash(dlcDirectory.getParent()) + "Movies\\");
 				if (moviesFolder.exists()) {

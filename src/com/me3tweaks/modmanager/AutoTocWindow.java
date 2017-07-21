@@ -92,7 +92,7 @@ public class AutoTocWindow extends JDialog {
 			break;
 		default:
 			ModManager.debugLogger.writeError("Unknown AutoTOC mode: " + mode);
-			JOptionPane.showMessageDialog(null, "Unknown AutoTOC mode: " + mode, "AutoTOC Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(AutoTocWindow.this, "Unknown AutoTOC mode: " + mode, "AutoTOC Error", JOptionPane.ERROR_MESSAGE);
 			dispose();
 			return;
 		}

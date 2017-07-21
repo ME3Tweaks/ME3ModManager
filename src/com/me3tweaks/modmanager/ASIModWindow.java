@@ -537,7 +537,7 @@ public class ASIModWindow extends JDialog {
 						ASIActionDialog.this.dispose();
 					} catch (MalformedURLException e1) {
 						ModManager.debugLogger.writeErrorWithException("Invalid source code URL " + mod.getSourceCode(), e1);
-						JOptionPane.showMessageDialog(null, "<html>The specified source code URL is not valid:<br>" + mod.getSourceCode(), "Invalid Source Code Link",
+						JOptionPane.showMessageDialog(ASIModWindow.this, "<html>The specified source code URL is not valid:<br>" + mod.getSourceCode(), "Invalid Source Code Link",
 								JOptionPane.ERROR_MESSAGE);
 					}
 				}

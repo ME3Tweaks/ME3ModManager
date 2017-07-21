@@ -143,9 +143,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			modManagementPatchLibary, modManagementClearPatchLibraryCache, modManagementModGroupsManager;
 	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32,
 			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config, toolsMapMeshViewer, toolsPCCDataDumper;
-	JMenuItem backupBackupDLC, backupCreateGDB;
+	JMenuItem backupBackupDLC, backupCreateGDB, backupCreateVanillaCopy;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
-			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC;
+			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC, restoreVanillaCopy;
 
 	JMenuItem modDevStarterKit, moddevOfficialDLCManager;
 	JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2;
@@ -202,7 +202,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (emessage == null) {
 				emessage = "An uncaught NullPointerException has been thrown while preparing the interface.";
 			}
-			JOptionPane.showMessageDialog(null,
+			JOptionPane.showMessageDialog(ModManagerWindow.this,
 					"<html><div style=\"width:330px;\">Mod Manager's interface (post-startup) encountered a critical unknown error and was unable to start:<br>" + emessage + "<br>"
 							+ "<br>This has been logged to the me3cmm_last_run_log.txt file next to ME3CMM.exe.<br>Please report this to FemShep.</div></html>",
 					"Critical Error", JOptionPane.ERROR_MESSAGE);
@@ -216,7 +216,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			setVisible(true);
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
-			JOptionPane.showMessageDialog(null,
+			JOptionPane.showMessageDialog(ModManagerWindow.this,
 					"<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error:<br>" + e.getMessage() + "<br>"
 							+ "<br>This has been logged to the me3cmm_last_run_log.txt file.<br>The application will attempt to ignore this error.</div></html>",
 					"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
@@ -1096,7 +1096,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				} else {
 					labelStatus.setText("Drag and Drop requires a valid BioGame directory");
-					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory to use drag and drop features.",
+					JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory to use drag and drop features.",
 							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
 			}
@@ -1566,14 +1566,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		backupBasegameUnpacked = new JMenuItem("Backup basegame/unpacked files");
 		backupBasegameUnpacked.setToolTipText("An Unpacked and basegame file will be automatically backed up when Mod Manager replaces or removes that file");
 
+		backupCreateVanillaCopy = new JMenuItem("Create complete game backup (Vanilla)");
+		backupCreateVanillaCopy.setToolTipText("Create an entire copy of the game so you can do a complete restore in the future.\nUseful if you are doing texture modding.");
+		
 		backupCreateGDB = new JMenuItem("Update game repair database");
-		backupCreateGDB.setToolTipText("Creates/updates a database of checksums for basegame and unpacked DLC files for verifying restoring and backing up");
+		backupCreateGDB.setToolTipText("Creates/updates a database of checksums for basegame and unpacked DLC files.\nMod Manager uses this database for verifying restoring and backing up");
 
 		backupBackupDLC.addActionListener(this);
 		backupBasegameUnpacked.addActionListener(this);
 		backupCreateGDB.addActionListener(this);
+		backupCreateVanillaCopy.addActionListener(this);
 
 		backupMenu.add(backupBackupDLC);
+		backupMenu.add(backupCreateVanillaCopy);
 		backupMenu.add(backupBasegameUnpacked);
 		backupMenu.add(backupCreateGDB);
 		menuBar.add(backupMenu);
@@ -1925,7 +1930,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					labelStatus.setText("Updating ModMaker mods requires valid BIOGame");
 					labelStatus.setVisible(true);
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(ModManagerWindow.this,
 							"The BIOGame directory is not valid.\nCannot update ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
 							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
@@ -1950,7 +1955,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					labelStatus.setText("Updating ModMaker mods requires valid BIOGame");
 					labelStatus.setVisible(true);
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(ModManagerWindow.this,
 							"The BIOGame directory is not valid.\nCannot update ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
 							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
@@ -2109,8 +2114,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 
 			}
 		} else if (e.getSource() == modManagementASI) {
@@ -2127,7 +2132,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Opening ASI Management Window");
 				updateApplyButton();
 				if (ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir()) == false) {
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(ModManagerWindow.this,
 							"ASI loader not installed.\nASI mods won't load without using the ASI version of binkw32.\nYou can install this from the tools menu or the ASI Mod Management window.",
 							"ASI loader not installed", JOptionPane.WARNING_MESSAGE);
 				}
@@ -2136,8 +2141,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				updateApplyButton();
 				labelStatus.setText("Can't manage ASI mods without valid BioGame");
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				ModManager.debugLogger.writeMessage("Invalid biogame dir for asi management");
 			}
 
@@ -2156,8 +2161,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Conflict detector requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == modManagementFailedMods) {
 			new FailedModsWindow();
@@ -2167,8 +2172,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Backing up DLC requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else
 
@@ -2186,14 +2191,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("ModMaker requires valid BIOGame directory to start");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
+		} else if (e.getSource() == backupCreateVanillaCopy || e.getSource() == restoreVanillaCopy) {
+			new VanillaBackupWindow();
 		} else if (e.getSource() == backupCreateGDB) {
 			if (validateBIOGameDir()) {
 				createBasegameDB(GetBioGameDir());
 			} else {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
 						"The BioGame directory is not valid.\nMod Manager cannot update or create the game repair database.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
@@ -2207,8 +2214,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreCoalesced(GetBioGameDir());
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == modDevStarterKit) {
 			new StarterKitWindow();
@@ -2217,16 +2225,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				new OfficialDLCWindow(ModManagerWindow.GetBioGameDir());
 			} else {
 				labelStatus.setText("Official DLC Toggler requires valid BIOGame");
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BioGame directory to use the Official DLC toggler.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BioGame directory to use the Official DLC toggler.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertAllDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(GetBioGameDir(), RestoreMode.ALLDLC);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoredeleteAllCustomDLC) {
 			if (validateBIOGameDir()) {
@@ -2237,15 +2246,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			} else {
 				labelStatus.setText("Can't remove custom DLC with invalid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreCustomDLCManager) {
 			if (validateBIOGameDir()) {
 				new CustomDLCWindow(GetBioGameDir());
 			} else {
 				labelStatus.setText("Custom DLC Manager requires valid BIOGame directory");
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
 						"The BioGame directory is not valid.\nCustom DLC Manager requires a valid directory.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
@@ -2254,7 +2264,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				new SelectiveRestoreWindow(GetBioGameDir());
 			} else {
 				labelStatus.setText("Custom Restore requires valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nCustom Restore requires a valid directory.\nFix the BioGame directory before continuing.",
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nCustom Restore requires a valid directory.\nFix the BioGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertBasegame) {
@@ -2262,24 +2273,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				restoreDataFiles(GetBioGameDir(), RestoreMode.BASEGAME);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertUnpacked) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(GetBioGameDir(), RestoreMode.UNPACKED);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertBasegameUnpacked) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(GetBioGameDir(), RestoreMode.UNPACKEDBASEGAME);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreVanillifyDLC) {
 			if (validateBIOGameDir()) {
@@ -2291,40 +2305,45 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertSPDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(GetBioGameDir(), RestoreMode.SP);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertMPDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(GetBioGameDir(), RestoreMode.MP);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertSPBaseDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(GetBioGameDir(), RestoreMode.SPBASE);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == restoreRevertMPBaseDLC) {
 			if (validateBIOGameDir()) {
 				restoreDataFiles(GetBioGameDir(), RestoreMode.MPBASE);
 			} else {
 				labelStatus.setText("Cannot restore files without valid BIOGame directory");
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else
 
@@ -2345,7 +2364,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				} else {
 					labelStatus.setText("Cannot restore files without valid BIOGame directory");
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(ModManagerWindow.this,
 							"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
 							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
@@ -2360,8 +2379,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Cannot delete files with invalid BIOGame directory");
 
-				JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == actionModMaker) {
 			URI theURI;
@@ -2435,8 +2455,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					labelStatus.setText("Installing a mod requires valid BIOGame path");
 					labelStatus.setVisible(true);
-					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-							JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
 			} else {
 				JOptionPane.showMessageDialog(ModManagerWindow.this, "Mass Effect 3 must be closed before you can install a mod.", "MassEffect3.exe is running",
@@ -2451,7 +2471,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Starting the game requires a valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
 						"The BIOGame directory is not valid.\nMod Manager does not know where to launch the game executable.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
@@ -2683,11 +2703,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.runProcessDetached(p);
 				} else {
 					ModManager.debugLogger.writeError("Config tool is missing! Not found at " + path);
-					JOptionPane.showMessageDialog(null, "The config tool executable doesn't exist where it should:\n" + path, "Missing Config Tool", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.this, "The config tool executable doesn't exist where it should:\n" + path, "Missing Config Tool",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			} else {
 				labelStatus.setText("ME3 Config tool requires a valid BIOGame directory");
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
 						"The BIOGame directory is not valid.\nCannot open the ME3 Config tool if Mod Manager doesn't know where Mass Effect 3 is.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
@@ -2706,7 +2727,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Unpacking DLC requires a valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
 						"The BIOGame directory is not valid.\nCannot unpack DLC without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
@@ -2734,7 +2755,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Game AutoTOC requires a valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
 						"The BIOGame directory is not valid.\nCannot update TOC files without a valid directory.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
@@ -2754,8 +2775,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == modManagementModGroupsManager) {
 			if (validateBIOGameDir()) {
@@ -2772,8 +2793,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 
 		} else if (e.getSource() == moddevUpdateXMLGenerator) {
@@ -2800,8 +2821,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 					labelStatus.setVisible(true);
-					JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-							JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+							"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		} else if (e.getSource() == toolsInstallBinkw32asi) {
@@ -2822,7 +2843,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					labelStatus.setText("Binkw32 ASI Bypass requires Visual C++ 2015 x86");
 					labelStatus.setVisible(true);
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(ModManagerWindow.this,
 							"Binkw32 ASI Bypass requires Visual C++ 2015 (or higher) x86.\nAfter you close this dialog, your browser will open and download the installer for Visual C++ 2017 from Microsoft.",
 							"ASI loader requires VC++ 2015 x86 or higher", JOptionPane.ERROR_MESSAGE);
 					try {
@@ -2834,8 +2855,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == toolsInstallBinkw32) {
 			if (ModManager.isMassEffect3Running()) {
@@ -2849,8 +2870,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 
 		} else if (e.getSource() == toolsUninstallBinkw32) {
@@ -2865,8 +2886,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
-				JOptionPane.showMessageDialog(null, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.", "Invalid BioGame Directory",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
+						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -2941,7 +2962,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new AllModsUpdateWindow(this, isManualCheck, updatableMods);
 		} else {
 			if (isManualCheck) {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
 						"No mods are eligible for the Mod Manager update service.\nEligible mods include ModMaker mods and ones hosted on ME3Tweaks.com.", "No updatable mods",
 						JOptionPane.WARNING_MESSAGE);
 			}
@@ -2969,7 +2990,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void openME3Dir() {
 		File file = new File(GetBioGameDir());
 		if (!file.exists()) {
-			JOptionPane.showMessageDialog(null, "The BioGame directory does not exist.", "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory does not exist.", "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
@@ -2996,7 +3017,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new BackupWindow(this, bioGameDir);
 		} else {
 			// Biogame is invalid
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
+			JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
 					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			labelStatus.setText("DLC backup failed");
 			labelStatus.setVisible(true);
@@ -3010,7 +3031,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			new BackupWindow(this, bioGameDir, dlcName);
 		} else {
 			// Biogame is invalid
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
+			JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
 					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			labelStatus.setText("DLC backup failed");
 			labelStatus.setVisible(true);
@@ -3035,7 +3056,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (!relativePath.contains("..")) {
 					ModManager.debugLogger.writeMessage("Relative path detected: " + relativePath);
 					// common path
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(ModManagerWindow.this,
 							"Mod Manager will not work if it is run from the Mass Effect 3 game directory, or any of its subdirectories.\nMove the Mod Manager folder out of the game directory, as Mod Manager will not work until you do this.",
 							"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
 					return;
@@ -3072,8 +3093,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			comboboxBiogameDir.addItemListener(BIOGAME_ITEM_LISTENER);
 			validateBIOGameDir();
 		} else {
-			JOptionPane.showMessageDialog(null, "Invalid Mass Effect 3 BIOGame folder selected:\n" + dirChooser.getSelectedFile().toString(), "Invalid ME3 BIOGame Directory",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.this, "Invalid Mass Effect 3 BIOGame folder selected:\n" + dirChooser.getSelectedFile().toString(),
+					"Invalid ME3 BIOGame Directory", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -3124,7 +3145,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				}
 				// common path
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"Mod Manager will not work when running from inside a Mass Effect 3 game directory.\nMove Mod Manager out of the game directory and restart Mod Manager.",
 						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
 				ModManager.debugLogger.writeError("Mod Manager is located in the game directory! Shutting down to avoid issues.");
@@ -3242,8 +3263,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 				if ((defaultsfarMainFileExists || patch001farMainFileExists) && !backFile.exists()) {
 					String YesNo[] = { "Yes", "No" }; // Yes/no buttons
-					int showDLCBackup = JOptionPane.showOptionDialog(null, "<html>" + job.getJobName() + " DLC has not been backed up.<br>Back it up now?</hmtl>", "Backup DLC",
-							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
+					int showDLCBackup = JOptionPane.showOptionDialog(ModManagerWindow.ACTIVE_WINDOW,
+							"<html>" + job.getJobName() + " DLC has not been backed up.<br>Back it up now?</hmtl>", "Backup DLC", JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
 					if (showDLCBackup == 0) {
 						autoBackupDLC(GetBioGameDir(), job.getJobName());
 					}
@@ -3377,7 +3399,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					// Copy
 					String destFile = ModManager.appendSlash(bioGameDir) + "CookedPCConsole\\Coalesced.bin";
 					if (new File(destFile).exists() == false) {
-						JOptionPane.showMessageDialog(null,
+						JOptionPane.showMessageDialog(ModManagerWindow.this,
 								"Coalesced.bin to be restored was not found in the specified BIOGame\\CookedPCConsole directory.\nYou must fix the directory before you can restore Coalesced.",
 								"Coalesced not found", JOptionPane.ERROR_MESSAGE);
 						labelStatus.setText("Coalesced.bin not restored");
@@ -3394,7 +3416,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				} else {
 					labelStatus.setText("Coalesced.bin not restored.");
 					labelStatus.setVisible(true);
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(ModManagerWindow.this,
 							"Your backed up original Coalesced.bin file does not match the known original from Mass Effect 3.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.",
 							"Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
 					return false;
@@ -3408,7 +3430,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			labelStatus.setText("Coalesced.bin not restored");
 			labelStatus.setVisible(true);
-			JOptionPane.showMessageDialog(null,
+			JOptionPane.showMessageDialog(ModManagerWindow.this,
 					"The backed up Coalesced.bin file (data/Coalesced.original) does not exist.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.\n\nThis error should have been caught but can be thrown due to file system changes \nwhile the program is open.",
 					"Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
 
@@ -3434,8 +3456,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			labelStatus.setText("Invalid BioGame Directory");
 			labelStatus.setVisible(true);
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid. Files cannot be restored.\nFix the directory and try again.", "Invalid BioGame Directory",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory is not valid. Files cannot be restored.\nFix the directory and try again.",
+					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 	}
@@ -3482,7 +3504,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// check if the new one exists
 		if (!executable.exists()) {
-			JOptionPane.showMessageDialog(null,
+			JOptionPane.showMessageDialog(ModManagerWindow.this,
 					"Unable to find game executable in the specified directory:\n" + executable.getAbsolutePath() + "\nMake sure your BIOGame directory is correct.",
 					"Unable to Launch Game", JOptionPane.ERROR_MESSAGE);
 			return;
@@ -3538,7 +3560,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			return result;
 		}
-		JOptionPane.showMessageDialog(null,
+		JOptionPane.showMessageDialog(ModManagerWindow.this,
 				"The BioGame directory is not valid.\nMod Manager cannot install the LauncherWV DLC bypass.\nFix the BioGame directory before continuing.",
 				"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 		return false;
@@ -3555,7 +3577,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			return result;
 		}
-		JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot install Binkw32" + (asi ? " (ASI)" : "")
+		JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory is not valid.\nMod Manager cannot install Binkw32" + (asi ? " (ASI)" : "")
 				+ ".dll DLC bypass.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 		return false;
 	}
@@ -3571,7 +3593,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			return result;
 		}
-		JOptionPane.showMessageDialog(null,
+		JOptionPane.showMessageDialog(ModManagerWindow.this,
 				"The BioGame directory is not valid.\nMod Manager cannot revert the Binkw32.dll DLC bypass.\nFix the BioGame directory before continuing.",
 				"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 		return false;

@@ -185,7 +185,7 @@ public class ModInstallWindow extends JDialog {
 					if (!fullautotoc.exists() || !sfarinjector.exists()) {
 						dispose();
 						ModManager.debugLogger.writeError("Mod Manager Command Line tools are not available. Aborting installation");
-						JOptionPane.showMessageDialog(null,
+						JOptionPane.showMessageDialog(ModInstallWindow.this,
 								"Installation of mods requires the Mod Manager Command Line tools library.\nThis will automatically download on startup when connected to the internet.\nMod installation cannot continue.",
 								"Required Component Missing", JOptionPane.ERROR_MESSAGE);
 						return false;
@@ -493,7 +493,7 @@ public class ModInstallWindow extends JDialog {
 				if (bghDB == null) {
 					//cannot continue
 					failedLoadingDB = true;
-					JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
+					JOptionPane.showMessageDialog(ModInstallWindow.this, "<html>The game repair database failed to load.<br>"
 							+ "Only one connection to the local repair database is allowed at a time.<br>"
 							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
 							"Database Failure", JOptionPane.ERROR_MESSAGE);
@@ -532,7 +532,7 @@ public class ModInstallWindow extends JDialog {
 						if (rfi == null) {
 							ModManager.debugLogger.writeMessage("File not in GameDB, showing prompt: " + relative);
 							// file is missing. Basegame DB likely hasn't been made
-							int reply = JOptionPane.showConfirmDialog(null, "<html>" + relative
+							int reply = JOptionPane.showConfirmDialog(ModInstallWindow.this, "<html>" + relative
 									+ " is not in the game repair database.<br>In order to restore basegame files and unpacked DLC files this database needs to be created or updated.<br>Open the database window?</html>",
 									"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 							if (reply == JOptionPane.NO_OPTION) {
@@ -586,7 +586,7 @@ public class ModInstallWindow extends JDialog {
 						RepairFileInfo rfi = bghDB.getFileInfo(relative);
 						if (rfi == null) {
 							// file is missing. Basegame DB likely hasn't been made
-							int reply = JOptionPane.showConfirmDialog(null,
+							int reply = JOptionPane.showConfirmDialog(ModInstallWindow.this,
 									"<html>One or more of the files this mod is installing is not in the game repair database.<br>In order to restore game files this database needs to be created or updated.<br>Open the database window?</html>",
 									"Mod Installation Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 							if (reply == JOptionPane.NO_OPTION) {
@@ -955,7 +955,7 @@ public class ModInstallWindow extends JDialog {
 					// validate file to backup.
 					boolean justInstall = false;
 					if (rfi == null) {
-						int reply = JOptionPane.showOptionDialog(null, "<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
+						int reply = JOptionPane.showOptionDialog(ModInstallWindow.this, "<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
 								+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
 								"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
 								new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
@@ -976,7 +976,7 @@ public class ModInstallWindow extends JDialog {
 					if (!justInstall && !installAndUpdate) {
 						if (unpacked.length() != rfi.filesize) {
 							// MISMATCH!
-							int reply = JOptionPane.showOptionDialog(null,
+							int reply = JOptionPane.showOptionDialog(ModInstallWindow.this,
 									"<html>The filesize of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>" + unpacked.length()
 											+ " bytes (installed) vs " + rfi.filesize + " bytes (database)<br><br>"
 											+ "This file could be corrupted or modified since the database was created.<br>"
@@ -1003,7 +1003,7 @@ public class ModInstallWindow extends JDialog {
 						// again.
 						try {
 							if (!MD5Checksum.getMD5Checksum(unpacked.getAbsolutePath()).equals(rfi.md5)) {
-								int reply = JOptionPane.showOptionDialog(null,
+								int reply = JOptionPane.showOptionDialog(ModInstallWindow.this,
 										"<html>The hash of the file:<br>" + relative + "<br>does not match the one stored in the repair game database.<br>"
 												+ "This file has changed since the database was created.<br>"
 												+ "Backing up this file may overwrite your default setup if you use custom mods like texture swaps when restoring.<br></html>",
@@ -1315,7 +1315,7 @@ public class ModInstallWindow extends JDialog {
 					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to install at least 1 part of mod");
 					ModManager.debugLogger
 							.writeMessage("Some mods failed to fully install. Jobs required to copmlete: " + numjobs + ", while injectioncommander only reported " + completed);
-					JOptionPane.showMessageDialog(null, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModInstallWindow.this, sb.toString(), "Error", JOptionPane.ERROR_MESSAGE);
 				} else {
 					// we're good
 					if (mods.size() > 1) {
@@ -1375,7 +1375,7 @@ public class ModInstallWindow extends JDialog {
 						}
 						if (bghDB == null) {
 							//cannot continue
-							JOptionPane.showMessageDialog(null, "<html>The game repair database failed to load.<br>"
+							JOptionPane.showMessageDialog(ModInstallWindow.this, "<html>The game repair database failed to load.<br>"
 									+ "Only one connection to the local repair database is allowed at a time.<br>"
 									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
 									"Database Failure", JOptionPane.ERROR_MESSAGE);

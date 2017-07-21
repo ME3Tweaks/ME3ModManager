@@ -17,8 +17,13 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextPane;
@@ -506,5 +511,58 @@ public class ResourceUtils {
 	public static void openFolderInExplorer(String folder) {
 		ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", "\""+folder+"\""));
 	}
+	
+	
+	/**
+	 * Attempts to calculate the size of a file or directory.
+	 * 
+	 * <p>
+	 * Since the operation is non-atomic, the returned value may be inaccurate.
+	 * However, this method is quick and does its best.
+	 * @param path Path to calculate size of
+	 * @param includeBackups Include files in folders that contain cmmbackups or end with .bak
+	 */
+	public static long GetDirectorySize(Path path, boolean includeBackups) {
 
+	    final AtomicLong size = new AtomicLong(0);
+
+	    try {
+	        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+	            @Override
+	            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+	            	if (!includeBackups && FilenameUtils.getExtension(file.toString()).equals(".bak")) {
+	            		return FileVisitResult.CONTINUE; //don't include. bak
+	            	}
+	            	
+	            	if (!includeBackups && file.toString().contains("cmmbackups")) {
+	            		return FileVisitResult.CONTINUE; //don't include cmmbackup
+	            	}
+	            	
+	                size.addAndGet(attrs.size());
+	                return FileVisitResult.CONTINUE;
+	            }
+
+	            @Override
+	            public FileVisitResult visitFileFailed(Path file, IOException exc) {
+
+	                System.out.println("skipped: " + file + " (" + exc + ")");
+	                // Skip folders that can't be traversed
+	                return FileVisitResult.CONTINUE;
+	            }
+
+	            @Override
+	            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+
+	                if (exc != null)
+	                    System.out.println("had trouble traversing: " + dir + " (" + exc + ")");
+	                // Ignore errors traversing a folder
+	                return FileVisitResult.CONTINUE;
+	            }
+	        });
+	    } catch (IOException e) {
+	        throw new AssertionError("walkFileTree will not throw IOException if the FileVisitor does not");
+	    }
+
+	    return size.get();
+	}
 }
