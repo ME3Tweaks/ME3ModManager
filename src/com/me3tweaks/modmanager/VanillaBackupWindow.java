@@ -3,33 +3,30 @@ package com.me3tweaks.modmanager;
 import static com.sun.jna.platform.win32.WinReg.HKEY_CURRENT_USER;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -40,18 +37,14 @@ import javax.swing.border.EmptyBorder;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 
-import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.ModType;
-import com.me3tweaks.modmanager.objects.PCCDumpOptions;
-import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.Win32Exception;
 
-public class VanillaBackupWindow extends JFrame {
+public class VanillaBackupWindow extends JDialog {
 
 	/**
 	 * Window controller for the vanilla backup/restore tool
@@ -68,20 +61,25 @@ public class VanillaBackupWindow extends JFrame {
 	private static String VanillaUserRegistryKey = "SOFTWARE\\Mass Effect 3 Mod Manager";
 	private static String VanillaUserRegistryValue = "VanillaCopyLocation";
 	private boolean shouldShow = true;
+	private JButton backupButton;
+	private JButton restoreButton;
+	private JLabel backupLocation;
+	private String backupPath;
 
 	/**
 	 * Manually invoked Vanilla Backup Window
 	 * 
 	 */
-	public VanillaBackupWindow() {
+	public VanillaBackupWindow(boolean isBackup) {
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening Vanilla Backup Window");
-		setupWindow();
+		setupWindow(isBackup);
 		if (shouldShow) {
 			setVisible(true);
 		}
 	}
 
-	private void setupWindow() {
+	private void setupWindow(boolean isBackup) {
 		setTitle("Full Game Restoration");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setIconImages(ModManager.ICONS);
@@ -93,39 +91,41 @@ public class VanillaBackupWindow extends JFrame {
 				"<html><div style=\"width: 300px\">Mod Manager can create a full game snapshot that you can use to do a complete game restore from. This is known in Mod Manager as restoring to vanilla - where items are in an unmodded state.</div></html>");
 
 		northPanel.add(vanillaWindowDescription, BorderLayout.NORTH);
-		String path = null;
+		backupPath = null;
 		try {
-			path = Advapi32Util.registryGetStringValue(HKEY_CURRENT_USER, VanillaUserRegistryKey, VanillaUserRegistryValue);
-			File backupDir = new File(path);
+			backupPath = Advapi32Util.registryGetStringValue(HKEY_CURRENT_USER, VanillaUserRegistryKey, VanillaUserRegistryValue);
+			File backupDir = new File(backupPath);
 
 			if (backupDir.exists() && backupDir.isDirectory() && verifyVanillaBackup(backupDir)) {
-				ModManager.debugLogger.writeMessage("Found valid vanilla copy location in registry: " + path);
-				path = null;
+				ModManager.debugLogger.writeMessage("Found valid vanilla copy location in registry: " + backupPath);
 			} else {
-				ModManager.debugLogger.writeError("Found vanilla copy location in registry, but it doesn't seem to be valid, one of the validation cehcks failed");
-
+				ModManager.debugLogger.writeError("Found vanilla copy location in registry, but it doesn't seem to be valid, one of the validation checks failed");
+				backupPath = null;
 			}
 		} catch (Win32Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Win32Exception reading registry - assuming no backup exists yet", e);
 		}
+
+		backupButton = new JButton("Create Backup");
+		restoreButton = new JButton("Restore Backup");
+		
 		String backupLocMessage = "";
-		if (path != null && new File(path).exists() && new File(path).isDirectory()) {
-			long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(path), false);
+		if (backupPath != null && new File(backupPath).exists() && new File(backupPath).isDirectory()) {
+			long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(backupPath), false);
 			String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
-			backupLocMessage = "Backup location: " + path + ", " + sizeHR;
+			backupLocMessage = "Backup location: " + backupPath + ", " + sizeHR;
 		} else {
 			long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(ModManagerWindow.GetBioGameDir()), false);
 			String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
 			backupLocMessage = "No complete backup has been created. Creating one will require about " + sizeHR + ".";
+			restoreButton.setEnabled(false);
 		}
-		JLabel backupLocation = new JLabel(backupLocMessage);
+		backupLocation = new JLabel(backupLocMessage);
 		northPanel.add(new JSeparator(), BorderLayout.CENTER);
 		northPanel.add(backupLocation, BorderLayout.SOUTH);
 		rootPanel.add(northPanel, BorderLayout.NORTH);
 
 		JPanel backupPanel = new JPanel(new BorderLayout());
-		JButton backupButton = new JButton("Create Backup");
-		JButton restoreButton = new JButton("Restore Backup");
 
 		backupButton.addActionListener(new ActionListener() {
 
@@ -239,7 +239,10 @@ public class VanillaBackupWindow extends JFrame {
 							//Verify it is empty...
 							if (chosenDir.list().length == 0) {
 								//We should be good, finally!
-
+								ModManager.debugLogger.writeMessage("Creating complete game backup.");
+								ModManager.debugLogger.writeMessage("Source: " + new File(ModManagerWindow.GetBioGameDir()).getParent());
+								ModManager.debugLogger.writeMessage("Destination: " + chosenDir.getAbsolutePath());
+								new VanillaBackupThread(new File(ModManagerWindow.GetBioGameDir()).getParent(), chosenDir.getAbsolutePath(), true).execute();
 							} else {
 								ModManager.debugLogger.writeError("Selected directory not empty: " + chosenDir);
 								JOptionPane.showMessageDialog(VanillaBackupWindow.this, chosenDir.getAbsolutePath() + "\nis not empty. The backup directory must be empty.",
@@ -273,12 +276,15 @@ public class VanillaBackupWindow extends JFrame {
 		restoreButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int response = JOptionPane.showConfirmDialog(VanillaBackupWindow.this,
-						"Your entire game installation located at\n" + ModManagerWindow.GetBioGameDir()
-								+ "\nwill be deleted (and restored from the backup) if you continue.\nAre you sure you want to do a complete restore to this directory?",
-						"GAME DIRECTORY WILL BE DELETED", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-				if (response == JOptionPane.YES_OPTION) {
-
+				if (backupPath != null) {
+					int response = JOptionPane.showConfirmDialog(VanillaBackupWindow.this,
+							"Your entire game installation located at\n" + ModManagerWindow.GetBioGameDir()
+									+ "\nwill be deleted (and restored from the backup) if you continue.\nAre you sure you want to do a complete restore to this directory?",
+							"GAME DIRECTORY WILL BE DELETED", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+					if (response == JOptionPane.YES_OPTION) {
+						//Delete directory and copy over it.
+						new VanillaBackupThread(backupPath, new File(ModManagerWindow.GetBioGameDir()).getParent(), false).execute();
+					}
 				}
 			}
 		});
@@ -286,45 +292,189 @@ public class VanillaBackupWindow extends JFrame {
 		JPanel actionsPanel = new JPanel();
 		actionsPanel.setLayout(new BoxLayout(actionsPanel, BoxLayout.LINE_AXIS));
 
-		actionsPanel.add(Box.createHorizontalGlue());
+		progressBar = new JProgressBar();
+		progressBar.setPreferredSize(new Dimension(150, 20));
+		progressBar.setStringPainted(true);
+		progressBar.setIndeterminate(false);
+		progressBar.setEnabled(false);
+
+		actionsPanel.add(progressBar);
+		actionsPanel.add(Box.createRigidArea(new Dimension(5, 2)));
+		//actionsPanel.add(Box.createHorizontalGlue());
 		actionsPanel.add(restoreButton);
 		actionsPanel.add(Box.createRigidArea(new Dimension(5, 2)));
 		actionsPanel.add(backupButton);
 
 		backupPanel.add(actionsPanel, BorderLayout.CENTER);
+
+		//backupPanel.add(progressBar, BorderLayout.SOUTH);
 		rootPanel.add(backupPanel, BorderLayout.CENTER);
 		rootPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(rootPanel);
-		progressBar = new JProgressBar(0, 100);
-		progressBar.setStringPainted(true);
-		progressBar.setIndeterminate(false);
-		progressBar.setEnabled(false);
 
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+		
+		if (isBackup) {
+			backupButton.requestFocus();
+		} else {
+			restoreButton.requestFocus();
+		}
 	}
 
 	private boolean verifyVanillaBackup(File backupDir) {
-		// TODO Auto-generated method stub
-		return false;
+
+		ModManager.debugLogger.writeMessage("Performing quick verify on backup directory: " + backupDir.getAbsolutePath());
+		for (String testSubpath : VanillaTestFiles) {
+			File testFile = new File(backupDir.getAbsolutePath() + File.separator + testSubpath);
+			if (!testFile.exists()) {
+				ModManager.debugLogger.writeMessage("Backup directory failed quick verify, expected file missing: " + testFile.getAbsolutePath());
+				return false;
+			}
+		}
+		ModManager.debugLogger.writeMessage("Backup directory passed quick verification");
+		return true;
 	}
 
+	/**
+	 * Clones a folder recursively from one folder to another, skipping backups.
+	 * 
+	 * @author Mgamerz
+	 *
+	 */
 	class VanillaBackupThread extends SwingWorker<Boolean, ThreadCommand> {
-		int completed = 0;
-		int numjobs = 0;
-		HashMap<String, String> sfarHashes;
-		HashMap<String, Long> sfarSizes;
 
-		protected VanillaBackupThread() {
-			sfarHashes = ModType.getHashesMap();
-			sfarSizes = ModType.getSizesMap();
+		private String sourceDir;
+		private String destDir;
+		private int numFilesToCopy;
+		private AtomicInteger filesCopied = new AtomicInteger();
+		private boolean isBackup;
+
+		protected VanillaBackupThread(String sourceDir, String destDir, boolean isBackup) {
+			this.sourceDir = sourceDir;
+			this.destDir = destDir;
+			this.isBackup = isBackup;
+			backupButton.setEnabled(false);
+			restoreButton.setEnabled(false);
 		}
 
 		@Override
 		public Boolean doInBackground() {
-			//Copy stuff
-			
+			//Get files list 
+
+			ArrayList<String> filesToCopyRelative = new ArrayList<String>();
+			File sourceDirFile = new File(sourceDir);
+			File destDirFile = new File(destDir);
+			if (!isBackup) {
+				FileUtils.deleteQuietly(destDirFile);
+				destDirFile.mkdirs();
+			}
+			int startLength = sourceDir.length();
+
+			try {
+				Files.walkFileTree(sourceDirFile.toPath(), new SimpleFileVisitor<Path>() {
+					@Override
+					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+						String filepath = file.toString();
+						String extension = FilenameUtils.getExtension(filepath);
+						switch (extension) {
+						case "bak":
+						case "pdf":
+						case "wav":
+							return FileVisitResult.CONTINUE; //don't include this crap
+						}
+
+						if (filepath.contains("cmmbackup")) {
+							System.out.println("Excluding file: " + file.toAbsolutePath());
+							return FileVisitResult.CONTINUE; //don't include cmmbackup
+						}
+
+						String relpath = file.toAbsolutePath().toString().substring(startLength);
+						filesToCopyRelative.add(relpath);
+						return FileVisitResult.CONTINUE;
+					}
+
+					@Override
+					public FileVisitResult visitFileFailed(Path file, IOException exc) {
+
+						// Skip folders that can't be traversed
+						return FileVisitResult.CONTINUE;
+					}
+
+					@Override
+					public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+						// Ignore errors traversing a folder
+						return FileVisitResult.CONTINUE;
+					}
+				});
+			} catch (IOException e) {
+				throw new AssertionError("walkFileTree will not throw IOException if the FileVisitor does not");
+			}
+
+			numFilesToCopy = filesToCopyRelative.size();
+
+			for (String relPath : filesToCopyRelative) {
+				File sourceFile = new File(sourceDir + relPath);
+				File destFile = new File(destDir + relPath);
+				try {
+					String message = "Copying " + sourceFile.getName() + ", " + ResourceUtils.humanReadableByteCount(sourceFile.length(), true);
+					publish(new ThreadCommand("SET_CURRENT_OPERATION", message));
+					FileUtils.copyFile(sourceFile, destFile);
+					filesCopied.incrementAndGet();
+					publish(new ThreadCommand("UPDATE_PROGRESS"));
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Error copying file for backup or restore!", e);
+				}
+			}
+
+			if (isBackup) {
+				Advapi32Util.registrySetStringValue(HKEY_CURRENT_USER, VanillaUserRegistryKey, VanillaUserRegistryValue, destDir);
+				ModManager.debugLogger.writeMessage("Updated registry key to point to new backup directory.");
+				publish(new ThreadCommand("BACKUP_COMPLETE"));
+			} else {
+				publish(new ThreadCommand("RESTORE_COMPLETE"));
+			}
+
 			return true;
+		}
+
+		@Override
+		protected void process(List<ThreadCommand> chunks) {
+			for (ThreadCommand latest : chunks) {
+				switch (latest.getCommand()) {
+				case "UPDATE_PROGRESS":
+					progressBar.setVisible(true);
+					int progress = (int) (filesCopied.get() * 100.0 / numFilesToCopy);
+					progressBar.setValue(progress);
+					break;
+				case "SET_CURRENT_OPERATION":
+					backupLocation.setText(latest.getMessage());
+					break;
+				case "BACKUP_COMPLETE":
+					dispose();
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Complete game backup completed.");
+					break;
+				case "RESTORE_COMPLETE":
+					dispose();
+					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Game restored from backup");
+					break;
+				}
+			}
+		}
+
+		@Override
+		protected void done() {
+			try {
+				get();
+			} catch (InterruptedException e) {
+				ModManager.debugLogger.writeErrorWithException("VanillaBackupThread interrupted exception:", e);
+			} catch (ExecutionException e) {
+				ModManager.debugLogger.writeErrorWithException("VanillaBackupThread encountered exception:", e);
+			}
+
+			dispose();
+
 		}
 	}
 }

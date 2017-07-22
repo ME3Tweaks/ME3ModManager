@@ -94,7 +94,7 @@ public class StarterKitWindow extends JDialog {
 		NumberFormatter mountformatter = new NumberFormatter(mountFormat);
 		mountformatter.setValueClass(Short.class);
 		mountformatter.setMinimum(1);
-		mountformatter.setMaximum(Short.MAX_VALUE);
+		mountformatter.setMaximum(4800);
 		mountformatter.setCommitsOnValidEdit(true);
 
 		JPanel panel = new JPanel(new GridBagLayout());

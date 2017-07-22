@@ -365,12 +365,12 @@ public class MountFileEditorWindow extends JDialog {
 
 		try {
 			int mountPriorityVal = Integer.parseInt(mountPriority);
-			if (mountPriorityVal > Short.MAX_VALUE || mountPriorityVal < 0) {
-				JOptionPane.showMessageDialog(this, "Mount priority must be between 1 and " + Short.MAX_VALUE, "Invalid Mount Priority", JOptionPane.ERROR_MESSAGE);
+			if (mountPriorityVal > ((int) Short.MAX_VALUE * 2) || mountPriorityVal < 0) {
+				JOptionPane.showMessageDialog(this, "Mount priority must be between 1 and " + ((int) Short.MAX_VALUE * 2), "Invalid Mount Priority", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 		} catch (NumberFormatException e) {
-			JOptionPane.showMessageDialog(this, "Mount priority must be between 1 and " + Short.MAX_VALUE, "Invalid Mount Priority", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Mount priority must be between 1 and " + ((int) Short.MAX_VALUE * 2), "Invalid Mount Priority", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 

@@ -491,6 +491,7 @@ public class ResourceUtils {
 
 	/**
 	 * Returns if this is 64-bit windows (OS, not VM).
+	 * 
 	 * @return true if 64bit, false otherwise
 	 */
 	public static boolean is64BitWindows() {
@@ -505,64 +506,76 @@ public class ResourceUtils {
 	}
 
 	/**
-	 * Opens the specified folder in explorer. Do not quote the item being passed here, it will be quoted when run.
-	 * @param folder folder path to open in explorer
+	 * Opens the specified folder in explorer. Do not quote the item being
+	 * passed here, it will be quoted when run.
+	 * 
+	 * @param folder
+	 *            folder path to open in explorer
 	 */
 	public static void openFolderInExplorer(String folder) {
-		ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", "\""+folder+"\""));
+		ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", "\"" + folder + "\""));
 	}
-	
-	
+
 	/**
 	 * Attempts to calculate the size of a file or directory.
 	 * 
 	 * <p>
 	 * Since the operation is non-atomic, the returned value may be inaccurate.
 	 * However, this method is quick and does its best.
-	 * @param path Path to calculate size of
-	 * @param includeBackups Include files in folders that contain cmmbackups or end with .bak
+	 * 
+	 * @param path
+	 *            Path to calculate size of
+	 * @param includeBackupsAndOtherJunk
+	 *            Include files in folders that contain cmmbackups or end with
+	 *            .bak, .wav, .pdf
 	 */
-	public static long GetDirectorySize(Path path, boolean includeBackups) {
+	public static long GetDirectorySize(Path path, boolean includeBackupsAndOtherJunk) {
 
-	    final AtomicLong size = new AtomicLong(0);
+		final AtomicLong size = new AtomicLong(0);
 
-	    try {
-	        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-	            @Override
-	            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-	            	if (!includeBackups && FilenameUtils.getExtension(file.toString()).equals(".bak")) {
-	            		return FileVisitResult.CONTINUE; //don't include. bak
-	            	}
-	            	
-	            	if (!includeBackups && file.toString().contains("cmmbackups")) {
-	            		return FileVisitResult.CONTINUE; //don't include cmmbackup
-	            	}
-	            	
-	                size.addAndGet(attrs.size());
-	                return FileVisitResult.CONTINUE;
-	            }
+		try {
+			Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+					if (!includeBackupsAndOtherJunk) {
+						String extension = FilenameUtils.getExtension(file.toString());
+						switch (extension) {
+						case "bak":
+						case "pdf":
+						case "wav":
+							return FileVisitResult.CONTINUE; //don't include. bak
+						}
+					}
 
-	            @Override
-	            public FileVisitResult visitFileFailed(Path file, IOException exc) {
+					if (!includeBackupsAndOtherJunk && file.toString().contains("cmmbackup")) {
+						return FileVisitResult.CONTINUE; //don't include cmmbackup
+					}
 
-	                System.out.println("skipped: " + file + " (" + exc + ")");
-	                // Skip folders that can't be traversed
-	                return FileVisitResult.CONTINUE;
-	            }
+					size.addAndGet(attrs.size());
+					return FileVisitResult.CONTINUE;
+				}
 
-	            @Override
-	            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+				@Override
+				public FileVisitResult visitFileFailed(Path file, IOException exc) {
 
-	                if (exc != null)
-	                    System.out.println("had trouble traversing: " + dir + " (" + exc + ")");
-	                // Ignore errors traversing a folder
-	                return FileVisitResult.CONTINUE;
-	            }
-	        });
-	    } catch (IOException e) {
-	        throw new AssertionError("walkFileTree will not throw IOException if the FileVisitor does not");
-	    }
+					System.out.println("skipped: " + file + " (" + exc + ")");
+					// Skip folders that can't be traversed
+					return FileVisitResult.CONTINUE;
+				}
 
-	    return size.get();
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+
+					if (exc != null)
+						System.out.println("had trouble traversing: " + dir + " (" + exc + ")");
+					// Ignore errors traversing a folder
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		} catch (IOException e) {
+			throw new AssertionError("walkFileTree will not throw IOException if the FileVisitor does not");
+		}
+
+		return size.get();
 	}
 }

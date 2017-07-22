@@ -31,7 +31,7 @@ public class ThirdPartyModInfo {
 		this.moddescription = (String) modinfo.get("moddesc");
 		this.modsite = (String) modinfo.get("modsite");
 		String priority = (String) modinfo.get("mountpriority");
-		this.mountpriority = Short.parseShort(priority);
+		this.mountpriority = Integer.parseInt(priority);
 	}
 	
 

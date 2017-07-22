@@ -80,7 +80,8 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
 		introLabel.setText("<html>An update for Mod Manager's Java Runtime is available.</html>");
 
 		String bitnessUpgrade = "";
-		if (ArchUtils.getProcessor().isX86() && ResourceUtils.is64BitWindows()) {
+		boolean x86 = ArchUtils.getProcessor().is32Bit();
+		if (x86 && ResourceUtils.is64BitWindows()) {
 			bitnessUpgrade = "<br>This will upgrade Mod Manager from 32-bit java to 64-bit java.";
 		}
 

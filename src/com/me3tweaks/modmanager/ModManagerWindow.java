@@ -1567,10 +1567,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		backupBasegameUnpacked.setToolTipText("An Unpacked and basegame file will be automatically backed up when Mod Manager replaces or removes that file");
 
 		backupCreateVanillaCopy = new JMenuItem("Create complete game backup (Vanilla)");
-		backupCreateVanillaCopy.setToolTipText("Create an entire copy of the game so you can do a complete restore in the future.\nUseful if you are doing texture modding.");
-		
+		backupCreateVanillaCopy
+				.setToolTipText("<html>Create an entire copy of the game so you can do a complete restore in the future.<br>Useful if you are doing texture modding.</html>");
+
 		backupCreateGDB = new JMenuItem("Update game repair database");
-		backupCreateGDB.setToolTipText("Creates/updates a database of checksums for basegame and unpacked DLC files.\nMod Manager uses this database for verifying restoring and backing up");
+		backupCreateGDB.setToolTipText(
+				"Creates/updates a database of checksums for basegame and unpacked DLC files.\nMod Manager uses this database for verifying restoring and backing up");
 
 		backupBackupDLC.addActionListener(this);
 		backupBasegameUnpacked.addActionListener(this);
@@ -1637,6 +1639,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertCoal = new JMenuItem("Restore vanilla Coalesced.bin");
 		restoreRevertCoal.setToolTipText("<html>Restores the basegame coalesced file</html>");
 
+		restoreVanillaCopy = new JMenuItem("Restore game to vanilla");
+		restoreVanillaCopy.setToolTipText("<html>Restore your game from a previously created vanilla backup</html>");
+
 		restoreSelective.addActionListener(this);
 		restoreRevertEverything.addActionListener(this);
 		restoreDeleteUnpacked.addActionListener(this);
@@ -1652,6 +1657,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreRevertMPDLC.addActionListener(this);
 		restoreRevertMPBaseDLC.addActionListener(this);
 		restoreRevertCoal.addActionListener(this);
+		restoreVanillaCopy.addActionListener(this);
 
 		restoreMenuAdvanced.add(restoredeleteAllCustomDLC);
 		restoreMenuAdvanced.addSeparator();
@@ -1674,6 +1680,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		restoreMenu.add(restoreRevertEverything);
 		restoreMenu.add(restoreRevertMPBaseDLC);
 		restoreMenu.add(restoreRevertSPBaseDLC);
+		restoreMenu.add(restoreVanillaCopy);
 		restoreMenu.addSeparator();
 		restoreMenu.add(restoreMenuAdvanced);
 		menuBar.add(restoreMenu);
@@ -2195,7 +2202,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == backupCreateVanillaCopy || e.getSource() == restoreVanillaCopy) {
-			new VanillaBackupWindow();
+			new VanillaBackupWindow(e.getSource() == backupCreateVanillaCopy);
 		} else if (e.getSource() == backupCreateGDB) {
 			if (validateBIOGameDir()) {
 				createBasegameDB(GetBioGameDir());
