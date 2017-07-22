@@ -603,7 +603,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			String latestjavaexehash = (String) latest_object.get("jre_latest_version");
 
-			if (ModManager.isUsingBundledJRE() || ResourceUtils.is64BitWindows() && ArchUtils.getProcessor().isX86()) {
+			if (ModManager.isUsingBundledJRE() || ResourceUtils.is64BitWindows() && ArchUtils.getProcessor().is32Bit()) {
 				//32-bit JVM on 64-bit windows - should check
 				//I using the bundled x64 JRE  - should check
 				boolean hashMismatch = false;

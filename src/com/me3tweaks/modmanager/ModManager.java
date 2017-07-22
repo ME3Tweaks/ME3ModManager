@@ -432,6 +432,19 @@ public class ModManager {
 					ModManager.debugLogger.writeMessage("--update-from number format exception.");
 				}
 			}
+
+			if (args.length > 1 && args[0].equals("--jre-update-from")) {
+				// This is being run as an update
+				String javaJRE = System.getProperty("java.version");
+				if (javaJRE.equals(args[1])) {
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "JRE update (might have) failed!\nStill using " + javaJRE + ".", "JRE Update Failed",
+							JOptionPane.ERROR_MESSAGE);
+				} else {
+					String message = "JRE update successful.\nOld Version: " + args[1] + "\nCurrent Version: " + javaJRE;
+					JOptionPane.showMessageDialog(null, message, "JRE Update Complete", JOptionPane.INFORMATION_MESSAGE);
+				}
+			}
+
 			if (args.length > 1 && args[0].equals("--minor-update-from")) {
 				// This is being run as a minor update
 				try {

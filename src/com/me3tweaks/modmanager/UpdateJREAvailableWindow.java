@@ -84,6 +84,9 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
 		if (x86 && ResourceUtils.is64BitWindows()) {
 			bitnessUpgrade = "<br>This will upgrade Mod Manager from 32-bit java to 64-bit java.";
 		}
+		if (!x86 && !ModManager.isUsingBundledJRE()) {
+			bitnessUpgrade = "<br>This will switch Mod Manager from using your system JRE to a bundled version.";
+		}
 
 		versionsLabel = new JLabel("<html>Local Version: " + System.getProperty("java.version") + "<br>" + "Latest Version: " + version + bitnessUpgrade + "</html>");
 
@@ -392,7 +395,9 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
 		sb.append("\r\n");
 		sb.append("PING 1.1.1.1 -n 1 -w 2000 >NUL");
 		sb.append("\r\n");
-		sb.append("mkdir " + ModManager.getTempDir() + "NewVersion");
+		sb.append("rmdir /S /Q \""+System.getProperty("user.dir")+"\\data\\jre-x64\"");
+		sb.append("\r\n");
+		sb.append("mkdir \"" + ModManager.getTempDir() + "NewVersion\"");
 		sb.append("\r\n");
 		sb.append("\r\n");
 		sb.append("::Extract update");
