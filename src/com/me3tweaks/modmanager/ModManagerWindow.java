@@ -3135,16 +3135,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	private static boolean internalValidateBIOGameDir(String path) {
 		if (path == null) {
+			ModManager.debugLogger.writeError("BIOGame Directory is invalid (null path)");
 			return false;
 		}
 		File coalesced = new File(ModManager.appendSlash(path) + "CookedPCConsole\\Coalesced.bin");
 		File dlcFolder = new File(ModManager.appendSlash(path) + "DLC\\");
 		File parentPath = new File(path).getParentFile();
+		if (!coalesced.exists()) {
+			ModManager.debugLogger.writeError("Validating BIOGame directory failed: Coalesced.bin doesn't exist at "+coalesced.getAbsolutePath());
+		}
+		
+		if (!dlcFolder.exists()) {
+			ModManager.debugLogger.writeError("Validating BIOGame directory failed: DLC Folder doesn't exist at "+dlcFolder.getAbsolutePath());
+		}
+		
 		if (coalesced.exists() && dlcFolder.exists() && parentPath != null) {
-
+			// It exists - testing for subdirectory.
 			String localpath = ModManager.appendSlash(System.getProperty("user.dir"));
 			try {
-
 				if (!localpath.equalsIgnoreCase(ModManager.appendSlash(parentPath.getAbsolutePath()))) {
 					String relative = ResourceUtils.getRelativePath(localpath, ModManager.appendSlash(parentPath.getAbsolutePath()), File.separator);
 					if (relative.startsWith("..")) {
@@ -3152,10 +3160,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				}
 				// common path
+				ModManager.debugLogger.writeError("Mod Manager is located in the game directory! Shutting down to avoid issues.");
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"Mod Manager will not work when running from inside a Mass Effect 3 game directory.\nMove Mod Manager out of the game directory and restart Mod Manager.",
 						"Invalid Mod Manager Location", JOptionPane.ERROR_MESSAGE);
-				ModManager.debugLogger.writeError("Mod Manager is located in the game directory! Shutting down to avoid issues.");
 				System.exit(1);
 			} catch (ResourceUtils.PathResolutionException e) {
 				// we're OK
