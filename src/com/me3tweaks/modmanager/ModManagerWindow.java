@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
@@ -605,7 +606,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			if (ModManager.isUsingBundledJRE() || ResourceUtils.is64BitWindows() && ArchUtils.getProcessor().is32Bit()) {
 				//32-bit JVM on 64-bit windows - should check
-				//I using the bundled x64 JRE  - should check
+				//Is using the bundled x64 JRE - should check
 				boolean hashMismatch = false;
 				File f = new File(ModManager.getBundledJREPath() + "bin\\java.exe");
 				if (f.exists()) {
@@ -960,20 +961,35 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		setMinimumSize(minSize);
 		ArrayList<String> directories = ModManager.getSavedBIOGameDirectories();
 
-		comboboxBiogameDir = new JComboBox<String>(directories.toArray(new String[directories.size()]));
+		DefaultComboBoxModel<String> biogameDirectoriesModel = new DefaultComboBoxModel<>();
+
+		comboboxBiogameDir = new JComboBox<String>();
+		comboboxBiogameDir.setModel(biogameDirectoriesModel);
+
+		for (String dir : directories) {
+			biogameDirectoriesModel.addElement(dir);
+		}
+
 		ModManager.debugLogger.writeMessage("Setting active biogame directory from registry...");
 		String registrykey = ModManager.LookupGamePathViaRegistryKey(true);
 		boolean useAddInstead = comboboxBiogameDir.getModel().getSize() > 0;
 		if (registrykey != null) {
+			registrykey = ResourceUtils.removeTrailingSlashes(registrykey);
 			int index = directories.indexOf(registrykey);
+			String gamedir = new File(registrykey).getParent();
 			if (index >= 0) {
 				comboboxBiogameDir.setSelectedIndex(index);
-				registrykey = new File(registrykey).getParent();
-				boolean hasWritePermissions = ModManager.checkWritePermissions(registrykey) && ModManager.checkWritePermissions(registrykey + "\\BIOGame")
-						&& ModManager.checkWritePermissions(registrykey + "\\BIOGame\\CookedPCConsole");
-				if (!hasWritePermissions) {
-					showFolderPermissionsGrantDialog(registrykey);
-				}
+
+			} else {
+				biogameDirectoriesModel.insertElementAt(registrykey, 0);
+				comboboxBiogameDir.setSelectedIndex(0);
+				directories.add(registrykey);
+				saveBiogamePath(directories);
+			}
+			boolean hasWritePermissions = ModManager.checkWritePermissions(gamedir) && ModManager.checkWritePermissions(gamedir + "\\BIOGame")
+					&& ModManager.checkWritePermissions(gamedir + "\\BIOGame\\CookedPCConsole");
+			if (!hasWritePermissions) {
+				showFolderPermissionsGrantDialog(registrykey);
 			}
 		}
 
@@ -2839,25 +2855,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				return;
 			}
 			if (validateBIOGameDir()) {
-				if (validateVC2015()) {
-					int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
-							"<html><div style='width: 300px'>Installing the ASI version of binkw32.dll bypass will load .asi files and run 3rd party code. Any .asi file in the same folder as MassEffect3.exe and within a subfolder named asi will be loaded at game startup. The code in these asi files will then be run like any program on your computer.<br><br>Ensure you trust the developer you download and install ASI mods from.<br><br>If you have no idea what this means, you should use the default non-asi binkw32.dll bypass option.<br><br>Install the ASI version of binkw32 bypass?</div></html>",
-							"Potential security risk", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-					if (result == JOptionPane.YES_OPTION) {
-						ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
-						installBinkw32Bypass(true);
-					}
-				} else {
-					labelStatus.setText("Binkw32 ASI Bypass requires Visual C++ 2015 x86");
-					labelStatus.setVisible(true);
-					JOptionPane.showMessageDialog(ModManagerWindow.this,
-							"Binkw32 ASI Bypass requires Visual C++ 2015 (or higher) x86.\nAfter you close this dialog, your browser will open and download the installer for Visual C++ 2017 from Microsoft.",
-							"ASI loader requires VC++ 2015 x86 or higher", JOptionPane.ERROR_MESSAGE);
-					try {
-						ResourceUtils.openWebpage(new URL("https://download.microsoft.com/download/7/a/6/7a68af9f-3761-4781-809b-b6df0f56d24c/vc_redist.x86.exe"));
-					} catch (MalformedURLException e1) {
-						ModManager.debugLogger.writeErrorWithException("Unable to open VC++ download page:", e1);
-					}
+				int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
+						"<html><div style='width: 300px'>Installing the ASI version of binkw32.dll bypass will load .asi files and run 3rd party code. Any .asi file in the same folder as MassEffect3.exe and within a subfolder named asi will be loaded at game startup. The code in these asi files will then be run like any program on your computer.<br><br>Ensure you trust the developer you download and install ASI mods from.<br><br>If you have no idea what this means, you should use the default non-asi binkw32.dll bypass option.<br><br>Install the ASI version of binkw32 bypass?</div></html>",
+						"Potential security risk", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+				if (result == JOptionPane.YES_OPTION) {
+					ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
+					installBinkw32Bypass(true);
 				}
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
@@ -2865,7 +2868,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
-		} else if (e.getSource() == toolsInstallBinkw32) {
+		} else if (e.getSource() == toolsInstallBinkw32)
+
+		{
 			if (ModManager.isMassEffect3Running()) {
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 DLC bypass.",
 						"MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
@@ -2897,38 +2902,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		}
-	}
-
-	private boolean validateVC2015() {
-		if (!ModManager.PERFORM_DOT_NET_CHECK) {
-			return true;
-		}
-		try {
-			String x86VC2015 = "SOFTWARE\\Classes\\Installer\\Dependencies\\{e2803110-78b3-4664-a479-3611a381656a}";
-			String x86VC2017 = "Installer\\Dependencies\\,,x86,14.0,bundle";
-			try {
-				ModManager.debugLogger.writeMessage("Looking up VC2015...");
-				Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, x86VC2015, "Version");
-				ModManager.debugLogger.writeMessage("VC2015 appears to be installed");
-				return true; //VC 2015
-			} catch (Exception e) {
-				ModManager.debugLogger.writeMessage("Looking up VC2017...");
-				String vc2017ver = Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, x86VC2017, "Version");
-				ModManager.debugLogger.writeMessage("VC2017 appears to be installed: " + vc2017ver);
-				Version vcVer = new Version(vc2017ver);
-				Version min = new Version("14.10.25008.0");
-				if (vcVer.compareTo(min) >= 0) {
-					return true;
-				} else {
-					return false;
-				}
-			}
-		} catch (Throwable e) {
-			ModManager.debugLogger.writeErrorWithException(
-					"Error occured while attempting to get VC2015 installation status! Could be the JNA crash, or the registry key doesn't exist (which means it is not installed).",
-					e);
-		}
-		return false;
 	}
 
 	private void checkAllModsForUpdates(boolean isManualCheck) {
@@ -3054,6 +3027,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		String chosenPath = dirChooser.getSelectedFile().toString();
 		if (internalValidateBIOGameDir(chosenPath)) {
 			chosenPath = new File(chosenPath).getParent();
+
+			// Check to make sure path is not a backup path
+			File cmm_vanilla = new File(chosenPath + File.separator + "cmm_vanilla");
+			ModManager.debugLogger.writeMessage("Checking if biogame directory is a vanilla backup: " + cmm_vanilla);
+			if (cmm_vanilla.exists()) {
+				ModManager.debugLogger.writeMessage("Selected directory is a vanilla backup, rejecting biogame choice.");
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "The selected directory is marked as a vanilla backup.\nMod Manager cannot use this as a installation target.",
+						"Protected Directory Selected", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
 			// Check to make sure mod manager folder is not a subset
 			String localpath = System.getProperty("user.dir");
 			ModManager.debugLogger.writeMessage("Checking if biogame directory is a subdirectory of the game: " + chosenPath);
@@ -3142,13 +3126,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		File dlcFolder = new File(ModManager.appendSlash(path) + "DLC\\");
 		File parentPath = new File(path).getParentFile();
 		if (!coalesced.exists()) {
-			ModManager.debugLogger.writeError("Validating BIOGame directory failed: Coalesced.bin doesn't exist at "+coalesced.getAbsolutePath());
+			ModManager.debugLogger.writeError("Validating BIOGame directory failed: Coalesced.bin doesn't exist at " + coalesced.getAbsolutePath());
 		}
-		
+
 		if (!dlcFolder.exists()) {
-			ModManager.debugLogger.writeError("Validating BIOGame directory failed: DLC Folder doesn't exist at "+dlcFolder.getAbsolutePath());
+			ModManager.debugLogger.writeError("Validating BIOGame directory failed: DLC Folder doesn't exist at " + dlcFolder.getAbsolutePath());
 		}
-		
+
 		if (coalesced.exists() && dlcFolder.exists() && parentPath != null) {
 			// It exists - testing for subdirectory.
 			String localpath = ModManager.appendSlash(System.getProperty("user.dir"));
@@ -3220,7 +3204,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			for (String str : installDir) {
 				ModManager.debugLogger.writeMessage(" - " + str);
-				writer.write(str);
+				writer.write(ResourceUtils.removeTrailingSlashes(str));
 				writer.write("\n");
 			}
 			writer.close();

@@ -108,7 +108,7 @@ public class VanillaBackupWindow extends JDialog {
 
 		backupButton = new JButton("Create Backup");
 		restoreButton = new JButton("Restore Backup");
-		
+
 		String backupLocMessage = "";
 		if (backupPath != null && new File(backupPath).exists() && new File(backupPath).isDirectory()) {
 			long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(backupPath), false);
@@ -131,6 +131,22 @@ public class VanillaBackupWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				ModManager.debugLogger.writeMessage("Backup button clicked - checking if backup already exists");
+				if (backupPath != null && new File(backupPath).exists() && new File(backupPath).isDirectory()) {
+					ModManager.debugLogger.writeMessage("Backup already exists - prompting user for action");
+					int option = JOptionPane.showConfirmDialog(VanillaBackupWindow.this,
+							"A backup of your game already exists at the following directory:\n" + backupPath
+									+ "\nAre you sure you want to create a new copy? The old one won't be deleted.",
+							"Backup already exists", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+					if (option == JOptionPane.NO_OPTION) { 
+						ModManager.debugLogger.writeMessage("Backup already exists - user declined to make new one.");
+						return;
+					}
+					ModManager.debugLogger.writeMessage("Backup already exists - user creating new one anyways.");
+
+				}
+
 				//See if any Custom DLC is installed.
 				ModManager.debugLogger.writeMessage("Vanilla Backup: Checking if any Custom DLC is installed.");
 				File mainDlcDir = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "DLC/");
@@ -314,7 +330,7 @@ public class VanillaBackupWindow extends JDialog {
 
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
-		
+
 		if (isBackup) {
 			backupButton.requestFocus();
 		} else {
@@ -426,12 +442,18 @@ public class VanillaBackupWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Error copying file for backup or restore!", e);
 				}
 			}
-
+			File cmm_vanilla = new File(destDir + "cmm_vanilla");
 			if (isBackup) {
+				try {
+					FileUtils.touch(cmm_vanilla);
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Error setting directory cmm_vanilla file:", e);
+				}
 				Advapi32Util.registrySetStringValue(HKEY_CURRENT_USER, VanillaUserRegistryKey, VanillaUserRegistryValue, destDir);
 				ModManager.debugLogger.writeMessage("Updated registry key to point to new backup directory.");
 				publish(new ThreadCommand("BACKUP_COMPLETE"));
 			} else {
+				FileUtils.deleteQuietly(cmm_vanilla);
 				publish(new ThreadCommand("RESTORE_COMPLETE"));
 			}
 

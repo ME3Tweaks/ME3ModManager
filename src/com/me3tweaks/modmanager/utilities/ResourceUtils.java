@@ -578,4 +578,19 @@ public class ResourceUtils {
 
 		return size.get();
 	}
+	
+	/**
+	 * Removes the final character in a string if it is a / or a \
+	 * @param input String to parse
+	 * @return string without slash on end, or the original input if there was none
+	 */
+	public static String removeTrailingSlashes(String input) {
+		if (input.endsWith("/"))
+		    return input.substring(0,input.length()-1);
+		else if (input.endsWith(File.separator)) {
+		    return input.substring(0,input.length()-1);
+		}
+		else
+		    return input;
+	}
 }

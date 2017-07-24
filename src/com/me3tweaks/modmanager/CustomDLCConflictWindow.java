@@ -58,6 +58,7 @@ import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.MultiLineTableCell;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 /**
@@ -509,8 +510,8 @@ public class CustomDLCConflictWindow extends JDialog {
 				//check version
 				int version = EXEFileInfo.getRevisionOfProgram(transplanterpath);
 				if (version < ModManager.MIN_REQUIRED_CMDLINE_REV) {
-					ModManager.debugLogger.writeError(
-							"Outdated transplanter detected - aborting install. Local: " + version + ", required: 1.0.0." + ModManager.MIN_REQUIRED_CMDLINE_REV);
+					ModManager.debugLogger
+							.writeError("Outdated transplanter detected - aborting install. Local: " + version + ", required: 1.0.0." + ModManager.MIN_REQUIRED_CMDLINE_REV);
 					publish(new ThreadCommand("OUTDATED_TRANSPLANTER", Integer.toString(version)));
 					return false;
 				}
@@ -583,6 +584,8 @@ public class CustomDLCConflictWindow extends JDialog {
 				String copyTargetPath = skg.getGeneratedMod().getModPath() + "DLC_MOD_" + internalName + "/CookedPCConsole/" + resolutionFile.getKey();
 				//	try {
 				ModManager.debugLogger.writeMessage("Decompressing 2nd tier conflict file: " + sourcePath + " => " + copyTargetPath);
+				String hash = MD5Checksum.getMD5Checksum(sourcePath);
+				ModManager.debugLogger.writeMessage("Hash of " + sourcePath + ": " + hash);
 				//FileUtils.copyFile(new File(sourcePath), new File(copyTargetPath));
 				ModManager.decompressPCC(new File(sourcePath), new File(copyTargetPath));
 				transplantFiles.add(copyTargetPath);
@@ -604,7 +607,7 @@ public class CustomDLCConflictWindow extends JDialog {
 				boolean isBlacklisted = false;
 				for (String doNotTransplantInto : blacklistedGUIconflictfiles) {
 					if (FilenameUtils.getName(transplantFile).equalsIgnoreCase(doNotTransplantInto)) {
-						ModManager.debugLogger.writeMessage("Ignoring blacklisted transplant target: "+doNotTransplantInto+" - Promoting it directly above GUI mods.");
+						ModManager.debugLogger.writeMessage("Ignoring blacklisted transplant target: " + doNotTransplantInto + " - Promoting it directly above GUI mods.");
 						isBlacklisted = true;
 						break; //This file is blacklisted - just leave it be.
 					}

@@ -82,7 +82,7 @@ public class ModManager {
 
 	public static final String VERSION = "5.0.3";
 	public static long BUILD_NUMBER = 78L;
-	public static final String BUILD_DATE = "7/22/2017";
+	public static final String BUILD_DATE = "7/24/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -437,17 +437,17 @@ public class ModManager {
 				// This is being run as an update
 				String javaJRE = System.getProperty("java.version");
 				if (javaJRE.equals(args[1])) {
-					if (args[2].equals("system") && !ModManager.isUsingBundledJRE()) { 
-					ModManager.debugLogger.writeError("JRE update failed - same version, not using bundled!");
-					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "JRE update (might have) failed!\nStill using " + javaJRE + ".", "JRE Update Failed",
-							JOptionPane.ERROR_MESSAGE);
+					if (args[2].equals("system") && !ModManager.isUsingBundledJRE()) {
+						ModManager.debugLogger.writeError("JRE update failed - same version, not using bundled!");
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "JRE update (might have) failed!\nStill using " + javaJRE + ".", "JRE Update Failed",
+								JOptionPane.ERROR_MESSAGE);
 					} else {
 						ModManager.debugLogger.writeMessage("JRE update succeeded - same version, but now using bundled");
 						String message = "JRE update successful.\nMod Manager is now using a bundled JRE - it no longer needs the system one\nRunning Java " + args[1];
 						JOptionPane.showMessageDialog(null, message, "JRE Update Complete", JOptionPane.INFORMATION_MESSAGE);
 					}
 				} else {
-					ModManager.debugLogger.writeMessage("JRE update succeeded - updated to "+args[1]);
+					ModManager.debugLogger.writeMessage("JRE update succeeded - updated to " + args[1]);
 					String message = "JRE update successful.\nOld Version: " + args[1] + "\nCurrent Version: " + javaJRE;
 					JOptionPane.showMessageDialog(null, message, "JRE Update Complete", JOptionPane.INFORMATION_MESSAGE);
 				}
@@ -1013,19 +1013,30 @@ public class ModManager {
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * Gets the list of saved BIOGAme directories from the BIOGAME_DIRECTORIES
+	 * file. If none are found, it looks up the registry key and returns that.
+	 * ModMAnagerWindow will also look up the registry key to set the default
+	 * value.
+	 * 
+	 * @return list of found biogame directories
+	 */
 	public static ArrayList<String> getSavedBIOGameDirectories() {
 		ArrayList<String> directories = new ArrayList<>();
-		File file = new File(getDataDir() + "BIOGAME_DIRECTORIES");
+		File file = new File(ModManager.getSavedBIOGameDirectoriesFile());
 		if (file.exists()) {
 			Scanner scanner;
 			try {
 				scanner = new Scanner(file);
 				while (scanner.hasNextLine()) {
 					String directory = scanner.nextLine();
+					directory = ResourceUtils.removeTrailingSlashes(directory);
 					if (!(new File(directory).exists())) {
 						continue; //skip
 					}
-					directories.add(directory);
+					if (!directories.contains(directory)) {
+						directories.add(directory);
+					}
 				}
 				scanner.close();
 			} catch (FileNotFoundException e) {
@@ -1039,6 +1050,7 @@ public class ModManager {
 			if (setDir != null) {
 				File dir = new File(setDir);
 				if (dir.exists()) {
+					setDir = ResourceUtils.removeTrailingSlashes(setDir);
 					directories.add(setDir);
 					try {
 						ModManager.debugLogger.writeMessage("Upgrading biogame directory to BIOGAME_DIRECTORIES file.");
@@ -1051,10 +1063,10 @@ public class ModManager {
 					return directories;
 				}
 			}
-
 			//Haven't found any yet... look it up
 			String regpath = ModManager.LookupGamePathViaRegistryKey(true);
 			if (regpath != null && new File(regpath).exists()) {
+				regpath = ResourceUtils.removeTrailingSlashes(regpath);
 				directories.add(regpath);
 			}
 		}
@@ -1688,8 +1700,8 @@ public class ModManager {
 		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
 		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 		try {
-			// Original ASI hash, July 8 2017 v3 hash
-			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d" };
+			// Original ASI hash, July 8 2017 v3 hash, July 23 2017 v4 Hash
+			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d","1acccbdae34e29ca7a50951999ed80d5" };
 			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (asihashlist.contains(binkhash) && bink23.exists()) {
