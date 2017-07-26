@@ -363,7 +363,7 @@ public class DeltaWindow extends JDialog {
 							} catch (SAXException | IOException | ParserConfigurationException e) {
 								ModManager.debugLogger.writeErrorWithException("Exception loading file into memory:", e);
 								if (!verifyOnly) {
-									JOptionPane.showMessageDialog(null, "<html>Unable to load decompiled coalesced file into memory:<br>" + ModManager.getCompilingDir()
+									JOptionPane.showMessageDialog(DeltaWindow.this, "<html>Unable to load decompiled coalesced file into memory:<br>" + ModManager.getCompilingDir()
 											+ "coalesceds\\" + foldername + "\\" + iniFileName + ".</html>", "Delta Error", JOptionPane.ERROR_MESSAGE);
 								}
 								return false;
@@ -417,7 +417,7 @@ public class DeltaWindow extends JDialog {
 									default:
 										ModManager.debugLogger.writeError("Unknown delta property type: " + nodeName);
 										if (!verifyOnly) {
-											JOptionPane.showMessageDialog(null,
+											JOptionPane.showMessageDialog(DeltaWindow.this,
 													"<html>Unknown delta property type: " + nodeName + "<br>You may need to update Mod Manager, or this delta may be invalid.",
 													"Delta Error", JOptionPane.ERROR_MESSAGE);
 										}
@@ -520,7 +520,7 @@ public class DeltaWindow extends JDialog {
 											ModManager.debugLogger
 													.writeError("Could not find the path to a property: " + path + ".\nIn module: " + intCoalName + "<br>File: " + iniFileName);
 											if (!verifyOnly) {
-												JOptionPane.showMessageDialog(null, "<html>Could not find the path to a property: " + path + ".<br>Module: " + intCoalName
+												JOptionPane.showMessageDialog(DeltaWindow.this, "<html>Could not find the path to a property: " + path + ".<br>Module: " + intCoalName
 														+ "<br>File: " + iniFileName + "<br>This delta is not valid.</html>", "Delta Error", JOptionPane.ERROR_MESSAGE);
 											}
 											return false;
@@ -530,7 +530,7 @@ public class DeltaWindow extends JDialog {
 										//we didn't find what we wanted...
 										dispose();
 										if (!verifyOnly) {
-											JOptionPane.showMessageDialog(null,
+											JOptionPane.showMessageDialog(DeltaWindow.this,
 													"<html>Could not find the path " + path + " to property.<br>Module: " + intCoalName + "<br>File: " + iniFileName + "</html>",
 													"Compiling Error", JOptionPane.ERROR_MESSAGE);
 										}
@@ -696,7 +696,7 @@ public class DeltaWindow extends JDialog {
 														ModManager.debugLogger.writeError(
 																"ERROR: Unknown matching algorithm: " + arrayType + ". does this client need updated? Aborting this stat update.");
 														if (!verifyOnly) {
-															JOptionPane.showMessageDialog(null,
+															JOptionPane.showMessageDialog(DeltaWindow.this,
 																	"<html>Unsupported delta matching algorithm: " + arrayType
 																			+ ".<br>Mod Manager may need to be updated to support this, or the delta may be incorrect.<br>"
 																			+ "This part of the delta will be skipped.</html>",
@@ -721,7 +721,7 @@ public class DeltaWindow extends JDialog {
 															ModManager.debugLogger.writeMessage("ERROR: Unknown matching algorithm: " + arrayType
 																	+ " does this client need updated? Aborting this stat update.");
 															if (!verifyOnly) {
-																JOptionPane.showMessageDialog(null,
+																JOptionPane.showMessageDialog(DeltaWindow.this,
 																		"<html>Unsupported delta operation: " + operation
 																				+ ".<br>Mod Manager may need to be updated to support this, or the delta may be incorrect.</html>",
 																		"Delta Error", JOptionPane.ERROR_MESSAGE);
@@ -770,7 +770,7 @@ public class DeltaWindow extends JDialog {
 										sb.append(newValue);
 										sb.append("</html>");
 										if (!verifyOnly) {
-											JOptionPane.showMessageDialog(null, sb.toString(), "Delta Error", JOptionPane.ERROR_MESSAGE);
+											JOptionPane.showMessageDialog(DeltaWindow.this, sb.toString(), "Delta Error", JOptionPane.ERROR_MESSAGE);
 										}
 										addNewError("Could not find a property to update/remove.");
 										ModManager.debugLogger.writeError(sb.toString());
@@ -794,7 +794,7 @@ public class DeltaWindow extends JDialog {
 									//go to next file
 								} catch (TransformerFactoryConfigurationError | TransformerException e) {
 									ModManager.debugLogger.writeErrorWithException("Error saving modified file!", e);
-									JOptionPane.showMessageDialog(null, "<html>Error occured saving file: " + e.getMessage() + "</html>", "Delta Error", JOptionPane.ERROR_MESSAGE);
+									JOptionPane.showMessageDialog(DeltaWindow.this, "<html>Error occured saving file: " + e.getMessage() + "</html>", "Delta Error", JOptionPane.ERROR_MESSAGE);
 									return false;
 								}
 							}

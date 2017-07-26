@@ -17,8 +17,13 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextPane;
@@ -486,6 +491,7 @@ public class ResourceUtils {
 
 	/**
 	 * Returns if this is 64-bit windows (OS, not VM).
+	 * 
 	 * @return true if 64bit, false otherwise
 	 */
 	public static boolean is64BitWindows() {
@@ -500,11 +506,91 @@ public class ResourceUtils {
 	}
 
 	/**
-	 * Opens the specified folder in explorer. Do not quote the item being passed here, it will be quoted when run.
-	 * @param folder folder path to open in explorer
+	 * Opens the specified folder in explorer. Do not quote the item being
+	 * passed here, it will be quoted when run.
+	 * 
+	 * @param folder
+	 *            folder path to open in explorer
 	 */
 	public static void openFolderInExplorer(String folder) {
-		ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", "\""+folder+"\""));
+		ModManager.runProcessDetached(new ProcessBuilder("explorer.exe", "\"" + folder + "\""));
 	}
 
+	/**
+	 * Attempts to calculate the size of a file or directory.
+	 * 
+	 * <p>
+	 * Since the operation is non-atomic, the returned value may be inaccurate.
+	 * However, this method is quick and does its best.
+	 * 
+	 * @param path
+	 *            Path to calculate size of
+	 * @param includeBackupsAndOtherJunk
+	 *            Include files in folders that contain cmmbackups or end with
+	 *            .bak, .wav, .pdf
+	 */
+	public static long GetDirectorySize(Path path, boolean includeBackupsAndOtherJunk) {
+
+		final AtomicLong size = new AtomicLong(0);
+
+		try {
+			Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+					if (!includeBackupsAndOtherJunk) {
+						String extension = FilenameUtils.getExtension(file.toString());
+						switch (extension) {
+						case "bak":
+						case "pdf":
+						case "wav":
+							return FileVisitResult.CONTINUE; //don't include. bak
+						}
+					}
+
+					if (!includeBackupsAndOtherJunk && file.toString().contains("cmmbackup")) {
+						return FileVisitResult.CONTINUE; //don't include cmmbackup
+					}
+
+					size.addAndGet(attrs.size());
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult visitFileFailed(Path file, IOException exc) {
+
+					System.out.println("skipped: " + file + " (" + exc + ")");
+					// Skip folders that can't be traversed
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+
+					if (exc != null)
+						System.out.println("had trouble traversing: " + dir + " (" + exc + ")");
+					// Ignore errors traversing a folder
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		} catch (IOException e) {
+			throw new AssertionError("walkFileTree will not throw IOException if the FileVisitor does not");
+		}
+
+		return size.get();
+	}
+	
+	/**
+	 * Removes the final character in a string if it is a / or a \
+	 * @param input String to parse
+	 * @return string without slash on end, or the original input if there was none
+	 */
+	public static String removeTrailingSlashes(String input) {
+		if (input.endsWith("/"))
+		    return input.substring(0,input.length()-1);
+		else if (input.endsWith(File.separator)) {
+		    return input.substring(0,input.length()-1);
+		}
+		else
+		    return input;
+	}
 }

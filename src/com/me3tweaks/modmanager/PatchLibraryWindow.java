@@ -679,7 +679,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 						automated_requiredMixinIds.remove(new Integer(miss));
 					}
 					errorStr += "\nThese MixIns can't be added to this mod.";
-					JOptionPane.showMessageDialog(null, errorStr, "Missing MixIns", JOptionPane.WARNING_MESSAGE);
+					JOptionPane.showMessageDialog(PatchLibraryWindow.this, errorStr, "Missing MixIns", JOptionPane.WARNING_MESSAGE);
 				}
 				dispose();
 				advertiseInstalls(callingDialog, automated_requiredMixinIds, automated_mod);

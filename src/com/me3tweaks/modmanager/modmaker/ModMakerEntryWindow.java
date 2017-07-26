@@ -86,7 +86,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setResizable(false);
 		setIconImages(ModManager.ICONS);
-		
+
 		JPanel modMakerPanel = new JPanel();
 		modMakerPanel.setLayout(new BoxLayout(modMakerPanel, BoxLayout.Y_AXIS));
 		JPanel infoPane = new JPanel();
@@ -187,9 +187,8 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			JPanel launcherWVPanel = new JPanel();
 			launcherWVPanel.setLayout(new BoxLayout(launcherWVPanel, BoxLayout.LINE_AXIS));
 			launcherWVPanel.add(Box.createHorizontalGlue());
-			launcherWVPanel.add(
-					new JLabel(
-							"<html>The Launcher_WV.exe DLC bypass will be installed so your mod will work.<br>To use mods you will need to use Start Game from Mod Manager.<br>Tab and ` will open the console in game.<br>Your game will not be modified by this file.</html>"),
+			launcherWVPanel.add(new JLabel(
+					"<html>The Launcher_WV.exe DLC bypass will be installed so your mod will work.<br>To use mods you will need to use Start Game from Mod Manager.<br>Tab and ` will open the console in game.<br>Your game will not be modified by this file.</html>"),
 					BorderLayout.CENTER);
 			launcherWVPanel.add(Box.createHorizontalGlue());
 			modMakerPanel.add(launcherWVPanel);
@@ -209,7 +208,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 
 		modMakerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		add(modMakerPanel);
-		
+
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 
@@ -271,7 +270,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			if (!tankMasterCompiler.exists()) {
 				dispose();
 				ModManager.debugLogger.writeError("Tankmaster's compiler not detected. Abort. Searched at: " + tankMasterCompiler.toString());
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModMakerEntryWindow.this,
 						"<html>You need TankMaster's Coalesced Compiler in order to use ModMaker.<br><br>It should have been bundled with Mod Manager in the data/tankmaster_coalesce folder.</html>",
 						"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 
@@ -286,14 +285,14 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 				dispose();
 				ModManager.debugLogger.writeError("Mod Manager Command Line tools not present, aborting.");
 
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModMakerEntryWindow.this,
 						"<html>Mod Manager's Command Line library is not installed. Mod Manager should automatically download this on startup from Github.</html>",
 						"Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 
 				return false;
 			}
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "<html>An error occured while attempting to check prerequesites for ModMaker:<br>" + e.getMessage()
+			JOptionPane.showMessageDialog(ModMakerEntryWindow.this, "<html>An error occured while attempting to check prerequesites for ModMaker:<br>" + e.getMessage()
 					+ "<br>Please report this to FemShep with the Mod Manager log at femshep@me3tweaks.com.</html>", "Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}

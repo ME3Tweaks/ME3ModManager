@@ -366,7 +366,7 @@ public class UnpackWindow extends JDialog {
 				for (String failed : failedUnpacks) {
 					header += failed + "\n";
 				}
-				JOptionPane.showMessageDialog(null, header, "DLC unpack errors", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(UnpackWindow.this, header, "DLC unpack errors", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}

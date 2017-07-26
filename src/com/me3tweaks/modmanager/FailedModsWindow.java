@@ -53,7 +53,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 	private JButton deleteButton;
 
 	public FailedModsWindow() {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Loading failed mods window");
 		setupWindow();
 		setVisible(true);
@@ -155,7 +155,7 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 						}
 					} else {
 						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Restoring ModMaker mods requires valid BIOGame");
-						JOptionPane.showMessageDialog(null,
+						JOptionPane.showMessageDialog(FailedModsWindow.this,
 								"The BIOGame directory is not valid.\nCannot restore ModMaker mods without a valid BIOGame directory.\nFix the BIOGame directory before continuing.",
 								"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 					}

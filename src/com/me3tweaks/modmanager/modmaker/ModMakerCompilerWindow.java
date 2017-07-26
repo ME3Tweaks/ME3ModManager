@@ -304,7 +304,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					String cmd = error.getCommand();
 					switch (cmd) {
 					case "ERROR":
-						JOptionPane.showMessageDialog(null, error.getMessage(), "Compiling Error", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, error.getMessage(), "Compiling Error", JOptionPane.ERROR_MESSAGE);
 						ModManager.debugLogger.writeMessage(error.getMessage());
 						dispose();
 						break;
@@ -1021,7 +1021,7 @@ public class ModMakerCompilerWindow extends JDialog {
 									if (path.equals("")) {
 										//will never find.
 										dispose();
-										JOptionPane.showMessageDialog(null, "<html>Unable to compile mod.<br>Path for property is empty: " + newPropName + ".<br>Module: "
+										JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Unable to compile mod.<br>Path for property is empty: " + newPropName + ".<br>Module: "
 												+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 										error = true;
 										return null;
@@ -1056,7 +1056,7 @@ public class ModMakerCompilerWindow extends JDialog {
 											ModManager.debugLogger.writeError("Could not find property to update: " + path + " for property " + newPropName + " in module "
 													+ intCoalName + ". PArt of the file: " + iniFileName);
 
-											JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: "
+											JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: "
 													+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 											error = true;
 											return null;
@@ -1066,7 +1066,7 @@ public class ModMakerCompilerWindow extends JDialog {
 										//we didn't find what we wanted...
 										dispose();
 										error = true;
-										JOptionPane.showMessageDialog(null, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: " + intCoalName
+										JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: " + intCoalName
 												+ "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 										return null;
 									}
@@ -1229,7 +1229,7 @@ public class ModMakerCompilerWindow extends JDialog {
 													default:
 														ModManager.debugLogger.writeError(
 																"ERROR: Unknown matching algorithm: " + arrayType + ". does this client need updated? Aborting this stat update.");
-														JOptionPane.showMessageDialog(null,
+														JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
 																"<html>Unknown matching algorithm from ME3Tweaks: " + arrayType
 																		+ ".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
 																"Compiling Error", JOptionPane.ERROR_MESSAGE);
@@ -1251,7 +1251,7 @@ public class ModMakerCompilerWindow extends JDialog {
 														default:
 															ModManager.debugLogger.writeError(
 																	"Unknown matching algorithm: " + arrayType + " does this client need updated? Aborting this stat update.");
-															JOptionPane.showMessageDialog(null,
+															JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
 																	"<html>Unknown operation from ME3Tweaks: " + operation
 																			+ ".<br>You should check for updates to Mod Manager.<br>This mod will not fully compile.</html>",
 																	"Compiling Error", JOptionPane.ERROR_MESSAGE);
@@ -1297,7 +1297,7 @@ public class ModMakerCompilerWindow extends JDialog {
 											sb.append(newValue);
 											sb.append("</html>");
 
-											JOptionPane.showMessageDialog(null, sb.toString(), "Compiling Error", JOptionPane.ERROR_MESSAGE);
+											JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, sb.toString(), "Compiling Error", JOptionPane.ERROR_MESSAGE);
 											ModManager.debugLogger.writeError(sb.toString());
 										}
 									}

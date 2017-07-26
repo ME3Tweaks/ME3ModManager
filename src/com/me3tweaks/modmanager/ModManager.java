@@ -80,9 +80,9 @@ public class ModManager {
 	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0.2";
-	public static long BUILD_NUMBER = 77L;
-	public static final String BUILD_DATE = "7/18/2017";
+	public static final String VERSION = "5.0.3";
+	public static long BUILD_NUMBER = 78L;
+	public static final String BUILD_DATE = "7/24/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -416,7 +416,8 @@ public class ModManager {
 					long oldbuild = Long.parseLong(args[1]);
 					if (oldbuild >= ModManager.BUILD_NUMBER) {
 						// SOMETHING WAS WRONG!
-						JOptionPane.showMessageDialog(null, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed",
+								JOptionPane.ERROR_MESSAGE);
 						ModManager.debugLogger.writeMessage("UPDATE FAILED!");
 					} else {
 						// update ok
@@ -431,13 +432,34 @@ public class ModManager {
 					ModManager.debugLogger.writeMessage("--update-from number format exception.");
 				}
 			}
+
+			if (args.length > 2 && args[0].equals("--jre-update-from")) {
+				// This is being run as an update
+				String javaJRE = System.getProperty("java.version");
+				if (javaJRE.equals(args[1])) {
+					if (args[2].equals("system") && !ModManager.isUsingBundledJRE()) {
+						ModManager.debugLogger.writeError("JRE update failed - same version, not using bundled!");
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "JRE update (might have) failed!\nStill using " + javaJRE + ".", "JRE Update Failed",
+								JOptionPane.ERROR_MESSAGE);
+					} else {
+						ModManager.debugLogger.writeMessage("JRE update succeeded - same version, but now using bundled");
+						String message = "JRE update successful.\nMod Manager is now using a bundled JRE - it no longer needs the system one\nRunning Java " + args[1];
+						JOptionPane.showMessageDialog(null, message, "JRE Update Complete", JOptionPane.INFORMATION_MESSAGE);
+					}
+				} else {
+					ModManager.debugLogger.writeMessage("JRE update succeeded - updated to " + args[1]);
+					String message = "JRE update successful.\nOld Version: " + args[1] + "\nCurrent Version: " + javaJRE;
+					JOptionPane.showMessageDialog(null, message, "JRE Update Complete", JOptionPane.INFORMATION_MESSAGE);
+				}
+			}
+
 			if (args.length > 1 && args[0].equals("--minor-update-from")) {
 				// This is being run as a minor update
 				try {
 					long oldbuild = Long.parseLong(args[1]);
 					if (oldbuild == ModManager.BUILD_NUMBER) {
 						// SOMETHING WAS WRONG!
-						JOptionPane.showMessageDialog(null, "Minor update was applied.", "Update OK", JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Minor update was applied.", "Update OK", JOptionPane.INFORMATION_MESSAGE);
 						ModManager.debugLogger.writeMessage("MINOR UPDATE OK!");
 					}
 				} catch (NumberFormatException e) {
@@ -454,7 +476,7 @@ public class ModManager {
 			}
 
 			if (checkIfCMMPatchIsTooLong()) {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"Mod Manager has detected that it running from a location with a long filepath.\nMod Manager caches files using their relative game directory path.\nYou may consider moving Mod Manager higher up this file system's hierarchy\nto avoid issues with Windows path limitations.",
 						"Windows Path Limitation Warning", JOptionPane.WARNING_MESSAGE);
 			}
@@ -500,14 +522,14 @@ public class ModManager {
 			}
 			debugLogger.writeMessage("Mod Manager version " + ModManager.VERSION + " Build " + ModManager.BUILD_NUMBER);
 			if (emergencyMode) {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
 								+ "Logging mode was attempted to be turned on, but failed. Logging for this session has been enabled.<br>"
 								+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>"
 								+ "Something is very wrong and Mod Manager will likely not function properly.</html>",
 						"Critical Startup Error", JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"<html>An unknown error occured during Mod Manager startup:<br>" + e.getMessage() + "<br>"
 								+ "Mod Manager will attempt to continue startup with limited resources and defaults.<br>" + "Logging mode has been automatically turned on.</html>",
 						"Startup Error", JOptionPane.WARNING_MESSAGE);
@@ -527,8 +549,9 @@ public class ModManager {
 			new ModManagerWindow(isUpdate);
 		} catch (Throwable e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught throwable during runtime:", e);
-			JOptionPane.showMessageDialog(null, "Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.",
-					"Mod Manager has crashed", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.", "Mod Manager has crashed",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -697,8 +720,9 @@ public class ModManager {
 		ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
 		File bgdir = new File(biogamedir);
 		if (!bgdir.exists()) {
-			JOptionPane.showMessageDialog(null, "The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.",
-					"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
+					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -712,11 +736,12 @@ public class ModManager {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			if (isAdmin()) {
-				JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nPlease report this to FemShep.", "Launcher_WV.exe error",
-						JOptionPane.ERROR_MESSAGE);
-			} else {
-				JOptionPane.showMessageDialog(null, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.",
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nPlease report this to FemShep.",
 						"Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
+			} else {
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+						"An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.", "Launcher_WV.exe error",
+						JOptionPane.ERROR_MESSAGE);
 			}
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
 			return false;
@@ -772,10 +797,11 @@ public class ModManager {
 		} catch (Exception e1) {
 			ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
 			if (isAdmin()) {
-				JOptionPane.showMessageDialog(null, "An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nPlease report this to FemShep.",
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
+						"An error occured extracting binkw32" + (asi ? "_asi" : "") + ".dll out of ME3CMM.exe.\nPlease report this to FemShep.",
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"An error occured extracting binkw32" + (asi ? "_asi" : "")
 								+ ".dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator or grant yourself write permissions from the tools menu.",
 						"binkw32" + (asi ? "_asi" : "") + ".dll error", JOptionPane.ERROR_MESSAGE);
@@ -987,19 +1013,30 @@ public class ModManager {
 		return appendSlash(file.getAbsolutePath());
 	}
 
+	/**
+	 * Gets the list of saved BIOGAme directories from the BIOGAME_DIRECTORIES
+	 * file. If none are found, it looks up the registry key and returns that.
+	 * ModMAnagerWindow will also look up the registry key to set the default
+	 * value.
+	 * 
+	 * @return list of found biogame directories
+	 */
 	public static ArrayList<String> getSavedBIOGameDirectories() {
 		ArrayList<String> directories = new ArrayList<>();
-		File file = new File(getDataDir() + "BIOGAME_DIRECTORIES");
+		File file = new File(ModManager.getSavedBIOGameDirectoriesFile());
 		if (file.exists()) {
 			Scanner scanner;
 			try {
 				scanner = new Scanner(file);
 				while (scanner.hasNextLine()) {
 					String directory = scanner.nextLine();
+					directory = ResourceUtils.removeTrailingSlashes(directory);
 					if (!(new File(directory).exists())) {
 						continue; //skip
 					}
-					directories.add(directory);
+					if (!directories.contains(directory)) {
+						directories.add(directory);
+					}
 				}
 				scanner.close();
 			} catch (FileNotFoundException e) {
@@ -1013,6 +1050,7 @@ public class ModManager {
 			if (setDir != null) {
 				File dir = new File(setDir);
 				if (dir.exists()) {
+					setDir = ResourceUtils.removeTrailingSlashes(setDir);
 					directories.add(setDir);
 					try {
 						ModManager.debugLogger.writeMessage("Upgrading biogame directory to BIOGAME_DIRECTORIES file.");
@@ -1025,10 +1063,10 @@ public class ModManager {
 					return directories;
 				}
 			}
-
 			//Haven't found any yet... look it up
 			String regpath = ModManager.LookupGamePathViaRegistryKey(true);
 			if (regpath != null && new File(regpath).exists()) {
+				regpath = ResourceUtils.removeTrailingSlashes(regpath);
 				directories.add(regpath);
 			}
 		}
@@ -1662,8 +1700,8 @@ public class ModManager {
 		File bink32 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw32.dll");
 		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 		try {
-			// Original ASI hash, July 8 2017 v3 hash
-			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d" };
+			// Original ASI hash, July 8 2017 v3 hash, July 23 2017 v4 Hash
+			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d","1acccbdae34e29ca7a50951999ed80d5" };
 			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (asihashlist.contains(binkhash) && bink23.exists()) {

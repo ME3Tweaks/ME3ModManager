@@ -397,7 +397,7 @@ public class BackupWindow extends JDialog {
 				for (String failed : failedBackups) {
 					header += failed + "\n";
 				}
-				JOptionPane.showMessageDialog(null, header, "DLC backup errors", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(BackupWindow.this, header, "DLC backup errors", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
