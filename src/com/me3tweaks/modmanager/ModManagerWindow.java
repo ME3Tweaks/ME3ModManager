@@ -2557,25 +2557,28 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						new ME3ExplorerUpdaterWindow(ModManager.LATEST_ME3EXPLORER_VERSION, true);
 					} else {
 						if (me3exp.exists()) {
-							ModManager.debugLogger.writeMessage("Launching ME3Explorer");
-							labelStatus.setText("Launched ME3Explorer");
 							ProcessBuilder pb = new ProcessBuilder(me3exp.getAbsolutePath());
+							File workingdir = new File(me3exp.getAbsolutePath()).getParentFile();
+							pb.directory(workingdir);
+							ModManager.debugLogger.writeMessage("Launching ME3Explorer. Working directory for process: "+workingdir);
 							ModManager.runProcessDetached(pb);
+							labelStatus.setText("Launched ME3Explorer");
 						} else {
-							ModManager.debugLogger.writeMessage("Aboring ME3Explorer launch - does not exist locally");
+							ModManager.debugLogger.writeMessage("Aborting ME3Explorer launch - does not exist locally");
 							labelStatus.setText("ME3Explorer not available");
 						}
 					}
 				} else {
 					if (me3exp.exists()) {
 						//run it
-						ModManager.debugLogger.writeMessage("Launching ME3Explorer");
-						labelStatus.setText("Launched ME3Explorer");
 						ProcessBuilder pb = new ProcessBuilder(me3exp.getAbsolutePath());
+						File workingdir = new File(me3exp.getAbsolutePath()).getParentFile();
+						pb.directory(workingdir);
+						ModManager.debugLogger.writeMessage("Launching ME3Explorer. Working directory for process: "+workingdir);
 						ModManager.runProcessDetached(pb);
+						labelStatus.setText("Launched ME3Explorer");
 					}
 				}
-
 			} else {
 				updateApplyButton();
 				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");

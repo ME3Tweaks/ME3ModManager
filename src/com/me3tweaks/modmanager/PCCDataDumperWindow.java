@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +38,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.PCCDataDumperWindow.DumpPCCJob.DumpTaskResult;
@@ -269,6 +271,26 @@ public class PCCDataDumperWindow extends JFrame {
 					files.addAll(testpatchfiles);
 				}
 			}
+
+			if (options.properties) {
+				//Locate TLK
+				publish(new ThreadCommand("UPDATE_STATUS", "Caching TLK files for property dumping..."));
+				ArrayList<String> installedDLC = ModManager.getInstalledDLC(options.gamePath + "\\BIOGame");
+				for (String dlc : installedDLC) {
+					String intTlkPath = "/BIOGame/DLC/" + dlc + "/CookedPCConsole/" + dlc + "_INT.tlk";
+					String tlkPath = options.gamePath + intTlkPath;
+					if (new File(tlkPath).exists()) {
+						ModManager.debugLogger.writeMessage("Copying unpacked INT TLK from " + tlkPath);
+						FileUtils.copyFile(new File(tlkPath), new File(ModManager.getPCCDumpTLKCacheFolder() + dlc + "_INT.tlk"));
+					} else {
+						String sfar = options.gamePath + "\\BIOGame\\DLC\\" + dlc + "\\CookedPCConsole\\Default.sfar";
+						if (new File(sfar).exists()) {
+							ModManager.debugLogger.writeMessage("Extracting INT TLK from " + sfar);
+							ModManager.ExtractFileFromSFAR(sfar, intTlkPath, ModManager.getPCCDumpTLKCacheFolder());
+						}
+					}
+				}
+			}
 			ModManager.debugLogger.writeMessage("Number of files to dump: " + files.size());
 			publish(new ThreadCommand("UPDATE_STATUS", "Dumping PCC files..."));
 
@@ -300,7 +322,7 @@ public class PCCDataDumperWindow extends JFrame {
 
 			for (DumpTaskResult tr : retrySingleThreaded) {
 				String filepath = tr.getFilepath();
-				ModManager.debugLogger.writeMessage("Retrying dump in single threaded mode on file: "+filepath);
+				ModManager.debugLogger.writeMessage("Retrying dump in single threaded mode on file: " + filepath);
 				String taskname = FilenameUtils.getName(filepath) + " (" + ResourceUtils.humanReadableByteCount(new File(filepath).length(), true) + ")";
 				publish(new ThreadCommand("ASSIGN_TASK", taskname));
 				ProcessResult pr = ModManager.dumpPCC(filepath, options);
