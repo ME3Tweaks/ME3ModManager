@@ -916,8 +916,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
 						updatetext += AllModsUpdateWindow.getVersionUpdateString(upackage);
 						if (upackage.getChangeLog() != null && !upackage.getChangeLog().equals("")) {
-							updatetext += "\n - ";
+							updatetext += "    Changelog: ";
 							updatetext += upackage.getChangeLog();
+							updatetext += "\n";
 						}
 						updatetext += "\nUpdate this mod?";
 						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
@@ -993,7 +994,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		PRELOADED_BIOGAME_DIR = comboboxBiogameDir.getItemAt(0);
+		if (comboboxBiogameDir.getSelectedItem() != null) {
+			PRELOADED_BIOGAME_DIR = (String) comboboxBiogameDir.getSelectedItem();
+		}
 		BIOGAME_ITEM_LISTENER = new BiogameDirChangeListener();
 
 		// Menubar
@@ -2560,7 +2563,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							ProcessBuilder pb = new ProcessBuilder(me3exp.getAbsolutePath());
 							File workingdir = new File(me3exp.getAbsolutePath()).getParentFile();
 							pb.directory(workingdir);
-							ModManager.debugLogger.writeMessage("Launching ME3Explorer. Working directory for process: "+workingdir);
+							ModManager.debugLogger.writeMessage("Launching ME3Explorer. Working directory for process: " + workingdir);
 							ModManager.runProcessDetached(pb);
 							labelStatus.setText("Launched ME3Explorer");
 						} else {
@@ -2574,7 +2577,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						ProcessBuilder pb = new ProcessBuilder(me3exp.getAbsolutePath());
 						File workingdir = new File(me3exp.getAbsolutePath()).getParentFile();
 						pb.directory(workingdir);
-						ModManager.debugLogger.writeMessage("Launching ME3Explorer. Working directory for process: "+workingdir);
+						ModManager.debugLogger.writeMessage("Launching ME3Explorer. Working directory for process: " + workingdir);
 						ModManager.runProcessDetached(pb);
 						labelStatus.setText("Launched ME3Explorer");
 					}
