@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -64,12 +65,20 @@ public class ModXMLTools {
 
 	private static class ManifestGeneratorUpdateCompressor extends SwingWorker<String, ThreadCommand> {
 		private Mod mod;
+		private String changelog;
 
 		public ManifestGeneratorUpdateCompressor(Mod mod) {
 			this.mod = mod;
 			//Verify Deltas
 			for (ModDelta delta : mod.getModDeltas()) {
 				new DeltaWindow(mod, delta, true, false);
+			}
+			FileUtils.deleteQuietly(new File(mod.getModPath() + "VARIANTS")); //nuke variants.
+			String changelog = JOptionPane.showInputDialog(ModManagerWindow.ACTIVE_WINDOW,
+					"Enter a short changelog users will see when updating your mod.\nKeep it to 1 sentence or less.\nLeave blank for no changelog.", "Enter Changelog",
+					JOptionPane.PLAIN_MESSAGE);
+			if (changelog != null && !changelog.equals("")) {
+				this.changelog = changelog;
 			}
 		}
 
@@ -129,7 +138,7 @@ public class ModXMLTools {
 			}
 
 			File manifestFile = new File(
-					System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Manifests" + File.separator + foldername + ".xml");
+					ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
 
 			//SIMULATE REVERSE UPDATE
 			//CHECK FOR FILE EXISTENCE IN MOD UPDATE FOLDER, LZMA HASHES.
@@ -187,11 +196,11 @@ public class ModXMLTools {
 			//Compressing mod to /serverupdate
 
 			long startTime = System.currentTimeMillis();
-			String sideloadoutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Sideload" + File.separator + foldername
+			String sideloadoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Sideload" + File.separator + foldername
 					+ File.separator;
-			String compressedfulloutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "Full" + File.separator + foldername
+			String compressedfulloutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Full" + File.separator + foldername
 					+ File.separator;
-			String compressedupdateoutputfolder = System.getProperty("user.dir") + File.separator + "ME3TweaksUpdaterService" + File.separator + "UpdateDelta" + File.separator
+			String compressedupdateoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "UpdateDelta" + File.separator
 					+ foldername + File.separator;
 
 			if (!manifestFile.exists()) {
@@ -266,6 +275,9 @@ public class ModXMLTools {
 			rootElement.setAttribute("updatecode", Integer.toString(mod.getClassicUpdateCode()));
 			rootElement.setAttribute("folder", mod.getServerModFolder());
 			rootElement.setAttribute("manifesttype", "full");
+			if (changelog != null) {
+				rootElement.setAttribute("changelog", changelog);
+			}
 			if (mod.getSideloadURL() != null) {
 				//already validated above
 				Element sideloadElement = modDoc.createElement("sideloadurl");
@@ -353,6 +365,7 @@ public class ModXMLTools {
 			clpbrd.setContents(new StringSelection(manifest), null);
 
 			publish(new ThreadCommand(mod.getModName() + " prepared for updater service", null));
+			ResourceUtils.openFolderInExplorer(ModManager.getME3TweaksUpdaterServiceFolder());
 			return null;
 		}
 

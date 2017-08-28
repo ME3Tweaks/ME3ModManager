@@ -171,11 +171,9 @@ public class AllModsUpdateWindow extends JDialog {
 					for (UpdatePackage upackage : upackages) {
 						if (upackage.requiresSideload()) {
 							ignoredpackages.add(upackage);
-							JOptionPane.showMessageDialog(AllModsUpdateWindow.this,
-									upackage.getMod().getModName()
-											+ " has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "
-											+ upackage.getMod().getModName() + ".",
-									"Sideload update required", JOptionPane.WARNING_MESSAGE);
+							JOptionPane.showMessageDialog(AllModsUpdateWindow.this, upackage.getMod().getModName()
+									+ " has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "
+									+ upackage.getMod().getModName() + ".", "Sideload update required", JOptionPane.WARNING_MESSAGE);
 							try {
 								ResourceUtils.openWebpage(new URL(upackage.getSideloadURL()));
 							} catch (MalformedURLException e) {
@@ -197,6 +195,9 @@ public class AllModsUpdateWindow extends JDialog {
 					for (UpdatePackage upackage : upackages) {
 						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + "");
 						updatetext += getVersionUpdateString(upackage);
+						if (upackage.getChangeLog() != null && !upackage.getChangeLog().equals("")) {
+							updatetext += "   Changelog: " + upackage.getChangeLog() + "\n";
+						}
 					}
 					if (upackages.size() > 1) {
 						updatetext += "Update these mods?";
@@ -223,7 +224,7 @@ public class AllModsUpdateWindow extends JDialog {
 				case "MANIFEST_DOWNLOADED":
 					statusLabel.setText("Calculating files for update");
 					break;
-				case "CALCULATING_PROGRESS" :
+				case "CALCULATING_PROGRESS":
 					statusLabel.setText(obj.getMessage());
 					break;
 				case "NUM_REMAINING":
@@ -304,11 +305,15 @@ public class AllModsUpdateWindow extends JDialog {
 						"Mods failed to update", JOptionPane.ERROR_MESSAGE);
 			} else if (upackages.size() != completedUpdates.size()) {
 				//one error occured
-				JOptionPane.showMessageDialog(callingWindow, completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
-						+ " failed to update.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.", "Some mods were updated", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(callingWindow,
+						completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
+								+ " failed to update.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.",
+						"Some mods were updated", JOptionPane.WARNING_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(callingWindow, upackages.size() + " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.", "Mods updated",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(callingWindow,
+						upackages.size()
+								+ " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.",
+						"Mods updated", JOptionPane.INFORMATION_MESSAGE);
 			}
 
 			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
@@ -317,9 +322,9 @@ public class AllModsUpdateWindow extends JDialog {
 		public void setManifestDownloaded() {
 			publish(new ThreadCommand("MANIFEST_DOWNLOADED"));
 		}
-		
+
 		public void setUpdateCalculationProgress(int done, int total) {
-			publish(new ThreadCommand("CALCULATING_PROGRESS", "Calculating files for update ["+done+"/"+total+"]"));
+			publish(new ThreadCommand("CALCULATING_PROGRESS", "Calculating files for update [" + done + "/" + total + "]"));
 		}
 
 		public void publishUpdate(String update) {

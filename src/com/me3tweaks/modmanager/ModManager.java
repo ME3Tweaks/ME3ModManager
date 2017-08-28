@@ -33,7 +33,9 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 import javax.swing.JOptionPane;
 import javax.swing.ToolTipManager;
@@ -50,6 +52,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -63,6 +67,7 @@ import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.PCCDumpOptions;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.DebugLogger;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
@@ -80,9 +85,9 @@ public class ModManager {
 	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0.3";
-	public static long BUILD_NUMBER = 78L;
-	public static final String BUILD_DATE = "7/24/2017";
+	public static final String VERSION = "5.0.4";
+	public static long BUILD_NUMBER = 79L;
+	public static final String BUILD_DATE = "8/12/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -99,7 +104,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 22;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 23;
 
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
@@ -133,7 +138,6 @@ public class ModManager {
 	} //threading wait() and notifyall();
 
 	public static void main(String[] args) {
-
 		loadLogger();
 		boolean emergencyMode = false;
 		boolean isUpdate = false;
@@ -583,7 +587,7 @@ public class ModManager {
 			try {
 				FileUtils.moveDirectory(oldupdatedir, new File(ModManager.getToolsDir()));
 			} catch (IOException e) {
-				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY! Deleting the update/ folder instead (will auto download the new 7za)");
+				ModManager.debugLogger.writeMessage("FAILED TO MOVE update TO data/ DIRECTORY! Deleting the update/ folder instead (will auto download the new 7z)");
 				ModManager.debugLogger.writeException(e);
 				FileUtils.deleteQuietly(oldupdatedir);
 			}
@@ -1402,7 +1406,7 @@ public class ModManager {
 		commandBuilder.add("--OutputPath");
 		commandBuilder.add(extractionDirectory);
 		commandBuilder.add("--FlatFolderExtraction");
-
+		
 		ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
 		return ModManager.runProcess(extractionProcessBuilder);
 	}
@@ -1484,6 +1488,8 @@ public class ModManager {
 		}
 		if (options.properties) {
 			commandBuilder.add("--properties");
+			commandBuilder.add("--tlkcache");
+			commandBuilder.add(ModManager.getPCCDumpTLKCacheFolder());
 		}
 
 		if (options.swfs) {
@@ -2480,6 +2486,17 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
+	
+	/**
+	 * Returns the PCC dumping folder's TLK cache
+	 * 
+	 * @return data\pccdumps\TLKCache
+	 */
+	public static String getPCCDumpTLKCacheFolder() {
+		File file = new File(getDataDir() + "PCCdumps\\TLKCache\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
+	}
 
 	/**
 	 * Gets the directory that contains the batch installation groups.
@@ -2723,5 +2740,12 @@ public class ModManager {
 
 	public static String getBundledJREPath() {
 		return getDataDir() + "jre-x64\\";
+	}
+
+	public static String getME3TweaksUpdaterServiceFolder() {
+		// TODO Auto-generated method stub
+		File file = new File(getDataDir() + "ME3TweaksUpdaterService\\");
+		file.mkdirs();
+		return appendSlash(file.getAbsolutePath());
 	}
 }
