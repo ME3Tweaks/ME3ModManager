@@ -263,8 +263,11 @@ public class SevenZipCompressedModInspector {
 					if (!deletesuccessful) {
 						ModManager.debugLogger.writeError("FAILED TO DELETE FOLDER: " + outputdir);
 					}
-				} else {
+				} else if (result ==ModImportArchiveWindow.IMPORT_AS_SIDELOAD_OPTION){
 					ModManagerWindow.forceUpdateOnReloadList.add(cm.getModDescMod().getClassicUpdateCode());
+				} else {
+					//cancel
+					return false;
 				}
 
 			}
