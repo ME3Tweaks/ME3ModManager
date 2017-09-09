@@ -457,12 +457,16 @@ public class ModImportArchiveWindow extends JDialog {
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 				if (modsToImport.size() == 1) {
 					//Highlight it
-					
+					//don't have a way to figure out what was just imported...
 				}
 				return;
 			} else {
 				ModManager.debugLogger.writeError("[IMPORTWORKER] Import was not fully successful");
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+				progressBar.setVisible(false);
+				importButton.setVisible(true);
+				importButton.setEnabled(true);
+				importButton.setText("Import Selected");
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Error occured during mod import.\nSome mods may have successfully imported.", "Import Unsuccessful",
 						JOptionPane.ERROR_MESSAGE);
 			}

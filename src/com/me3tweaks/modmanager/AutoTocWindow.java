@@ -57,7 +57,8 @@ public class AutoTocWindow extends JDialog {
 					JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		setupWindow("Updating Basegame and DLC TOC files");
+		setupWindow("<center>Updating Basegame and DLC TOC files<br>This may take some time</center>");
+		progressBar.setStringPainted(false);
 		updatedGameTOCs = new HashMap<String, String>();
 		ModManager.debugLogger.writeMessage("===Starting AutoTOC. Mode: GAME-WIDE ===");
 		this.setTitle("Mod Manager AutoTOC");
@@ -86,9 +87,11 @@ public class AutoTocWindow extends JDialog {
 		switch (mode) {
 		case LOCALMOD_MODE:
 			setupWindow("Updating " + mod.getModName() + "'s PCConsoleTOC files");
+			progressBar.setStringPainted(true);
 			break;
 		case INSTALLED_MODE:
 			setupWindow("Updating installed PCConsoleTOCs for " + mod.getModName());
+			progressBar.setStringPainted(false);
 			break;
 		default:
 			ModManager.debugLogger.writeError("Unknown AutoTOC mode: " + mode);
@@ -110,7 +113,6 @@ public class AutoTocWindow extends JDialog {
 		infoLabel = new JLabel("<html>" + labelText + "</html>");
 		aboutPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
-		progressBar.setStringPainted(true);
 		progressBar.setIndeterminate(false);
 		aboutPanel.add(progressBar, BorderLayout.CENTER);
 		aboutPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
