@@ -3,6 +3,7 @@ package com.me3tweaks.modmanager.modupdater;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -15,6 +16,7 @@ import java.util.concurrent.CancellationException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -171,7 +173,11 @@ public class AllModsUpdateWindow extends JDialog {
 					for (UpdatePackage upackage : upackages) {
 						if (upackage.requiresSideload()) {
 							ignoredpackages.add(upackage);
-							JOptionPane.showMessageDialog(AllModsUpdateWindow.this, upackage.getMod().getModName()
+							Window center = callingWindow;
+							if (showUI) {
+								center = AllModsUpdateWindow.this;
+							}
+							JOptionPane.showMessageDialog(center, upackage.getMod().getModName()
 									+ " has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "
 									+ upackage.getMod().getModName() + ".", "Sideload update required", JOptionPane.WARNING_MESSAGE);
 							try {
@@ -205,7 +211,11 @@ public class AllModsUpdateWindow extends JDialog {
 						updatetext += "Update this mod?";
 					}
 					ModManager.debugLogger.writeMessage("Prompting users for updates");
-					int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
+					Window center = callingWindow;
+					if (showUI) {
+						center = AllModsUpdateWindow.this;
+					}
+					int result = JOptionPane.showConfirmDialog(center, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
 					switch (result) {
 					case JOptionPane.YES_OPTION:
 						userChose = 1;

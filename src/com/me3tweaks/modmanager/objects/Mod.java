@@ -60,6 +60,9 @@ public class Mod implements Comparable<Mod> {
 	private ArrayList<String> outdatedDLCModules = new ArrayList<>();
 	private ArrayList<AlternateCustomDLC> appliedAutomaticAlternateCustomDLC = new ArrayList<AlternateCustomDLC>();
 
+	public String rawCustomDLCSourceDirs;
+	public String rawcustomDLCDestDirs;
+	
 	public ArrayList<AlternateCustomDLC> getAppliedAutomaticAlternateCustomDLC() {
 		return appliedAutomaticAlternateCustomDLC;
 	}
@@ -632,6 +635,8 @@ public class Mod implements Comparable<Mod> {
 				//customDLC flag is set
 				String sourceFolderIni = modini.get(ModType.CUSTOMDLC, "sourcedirs");
 				String destFolderIni = modini.get(ModType.CUSTOMDLC, "destdirs");
+				rawCustomDLCSourceDirs = sourceFolderIni;
+				rawcustomDLCDestDirs = destFolderIni;
 				// ModManager.debugLogger.writeMessageConditionally("New files: "+newFileIni);
 				// ModManager.debugLogger.writeMessageConditionally("Old Files: "+oldFileIni);
 				if (sourceFolderIni == null || destFolderIni == null || sourceFolderIni.equals("") || destFolderIni.equals("")) {

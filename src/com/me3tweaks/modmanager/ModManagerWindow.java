@@ -72,12 +72,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArchUtils;
-import org.apache.commons.lang3.arch.Processor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.derby.iapi.services.loader.GeneratedMethod;
 import org.ini4j.InvalidFileFormatException;
-import org.ini4j.Profile.Section;
 import org.ini4j.Wini;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -85,7 +82,6 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.help.HelpMenu;
-import com.me3tweaks.modmanager.mapmesh.MapMeshViewer;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
@@ -115,7 +111,6 @@ import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomAction
 import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI2;
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
-import com.sun.jna.platform.win32.WinReg;
 
 import net.iharder.dnd.FileDrop;
 
@@ -137,13 +132,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JScrollPane scrollDescription;
 	JButton buttonBioGameDir, buttonApplyMod, buttonStartGame;
 	JMenuBar menuBar;
-	JMenu actionMenu, modUtilsMenu, modManagementMenu, devMenu, toolsMenu, backupMenu, restoreMenu, parsersMenu, helpMenu, openToolMenu;
+	JMenu actionMenu, modUtilsMenu, modManagementMenu, devMenu, toolsMenu, backupMenu, restoreMenu, parsersMenu, helpMenu, openToolMenu, modDeveloperMenu;
 	JPopupMenu modUtilsPopupMenu;
 	JMenuItem actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
 			modManagementPatchLibary, modManagementClearPatchLibraryCache, modManagementModGroupsManager;
 	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32,
-			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config, toolsMapMeshViewer, toolsPCCDataDumper;
+			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config, toolsPCCDataDumper;
 	JMenuItem backupBackupDLC, backupCreateGDB, backupCreateVanillaCopy;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC, restoreVanillaCopy;
@@ -1266,7 +1261,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		buttonStartGame = new JButton("Start Game");
 		buttonStartGame.addActionListener(this);
 		buttonStartGame.setToolTipText(
-				"<html>Starts the game.<br>If LauncherWV DLC bypass is installed, it will launch instead to patch out the DLC verifiction test.<br>The game will then start.</html>");
+				"<html>Starts the game and minimizes Mod Manager.</html>");
 
 		buttonPanel.add(buttonApplyMod);
 		buttonPanel.add(buttonStartGame);
@@ -1364,9 +1359,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			toolMassEffectModder.setToolTipText("<html>Mass Effect Modder requires 64-bit Windows</html>");
 			toolMassEffectModder.setEnabled(false);
 		}
-		toolME3Explorer = new JMenuItem("ME3Explorer");
+		toolME3Explorer = new JMenuItem("ME3Explorer (Mgamerz' Fork)");
 		toolME3Explorer.setToolTipText(
-				"<html>Runs ME3Explorer.<br>ME3Explorer is the primary tool for creating and editing Mass Effect 3 content.<br>Note: This is an external program and is not supported by ME3Tweaks.</html>");
+				"<html>Runs ME3Explorer.<br>ME3Explorer is the primary tool for creating and editing Mass Effect 3 content.<br>Note: This is an external program and only the ME3Tweaks additions are supported by ME3Tweaks.</html>");
 		toolTankmasterCoalUI = new JMenuItem("TankMaster Coalesce Interface");
 		toolTankmasterCoalUI.setToolTipText("Opens interface for Tankmaster's Coalesced compiler");
 		toolTankmasterTLK = new JMenuItem("TankMaster ME2/ME3 TLK Tool");
@@ -1482,12 +1477,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolME3Config = new JMenuItem("ME3 Config Tool");
 		toolME3Config.setToolTipText("<html>Opens the ME3 Configuration Utility that comes packaged with the game.<br>Lets you configure graphics and audio settings.</html>");
 
-		toolsMapMeshViewer = new JMenuItem("Map Pathfinding Viewer");
-		toolsMapMeshViewer.setToolTipText("<html>Parses the output of the GUI Transplanter dumping tool and can show pathfinding nodes for a map.<br>VERY EXPERIMENTAL.</html>");
-		if (!ResourceUtils.is64BitWindows()) {
-			toolsMapMeshViewer.setEnabled(false);
-			toolsMapMeshViewer.setToolTipText("<html>Requires 64-bit Windows</html>");
-		}
 		toolsPCCDataDumper = new JMenuItem("PCC Data Dumper");
 		toolsPCCDataDumper
 				.setToolTipText("<html>Parses PCC informtation (such as scripts, properties, coalesced, etc)<br>and dumps it into an easily searchable text format.</html>");
@@ -1532,7 +1521,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsInstallBinkw32asi.addActionListener(this);
 		toolsUninstallBinkw32.addActionListener(this);
 		toolME3Config.addActionListener(this);
-		toolsMapMeshViewer.addActionListener(this);
 		toolsPCCDataDumper.addActionListener(this);
 		toolME3Explorer.addActionListener(this);
 		toolMassEffectModder.addActionListener(this);
@@ -1566,11 +1554,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.add(toolMassEffectModder);
 		toolsMenu.add(toolME3Explorer);
 		toolsMenu.add(toolsPCCDataDumper);
-		toolsMenu.add(toolsMapMeshViewer);
 		//toolsMenu.add(parsersMenu); not enough content for this to be useful.
 		toolsMenu.add(devMenu);
 		toolsMenu.addSeparator();
-		toolsMenu.add(toolsInstallLauncherWV);
+		//toolsMenu.add(toolsInstallLauncherWV);
 		toolsMenu.add(toolsInstallBinkw32);
 		toolsMenu.add(toolsInstallBinkw32asi);
 		toolsMenu.add(toolsUninstallBinkw32);
@@ -1910,13 +1897,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			moddevUpdateXMLGenerator.setText("Cannot prepare " + mod.getModName() + " for ME3Tweaks Updater Service");
 			modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 		}
-		//DEPLOYMENt
+		
+		//DEVELOPER MENU
+		JMenu modDeveloperMenu = new JMenu("Developer options");
+
+		//MODDESC EDITOR
 		JMenuItem modutilsDeploy = new JMenuItem("Deploy Mod");
+		modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
+		
+		//DEPLOYMENT
+		JMenuItem modutilsModdescEditor = new JMenuItem("Installation editor (moddesc)");
 		modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
 
 		//OPEN MOD FOLDER
 		JMenuItem modutilsOpenFolder = new JMenuItem("Open mod folder");
 		modutilsOpenFolder.setToolTipText("<html>Opens this mod's folder in File Explorer.<br>" + mod.getModPath() + "</html>");
+
+		modDeveloperMenu.add(modutilsModdescEditor);
+		modDeveloperMenu.add(modutilsDeploy);
 
 		//DELETE MOD
 		JMenuItem modutilsDeleteMod = new JMenuItem("Delete mod from library");
@@ -1934,11 +1932,20 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		menuItems.add(modutilsInstallCustomKeybinds);
 		menuItems.add(modutilsInfoEditor);
 		menuItems.add(modutilsAutoTOC);
-		menuItems.add(modutilsDeploy);
+		menuItems.add(modDeveloperMenu);
 		menuItems.add(new JSeparator());
 		menuItems.add(modutilsOpenFolder);
 		menuItems.add(modutilsDeleteMod);
 
+		modutilsModdescEditor.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				new ModDescEditorWindow(mod);
+			}
+			
+		});
+		
 		modutilsCheckforupdate.addActionListener(new ActionListener() {
 
 			@Override
@@ -2501,18 +2508,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"The BIOGame directory is not valid.\nMod Manager does not know where to launch the game executable.\nFix the BIOGame directory before continuing.",
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
-		} else if (e.getSource() == toolsMapMeshViewer) {
-			if (ModManager.validateNETFrameworkIsInstalled()) {
-				updateApplyButton();
-				if (ResourceUtils.is64BitWindows()) {
-					new MapMeshViewer();
-				}
-			} else {
-				updateApplyButton();
-				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
-				ModManager.debugLogger.writeMessage("Run Map Mesh Viewer: .NET is not installed");
-				new NetFrameworkMissingWindow("The Map Mesh Viewer requires .NET 4.5.2 or higher to be installed.");
-			}
 		} else if (e.getSource() == toolsPCCDataDumper) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
@@ -2910,7 +2905,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
-	private void checkAllModsForUpdates(boolean isManualCheck) {
+	public void checkAllModsForUpdates(boolean isManualCheck) {
 		// Fix for moonshine mod v1
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.getElementAt(i);

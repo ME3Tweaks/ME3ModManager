@@ -74,7 +74,7 @@ public class ModImportArchiveWindow extends JDialog {
 	 * Standard, user triggered opening
 	 */
 	public ModImportArchiveWindow() {
-        super(null, Dialog.ModalityType.MODELESS);
+		super(null, Dialog.ModalityType.MODELESS);
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (manual mode)");
 		try {
 			ModManager.debugLogger.writeMessage("Loading 7-zip library");
@@ -98,7 +98,7 @@ public class ModImportArchiveWindow extends JDialog {
 	 *            file dropped
 	 */
 	public ModImportArchiveWindow(ModManagerWindow modManagerWindow, String file) {
-        super(null, Dialog.ModalityType.MODELESS);
+		super(null, Dialog.ModalityType.MODELESS);
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (filedrop mode)");
 		ModManager.debugLogger.writeMessage("Automating load of archive file: " + file);
 
@@ -455,6 +455,8 @@ public class ModImportArchiveWindow extends JDialog {
 				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
 				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+				ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Checking for mod updates");
 				if (modsToImport.size() == 1) {
 					//Highlight it
 					//don't have a way to figure out what was just imported...

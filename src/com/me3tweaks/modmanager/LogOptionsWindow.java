@@ -273,6 +273,12 @@ public class LogOptionsWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Error checking game version:", e);
 				}
 
+				if (ModManager.isALOTInstalled(ModManagerWindow.GetBioGameDir())) {
+					log += "ALOT appears to be installed.\n";
+				} else {
+					log += "ALOT does not appear to be installed.\n";
+				}
+
 				if (minorBuildNum == 5 || minorBuildNum == -1) {
 					try {
 						String hash = MD5Checksum.getMD5Checksum(executable.getAbsolutePath());
@@ -289,6 +295,7 @@ public class LogOptionsWindow extends JDialog {
 					}
 				}
 				log += "\n";
+
 			}
 		}
 

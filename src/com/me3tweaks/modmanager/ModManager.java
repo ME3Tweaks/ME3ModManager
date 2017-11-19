@@ -85,9 +85,9 @@ public class ModManager {
 	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0.5";
-	public static long BUILD_NUMBER = 80L;
-	public static final String BUILD_DATE = "09/08/2017";
+	public static final String VERSION = "5.0.6";
+	public static long BUILD_NUMBER = 81L;
+	public static final String BUILD_DATE = "11/12/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -104,7 +104,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 24;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 27;
 
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
@@ -1406,7 +1406,7 @@ public class ModManager {
 		commandBuilder.add("--OutputPath");
 		commandBuilder.add(extractionDirectory);
 		commandBuilder.add("--FlatFolderExtraction");
-		
+
 		ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
 		return ModManager.runProcess(extractionProcessBuilder);
 	}
@@ -1707,7 +1707,7 @@ public class ModManager {
 		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 		try {
 			// Original ASI hash, July 8 2017 v3 hash, July 23 2017 v4 Hash
-			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d","1acccbdae34e29ca7a50951999ed80d5" };
+			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d", "1acccbdae34e29ca7a50951999ed80d5" };
 			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (asihashlist.contains(binkhash) && bink23.exists()) {
@@ -2486,7 +2486,7 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-	
+
 	/**
 	 * Returns the PCC dumping folder's TLK cache
 	 * 
@@ -2747,5 +2747,25 @@ public class ModManager {
 		File file = new File(getDataDir() + "ME3TweaksUpdaterService\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
+	}
+
+	public static boolean isALOTInstalled(String biogamePath) {
+		biogamePath += "/CookedPCConsole/adv_combat_tutorial_xbox_D_Int.afc";
+		File markerfile = new File(biogamePath);
+		if (markerfile.exists()) {
+			Path path = Paths.get(markerfile.getAbsolutePath());
+			try {
+				byte[] markerbytes = new byte[] { 0x4D, 0x45, 0x4D, 0x49 };
+				byte[] data = Files.readAllBytes(path);
+				byte[] final4bytes = Arrays.copyOfRange(data, data.length - 4, data.length);
+				if (Arrays.equals(final4bytes, markerbytes)) {
+					return true;
+				}
+				return false;
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException("Error checking if ALOT is installed.", e);
+			}
+		}
+		return false;
 	}
 }
