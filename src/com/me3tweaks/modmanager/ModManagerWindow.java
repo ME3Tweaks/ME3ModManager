@@ -82,6 +82,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.help.HelpMenu;
+import com.me3tweaks.modmanager.moddesceditor.ModDescEditorWindow;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;

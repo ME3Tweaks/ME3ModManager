@@ -8,14 +8,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.ini4j.BasicProfile;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -23,6 +21,7 @@ import com.me3tweaks.modmanager.AutoTocWindow;
 import com.me3tweaks.modmanager.DeltaWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.moddesceditor.MDEOfficialJob;
 import com.me3tweaks.modmanager.utilities.ByteArrayInOutStream;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
@@ -62,7 +61,8 @@ public class Mod implements Comparable<Mod> {
 
 	public String rawCustomDLCSourceDirs;
 	public String rawcustomDLCDestDirs;
-	
+	public ArrayList<MDEOfficialJob> rawOfficialJobs = new ArrayList<MDEOfficialJob>();
+
 	public ArrayList<AlternateCustomDLC> getAppliedAutomaticAlternateCustomDLC() {
 		return appliedAutomaticAlternateCustomDLC;
 	}
@@ -308,7 +308,7 @@ public class Mod implements Comparable<Mod> {
 			return;
 		}
 
-		// Add MP Change
+		// Add MP Change - DEPRECATED!
 		if (modini.get("ModInfo", "modmp") != null) {
 			modmp = modini.get("ModInfo", "modmp");
 			ModManager.debugLogger.writeMessageConditionally("Detected multiplayer modification", ModManager.LOG_MOD_INIT);
@@ -327,8 +327,9 @@ public class Mod implements Comparable<Mod> {
 			if (!ignoreLoadErrors) {
 				File file = new File(ModManager.appendSlash(getModPath()) + "Coalesced.bin");
 				if (!file.exists() && !ignoreLoadErrors) {
-					ModManager.debugLogger.writeError(modName + " doesn't have Coalesced.bin and is marked as legacy, marking as invalid.");
-					setFailedReason("Mod is legacy (1.0), which requires a Coalesced.bin in the same folder as the moddesc.ini file. One is not present.");
+					ModManager.debugLogger
+							.writeError(modName + " doesn't have Coalesced.bin and is marked as legacy (coalesced is required for this moddesc version), marking as invalid.");
+					setFailedReason("Mod is legacy (1.0), which requires a Coalesced.bin in the same folder as the moddesc.ini file. Coalesced.bin is not present.");
 					return;
 				}
 			}
@@ -465,6 +466,11 @@ public class Mod implements Comparable<Mod> {
 					requirementText = modini.get(modHeader, "jobdescription");
 					ModManager.debugLogger.writeMessageConditionally(modHeader + " job description: " + requirementText, ModManager.LOG_MOD_INIT);
 				}
+
+				//For ModDesc Editor
+				MDEOfficialJob mdeJob = new MDEOfficialJob(modHeader, iniModDir, newFileIni, oldFileIni, addFileIni, addFileTargetIni, addReadOnlyFileTargetIni,
+						removeFileTargetIni, requirementText);
+				rawOfficialJobs.add(mdeJob);
 
 				// Check to make sure the filenames are the same, and if they
 				// are, then the mod is going to be valid.
