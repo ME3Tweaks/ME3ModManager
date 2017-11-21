@@ -37,6 +37,7 @@ import java.util.function.Predicate;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
@@ -133,6 +134,7 @@ public class ModManager {
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGUAGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
+	public static ImageIcon ACTIVITY_ICON;
 
 	public static final class Lock {
 	} //threading wait() and notifyall();
@@ -149,6 +151,7 @@ public class ModManager {
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon32.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
+			ACTIVITY_ICON= new ImageIcon( Toolkit.getDefaultToolkit().getImage(ModManagerWindow.class.getResource("/resource/network.gif")));
 
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
 

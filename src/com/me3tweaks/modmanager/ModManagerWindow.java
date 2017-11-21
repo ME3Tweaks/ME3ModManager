@@ -7,7 +7,9 @@ import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -39,6 +41,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
@@ -93,6 +96,7 @@ import com.me3tweaks.modmanager.modupdater.UpdatePackage;
 import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
 import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.InstalledASIMod;
+import com.me3tweaks.modmanager.objects.MainUIBackgroundJob;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
@@ -174,6 +178,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenu restoreMenuAdvanced;
 	private boolean loadedFirstTime = false;
 	private JMenuItem toolMassEffectModder;
+	private ArrayList<MainUIBackgroundJob> backgroundJobs;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -190,6 +195,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		this.isUpdate = isUpdate;
 		ModManager.debugLogger.writeMessage("Setting up Mod Manager Window");
 		try {
+			if (ACTIVE_WINDOW != null) {
+				backgroundJobs = ACTIVE_WINDOW.backgroundJobs; //carry background job indicators.
+			} else {
+				backgroundJobs = new ArrayList<MainUIBackgroundJob>();
+			}
+
 			initializeWindow();
 			ACTIVE_WINDOW = this;
 		} catch (Exception e) {
@@ -217,6 +228,46 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					"<html><div style=\"width:330px;\">Mod Manager's interface has just encountered an error:<br>" + e.getMessage() + "<br>"
 							+ "<br>This has been logged to the me3cmm_last_run_log.txt file.<br>The application will attempt to ignore this error.</div></html>",
 					"Mod Manager Error", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	/**
+	 * Submits a background job indicator. When the task is complete you then
+	 * submit a task completion and when the list is empty the activity
+	 * indicator will stop.
+	 * 
+	 * @param taskname
+	 *            Name of the task.
+	 * @return hashcode of the task that requires submission to end the task.
+	 */
+	public int submitBackgroundJob(String taskname) {
+		MainUIBackgroundJob bg = new MainUIBackgroundJob(taskname);
+		backgroundJobs.add(bg);
+		setActivityIcon(true);
+		return bg.hashCode();
+	}
+
+	/**
+	 * Submits a completion request to the main interface using the originally
+	 * returned code. When all jobs are cleared, the activity indicator is
+	 * hidden.
+	 * 
+	 * @param jobHash
+	 *            hash of previously submitted job.
+	 */
+	public void submitJobCompletion(int jobHash) {
+		MainUIBackgroundJob bg = null;
+		for (MainUIBackgroundJob job : backgroundJobs) {
+			if (job.hashCode() == jobHash) {
+				bg = job;
+				break;
+			}
+		}
+		if (bg != null) {
+			backgroundJobs.remove(bg);
+			if (backgroundJobs.size() <= 0) {
+				setActivityIcon(false);
+			}
 		}
 	}
 
@@ -548,6 +599,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		@Override
 		protected void process(List<ThreadCommand> chunks) {
+			setActivityIcon(true);
 			for (ThreadCommand latest : chunks) {
 				switch (latest.getCommand()) {
 				case "UPDATE_HELP_MENU":
@@ -867,10 +919,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 	class SingleModUpdateCheckThread extends SwingWorker<Void, Object> {
 		Mod mod;
+		int jobCode;
 
 		public SingleModUpdateCheckThread(Mod mod) {
 			this.mod = mod;
 			labelStatus.setText("Checking for " + mod.getModName() + " updates");
+			jobCode = submitBackgroundJob("Checking for " + mod.getModName() + " updates");
 		}
 
 		@Override
@@ -897,6 +951,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (latest instanceof UpdatePackage) {
 					UpdatePackage upackage = (UpdatePackage) latest;
 					if (upackage.requiresSideload()) {
+						submitJobCompletion(jobCode);
 						JOptionPane.showMessageDialog(ModManagerWindow.this, upackage.getMod().getModName()
 								+ " has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "
 								+ upackage.getMod().getModName() + ".", "Sideload update required", JOptionPane.WARNING_MESSAGE);
@@ -917,6 +972,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							updatetext += "\n";
 						}
 						updatetext += "\nUpdate this mod?";
+						submitJobCompletion(jobCode);
 						int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, updatetext, "Mod update available", JOptionPane.YES_NO_OPTION);
 						if (result == JOptionPane.YES_OPTION) {
 							ModManager.debugLogger.writeMessage("Starting manual single-mod updater");
@@ -935,6 +991,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Exception in the single mod update thread: ", e);
 			}
+			submitJobCompletion(jobCode);
 		}
 
 	}
@@ -1261,8 +1318,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 		buttonStartGame = new JButton("Start Game");
 		buttonStartGame.addActionListener(this);
-		buttonStartGame.setToolTipText(
-				"<html>Starts the game and minimizes Mod Manager.</html>");
+		buttonStartGame.setToolTipText("<html>Starts the game and minimizes Mod Manager.</html>");
 
 		buttonPanel.add(buttonApplyMod);
 		buttonPanel.add(buttonStartGame);
@@ -1898,14 +1954,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			moddevUpdateXMLGenerator.setText("Cannot prepare " + mod.getModName() + " for ME3Tweaks Updater Service");
 			modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 		}
-		
+
 		//DEVELOPER MENU
 		JMenu modDeveloperMenu = new JMenu("Developer options");
 
 		//MODDESC EDITOR
 		JMenuItem modutilsDeploy = new JMenuItem("Deploy Mod");
 		modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
-		
+
 		//DEPLOYMENT
 		JMenuItem modutilsModdescEditor = new JMenuItem("Installation editor (moddesc)");
 		modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
@@ -1944,9 +2000,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			public void actionPerformed(ActionEvent arg0) {
 				new ModDescEditorWindow(mod);
 			}
-			
+
 		});
-		
+
 		modutilsCheckforupdate.addActionListener(new ActionListener() {
 
 			@Override
@@ -2907,6 +2963,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	public void checkAllModsForUpdates(boolean isManualCheck) {
+		setActivityIcon(true);
 		// Fix for moonshine mod v1
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.getElementAt(i);
@@ -3754,13 +3811,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
+	private void setActivityIcon(boolean visbiility) {
+		labelStatus.setIcon(visbiility ? ModManager.ACTIVITY_ICON : null);
+	}
+
 	class ModDeploymentThread extends SwingWorker<Boolean, ThreadCommand> {
 		Mod mod;
 		private File outfile;
+		int jobCode;
 
 		public ModDeploymentThread(Mod mod) {
 			this.mod = mod;
 			labelStatus.setText("Staging mod for deployment...");
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Deploying "+mod.getModName());
 		}
 
 		@Override
@@ -3904,6 +3967,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		protected void done() {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
+
 			try {
 				boolean result = get();
 				if (result && outfile != null) {

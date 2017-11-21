@@ -1,6 +1,5 @@
 package com.me3tweaks.modmanager.modupdater;
 
-import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Window;
@@ -16,7 +15,6 @@ import java.util.concurrent.CancellationException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -26,6 +24,7 @@ import javax.swing.SwingWorker;
 
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+import org.jdesktop.swingx.VerticalLayout;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
@@ -69,16 +68,15 @@ public class AllModsUpdateWindow extends JDialog {
 	private void setupWindow() {
 		setTitle("Mod Updater");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		setPreferredSize(new Dimension(320, 70));
 		setResizable(false);
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setIconImages(ModManager.ICONS);
-		JPanel panel = new JPanel(new BorderLayout());
+		JPanel panel = new JPanel(new VerticalLayout());
 
 		statusLabel = new JLabel("Downloading server manifest");
-		operationLabel = new JLabel("Obtaining latest mod information from ME3Tweaks...");
-		panel.add(operationLabel, BorderLayout.NORTH);
-		panel.add(statusLabel, BorderLayout.SOUTH);
+		operationLabel = new JLabel("Downloading mod manifests from ME3Tweaks.com");
+		panel.add(operationLabel);
+		panel.add(statusLabel);
 		// updatePanel.add(actionPanel);
 		// updatePanel.add(sizeLabel);
 
@@ -112,6 +110,11 @@ public class AllModsUpdateWindow extends JDialog {
 		int numToGo = 0;
 		boolean canceled = false;
 		ArrayList<UpdatePackage> completedUpdates = new ArrayList<UpdatePackage>();
+		int jobCode;
+
+		public AllModsDownloadTask() {
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Checking all mods for updates");
+		}
 
 		/**
 		 * Executed in background thread
@@ -168,6 +171,7 @@ public class AllModsUpdateWindow extends JDialog {
 				String command = obj.getCommand();
 				switch (command) {
 				case "PROMPT_USER":
+					ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 					//show sideload notice
 					ArrayList<UpdatePackage> ignoredpackages = new ArrayList<>();
 					for (UpdatePackage upackage : upackages) {

@@ -955,7 +955,8 @@ public class ModInstallWindow extends JDialog {
 					// validate file to backup.
 					boolean justInstall = false;
 					if (rfi == null) {
-						int reply = JOptionPane.showOptionDialog(ModInstallWindow.this, "<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
+						int reply = JOptionPane.showOptionDialog(ModInstallWindow.this, "<html><div style=\"width: 400px\">The file:<br>" + relative
+								+ "<br>is not in the repair database. "
 								+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
 								"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
 								new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
@@ -1196,6 +1197,12 @@ public class ModInstallWindow extends JDialog {
 				File dlcFolder = new File(dlcdir + File.separator + folder);
 				if (dlcFolder.exists() && dlcFolder.isDirectory()) {
 					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Deleting existing CustomDLC folder: " + dlcFolder);
+					FileUtils.deleteQuietly(dlcFolder);
+				}
+
+				dlcFolder = new File(dlcdir + File.separator + "x" + folder);
+				if (dlcFolder.exists() && dlcFolder.isDirectory()) {
+					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Deleting disabled CustomDLC folder: " + dlcFolder);
 					FileUtils.deleteQuietly(dlcFolder);
 				}
 			}

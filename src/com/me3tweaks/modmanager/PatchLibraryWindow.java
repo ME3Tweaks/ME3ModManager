@@ -732,7 +732,9 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 	}
 
 	public static String getLatestMixIns() {
+		int jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Getting latest mixins");
 		PatchLibraryWindow plw = new PatchLibraryWindow(AUTOUPDATE_MODE);
+		ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 		return "Updated " + plw.numberofupdatedmixins + " MixIn" + (plw.numberofupdatedmixins != 1 ? "s" : "");
 	}
 
