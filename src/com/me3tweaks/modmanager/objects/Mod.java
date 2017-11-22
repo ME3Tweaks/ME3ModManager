@@ -62,7 +62,9 @@ public class Mod implements Comparable<Mod> {
 	public String rawCustomDLCSourceDirs;
 	public String rawcustomDLCDestDirs;
 	public ArrayList<MDEOfficialJob> rawOfficialJobs = new ArrayList<MDEOfficialJob>();
-
+	public String rawAltDlcText;
+	public String rawAltFilesText;
+	public String rawOutdatedCustomDLCText;
 	public ArrayList<AlternateCustomDLC> getAppliedAutomaticAlternateCustomDLC() {
 		return appliedAutomaticAlternateCustomDLC;
 	}
@@ -719,6 +721,7 @@ public class Mod implements Comparable<Mod> {
 			if (modCMMVer >= 4.2) {
 				String altText = modini.get("CUSTOMDLC", "altfiles");
 				if (altText != null && !altText.equals("")) {
+					rawAltFilesText = altText;
 					ArrayList<String> alts = ValueParserLib.getSplitValues(altText);
 					if (alts == null) {
 						//error
@@ -770,6 +773,7 @@ public class Mod implements Comparable<Mod> {
 				ModManager.debugLogger.writeMessageConditionally("Targetting Mod Manager Version >= 4.4, looking for altdlc header", ModManager.LOG_MOD_INIT);
 				String altText = modini.get("CUSTOMDLC", "altdlc");
 				if (altText != null && !altText.equals("")) {
+					rawAltDlcText = altText;
 					ArrayList<String> alts = ValueParserLib.getSplitValues(altText);
 					if (alts == null) {
 						//error
@@ -788,6 +792,7 @@ public class Mod implements Comparable<Mod> {
 
 				String outdatedDLC = modini.get("CUSTOMDLC", "outdatedcustomdlc");
 				if (outdatedDLC != null && !outdatedDLC.equals("")) {
+					rawOutdatedCustomDLCText = outdatedDLC;
 					StringTokenizer outdatedDLCTok = new StringTokenizer(outdatedDLC, ";");
 					ArrayList<String> official = ModType.getStandardDLCFolders();
 					while (outdatedDLCTok.hasMoreTokens()) {
@@ -2090,15 +2095,15 @@ public class Mod implements Comparable<Mod> {
 
 					switch (condition) {
 					case AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT:
-						if (!installedDLC.containsAll(remappedHeaders)) {
-							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as at least one DLC in condition is present: " + altdlc,
+						if (installedDLC.containsAll(remappedHeaders)) {
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as all DLC in condition is present: " + altdlc,
 									ModManager.LOG_MOD_INIT);
 							ModJob job = getJobByModuleName(ModType.CUSTOMDLC);
 							applyAlternateDLCOperation(job, altdlc);
 							altApplied = true;
 
 						} else {
-							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc,
+							ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable at least one DLC in condition is not present: " + altdlc,
 									ModManager.LOG_MOD_INIT);
 						}
 						break;

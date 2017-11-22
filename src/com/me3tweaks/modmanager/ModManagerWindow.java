@@ -306,9 +306,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	class NetworkThread extends SwingWorker<Void, ThreadCommand> {
 
 		private boolean force;
+		private int networkThreadCode;
 
 		public NetworkThread(boolean force) {
 			this.force = force;
+			networkThreadCode = submitBackgroundJob("NetworkThread");
 		}
 
 		@Override
@@ -444,6 +446,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
 				JSONObject latestinfo = checkForModManagerUpdates();
 				checkForJREUpdates(latestinfo);
+
 			}
 			//checkForME3ExplorerUpdates();
 			checkForCommandLineToolUpdates();
@@ -599,7 +602,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		@Override
 		protected void process(List<ThreadCommand> chunks) {
-			setActivityIcon(true);
 			for (ThreadCommand latest : chunks) {
 				switch (latest.getCommand()) {
 				case "UPDATE_HELP_MENU":
@@ -633,6 +635,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		@Override
 		protected void done() {
+			submitJobCompletion(networkThreadCode);
 			forceUpdateOnReloadList.clear(); // remove pending updates
 			try {
 				get();
@@ -3282,7 +3285,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private boolean applyMod() {
 		// Prepare
 		Mod mod = modModel.get(modList.getSelectedIndex());
-
+		int jobCode = submitBackgroundJob("ModInstall");
 		labelStatus.setText("Installing " + mod.getModName() + "...");
 		labelStatus.setVisible(true);
 
@@ -3292,6 +3295,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		} else {
 			ModManager.debugLogger.writeMessage("No dlc mod job, finishing mod installation");
 		}
+		submitJobCompletion(jobCode);
 		return true;
 	}
 
@@ -3823,7 +3827,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		public ModDeploymentThread(Mod mod) {
 			this.mod = mod;
 			labelStatus.setText("Staging mod for deployment...");
-			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Deploying "+mod.getModName());
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Deploying " + mod.getModName());
 		}
 
 		@Override

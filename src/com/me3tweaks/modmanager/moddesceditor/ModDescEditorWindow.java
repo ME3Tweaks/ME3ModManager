@@ -196,10 +196,8 @@ public class ModDescEditorWindow extends JXFrame {
 			JXPanel jobPanel = new JXPanel(new GridBagLayout());
 			jobPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 			GridBagConstraints gbc = new GridBagConstraints();
-			int gridX = 0;
-			int gridY = 0;
-			gbc.gridx = gridX;
-			gbc.gridy = gridY;
+			gbc.gridx = 0;
+			gbc.gridy = 0;
 			gbc.gridwidth = 1;
 			gbc.gridheight = 1;
 			gbc.anchor = GridBagConstraints.WEST;
@@ -207,72 +205,79 @@ public class ModDescEditorWindow extends JXFrame {
 			gbc.weightx = 1.0;
 
 			//TASK DETAILS
-			if (!mdeJob.getRawHeader().equals(ModType.BINI)) {
+			//REPLACEMENTS
+			{
+				JXPanel replacementsListPanel = new JXPanel(new GridBagLayout());
+				replacementsListPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+				GridBagConstraints gridC = new GridBagConstraints();
 
-				//REPLACEMENTS
-				{
+				JLabel replacementsHeader = new JLabel("File Replacements");
+				replacementsHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
+				jobPanel.add(replacementsHeader, gbc);
+				gbc.gridy++;
+
+				if (mdeJob.getRawNewFiles() != null && mdeJob.getRawReplaceFiles() != null) {
 					StringTokenizer newStrok = new StringTokenizer(mdeJob.getRawNewFiles(), ";");
 					StringTokenizer oldStrok = new StringTokenizer(mdeJob.getRawReplaceFiles(), ";");
-					JLabel replacementsHeader = new JLabel("File Replacements");
-					replacementsHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
-					jobPanel.add(replacementsHeader, gbc);
-					gbc.gridy = ++gridY;
-					if (newStrok != null && oldStrok != null) {
-						JXPanel replacementsListPanel = new JXPanel(new GridBagLayout());
-						GridBagConstraints gridC = new GridBagConstraints();
 
-						JLabel sourceHeader = new JLabel("New file");
-						JLabel replaceHeader = new JLabel("In-game path to replace");
-						sourceHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
-						replaceHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
-						gridC.fill = GridBagConstraints.HORIZONTAL;
+					JLabel sourceHeader = new JLabel("New file");
+					JLabel replaceHeader = new JLabel("In-game path to replace");
+					sourceHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
+					replaceHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
+					gridC.fill = GridBagConstraints.HORIZONTAL;
+					gridC.gridx = 0;
+					gridC.weightx = 0;
+					replacementsListPanel.add(sourceHeader, gridC);
+					gridC.gridx = 1;
+					gridC.weightx = 1;
+					replacementsListPanel.add(replaceHeader, gridC);
+					gridC.gridy++;
+
+					while (newStrok.hasMoreTokens()) {
+						String newFile = newStrok.nextToken();
+						String oldFile = oldStrok.nextToken();
+
+						JLabel fileReplaceLabel = new JLabel(newFile);
+						JLabel replacePathLabel = new JLabel(oldFile);
+
+						gridC.gridy++;
 						gridC.gridx = 0;
-						gridC.weightx = 0;
-						replacementsListPanel.add(sourceHeader, gridC);
+						gridC.weightx = 0.1;
+
+						replacementsListPanel.add(fileReplaceLabel, gridC);
 						gridC.gridx = 1;
 						gridC.weightx = 1;
-						replacementsListPanel.add(replaceHeader, gridC);
-						replacementsListPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
-						gridC.gridy++;
 
-						while (newStrok.hasMoreTokens()) {
-							String newFile = newStrok.nextToken();
-							String oldFile = oldStrok.nextToken();
-
-							JLabel fileReplaceLabel = new JLabel(newFile);
-							JLabel replacePathLabel = new JLabel(oldFile);
-
-							gridC.gridy++;
-							gridC.gridx = 0;
-							gridC.weightx = 0.1;
-
-							replacementsListPanel.add(fileReplaceLabel, gridC);
-							gridC.gridx = 1;
-							gridC.weightx = 1;
-
-							replacementsListPanel.add(replacePathLabel, gridC);
-						}
-
-						jobPanel.add(replacementsListPanel, gbc);
-					} else {
-						JLabel noReplacements = new JLabel("No files are replaced in this job.");
-						jobPanel.add(noReplacements, gbc);
-						gbc.gridy++;
+						replacementsListPanel.add(replacePathLabel, gridC);
 					}
+
+					jobPanel.add(replacementsListPanel, gbc);
+				} else {
+					JLabel noReplacements = new JLabel("No files are replaced in this job.");
+					replacementsListPanel.add(noReplacements, gbc);
+					gbc.gridy++;
 				}
+				jobPanel.add(replacementsListPanel, gbc);
+			}
+			if (!mdeJob.getRawHeader().equals(ModType.BINI)) {
 
 				//ADD FILES
 				{
-					StringTokenizer addStrok = new StringTokenizer(mdeJob.getRawAddFiles(), ";");
-					StringTokenizer addTargetsStrok = new StringTokenizer(mdeJob.getRawAddTargetFiles(), ";");
+					JXPanel additionsListPanel = new JXPanel(new GridBagLayout());
+					additionsListPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+					GridBagConstraints gridC = new GridBagConstraints();
+					gbc.gridy++;
 					JLabel newFilesHeader = new JLabel("New Additional Files");
 					newFilesHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
 					jobPanel.add(newFilesHeader, gbc);
-					if (addStrok != null && addTargetsStrok != null) {
+					gbc.gridy++;
 
-						gbc.gridy = ++gridY;
-						JXPanel replacementsListPanel = new JXPanel(new GridBagLayout());
-						GridBagConstraints gridC = new GridBagConstraints();
+					if (mdeJob.getRawAddFiles() != null && mdeJob.getRawAddTargetFiles() != null) {
+						StringTokenizer addStrok = new StringTokenizer(mdeJob.getRawAddFiles(), ";");
+						StringTokenizer addTargetsStrok = new StringTokenizer(mdeJob.getRawAddTargetFiles(), ";");
+						/*
+						 * gbc.gridy++;
+						 */
 
 						JLabel sourceHeader = new JLabel("New file");
 						JLabel replaceHeader = new JLabel("In-game path to add to");
@@ -281,11 +286,10 @@ public class ModDescEditorWindow extends JXFrame {
 						gridC.fill = GridBagConstraints.HORIZONTAL;
 						gridC.gridx = 0;
 						gridC.weightx = 0;
-						replacementsListPanel.add(sourceHeader, gridC);
+						additionsListPanel.add(sourceHeader, gridC);
 						gridC.gridx = 1;
 						gridC.weightx = 1;
-						replacementsListPanel.add(replaceHeader, gridC);
-						replacementsListPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+						additionsListPanel.add(replaceHeader, gridC);
 						gridC.gridy++;
 
 						while (addStrok.hasMoreTokens()) {
@@ -299,27 +303,32 @@ public class ModDescEditorWindow extends JXFrame {
 							gridC.gridx = 0;
 							gridC.weightx = 0.1;
 
-							replacementsListPanel.add(fileReplaceLabel, gridC);
+							additionsListPanel.add(fileReplaceLabel, gridC);
 							gridC.gridx = 1;
 							gridC.weightx = 1;
 
-							replacementsListPanel.add(replacePathLabel, gridC);
+							additionsListPanel.add(replacePathLabel, gridC);
 						}
 
-						jobPanel.add(replacementsListPanel, gbc);
 					} else {
-						JLabel noAdditions = new JLabel("No files are added to the game by this job.");
-						jobPanel.add(noAdditions, gbc);
-						gbc.gridy++;
+						JLabel noAdditions = new JLabel("No files are added to the game by this job.", SwingConstants.LEFT);
+						gridC.gridy++;
+						gridC.gridx = 0;
+						gridC.weightx = 1;
+						gridC.anchor = GridBagConstraints.WEST;
+
+						additionsListPanel.add(noAdditions, gridC);
 					}
-				}
+					gbc.gridy++;
 
-				if (!mdeJob.getRawHeader().equals(ModType.BASEGAME)) {
-					JLabel requirementLabel = new JLabel("Reason for this task: " + mdeJob.getRawRequirementText());
-					gbc.gridy = ++gridY;
-					jobPanel.add(requirementLabel, gbc);
+					jobPanel.add(additionsListPanel, gbc);
 				}
-
+			}
+			//REQUIREMENTS
+			if (!mdeJob.getRawHeader().equals(ModType.BASEGAME)) {
+				JLabel requirementLabel = new JLabel("Reason for this task: " + mdeJob.getRawRequirementText());
+				gbc.gridy++;
+				jobPanel.add(requirementLabel, gbc);
 			}
 
 			JXCollapsiblePane jobPane = new JXCollapsiblePane();
@@ -435,6 +444,26 @@ public class ModDescEditorWindow extends JXFrame {
 			}
 		});
 
+		//altfiles
+		{
+			JXPanel altFilesPanel = new JXPanel();
+			altFilesPanel.setLayout(new BoxLayout(altFilesPanel, BoxLayout.Y_AXIS));
+			altFilesPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+			JLabel altFilesIntroText = new JLabel(
+					"<html>You can specify that specific files are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>");
+
+			altFilesIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
+			altFilesPanel.add(altFilesIntroText);
+		}
+		//altdlc in customdlc header.
+		JXPanel altDLCPanel = new JXPanel();
+		altDLCPanel.setLayout(new BoxLayout(altDLCPanel, BoxLayout.Y_AXIS));
+		altDLCPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+		JLabel altDLCIntroText = new JLabel(
+				"<html>You can specify that specific CustomDLC are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>");
+
+		altDLCIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
+		altDLCPanel.add(altDLCIntroText);
 		//Sections Top Level =================================
 		JXCollapsiblePane metadataPane = new JXCollapsiblePane();
 		metadataPane.add(metadataPanel);
@@ -446,10 +475,10 @@ public class ModDescEditorWindow extends JXFrame {
 		customDLCPane.add(customDLCPanel);
 
 		JXCollapsiblePane condFilesPane = new JXCollapsiblePane();
-		//customDLCPane.add(customDLCPanel);
+		condFilesPane.add(altFilesPanel);
 
 		JXCollapsiblePane condDLCPane = new JXCollapsiblePane();
-		//customDLCPane.add(customDLCPanel);
+		condDLCPane.add(altDLCPanel);
 
 		JLabel metaPanelTitle = new JLabel("Mod Metadata");
 		JLabel baseOfficialPanelTitle = new JLabel("Basegame + Official DLC + Balance Changes Modifications");
