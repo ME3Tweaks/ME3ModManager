@@ -289,7 +289,7 @@ public class RestoreFilesWindow extends JDialog {
 				completed++;
 				publish(Integer.toString(completed));
 			}
-			
+
 			ModManager.debugLogger.writeMessage("===Deleting unpacked backup folders files===");
 			for (String header : dlcHeaders) {
 				File dlcBackupDirectory = new File(dlcbackupfolder + dlcFolders.get(header));
@@ -391,8 +391,9 @@ public class RestoreFilesWindow extends JDialog {
 			}
 			if (bghDB == null) {
 				//cannot continue
-				JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
-						+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>The game repair database failed to load.<br>"
+						+ "Only one connection to the local database is allowed at a time.<br>" + "Please make sure you only have one instance of Mod Manager running.</html>",
+						"Database Failure", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 			HashMap<String, String> dlcFolderMap = ModType.getHeaderFolderMap();
@@ -515,8 +516,9 @@ public class RestoreFilesWindow extends JDialog {
 			}
 			if (bghDB == null) {
 				//cannot continue
-				JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>The game repair database failed to load.<br>" + "Only one connection to the local database is allowed at a time.<br>"
-						+ "Please make sure you only have one instance of Mod Manager running.</html>", "Database Failure", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>The game repair database failed to load.<br>"
+						+ "Only one connection to the local database is allowed at a time.<br>" + "Please make sure you only have one instance of Mod Manager running.</html>",
+						"Database Failure", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
@@ -631,6 +633,12 @@ public class RestoreFilesWindow extends JDialog {
 			return true;
 		}
 
+		/**
+		 * Processes an SFAR restore job.
+		 * @param fullDLCDirectory The directory that will contain the .sfar and .sfar.bak file.
+		 * @param jobName name of the job (official header).
+		 * @return True if file has copied from backup, false otherwise
+		 */
 		private boolean processRestoreJob(String fullDLCDirectory, String jobName) {
 			// TODO Auto-generated method stub
 			ModManager.debugLogger.writeMessage("------------" + jobName + "------------");
@@ -695,18 +703,35 @@ public class RestoreFilesWindow extends JDialog {
 			if (defaultSfarBackup.exists()) {
 				backupSfar = defaultSfarBackup;
 			}
+			boolean isTestPatch = false;
 			if (testpatchSfar.exists()) {
 				backupSfar = testpatchSfarBackup;
+				isTestPatch = true;
 			}
 
 			if (backupSfar == null) {
-				//no backup!
-				publish(jobName + ": No backup exists, cannot restore.");
-				JOptionPane.showMessageDialog(RestoreFilesWindow.this,
-						"<html>No backup for " + jobName
-								+ " exists, you'll have to restore through Origin's Repair Game.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
-						"Error", JOptionPane.ERROR_MESSAGE);
-				return false;
+				//no normal backup.
+				String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath();
+				if (vanillaBackupPath == null) {
+					//no backup!
+					publish(jobName + ": No backup exists, cannot restore.");
+					JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>No backup for " + jobName
+							+ " exists, you'll have to restore through Origin's Repair Game.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
+							"Error", JOptionPane.ERROR_MESSAGE);
+					return false;
+				}
+				//Attempt fetch from complete game backup
+				vanillaBackupPath += "\\BIOGame\\";
+				vanillaBackupPath += ModManager.appendSlash(ModType.getDLCPath(jobName));
+				vanillaBackupPath += isTestPatch ? "Patch_001.sfar" : "Default.sfar";
+				backupSfar = new File(vanillaBackupPath);
+				if (!backupSfar.exists()) {
+					publish(jobName + ": No backup exists (in-game or in vanilla copy), cannot restore.");
+					JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>No backup for " + jobName
+							+ " exists in both the install target's DLC directory and in unmodified full game copy.<br>ou'll have to restore through Origin's Repair Game feature.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
+							"Error", JOptionPane.ERROR_MESSAGE);
+					return false;
+				}
 			}
 
 			if (backupSfar.exists()) {

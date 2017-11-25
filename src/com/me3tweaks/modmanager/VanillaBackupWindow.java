@@ -78,7 +78,10 @@ public class VanillaBackupWindow extends JDialog {
 			setVisible(true);
 		}
 	}
-	
+	/**
+	 * Fetches the full backup path from the registry.
+	 * @return Filepath from registry to full backup path. If none exists, this returns null.
+	 */
 	public static String GetFullBackupPath() {
 		String backupPath = null;
 		try {

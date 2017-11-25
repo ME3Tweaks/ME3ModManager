@@ -101,6 +101,7 @@ import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModList;
+import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.RestoreMode;
@@ -1192,7 +1193,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		buttonBioGameDir = new JButton(useAddInstead ? "Add Target" : "Browse...");
 		buttonBioGameDir.setToolTipText(
-				"<html>Add a new BIOGame directory target.<br>This is located in the installation directory for Mass Effect 3.<br>Typically this is in the Origin Games folder.</html>");
+				"<html>Add a new BIOGame directory target.<br>This is located in the installation directory for Mass Effect 3.<br>This is located in the Origin Games folder.</html>");
 		buttonBioGameDir.setPreferredSize(new Dimension(useAddInstead ? 105 : 90, 14));
 
 		buttonBioGameDir.addActionListener(this);
@@ -1387,9 +1388,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			buttonApplyMod.setText("Apply Mod");
 			if (modList.getSelectedIndex() == -1) {
 				buttonApplyMod.setToolTipText("Select a mod on the left");
+				buttonApplyMod.setEnabled(false);
 			} else {
-				buttonApplyMod.setToolTipText(
-						"<html>Apply this mod to the game.<br>If another mod is already installed, restore your game first!<br>You can merge Mod Manager mods in the Tools menu.</html>");
+				buttonApplyMod.setToolTipText("<html>Applies this mod to the game.<br>Not all mods are compatible with each other.</html>");
+				buttonApplyMod.setEnabled(false);
 
 			}
 		} else {
@@ -2270,7 +2272,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 							"ASI loader not installed", JOptionPane.WARNING_MESSAGE);
 				}
 
-				new ASIModWindow(new File(GetBioGameDir()).getParent());
+				new ASIModWindow(new File(GetBioGameDir()).getParent(), false);
 			} else {
 				updateApplyButton();
 				labelStatus.setText("Can't manage ASI mods without valid BioGame");
@@ -3010,19 +3012,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	public void checkAllModsForUpdates(boolean isManualCheck) {
-		// Fix for moonshine mod v1
-		for (int i = 0; i < modModel.size(); i++) {
-			Mod mod = modModel.getElementAt(i);
-			if ("MoonShine".equals(mod.getAuthor())) {
-				if ("360 Controller Support".equals(mod.getModName())) {
-					if (mod.getVersion() == 0) {
-						mod.setModUpdateCode(15);
-						mod.setVersion(1);
-					}
-				}
-			}
-		}
-
 		ArrayList<Mod> updatableMods = new ArrayList<Mod>();
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.get(i);
@@ -3044,6 +3033,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		if (updatableMods.size() > 0) {
+			labelStatus.setText("Checking mods for updates");
 			new AllModsUpdateWindow(this, isManualCheck, updatableMods);
 		} else {
 			if (isManualCheck) {
@@ -3051,6 +3041,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"No mods are eligible for the Mod Manager update service.\nEligible mods include ModMaker mods and ones hosted on ME3Tweaks.com.", "No updatable mods",
 						JOptionPane.WARNING_MESSAGE);
 			}
+
 			Wini ini;
 			try {
 				File settings = new File(ModManager.SETTINGS_FILENAME);
@@ -3321,25 +3312,69 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	/**
-	 * Installs the mod.
+	 * Installs the mod after doing some prechecks
 	 * 
-	 * @return True if the file copied, otherwise false
+	 * @return True if the mod installed, false otherwise
 	 */
 	private boolean applyMod() {
-		// Prepare
+		ModManager.debugLogger.writeMessage("applyMod() method is executing.");
+		// Precheck for ALOT
 		Mod mod = modModel.get(modList.getSelectedIndex());
+		if (ModManager.CHECK_FOR_ALOT_INSTALL && ModManager.isALOTInstalled(GetBioGameDir())) {
+			boolean hasPCCInstall = false;
+			ModManager.debugLogger.writeMessage("ALOT is installed, checking for installation of non-testpatch PCC files...");
+
+			for (ModJob job : mod.getJobs()) {
+				if (job.getJobName().equals(ModType.TESTPATCH)) {
+					continue; //we don't are about this
+				}
+				for (String destFile : job.getFilesToReplaceTargets()) {
+					if (FilenameUtils.getExtension(destFile).toLowerCase().equals("pcc")) {
+						hasPCCInstall = true;
+						ModManager.debugLogger.writeMessage("Detected PCC file attempting to install over ALOT installation: " + destFile);
+						break;
+					}
+				}
+				if (hasPCCInstall) {
+					break;
+				}
+			}
+
+			if (hasPCCInstall) {
+				installBlockedByALOT(false);
+				return false;
+			} else {
+				ModManager.debugLogger.writeMessage("ALOT is installed, did not detect any potential issues for this mod install.");
+			}
+		}
+
 		int jobCode = submitBackgroundJob("ModInstall");
 		labelStatus.setText("Installing " + mod.getModName() + "...");
-		labelStatus.setVisible(true);
-
 		if (mod.getJobs().length > 0) {
-			checkBackedUp(mod);
+			checkDLCIsBackedUp(mod);
 			new ModInstallWindow(this, mod, null);
-		} else {
-			ModManager.debugLogger.writeMessage("No dlc mod job, finishing mod installation");
 		}
 		submitJobCompletion(jobCode);
 		return true;
+	}
+
+	/**
+	 * Shows a message to the user that installation of mods is blocked due to
+	 * ALOT.
+	 * @param multi Indicates if this is due to single mod installer or multimod installer (batch mode)
+	 */
+	public void installBlockedByALOT(boolean multi) {
+		ModManager.debugLogger.writeMessage("Installation of mod has been blocked due to detection of ALOT.");
+		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Installation blocked due to detection of ALOT");
+		if (multi) {
+			JOptionPane.showMessageDialog(this,
+					"Batch Mod Installer is disabled while ALOT is installed.\nInstallation of mods is blocked while ALOT is installed, as this will almost always cause problems.\nIf you know what you are doing you can turn this check off in the options menu.",
+					"Installation Blocked", JOptionPane.ERROR_MESSAGE);
+		} else {
+			JOptionPane.showMessageDialog(this,
+					"ALOT is installed and this mod installs PCC files.\nInstallation of mods is blocked while ALOT is installed, as this will almost always cause problems.\nIf you know what you are doing you can turn this check off in the options menu.",
+					"Installation Blocked", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	/**
@@ -3348,7 +3383,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * @param mod
 	 *            Mod to check backups for
 	 */
-	private void checkBackedUp(Mod mod) {
+	private void checkDLCIsBackedUp(Mod mod) {
 		ModJob[] jobs = mod.getJobs();
 		for (ModJob job : jobs) {
 			if (job.getJobType() == ModJob.BASEGAME || job.getJobType() == ModJob.CUSTOMDLC) {
@@ -3568,6 +3603,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
+	/**
+	 * Starts the MassEffect3.exe executable. Due to legacy code if LauncherWV is found it will be run, however you can no longer install LauncherWV.
+	 * @param CookedDir biogamedir
+	 */
 	private void startGame(String CookedDir) {
 		File startingDir = new File(CookedDir);
 		ModManager.debugLogger.writeMessage("Starting game.");

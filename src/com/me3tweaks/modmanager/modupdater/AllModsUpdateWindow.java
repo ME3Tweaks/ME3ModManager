@@ -125,6 +125,7 @@ public class AllModsUpdateWindow extends JDialog {
 			// folder
 			upackages = ModXMLTools.validateLatestAgainstServer(updatableMods, this);
 			if (upackages.size() <= 0) {
+				publish(new ThreadCommand("NO_UPDATES"));
 				return null;
 			}
 
@@ -170,8 +171,16 @@ public class AllModsUpdateWindow extends JDialog {
 			for (ThreadCommand obj : chunks) {
 				String command = obj.getCommand();
 				switch (command) {
+				case "NO_UPDATES":
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("All mods are up to date");
+					break;
 				case "PROMPT_USER":
 					ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
+					String statusMessage = "1 mod has an update available";
+					if (upackages.size() > 1) {
+						statusMessage = upackages.size() + " mods have updates available";
+					}
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(statusMessage);
 					//show sideload notice
 					ArrayList<UpdatePackage> ignoredpackages = new ArrayList<>();
 					for (UpdatePackage upackage : upackages) {
@@ -303,10 +312,9 @@ public class AllModsUpdateWindow extends JDialog {
 			}
 
 			if (upackages == null || upackages.size() <= 0) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mods are up to date");
 				if (AllModsUpdateWindow.this.showUI) {
 					JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.", "Mods up to date", JOptionPane.INFORMATION_MESSAGE);
-				} else {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mods are up to date");
 				}
 				return;
 			}
@@ -316,18 +324,21 @@ public class AllModsUpdateWindow extends JDialog {
 			}
 
 			if (completedUpdates.size() == 0) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error applying updates");
 				JOptionPane.showMessageDialog(callingWindow, "No mods successfully updated.\nCheck the Mod Manager log for more info or contact FemShep for help.",
 						"Mods failed to update", JOptionPane.ERROR_MESSAGE);
 			} else if (upackages.size() != completedUpdates.size()) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error applying some of the updates");
 				//one error occured
 				JOptionPane.showMessageDialog(callingWindow,
 						completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
 								+ " failed to update.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.",
 						"Some mods were updated", JOptionPane.WARNING_MESSAGE);
 			} else {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updates downloaded");
 				JOptionPane.showMessageDialog(callingWindow,
 						upackages.size()
-								+ " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.",
+								+ " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.",
 						"Mods updated", JOptionPane.INFORMATION_MESSAGE);
 			}
 

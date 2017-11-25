@@ -39,6 +39,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
+import org.apache.commons.io.FilenameUtils;
+
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.objects.CompressedMod;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
@@ -284,8 +286,10 @@ public class ModImportArchiveWindow extends JDialog {
 	public class ScanWorker extends SwingWorker<ArrayList<CompressedMod>, ThreadCommand> {
 
 		private String archiveFile;
-
+		private int jobCode;
 		public ScanWorker(String archiveFile) {
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Scanning archive for mods");
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Scanning "+FilenameUtils.getName(archiveFile));
 			this.archiveFile = archiveFile;
 			checkMap.clear();
 			compressedModModel.setRowCount(0);
@@ -333,6 +337,8 @@ public class ModImportArchiveWindow extends JDialog {
 		}
 
 		protected void done() {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Archive scan finished");
 			ModManager.debugLogger.writeMessage("[SCANWORKER] Background thread finished.");
 			checkMap.clear();
 			compressedModModel.setRowCount(0);
@@ -377,11 +383,14 @@ public class ModImportArchiveWindow extends JDialog {
 	public class ImportWorker extends SwingWorker<Boolean, ThreadCommand> {
 		private ArrayList<CompressedMod> modsToImport;
 		private String archiveFilePath;
+		private int jobCode;
 
 		public ImportWorker(String archiveFilePath, ArrayList<CompressedMod> modsToImport) {
 			// TODO Auto-generated constructor stub
 			this.archiveFilePath = archiveFilePath;
 			this.modsToImport = modsToImport;
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Importing Mods");
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Importing " + (modsToImport.size() != 1 ? "mods" : modsToImport.get(0).getModName()));
 			descriptionArea.setText("Importing mods into Mod Manager...");
 			progressBar.setIndeterminate(true);
 			browseButton.setEnabled(false);
@@ -408,7 +417,7 @@ public class ModImportArchiveWindow extends JDialog {
 				case "SIDELOAD_OR_NEW_PROMPT":
 					Object[] choices = { "SIDELOAD as update", "Import as NEW", "Cancel importing" };
 					String message = "You are importing " + command.getMessage()
-							+ ", which is already in imported into Mod Manager.\nPlease choose from one of the following options:\n\nSIDELOAD: Import mod as an update, overwriting local files with ones from this archive\nNEW: Delete local imported mod, and import mod from archive as a new mod\n\nSelect what you'd like to do.";
+							+ ", which is already in imported into Mod Manager.\nPlease choose from one of the following options:\n\nSIDELOAD: Import mod as an update, overwriting local files with ones from this archive\nNEW: Delete local imported mod, and import mod from archive as a new mod\n\nIf you weren't instructed to select 'SIDELOAD as update' you should do 'Import as NEW'.\n\nSelect what you'd like to do.";
 
 					synchronized (lock) {
 						sideloadresult = JOptionPane.showOptionDialog(ModImportArchiveWindow.this, message, "Mod to import already exists", JOptionPane.YES_NO_CANCEL_OPTION,
@@ -432,6 +441,7 @@ public class ModImportArchiveWindow extends JDialog {
 		}
 
 		public void done() {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			ModManager.debugLogger.writeMessage("[IMPORTWORKER] Finished background thread.");
 			boolean error = false;
 			try {
@@ -452,11 +462,10 @@ public class ModImportArchiveWindow extends JDialog {
 			repaint();
 			if (!error) {
 				ModManager.debugLogger.writeMessage("[IMPORTWORKER] Import successful.");
-				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
-				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 				ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Checking for mod updates");
+				dispose();
+				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
 				if (modsToImport.size() == 1) {
 					//Highlight it
 					//don't have a way to figure out what was just imported...

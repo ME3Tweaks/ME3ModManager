@@ -121,6 +121,8 @@ public class ModManager {
 	public static boolean MODMAKER_CONTROLLER_MOD_ADDINS = false;
 	public static String THIRD_PARTY_MOD_JSON;
 	public static boolean LOG_MODMAKER = false;
+	public static boolean CHECK_FOR_ALOT_INSTALL = true;
+
 	public static String COMMANDLINETOOLS_URL;
 	public static String LATEST_ME3EXPLORER_URL;
 	public static String LATEST_ME3EXPLORER_VERSION;
@@ -151,7 +153,7 @@ public class ModManager {
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon32.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
-			ACTIVITY_ICON= new ImageIcon( Toolkit.getDefaultToolkit().getImage(ModManagerWindow.class.getResource("/resource/network.gif")));
+			ACTIVITY_ICON = new ImageIcon(Toolkit.getDefaultToolkit().getImage(ModManagerWindow.class.getResource("/resource/network.gif")));
 
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
 
@@ -392,22 +394,46 @@ public class ModManager {
 				}
 
 				// Log Mod Startup
-				String modmakerlogStr = settingsini.get("Settings", "logmodmaker");
-				int modmakerlogStartupInt = 0;
-				if (modmakerlogStr != null && !modmakerlogStr.equals("")) {
-					try {
-						modmakerlogStartupInt = Integer.parseInt(modmakerlogStr);
-						if (modmakerlogStartupInt > 0) {
-							// logging is on
-							debugLogger.writeMessage("Modmaker Compiler logging is enabled");
-							LOG_MODMAKER = true;
-						} else {
-							debugLogger.writeMessage("Modmaker Compiler logging is disabled");
+				{
+					String modmakerlogStr = settingsini.get("Settings", "logmodmaker");
+					int modmakerlogStartupInt = 0;
+					if (modmakerlogStr != null && !modmakerlogStr.equals("")) {
+						try {
+							modmakerlogStartupInt = Integer.parseInt(modmakerlogStr);
+							if (modmakerlogStartupInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("Modmaker Compiler logging is enabled");
+								LOG_MODMAKER = true;
+							} else {
+								debugLogger.writeMessage("Modmaker Compiler logging is disabled");
+								LOG_MODMAKER = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the log modmaker setting - setting to disabled");
 							LOG_MODMAKER = false;
 						}
+					}
+				}
+
+				// CHECK FOR ALOT INSTALLATION
+
+				// Log Mod Startup
+				String alotCheckLogStr = settingsini.get("Settings", "checkforalotinstall");
+				int alotCheckInt = 0;
+				if (alotCheckLogStr != null && !alotCheckLogStr.equals("")) {
+					try {
+						alotCheckInt = Integer.parseInt(alotCheckLogStr);
+						if (alotCheckInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Checking for ALOT installation is enabled");
+							CHECK_FOR_ALOT_INSTALL = true;
+						} else {
+							debugLogger.writeMessage("Checking for ALOT installation is disabled");
+							CHECK_FOR_ALOT_INSTALL = false;
+						}
 					} catch (NumberFormatException e) {
-						debugLogger.writeError("Number format exception reading the log modmaker setting - setting to disabled");
-						LOG_MODMAKER = false;
+						debugLogger.writeError("Number format exception reading the check for alot install - setting to enabled");
+						CHECK_FOR_ALOT_INSTALL = true;
 					}
 				}
 

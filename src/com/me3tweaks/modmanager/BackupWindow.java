@@ -55,6 +55,7 @@ public class BackupWindow extends JDialog {
 	ArrayList<BackupPanelPairs> panelPairs;
 	private JLabel statusLabel, noBackedUpDLCLabel, noNotBackedUpDLCLabel;
 	private HashMap<String, Long> sizesMap = ModType.getSizesMap();
+	private String currentBackupInProgress;
 
 	/**
 	 * Manually invoked backup window
@@ -268,7 +269,13 @@ public class BackupWindow extends JDialog {
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
+	/**
+	 * Refreshes the interface's collapse and uncollapsed panels, as well as
+	 * hiding/showing the backup button and indicators of no content in both
+	 * columns.
+	 */
 	private void refreshViewState() {
+		ModManager.debugLogger.writeMessage("refreshViewState()");
 		boolean hasDLCBackedUp = false;
 		boolean hasDLCNotBackedUp = false;
 
@@ -311,6 +318,7 @@ public class BackupWindow extends JDialog {
 				File mainSfarbackup = new File(dlcPath + "\\Default.sfar.bak");
 				File testpathSfarbackup = new File(dlcPath + "\\Patch_001.sfar.bak");
 				if (!mainSfarbackup.exists() && !testpathSfarbackup.exists()) {
+					//backup does not exist
 					//Checking size...
 					File f = mainSfar;
 					boolean isTestPatch = false;
@@ -322,20 +330,30 @@ public class BackupWindow extends JDialog {
 					if (f.length() != sizesMap.get(dlcName) && (isTestPatch && f.length() != ModType.TESTPATCH_16_SIZE)) {
 						//dlc modified - do not show button for this.
 					} else {
+						if (dlcName.equalsIgnoreCase(currentBackupInProgress)) {
+							hasDLCNotBackedUp = true;
+						}
 						hasDLCNotBackedUp = true;
 					}
 					//backup missing but sfar eixsts
 					backedUpPane.setCollapsed(true);
 					backupPane.setCollapsed(false);
 				} else {
-					//backup exists
-					backedUpPane.setCollapsed(false);
-					backupPane.setCollapsed(true);
-					hasDLCBackedUp = true;
-
+					//backup file exists
+					if (dlcName.equals(currentBackupInProgress)) {
+						//backup in progress
+						backedUpPane.setCollapsed(true);
+						backupPane.setCollapsed(false);
+					} else {
+						//backup done
+						backedUpPane.setCollapsed(false);
+						backupPane.setCollapsed(true);
+						hasDLCBackedUp = true;
+					}
 				}
 				continue;
 			} else {
+				//dlc not installed
 				checkbox.setEnabled(false);
 				backedUpPane.setCollapsed(false);
 				backupPane.setCollapsed(true);
@@ -428,14 +446,11 @@ public class BackupWindow extends JDialog {
 					publish(new ThreadCommand("DLC_JOB_FINISHED", dlcName));
 				}
 			}
-
 			return true;
-
 		}
 
 		private boolean processBackupJob(String fullDLCDirectory, String dlcName, HashMap<String, String> sfarHashes) {
 			ModManager.debugLogger.writeMessage("Processing backup job for " + dlcName);
-
 			// TODO Auto-generated method stub
 			File dlcPath = new File(fullDLCDirectory);
 			// Check if directory exists
@@ -455,14 +470,15 @@ public class BackupWindow extends JDialog {
 			if (mainSfar.exists()) {
 				try {
 					//we can just check sfar size in pre-select step
-					publish(new ThreadCommand("BACKING_UP", dlcName));
+					//Thread.yield(); //a UI updater method that is dependent on the original background thread. So if the background thread is busy it doesn't work. well done sun.
+					publish(new ThreadCommand("BACKING_UP", dlcName, mainSfar.length()));
+
 					Files.copy(mainSfar.toPath(), backupSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
 				} catch (IOException e) {
 					addFailure(dlcName, "I/O Exception occured: " + e.getMessage());
 					ModManager.debugLogger.writeErrorWithException("IO Exception in backup procedures!", e);
 					return false;
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					addFailure(dlcName, "Unknown error occured: " + e.getMessage());
 					ModManager.debugLogger.writeErrorWithException("Unknown error in backup procedures!", e);
 					return false;
@@ -471,7 +487,7 @@ public class BackupWindow extends JDialog {
 			}
 			if (testpatchSfar.exists()) {
 				try {
-					publish(new ThreadCommand("BACKING_UP", dlcName));
+					publish(new ThreadCommand("BACKING_UP", dlcName, testpatchSfar.length()));
 					Files.copy(testpatchSfar.toPath(), backupTestpatchSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
 				} catch (IOException e) {
 					addFailure(dlcName, "I/O Exception occured: " + e.getMessage());
@@ -495,18 +511,23 @@ public class BackupWindow extends JDialog {
 				case "PROGRESS_UPDATE":
 					if (numjobs != 0) {
 						progressBar.setValue((int) (((float) completed / numjobs) * 100));
-						refreshViewState();
 					}
 					break;
 				case "DLC_JOB_FINISHED":
-					JCheckBox checkbox = checkboxMap.get(update);
+					JCheckBox checkbox = checkboxMap.get(update.getMessage());
 					if (checkbox != null) {
 						checkbox.setSelected(false);
-						return;
+						break;
 					}
 					break;
 				case "BACKING_UP":
-					statusLabel.setText("<html><center>Backing Up<br>" + update.getMessage() + "</center></html>");
+					currentBackupInProgress = update.getMessage();
+					if (statusLabel != null) {
+						statusLabel.setText("<html><center>Backing Up<br>" + update.getMessage() + " (" + ResourceUtils.humanReadableByteCount((long) update.getData(), true)
+								+ ")</center></html>");
+						refreshViewState();
+						new Timer().schedule(new RepackUITask(BackupWindow.this), 250); //animation change
+					}
 					break;
 				}
 			}
@@ -515,14 +536,15 @@ public class BackupWindow extends JDialog {
 		@Override
 		protected void done() {
 			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
+			currentBackupInProgress = null;
 			try {
 				get();
 				finishBackup(completed);
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Exception in the backup dlc thread: ", e);
-				refreshViewState();
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error backing up DLC");
 				if (backupButton != null) {
+					refreshViewState();
 					infoLabel.setText("<html><center>Backup job completed but with errors.<br>See the Mod Manager log in the help menu.</center></html>");
 					statusLabel.setText("");
 				}
@@ -536,6 +558,14 @@ public class BackupWindow extends JDialog {
 			showFailedBackups();
 		}
 
+		/**
+		 * Adds a failed indicator for the backup job.
+		 * 
+		 * @param dlcName
+		 *            Failed backup name.
+		 * @param reason
+		 *            Reason the job failed.
+		 */
 		public void addFailure(String dlcName, String reason) {
 			failedBackups.add(dlcName + ": " + reason);
 		}
@@ -553,15 +583,19 @@ public class BackupWindow extends JDialog {
 				JOptionPane.showMessageDialog(BackupWindow.this, header, "DLC backup errors", JOptionPane.ERROR_MESSAGE);
 			}
 		}
-	}
-
-	protected void finishBackup(int completed) {
-		refreshViewState();
-		ModManager.debugLogger.writeMessage("Finished backing up DLCs.");
-		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(completed + " DLCs backed up.");
-		if (backupButton != null) {
-			infoLabel.setText("<html><center>Backup job completed.<br>You can restore these DLC files via the Restore Menu by using the SFAR options.</center></html>");
-			statusLabel.setText("");
+		
+		protected void finishBackup(int completed) {
+			ModManager.debugLogger.writeMessage("Finished backing up DLCs.");
+			if (jobs.length == 1 && completed == 1) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(jobs[0] + " backed up");
+			} else {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(completed + " DLCs backed up");
+			}
+			if (backupButton != null) {
+				refreshViewState();
+				infoLabel.setText("<html><center>Backup job completed.<br>You can restore these DLC files via the Restore Menu by using the SFAR options.</center></html>");
+				statusLabel.setText("");
+			}
 		}
 	}
 

@@ -61,7 +61,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 	JLabel statusLabel;
 	JProgressBar downloadProgress;
 	private UpdatePackage upackage;
-
+	int jobCode;
 	public ModUpdateWindow(UpdatePackage upackage) {
 		this.upackage = upackage;
 		downloadSource = "https://me3tweaks.com/mods/updates/";
@@ -74,6 +74,8 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 	 * @param frame
 	 */
 	public void startUpdate(JFrame frame) {
+		jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Updating singlemod");
+		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updating "+upackage.getMod().getModName());
 		if (upackage.isModmakerupdate()) {
 			//get default language
 			//set combobox from settings
@@ -84,6 +86,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			task.execute();
 			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			setVisible(true); //EDT will stall until this modal window closes
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 		}
 	}
@@ -94,6 +97,8 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 	 * @param amuw
 	 */
 	public boolean startAllModsUpdate(AllModsUpdateWindow amuw) {
+		jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Updating multimod");
+		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updating "+upackage.getMod().getModName());
 		if (upackage.isModmakerupdate()) {
 			//validate biogamedir (TLK)
 			if (!ModManagerWindow.validateBIOGameDir()) {
@@ -120,9 +125,10 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
 			task.execute();
 			setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 			setVisible(true);
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			return task.wasSuccessful();
-
 		}
+		ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 		return true;
 	}
 

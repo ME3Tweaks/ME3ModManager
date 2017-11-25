@@ -525,11 +525,11 @@ public class ModDescEditorWindow extends JXFrame {
 
 		//altfiles
 		JXPanel altFilesPanel = new JXPanel();
-		altFilesPanel.setLayout(new BoxLayout(altFilesPanel, BoxLayout.Y_AXIS));
+		altFilesPanel.setLayout(new VerticalLayout());//(altFilesPanel, BoxLayout.Y_AXIS));
 		altFilesPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 		{
 			JLabel altFilesIntroText = new JLabel(
-					"<html>You can specify that specific files are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>");
+					"<html>You can specify that specific files are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>",SwingConstants.LEFT);
 
 			altFilesIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
 			altFilesPanel.add(altFilesIntroText);
@@ -538,7 +538,8 @@ public class ModDescEditorWindow extends JXFrame {
 				expandCondFiles = true;
 
 				for (AlternateFile af : mod.getAlternateFiles()) {
-					altFilesPanel.add(new JLabel(af.getFriendlyName()));
+					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(af);
+					altFilesPanel.add(mdecfi.getPanel());
 				}
 			} else {
 
