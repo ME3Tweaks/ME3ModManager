@@ -38,6 +38,7 @@ import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.VerticalLayout;
 
 import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.CheckBoxLabel;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
@@ -102,7 +103,7 @@ public class BackupWindow extends JDialog {
 				SwingConstants.CENTER);
 		rootPanel.add(infoLabel);
 
-		statusLabel = new JLabel();
+		statusLabel = new JLabel("", SwingConstants.CENTER);
 		rootPanel.add(statusLabel);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setStringPainted(true);
@@ -387,7 +388,7 @@ public class BackupWindow extends JDialog {
 		return jobs.toArray(new String[jobs.size()]);
 	}
 
-	class backupDLCJob extends SwingWorker<Boolean, String> {
+	class backupDLCJob extends SwingWorker<Boolean, ThreadCommand> {
 		int completed = 0;
 		int numjobs = 0;
 		String bioGameDir;
@@ -420,12 +421,11 @@ public class BackupWindow extends JDialog {
 			HashMap<String, String> sfarHashes = ModType.getHashesMap();
 			for (String dlcName : jobs) {
 				if (windowOpen == true) {// if the window is closed this will quickly finish this thread after the current job finishes
-					ModManager.debugLogger.writeMessage("Processing backup job");
 					if (processBackupJob(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName)), dlcName, sfarHashes)) {
 						completed++;
 					}
-					publish(Integer.toString(completed));
-					publish(dlcName); //i should switch this to threadcommand
+					publish(new ThreadCommand("PROGRESS_UPDATE"));
+					publish(new ThreadCommand("DLC_JOB_FINISHED", dlcName));
 				}
 			}
 
@@ -434,12 +434,14 @@ public class BackupWindow extends JDialog {
 		}
 
 		private boolean processBackupJob(String fullDLCDirectory, String dlcName, HashMap<String, String> sfarHashes) {
+			ModManager.debugLogger.writeMessage("Processing backup job for " + dlcName);
+
 			// TODO Auto-generated method stub
 			File dlcPath = new File(fullDLCDirectory);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
 				// Maybe DLC is not installed?
-				ModManager.debugLogger.writeMessage(fullDLCDirectory + " does not exist. It might not be installed (this should have been caught!");
+				ModManager.debugLogger.writeMessage(fullDLCDirectory + " does not exist. It might not be installed (this should have been caught!)");
 				return false;
 			}
 
@@ -452,18 +454,8 @@ public class BackupWindow extends JDialog {
 
 			if (mainSfar.exists()) {
 				try {
-
-					//we can just check sfar size
-
-					//We should hash it and compare it against the known original
-					/*
-					 * publish("Verifying<br>" + dlcName); if
-					 * (!(MD5Checksum.getMD5Checksum(mainSfar.toString()).equals
-					 * (sfarHashes.get(dlcName)))) { //It's not the original
-					 * addFailure(dlcName, "DLC has been modified"); return
-					 * false; }
-					 */
-					publish("Backing up<br>" + dlcName);
+					//we can just check sfar size in pre-select step
+					publish(new ThreadCommand("BACKING_UP", dlcName));
 					Files.copy(mainSfar.toPath(), backupSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
 				} catch (IOException e) {
 					addFailure(dlcName, "I/O Exception occured: " + e.getMessage());
@@ -479,15 +471,7 @@ public class BackupWindow extends JDialog {
 			}
 			if (testpatchSfar.exists()) {
 				try {
-					//We should hash it and compare it against the known original
-					publish("Verifying " + dlcName + "...");
-					String hash = MD5Checksum.getMD5Checksum(testpatchSfar.toString());
-					if (!(hash.equals(sfarHashes.get(dlcName)) && !hash.equals(ModType.TESTPATCH_16_HASH))) {
-						//It's not the original
-						addFailure(dlcName, "DLC has been modified");
-						return false;
-					}
-					publish("Backing up " + dlcName + "...");
+					publish(new ThreadCommand("BACKING_UP", dlcName));
 					Files.copy(testpatchSfar.toPath(), backupTestpatchSfar.toPath(), StandardCopyOption.REPLACE_EXISTING);
 				} catch (IOException e) {
 					addFailure(dlcName, "I/O Exception occured: " + e.getMessage());
@@ -504,29 +488,26 @@ public class BackupWindow extends JDialog {
 		}
 
 		@Override
-		protected void process(List<String> updates) {
+		protected void process(List<ThreadCommand> updates) {
 			// System.out.println("Restoring next DLC");
-			for (String update : updates) {
-				try {
-					Integer.parseInt(update); // see if we got a number. if we did that means we should update the bar
+			for (ThreadCommand update : updates) {
+				switch (update.getCommand()) {
+				case "PROGRESS_UPDATE":
 					if (numjobs != 0) {
 						progressBar.setValue((int) (((float) completed / numjobs) * 100));
 						refreshViewState();
 					}
-				} catch (NumberFormatException e) {
-					// this is not a progress update, it's a string update
-					ArrayList<String> dlcNames = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
-					if (dlcNames.contains(update)) {
-						//job is finished, interally uncheck it (since it will now be hidden.)
-						JCheckBox checkbox = checkboxMap.get(update);
-						if (checkbox != null) {
-							checkbox.setSelected(false);
-							return;
-						}
-					} else {
-						statusLabel.setText("<html><center>" + update + "</center></html>");
+					break;
+				case "DLC_JOB_FINISHED":
+					JCheckBox checkbox = checkboxMap.get(update);
+					if (checkbox != null) {
+						checkbox.setSelected(false);
+						return;
 					}
-
+					break;
+				case "BACKING_UP":
+					statusLabel.setText("<html><center>Backing Up<br>" + update.getMessage() + "</center></html>");
+					break;
 				}
 			}
 		}
