@@ -262,6 +262,7 @@ public class AllModsUpdateWindow extends JDialog {
 		@Override
 		protected void done() {
 			ModManager.debugLogger.writeMessage("Auto-Updater thread: performing done()");
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			try {
 				get();
 			} catch (CancellationException e) {

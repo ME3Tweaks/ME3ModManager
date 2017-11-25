@@ -7,9 +7,7 @@ import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Image;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -41,7 +39,6 @@ import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
@@ -66,6 +63,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -79,6 +77,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+import org.jdesktop.swingx.JXCollapsiblePane;
+import org.jdesktop.swingx.JXCollapsiblePane.Direction;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -142,9 +142,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	JMenuItem actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
 	JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
 			modManagementPatchLibary, modManagementClearPatchLibraryCache, modManagementModGroupsManager;
-	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsInstallBinkw32, toolsInstallBinkw32asi, toolsUninstallBinkw32,
-			toolMountdlcEditor, /* toolsMergeMod */ toolME3Config, toolsPCCDataDumper;
-	JMenuItem backupBackupDLC, backupCreateGDB, backupCreateVanillaCopy;
+	JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsUninstallBinkw32, toolMountdlcEditor,
+			/* toolsMergeMod */ toolME3Config, toolsPCCDataDumper;
+	JCheckBoxMenuItem toolsInstallBinkw32, toolsInstallBinkw32asi;
+	JMenuItem backupBackupDLC, backupCreateGDB;
+	JCheckBoxMenuItem backupCreateVanillaCopy;
 	JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
 			restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC, restoreVanillaCopy;
 
@@ -179,6 +181,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private boolean loadedFirstTime = false;
 	private JMenuItem toolMassEffectModder;
 	private ArrayList<MainUIBackgroundJob> backgroundJobs;
+	private JXCollapsiblePane activityPanel;
 
 	/**
 	 * Opens a new Mod Manager window. Disposes of old ones if one is open.
@@ -189,17 +192,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	public ModManagerWindow(boolean isUpdate) {
 		if (ACTIVE_WINDOW != null) {
+			backgroundJobs = ACTIVE_WINDOW.backgroundJobs; //carry background job indicators.
 			ACTIVE_WINDOW.dispose();
 			ACTIVE_WINDOW = null;
+		} else {
+			backgroundJobs = new ArrayList<MainUIBackgroundJob>();
 		}
 		this.isUpdate = isUpdate;
 		ModManager.debugLogger.writeMessage("Setting up Mod Manager Window");
 		try {
-			if (ACTIVE_WINDOW != null) {
-				backgroundJobs = ACTIVE_WINDOW.backgroundJobs; //carry background job indicators.
-			} else {
-				backgroundJobs = new ArrayList<MainUIBackgroundJob>();
-			}
 
 			initializeWindow();
 			ACTIVE_WINDOW = this;
@@ -1325,7 +1326,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		buttonPanel.add(buttonApplyMod);
 		buttonPanel.add(buttonStartGame);
-		applyPanel.add(labelStatus, BorderLayout.WEST);
+
+		JPanel statusPanel = new JPanel(new BorderLayout());
+		activityPanel = new JXCollapsiblePane(Direction.LEFT);
+		activityPanel.add(new JLabel(ModManager.ACTIVITY_ICON));
+		labelStatus.setBorder(new EmptyBorder(3, 3, 3, 3));
+		statusPanel.add(activityPanel, BorderLayout.WEST);
+		statusPanel.add(labelStatus, BorderLayout.CENTER);
+
+		applyPanel.add(statusPanel, BorderLayout.WEST);
 		applyPanel.add(buttonPanel, BorderLayout.EAST);
 
 		southPanel.add(applyPanel, BorderLayout.SOUTH);
@@ -1427,7 +1436,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolTankmasterTLK = new JMenuItem("TankMaster ME2/ME3 TLK Tool");
 		toolTankmasterTLK.setToolTipText("Runs the bundled TLK tool provided by TankMaster");
 		toolsAutoTOCGame = new JMenuItem("Run AutoTOC on game");
-		toolsAutoTOCGame.setToolTipText("<html>Updates TOC files for basegame, DLC (unpacked and modified SFAR), and custom DLC.<br>May help fix infinite loading issues</html>");
+		toolsAutoTOCGame.setToolTipText("<html>Updates TOC files for basegame, DLC (unpacked and modified SFAR), and custom DLC.<br>May help fix infinite loading issues.</html>");
 
 		actionReload = new JMenuItem("Reload Mod Manager");
 		actionReload.setToolTipText("Reloads Mod Manager to refresh mods, mixins, and help documentation");
@@ -1516,15 +1525,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsGrantWriteAccess = new JMenuItem("Grant write access to selected game directory");
 		toolsGrantWriteAccess.setToolTipText("Attempts to grant your user account write access to the listed Mass Effect 3 game directory");
 
-		toolsInstallLauncherWV = new JMenuItem("Install LauncherWV DLC Bypass");
+		toolsInstallLauncherWV = new JCheckBoxMenuItem("Install LauncherWV DLC Bypass");
 		toolsInstallLauncherWV.setToolTipText(
 				"<html>Installs an in-memory patcher giving you console and allowing modified DLC.<br>This does not does not modify files.<br>This bypass method has been deprecated. Use binkw32 instead</html>");
-		toolsInstallBinkw32 = new JMenuItem("Install Binkw32 DLC Bypass");
+		toolsInstallBinkw32 = new JCheckBoxMenuItem("Install Binkw32 DLC Bypass");
 		toolsInstallBinkw32.setToolTipText(
 				"<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This modifies your game and is erased when doing an Origin Repair</html>");
-		toolsInstallBinkw32asi = new JMenuItem("Install Binkw32 DLC Bypass (ASI version)");
+		toolsInstallBinkw32asi = new JCheckBoxMenuItem("Install Binkw32 DLC Bypass (ASI version)");
 		toolsInstallBinkw32asi.setToolTipText(
 				"<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This version allows loading of advanced ASI mods that allow 3rd party code to run on your machine.<br>This modifies your game and is erased when doing an Origin Repair</html>");
+
 		toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
 		toolsUninstallBinkw32.setToolTipText("<html>Removes the Binkw32.dll DLC bypass (including ASI version), reverting to the original file</html>");
 
@@ -1632,9 +1642,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		backupBasegameUnpacked = new JMenuItem("Backup basegame/unpacked files");
 		backupBasegameUnpacked.setToolTipText("An Unpacked and basegame file will be automatically backed up when Mod Manager replaces or removes that file");
 
-		backupCreateVanillaCopy = new JMenuItem("Create complete game backup (Vanilla)");
+		backupCreateVanillaCopy = new JCheckBoxMenuItem("Create complete game backup (Unmodified)");
 		backupCreateVanillaCopy
 				.setToolTipText("<html>Create an entire copy of the game so you can do a complete restore in the future.<br>Useful if you are doing texture modding.</html>");
+		if (VanillaBackupWindow.GetFullBackupPath() != null) {
+			backupCreateVanillaCopy.setSelected(true);
+			backupCreateVanillaCopy.setText("Game has been fully backed up");
+			backupCreateVanillaCopy
+					.setToolTipText("<html>The game has been fully backed up in an unmodified state.<br>You can restore the entire game using the Restore Menu.</html>");
+		}
 
 		backupCreateGDB = new JMenuItem("Update game repair database");
 		backupCreateGDB.setToolTipText(
@@ -1754,7 +1770,31 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		helpMenu = HelpMenu.constructHelpMenu();
 		menuBar.add(helpMenu);
 
+		updateBinkBypassStatus();
+
 		return menuBar;
+	}
+
+	private void updateBinkBypassStatus() {
+		if (ModManager.checkIfBinkBypassIsInstalled(GetBioGameDir()) && !ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir())) {
+			toolsInstallBinkw32.setVisible(true);
+			toolsInstallBinkw32.setSelected(true);
+			toolsInstallBinkw32.setText("Binkw32 bypass is installed");
+		} else {
+			toolsInstallBinkw32.setVisible(true); //will be hidden again if asi version is installed.
+			toolsInstallBinkw32.setSelected(false);
+			toolsInstallBinkw32.setText("Install Binkw32 DLC Bypass");
+		}
+		if (ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir())) {
+			toolsInstallBinkw32.setVisible(false);
+			toolsInstallBinkw32asi.setSelected(true);
+			toolsInstallBinkw32asi.setText("Binkw32 ASI bypass is installed");
+		} else {
+			toolsInstallBinkw32asi.setSelected(false);
+			toolsInstallBinkw32asi.setText("Install Binkw32 DLC Bypass (ASI version)");
+		}
+		//no bypass installed
+		toolsUninstallBinkw32.setVisible(ModManager.checkIfBinkBypassIsInstalled(GetBioGameDir()));
 	}
 
 	private ArrayList<Component> buildModUtilsMenu(final Mod mod) {
@@ -2288,7 +2328,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == backupCreateVanillaCopy || e.getSource() == restoreVanillaCopy) {
+			backupCreateVanillaCopy.setSelected(VanillaBackupWindow.GetFullBackupPath() != null);
 			new VanillaBackupWindow(e.getSource() == backupCreateVanillaCopy);
+			backupCreateVanillaCopy.setSelected(VanillaBackupWindow.GetFullBackupPath() != null);
 		} else if (e.getSource() == backupCreateGDB) {
 			if (validateBIOGameDir()) {
 				createBasegameDB(GetBioGameDir());
@@ -2923,6 +2965,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
 					installBinkw32Bypass(true);
 				}
+				updateBinkBypassStatus();
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
@@ -2940,6 +2983,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			if (validateBIOGameDir()) {
 				ModManager.debugLogger.writeMessage("Installing manual Binkw32 bypass (standard).");
 				installBinkw32Bypass(false);
+				updateBinkBypassStatus();
 			} else {
 				labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
 				labelStatus.setVisible(true);
@@ -2966,7 +3010,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	public void checkAllModsForUpdates(boolean isManualCheck) {
-		setActivityIcon(true);
 		// Fix for moonshine mod v1
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.getElementAt(i);
@@ -3056,7 +3099,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void backupDLC(String bioGameDir) {
 		// Check that biogame is valid
 		if (validateBIOGameDir()) {
-			new BackupWindow(this, bioGameDir);
+			new BackupWindow(this);
 		} else {
 			// Biogame is invalid
 			JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
@@ -3070,7 +3113,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void autoBackupDLC(String bioGameDir, String dlcName) {
 		// Check that biogame is valid
 		if (validateBIOGameDir()) {
-			new BackupWindow(this, bioGameDir, dlcName);
+			new BackupWindow(this, dlcName);
 		} else {
 			// Biogame is invalid
 			JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory is not valid.\nDLC cannot be not backed up.\nFix the BioGame directory before continuing.",
@@ -3358,6 +3401,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
 				}
 				fieldDescription.setText(getNoSelectedModDescription());
+				modWebsiteLink.setVisible(false);
 				modUtilsMenu.setEnabled(false);
 				modUtilsMenu.setToolTipText("Select a mod to enable this menu");
 				moddevUpdateXMLGenerator.setText("Prepare mod for ME3Tweaks Updater Service");
@@ -3653,6 +3697,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			} else {
 				labelStatus.setText("FAILURE: Binkw32 bypass not uninstalled");
 			}
+			updateBinkBypassStatus();
 			return result;
 		}
 		JOptionPane.showMessageDialog(ModManagerWindow.this,
@@ -3707,6 +3752,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		new SingleModUpdateCheckThread(mod).execute();
 	}
 
+	/**
+	 * Fetches the current active BioGame target. Does not guarantee the end of
+	 * the string has a /.
+	 * 
+	 * @return Current target
+	 */
 	public static String GetBioGameDir() {
 		if (ModManagerWindow.ACTIVE_WINDOW == null || ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir == null
 				|| ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir.getSelectedItem() == null) {
@@ -3816,7 +3867,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void setActivityIcon(boolean visbiility) {
-		labelStatus.setIcon(visbiility ? ModManager.ACTIVITY_ICON : null);
+		//labelStatus.setIcon(visbiility ? ModManager.ACTIVITY_ICON : null);
+		activityPanel.setCollapsed(!visbiility);
 	}
 
 	class ModDeploymentThread extends SwingWorker<Boolean, ThreadCommand> {

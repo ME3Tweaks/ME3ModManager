@@ -651,6 +651,7 @@ public class FileDropWindow extends JDialog {
 		public boolean completed = false;
 		private StarterKitProgressDialog dialog;
 		private ArrayList<File> files;
+		int jobCode;
 
 		//TODO: Make Batch Worker accept a a list of files/folders to parse instead of just calculating from directory
 
@@ -658,6 +659,7 @@ public class FileDropWindow extends JDialog {
 			this.operation = operation;
 			this.files = files;
 			this.dialog = dialog; //can be null.
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Batch File Operation");
 		}
 
 		@Override
@@ -752,6 +754,7 @@ public class FileDropWindow extends JDialog {
 
 		@Override
 		protected void done() {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			try {
 				get(); //will trigger exceptions if one occured
 				if (ModManagerWindow.ACTIVE_WINDOW != null)

@@ -18,7 +18,7 @@ public class MDEOfficialJob {
 		this.rawNewFiles = rawNewFiles;
 		this.rawReplaceFiles = rawReplaceFiles;
 		this.rawAddFiles = rawAddFiles;
-		this.rawAddFiles = rawAddFiles;
+		this.rawAddTargetFiles = rawAddTargetFiles;
 		this.rawAddReadOnlyTargetFiles = rawAddReadOnlyTargetFiles;
 		this.rawRemoveFiles = removeFiles;
 		this.rawRequirementText = rawRequirementText;

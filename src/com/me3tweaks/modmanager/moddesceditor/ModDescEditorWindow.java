@@ -7,7 +7,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -23,9 +23,11 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
@@ -43,6 +45,8 @@ import org.jdesktop.swingx.ScrollableSizeHint;
 import org.jdesktop.swingx.VerticalLayout;
 
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
+import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModType;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
@@ -166,6 +170,9 @@ public class ModDescEditorWindow extends JXFrame {
 		metadataPanel.add(secondRowPanel);
 		metadataPanel.add(descriptionPanel);
 
+		//
+		boolean expandBaseDLC = false, expandCustomDLC = false, expandCondFiles = false, expandCondDLC = false;
+
 		//BASEGAME + OFFICIAL DLC MODIFICATIONS PANEL
 		JXPanel baseOfficialPanel = new JXPanel();
 		baseOfficialPanel.setLayout(new VerticalLayout());
@@ -175,6 +182,7 @@ public class ModDescEditorWindow extends JXFrame {
 				"<html>Basegame and official DLC modifiers should be used in circumstances where DLC cannot be added (e.g. in MP for gameplay mods, but not additional MP content mods).<br>You should also use them for items in TESTPATCH or files that must be modified as they load before the main menu (e.g. SFXGame).<br>There is very rarely a need to modify SP DLC using this method, use Custom DLC instead.</html>");
 		baseOfficialPanel.add(baseOfficialIntro);
 		for (MDEOfficialJob mdeJob : mod.rawOfficialJobs) {
+			expandBaseDLC = true;
 			//Task Header Panel
 			JButton button = new JButton();
 
@@ -205,6 +213,7 @@ public class ModDescEditorWindow extends JXFrame {
 			gbc.weightx = 1.0;
 
 			//TASK DETAILS
+			Insets columnRightSideInsets = new Insets(0, 0, 0, 10);
 			//REPLACEMENTS
 			{
 				JXPanel replacementsListPanel = new JXPanel(new GridBagLayout());
@@ -225,10 +234,12 @@ public class ModDescEditorWindow extends JXFrame {
 					sourceHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
 					replaceHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
 					gridC.fill = GridBagConstraints.HORIZONTAL;
-					gridC.gridx = 0;
-					gridC.weightx = 0;
-					replacementsListPanel.add(sourceHeader, gridC);
 					gridC.gridx = 1;
+					gridC.insets = columnRightSideInsets;
+					gridC.weightx = 0;
+					gridC.anchor = GridBagConstraints.WEST;
+					replacementsListPanel.add(sourceHeader, gridC);
+					gridC.gridx = 2;
 					gridC.weightx = 1;
 					replacementsListPanel.add(replaceHeader, gridC);
 					gridC.gridy++;
@@ -240,27 +251,43 @@ public class ModDescEditorWindow extends JXFrame {
 						JLabel fileReplaceLabel = new JLabel(newFile);
 						JLabel replacePathLabel = new JLabel(oldFile);
 
+						JButton minusButton = new JButton("-");
+
+						gridC.fill = GridBagConstraints.NONE;
 						gridC.gridy++;
 						gridC.gridx = 0;
-						gridC.weightx = 0.1;
+						gridC.weightx = 0;
+						replacementsListPanel.add(minusButton, gridC);
 
-						replacementsListPanel.add(fileReplaceLabel, gridC);
 						gridC.gridx = 1;
-						gridC.weightx = 1;
+						replacementsListPanel.add(fileReplaceLabel, gridC);
 
+						gridC.gridx = 2;
+						gridC.weightx = 1;
+						gridC.fill = GridBagConstraints.HORIZONTAL;
 						replacementsListPanel.add(replacePathLabel, gridC);
 					}
 
-					jobPanel.add(replacementsListPanel, gbc);
 				} else {
 					JLabel noReplacements = new JLabel("No files are replaced in this job.");
 					replacementsListPanel.add(noReplacements, gbc);
 					gbc.gridy++;
 				}
+
+				if (!mdeJob.getRawHeader().equals(ModType.BINI)) {
+					gridC.gridy++;
+					gridC.gridx = 0;
+					gridC.weightx = 0;
+					gridC.anchor = GridBagConstraints.WEST;
+					gridC.gridwidth = 3;
+					gridC.fill = GridBagConstraints.NONE;
+					JButton addReplacementFile = new JButton("Add replacement file to " + mdeJob.getRawHeader());
+					replacementsListPanel.add(addReplacementFile, gridC);
+				}
+
 				jobPanel.add(replacementsListPanel, gbc);
 			}
 			if (!mdeJob.getRawHeader().equals(ModType.BINI)) {
-
 				//ADD FILES
 				{
 					JXPanel additionsListPanel = new JXPanel(new GridBagLayout());
@@ -273,8 +300,25 @@ public class ModDescEditorWindow extends JXFrame {
 					gbc.gridy++;
 
 					if (mdeJob.getRawAddFiles() != null && mdeJob.getRawAddTargetFiles() != null) {
+
+						//Get Raad-only
+						ArrayList<String> readOnlyFiles = new ArrayList<String>();
+						if (mdeJob.getRawAddReadOnlyTargetFiles() != null) {
+							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(mdeJob.getRawAddReadOnlyTargetFiles(), ";");
+
+							while (addTargetReadOnlyStrok.hasMoreTokens()) {
+								String readonlytarget = addTargetReadOnlyStrok.nextToken();
+								if (mdeJob.getRawHeader().equals(ModType.BASEGAME)) {
+									readonlytarget = ResourceUtils.normalizeFilePath(readonlytarget, false);
+								} else {
+									readonlytarget = ResourceUtils.normalizeFilePath(readonlytarget, true);
+								}
+								readOnlyFiles.add(readonlytarget);
+							}
+						}
 						StringTokenizer addStrok = new StringTokenizer(mdeJob.getRawAddFiles(), ";");
 						StringTokenizer addTargetsStrok = new StringTokenizer(mdeJob.getRawAddTargetFiles(), ";");
+
 						/*
 						 * gbc.gridy++;
 						 */
@@ -283,44 +327,71 @@ public class ModDescEditorWindow extends JXFrame {
 						JLabel replaceHeader = new JLabel("In-game path to add to");
 						sourceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
 						replaceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
+						gridC.insets = columnRightSideInsets;
 						gridC.fill = GridBagConstraints.HORIZONTAL;
-						gridC.gridx = 0;
-						gridC.weightx = 0;
-						additionsListPanel.add(sourceHeader, gridC);
 						gridC.gridx = 1;
-						gridC.weightx = 1;
+						additionsListPanel.add(sourceHeader, gridC);
+						gridC.gridx = 2;
 						additionsListPanel.add(replaceHeader, gridC);
 						gridC.gridy++;
+						gridC.anchor = GridBagConstraints.WEST;
 
 						while (addStrok.hasMoreTokens()) {
+
+							JButton minusButton = new JButton("-");
+
+							gridC.fill = GridBagConstraints.NONE;
+							gridC.gridy++;
+							gridC.gridx = 0;
+							gridC.weightx = 0;
+							additionsListPanel.add(minusButton, gridC);
+
 							String newFile = addStrok.nextToken();
 							String oldFile = addTargetsStrok.nextToken();
 
 							JLabel fileReplaceLabel = new JLabel(newFile);
 							JLabel replacePathLabel = new JLabel(oldFile);
 
-							gridC.gridy++;
-							gridC.gridx = 0;
-							gridC.weightx = 0.1;
+							gridC.gridx = 1;
 
 							additionsListPanel.add(fileReplaceLabel, gridC);
-							gridC.gridx = 1;
-							gridC.weightx = 1;
+							gridC.gridx = 2;
+							gridC.weightx = 0;
 
 							additionsListPanel.add(replacePathLabel, gridC);
-						}
+							gridC.fill = GridBagConstraints.HORIZONTAL;
 
+							gridC.gridx = 3;
+							gridC.weightx = 1;
+
+							JCheckBox readOnly = new JCheckBox("Read only");
+							if (readOnlyFiles.contains(oldFile)) {
+								readOnly.setSelected(true);
+							}
+							additionsListPanel.add(readOnly, gridC);
+						}
 					} else {
 						JLabel noAdditions = new JLabel("No files are added to the game by this job.", SwingConstants.LEFT);
 						gridC.gridy++;
 						gridC.gridx = 0;
 						gridC.weightx = 1;
 						gridC.anchor = GridBagConstraints.WEST;
-
+						gridC.gridwidth = 3;
+						gridC.fill = GridBagConstraints.NONE;
 						additionsListPanel.add(noAdditions, gridC);
 					}
-					gbc.gridy++;
 
+					gridC.gridy++;
+					gridC.gridx = 0;
+					gridC.weightx = 0;
+					gridC.anchor = GridBagConstraints.WEST;
+					gridC.gridwidth = 3;
+					gridC.fill = GridBagConstraints.NONE;
+					JButton addNewFile = new JButton("Add additional file to " + mdeJob.getRawHeader());
+					additionsListPanel.add(addNewFile, gridC);
+
+					//end add panel
+					gbc.gridy++;
 					jobPanel.add(additionsListPanel, gbc);
 				}
 			}
@@ -345,6 +416,12 @@ public class ModDescEditorWindow extends JXFrame {
 			baseOfficialPanel.add(jobPane);
 		}
 
+		JButton addNewHeader = new JButton("Add new official files task");
+
+		JPanel addNewTaskPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		addNewTaskPanel.add(addNewHeader);
+		baseOfficialPanel.add(addNewTaskPanel);
+
 		//CUSTOM DLC PANEL ======================================================================
 		JXPanel customDLCPanel = new JXPanel();
 		customDLCPanel.setLayout(new BoxLayout(customDLCPanel, BoxLayout.Y_AXIS));
@@ -360,6 +437,8 @@ public class ModDescEditorWindow extends JXFrame {
 		labelNoCustomDLC.setAlignmentX(Component.LEFT_ALIGNMENT);
 		customDLCPanel.add(labelNoCustomDLC);
 		if (mod.rawcustomDLCDestDirs != null && mod.rawCustomDLCSourceDirs != null) {
+			expandCustomDLC = true;
+
 			StringTokenizer srcStrok = new StringTokenizer(mod.rawcustomDLCDestDirs, ";");
 			StringTokenizer destStrok = new StringTokenizer(mod.rawCustomDLCSourceDirs, ";");
 			while (srcStrok.hasMoreTokens()) {
@@ -445,15 +524,26 @@ public class ModDescEditorWindow extends JXFrame {
 		});
 
 		//altfiles
+		JXPanel altFilesPanel = new JXPanel();
+		altFilesPanel.setLayout(new BoxLayout(altFilesPanel, BoxLayout.Y_AXIS));
+		altFilesPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 		{
-			JXPanel altFilesPanel = new JXPanel();
-			altFilesPanel.setLayout(new BoxLayout(altFilesPanel, BoxLayout.Y_AXIS));
-			altFilesPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 			JLabel altFilesIntroText = new JLabel(
 					"<html>You can specify that specific files are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>");
 
 			altFilesIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
 			altFilesPanel.add(altFilesIntroText);
+
+			if (mod.rawAltDlcText != null) {
+				expandCondFiles = true;
+
+				for (AlternateFile af : mod.getAlternateFiles()) {
+					altFilesPanel.add(new JLabel(af.getFriendlyName()));
+				}
+			} else {
+
+				altFilesPanel.add(new JLabel("No altfiles specified."));
+			}
 		}
 		//altdlc in customdlc header.
 		JXPanel altDLCPanel = new JXPanel();
@@ -464,21 +554,38 @@ public class ModDescEditorWindow extends JXFrame {
 
 		altDLCIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
 		altDLCPanel.add(altDLCIntroText);
+
+		{
+
+			if (mod.rawAltDlcText != null) {
+				expandCondDLC = true;
+				for (AlternateCustomDLC ad : mod.getAlternateCustomDLC()) {
+					altDLCPanel.add(new JLabel(ad.getFriendlyName()));
+				}
+			} else {
+
+				altDLCPanel.add(new JLabel("No alc specified."));
+			}
+		}
 		//Sections Top Level =================================
 		JXCollapsiblePane metadataPane = new JXCollapsiblePane();
 		metadataPane.add(metadataPanel);
 
 		JXCollapsiblePane baseDLCPane = new JXCollapsiblePane();
 		baseDLCPane.add(baseOfficialPanel);
+		baseDLCPane.setCollapsed(!expandBaseDLC);
 
 		JXCollapsiblePane customDLCPane = new JXCollapsiblePane();
 		customDLCPane.add(customDLCPanel);
+		customDLCPane.setCollapsed(!expandCustomDLC);
 
 		JXCollapsiblePane condFilesPane = new JXCollapsiblePane();
 		condFilesPane.add(altFilesPanel);
+		condFilesPane.setCollapsed(!expandCondFiles);
 
 		JXCollapsiblePane condDLCPane = new JXCollapsiblePane();
 		condDLCPane.add(altDLCPanel);
+		condDLCPane.setCollapsed(!expandCondDLC);
 
 		JLabel metaPanelTitle = new JLabel("Mod Metadata");
 		JLabel baseOfficialPanelTitle = new JLabel("Basegame + Official DLC + Balance Changes Modifications");
@@ -514,9 +621,6 @@ public class ModDescEditorWindow extends JXFrame {
 			toggleAction.putValue(JXCollapsiblePane.EXPAND_ICON, UIManager.getIcon("Tree.collapsedIcon"));
 			button.setAction(toggleAction);
 			button.setText("");
-			if (i > 0) {
-				pane.setCollapsed(true);
-			}
 
 			//make label clickable
 			label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

@@ -103,6 +103,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	private Mod mod;
 	private ArrayList<String> requiredMixinIds = new ArrayList<String>();
 	private ArrayList<DynamicPatch> dynamicMixins = new ArrayList<DynamicPatch>();
+	private int jobCode;
 
 	/**
 	 * Starts a modmaker session for a user-selected download
@@ -118,6 +119,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.code = code;
 		this.languages = languages;
 		setupWindow();
+		jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Compiling ModMaker Mod");
 		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiling ModMaker Mod...");
 		new ModDownloadWorker().execute();
 
@@ -1881,6 +1883,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 			finishModMaker(newMod);
 		} else {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			dispose();
 		}
 	}
@@ -1894,6 +1897,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
 		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
+		ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 		overallProgress.setValue(100);
 		stepsCompleted++;
 		ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);

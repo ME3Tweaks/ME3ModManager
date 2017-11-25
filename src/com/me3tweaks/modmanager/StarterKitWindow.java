@@ -466,8 +466,6 @@ public class StarterKitWindow extends JDialog {
 				String output = cookedPath + "DLC_MOD_" + internaldlcname + "_" + lang + ".xml";
 				ModManager.ExportResource("/StarterKitTLK.xml", output);
 				String replaceOutput = FileUtils.readFileToString(new File(output), "UTF-8");
-				//ModManager.debugLogger.writeMessage("DEBUGGING: LANGUAGE INPUT TEXT WAS READ AS:");
-				//ModManager.debugLogger.writeMessage(replaceOutput);
 				String langcode = "";
 				switch (lang) {
 				case "INT":
@@ -604,7 +602,7 @@ public class StarterKitWindow extends JDialog {
 			startermod.setSite(modsite);
 			startermod.setModName(modname);
 			startermod.setVersion(1.0);
-			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, 4.2), StandardCharsets.UTF_8);
+			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT), StandardCharsets.UTF_8);
 
 			//reload newly written mod.
 			ModManager.debugLogger.writeMessage("Loading moddesc.ini to verify mod is valid");

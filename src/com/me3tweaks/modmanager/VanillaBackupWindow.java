@@ -78,6 +78,30 @@ public class VanillaBackupWindow extends JDialog {
 			setVisible(true);
 		}
 	}
+	
+	public static String GetFullBackupPath() {
+		String backupPath = null;
+		try {
+			backupPath = Advapi32Util.registryGetStringValue(HKEY_CURRENT_USER, VanillaUserRegistryKey, VanillaUserRegistryValue);
+			File backupDir = new File(backupPath);
+
+			if (backupDir.exists() && backupDir.isDirectory() && verifyVanillaBackup(backupDir)) {
+				ModManager.debugLogger.writeMessage("Found valid vanilla copy location in registry: " + backupPath);
+			} else {
+				ModManager.debugLogger.writeError("Found vanilla copy location in registry, but it doesn't seem to be valid, one of the validation checks failed");
+				backupPath = null;
+			}
+		} catch (Win32Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Win32Exception reading registry - assuming no backup exists yet (this is not really an error... mostly).", e);
+		}
+
+		if (backupPath != null && new File(backupPath).exists() && new File(backupPath).isDirectory()) {
+			return backupPath;
+
+		} else {
+			return null;
+		}
+	}
 
 	private void setupWindow(boolean isBackup) {
 		setTitle("Full Game Restoration");
@@ -91,20 +115,7 @@ public class VanillaBackupWindow extends JDialog {
 				"<html><div style=\"width: 300px\">Mod Manager can create a full game snapshot that you can use to do a complete game restore from. This is known in Mod Manager as restoring to vanilla - where items are in an unmodded state.</div></html>");
 
 		northPanel.add(vanillaWindowDescription, BorderLayout.NORTH);
-		backupPath = null;
-		try {
-			backupPath = Advapi32Util.registryGetStringValue(HKEY_CURRENT_USER, VanillaUserRegistryKey, VanillaUserRegistryValue);
-			File backupDir = new File(backupPath);
-
-			if (backupDir.exists() && backupDir.isDirectory() && verifyVanillaBackup(backupDir)) {
-				ModManager.debugLogger.writeMessage("Found valid vanilla copy location in registry: " + backupPath);
-			} else {
-				ModManager.debugLogger.writeError("Found vanilla copy location in registry, but it doesn't seem to be valid, one of the validation checks failed");
-				backupPath = null;
-			}
-		} catch (Win32Exception e) {
-			ModManager.debugLogger.writeErrorWithException("Win32Exception reading registry - assuming no backup exists yet", e);
-		}
+		backupPath = GetFullBackupPath();
 
 		backupButton = new JButton("Create Backup");
 		restoreButton = new JButton("Restore Backup");
@@ -120,6 +131,7 @@ public class VanillaBackupWindow extends JDialog {
 			backupLocMessage = "No complete backup has been created. Creating one will require about " + sizeHR + ".";
 			restoreButton.setEnabled(false);
 		}
+		
 		backupLocation = new JLabel(backupLocMessage);
 		northPanel.add(new JSeparator(), BorderLayout.CENTER);
 		northPanel.add(backupLocation, BorderLayout.SOUTH);
@@ -338,7 +350,7 @@ public class VanillaBackupWindow extends JDialog {
 		}
 	}
 
-	private boolean verifyVanillaBackup(File backupDir) {
+	private static boolean verifyVanillaBackup(File backupDir) {
 
 		ModManager.debugLogger.writeMessage("Performing quick verify on backup directory: " + backupDir.getAbsolutePath());
 		for (String testSubpath : VanillaTestFiles) {

@@ -130,4 +130,9 @@ public class AboutWindow2Controller {
 	private void openTankmasterPage() {
 		ResourceUtils.openWebpage("http://me3explorer.freeforums.org/post12495.html#p12495");
 	}
+	
+	@FXML
+	private void openSwingXPage() {
+		ResourceUtils.openWebpage("	https://stackoverflow.com/questions/6818528/what-is-the-status-of-swinglabs-swingx-post-acquisition");
+	}
 }
