@@ -534,7 +534,7 @@ public class ModDescEditorWindow extends JXFrame {
 			altFilesIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
 			altFilesPanel.add(altFilesIntroText);
 
-			if (mod.rawAltDlcText != null) {
+			if (mod.rawAltFilesText != null) {
 				expandCondFiles = true;
 
 				for (AlternateFile af : mod.getAlternateFiles()) {
