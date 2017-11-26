@@ -1,7 +1,6 @@
 package com.me3tweaks.modmanager;
 
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -10,10 +9,8 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -21,12 +18,15 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
+
+import javafx.application.Platform;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 
 public class CoalescedWindow extends JFrame {
 
@@ -40,18 +40,18 @@ public class CoalescedWindow extends JFrame {
 		setVisible(true);
 	}
 
-	public CoalescedWindow(File file, boolean automated) {		
-		ModManager.debugLogger.writeMessage("Opening Coalesced window with prepopulated value: "+file+", automated? "+automated);
+	public CoalescedWindow(File file, boolean automated) {
+		ModManager.debugLogger.writeMessage("Opening Coalesced window with prepopulated value: " + file + ", automated? " + automated);
 		if (automated) {
 			if (FilenameUtils.getExtension(file.getAbsolutePath()).equals("xml")) {
 				//manifest
 				compileCoalesced(file.getAbsolutePath());
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiled "+FilenameUtils.getName(file.getAbsolutePath())+" (Be sure to verify)");
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiled " + FilenameUtils.getName(file.getAbsolutePath()) + " (Be sure to verify)");
 			}
 			if (FilenameUtils.getExtension(file.getAbsolutePath()).equals("bin")) {
 				//coalesced
 				decompileCoalesced(file.getAbsolutePath());
-				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Decompiled "+FilenameUtils.getName(file.getAbsolutePath()));
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Decompiled " + FilenameUtils.getName(file.getAbsolutePath()));
 			}
 		} else {
 			setupWindow();
@@ -156,27 +156,30 @@ public class CoalescedWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser binChooser = new JFileChooser();
-				File tryDir = new File(dInputField.getText());
-				if (tryDir.exists() && tryDir.isFile()) {
-					binChooser.setCurrentDirectory(tryDir.getParentFile());
-				} else {
-					binChooser.setCurrentDirectory(new File("."));
-				}
-				binChooser.setDialogTitle("Select .bin to decompile");
-				binChooser.setAcceptAllFileFilterUsed(false);
-				binChooser.setFileFilter(new FileNameExtensionFilter("Coalesced files (.bin)", "bin"));
+				Platform.runLater(() -> {
 
-				if (binChooser.showOpenDialog(CoalescedWindow.this) == JFileChooser.APPROVE_OPTION) {
-					String chosenFile = binChooser.getSelectedFile().getAbsolutePath();
-					if (chosenFile.toLowerCase().endsWith("PCConsoleTOC.bin".toLowerCase())) {
-						dStatus.setText("Selected PCConsoleTOC file, not a Coalesced file.");
+					FileChooser binChooser = new FileChooser();
+
+					File tryDir = new File(dInputField.getText());
+					if (tryDir.exists() && tryDir.isFile()) {
+						binChooser.setInitialDirectory(tryDir.getParentFile());
 					} else {
-						dInputField.setText(chosenFile);
-						dStatus.setText(" ");
-						dCompile.setEnabled(true);
+						binChooser.setInitialDirectory(new File(ModManager.getModsDir()));
 					}
-				}
+					binChooser.setTitle("Select .bin to decompile");
+					binChooser.getExtensionFilters().addAll(new ExtensionFilter("Coalesced Files", "*.bin"));
+					File chosenFile = binChooser.showOpenDialog(null);
+
+					if (chosenFile != null) {
+						if (chosenFile.getAbsolutePath().toLowerCase().endsWith("PCConsoleTOC.bin".toLowerCase())) {
+							dStatus.setText("Selected PCConsoleTOC file, not a Coalesced file.");
+						} else {
+							dInputField.setText(chosenFile.getAbsolutePath());
+							dStatus.setText(" ");
+							dCompile.setEnabled(true);
+						}
+					}
+				});
 			}
 		});
 
@@ -184,28 +187,24 @@ public class CoalescedWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser xmlChooser = new JFileChooser();
-				File tryFile = new File(cInputField.getText());
-				if (tryFile.exists() && tryFile.isFile()) {
-					xmlChooser.setCurrentDirectory(tryFile.getParentFile());
-				} else {
-					xmlChooser.setCurrentDirectory(new File("."));
-				}
-				xmlChooser.setDialogTitle("Select .xml manifest to compile");
-				//binChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-				//
-				// disable the "All files" option.
-				//
-				xmlChooser.setAcceptAllFileFilterUsed(false);
-				xmlChooser.setFileFilter(new FileNameExtensionFilter("Coalesced Manifest File (.xml)", "xml"));
+				Platform.runLater(() -> {
 
-				if (xmlChooser.showOpenDialog(CoalescedWindow.this) == JFileChooser.APPROVE_OPTION) {
-					String chosenFile = xmlChooser.getSelectedFile().getAbsolutePath();
-					cInputField.setText(chosenFile);
-					cCompile.setEnabled(true);
-				} else {
+					FileChooser xmlChooser = new FileChooser();
+					File tryFile = new File(cInputField.getText());
+					if (tryFile.exists() && tryFile.isFile()) {
+						xmlChooser.setInitialDirectory(tryFile.getParentFile());
+					} else {
+						xmlChooser.setInitialDirectory(new File(ModManager.getModsDir()));
+					}
+					xmlChooser.setTitle("Select .xml manifest to compile");
+					xmlChooser.getExtensionFilters().addAll(new ExtensionFilter("Coalesced Manifest Files", "*.xml"));
+					File chosenFile = xmlChooser.showSaveDialog(null);
 
-				}
+					if (chosenFile != null) {
+						cInputField.setText(chosenFile.getAbsolutePath());
+						cCompile.setEnabled(true);
+					}
+				});
 			}
 		});
 
@@ -221,7 +220,6 @@ public class CoalescedWindow extends JFrame {
 				}
 			}
 
-			
 		});
 
 		cCompile.addActionListener(new ActionListener() {
@@ -237,7 +235,7 @@ public class CoalescedWindow extends JFrame {
 			}
 		});
 	}
-	
+
 	protected static ProcessResult compileCoalesced(String path) {
 		String compilerPath = ModManager.getTankMasterCompilerDir() + "MassEffect3.Coalesce.exe";
 

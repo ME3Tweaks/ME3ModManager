@@ -42,7 +42,6 @@ import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -118,6 +117,8 @@ import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomAction
 import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 
+import javafx.application.Platform;
+import javafx.stage.DirectoryChooser;
 import net.iharder.dnd.FileDrop;
 
 /**
@@ -2213,26 +2214,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	public void actionPerformed(ActionEvent e) {
 		// too bad we can't do a switch statement on the object :(
 		if (e.getSource() == buttonBioGameDir) {
-			JFileChooser dirChooser = new JFileChooser();
-			String biogamedir = GetBioGameDir();
-			if (biogamedir != null) {
-				File tryDir = new File(biogamedir);
-				if (tryDir.exists()) {
-					dirChooser.setCurrentDirectory(new File(GetBioGameDir()));
+			Platform.runLater(() -> {
+				DirectoryChooser dirChooser = new DirectoryChooser();
+				String biogamedir = GetBioGameDir();
+				if (biogamedir != null) {
+					File tryDir = new File(biogamedir);
+					if (tryDir.exists()) {
+						dirChooser.setInitialDirectory(new File(GetBioGameDir()));
+					} else {
+						ModManager.debugLogger.writeMessage("Directory " + GetBioGameDir() + " does not exist, defaulting to working directory.");
+					}
 				} else {
-					ModManager.debugLogger.writeMessage("Directory " + GetBioGameDir() + " does not exist, defaulting to working directory.");
+					dirChooser.setInitialDirectory(new java.io.File("."));
 				}
-			} else {
-				dirChooser.setCurrentDirectory(new java.io.File("."));
-			}
-			dirChooser.setDialogTitle("Select BIOGame directory");
-			dirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			dirChooser.setAcceptAllFileFilterUsed(false);
-			if (dirChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-				checkForValidBioGame(dirChooser);
-			} else {
-				ModManager.debugLogger.writeMessage("No directory selected...");
-			}
+				dirChooser.setTitle("Select BIOGame directory");
+				File chosenDirectory = dirChooser.showDialog(null);
+				if (chosenDirectory != null) {
+					checkForValidBioGame(chosenDirectory);
+				} else {
+					ModManager.debugLogger.writeMessage("No directory selected...");
+				}
+			});
 		} else if (e.getSource() == modManagementModMaker) {
 			if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
@@ -3119,8 +3121,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 * Checks that the user has chosen a correct biogame directory. If the
 	 * selection is valid it is added to the list of BIOGAME_DIRECTORIES file.
 	 */
-	private void checkForValidBioGame(JFileChooser dirChooser) {
-		String chosenPath = dirChooser.getSelectedFile().toString();
+	private void checkForValidBioGame(File chosenFile) {
+		String chosenPath = chosenFile.getAbsolutePath();
 		if (internalValidateBIOGameDir(chosenPath)) {
 			chosenPath = new File(chosenPath).getParent();
 
@@ -3157,7 +3159,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			int size = model.getSize();
 			for (int i = 0; i < size; i++) {
 				String element = model.getElementAt(i);
-				if (element.equalsIgnoreCase(dirChooser.getSelectedFile().toString())) {
+				if (element.equalsIgnoreCase(chosenPath)) {
 					continue; //we'll put ours at the top of the list
 				}
 				biogameDirectories.add(element);
@@ -3165,23 +3167,23 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			comboboxBiogameDir.removeItemListener(BIOGAME_ITEM_LISTENER);
 			comboboxBiogameDir.removeAllItems();
-			comboboxBiogameDir.addItem(dirChooser.getSelectedFile().toString()); //our selected item
+			comboboxBiogameDir.addItem(chosenPath); //our selected item
 
 			for (String biodir : biogameDirectories) {
 				comboboxBiogameDir.addItem(biodir); //all the others
 			}
 
-			biogameDirectories.add(0, dirChooser.getSelectedFile().toString());
+			biogameDirectories.add(0, chosenPath);
 
 			saveBiogamePath(biogameDirectories);
 			labelStatus.setText("Set game target directory");
 			labelStatus.setVisible(true);
-			comboboxBiogameDir.setSelectedItem(dirChooser.getSelectedFile().toString());
+			comboboxBiogameDir.setSelectedItem(chosenPath);
 			comboboxBiogameDir.addItemListener(BIOGAME_ITEM_LISTENER);
 			validateBIOGameDir();
 		} else {
-			JOptionPane.showMessageDialog(ModManagerWindow.this, "Invalid Mass Effect 3 BIOGame folder selected:\n" + dirChooser.getSelectedFile().toString(),
-					"Invalid ME3 BIOGame Directory", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(ModManagerWindow.this, "Invalid Mass Effect 3 BIOGame folder selected:\n" + chosenPath, "Invalid ME3 BIOGame Directory",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -3361,7 +3363,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	/**
 	 * Shows a message to the user that installation of mods is blocked due to
 	 * ALOT.
-	 * @param multi Indicates if this is due to single mod installer or multimod installer (batch mode)
+	 * 
+	 * @param multi
+	 *            Indicates if this is due to single mod installer or multimod
+	 *            installer (batch mode)
 	 */
 	public void installBlockedByALOT(boolean multi) {
 		ModManager.debugLogger.writeMessage("Installation of mod has been blocked due to detection of ALOT.");
@@ -3604,8 +3609,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	/**
-	 * Starts the MassEffect3.exe executable. Due to legacy code if LauncherWV is found it will be run, however you can no longer install LauncherWV.
-	 * @param CookedDir biogamedir
+	 * Starts the MassEffect3.exe executable. Due to legacy code if LauncherWV
+	 * is found it will be run, however you can no longer install LauncherWV.
+	 * 
+	 * @param CookedDir
+	 *            biogamedir
 	 */
 	private void startGame(String CookedDir) {
 		File startingDir = new File(CookedDir);

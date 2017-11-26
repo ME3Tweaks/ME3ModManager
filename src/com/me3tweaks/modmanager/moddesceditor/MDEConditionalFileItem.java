@@ -1,11 +1,14 @@
 package com.me3tweaks.modmanager.moddesceditor;
 
-import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.File;
 
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -15,6 +18,12 @@ import javax.swing.JTextField;
 import org.jdesktop.swingx.HorizontalLayout;
 
 import com.me3tweaks.modmanager.objects.AlternateFile;
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.ui.SwingLink;
+
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.stage.FileChooser;
 
 public class MDEConditionalFileItem {
 	private JPanel panel;
@@ -67,9 +76,12 @@ public class MDEConditionalFileItem {
 
 	private JButton minusButton;
 	private JTextField descriptionField;
+
+	private Mod mod;
 	private static int itemSpacing = 5;
 
-	public MDEConditionalFileItem(AlternateFile af) {
+	public MDEConditionalFileItem(Mod mod, AlternateFile af) {
+		this.mod = mod;
 		this.af = af;
 		setupPanel();
 	}
@@ -100,21 +112,50 @@ public class MDEConditionalFileItem {
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 
 		panel.add(operationBox);
+		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 
-		JLabel srcLabel = new JLabel(af.getAltFile());
-		Component srcSpace = Box.createRigidArea(new Dimension(itemSpacing, 3));
-		panel.add(srcSpace);
-		panel.add(srcLabel);
+		JPanel rightSideVerticalPanel = new JPanel();
+		rightSideVerticalPanel.setLayout(new BoxLayout(rightSideVerticalPanel, BoxLayout.Y_AXIS));
+		rightSideVerticalPanel.add(Box.createVerticalGlue());
+		ActionListener srcChangeAction = new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				// TODO Auto-generated method stub
+				Platform.runLater(() -> {
+					FileChooser fileChooser = new FileChooser();
+					fileChooser.setInitialDirectory(new File(mod.getModPath()));
+					//Set extension filter
+					FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("Mod File", "*.*");
+					fileChooser.getExtensionFilters().addAll(extFilterJPG);
+
+					//Show open file dialog
+					File file = fileChooser.showOpenDialog(null);
+				});
+			}
+		};
+		SwingLink srcLabel = new SwingLink(af.getAltFile(), "Click to change file", srcChangeAction);
+		rightSideVerticalPanel.add(srcLabel);
 
 		JLabel forLabel = new JLabel("for");
-		Component forSpace = Box.createRigidArea(new Dimension(itemSpacing, 3));
-		panel.add(forSpace);
-		panel.add(forLabel);
+		//Component forSpace = Box.createRigidArea(new Dimension(itemSpacing, 3));
+		//panel.add(forSpace);
+		rightSideVerticalPanel.add(forLabel);
 
-		JLabel destLabel = new JLabel(af.getModFile());
-		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
-		panel.add(destLabel);
+		ActionListener changeDestAction = new ActionListener() {
 
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				// TODO Auto-generated method stub
+
+			}
+		};
+		SwingLink destLabel = new SwingLink(af.getModFile(), "Click to change file", changeDestAction);
+		//panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
+		rightSideVerticalPanel.add(destLabel);
+		rightSideVerticalPanel.add(Box.createVerticalGlue());
+
+		panel.add(rightSideVerticalPanel);
 		operationBox.addItemListener(new ItemListener() {
 
 			@Override
@@ -123,20 +164,16 @@ public class MDEConditionalFileItem {
 					int index = operationBox.getSelectedIndex();
 					switch (index) {
 					case 0: //add
-						srcSpace.setVisible(true);
-						forSpace.setVisible(true);
+						forLabel.setText("at");
 						srcLabel.setVisible(true);
 						forLabel.setVisible(true);
 						break;
 					case 1: //dont install
-						srcSpace.setVisible(false);
-						forSpace.setVisible(false);
 						srcLabel.setVisible(false);
 						forLabel.setVisible(false);
 						break;
 					case 2: //substitute
-						srcSpace.setVisible(true);
-						forSpace.setVisible(true);
+						forLabel.setText("for");
 						srcLabel.setVisible(true);
 						forLabel.setVisible(true);
 						break;

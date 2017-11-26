@@ -26,7 +26,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -43,6 +42,9 @@ import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.Win32Exception;
+
+import javafx.application.Platform;
+import javafx.stage.DirectoryChooser;
 
 public class VanillaBackupWindow extends JDialog {
 
@@ -78,9 +80,12 @@ public class VanillaBackupWindow extends JDialog {
 			setVisible(true);
 		}
 	}
+
 	/**
 	 * Fetches the full backup path from the registry.
-	 * @return Filepath from registry to full backup path. If none exists, this returns null.
+	 * 
+	 * @return Filepath from registry to full backup path. If none exists, this
+	 *         returns null.
 	 */
 	public static String GetFullBackupPath() {
 		String backupPath = null;
@@ -134,7 +139,7 @@ public class VanillaBackupWindow extends JDialog {
 			backupLocMessage = "No complete backup has been created. Creating one will require about " + sizeHR + ".";
 			restoreButton.setEnabled(false);
 		}
-		
+
 		backupLocation = new JLabel(backupLocMessage);
 		northPanel.add(new JSeparator(), BorderLayout.CENTER);
 		northPanel.add(backupLocation, BorderLayout.SOUTH);
@@ -154,7 +159,7 @@ public class VanillaBackupWindow extends JDialog {
 									+ "\nAre you sure you want to create a new copy? The old one won't be deleted.",
 							"Backup already exists", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-					if (option == JOptionPane.NO_OPTION) { 
+					if (option == JOptionPane.NO_OPTION) {
 						ModManager.debugLogger.writeMessage("Backup already exists - user declined to make new one.");
 						return;
 					}
@@ -248,58 +253,48 @@ public class VanillaBackupWindow extends JDialog {
 						"Is your game currently unmodded, aka \"vanilla\"? If not, get it into an unmodded state first!\nDon't waste space making worthless backups.",
 						"Vanilla Confirmation", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, choices, defaultChoice);
 				if (response == JOptionPane.YES_OPTION) {
-					System.out.println("YES OPTION");
 					long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(ModManagerWindow.GetBioGameDir()), false);
 					String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
 					JOptionPane.showMessageDialog(VanillaBackupWindow.this, "Please choose a directory to store the backup in.\nThe drive needs to have at least " + sizeHR
 							+ " of free space\nand the selected directory must be empty.", "Select backup directory", JOptionPane.PLAIN_MESSAGE);
 
-					JFileChooser chooser = new JFileChooser();
-					chooser.setCurrentDirectory(new java.io.File("."));
-					chooser.setDialogTitle("Select backup directory");
-					chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-					//
-					// disable the "All files" option.
-					//
-					chooser.setAcceptAllFileFilterUsed(false);
-					//    
-					if (chooser.showOpenDialog(VanillaBackupWindow.this) == JFileChooser.APPROVE_OPTION) {
-						File chosenDir = chooser.getSelectedFile();
-						long availableSpace = chosenDir.getUsableSpace();
-						if (availableSpace > gamedirsize) {
-							//Verify it is empty...
-							if (chosenDir.list().length == 0) {
-								//We should be good, finally!
-								ModManager.debugLogger.writeMessage("Creating complete game backup.");
-								ModManager.debugLogger.writeMessage("Source: " + new File(ModManagerWindow.GetBioGameDir()).getParent());
-								ModManager.debugLogger.writeMessage("Destination: " + chosenDir.getAbsolutePath());
-								new VanillaBackupThread(new File(ModManagerWindow.GetBioGameDir()).getParent(), chosenDir.getAbsolutePath(), true).execute();
+					Platform.runLater(() -> {
+						DirectoryChooser chooser = new DirectoryChooser();
+						chooser.setInitialDirectory(new java.io.File("."));
+						chooser.setTitle("Select backup directory");
+						File chosenDir = chooser.showDialog(null);
+						
+						if (chosenDir != null) {
+							long availableSpace = chosenDir.getUsableSpace();
+							if (availableSpace > gamedirsize) {
+								//Verify it is empty...
+								if (chosenDir.list().length == 0) {
+									//We should be good, finally!
+									ModManager.debugLogger.writeMessage("Creating complete game backup.");
+									ModManager.debugLogger.writeMessage("Source: " + new File(ModManagerWindow.GetBioGameDir()).getParent());
+									ModManager.debugLogger.writeMessage("Destination: " + chosenDir.getAbsolutePath());
+									new VanillaBackupThread(new File(ModManagerWindow.GetBioGameDir()).getParent(), chosenDir.getAbsolutePath(), true).execute();
+								} else {
+									ModManager.debugLogger.writeError("Selected directory not empty: " + chosenDir);
+									JOptionPane.showMessageDialog(VanillaBackupWindow.this, chosenDir.getAbsolutePath() + "\nis not empty. The backup directory must be empty.",
+											"Not enough space", JOptionPane.ERROR_MESSAGE);
+									shouldShow = false;
+									return;
+								}
 							} else {
-								ModManager.debugLogger.writeError("Selected directory not empty: " + chosenDir);
-								JOptionPane.showMessageDialog(VanillaBackupWindow.this, chosenDir.getAbsolutePath() + "\nis not empty. The backup directory must be empty.",
-										"Not enough space", JOptionPane.ERROR_MESSAGE);
+								ModManager.debugLogger
+										.writeError("Selected drive doesn't have enough space: " + chosenDir + " - Has " + availableSpace + ", we need " + gamedirsize);
+								String partition = FilenameUtils.getPrefix(chosenDir.getAbsolutePath());
+								JOptionPane.showMessageDialog(VanillaBackupWindow.this,
+										partition + " does not have enough disk space to store the backup.\nNeeded: " + sizeHR + "\nAvailable: "
+												+ ResourceUtils.humanReadableByteCount(availableSpace, true) + "\nPlease choose a different partition or free up space on "
+												+ partition + ".",
+										"Directory not empty", JOptionPane.ERROR_MESSAGE);
 								shouldShow = false;
 								return;
 							}
-						} else {
-							ModManager.debugLogger.writeError("Selected drive doesn't have enough space: " + chosenDir + " - Has " + availableSpace + ", we need " + gamedirsize);
-							String partition = FilenameUtils.getPrefix(chosenDir.getAbsolutePath());
-							JOptionPane.showMessageDialog(VanillaBackupWindow.this,
-									partition + " does not have enough disk space to store the backup.\nNeeded: " + sizeHR + "\nAvailable: "
-											+ ResourceUtils.humanReadableByteCount(availableSpace, true) + "\nPlease choose a different partition or free up space on " + partition
-											+ ".",
-									"Directory not empty", JOptionPane.ERROR_MESSAGE);
-							shouldShow = false;
-							return;
 						}
-					}
-
-				}
-				if (response == JOptionPane.NO_OPTION) {
-					System.out.println("NO OPTION");
-				}
-				if (response == JOptionPane.CANCEL_OPTION) {
-					System.out.println("CANCEL OPTION");
+					});
 				}
 			}
 		});

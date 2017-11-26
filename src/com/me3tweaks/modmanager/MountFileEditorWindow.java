@@ -21,7 +21,6 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -30,7 +29,6 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.io.FileUtils;
 
@@ -38,6 +36,10 @@ import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.MountFlagCellRenderer;
 import com.me3tweaks.modmanager.utilities.datatypeconverter.DatatypeConverter;
+
+import javafx.application.Platform;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 
 public class MountFileEditorWindow extends JDialog {
 	private static final int MOUNTDLC_LENGTH = 108;
@@ -65,7 +67,7 @@ public class MountFileEditorWindow extends JDialog {
 	 * Opens a blank mount file editor.
 	 */
 	public MountFileEditorWindow() {
-        super(null, Dialog.ModalityType.MODELESS);
+		super(null, Dialog.ModalityType.MODELESS);
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
@@ -78,7 +80,7 @@ public class MountFileEditorWindow extends JDialog {
 	 *            mount to load
 	 */
 	public MountFileEditorWindow(String target) {
-        super(null, Dialog.ModalityType.MODELESS);
+		super(null, Dialog.ModalityType.MODELESS);
 		setupWindow();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		lInputField.setText(target);
@@ -282,8 +284,8 @@ public class MountFileEditorWindow extends JDialog {
 					String mountPriority = priorityField.getText();
 					String tlkId = tlkIdField.getText();
 					MountFlag flag = flagModel.getElementAt(mountFlagsCombobox.getSelectedIndex());
-					int priorityVal = Integer.parseUnsignedInt(mountPriority);					
-					boolean saved = SaveMount(sInputField.getText(),tlkId,flag,priorityVal);
+					int priorityVal = Integer.parseUnsignedInt(mountPriority);
+					boolean saved = SaveMount(sInputField.getText(), tlkId, flag, priorityVal);
 					if (saved) {
 						sStatus.setText("File saved.");
 					} else {
@@ -297,24 +299,25 @@ public class MountFileEditorWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser dlcChooser = new JFileChooser();
-				File tryDir = new File(lInputField.getText());
-				if (tryDir.exists() && tryDir.isFile()) {
-					dlcChooser.setCurrentDirectory(tryDir.getParentFile());
-				} else {
-					dlcChooser.setCurrentDirectory(new File("."));
-				}
-				dlcChooser.setSelectedFile(new File("Mount.dlc"));
-				dlcChooser.setDialogTitle("Select Mount.dlc to load");
-				dlcChooser.setAcceptAllFileFilterUsed(false);
-				dlcChooser.setFileFilter(new FileNameExtensionFilter("ME3 DLC Mount File (Mount.dlc)", "dlc"));
+				Platform.runLater(() -> {
+					FileChooser dlcChooser = new FileChooser();
+					File tryDir = new File(lInputField.getText());
+					if (tryDir.exists() && tryDir.isFile()) {
+						dlcChooser.setInitialDirectory(tryDir.getParentFile());
+					} else {
+						dlcChooser.setInitialDirectory(new File(ModManager.getModsDir()));
+					}
+					//dlcChooser.setSelectedFile(new File("Mount.dlc"));
+					dlcChooser.setTitle("Select Mount.dlc to load");
+					dlcChooser.getExtensionFilters().addAll(new ExtensionFilter("ME3 DLC Mount File", "*.dlc"));
 
-				if (dlcChooser.showOpenDialog(MountFileEditorWindow.this) == JFileChooser.APPROVE_OPTION) {
-					String chosenFile = dlcChooser.getSelectedFile().getAbsolutePath();
-					lInputField.setText(chosenFile);
-					lStatus.setText(" ");
-					butLoadMount.setEnabled(true);
-				}
+					File chosenFile = dlcChooser.showOpenDialog(null);
+					if (chosenFile != null) {
+						lInputField.setText(chosenFile.getAbsolutePath());
+						lStatus.setText(" ");
+						butLoadMount.setEnabled(true);
+					}
+				});
 			}
 		});
 
@@ -322,32 +325,27 @@ public class MountFileEditorWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser saveChooser = new JFileChooser();
-				File tryFile = new File(sInputField.getText());
-				File loadFile = new File(lInputField.getText());
-				if (tryFile.exists() && tryFile.isFile()) {
-					saveChooser.setCurrentDirectory(tryFile.getParentFile());
-				} else if (loadFile.exists() && loadFile.isFile()) {
-					saveChooser.setCurrentDirectory(loadFile.getParentFile());
-				} else {
-					saveChooser.setCurrentDirectory(new File("."));
-				}
-				saveChooser.setSelectedFile(new File("Mount.dlc"));
-				saveChooser.setDialogTitle("Select where to save Mount.dlc");
-				//binChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-				//
-				// disable the "All files" option.
-				//
-				saveChooser.setAcceptAllFileFilterUsed(false);
-				saveChooser.setFileFilter(new FileNameExtensionFilter("ME3 DLC Mount File (Mount.dlc)", "dlc"));
+				Platform.runLater(() -> {
+					FileChooser saveChooser = new FileChooser();
+					File tryFile = new File(sInputField.getText());
+					File loadFile = new File(lInputField.getText());
+					if (tryFile.exists() && tryFile.isFile()) {
+						saveChooser.setInitialDirectory(tryFile.getParentFile());
+					} else if (loadFile.exists() && loadFile.isFile()) {
+						saveChooser.setInitialDirectory(loadFile.getParentFile());
+					} else {
+						saveChooser.setInitialDirectory(new File("."));
+					}
+					saveChooser.setInitialFileName("Mount.dlc");
+					saveChooser.setTitle("Select where to save Mount.dlc");
+					saveChooser.getExtensionFilters().addAll(new ExtensionFilter("ME3 DLC Mount File", "*.dlc"));
 
-				if (saveChooser.showSaveDialog(MountFileEditorWindow.this) == JFileChooser.APPROVE_OPTION) {
-					String chosenFile = saveChooser.getSelectedFile().getAbsolutePath();
-					sInputField.setText(chosenFile);
-					butSave.setEnabled(true);
-				} else {
-
-				}
+					File chosenFile = saveChooser.showSaveDialog(null);
+					if (chosenFile != null) {
+						sInputField.setText(chosenFile.getAbsolutePath());
+						butSave.setEnabled(true);
+					}
+				});
 			}
 		});
 
@@ -478,7 +476,7 @@ public class MountFileEditorWindow extends JDialog {
 			return "I/O Exception";
 		}
 		if (data.length != MOUNTDLC_LENGTH) {
-			ModManager.debugLogger.writeError("Mount file appears invalid, size is not normal: (this) "+data.length+" vs (normal) "+MOUNTDLC_LENGTH);
+			ModManager.debugLogger.writeError("Mount file appears invalid, size is not normal: (this) " + data.length + " vs (normal) " + MOUNTDLC_LENGTH);
 			return "Invalid Mount File (size)";
 		}
 

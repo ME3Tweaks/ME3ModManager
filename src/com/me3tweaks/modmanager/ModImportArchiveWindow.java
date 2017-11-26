@@ -14,11 +14,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.BoxLayout;
-import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -34,10 +32,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -47,6 +42,9 @@ import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.SevenZipCompressedModInspector;
 
+import javafx.application.Platform;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import net.sf.sevenzipjbinding.SevenZip;
 
 /**
@@ -234,24 +232,31 @@ public class ModImportArchiveWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser archiveChooser = new JFileChooser();
-				File tryDir = new File(archivePathField.getText());
-				if (tryDir.exists() && tryDir.isFile()) {
-					archiveChooser.setCurrentDirectory(tryDir.getParentFile());
-				} else {
-					archiveChooser.setCurrentDirectory(new File("."));
-				}
-				archiveChooser.setDialogTitle("Select mod archive to import");
-				archiveChooser.setAcceptAllFileFilterUsed(false);
-				archiveChooser.setFileFilter(new FileNameExtensionFilter("Compressed Archive Files (.7z/.rar/.zip)", "7z", "rar", "zip"));
+				Platform.runLater(() -> {
+					FileChooser archiveChooser = new FileChooser();
+					File tryDir = new File(archivePathField.getText());
+					if (tryDir.exists() && tryDir.isFile()) {
+						archiveChooser.setInitialDirectory(tryDir.getParentFile());
+					} else {
+						//Downloads
+						File downloadsFolder = new File(System.getProperty("user.home") + "/Downloads/");
+						if (downloadsFolder.exists()) {
+							archiveChooser.setInitialDirectory(downloadsFolder);
+						} else {
+							archiveChooser.setInitialDirectory(new File("."));
+						}
+					}
+					archiveChooser.setTitle("Select mod archive to import");
+					archiveChooser.getExtensionFilters().addAll(new ExtensionFilter("Compressed Mods", "*.7z", "*.rar", "*.zip"));
 
-				if (archiveChooser.showOpenDialog(ModImportArchiveWindow.this) == JFileChooser.APPROVE_OPTION) {
+					File selectedFile = archiveChooser.showOpenDialog(null);
+					if (selectedFile != null) {
 
-					loadArchive(archiveChooser.getSelectedFile().getAbsolutePath());
-				}
+						loadArchive(selectedFile.getAbsolutePath());
+					}
+				});
 			}
 		});
-
 		importButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -287,9 +292,10 @@ public class ModImportArchiveWindow extends JDialog {
 
 		private String archiveFile;
 		private int jobCode;
+
 		public ScanWorker(String archiveFile) {
 			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Scanning archive for mods");
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Scanning "+FilenameUtils.getName(archiveFile));
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Scanning " + FilenameUtils.getName(archiveFile));
 			this.archiveFile = archiveFile;
 			checkMap.clear();
 			compressedModModel.setRowCount(0);

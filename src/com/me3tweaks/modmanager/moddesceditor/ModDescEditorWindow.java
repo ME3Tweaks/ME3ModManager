@@ -38,6 +38,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import org.jdesktop.swingx.HorizontalLayout;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXPanel;
@@ -45,6 +46,7 @@ import org.jdesktop.swingx.ScrollableSizeHint;
 import org.jdesktop.swingx.VerticalLayout;
 
 import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
 import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
@@ -525,11 +527,12 @@ public class ModDescEditorWindow extends JXFrame {
 
 		//altfiles
 		JXPanel altFilesPanel = new JXPanel();
-		altFilesPanel.setLayout(new VerticalLayout());//(altFilesPanel, BoxLayout.Y_AXIS));
+		altFilesPanel.setLayout(new VerticalLayout(3));//(altFilesPanel, BoxLayout.Y_AXIS));
 		altFilesPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 		{
 			JLabel altFilesIntroText = new JLabel(
-					"<html>You can specify that specific files are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>",SwingConstants.LEFT);
+					"<html>You can specify that specific files are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>",
+					SwingConstants.LEFT);
 
 			altFilesIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
 			altFilesPanel.add(altFilesIntroText);
@@ -538,7 +541,7 @@ public class ModDescEditorWindow extends JXFrame {
 				expandCondFiles = true;
 
 				for (AlternateFile af : mod.getAlternateFiles()) {
-					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(af);
+					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(mod, af);
 					altFilesPanel.add(mdecfi.getPanel());
 				}
 			} else {
@@ -677,10 +680,11 @@ public class ModDescEditorWindow extends JXFrame {
 		//this.setPreferredSize(new Dimension(800, 600));
 		this.getContentPane().add(topScrollPane);
 		this.pack();
+		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
 	private MDECustomDLC generateMDECustomDLC(String src, String dest) {
-		JXPanel custDLCLineItem = new JXPanel(new FlowLayout(FlowLayout.LEFT));
+		JXPanel custDLCLineItem = new JXPanel(new HorizontalLayout());
 		JButton subtractButton = new JButton("-");
 		custDLCLineItem.add(subtractButton);
 		String custDLCLine = src + " -> " + dest + " [mod folder -> installed folder]";

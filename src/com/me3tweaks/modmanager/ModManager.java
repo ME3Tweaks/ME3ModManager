@@ -82,6 +82,8 @@ import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinReg;
 import com.sun.jna.win32.W32APIOptions;
 
+import javafx.embed.swing.JFXPanel;
+
 public class ModManager {
 	public static boolean IS_DEBUG = true;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
@@ -578,6 +580,12 @@ public class ModManager {
 		} catch (Exception e) {
 			System.err.println("Couldn't set the UI interface style");
 		}
+		
+		ModManager.debugLogger.writeMessage("Loading JavaFX");
+		new JFXPanel(); // used for initializing javafx thread (ideally called once)
+		ModManager.debugLogger.writeMessage("Loaded JavaFX");
+
+		
 		try {
 			new ModManagerWindow(isUpdate);
 		} catch (Throwable e) {
