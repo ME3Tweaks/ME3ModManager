@@ -50,7 +50,7 @@ import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
 import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class ModDescEditorWindow extends JXFrame {
@@ -60,7 +60,11 @@ public class ModDescEditorWindow extends JXFrame {
 	private ArrayList<MDECustomDLC> customDLCSelections = new ArrayList<>();
 
 	public ModDescEditorWindow(Mod mod) {
-		this.mod = mod;
+		ModManager.debugLogger.writeMessage("Reloading "+mod.getModName()+" without automatic alternates applied.");
+		Mod noAutoParse = new Mod();
+		noAutoParse.setShouldApplyAutos(false);
+		noAutoParse.loadMod(mod.getDescFile());
+		this.mod = noAutoParse;
 		setupWindow(mod);
 		setVisible(true);
 	}
@@ -276,7 +280,7 @@ public class ModDescEditorWindow extends JXFrame {
 					gbc.gridy++;
 				}
 
-				if (!mdeJob.getRawHeader().equals(ModType.BINI)) {
+				if (!mdeJob.getRawHeader().equals(ModTypeConstants.BINI)) {
 					gridC.gridy++;
 					gridC.gridx = 0;
 					gridC.weightx = 0;
@@ -289,7 +293,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 				jobPanel.add(replacementsListPanel, gbc);
 			}
-			if (!mdeJob.getRawHeader().equals(ModType.BINI)) {
+			if (!mdeJob.getRawHeader().equals(ModTypeConstants.BINI)) {
 				//ADD FILES
 				{
 					JXPanel additionsListPanel = new JXPanel(new GridBagLayout());
@@ -310,7 +314,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 							while (addTargetReadOnlyStrok.hasMoreTokens()) {
 								String readonlytarget = addTargetReadOnlyStrok.nextToken();
-								if (mdeJob.getRawHeader().equals(ModType.BASEGAME)) {
+								if (mdeJob.getRawHeader().equals(ModTypeConstants.BASEGAME)) {
 									readonlytarget = ResourceUtils.normalizeFilePath(readonlytarget, false);
 								} else {
 									readonlytarget = ResourceUtils.normalizeFilePath(readonlytarget, true);
@@ -398,7 +402,7 @@ public class ModDescEditorWindow extends JXFrame {
 				}
 			}
 			//REQUIREMENTS
-			if (!mdeJob.getRawHeader().equals(ModType.BASEGAME)) {
+			if (!mdeJob.getRawHeader().equals(ModTypeConstants.BASEGAME)) {
 				JLabel requirementLabel = new JLabel("Reason for this task: " + mdeJob.getRawRequirementText());
 				gbc.gridy++;
 				jobPanel.add(requirementLabel, gbc);
@@ -541,7 +545,7 @@ public class ModDescEditorWindow extends JXFrame {
 				expandCondFiles = true;
 
 				for (AlternateFile af : mod.getAlternateFiles()) {
-					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(mod, af);
+					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(this, af);
 					altFilesPanel.add(mdecfi.getPanel());
 				}
 			} else {
@@ -691,5 +695,13 @@ public class ModDescEditorWindow extends JXFrame {
 		custDLCLineItem.add(new JLabel(custDLCLine));
 		custDLCLineItem.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return new MDECustomDLC(custDLCLineItem, subtractButton, new AbstractMap.SimpleEntry<String, String>(src, dest));
+	}
+
+	public Mod getMod() {
+		return mod;
+	}
+
+	public void setMod(Mod mod) {
+		this.mod = mod;
 	}
 }

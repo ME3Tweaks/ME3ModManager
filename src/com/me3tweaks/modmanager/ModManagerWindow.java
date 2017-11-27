@@ -100,7 +100,7 @@ import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModList;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.RestoreMode;
@@ -1392,12 +1392,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				buttonApplyMod.setEnabled(false);
 			} else {
 				buttonApplyMod.setToolTipText("<html>Applies this mod to the game.<br>Not all mods are compatible with each other.</html>");
-				buttonApplyMod.setEnabled(false);
+				buttonApplyMod.setEnabled(true);
 
 			}
 		} else {
 			buttonApplyMod.setText(".NET Missing");
 			buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
+			buttonApplyMod.setEnabled(false);
 		}
 	}
 
@@ -3327,7 +3328,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			ModManager.debugLogger.writeMessage("ALOT is installed, checking for installation of non-testpatch PCC files...");
 
 			for (ModJob job : mod.getJobs()) {
-				if (job.getJobName().equals(ModType.TESTPATCH)) {
+				if (job.getJobName().equals(ModTypeConstants.TESTPATCH)) {
 					continue; //we don't are about this
 				}
 				for (String destFile : job.getFilesToReplaceTargets()) {

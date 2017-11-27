@@ -12,17 +12,21 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 import org.jdesktop.swingx.HorizontalLayout;
 
 import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.ui.SwingLink;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
 import javafx.stage.FileChooser;
 
 public class MDEConditionalFileItem {
@@ -78,10 +82,20 @@ public class MDEConditionalFileItem {
 	private JTextField descriptionField;
 
 	private Mod mod;
+
+	private ModDescEditorWindow owningWindow;
+
+	private SwingLink srcLabel;
+
+	private SwingLink destLabel;
 	private static int itemSpacing = 5;
 
-	public MDEConditionalFileItem(Mod mod, AlternateFile af) {
-		this.mod = mod;
+	private String altFile;
+	private String modFile;
+
+	public MDEConditionalFileItem(ModDescEditorWindow owningWindow, AlternateFile af) {
+		this.mod = owningWindow.getMod();
+		this.owningWindow = owningWindow;
 		this.af = af;
 		setupPanel();
 	}
@@ -131,10 +145,28 @@ public class MDEConditionalFileItem {
 
 					//Show open file dialog
 					File file = fileChooser.showOpenDialog(null);
+					if (file != null) {
+						SwingUtilities.invokeLater(new Runnable() {
+							public void run() {
+								//Run on UI thread
+
+								//we need to verify file...
+								String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), mod.getModPath(), File.separator);
+								if (relativePath.contains("..")) {
+									//reject as out of mod folder.
+
+									JOptionPane.showMessageDialog(owningWindow, "This file is not in the mod folder.", "Invalid file", JOptionPane.ERROR_MESSAGE);
+								}
+
+								//File is valid
+								srcLabel.setText(relativePath);
+							}
+						});
+					}
 				});
 			}
 		};
-		SwingLink srcLabel = new SwingLink(af.getAltFile(), "Click to change file", srcChangeAction);
+		srcLabel = new SwingLink(af.getAltFile(), "Click to change file", srcChangeAction);
 		rightSideVerticalPanel.add(srcLabel);
 
 		JLabel forLabel = new JLabel("for");
@@ -143,14 +175,26 @@ public class MDEConditionalFileItem {
 		rightSideVerticalPanel.add(forLabel);
 
 		ActionListener changeDestAction = new ActionListener() {
-
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				// TODO Auto-generated method stub
-
+				ModJob job = mod.getJobByModuleName(ModTypeConstants.CUSTOMDLC);
+				if (job != null) {
+					int index = operationBox.getSelectedIndex();
+					if (index > 0) { //if 0, add mode
+						index = MDEModFileChooser.OPTIONTYPE_SELECTONLY; //select only
+					} else {
+						index = MDEModFileChooser.OPTIONTYPE_ADDONLY;
+					}
+					MDEModFileChooser fileChooser = new MDEModFileChooser(owningWindow, modFile, index, job);
+					if (fileChooser.getSelectedFile() != null) {
+						modFile = fileChooser.getSelectedFile();
+						destLabel.setText(modFile);
+					}
+				}
 			}
 		};
-		SwingLink destLabel = new SwingLink(af.getModFile(), "Click to change file", changeDestAction);
+		modFile = af.getModFile();
+		destLabel = new SwingLink(modFile, "Click to change file", changeDestAction);
 		//panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		rightSideVerticalPanel.add(destLabel);
 		rightSideVerticalPanel.add(Box.createVerticalGlue());

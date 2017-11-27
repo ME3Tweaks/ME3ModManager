@@ -351,10 +351,10 @@ public class Patch implements Comparable<Patch> {
 					//we need to add it as a new task and then add add a PCConsoleTOC for it
 					double newCmmVer = Math.max(mod.modCMMVer, 3.2);
 					ModJob job;
-					if (targetModule.equals(ModType.BASEGAME)) {
+					if (targetModule.equals(ModTypeConstants.BASEGAME)) {
 						job = new ModJob();
 					} else {
-						job = new ModJob(ModType.getDLCPath(targetModule), targetModule, null);
+						job = new ModJob(ModTypeConstants.getDLCPath(targetModule), targetModule, null);
 					}
 					job.setOwningMod(mod);
 

@@ -37,7 +37,7 @@ import javax.swing.border.EmptyBorder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.sun.jna.platform.win32.Advapi32Util;
@@ -178,7 +178,7 @@ public class VanillaBackupWindow extends JDialog {
 				});
 
 				for (String dir : directories) {
-					if (!ModType.isKnownDLCFolder(dir)) {
+					if (!ModTypeConstants.isKnownDLCFolder(dir)) {
 						ModManager.debugLogger.writeError("Non standard DLC folder detected: " + dir + ", aborting vanilla backup");
 						JOptionPane.showMessageDialog(VanillaBackupWindow.this,
 								"Your game has one or more Custom DLCs installed.\nUninstall all Custom DLC before making a backup.", "Game is modded", JOptionPane.ERROR_MESSAGE);
@@ -190,14 +190,14 @@ public class VanillaBackupWindow extends JDialog {
 
 				//See if any DLC is modified.
 				ModManager.debugLogger.writeMessage("Vanilla Backup: Checking if DLC is modified.");
-				String[] headerArray = ModType.getDLCHeaderNameArray();
-				HashMap<String, Long> sizesMap = ModType.getSizesMap();
-				HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
+				String[] headerArray = ModTypeConstants.getDLCHeaderNameArray();
+				HashMap<String, Long> sizesMap = ModTypeConstants.getSizesMap();
+				HashMap<String, String> nameMap = ModTypeConstants.getHeaderFolderMap();
 
 				int i = -1;
 				// Add and enable/disable DLC checkboxes and add to hashmap
 				for (String dlcName : headerArray) {
-					String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
+					String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
 					File dlcPath = new File(filepath);
 					// Check if directory exists
 					if (!dlcPath.exists()) {
@@ -223,8 +223,8 @@ public class VanillaBackupWindow extends JDialog {
 							}
 						} else {
 							//TESTPATCH
-							if (testpatchSfar.length() != sizesMap.get(dlcName) && testpatchSfar.length() != ModType.TESTPATCH_16_SIZE) {
-								ModManager.debugLogger.writeError("TESTPATCH size is not vanilla, should be " + sizesMap.get(dlcName) + " or " + ModType.TESTPATCH_16_SIZE
+							if (testpatchSfar.length() != sizesMap.get(dlcName) && testpatchSfar.length() != ModTypeConstants.TESTPATCH_16_SIZE) {
+								ModManager.debugLogger.writeError("TESTPATCH size is not vanilla, should be " + sizesMap.get(dlcName) + " or " + ModTypeConstants.TESTPATCH_16_SIZE
 										+ ", but it is " + testpatchSfar.length());
 								JOptionPane.showMessageDialog(VanillaBackupWindow.this, dlcName + " has been modified.\nDLC must be unmodified in order to create a backup.",
 										"Game is modded", JOptionPane.ERROR_MESSAGE);

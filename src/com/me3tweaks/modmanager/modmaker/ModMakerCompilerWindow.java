@@ -69,7 +69,7 @@ import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
@@ -1915,7 +1915,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		if (mod == null) {
 			//updater supresses this window
 			for (ModJob job : newMod.jobs) {
-				if (job.getJobName().equals(ModType.BINI)) {
+				if (job.getJobName().equals(ModTypeConstants.BINI)) {
 					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
 							//loader installed, no balance changes replacer

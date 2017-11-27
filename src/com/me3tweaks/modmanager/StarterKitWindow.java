@@ -49,7 +49,7 @@ import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
@@ -586,9 +586,9 @@ public class StarterKitWindow extends JDialog {
 
 			Mod startermod = new Mod();
 			startermod.setModPath(modpath);
-			ModJob custdlcjob = new ModJob("DLC_MOD_" + internaldlcname, ModType.CUSTOMDLC, "");
+			ModJob custdlcjob = new ModJob("DLC_MOD_" + internaldlcname, ModTypeConstants.CUSTOMDLC, "");
 			custdlcjob.setOwningMod(startermod);
-			custdlcjob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
+			custdlcjob.setJobName(ModTypeConstants.CUSTOMDLC); //backwards, it appears...
 			custdlcjob.setJobType(ModJob.CUSTOMDLC);
 			ArrayList<String> destFolders = new ArrayList<>();
 			ArrayList<String> srcFolders = new ArrayList<>();
@@ -596,7 +596,7 @@ public class StarterKitWindow extends JDialog {
 			srcFolders.add(modpath + "DLC_MOD_" + internaldlcname);
 			custdlcjob.setDestFolders(destFolders);
 			custdlcjob.setSourceFolders(srcFolders);
-			startermod.addTask(ModType.CUSTOMDLC, custdlcjob);
+			startermod.addTask(ModTypeConstants.CUSTOMDLC, custdlcjob);
 			startermod.setAuthor(moddev);
 			startermod.setModDescription(moddesc);
 			startermod.setSite(modsite);

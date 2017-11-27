@@ -31,7 +31,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.RestoreMode;
 import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
 import com.me3tweaks.modmanager.repairdb.RepairFileInfo;
@@ -143,8 +143,8 @@ public class RestoreFilesWindow extends JDialog {
 		HashMap<String, Long> sfarSizes;
 
 		protected RestoreDataJob() {
-			sfarHashes = ModType.getHashesMap();
-			sfarSizes = ModType.getSizesMap();
+			sfarHashes = ModTypeConstants.getHashesMap();
+			sfarSizes = ModTypeConstants.getSizesMap();
 		}
 
 		@Override
@@ -159,11 +159,11 @@ public class RestoreFilesWindow extends JDialog {
 				case RestoreMode.UNPACKED_HEADER_DELETE:
 					return processDeleteUnpackedFiles(customTaskHeader);
 				case RestoreMode.ALL:
-					numjobs = ModType.getHeaderNameArray().length + 3;
+					numjobs = ModTypeConstants.getHeaderNameArray().length + 3;
 					wipeBalanceChanges();
 					publish("Deleting custom DLC, restoring basegame/unpacked files,SFARs, unpacked content");
-					return removeCustomDLC() && processRestoreBasegame(false, false) && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray())
-							&& processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
+					return removeCustomDLC() && processRestoreBasegame(false, false) && restoreSFARsUsingHeaders(ModTypeConstants.getDLCHeaderNameArray())
+							&& processDeleteUnpackedFiles(ModTypeConstants.getDLCHeaderNameArray());
 				case RestoreMode.REMOVECUSTOMDLC:
 					publish("Deleting custom DLCs");
 					numjobs = 1;
@@ -182,36 +182,36 @@ public class RestoreFilesWindow extends JDialog {
 					wipeBalanceChanges();
 					return processRestoreBasegame(false, false);
 				case RestoreMode.VANILLIFYDLC:
-					numjobs = 2 + ModType.getDLCHeaderNameArray().length;
+					numjobs = 2 + ModTypeConstants.getDLCHeaderNameArray().length;
 					publish("Attempting to return DLC to vanilla state");
 					wipeBalanceChanges();
-					return removeCustomDLC() && restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray()) && processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
+					return removeCustomDLC() && restoreSFARsUsingHeaders(ModTypeConstants.getDLCHeaderNameArray()) && processDeleteUnpackedFiles(ModTypeConstants.getDLCHeaderNameArray());
 				case RestoreMode.ALLDLC:
-					numjobs = ModType.getHeaderNameArray().length;
+					numjobs = ModTypeConstants.getHeaderNameArray().length;
 					publish("Restoring all DLC SFARs");
-					return restoreSFARsUsingHeaders(ModType.getDLCHeaderNameArray());
+					return restoreSFARsUsingHeaders(ModTypeConstants.getDLCHeaderNameArray());
 				case RestoreMode.SP:
-					numjobs = ModType.getSPHeaderNameArray().length;
+					numjobs = ModTypeConstants.getSPHeaderNameArray().length;
 					publish("Restoring SP SFARs");
-					return restoreSFARsUsingHeaders(ModType.getSPHeaderNameArray());
+					return restoreSFARsUsingHeaders(ModTypeConstants.getSPHeaderNameArray());
 				case RestoreMode.MP:
-					numjobs = ModType.getMPHeaderNameArray().length;
+					numjobs = ModTypeConstants.getMPHeaderNameArray().length;
 					publish("Restoring MP SFARs");
 					wipeBalanceChanges();
-					return restoreSFARsUsingHeaders(ModType.getMPHeaderNameArray());
+					return restoreSFARsUsingHeaders(ModTypeConstants.getMPHeaderNameArray());
 				case RestoreMode.MPBASE:
-					numjobs = ModType.getMPHeaderNameArray().length + 1;
+					numjobs = ModTypeConstants.getMPHeaderNameArray().length + 1;
 					publish("Restoring MP SFARs and basegame files");
 					wipeBalanceChanges();
-					return processRestoreBasegame(false, true) && restoreSFARsUsingHeaders(ModType.getMPHeaderNameArray());
+					return processRestoreBasegame(false, true) && restoreSFARsUsingHeaders(ModTypeConstants.getMPHeaderNameArray());
 				case RestoreMode.SPBASE:
-					numjobs = ModType.getSPHeaderNameArray().length + 1;
+					numjobs = ModTypeConstants.getSPHeaderNameArray().length + 1;
 					publish("Restoring SP SFARs and basegame files");
-					return processRestoreBasegame(false, true) && restoreSFARsUsingHeaders(ModType.getSPHeaderNameArray());
+					return processRestoreBasegame(false, true) && restoreSFARsUsingHeaders(ModTypeConstants.getSPHeaderNameArray());
 				case RestoreMode.REMOVEUNPACKEDITEMS:
 					//numjobs calculated in the procedure
 					publish("Deleting unpacked files");
-					return processDeleteUnpackedFiles(ModType.getDLCHeaderNameArray());
+					return processDeleteUnpackedFiles(ModTypeConstants.getDLCHeaderNameArray());
 				case RestoreMode.BALANCE_CHANGES:
 					publish("Deleting ServerCoalesced.bin");
 					wipeBalanceChanges();
@@ -234,7 +234,7 @@ public class RestoreFilesWindow extends JDialog {
 			ArrayList<String> filepaths = new ArrayList<String>();
 
 			for (String header : dlcHeaders) {
-				String dlcFolderPath = ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(header));
+				String dlcFolderPath = ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModTypeConstants.getDLCPath(header));
 				File dlcDirectory = new File(dlcFolderPath);
 				if (dlcDirectory.exists()) {
 					File files[] = dlcDirectory.listFiles();
@@ -281,7 +281,7 @@ public class RestoreFilesWindow extends JDialog {
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
 			String dlcbackupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\BIOGame\\DLC\\";
 			ModManager.debugLogger.writeMessage("===Deleting " + numjobs + " unpacked files===");
-			HashMap<String, String> dlcFolders = ModType.getHeaderFolderMap();
+			HashMap<String, String> dlcFolders = ModTypeConstants.getHeaderFolderMap();
 			for (String filepath : filestodelete) {
 				ModManager.debugLogger.writeMessage("Deleting " + filepath);
 				publish("Deleting " + FilenameUtils.getName(filepath));
@@ -312,7 +312,7 @@ public class RestoreFilesWindow extends JDialog {
 		private boolean restoreSFARsUsingHeaders(String[] dlcHeaders) {
 			int restoresCompleted = 0;
 			for (String header : dlcHeaders) {
-				if (processRestoreJob(ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(header)), header)) {
+				if (processRestoreJob(ModManager.appendSlash(RestoreFilesWindow.this.BioGameDir) + ModManager.appendSlash(ModTypeConstants.getDLCPath(header)), header)) {
 					ModManager.debugLogger.writeMessage("Processed Restore SFAR Job (SUCCESS): " + header);
 					completed++; //for progress bar
 					restoresCompleted++; //for local checking
@@ -335,7 +335,7 @@ public class RestoreFilesWindow extends JDialog {
 				File[] folders = rootFolder.listFiles((FileFilter) FileFilterUtils.directoryFileFilter());
 				for (File dlcfolder : folders) {
 					String foldername = dlcfolder.getName();
-					if (!ModType.getStandardDLCFolders().contains(foldername)) {
+					if (!ModTypeConstants.getStandardDLCFolders().contains(foldername)) {
 						try {
 							FileUtils.deleteDirectory(dlcfolder);
 							ModManager.debugLogger.writeMessage("Deleted DLC folder: " + dlcfolder.getAbsolutePath());
@@ -396,7 +396,7 @@ public class RestoreFilesWindow extends JDialog {
 						"Database Failure", JOptionPane.ERROR_MESSAGE);
 				return false;
 			}
-			HashMap<String, String> dlcFolderMap = ModType.getHeaderFolderMap();
+			HashMap<String, String> dlcFolderMap = ModTypeConstants.getHeaderFolderMap();
 			String me3dir = (new File(RestoreFilesWindow.this.BioGameDir)).getParent();
 			String backupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\";
 			String dlcbackupfolder = ModManager.appendSlash(me3dir) + "cmmbackup\\BIOGame\\DLC\\";
@@ -679,7 +679,7 @@ public class RestoreFilesWindow extends JDialog {
 				Long filesize = mainSfar.length();
 
 				boolean sizeMatch = filesize.equals(sfarSizes.get(jobName));
-				if (!sizeMatch && (!(isTestpatch && !filesize.equals(ModType.TESTPATCH_16_SIZE)))) {
+				if (!sizeMatch && (!(isTestpatch && !filesize.equals(ModTypeConstants.TESTPATCH_16_SIZE)))) {
 					sizeMatch = false;
 					ModManager.debugLogger.writeMessage(jobName + ": size mismatch between known original and existing - marking for restore");
 					publish(jobName + ": DLC is modified [size]");
@@ -722,7 +722,7 @@ public class RestoreFilesWindow extends JDialog {
 				}
 				//Attempt fetch from complete game backup
 				vanillaBackupPath += "\\BIOGame\\";
-				vanillaBackupPath += ModManager.appendSlash(ModType.getDLCPath(jobName));
+				vanillaBackupPath += ModManager.appendSlash(ModTypeConstants.getDLCPath(jobName));
 				vanillaBackupPath += isTestPatch ? "Patch_001.sfar" : "Default.sfar";
 				backupSfar = new File(vanillaBackupPath);
 				if (!backupSfar.exists()) {

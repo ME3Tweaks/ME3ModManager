@@ -31,7 +31,7 @@ import javax.swing.table.DefaultTableModel;
 import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.ui.ButtonColumn;
 import com.me3tweaks.modmanager.ui.CustomDLCManagerToggleButtonColumn;
@@ -83,7 +83,7 @@ public class CustomDLCWindow extends JDialog {
 				displayDir = dir.substring(1);
 			}
 
-			if (ModType.isKnownDLCFolder(displayDir)) {
+			if (ModTypeConstants.isKnownDLCFolder(displayDir)) {
 				continue;
 			}
 			datasize++;

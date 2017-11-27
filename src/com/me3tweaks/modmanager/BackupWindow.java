@@ -37,7 +37,7 @@ import org.jdesktop.swingx.HorizontalLayout;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.VerticalLayout;
 
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.CheckBoxLabel;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
@@ -54,7 +54,7 @@ public class BackupWindow extends JDialog {
 	JButton backupButton;
 	ArrayList<BackupPanelPairs> panelPairs;
 	private JLabel statusLabel, noBackedUpDLCLabel, noNotBackedUpDLCLabel;
-	private HashMap<String, Long> sizesMap = ModType.getSizesMap();
+	private HashMap<String, Long> sizesMap = ModTypeConstants.getSizesMap();
 	private String currentBackupInProgress;
 
 	/**
@@ -123,7 +123,7 @@ public class BackupWindow extends JDialog {
 		JPanel SPDLCbackUpListPanel = new JPanel(new VerticalLayout());
 
 		// dlcList = new CheckBoxList();
-		String[] headerArray = ModType.getDLCHeaderNameArray();
+		String[] headerArray = ModTypeConstants.getDLCHeaderNameArray();
 		//check sfar size.
 
 		int i = 0;
@@ -151,7 +151,7 @@ public class BackupWindow extends JDialog {
 			panelPairs.add(panelPair);
 
 			// checkBoxPanel.add(checkbox);
-			String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
+			String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
 			File dlcPath = new File(filepath);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
@@ -185,7 +185,7 @@ public class BackupWindow extends JDialog {
 						isTestPatch = true;
 					}
 
-					if (f.length() != sizesMap.get(dlcName) && (isTestPatch && f.length() != ModType.TESTPATCH_16_SIZE)) {
+					if (f.length() != sizesMap.get(dlcName) && (isTestPatch && f.length() != ModTypeConstants.TESTPATCH_16_SIZE)) {
 						//MODIFIED!
 						ModManager.debugLogger.writeMessage("Unbacked-up DLC has been modified: " + dlcName);
 						checkbox.setSelected(false);
@@ -279,7 +279,7 @@ public class BackupWindow extends JDialog {
 		boolean hasDLCBackedUp = false;
 		boolean hasDLCNotBackedUp = false;
 
-		String[] headerArray = ModType.getDLCHeaderNameArray();
+		String[] headerArray = ModTypeConstants.getDLCHeaderNameArray();
 
 		// Add and enable/disable DLC checkboxes and add to hashmap
 		for (String dlcName : headerArray) {
@@ -299,7 +299,7 @@ public class BackupWindow extends JDialog {
 			JXCollapsiblePane backupPane = pair.backupPanel;
 			JXCollapsiblePane backedUpPane = pair.backedUpPanel;
 
-			String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
+			String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
 			File dlcPath = new File(filepath);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
@@ -327,7 +327,7 @@ public class BackupWindow extends JDialog {
 						isTestPatch = true;
 					}
 
-					if (f.length() != sizesMap.get(dlcName) && (isTestPatch && f.length() != ModType.TESTPATCH_16_SIZE)) {
+					if (f.length() != sizesMap.get(dlcName) && (isTestPatch && f.length() != ModTypeConstants.TESTPATCH_16_SIZE)) {
 						//dlc modified - do not show button for this.
 					} else {
 						if (dlcName.equalsIgnoreCase(currentBackupInProgress)) {
@@ -393,12 +393,12 @@ public class BackupWindow extends JDialog {
 	}
 
 	private String[] getJobs() {
-		String[] dlcNames = ModType.getDLCHeaderNameArray();
+		String[] dlcNames = ModTypeConstants.getDLCHeaderNameArray();
 		ArrayList<String> jobs = new ArrayList<String>();
 		for (String dlcName : dlcNames) {
 			JCheckBox checkbox = checkboxMap.get(dlcName);
 			if (checkbox != null && checkbox.isSelected()) {
-				ModManager.debugLogger.writeMessage("Job added to backup: " + checkbox.getText() + " at " + ModType.getDLCPath(checkbox.getText()));
+				ModManager.debugLogger.writeMessage("Job added to backup: " + checkbox.getText() + " at " + ModTypeConstants.getDLCPath(checkbox.getText()));
 				jobs.add(checkbox.getText());
 			}
 		}
@@ -436,10 +436,10 @@ public class BackupWindow extends JDialog {
 		@Override
 		public Boolean doInBackground() {
 			ModManager.debugLogger.writeMessage("Starting the restore thread");
-			HashMap<String, String> sfarHashes = ModType.getHashesMap();
+			HashMap<String, String> sfarHashes = ModTypeConstants.getHashesMap();
 			for (String dlcName : jobs) {
 				if (windowOpen == true) {// if the window is closed this will quickly finish this thread after the current job finishes
-					if (processBackupJob(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName)), dlcName, sfarHashes)) {
+					if (processBackupJob(ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName)), dlcName, sfarHashes)) {
 						completed++;
 					}
 					publish(new ThreadCommand("PROGRESS_UPDATE"));

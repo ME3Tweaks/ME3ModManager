@@ -26,7 +26,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -86,14 +86,14 @@ public class UnpackWindow extends JDialog {
 		checkBoxPanelRight.setLayout(new BoxLayout(checkBoxPanelRight, BoxLayout.Y_AXIS));
 
 		// dlcList = new CheckBoxList();
-		String[] headerArray = ModType.getDLCHeaderNameArray();
-		HashMap<String, Long> dlcSizeArray = ModType.getSizesMap();
+		String[] headerArray = ModTypeConstants.getDLCHeaderNameArray();
+		HashMap<String, Long> dlcSizeArray = ModTypeConstants.getSizesMap();
 		int i = 0;
 		// Add and enable/disable DLC checkboxes and add to hashmap
 		for (String dlcName : headerArray) {
 			JCheckBox checkbox = new JCheckBox(dlcName);
 			// checkBoxPanel.add(checkbox);
-			String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
+			String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
 			File dlcPath = new File(filepath);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
@@ -136,7 +136,7 @@ public class UnpackWindow extends JDialog {
 				checkboxMap.put(dlcName, checkbox);
 				continue;
 			} else {
-				if (dlcName.equals(ModType.TESTPATCH)) {
+				if (dlcName.equals(ModTypeConstants.TESTPATCH)) {
 					//Check existence
 					File patch001Sfar = new File(dlcPath + "\\Patch_001.sfar");
 					if (patch001Sfar.exists()) {
@@ -200,7 +200,7 @@ public class UnpackWindow extends JDialog {
 	}
 
 	private String[] getJobs() {
-		String[] dlcNames = ModType.getDLCHeaderNameArray();
+		String[] dlcNames = ModTypeConstants.getDLCHeaderNameArray();
 		ArrayList<String> jobs = new ArrayList<String>();
 		for (String dlcName : dlcNames) {
 			JCheckBox checkbox = checkboxMap.get(dlcName);
@@ -209,7 +209,7 @@ public class UnpackWindow extends JDialog {
 				if (jobname.endsWith("*")) {
 					jobname = jobname.substring(0, jobname.length() - 1);
 				}
-				ModManager.debugLogger.writeMessage("Job added to unpack: " + jobname + " at " + ModType.getDLCPath(jobname));
+				ModManager.debugLogger.writeMessage("Job added to unpack: " + jobname + " at " + ModTypeConstants.getDLCPath(jobname));
 				jobs.add(jobname);
 			}
 		}
@@ -245,7 +245,7 @@ public class UnpackWindow extends JDialog {
 		public Boolean doInBackground() {
 			ModManager.debugLogger.writeMessage("Starting the unpack thread");
 			for (String dlcName : jobs) {
-				String dlcPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
+				String dlcPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
 				//check for backup
 				File mainSfar = new File(dlcPath + "Default.sfar");
 

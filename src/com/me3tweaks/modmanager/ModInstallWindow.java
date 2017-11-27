@@ -47,7 +47,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
 import com.me3tweaks.modmanager.repairdb.RepairFileInfo;
@@ -352,10 +352,10 @@ public class ModInstallWindow extends JDialog {
 				precheckJobs.addAll(mod.jobs);
 			}
 			for (ModJob job : precheckJobs) {
-				if (job.getJobName().equals(ModType.CUSTOMDLC) || job.getJobName().equals(ModType.TESTPATCH)) {
+				if (job.getJobName().equals(ModTypeConstants.CUSTOMDLC) || job.getJobName().equals(ModTypeConstants.TESTPATCH)) {
 					continue;
 				}
-				if ((job.getJobName().equals(ModType.BASEGAME) && job.getFilesToReplaceTargets().size() == 0 && job.getFilesToRemoveTargets().size() == 0)) {
+				if ((job.getJobName().equals(ModTypeConstants.BASEGAME) && job.getFilesToReplaceTargets().size() == 0 && job.getFilesToRemoveTargets().size() == 0)) {
 					continue;
 				}
 
@@ -635,7 +635,7 @@ public class ModInstallWindow extends JDialog {
 					Path originalpath = Paths.get(unpacked.toString());
 					if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin")) {
 						try {
-							publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
+							publish(ModTypeConstants.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 							Path newfilepath = Paths.get(newFile);
 							Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
 							completedTaskSteps++;
@@ -662,7 +662,7 @@ public class ModInstallWindow extends JDialog {
 				File installFile = new File(me3dir + fileToAddTarget);
 				Path installPath = Paths.get(installFile.toString());
 				try {
-					publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(fileToAdd));
+					publish(ModTypeConstants.BASEGAME + ": Installing " + FilenameUtils.getName(fileToAdd));
 					Path newfilepath = Paths.get(fileToAdd);
 					if (installFile.exists()) {
 						installFile.delete();
@@ -723,7 +723,7 @@ public class ModInstallWindow extends JDialog {
 					File unpacked = new File(me3dir + fileToReplace);
 					Path originalpath = Paths.get(unpacked.toString());
 					try {
-						publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
+						publish(ModTypeConstants.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 						Path newfilepath = Paths.get(newFile);
 						if (!unpacked.getParentFile().exists()) {
 							unpacked.getParentFile().mkdirs();
@@ -768,7 +768,7 @@ public class ModInstallWindow extends JDialog {
 			if (job.TESTPATCH) {
 				sfarName = "Patch_001.sfar";
 			}
-			long knownsfarsize = ModType.getSizesMap().get(job.getJobName());
+			long knownsfarsize = ModTypeConstants.getSizesMap().get(job.getJobName());
 			String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
 			File sfarFile = new File(sfarPath);
 			if (sfarFile.exists()) {
@@ -1215,7 +1215,7 @@ public class ModInstallWindow extends JDialog {
 				String fileSource = job.getFilesToReplace().get(i);
 				// install file.
 				try {
-					publish(ModType.CUSTOMDLC + ": Installing " + FilenameUtils.getName(fileSource));
+					publish(ModTypeConstants.CUSTOMDLC + ": Installing " + FilenameUtils.getName(fileSource));
 					Path sourcePath = Paths.get(fileSource);
 					Path destPath = Paths.get(fileDestination);
 					File dest = new File(fileDestination);

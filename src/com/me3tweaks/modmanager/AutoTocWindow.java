@@ -26,7 +26,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.TocBatchDescriptor;
 
@@ -208,7 +208,7 @@ public class AutoTocWindow extends JDialog {
 					}
 				} else {
 					//get TOC file.
-					String tocPath = ModManager.getGameFile(ModType.getTOCPathFromHeader(job.getJobName()), job.getJobName(),
+					String tocPath = ModManager.getGameFile(ModTypeConstants.getTOCPathFromHeader(job.getJobName()), job.getJobName(),
 							ModManager.getTempDir() + job.getJobName() + "_PCConsoleTOC.bin");
 					if (tocPath != null) {
 						updatedGameTOCs.put(job.getJobName(), tocPath);

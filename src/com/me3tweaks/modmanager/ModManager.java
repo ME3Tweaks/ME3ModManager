@@ -64,7 +64,7 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModList;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.PCCDumpOptions;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
@@ -96,7 +96,7 @@ public class ModManager {
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
 																// version
-	public static final double MODDESC_VERSION_SUPPORT = 4.5; // max supported
+	public static final double MODDESC_VERSION_SUPPORT = 5.0; // max supported
 																// cmmver in
 																// moddesc
 	public static boolean MOD_MANAGER_UPDATE_READY = false; //if true, don't delete temp
@@ -1361,7 +1361,7 @@ public class ModManager {
 		} else {
 			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath() + "), fetching from game directory.");
 		}
-		if (targetModule.equals(ModType.BASEGAME)) {
+		if (targetModule.equals(ModTypeConstants.BASEGAME)) {
 			// we must use PCCEditor2 to decompress the file using the
 			// -decompresspcc command line arg
 			//get source directory via relative path chaining
@@ -1383,7 +1383,7 @@ public class ModManager {
 
 			// END OF
 			// BASEGAME======================================================
-		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+		} else if (targetModule.equals(ModTypeConstants.CUSTOMDLC)) {
 			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
 			return null;
 		} else {
@@ -1405,10 +1405,10 @@ public class ModManager {
 			// use the sfar
 			// get .sfar path
 			String sfarName = "Default.sfar";
-			if (targetModule.equals(ModType.TESTPATCH)) {
+			if (targetModule.equals(ModTypeConstants.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(targetModule)) + sfarName;
 			if (new File(sfarPath).exists()) {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
 				ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
@@ -1586,7 +1586,7 @@ public class ModManager {
 		FileUtils.deleteQuietly(destFile);
 		new File(destFile.getParent()).mkdirs();
 
-		if (targetModule.equals(ModType.BASEGAME)) {
+		if (targetModule.equals(ModTypeConstants.BASEGAME)) {
 			if (targetPath.endsWith(".pcc")) {
 				File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath);
 				File destinationFile = new File(copyToLocation);
@@ -1619,7 +1619,7 @@ public class ModManager {
 			}
 			// END OF
 			// BASEGAME======================================================
-		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+		} else if (targetModule.equals(ModTypeConstants.CUSTOMDLC)) {
 			ModManager.debugLogger.writeError("Fetching files from CustomDLC is not supported.");
 			return null;
 		} else {
@@ -1643,10 +1643,10 @@ public class ModManager {
 			// use the sfar
 			// get .sfar path
 			String sfarName = "Default.sfar";
-			if (targetModule.equals(ModType.TESTPATCH)) {
+			if (targetModule.equals(ModTypeConstants.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(targetModule)) + sfarName;
 
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
@@ -2698,7 +2698,7 @@ public class ModManager {
 
 		String backupDir = ModManager.appendSlash(cmmbackup);
 
-		if (targetModule.equals(ModType.BASEGAME)) {
+		if (targetModule.equals(ModTypeConstants.BASEGAME)) {
 			// we must decompress the file
 			//get source directory via relative path chaining
 			File sourceSource = new File(backupDir + targetPath);
@@ -2721,7 +2721,7 @@ public class ModManager {
 			}
 			// END OF
 			// BASEGAME======================================================
-		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+		} else if (targetModule.equals(ModTypeConstants.CUSTOMDLC)) {
 			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
 			return null;
 		} else {
@@ -2733,10 +2733,10 @@ public class ModManager {
 			// use the sfar
 			// get .sfar path
 			String sfarName = "Default.sfar.bak";
-			if (targetModule.equals(ModType.TESTPATCH)) {
+			if (targetModule.equals(ModTypeConstants.TESTPATCH)) {
 				sfarName = "Patch_001.sfar.bak";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(targetModule)) + sfarName;
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
 			ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
 			if (pr.getReturnCode() == 0) {

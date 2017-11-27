@@ -5,7 +5,12 @@ import java.util.HashMap;
 
 import com.me3tweaks.modmanager.ModManager;
 
-public class ModType {
+/**
+ * Class containing many constants for mods. This is the strings based mod names file.
+ * @author Mgamerz
+ *
+ */
+public class ModTypeConstants {
 	//DLC Header names (ModDesc.ini)
 	public static final String COAL = "COALESCED"; //Used with Legacy and 2.0
 	public static final String BASEGAME = "BASEGAME"; //Used in 3.0+

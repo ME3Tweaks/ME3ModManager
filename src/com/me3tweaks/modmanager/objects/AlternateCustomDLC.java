@@ -40,7 +40,7 @@ public class AlternateCustomDLC {
 	 * @param altfileText String to parse
 	 */
 	public AlternateCustomDLC(String altfileText) {
-		jobHeader = ModType.CUSTOMDLC;
+		jobHeader = ModTypeConstants.CUSTOMDLC;
 		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
 		if (!condition.equals(CONDITION_MANUAL)) {
 			conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);

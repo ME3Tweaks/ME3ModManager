@@ -33,7 +33,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.RestoreMode;
 import com.me3tweaks.modmanager.ui.NumReqButtonColumn;
 import com.me3tweaks.modmanager.ui.SFARColumn;
@@ -92,7 +92,7 @@ public class SelectiveRestoreWindow extends JDialog {
 		rootPanel.add(infoLabel, BorderLayout.NORTH);
 
 		//DLC TABLE DATA SOURCE
-		headerArray = ModType.getDLCHeaderNameArray();
+		headerArray = ModTypeConstants.getDLCHeaderNameArray();
 		dlcTableData = new Object[headerArray.length][NUM_COLUMNS];
 
 		//TABLE
@@ -281,8 +281,8 @@ public class SelectiveRestoreWindow extends JDialog {
 	 */
 	protected void updateTable() {
 		ModManager.debugLogger.writeMessage("===UPDATING CUSTOM RESTORE TABLE===");
-		HashMap<String, Long> sizesMap = ModType.getSizesMap();
-		HashMap<String, String> nameMap = ModType.getHeaderFolderMap();
+		HashMap<String, Long> sizesMap = ModTypeConstants.getSizesMap();
+		HashMap<String, String> nameMap = ModTypeConstants.getHeaderFolderMap();
 
 		int rowIndex = -1;
 		// Add and enable/disable DLC checkboxes and add to hashmap
@@ -291,7 +291,7 @@ public class SelectiveRestoreWindow extends JDialog {
 			table.setValueAt(ME3TweaksUtils.headerNameToShortDLCFolderName(dlcName), rowIndex, COL_INTNAME);
 			table.setValueAt(dlcName, rowIndex, COL_HUMNAME);
 
-			String filepath = ModManager.appendSlash(BioGameDir) + ModManager.appendSlash(ModType.getDLCPath(dlcName));
+			String filepath = ModManager.appendSlash(BioGameDir) + ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
 			File dlcPath = new File(filepath);
 			// Check if directory exists
 			if (!dlcPath.exists()) {
@@ -326,7 +326,7 @@ public class SelectiveRestoreWindow extends JDialog {
 						table.setValueAt("ORIGINAL", rowIndex, COL_MODIFIED);
 					}
 				} else {
-					if (testpatchSfar.length() != sizesMap.get(dlcName) && testpatchSfar.length() != ModType.TESTPATCH_16_SIZE) {
+					if (testpatchSfar.length() != sizesMap.get(dlcName) && testpatchSfar.length() != ModTypeConstants.TESTPATCH_16_SIZE) {
 						table.setValueAt("MODIFIED" + (testpatchSfar.length() > sizesMap.get(dlcName) ? "+" : "-"), rowIndex, COL_MODIFIED);
 					} else {
 						table.setValueAt("ORIGINAL", rowIndex, COL_MODIFIED);
@@ -373,7 +373,7 @@ public class SelectiveRestoreWindow extends JDialog {
 		ArrayList<String> filepaths = new ArrayList<String>();
 
 		for (String header : dlcHeaders) {
-			String dlcFolderPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(header));
+			String dlcFolderPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(header));
 			File dlcDirectory = new File(dlcFolderPath);
 
 			if (dlcDirectory.exists()) {
