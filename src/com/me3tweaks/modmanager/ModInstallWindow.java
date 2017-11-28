@@ -1284,7 +1284,7 @@ public class ModInstallWindow extends JDialog {
 					String outdated = entry.getValue();
 
 					int result = JOptionPane.showConfirmDialog(ModInstallWindow.this, "<html><div style='width: 400px'>" + modname
-							+ "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "(" + ME3TweaksUtils.getThirdPartyModName(outdated)
+							+ "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "(" + ME3TweaksUtils.getThirdPartyModName(outdated, false)
 							+ ") is not compatible/no longer necessary for this mod. The mod indicates they should be deleted as they may conflict with this mod.<br><br>Delete the Custom DLC folder "
 							+ outdated + "?</div></html>", "Outdated CustomDLC detected", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {

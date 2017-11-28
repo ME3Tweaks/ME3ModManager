@@ -27,7 +27,6 @@ public class AlternateFile {
 	private String associatedJobName;
 
 	public AlternateFile(String altfileText) {
-		System.out.println(altfileText);
 		conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
 		modFile = ValueParserLib.getStringProperty(altfileText, "ModFile", false);
 		if (modFile.charAt(0) != '/' && modFile.charAt(0) != '\\') {

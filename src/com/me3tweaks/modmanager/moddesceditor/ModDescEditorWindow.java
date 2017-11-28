@@ -400,7 +400,117 @@ public class ModDescEditorWindow extends JXFrame {
 					gbc.gridy++;
 					jobPanel.add(additionsListPanel, gbc);
 				}
+				
+				//MANUAL ALTFILES
+				//ADD FILES
+				{
+					JXPanel additionsListPanel = new JXPanel(new GridBagLayout());
+					additionsListPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+					GridBagConstraints gridC = new GridBagConstraints();
+					gbc.gridy++;
+					JLabel newFilesHeader = new JLabel("User selectable options");
+					newFilesHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
+					jobPanel.add(newFilesHeader, gbc);
+					gbc.gridy++;
+
+					if (mdeJob.getRawAddFiles() != null && mdeJob.getRawAddTargetFiles() != null) {
+
+						//Get Raad-only
+						ArrayList<String> readOnlyFiles = new ArrayList<String>();
+						if (mdeJob.getRawAddReadOnlyTargetFiles() != null) {
+							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(mdeJob.getRawAddReadOnlyTargetFiles(), ";");
+
+							while (addTargetReadOnlyStrok.hasMoreTokens()) {
+								String readonlytarget = addTargetReadOnlyStrok.nextToken();
+								if (mdeJob.getRawHeader().equals(ModTypeConstants.BASEGAME)) {
+									readonlytarget = ResourceUtils.normalizeFilePath(readonlytarget, false);
+								} else {
+									readonlytarget = ResourceUtils.normalizeFilePath(readonlytarget, true);
+								}
+								readOnlyFiles.add(readonlytarget);
+							}
+						}
+						StringTokenizer addStrok = new StringTokenizer(mdeJob.getRawAddFiles(), ";");
+						StringTokenizer addTargetsStrok = new StringTokenizer(mdeJob.getRawAddTargetFiles(), ";");
+
+						/*
+						 * gbc.gridy++;
+						 */
+
+						JLabel sourceHeader = new JLabel("New file");
+						JLabel replaceHeader = new JLabel("In-game path to add to");
+						sourceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
+						replaceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
+						gridC.insets = columnRightSideInsets;
+						gridC.fill = GridBagConstraints.HORIZONTAL;
+						gridC.gridx = 1;
+						additionsListPanel.add(sourceHeader, gridC);
+						gridC.gridx = 2;
+						additionsListPanel.add(replaceHeader, gridC);
+						gridC.gridy++;
+						gridC.anchor = GridBagConstraints.WEST;
+
+						while (addStrok.hasMoreTokens()) {
+
+							JButton minusButton = new JButton("-");
+
+							gridC.fill = GridBagConstraints.NONE;
+							gridC.gridy++;
+							gridC.gridx = 0;
+							gridC.weightx = 0;
+							additionsListPanel.add(minusButton, gridC);
+
+							String newFile = addStrok.nextToken();
+							String oldFile = addTargetsStrok.nextToken();
+
+							JLabel fileReplaceLabel = new JLabel(newFile);
+							JLabel replacePathLabel = new JLabel(oldFile);
+
+							gridC.gridx = 1;
+
+							additionsListPanel.add(fileReplaceLabel, gridC);
+							gridC.gridx = 2;
+							gridC.weightx = 0;
+
+							additionsListPanel.add(replacePathLabel, gridC);
+							gridC.fill = GridBagConstraints.HORIZONTAL;
+
+							gridC.gridx = 3;
+							gridC.weightx = 1;
+
+							JCheckBox readOnly = new JCheckBox("Read only");
+							if (readOnlyFiles.contains(oldFile)) {
+								readOnly.setSelected(true);
+							}
+							additionsListPanel.add(readOnly, gridC);
+						}
+					} else {
+						JLabel noAdditions = new JLabel("No user selection options are available for this job.", SwingConstants.LEFT);
+						gridC.gridy++;
+						gridC.gridx = 0;
+						gridC.weightx = 1;
+						gridC.anchor = GridBagConstraints.WEST;
+						gridC.gridwidth = 3;
+						gridC.fill = GridBagConstraints.NONE;
+						additionsListPanel.add(noAdditions, gridC);
+					}
+
+					gridC.gridy++;
+					gridC.gridx = 0;
+					gridC.weightx = 0;
+					gridC.anchor = GridBagConstraints.WEST;
+					gridC.gridwidth = 3;
+					gridC.fill = GridBagConstraints.NONE;
+					JButton addNewFile = new JButton("Add user selectable option to " + mdeJob.getRawHeader());
+					additionsListPanel.add(addNewFile, gridC);
+
+					//end add panel
+					gbc.gridy++;
+					jobPanel.add(additionsListPanel, gbc);
+				}
 			}
+			
+			
 			//REQUIREMENTS
 			if (!mdeJob.getRawHeader().equals(ModTypeConstants.BASEGAME)) {
 				JLabel requirementLabel = new JLabel("Reason for this task: " + mdeJob.getRawRequirementText());
@@ -420,6 +530,8 @@ public class ModDescEditorWindow extends JXFrame {
 
 			baseOfficialPanel.add(jobHeaderPanel);
 			baseOfficialPanel.add(jobPane);
+			
+			
 		}
 
 		JButton addNewHeader = new JButton("Add new official files task");

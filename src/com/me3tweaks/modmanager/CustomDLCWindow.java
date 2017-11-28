@@ -99,7 +99,7 @@ public class CustomDLCWindow extends JDialog {
 			} else {
 				// try to lookup via 3rd party service
 
-				dlcName = ME3TweaksUtils.getThirdPartyModName(displayDir);
+				dlcName = ME3TweaksUtils.getThirdPartyModName(displayDir, false);
 			}
 
 			String pcConsole = path + "CookedPCConsole/";
@@ -263,13 +263,13 @@ public class CustomDLCWindow extends JDialog {
 		viewConflictsButton.setToolTipText("View conflicts between Custom DLCs (and GUI mods)");
 		viewConflictsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		viewConflictsButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				new CustomDLCConflictWindow();
 			}
 		});
-		
+
 		enableAllButton.setToolTipText("Enable all Custom DLC listed in this window");
 		enableAllButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		enableAllButton.addActionListener(toggleAll);

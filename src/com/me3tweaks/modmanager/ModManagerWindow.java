@@ -3461,12 +3461,42 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// Update mod description
 				fieldDescription.setText(selectedMod.getModDisplayDescription());
 				fieldDescription.setCaretPosition(0);
-				buttonApplyMod.setEnabled(true);
-				if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
-					buttonApplyMod.setToolTipText(
-							"<html>Apply this mod to the game.<br>If other mods are installed, you should consider uninstalling them by<br>using the Restore Menu if they are known to not work together.</html>");
+
+				if (ModManagerWindow.validateBIOGameDir()) {
+					if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
+						buttonApplyMod.setToolTipText(
+								"<html>Apply this mod to the game.<br>If other mods are installed, you should consider uninstalling them by<br>using the Restore Menu if they are known to not work together.</html>");
+					} else {
+						buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
+						buttonApplyMod.setText("Missing .NET");
+						buttonApplyMod.setEnabled(false);
+					}
+
+					ArrayList<String> requiredHeaders = selectedMod.getRequiredDLCHeaders();
+					if (requiredHeaders.size() > 0) {
+						ArrayList<String> installedDLC = ModManager.getInstalledDLC(GetBioGameDir());
+						if (installedDLC.containsAll(requiredHeaders)) {
+							buttonApplyMod.setEnabled(true);
+							buttonApplyMod.setText("Apply Mod");
+						} else {
+							buttonApplyMod.setEnabled(false);
+							String toolTip = "<html>This mod is missing required DLC.<br>Missing required DLC:";
+							for (String str : requiredHeaders) {
+								if (!installedDLC.contains(str)) {
+									toolTip += "<br> - " + ME3TweaksUtils.getThirdPartyModName(str, true);
+								}
+							}
+							toolTip += "</html>";
+							buttonApplyMod.setToolTipText(toolTip);
+							buttonApplyMod.setText("Missing Required DLC");
+						}
+					} else {
+						buttonApplyMod.setEnabled(true);
+						buttonApplyMod.setText("Apply Mod");
+					}
 				} else {
-					buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework 4.5.2 or higher in order to install mods");
+					buttonApplyMod.setEnabled(false);
+					buttonApplyMod.setToolTipText("Invalid BIOGame Directory.");
 				}
 
 				UrlValidator urlValidator = new UrlValidator(new String[] { "http", "https" });

@@ -22,6 +22,7 @@ import com.me3tweaks.modmanager.DeltaWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.moddesceditor.MDEOfficialJob;
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.utilities.ByteArrayInOutStream;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
@@ -64,7 +65,8 @@ public class Mod implements Comparable<Mod> {
 	public ArrayList<MDEOfficialJob> rawOfficialJobs = new ArrayList<MDEOfficialJob>();
 	public String rawAltDlcText;
 	public String rawAltFilesText;
-	public String rawOutdatedCustomDLCText;
+	public ArrayList<String> requiredDLC = new ArrayList<>();
+	private String rawOutdatedCustomDLCText;
 
 	public ArrayList<AlternateCustomDLC> getAppliedAutomaticAlternateCustomDLC() {
 		return appliedAutomaticAlternateCustomDLC;
@@ -221,6 +223,9 @@ public class Mod implements Comparable<Mod> {
 		}
 		for (String str : mod.outdatedDLCModules) {
 			outdatedDLCModules.add(str);
+		}
+		for (String str : mod.requiredDLC) {
+			requiredDLC.add(str);
 		}
 	}
 
@@ -802,7 +807,7 @@ public class Mod implements Comparable<Mod> {
 				}
 			}
 			if (modCMMVer >= 4.4) {
-				ModManager.debugLogger.writeMessageConditionally("Targetting Mod Manager Version >= 4.4, looking for altdlc header", ModManager.LOG_MOD_INIT);
+				ModManager.debugLogger.writeMessageConditionally("Targetting Mod Manager Version >= 4.4, looking for altdlc descriptor in CUSTOMDLC", ModManager.LOG_MOD_INIT);
 				String altText = modini.get("CUSTOMDLC", "altdlc");
 				if (altText != null && !altText.equals("")) {
 					rawAltDlcText = altText;
@@ -849,9 +854,37 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 
+		//Read required DLC
+		if (modCMMVer >= 5.0) {
+			ModManager.debugLogger.writeMessageConditionally("Targetting Mod Manager Version >= 5.0, looking for requireddlc descriptor", ModManager.LOG_MOD_INIT);
+			String requiredDLCText = modini.get("ModInfo", "requireddlc");
+			if (requiredDLCText != null && !requiredDLCText.equals("")) {
+				//get list of installed DLC
+				StringTokenizer tok = new StringTokenizer(requiredDLCText, ";");
+				ArrayList<String> officialDLCHeaders = new ArrayList<String>(Arrays.asList(ModTypeConstants.getDLCHeaderNameArray()));
+				HashMap<String, String> headerFolderMap = ModTypeConstants.getHeaderFolderMap();
+				while (tok.hasMoreTokens()) {
+					String header = tok.nextToken();
+					//check if its an official dlc header...
+					if (officialDLCHeaders.contains(header)) {
+						//convert to dlc folder name
+						String fname = headerFolderMap.get(header);
+						if (fname != null) {
+							ModManager.debugLogger.writeMessageConditionally("Mod requires DLC " + ME3TweaksUtils.getThirdPartyModName(fname, true), ModManager.LOG_MOD_INIT);
+							requiredDLC.add(fname.toUpperCase()); //Remap CITADEL To DLC_EXP_Pack003, etc.
+						}
+					} else {
+						requiredDLC.add(header); //Custom DLC
+					}
+				}
+			}
+		}
+
 		// Backwards compatibility for Mod Manager 2's modcoal flag (has now
 		// moved to [BASEGAME] as of 3.0)
-		if (modCMMVer < 3.0f && modCMMVer >= 2.0f) {
+		if (modCMMVer < 3.0f && modCMMVer >= 2.0f)
+
+		{
 			modCMMVer = 2.0;
 			ModManager.debugLogger.writeMessageConditionally(modName + ": Targets CMM2.0. Checking for modcoal flag", ModManager.LOG_MOD_INIT);
 
@@ -1168,6 +1201,19 @@ public class Mod implements Comparable<Mod> {
 
 		// Add modifier
 		modDisplayDescription += getModifyString();
+
+		//add required
+		if (requiredDLC.size() > 0) {
+			modDisplayDescription += "\nRequires DLC/Mods: ";
+
+			for (String str : requiredDLC) {
+				String dlcName= ME3TweaksUtils.getThirdPartyModName(str, true);
+				if (!dlcName.equals(str)) {
+					dlcName += " ("+str+")";
+				}
+				modDisplayDescription += "\n - " + dlcName;
+			}
+		}
 	}
 
 	private boolean hasAutomaticConfiguration() {
@@ -1242,9 +1288,6 @@ public class Mod implements Comparable<Mod> {
 				modifyString += appendStr;
 				break;
 			}
-		}
-		if (!modifyString.equals("")) {
-			modifyString += "\n";
 		}
 		return modifyString;
 	}
@@ -2479,5 +2522,13 @@ public class Mod implements Comparable<Mod> {
 
 	public void setShouldApplyAutos(boolean shouldApplyAutos) {
 		this.shouldApplyAutos = shouldApplyAutos;
+	}
+
+	public ArrayList<String> getRequiredDLCHeaders() {
+		return requiredDLC;
+	}
+
+	public void setRequiredDLCHeaders(ArrayList<String> requiredDLCHeaders) {
+		this.requiredDLC = requiredDLCHeaders;
 	}
 }

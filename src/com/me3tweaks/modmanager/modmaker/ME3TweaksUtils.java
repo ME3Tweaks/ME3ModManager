@@ -636,16 +636,20 @@ public class ME3TweaksUtils {
 	 *            Custom DLC Folder name
 	 * @return Unknown Mod if not found, otherwise the listed name.
 	 */
-	public static String getThirdPartyModName(String customdlcfoldername) {
+	public static String getThirdPartyModName(String customdlcfoldername, boolean returnInputIfUnknown) {
+		customdlcfoldername = customdlcfoldername.toUpperCase();
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
-			return "Unknown Mod";
+			return returnInputIfUnknown ? customdlcfoldername : "Unknown Mod";
 		}
 		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: " + customdlcfoldername);
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);
-			JSONObject modinfo = (JSONObject) dbObj.get(customdlcfoldername.toUpperCase());
+			JSONObject modinfo = (JSONObject) dbObj.get(customdlcfoldername);
 			if (modinfo == null) {
+				if (returnInputIfUnknown) {
+					return customdlcfoldername;
+				}
 				return "Unknown Mod";
 			} else {
 				return (String) modinfo.get("modname");
@@ -655,6 +659,9 @@ public class ME3TweaksUtils {
 			e.printStackTrace();
 		}
 
+		if (returnInputIfUnknown) {
+			return customdlcfoldername;
+		}
 		return "Unknown Mod";
 	}
 
@@ -714,13 +721,15 @@ public class ME3TweaksUtils {
 
 	/**
 	 * Gets a random ME3Tweaks Tip from the tips service
-	 * @return random tip string, blank string if service not available or error occured.
+	 * 
+	 * @return random tip string, blank string if service not available or error
+	 *         occured.
 	 */
 	public static String getME3TweaksTip() {
 		if (ModManager.TIPS_SERVICE_JSON == null) {
 			return "";
 		}
-		
+
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject dbObj = (JSONObject) parser.parse(ModManager.TIPS_SERVICE_JSON);
@@ -731,7 +740,7 @@ public class ME3TweaksUtils {
 				tips.add((String) value);
 			}
 			Random rand = new Random();
-			int  n = rand.nextInt(tips.size());
+			int n = rand.nextInt(tips.size());
 			return tips.get(n);
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Failed to parse tips: ", e);
