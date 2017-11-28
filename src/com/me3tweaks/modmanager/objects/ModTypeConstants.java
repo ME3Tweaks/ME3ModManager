@@ -33,6 +33,7 @@ public class ModTypeConstants {
 	public static final String GUN02 = "GROUNDSIDE";
 	public static final String CUSTOMDLC = "CUSTOMDLC";
 	public static final String BINI = "BALANCE_CHANGES";
+	public static final String LIVETLK = "LIVE_TLK"; //not used yet...
 	public static final String DH1 = "GENESIS2";
 	public static final String COLLECTORSEDITION = "COLLECTORS_EDITION";
 	public static final String TESTPATCH_16_HASH = "9f7811a54c7f3bc21f5de7600a1ce721";
