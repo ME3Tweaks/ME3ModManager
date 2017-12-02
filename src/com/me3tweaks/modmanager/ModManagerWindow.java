@@ -1432,7 +1432,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			toolMassEffectModder.setToolTipText("<html>Mass Effect Modder requires 64-bit Windows</html>");
 			toolMassEffectModder.setEnabled(false);
 		}
-		toolME3Explorer = new JMenuItem("ME3Explorer (Mgamerz' Fork)");
+		toolME3Explorer = new JMenuItem("ME3Explorer (ME3Tweaks Fork)");
 		toolME3Explorer.setToolTipText(
 				"<html>Runs ME3Explorer.<br>ME3Explorer is the primary tool for creating and editing Mass Effect 3 content.<br>Note: This is an external program and only the ME3Tweaks additions are supported by ME3Tweaks.</html>");
 		toolTankmasterCoalUI = new JMenuItem("TankMaster Coalesce Interface");
@@ -2045,6 +2045,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under construction and is not fully functional in this build yet.");
 				new ModDescEditorWindow(mod);
 			}
 
