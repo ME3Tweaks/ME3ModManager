@@ -26,13 +26,16 @@ public class AlternateFile {
 	private boolean enabled = false;
 	private String associatedJobName;
 
-	public AlternateFile(String altfileText) {
+	public AlternateFile(String altfileText, double modCMMVer) {
 		conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
 		modFile = ValueParserLib.getStringProperty(altfileText, "ModFile", false);
 		if (modFile.charAt(0) != '/' && modFile.charAt(0) != '\\') {
 			modFile = "/" + modFile;
 		}
 		altFile = ValueParserLib.getStringProperty(altfileText, "ModAltFile", false);
+		if (altFile == null) {
+			altFile = ValueParserLib.getStringProperty(altfileText, "AltFile", false);
+		}
 		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
 		description = ValueParserLib.getStringProperty(altfileText, "Description", true);
 		operation = ValueParserLib.getStringProperty(altfileText, "ModOperation", false);

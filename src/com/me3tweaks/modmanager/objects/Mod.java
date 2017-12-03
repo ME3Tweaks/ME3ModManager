@@ -607,12 +607,12 @@ public class Mod implements Comparable<Mod> {
 							return;
 						}
 						for (String alt : alts) {
-							AlternateFile af = new AlternateFile(alt);
+							AlternateFile af = new AlternateFile(alt, modCMMVer);
 							af.setAssociatedJobName(newJob.getJobName());
 							af.setModFile(ResourceUtils.normalizeFilePath(af.getModFile(), false));
 							ModManager.debugLogger.writeMessageConditionally("Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);
 
-							String subPath = modCMMVer == 4.5 ? af.getSubtituteFile() : af.getAltFile();
+							String subPath = (modCMMVer == 4.5 && af.getOperation() == AlternateFile.OPERATION_SUBSTITUTE) ? af.getSubtituteFile() : af.getAltFile();
 							if (subPath != null) {
 								//check location
 								String subfile = ModManager.appendSlash(getModPath()) + subPath;
@@ -631,7 +631,7 @@ public class Mod implements Comparable<Mod> {
 								//Validate substition for moddesc 4.5 -> 5.0
 								if (af.getOperation().equals(AlternateFile.OPERATION_SUBSTITUTE)) {
 									if (!af.getAssociatedJobName().equals(ModTypeConstants.CUSTOMDLC) && modCMMVer == 4.5 && af.getSubtituteFile() == null) {
-										//auto alts cannot apply to the same thing
+										//missing substitute file on 4.5
 										ModManager.debugLogger
 												.writeError("Automatic alternate file targets Mod Manager 4.5 but does not have a listed SubstituteFile: " + af.getModFile());
 										setFailedReason("This mod specifies automatic conditional changes for the following but has no SubstituteFile item in its altfile struct: "
@@ -640,7 +640,7 @@ public class Mod implements Comparable<Mod> {
 										return;
 									}
 									if (modCMMVer > 4.5 && af.getSubtituteFile() != null) {
-										//auto alts cannot apply to the same thing
+										//Using substitute operation on > 4.5 is not allowed
 										ModManager.debugLogger
 												.writeError("Automatic alternate file targets Mod Manager > 4.5 but contains 4.5 only SubstituteFile: " + af.getModFile());
 										setFailedReason("This mod specifies automatic conditional changes for the following but has a SubstituteFile item in its altfile struct: "
@@ -768,7 +768,7 @@ public class Mod implements Comparable<Mod> {
 						return;
 					}
 					for (String alt : alts) {
-						AlternateFile af = new AlternateFile(alt);
+						AlternateFile af = new AlternateFile(alt, modCMMVer);
 						af.setAssociatedJobName(ModTypeConstants.CUSTOMDLC);
 						ModManager.debugLogger.writeMessageConditionally("Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);
 						alternateFiles.add(af);
@@ -1036,6 +1036,7 @@ public class Mod implements Comparable<Mod> {
 							autoOriginalFiles.put(task, alts);
 						}
 					}
+					ModManager.debugLogger.writeMessageConditionally("Offical Task Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);
 				} else {
 					ModManager.debugLogger.writeError("Invalid alternate file specified: " + af + ". Some pieces of required information may be missing.");
 					setFailedReason("This mod contains an invalid alternate file specification:\n" + af);
@@ -1207,9 +1208,9 @@ public class Mod implements Comparable<Mod> {
 			modDisplayDescription += "\nRequires DLC/Mods: ";
 
 			for (String str : requiredDLC) {
-				String dlcName= ME3TweaksUtils.getThirdPartyModName(str, true);
+				String dlcName = ME3TweaksUtils.getThirdPartyModName(str, true);
 				if (!dlcName.equals(str)) {
-					dlcName += " ("+str+")";
+					dlcName += " (" + str + ")";
 				}
 				modDisplayDescription += "\n - " + dlcName;
 			}
