@@ -52,7 +52,6 @@ public class AboutWindow2 extends JDialog {
 		setIconImages(ModManager.ICONS);
 		setPreferredSize(WINDOW_SIZE);
 		JFXPanel fxPanel = new JFXPanel();
-
 		add(fxPanel);
 		//setPreferredSize(WINDOW_SIZE);
 		pack();

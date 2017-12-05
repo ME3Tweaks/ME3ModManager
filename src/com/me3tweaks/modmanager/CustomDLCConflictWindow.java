@@ -51,7 +51,7 @@ import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.StarterKitWindow.StarterKitGenerator;
 import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.objects.ProcessResult;
@@ -103,7 +103,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 		for (String dlc : installedDLCs) {
 			File mountFile = new File(biogameDirectory + "DLC/" + dlc + File.separator + "CookedPCConsole/Mount.dlc");
-			if (!ModType.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
+			if (!ModTypeConstants.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
 				customDLCs.add(new CustomDLC(new MountFile(mountFile.getAbsolutePath()), dlc));
 			}
 		}

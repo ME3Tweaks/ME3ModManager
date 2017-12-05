@@ -49,7 +49,7 @@ import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.MountFlag;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
@@ -466,8 +466,6 @@ public class StarterKitWindow extends JDialog {
 				String output = cookedPath + "DLC_MOD_" + internaldlcname + "_" + lang + ".xml";
 				ModManager.ExportResource("/StarterKitTLK.xml", output);
 				String replaceOutput = FileUtils.readFileToString(new File(output), "UTF-8");
-				//ModManager.debugLogger.writeMessage("DEBUGGING: LANGUAGE INPUT TEXT WAS READ AS:");
-				//ModManager.debugLogger.writeMessage(replaceOutput);
 				String langcode = "";
 				switch (lang) {
 				case "INT":
@@ -588,9 +586,9 @@ public class StarterKitWindow extends JDialog {
 
 			Mod startermod = new Mod();
 			startermod.setModPath(modpath);
-			ModJob custdlcjob = new ModJob("DLC_MOD_" + internaldlcname, ModType.CUSTOMDLC, "");
+			ModJob custdlcjob = new ModJob("DLC_MOD_" + internaldlcname, ModTypeConstants.CUSTOMDLC, "");
 			custdlcjob.setOwningMod(startermod);
-			custdlcjob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
+			custdlcjob.setJobName(ModTypeConstants.CUSTOMDLC); //backwards, it appears...
 			custdlcjob.setJobType(ModJob.CUSTOMDLC);
 			ArrayList<String> destFolders = new ArrayList<>();
 			ArrayList<String> srcFolders = new ArrayList<>();
@@ -598,13 +596,13 @@ public class StarterKitWindow extends JDialog {
 			srcFolders.add(modpath + "DLC_MOD_" + internaldlcname);
 			custdlcjob.setDestFolders(destFolders);
 			custdlcjob.setSourceFolders(srcFolders);
-			startermod.addTask(ModType.CUSTOMDLC, custdlcjob);
+			startermod.addTask(ModTypeConstants.CUSTOMDLC, custdlcjob);
 			startermod.setAuthor(moddev);
 			startermod.setModDescription(moddesc);
 			startermod.setSite(modsite);
 			startermod.setModName(modname);
 			startermod.setVersion(1.0);
-			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, 4.2), StandardCharsets.UTF_8);
+			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT), StandardCharsets.UTF_8);
 
 			//reload newly written mod.
 			ModManager.debugLogger.writeMessage("Loading moddesc.ini to verify mod is valid");

@@ -16,7 +16,7 @@ import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 
 /**
@@ -524,27 +524,27 @@ public class ME3TweaksUtils {
 			return coalHashMap;
 		}
 		coalHashMap = new HashMap<String, String>();
-		coalHashMap.put(ModType.BASEGAME, "540053c7f6eed78d92099cf37f239e8e");
-		coalHashMap.put(ModType.MP1, "7206b8f7a3cadb5f1e425263638816b4");
-		coalHashMap.put(ModType.MP2, "48d9ceaa751e850cfc4fe39bd72339f3");
-		coalHashMap.put(ModType.MP3, "0493ab300be5513cad3bbcc1670b22ff");
-		coalHashMap.put(ModType.MP4, "35eb556e8757b265d3ee934a489796b4");
-		coalHashMap.put(ModType.MP5, "48eb9900ccbcd4927be7988e3939a765");
-		coalHashMap.put(ModType.PATCH1, "a3d61c61f4e6dfff4167d46c188f2dba");
-		coalHashMap.put(ModType.PATCH2, "3bf6ce760fcdd69e656ef10a1eb08692");
-		coalHashMap.put(ModType.TESTPATCH, "82f2ddaf4ecc9c60c2d083740069653a");
-		coalHashMap.put(ModType.HEN_PR, "d8007a2a44af5682c86dbdf327d44864");
-		coalHashMap.put(ModType.END, "e94e2fb635c01c6edcea018cc7b9701c");
-		coalHashMap.put(ModType.EXP1, "363a36372ef369b5ea8f00f662e467e4");
-		coalHashMap.put(ModType.EXP2, "c13410248a3bc6de4d653622d150eb80");
-		coalHashMap.put(ModType.EXP3, "8646b866e7660e7056681f14dcd2db76");
-		coalHashMap.put(ModType.EXP3B, "fbfd633f640eccf5f21ac1603a137d5a");
-		coalHashMap.put(ModType.APP01, "efe108aa8f2142734c07d888b79f4c0b");
-		coalHashMap.put(ModType.GUN01, "fe9084127be47b8c084dad67c64cd211");
-		coalHashMap.put(ModType.GUN02, "f3231b3855fdf288482a541b147dfca9");
-		coalHashMap.put(ModType.BINI, "1d3e646cdf9da8bcb8207d8fd961f7f5");
-		coalHashMap.put(ModType.COLLECTORSEDITION, "");
-		coalHashMap.put(ModType.DH1, "");
+		coalHashMap.put(ModTypeConstants.BASEGAME, "540053c7f6eed78d92099cf37f239e8e");
+		coalHashMap.put(ModTypeConstants.MP1, "7206b8f7a3cadb5f1e425263638816b4");
+		coalHashMap.put(ModTypeConstants.MP2, "48d9ceaa751e850cfc4fe39bd72339f3");
+		coalHashMap.put(ModTypeConstants.MP3, "0493ab300be5513cad3bbcc1670b22ff");
+		coalHashMap.put(ModTypeConstants.MP4, "35eb556e8757b265d3ee934a489796b4");
+		coalHashMap.put(ModTypeConstants.MP5, "48eb9900ccbcd4927be7988e3939a765");
+		coalHashMap.put(ModTypeConstants.PATCH1, "a3d61c61f4e6dfff4167d46c188f2dba");
+		coalHashMap.put(ModTypeConstants.PATCH2, "3bf6ce760fcdd69e656ef10a1eb08692");
+		coalHashMap.put(ModTypeConstants.TESTPATCH, "82f2ddaf4ecc9c60c2d083740069653a");
+		coalHashMap.put(ModTypeConstants.HEN_PR, "d8007a2a44af5682c86dbdf327d44864");
+		coalHashMap.put(ModTypeConstants.END, "e94e2fb635c01c6edcea018cc7b9701c");
+		coalHashMap.put(ModTypeConstants.EXP1, "363a36372ef369b5ea8f00f662e467e4");
+		coalHashMap.put(ModTypeConstants.EXP2, "c13410248a3bc6de4d653622d150eb80");
+		coalHashMap.put(ModTypeConstants.EXP3, "8646b866e7660e7056681f14dcd2db76");
+		coalHashMap.put(ModTypeConstants.EXP3B, "fbfd633f640eccf5f21ac1603a137d5a");
+		coalHashMap.put(ModTypeConstants.APP01, "efe108aa8f2142734c07d888b79f4c0b");
+		coalHashMap.put(ModTypeConstants.GUN01, "fe9084127be47b8c084dad67c64cd211");
+		coalHashMap.put(ModTypeConstants.GUN02, "f3231b3855fdf288482a541b147dfca9");
+		coalHashMap.put(ModTypeConstants.BINI, "1d3e646cdf9da8bcb8207d8fd961f7f5");
+		coalHashMap.put(ModTypeConstants.COLLECTORSEDITION, "");
+		coalHashMap.put(ModTypeConstants.DH1, "");
 		return coalHashMap;
 	}
 
@@ -553,26 +553,26 @@ public class ME3TweaksUtils {
 			return tocHashMap;
 		}
 		tocHashMap = new HashMap<String, String>();
-		tocHashMap.put(ModType.BASEGAME, "07e157a9bc1bb7ee13f0310d8b165f08");
-		tocHashMap.put(ModType.MP1, "4ffa2aab35ba7e16243b8cf573629f0a");
-		tocHashMap.put(ModType.MP2, "7136eb641f5c1dca0e9c54583ad7560f");
-		tocHashMap.put(ModType.MP3, "25e8ae6f428a6d09058175b81d59451d");
-		tocHashMap.put(ModType.MP4, "ec1035b4153959a5a7f051616a5f257b");
-		tocHashMap.put(ModType.MP5, "74e86f1189403b01975a67d27dd0bc99");
-		tocHashMap.put(ModType.PATCH1, "ddc9f8aca8b4a1eabab5f28966b09718");
-		tocHashMap.put(ModType.PATCH2, "32e5f7f628e16b53546a345a63a76d82");
-		tocHashMap.put(ModType.TESTPATCH, "e5e7d1199145ebc08d6c1508318c2b55");
-		tocHashMap.put(ModType.HEN_PR, "0fcf41d28e5b8fdb4440068e45f9781d");
-		tocHashMap.put(ModType.END, "977880ad14ab246171f5c2c9e9975174");
-		tocHashMap.put(ModType.EXP1, "5ae9c8cfac5867982d3ec15adc2ba037");
-		tocHashMap.put(ModType.EXP2, "5497ab73be4c12ca9e4e0303d090ea72");
-		tocHashMap.put(ModType.EXP3, "5d8eb55ef0150b8e644c8dccb814f617");
-		tocHashMap.put(ModType.EXP3B, "0771adb534768b3a0229ca6f57e9ec5b");
-		tocHashMap.put(ModType.APP01, "21c396e4ae50b4d8b3cf55fe2b9c0722");
-		tocHashMap.put(ModType.GUN01, "53f06f917f27af46af25cae77f595d75");
-		tocHashMap.put(ModType.GUN02, "6c26b453dfaf663ebaeeafeac78440c2");
-		tocHashMap.put(ModType.COLLECTORSEDITION, "");
-		tocHashMap.put(ModType.DH1, "");
+		tocHashMap.put(ModTypeConstants.BASEGAME, "07e157a9bc1bb7ee13f0310d8b165f08");
+		tocHashMap.put(ModTypeConstants.MP1, "4ffa2aab35ba7e16243b8cf573629f0a");
+		tocHashMap.put(ModTypeConstants.MP2, "7136eb641f5c1dca0e9c54583ad7560f");
+		tocHashMap.put(ModTypeConstants.MP3, "25e8ae6f428a6d09058175b81d59451d");
+		tocHashMap.put(ModTypeConstants.MP4, "ec1035b4153959a5a7f051616a5f257b");
+		tocHashMap.put(ModTypeConstants.MP5, "74e86f1189403b01975a67d27dd0bc99");
+		tocHashMap.put(ModTypeConstants.PATCH1, "ddc9f8aca8b4a1eabab5f28966b09718");
+		tocHashMap.put(ModTypeConstants.PATCH2, "32e5f7f628e16b53546a345a63a76d82");
+		tocHashMap.put(ModTypeConstants.TESTPATCH, "e5e7d1199145ebc08d6c1508318c2b55");
+		tocHashMap.put(ModTypeConstants.HEN_PR, "0fcf41d28e5b8fdb4440068e45f9781d");
+		tocHashMap.put(ModTypeConstants.END, "977880ad14ab246171f5c2c9e9975174");
+		tocHashMap.put(ModTypeConstants.EXP1, "5ae9c8cfac5867982d3ec15adc2ba037");
+		tocHashMap.put(ModTypeConstants.EXP2, "5497ab73be4c12ca9e4e0303d090ea72");
+		tocHashMap.put(ModTypeConstants.EXP3, "5d8eb55ef0150b8e644c8dccb814f617");
+		tocHashMap.put(ModTypeConstants.EXP3B, "0771adb534768b3a0229ca6f57e9ec5b");
+		tocHashMap.put(ModTypeConstants.APP01, "21c396e4ae50b4d8b3cf55fe2b9c0722");
+		tocHashMap.put(ModTypeConstants.GUN01, "53f06f917f27af46af25cae77f595d75");
+		tocHashMap.put(ModTypeConstants.GUN02, "6c26b453dfaf663ebaeeafeac78440c2");
+		tocHashMap.put(ModTypeConstants.COLLECTORSEDITION, "");
+		tocHashMap.put(ModTypeConstants.DH1, "");
 		return tocHashMap;
 	}
 
@@ -636,16 +636,20 @@ public class ME3TweaksUtils {
 	 *            Custom DLC Folder name
 	 * @return Unknown Mod if not found, otherwise the listed name.
 	 */
-	public static String getThirdPartyModName(String customdlcfoldername) {
+	public static String getThirdPartyModName(String customdlcfoldername, boolean returnInputIfUnknown) {
+		customdlcfoldername = customdlcfoldername.toUpperCase();
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
-			return "Unknown Mod";
+			return returnInputIfUnknown ? customdlcfoldername : "Unknown Mod";
 		}
 		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: " + customdlcfoldername);
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);
-			JSONObject modinfo = (JSONObject) dbObj.get(customdlcfoldername.toUpperCase());
+			JSONObject modinfo = (JSONObject) dbObj.get(customdlcfoldername);
 			if (modinfo == null) {
+				if (returnInputIfUnknown) {
+					return customdlcfoldername;
+				}
 				return "Unknown Mod";
 			} else {
 				return (String) modinfo.get("modname");
@@ -655,6 +659,9 @@ public class ME3TweaksUtils {
 			e.printStackTrace();
 		}
 
+		if (returnInputIfUnknown) {
+			return customdlcfoldername;
+		}
 		return "Unknown Mod";
 	}
 
@@ -714,13 +721,15 @@ public class ME3TweaksUtils {
 
 	/**
 	 * Gets a random ME3Tweaks Tip from the tips service
-	 * @return random tip string, blank string if service not available or error occured.
+	 * 
+	 * @return random tip string, blank string if service not available or error
+	 *         occured.
 	 */
 	public static String getME3TweaksTip() {
 		if (ModManager.TIPS_SERVICE_JSON == null) {
 			return "";
 		}
-		
+
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject dbObj = (JSONObject) parser.parse(ModManager.TIPS_SERVICE_JSON);
@@ -731,7 +740,7 @@ public class ME3TweaksUtils {
 				tips.add((String) value);
 			}
 			Random rand = new Random();
-			int  n = rand.nextInt(tips.size());
+			int n = rand.nextInt(tips.size());
 			return tips.get(n);
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Failed to parse tips: ", e);

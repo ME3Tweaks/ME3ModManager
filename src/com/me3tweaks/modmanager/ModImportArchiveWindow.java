@@ -14,11 +14,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.BoxLayout;
-import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -34,10 +32,9 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
+
+import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.objects.CompressedMod;
@@ -45,6 +42,9 @@ import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.SevenZipCompressedModInspector;
 
+import javafx.application.Platform;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import net.sf.sevenzipjbinding.SevenZip;
 
 /**
@@ -74,7 +74,7 @@ public class ModImportArchiveWindow extends JDialog {
 	 * Standard, user triggered opening
 	 */
 	public ModImportArchiveWindow() {
-        super(null, Dialog.ModalityType.MODELESS);
+		super(null, Dialog.ModalityType.MODELESS);
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (manual mode)");
 		try {
 			ModManager.debugLogger.writeMessage("Loading 7-zip library");
@@ -98,7 +98,7 @@ public class ModImportArchiveWindow extends JDialog {
 	 *            file dropped
 	 */
 	public ModImportArchiveWindow(ModManagerWindow modManagerWindow, String file) {
-        super(null, Dialog.ModalityType.MODELESS);
+		super(null, Dialog.ModalityType.MODELESS);
 		ModManager.debugLogger.writeMessage("Opening Mod Import Window - Archive (filedrop mode)");
 		ModManager.debugLogger.writeMessage("Automating load of archive file: " + file);
 
@@ -232,24 +232,31 @@ public class ModImportArchiveWindow extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser archiveChooser = new JFileChooser();
-				File tryDir = new File(archivePathField.getText());
-				if (tryDir.exists() && tryDir.isFile()) {
-					archiveChooser.setCurrentDirectory(tryDir.getParentFile());
-				} else {
-					archiveChooser.setCurrentDirectory(new File("."));
-				}
-				archiveChooser.setDialogTitle("Select mod archive to import");
-				archiveChooser.setAcceptAllFileFilterUsed(false);
-				archiveChooser.setFileFilter(new FileNameExtensionFilter("Compressed Archive Files (.7z/.rar/.zip)", "7z", "rar", "zip"));
+				Platform.runLater(() -> {
+					FileChooser archiveChooser = new FileChooser();
+					File tryDir = new File(archivePathField.getText());
+					if (tryDir.exists() && tryDir.isFile()) {
+						archiveChooser.setInitialDirectory(tryDir.getParentFile());
+					} else {
+						//Downloads
+						File downloadsFolder = new File(System.getProperty("user.home") + "/Downloads/");
+						if (downloadsFolder.exists()) {
+							archiveChooser.setInitialDirectory(downloadsFolder);
+						} else {
+							archiveChooser.setInitialDirectory(new File("."));
+						}
+					}
+					archiveChooser.setTitle("Select mod archive to import");
+					archiveChooser.getExtensionFilters().addAll(new ExtensionFilter("Compressed Mods", "*.7z", "*.rar", "*.zip"));
 
-				if (archiveChooser.showOpenDialog(ModImportArchiveWindow.this) == JFileChooser.APPROVE_OPTION) {
+					File selectedFile = archiveChooser.showOpenDialog(null);
+					if (selectedFile != null) {
 
-					loadArchive(archiveChooser.getSelectedFile().getAbsolutePath());
-				}
+						loadArchive(selectedFile.getAbsolutePath());
+					}
+				});
 			}
 		});
-
 		importButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -284,8 +291,11 @@ public class ModImportArchiveWindow extends JDialog {
 	public class ScanWorker extends SwingWorker<ArrayList<CompressedMod>, ThreadCommand> {
 
 		private String archiveFile;
+		private int jobCode;
 
 		public ScanWorker(String archiveFile) {
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Scanning archive for mods");
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Scanning " + FilenameUtils.getName(archiveFile));
 			this.archiveFile = archiveFile;
 			checkMap.clear();
 			compressedModModel.setRowCount(0);
@@ -333,6 +343,8 @@ public class ModImportArchiveWindow extends JDialog {
 		}
 
 		protected void done() {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Archive scan finished");
 			ModManager.debugLogger.writeMessage("[SCANWORKER] Background thread finished.");
 			checkMap.clear();
 			compressedModModel.setRowCount(0);
@@ -377,11 +389,14 @@ public class ModImportArchiveWindow extends JDialog {
 	public class ImportWorker extends SwingWorker<Boolean, ThreadCommand> {
 		private ArrayList<CompressedMod> modsToImport;
 		private String archiveFilePath;
+		private int jobCode;
 
 		public ImportWorker(String archiveFilePath, ArrayList<CompressedMod> modsToImport) {
 			// TODO Auto-generated constructor stub
 			this.archiveFilePath = archiveFilePath;
 			this.modsToImport = modsToImport;
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Importing Mods");
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Importing " + (modsToImport.size() != 1 ? "mods" : modsToImport.get(0).getModName()));
 			descriptionArea.setText("Importing mods into Mod Manager...");
 			progressBar.setIndeterminate(true);
 			browseButton.setEnabled(false);
@@ -408,7 +423,7 @@ public class ModImportArchiveWindow extends JDialog {
 				case "SIDELOAD_OR_NEW_PROMPT":
 					Object[] choices = { "SIDELOAD as update", "Import as NEW", "Cancel importing" };
 					String message = "You are importing " + command.getMessage()
-							+ ", which is already in imported into Mod Manager.\nPlease choose from one of the following options:\n\nSIDELOAD: Import mod as an update, overwriting local files with ones from this archive\nNEW: Delete local imported mod, and import mod from archive as a new mod\n\nSelect what you'd like to do.";
+							+ ", which is already in imported into Mod Manager.\nPlease choose from one of the following options:\n\nSIDELOAD: Import mod as an update, overwriting local files with ones from this archive\nNEW: Delete local imported mod, and import mod from archive as a new mod\n\nIf you weren't instructed to select 'SIDELOAD as update' you should do 'Import as NEW'.\n\nSelect what you'd like to do.";
 
 					synchronized (lock) {
 						sideloadresult = JOptionPane.showOptionDialog(ModImportArchiveWindow.this, message, "Mod to import already exists", JOptionPane.YES_NO_CANCEL_OPTION,
@@ -432,6 +447,7 @@ public class ModImportArchiveWindow extends JDialog {
 		}
 
 		public void done() {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			ModManager.debugLogger.writeMessage("[IMPORTWORKER] Finished background thread.");
 			boolean error = false;
 			try {
@@ -452,9 +468,10 @@ public class ModImportArchiveWindow extends JDialog {
 			repaint();
 			if (!error) {
 				ModManager.debugLogger.writeMessage("[IMPORTWORKER] Import successful.");
-				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
-				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+				ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
+				dispose();
+				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
 				if (modsToImport.size() == 1) {
 					//Highlight it
 					//don't have a way to figure out what was just imported...

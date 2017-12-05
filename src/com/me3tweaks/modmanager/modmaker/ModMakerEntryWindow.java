@@ -26,14 +26,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -45,6 +43,9 @@ import org.ini4j.Wini;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
+
+import javafx.application.Platform;
+import javafx.stage.FileChooser;
 
 @SuppressWarnings("serial")
 public class ModMakerEntryWindow extends JDialog implements ActionListener {
@@ -345,35 +346,37 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	 * @param languages
 	 */
 	private void sideloadModmaker(ArrayList<String> languages) {
-		JFileChooser dirChooser = new JFileChooser();
-		File file = new File(ModManager.getModmakerCacheDir());
-		dirChooser.setCurrentDirectory(file);
-		dirChooser.setDialogTitle("Select ModMaker XML file");
-		dirChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-		dirChooser.setAcceptAllFileFilterUsed(false);
-		dirChooser.setFileFilter(new FileNameExtensionFilter("ModMaker Mod Delta Files (.xml)", "xml"));
 
-		String chosenFile = null;
-		if (dirChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			chosenFile = dirChooser.getSelectedFile().getAbsolutePath();
-			boolean shouldContinue = true;
-			if (!hasDLCBypass) {
-				shouldContinue = installBypass();
-			}
-			if (shouldContinue) {
-				Wini ini = ModManager.LoadSettingsINI();
-				try {
-					ini.put("Settings", "modmaker_language", languageChoices.getSelectedItem());
-					ini.store();
-				} catch (InvalidFileFormatException e) {
-					ModManager.debugLogger.writeErrorWithException("Invalid file format exception writing settings ini: ", e);
-				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+		Platform.runLater(() -> {
+			FileChooser fileChooser = new FileChooser();
+			FileChooser.ExtensionFilter extFilterModMaker = new FileChooser.ExtensionFilter("ModMaker Mod Delta Files", "*.xml");
+			fileChooser.getExtensionFilters().addAll(extFilterModMaker);
+			File startDir = new File(ModManager.getModmakerCacheDir());
+			fileChooser.setInitialDirectory(startDir);
+			fileChooser.setTitle("Select ModMaker file");
+
+			//Show open file dialog
+			File chosenFile = fileChooser.showOpenDialog(null); //can't be centered
+			if (chosenFile != null) {
+				boolean shouldContinue = true;
+				if (!hasDLCBypass) {
+					shouldContinue = installBypass();
 				}
-				dispose();
-				ModManagerWindow.ACTIVE_WINDOW.startModMaker(chosenFile, languages);
+				if (shouldContinue) {
+					Wini ini = ModManager.LoadSettingsINI();
+					try {
+						ini.put("Settings", "modmaker_language", languageChoices.getSelectedItem());
+						ini.store();
+					} catch (InvalidFileFormatException e) {
+						ModManager.debugLogger.writeErrorWithException("Invalid file format exception writing settings ini: ", e);
+					} catch (IOException e) {
+						ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+					}
+					dispose();
+					ModManagerWindow.ACTIVE_WINDOW.startModMaker(chosenFile.getAbsolutePath(), languages);
+				}
 			}
-		}
+		});
 	}
 
 	private static ArrayList<String> getLanguages(String chosenLang) {

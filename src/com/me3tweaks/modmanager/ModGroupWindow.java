@@ -135,6 +135,11 @@ public class ModGroupWindow extends JDialog implements ListSelectionListener {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (ModManagerWindow.validateBIOGameDir()) {
+					
+					if (ModManager.CHECK_FOR_ALOT_INSTALL && ModManager.isALOTInstalled(ModManagerWindow.GetBioGameDir())) {
+						ModManagerWindow.ACTIVE_WINDOW.installBlockedByALOT(true);
+						return;
+					}
 					boolean wasCanceled = false;
 					ModInstallWindow.BatchPackage bp = new ModInstallWindow.BatchPackage();
 					bp.totalBatchMods = groupContentsModel.size();

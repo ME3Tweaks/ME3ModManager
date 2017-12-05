@@ -39,7 +39,6 @@ import org.apache.commons.io.filefilter.SuffixFileFilter;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.StarterKitWindow.StarterKitProgressDialog;
-import com.me3tweaks.modmanager.mapmesh.MapMeshViewer;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.objects.ProcessResult;
@@ -401,23 +400,13 @@ public class FileDropWindow extends JDialog {
 				compressionPCCPanel.add(decompressAllPcc, BorderLayout.NORTH);
 				compressionPCCPanel.add(compressAllPcc, BorderLayout.SOUTH);
 
-				JButton aipathfinding = new JButton("View AI Pathfinding in Map Pathfinding Viewer");
-				aipathfinding.setToolTipText("View this file in the pathfinding viewer - file must contain path nodes (typically BioD)");
-				if (!ResourceUtils.is64BitWindows()) {
-					aipathfinding.setEnabled(false);
-					aipathfinding.setToolTipText("Requires 64-bit Windows");
-				} else if (filesToPass.size() > 1) {
-					aipathfinding.setEnabled(false);
-					aipathfinding.setToolTipText("Drop only one file onto Mod Manager's window to use this drag and drop shortcut.");
-				}
 				JButton dumppcc = new JButton("Dump PCC info with PCC Data Dumper");
 				JPanel readPCCPanel = new JPanel(new BorderLayout());
 				dumppcc.setToolTipText("Dump PCC information to disk in an easily readable format");
 
 				TitledBorder coalescedManifestBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "PCC - Data Viewers");
 				readPCCPanel.setBorder(coalescedManifestBorder);
-				readPCCPanel.add(aipathfinding, BorderLayout.NORTH);
-				readPCCPanel.add(dumppcc, BorderLayout.SOUTH);
+				readPCCPanel.add(dumppcc, BorderLayout.NORTH);
 
 				pccFilePanel.add(compressionPCCPanel);
 				pccFilePanel.add(readPCCPanel);
@@ -431,15 +420,6 @@ public class FileDropWindow extends JDialog {
 						ModManager.debugLogger.writeMessage("User chose singular COMPRESS_PCC operation");
 						new BatchWorker(filesToPass, BatchWorker.DECOMPRESS_PCC, null).execute();
 						dispose();
-					}
-				});
-
-				aipathfinding.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						ModManager.debugLogger.writeMessage("User chose singular PATHFINDING_VIEW operation");
-						dispose();
-						new MapMeshViewer(droppedFile);
 					}
 				});
 
@@ -613,40 +593,6 @@ public class FileDropWindow extends JDialog {
 				});
 				break;
 			}
-			case "txt": {
-				JButton pathfindingButton = new JButton("Open file in Map Pathfinding Viewer");
-				if (!ResourceUtils.is64BitWindows()) {
-					pathfindingButton.setEnabled(false);
-					pathfindingButton.setToolTipText("Requires 64-bit Windows");
-				}
-				pathfindingButton.setAlignmentX(CENTER_ALIGNMENT);
-				JPanel textFilePanel = new JPanel();
-				textFilePanel.setLayout(new BoxLayout(textFilePanel, BoxLayout.PAGE_AXIS));
-				TitledBorder textFileBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "TXT - Text file options");
-				textFilePanel.setBorder(textFileBorder);
-
-				JPanel pathfindingDumpPanel = new JPanel(new BorderLayout());
-				TitledBorder pathfindingDumpBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "TXT - PCC or Pathfinding dump");
-				pathfindingDumpPanel.setBorder(pathfindingDumpBorder);
-				pathfindingDumpPanel.setAlignmentX(CENTER_ALIGNMENT);
-
-				pathfindingDumpPanel.add(pathfindingButton, BorderLayout.NORTH);
-				pathfindingDumpPanel.add(new JLabel("<html><center>" + droppedFiles.get(0).toFile().getAbsolutePath() + "</center></html>", SwingConstants.CENTER),
-						BorderLayout.SOUTH);
-				textFilePanel.add(pathfindingDumpPanel);
-
-				panel.add(textFilePanel, BorderLayout.CENTER);
-
-				pathfindingButton.addActionListener(new ActionListener() {
-
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						dispose();
-						new MapMeshViewer(droppedFiles.get(0).toFile());
-					}
-				});
-				break;
-			}
 			default: {
 				JPanel failPanel = new JPanel();
 				failPanel.add(new JLabel("<html><center>Unsupported Drag & Drop file extension: " + extension + "</center></html>", SwingConstants.CENTER));
@@ -666,7 +612,6 @@ public class FileDropWindow extends JDialog {
 		supportedTypesPanel.add(new JLabel(".pcc (ME3 package file)", SwingConstants.CENTER));
 		supportedTypesPanel.add(new JLabel(".bin (Coalesced file)", SwingConstants.CENTER));
 		supportedTypesPanel.add(new JLabel(".tlk (Localization file)", SwingConstants.CENTER));
-		supportedTypesPanel.add(new JLabel(".txt (PCC data dump file)", SwingConstants.CENTER));
 		supportedTypesPanel.add(new JLabel(".xml (Multiple types)", SwingConstants.CENTER));
 		supportedTypesPanel.add(new JLabel(".dlc (Mount.dlc file)", SwingConstants.CENTER));
 		supportedTypesPanel.add(new JLabel(".asi (Runtime native mod)", SwingConstants.CENTER));
@@ -706,6 +651,7 @@ public class FileDropWindow extends JDialog {
 		public boolean completed = false;
 		private StarterKitProgressDialog dialog;
 		private ArrayList<File> files;
+		int jobCode;
 
 		//TODO: Make Batch Worker accept a a list of files/folders to parse instead of just calculating from directory
 
@@ -713,6 +659,7 @@ public class FileDropWindow extends JDialog {
 			this.operation = operation;
 			this.files = files;
 			this.dialog = dialog; //can be null.
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Batch File Operation");
 		}
 
 		@Override
@@ -807,6 +754,7 @@ public class FileDropWindow extends JDialog {
 
 		@Override
 		protected void done() {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			try {
 				get(); //will trigger exceptions if one occured
 				if (ModManagerWindow.ACTIVE_WINDOW != null)

@@ -37,6 +37,7 @@ import java.util.function.Predicate;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
@@ -63,7 +64,7 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.CustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModList;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.PCCDumpOptions;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ProcessResult;
@@ -81,13 +82,15 @@ import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinReg;
 import com.sun.jna.win32.W32APIOptions;
 
+import javafx.embed.swing.JFXPanel;
+
 public class ModManager {
 	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0.5";
-	public static long BUILD_NUMBER = 80L;
-	public static final String BUILD_DATE = "09/08/2017";
+	public static final String VERSION = "5.0.6";
+	public static long BUILD_NUMBER = 81L;
+	public static final String BUILD_DATE = "12/03/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -104,7 +107,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 24;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 27;
 
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
@@ -120,6 +123,8 @@ public class ModManager {
 	public static boolean MODMAKER_CONTROLLER_MOD_ADDINS = false;
 	public static String THIRD_PARTY_MOD_JSON;
 	public static boolean LOG_MODMAKER = false;
+	public static boolean CHECK_FOR_ALOT_INSTALL = true;
+
 	public static String COMMANDLINETOOLS_URL;
 	public static String LATEST_ME3EXPLORER_URL;
 	public static String LATEST_ME3EXPLORER_VERSION;
@@ -133,6 +138,7 @@ public class ModManager {
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGUAGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
+	public static ImageIcon ACTIVITY_ICON;
 
 	public static final class Lock {
 	} //threading wait() and notifyall();
@@ -149,6 +155,7 @@ public class ModManager {
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon32.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon64.png")));
 			ICONS.add(Toolkit.getDefaultToolkit().getImage(ModManager.class.getResource("/resource/icon128.png")));
+			ACTIVITY_ICON = new ImageIcon(Toolkit.getDefaultToolkit().getImage(ModManagerWindow.class.getResource("/resource/network.gif")));
 
 			ToolTipManager.sharedInstance().setDismissDelay(15000);
 
@@ -389,22 +396,46 @@ public class ModManager {
 				}
 
 				// Log Mod Startup
-				String modmakerlogStr = settingsini.get("Settings", "logmodmaker");
-				int modmakerlogStartupInt = 0;
-				if (modmakerlogStr != null && !modmakerlogStr.equals("")) {
-					try {
-						modmakerlogStartupInt = Integer.parseInt(modmakerlogStr);
-						if (modmakerlogStartupInt > 0) {
-							// logging is on
-							debugLogger.writeMessage("Modmaker Compiler logging is enabled");
-							LOG_MODMAKER = true;
-						} else {
-							debugLogger.writeMessage("Modmaker Compiler logging is disabled");
+				{
+					String modmakerlogStr = settingsini.get("Settings", "logmodmaker");
+					int modmakerlogStartupInt = 0;
+					if (modmakerlogStr != null && !modmakerlogStr.equals("")) {
+						try {
+							modmakerlogStartupInt = Integer.parseInt(modmakerlogStr);
+							if (modmakerlogStartupInt > 0) {
+								// logging is on
+								debugLogger.writeMessage("Modmaker Compiler logging is enabled");
+								LOG_MODMAKER = true;
+							} else {
+								debugLogger.writeMessage("Modmaker Compiler logging is disabled");
+								LOG_MODMAKER = false;
+							}
+						} catch (NumberFormatException e) {
+							debugLogger.writeError("Number format exception reading the log modmaker setting - setting to disabled");
 							LOG_MODMAKER = false;
 						}
+					}
+				}
+
+				// CHECK FOR ALOT INSTALLATION
+
+				// Log Mod Startup
+				String alotCheckLogStr = settingsini.get("Settings", "checkforalotinstall");
+				int alotCheckInt = 0;
+				if (alotCheckLogStr != null && !alotCheckLogStr.equals("")) {
+					try {
+						alotCheckInt = Integer.parseInt(alotCheckLogStr);
+						if (alotCheckInt > 0) {
+							// logging is on
+							debugLogger.writeMessage("Checking for ALOT installation is enabled");
+							CHECK_FOR_ALOT_INSTALL = true;
+						} else {
+							debugLogger.writeMessage("Checking for ALOT installation is disabled");
+							CHECK_FOR_ALOT_INSTALL = false;
+						}
 					} catch (NumberFormatException e) {
-						debugLogger.writeError("Number format exception reading the log modmaker setting - setting to disabled");
-						LOG_MODMAKER = false;
+						debugLogger.writeError("Number format exception reading the check for alot install - setting to enabled");
+						CHECK_FOR_ALOT_INSTALL = true;
 					}
 				}
 
@@ -549,6 +580,12 @@ public class ModManager {
 		} catch (Exception e) {
 			System.err.println("Couldn't set the UI interface style");
 		}
+		
+		ModManager.debugLogger.writeMessage("Loading JavaFX");
+		new JFXPanel(); // used for initializing javafx thread (ideally called once)
+		ModManager.debugLogger.writeMessage("Loaded JavaFX");
+
+		
 		try {
 			new ModManagerWindow(isUpdate);
 		} catch (Throwable e) {
@@ -1324,7 +1361,7 @@ public class ModManager {
 		} else {
 			ModManager.debugLogger.writeMessage("Patch source is not in library (would be at: " + sourceDestination.getAbsolutePath() + "), fetching from game directory.");
 		}
-		if (targetModule.equals(ModType.BASEGAME)) {
+		if (targetModule.equals(ModTypeConstants.BASEGAME)) {
 			// we must use PCCEditor2 to decompress the file using the
 			// -decompresspcc command line arg
 			//get source directory via relative path chaining
@@ -1346,7 +1383,7 @@ public class ModManager {
 
 			// END OF
 			// BASEGAME======================================================
-		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+		} else if (targetModule.equals(ModTypeConstants.CUSTOMDLC)) {
 			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
 			return null;
 		} else {
@@ -1368,10 +1405,10 @@ public class ModManager {
 			// use the sfar
 			// get .sfar path
 			String sfarName = "Default.sfar";
-			if (targetModule.equals(ModType.TESTPATCH)) {
+			if (targetModule.equals(ModTypeConstants.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(targetModule)) + sfarName;
 			if (new File(sfarPath).exists()) {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
 				ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
@@ -1406,7 +1443,7 @@ public class ModManager {
 		commandBuilder.add("--OutputPath");
 		commandBuilder.add(extractionDirectory);
 		commandBuilder.add("--FlatFolderExtraction");
-		
+
 		ProcessBuilder extractionProcessBuilder = new ProcessBuilder(commandBuilder);
 		return ModManager.runProcess(extractionProcessBuilder);
 	}
@@ -1549,7 +1586,7 @@ public class ModManager {
 		FileUtils.deleteQuietly(destFile);
 		new File(destFile.getParent()).mkdirs();
 
-		if (targetModule.equals(ModType.BASEGAME)) {
+		if (targetModule.equals(ModTypeConstants.BASEGAME)) {
 			if (targetPath.endsWith(".pcc")) {
 				File sourceSource = new File(ModManager.appendSlash(new File(bioGameDir).getParent()) + targetPath);
 				File destinationFile = new File(copyToLocation);
@@ -1582,7 +1619,7 @@ public class ModManager {
 			}
 			// END OF
 			// BASEGAME======================================================
-		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+		} else if (targetModule.equals(ModTypeConstants.CUSTOMDLC)) {
 			ModManager.debugLogger.writeError("Fetching files from CustomDLC is not supported.");
 			return null;
 		} else {
@@ -1606,10 +1643,10 @@ public class ModManager {
 			// use the sfar
 			// get .sfar path
 			String sfarName = "Default.sfar";
-			if (targetModule.equals(ModType.TESTPATCH)) {
+			if (targetModule.equals(ModTypeConstants.TESTPATCH)) {
 				sfarName = "Patch_001.sfar";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(targetModule)) + sfarName;
 
 			ArrayList<String> commandBuilder = new ArrayList<String>();
 			commandBuilder.add(ModManager.getCommandLineToolsDir() + "SFARTools-Extract.exe");
@@ -1707,7 +1744,7 @@ public class ModManager {
 		File bink23 = new File(gamedir.toString() + "\\Binaries\\Win32\\binkw23.dll");
 		try {
 			// Original ASI hash, July 8 2017 v3 hash, July 23 2017 v4 Hash
-			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d","1acccbdae34e29ca7a50951999ed80d5" };
+			String[] asiBinkHashes = { "65eb0d2e5c3ccb1cdab5e48d1a9d598d", "bc37adee806059822c972b71df36775d", "1acccbdae34e29ca7a50951999ed80d5" };
 			ArrayList<String> asihashlist = new ArrayList<>(Arrays.asList(asiBinkHashes));
 			String binkhash = MD5Checksum.getMD5Checksum(bink32.toString());
 			if (asihashlist.contains(binkhash) && bink23.exists()) {
@@ -2486,7 +2523,7 @@ public class ModManager {
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}
-	
+
 	/**
 	 * Returns the PCC dumping folder's TLK cache
 	 * 
@@ -2661,7 +2698,7 @@ public class ModManager {
 
 		String backupDir = ModManager.appendSlash(cmmbackup);
 
-		if (targetModule.equals(ModType.BASEGAME)) {
+		if (targetModule.equals(ModTypeConstants.BASEGAME)) {
 			// we must decompress the file
 			//get source directory via relative path chaining
 			File sourceSource = new File(backupDir + targetPath);
@@ -2684,7 +2721,7 @@ public class ModManager {
 			}
 			// END OF
 			// BASEGAME======================================================
-		} else if (targetModule.equals(ModType.CUSTOMDLC)) {
+		} else if (targetModule.equals(ModTypeConstants.CUSTOMDLC)) {
 			System.err.println("CUSTOMDLC IS NOT SUPPORTED RIGHT NOW");
 			return null;
 		} else {
@@ -2696,10 +2733,10 @@ public class ModManager {
 			// use the sfar
 			// get .sfar path
 			String sfarName = "Default.sfar.bak";
-			if (targetModule.equals(ModType.TESTPATCH)) {
+			if (targetModule.equals(ModTypeConstants.TESTPATCH)) {
 				sfarName = "Patch_001.sfar.bak";
 			}
-			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModType.getDLCPath(targetModule)) + sfarName;
+			String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(targetModule)) + sfarName;
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
 			ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());
 			if (pr.getReturnCode() == 0) {
@@ -2747,5 +2784,25 @@ public class ModManager {
 		File file = new File(getDataDir() + "ME3TweaksUpdaterService\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
+	}
+
+	public static boolean isALOTInstalled(String biogamePath) {
+		biogamePath += "/CookedPCConsole/adv_combat_tutorial_xbox_D_Int.afc";
+		File markerfile = new File(biogamePath);
+		if (markerfile.exists()) {
+			Path path = Paths.get(markerfile.getAbsolutePath());
+			try {
+				byte[] markerbytes = new byte[] { 0x4D, 0x45, 0x4D, 0x49 };
+				byte[] data = Files.readAllBytes(path);
+				byte[] final4bytes = Arrays.copyOfRange(data, data.length - 4, data.length);
+				if (Arrays.equals(final4bytes, markerbytes)) {
+					return true;
+				}
+				return false;
+			} catch (IOException e) {
+				ModManager.debugLogger.writeErrorWithException("Error checking if ALOT is installed.", e);
+			}
+		}
+		return false;
 	}
 }

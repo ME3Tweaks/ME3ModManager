@@ -27,7 +27,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 
 public class ModImportDLCWindow extends JDialog implements ListSelectionListener {
@@ -60,7 +60,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 		});
 
 		for (String dir : directories) {
-			if (ModType.isKnownDLCFolder(dir)) {
+			if (ModTypeConstants.isKnownDLCFolder(dir)) {
 				continue;
 			}
 			//add to list

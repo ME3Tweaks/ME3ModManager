@@ -55,6 +55,7 @@
          <Hyperlink onAction="#openCommonsLangPage" text="Apache Commons Lang" />
          <Hyperlink onAction="#openFileDropPage" text="FileDrop" />
          <Hyperlink onAction="#openini4jPage" text="ini4j" />
+         <Hyperlink onAction="#openSwingXPage" text="SwingX" />
          <Hyperlink onAction="#openJNAPage" text="Java Native Access" />
          <Hyperlink onAction="#openjsonsimplePage" text="json-simple" />
       </children>
@@ -81,7 +82,6 @@
          <Hyperlink onAction="#openElevatePage" text="Elevate" />
          <Hyperlink onAction="#openJojoDiffPage" text="JoJo Diff" />
          <Hyperlink onAction="#openLaunch4jPage" text="Launch4j" />
-         <Hyperlink onAction="#openLauncherWVPage" text="LauncherWV" />
          <Hyperlink onAction="#openMEMPage" text="Mass Effect Modder" />
          <Hyperlink onAction="#openME3ExplorerPage" text="ME3Explorer" />
          <Hyperlink onAction="#openTankmasterPage" text="Tankmaster TLK &amp; Coalesce" />

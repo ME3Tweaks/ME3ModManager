@@ -68,6 +68,7 @@ public class PCCDataDumperWindow extends JFrame {
 	JCheckBox dumpSWF;
 	final int threads = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1);
 	private JPanel dumpPanel;
+	private JCheckBox[] allCheckboxes;
 
 	/**
 	 * Manually invoked pcc data dumping window
@@ -220,6 +221,27 @@ public class PCCDataDumperWindow extends JFrame {
 		});
 		pack();
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+
+		
+		//Listeners
+		allCheckboxes = new JCheckBox[] { dumpCoalesced, dumpScripts, dumpExports, dumpImports, dumpNames, dumpSWF, dumpProperties };
+		ActionListener actionListener = new ActionListener() {
+			public void actionPerformed(ActionEvent actionEvent) {
+				boolean shouldBeEnabled = false;
+				for (JCheckBox checkbox : allCheckboxes) {
+					shouldBeEnabled |= checkbox.isSelected();
+				}
+				dumpButton.setEnabled(shouldBeEnabled);
+			}
+		};
+
+		dumpScripts.addActionListener(actionListener);
+		dumpCoalesced.addActionListener(actionListener);
+		dumpProperties.addActionListener(actionListener);
+		dumpExports.addActionListener(actionListener);
+		dumpImports.addActionListener(actionListener);
+		dumpNames.addActionListener(actionListener);
+		dumpSWF.addActionListener(actionListener);
 	}
 
 	class DumpPCCJob extends SwingWorker<ArrayList<DumpTaskResult>, ThreadCommand> {

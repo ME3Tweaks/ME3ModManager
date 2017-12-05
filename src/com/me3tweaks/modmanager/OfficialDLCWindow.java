@@ -25,7 +25,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.ui.CustomDLCManagerToggleButtonColumn;
 
@@ -77,7 +77,7 @@ public class OfficialDLCWindow extends JDialog {
 			if (checkDir.toUpperCase().startsWith("XDLC_")) {
 				checkDir = checkDir.substring(1);
 			}
-			if (!ModType.isKnownDLCFolder(checkDir)) {
+			if (!ModTypeConstants.isKnownDLCFolder(checkDir)) {
 				continue;
 			} else {
 				OfficialDLCInfo odi = new OfficialDLCInfo(dir);

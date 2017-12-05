@@ -6,6 +6,8 @@ import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -29,7 +31,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JViewport;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -83,13 +87,14 @@ public class ASIModWindow extends JDialog {
 	private ArrayList<ASIUpdateGroup> updategroups;
 	private ArrayList<InstalledASIMod> installedASIs;
 	private JTable table;
+	private int balanceChangesRow;
 
 	/**
 	 * Main constructor. Use when opening the ASI Mod Window.
 	 * 
 	 * @param gamedir
 	 */
-	public ASIModWindow(String gamedir) {
+	public ASIModWindow(String gamedir, boolean balanceChangesHighlight) {
 		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening ASI window.");
 		this.gamedir = ModManager.appendSlash(gamedir);
@@ -98,7 +103,7 @@ public class ASIModWindow extends JDialog {
 		if (!asiDir.exists()) {
 			asiDir.mkdirs();
 		}
-		setupWindow();
+		setupWindow(balanceChangesHighlight);
 		setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 		setVisible(true);
 	}
@@ -110,7 +115,7 @@ public class ASIModWindow extends JDialog {
 		//Empty constuctor - used to access local variables
 	}
 
-	private void setupWindow() {
+	private void setupWindow(boolean balanceChangesHighlight) {
 		setIconImages(ModManager.ICONS);
 		setTitle("ASI Mod Manager");
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
@@ -131,7 +136,7 @@ public class ASIModWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				ModManagerWindow.ACTIVE_WINDOW.toolsInstallBinkw32asi.doClick();
 				dispose();
-				new ASIModWindow(gamedir);
+				new ASIModWindow(gamedir, balanceChangesHighlight);
 			}
 		};
 
@@ -167,6 +172,9 @@ public class ASIModWindow extends JDialog {
 			data[i][COL_ASIFILENAME] = mod;
 			data[i][COL_DESCRIPTION] = mod.getDescription();
 			data[i][COL_ACTION] = "<html><center>" + headingtext + "</center></html>";
+			if (mod.getName().equals("Balance Changes Replacer")) {
+				balanceChangesRow = i;
+			}
 		}
 
 		String[] columnNames = { "ASI Mod", "Description", "Actions" };
@@ -242,7 +250,7 @@ public class ASIModWindow extends JDialog {
 				updateLocalManifest.setEnabled(false);
 				getOnlineASIManifest();
 				dispose();
-				new ASIModWindow(gamedir);
+				new ASIModWindow(gamedir, balanceChangesHighlight);
 			}
 		});
 		bottomPanel.add(updateLocalManifest, BorderLayout.CENTER);
@@ -251,6 +259,21 @@ public class ASIModWindow extends JDialog {
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		add(panel);
 		pack();
+
+		if (balanceChangesHighlight) {
+			table.setRowSelectionInterval(balanceChangesRow, balanceChangesRow);
+			SwingUtilities.invokeLater(() -> scrollToVisible(table, balanceChangesRow, 0));
+		}
+	}
+
+	private static void scrollToVisible(JTable table, int rowIndex, int vColIndex) {
+		if (!(table.getParent() instanceof JViewport))
+			return;
+		JViewport viewport = (JViewport) table.getParent();
+		Rectangle rect = table.getCellRect(rowIndex, vColIndex, true);
+		Point pt = viewport.getViewPosition();
+		rect.setLocation(rect.x - pt.x, rect.y - pt.y);
+		viewport.scrollRectToVisible(rect);
 	}
 
 	private InstalledASIMod findOutdatedInstalledModByManifestMod(ASIMod mod) {

@@ -51,7 +51,7 @@ import org.apache.http.message.BasicNameValuePair;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
@@ -325,8 +325,9 @@ public class ImportEntryWindow extends JDialog {
 
 				@Override
 				public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-					ModManager.debugLogger.writeMessage("Importing file: " + targetPath.toString());
-					Files.copy(file, targetPath.resolve(sourcePath.relativize(file)));
+					Path dest = targetPath.resolve(sourcePath.relativize(file));
+					ModManager.debugLogger.writeMessage("Importing file: " + dest.toString());
+					Files.copy(file, dest);
 					publish(new ThreadCommand("SINGLE_FILE_COPIED"));
 					return FileVisitResult.CONTINUE;
 				}
@@ -342,13 +343,13 @@ public class ImportEntryWindow extends JDialog {
 
 			ModJob dlcJob = new ModJob();
 			dlcJob.setOwningMod(mod);
-			dlcJob.setJobName(ModType.CUSTOMDLC); //backwards, it appears...
+			dlcJob.setJobName(ModTypeConstants.CUSTOMDLC); //backwards, it appears...
 			dlcJob.setJobType(ModJob.CUSTOMDLC);
 			dlcJob.setSourceFolders(new ArrayList<String>());
 			dlcJob.setDestFolders(new ArrayList<String>());
 			dlcJob.getSourceFolders().add(dlcModName);
 			dlcJob.getDestFolders().add(dlcModName);
-			mod.addTask(ModType.CUSTOMDLC, dlcJob);
+			mod.addTask(ModTypeConstants.CUSTOMDLC, dlcJob);
 
 			String desc = mod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT);
 			File descFile = new File(localModPathFile + File.separator + "moddesc.ini");

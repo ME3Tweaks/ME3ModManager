@@ -18,6 +18,11 @@
 	<classpathentry kind="lib" path="libraries/commons-validator-1.6.jar"/>
 	<classpathentry kind="lib" path="libraries/httpclient-4.5.3.jar"/>
 	<classpathentry kind="lib" path="libraries/httpcore-4.4.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/mgame/workspace/modmanager3/libraries/swingx-all-1.6.5-1.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/X:/Google%20Drive/Code/Java/Mod%20Manager/Library%20Documentation/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="libraries/commons-lang3-3.6.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="https://commons.apache.org/proper/commons-lang/javadocs/api-release"/>
@@ -25,6 +30,6 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="libraries/jna-4.4.0.jar"/>
 	<classpathentry kind="lib" path="libraries/jna-platform-4.4.0.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/Bundled JRE x64"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

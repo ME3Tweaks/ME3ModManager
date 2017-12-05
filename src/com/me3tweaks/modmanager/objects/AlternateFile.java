@@ -24,14 +24,18 @@ public class AlternateFile {
 	private String substitutefile;
 	private String friendlyName;
 	private boolean enabled = false;
+	private String associatedJobName;
 
-	public AlternateFile(String altfileText) {
+	public AlternateFile(String altfileText, double modCMMVer) {
 		conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
 		modFile = ValueParserLib.getStringProperty(altfileText, "ModFile", false);
 		if (modFile.charAt(0) != '/' && modFile.charAt(0) != '\\') {
 			modFile = "/" + modFile;
 		}
 		altFile = ValueParserLib.getStringProperty(altfileText, "ModAltFile", false);
+		if (altFile == null) {
+			altFile = ValueParserLib.getStringProperty(altfileText, "AltFile", false);
+		}
 		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
 		description = ValueParserLib.getStringProperty(altfileText, "Description", true);
 		operation = ValueParserLib.getStringProperty(altfileText, "ModOperation", false);
@@ -62,6 +66,7 @@ public class AlternateFile {
 		operation = alt.operation;
 		enabled = alt.enabled;
 		substitutefile = alt.substitutefile;
+		associatedJobName = alt.associatedJobName;
 	}
 
 	public String getDescription() {
@@ -127,7 +132,7 @@ public class AlternateFile {
 				return false;
 			}
 			if (condition.equals(CONDITION_DLC_NOT_PRESENT) || condition.equals(CONDITION_DLC_PRESENT)) {
-				ArrayList<String> officialHeaders = new ArrayList<String>(Arrays.asList(ModType.getDLCHeaderNameArray()));
+				ArrayList<String> officialHeaders = new ArrayList<String>(Arrays.asList(ModTypeConstants.getDLCHeaderNameArray()));
 				if (!officialHeaders.contains(conditionalDLC)) {
 					File f = new File(modPath + conditionalDLC);
 					if (f.exists() && f.isDirectory()) {
@@ -183,6 +188,14 @@ public class AlternateFile {
 
 	public void setSubstituteFile(String substitutefile) {
 		this.substitutefile = substitutefile;
+	}
+
+	public void setAssociatedJobName(String jobType) {
+		this.associatedJobName = jobType;
+	}
+
+	public String getAssociatedJobName() {
+		return associatedJobName;
 	}
 
 }

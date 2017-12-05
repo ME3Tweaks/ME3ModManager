@@ -1,8 +1,8 @@
 package com.me3tweaks.modmanager.modupdater;
 
-import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -24,6 +24,7 @@ import javax.swing.SwingWorker;
 
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
+import org.jdesktop.swingx.VerticalLayout;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
@@ -67,16 +68,15 @@ public class AllModsUpdateWindow extends JDialog {
 	private void setupWindow() {
 		setTitle("Mod Updater");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		setPreferredSize(new Dimension(320, 70));
 		setResizable(false);
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setIconImages(ModManager.ICONS);
-		JPanel panel = new JPanel(new BorderLayout());
+		JPanel panel = new JPanel(new VerticalLayout());
 
 		statusLabel = new JLabel("Downloading server manifest");
-		operationLabel = new JLabel("Obtaining latest mod information from ME3Tweaks...");
-		panel.add(operationLabel, BorderLayout.NORTH);
-		panel.add(statusLabel, BorderLayout.SOUTH);
+		operationLabel = new JLabel("Downloading mod manifests from ME3Tweaks.com");
+		panel.add(operationLabel);
+		panel.add(statusLabel);
 		// updatePanel.add(actionPanel);
 		// updatePanel.add(sizeLabel);
 
@@ -110,6 +110,11 @@ public class AllModsUpdateWindow extends JDialog {
 		int numToGo = 0;
 		boolean canceled = false;
 		ArrayList<UpdatePackage> completedUpdates = new ArrayList<UpdatePackage>();
+		int jobCode;
+
+		public AllModsDownloadTask() {
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Checking all mods for updates");
+		}
 
 		/**
 		 * Executed in background thread
@@ -120,6 +125,7 @@ public class AllModsUpdateWindow extends JDialog {
 			// folder
 			upackages = ModXMLTools.validateLatestAgainstServer(updatableMods, this);
 			if (upackages.size() <= 0) {
+				publish(new ThreadCommand("NO_UPDATES"));
 				return null;
 			}
 
@@ -165,13 +171,26 @@ public class AllModsUpdateWindow extends JDialog {
 			for (ThreadCommand obj : chunks) {
 				String command = obj.getCommand();
 				switch (command) {
+				case "NO_UPDATES":
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("All mods are up to date");
+					break;
 				case "PROMPT_USER":
+					ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
+					String statusMessage = "1 mod has an update available";
+					if (upackages.size() > 1) {
+						statusMessage = upackages.size() + " mods have updates available";
+					}
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(statusMessage);
 					//show sideload notice
 					ArrayList<UpdatePackage> ignoredpackages = new ArrayList<>();
 					for (UpdatePackage upackage : upackages) {
 						if (upackage.requiresSideload()) {
 							ignoredpackages.add(upackage);
-							JOptionPane.showMessageDialog(AllModsUpdateWindow.this, upackage.getMod().getModName()
+							Window center = callingWindow;
+							if (showUI) {
+								center = AllModsUpdateWindow.this;
+							}
+							JOptionPane.showMessageDialog(center, upackage.getMod().getModName()
 									+ " has an update available from ME3Tweaks, but requires a sideloaded update first.\nAfter this dialog is closed, a browser window will open where you can download this sideload update.\nDrag and drop this downloaded file onto Mod Manager to install it.\nAfter the sideloaded update is complete, Mod Manager will download the rest of the update.\n\nThis is to save on bandwidth costs for both ME3Tweaks and the developer of "
 									+ upackage.getMod().getModName() + ".", "Sideload update required", JOptionPane.WARNING_MESSAGE);
 							try {
@@ -205,7 +224,11 @@ public class AllModsUpdateWindow extends JDialog {
 						updatetext += "Update this mod?";
 					}
 					ModManager.debugLogger.writeMessage("Prompting users for updates");
-					int result = JOptionPane.showConfirmDialog(AllModsUpdateWindow.this, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
+					Window center = callingWindow;
+					if (showUI) {
+						center = AllModsUpdateWindow.this;
+					}
+					int result = JOptionPane.showConfirmDialog(center, updatetext, "Mod updates available", JOptionPane.YES_NO_OPTION);
 					switch (result) {
 					case JOptionPane.YES_OPTION:
 						userChose = 1;
@@ -248,6 +271,7 @@ public class AllModsUpdateWindow extends JDialog {
 		@Override
 		protected void done() {
 			ModManager.debugLogger.writeMessage("Auto-Updater thread: performing done()");
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			try {
 				get();
 			} catch (CancellationException e) {
@@ -288,10 +312,9 @@ public class AllModsUpdateWindow extends JDialog {
 			}
 
 			if (upackages == null || upackages.size() <= 0) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mods are up to date");
 				if (AllModsUpdateWindow.this.showUI) {
 					JOptionPane.showMessageDialog(callingWindow, "All updatable mods are up to date.", "Mods up to date", JOptionPane.INFORMATION_MESSAGE);
-				} else {
-					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mods are up to date");
 				}
 				return;
 			}
@@ -301,18 +324,21 @@ public class AllModsUpdateWindow extends JDialog {
 			}
 
 			if (completedUpdates.size() == 0) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error applying updates");
 				JOptionPane.showMessageDialog(callingWindow, "No mods successfully updated.\nCheck the Mod Manager log for more info or contact FemShep for help.",
 						"Mods failed to update", JOptionPane.ERROR_MESSAGE);
 			} else if (upackages.size() != completedUpdates.size()) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error applying some of the updates");
 				//one error occured
 				JOptionPane.showMessageDialog(callingWindow,
 						completedUpdates.size() + " mod(s) successfully updated.\n" + (upackages.size() - completedUpdates.size())
 								+ " failed to update.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.",
 						"Some mods were updated", JOptionPane.WARNING_MESSAGE);
 			} else {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updates downloaded");
 				JOptionPane.showMessageDialog(callingWindow,
 						upackages.size()
-								+ " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.\nMod Manager will now reload mods.",
+								+ " mod(s) have been successfully updated.\nYou will need to apply updated mod(s) for them to take effect.",
 						"Mods updated", JOptionPane.INFORMATION_MESSAGE);
 			}
 

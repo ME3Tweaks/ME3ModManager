@@ -66,6 +66,7 @@ public class ModXMLTools {
 	private static class ManifestGeneratorUpdateCompressor extends SwingWorker<String, ThreadCommand> {
 		private Mod mod;
 		private String changelog;
+		private int jobCode;
 
 		public ManifestGeneratorUpdateCompressor(Mod mod) {
 			this.mod = mod;
@@ -80,6 +81,7 @@ public class ModXMLTools {
 			if (changelog != null && !changelog.equals("")) {
 				this.changelog = changelog;
 			}
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ManifestGenerator");
 		}
 
 		@Override
@@ -377,6 +379,7 @@ public class ModXMLTools {
 
 		@Override
 		public void done() {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			try {
 				get();
 			} catch (Exception e) {

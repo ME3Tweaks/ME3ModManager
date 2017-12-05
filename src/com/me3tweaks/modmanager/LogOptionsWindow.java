@@ -52,7 +52,7 @@ import org.apache.http.message.BasicNameValuePair;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.CustomDLC;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
@@ -273,6 +273,12 @@ public class LogOptionsWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Error checking game version:", e);
 				}
 
+				if (ModManager.isALOTInstalled(ModManagerWindow.GetBioGameDir())) {
+					log += "ALOT appears to be installed.\n";
+				} else {
+					log += "ALOT does not appear to be installed.\n";
+				}
+
 				if (minorBuildNum == 5 || minorBuildNum == -1) {
 					try {
 						String hash = MD5Checksum.getMD5Checksum(executable.getAbsolutePath());
@@ -289,6 +295,7 @@ public class LogOptionsWindow extends JDialog {
 					}
 				}
 				log += "\n";
+
 			}
 		}
 
@@ -369,7 +376,7 @@ public class LogOptionsWindow extends JDialog {
 			ArrayList<CustomDLC> customDLCs = new ArrayList<CustomDLC>();
 			for (String dlc : installedDLCs) {
 				File mountFile = new File(ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + "DLC/" + dlc + File.separator + "CookedPCConsole/Mount.dlc");
-				if (!ModType.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
+				if (!ModTypeConstants.isKnownDLCFolder(dlc) && dlc.toUpperCase().startsWith("DLC_") && mountFile.exists()) {
 					customDLCs.add(new CustomDLC(new MountFile(mountFile.getAbsolutePath()), dlc));
 				}
 			}
@@ -436,7 +443,7 @@ public class LogOptionsWindow extends JDialog {
 				//add to list
 				File metacmm = new File(mainDlcDir + File.separator + dir + File.separator + "_metacmm.txt");
 				if (dir.toUpperCase().startsWith("DLC_")) {
-					if (ModType.isKnownDLCFolder(dir)) {
+					if (ModTypeConstants.isKnownDLCFolder(dir)) {
 						installeddlcstr += dir + " (Offical BioWare DLC)\n";
 						continue;
 					}

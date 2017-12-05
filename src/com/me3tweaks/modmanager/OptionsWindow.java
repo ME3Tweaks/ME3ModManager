@@ -35,9 +35,10 @@ public class OptionsWindow extends JDialog {
 	private AbstractButton logModInit;
 	private JCheckBox logPatchInit;
 	private JCheckBox autoFixControllerModMaker;
+	private JCheckBox checkForALOTOnModInstall;
 
 	public OptionsWindow(JFrame callingWindow) {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening Options Window");
 		setupWindow();
 		setLocationRelativeTo(callingWindow);
@@ -60,12 +61,8 @@ public class OptionsWindow extends JDialog {
 		enforceDotNetRequirement.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Wini ini;
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
+					Wini ini = ModManager.LoadSettingsINI();
 					ModManager.PERFORM_DOT_NET_CHECK = enforceDotNetRequirement.isSelected();
 					if (enforceDotNetRequirement.isSelected()) {
 						ModManager.debugLogger.writeMessage("Enabling .NET framework check");
@@ -139,7 +136,7 @@ public class OptionsWindow extends JDialog {
 				}
 			}
 		});
-		if (!ResourceUtils.is64BitWindows()){
+		if (!ResourceUtils.is64BitWindows()) {
 			compressCompatibilityGeneratorOutput.setEnabled(false);
 			compressCompatibilityGeneratorOutput.setToolTipText("Compressing output requires 64-bit version of Windows");
 		}
@@ -150,12 +147,8 @@ public class OptionsWindow extends JDialog {
 		autoInjectKeybindsModMaker.setSelected(ModManager.AUTO_INJECT_KEYBINDS);
 		autoInjectKeybindsModMaker.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Wini ini;
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
+					Wini ini = ModManager.LoadSettingsINI();
 					if (autoInjectKeybindsModMaker.isSelected()) {
 						ini.put("Settings", "autoinjectkeybinds", "1");
 					} else {
@@ -177,12 +170,8 @@ public class OptionsWindow extends JDialog {
 		autoFixControllerModMaker.setSelected(ModManager.MODMAKER_CONTROLLER_MOD_ADDINS);
 		autoFixControllerModMaker.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Wini ini;
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
+					Wini ini = ModManager.LoadSettingsINI();
 					if (autoFixControllerModMaker.isSelected()) {
 						ini.put("Settings", "controllermoduser", "1");
 					} else {
@@ -203,12 +192,8 @@ public class OptionsWindow extends JDialog {
 		autoUpdateModManager.setSelected(ModManager.AUTO_UPDATE_MOD_MANAGER);
 		autoUpdateModManager.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Wini ini;
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
+					Wini ini = ModManager.LoadSettingsINI();
 					if (autoUpdateModManager.isSelected()) {
 						ini.put("Settings", "checkforupdates", "1");
 					} else {
@@ -230,12 +215,9 @@ public class OptionsWindow extends JDialog {
 		autoUpdateMods.setSelected(ModManager.AUTO_UPDATE_CONTENT);
 		autoUpdateMods.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Wini ini;
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
+					Wini ini = ModManager.LoadSettingsINI();
+
 					ini.put("Settings", "autoupdatemods", autoUpdateMods.isSelected() ? "true" : "false");
 					ini.put("Settings", "declinedautoupdate", autoUpdateMods.isSelected() ? "false" : "true");
 					ini.store();
@@ -253,12 +235,8 @@ public class OptionsWindow extends JDialog {
 		autoApplyMixins.setSelected(ModManager.AUTO_APPLY_MODMAKER_MIXINS);
 		autoApplyMixins.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Wini ini;
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
+					Wini ini = ModManager.LoadSettingsINI();
 					ini.put("Settings", "autoinstallmixins", autoApplyMixins.isSelected() ? "1" : "0");
 					ini.store();
 					ModManager.AUTO_APPLY_MODMAKER_MIXINS = autoApplyMixins.isSelected();
@@ -276,12 +254,8 @@ public class OptionsWindow extends JDialog {
 			skipUpdate.setSelected(ModManager.SKIP_UPDATES_UNTIL_BUILD > ModManager.BUILD_NUMBER);
 			skipUpdate.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					Wini ini;
 					try {
-						File settings = new File(ModManager.SETTINGS_FILENAME);
-						if (!settings.exists())
-							settings.createNewFile();
-						ini = new Wini(settings);
+						Wini ini = ModManager.LoadSettingsINI();
 						if (skipUpdate.isSelected()) {
 							ModManager.debugLogger
 									.writeMessage("OPTIONS: User is skipping (has already skipped to see this checkbox) the next update, build " + (ModManager.BUILD_NUMBER + 1));
@@ -328,12 +302,8 @@ public class OptionsWindow extends JDialog {
 		logModInit.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
-				Wini ini;
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
+					Wini ini = ModManager.LoadSettingsINI();
 					ModManager.debugLogger.writeMessage("User changing run log mod init to " + logModInit.isSelected());
 					ini.put("Settings", "logmodinit", logModInit.isSelected() ? "1" : "0");
 					ModManager.LOG_MOD_INIT = logModInit.isSelected();
@@ -352,12 +322,8 @@ public class OptionsWindow extends JDialog {
 		logPatchInit.setSelected(ModManager.LOG_PATCH_INIT);
 		logPatchInit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Wini ini;
 				try {
-					File settings = new File(ModManager.SETTINGS_FILENAME);
-					if (!settings.exists())
-						settings.createNewFile();
-					ini = new Wini(settings);
+					Wini ini = ModManager.LoadSettingsINI();
 					ModManager.debugLogger.writeMessage("User changing run log mixin init to " + logPatchInit.isSelected());
 					ini.put("Settings", "logpatchinit", logPatchInit.isSelected() ? "1" : "0");
 					ModManager.LOG_PATCH_INIT = logPatchInit.isSelected();
@@ -370,6 +336,26 @@ public class OptionsWindow extends JDialog {
 			}
 		});
 
+		checkForALOTOnModInstall = new JCheckBox("<html><div style=\"width: 300px\">Prevent mod installation if ALOT is installed</div></html>");
+		checkForALOTOnModInstall.setToolTipText("<html>Stops installation of mods that will break the game if ALOT is intalled (mods that install pcc files).</html>");
+		checkForALOTOnModInstall.setSelected(ModManager.CHECK_FOR_ALOT_INSTALL);
+		checkForALOTOnModInstall.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					Wini ini = ModManager.LoadSettingsINI();
+					ModManager.debugLogger.writeMessage("User changing run check for alot install to " + checkForALOTOnModInstall.isSelected());
+					ini.put("Settings", "checkforalotinstall", checkForALOTOnModInstall.isSelected() ? "1" : "0");
+					ModManager.CHECK_FOR_ALOT_INSTALL = checkForALOTOnModInstall.isSelected();
+					ini.store();
+				} catch (InvalidFileFormatException ex) {
+					ex.printStackTrace();
+				} catch (IOException ex) {
+					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", ex);
+				}
+			}
+		});
+
+		optionsPanel.add(checkForALOTOnModInstall);
 		optionsPanel.add(autoApplyMixins);
 		optionsPanel.add(autoInjectKeybindsModMaker);
 		optionsPanel.add(autoFixControllerModMaker);

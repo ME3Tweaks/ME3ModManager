@@ -107,7 +107,7 @@ public class ModJob {
 	 */
 	public ModJob() {
 		setJobType(BASEGAME);
-		setJobName(ModType.BASEGAME);
+		setJobName(ModTypeConstants.BASEGAME);
 		filesToReplace = new ArrayList<String>();
 		filesToReplaceTargets = new ArrayList<String>();
 		addFiles = new ArrayList<String>();

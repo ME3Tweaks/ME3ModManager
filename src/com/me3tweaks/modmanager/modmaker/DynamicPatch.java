@@ -12,7 +12,6 @@ import org.w3c.dom.Node;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.utilities.datatypeconverter.DatatypeConverter;
-import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
 
 /**
  * Patch that can be compiled and applied on the fly

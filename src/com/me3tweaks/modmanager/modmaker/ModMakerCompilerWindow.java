@@ -69,7 +69,7 @@ import com.me3tweaks.modmanager.PatchLibraryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModDelta;
 import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.biodifficulty.Category;
@@ -103,6 +103,7 @@ public class ModMakerCompilerWindow extends JDialog {
 	private Mod mod;
 	private ArrayList<String> requiredMixinIds = new ArrayList<String>();
 	private ArrayList<DynamicPatch> dynamicMixins = new ArrayList<DynamicPatch>();
+	private int jobCode;
 
 	/**
 	 * Starts a modmaker session for a user-selected download
@@ -118,6 +119,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.code = code;
 		this.languages = languages;
 		setupWindow();
+		jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Compiling ModMaker Mod");
 		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiling ModMaker Mod...");
 		new ModDownloadWorker().execute();
 
@@ -237,8 +239,9 @@ public class ModMakerCompilerWindow extends JDialog {
 					modDelta = FileUtils.readFileToString(new File(code), StandardCharsets.UTF_8);
 				}
 				//File has been downloaded
+				File downloadedFile = new File(ModManager.getModmakerCacheDir() + mmcode + ".xml");
 				if (mmcode != 0) {
-					FileUtils.writeStringToFile(new File(ModManager.getModmakerCacheDir() + mmcode + ".xml"), modDelta, StandardCharsets.UTF_8);
+					FileUtils.writeStringToFile(downloadedFile, modDelta, StandardCharsets.UTF_8);
 				}
 				ModManager.debugLogger.writeMessage("Cached xml file to cache directory.");
 				publish(new ThreadCommand("UPDATE_INFO", "<html>Parsing Mod Delta</html>"));
@@ -254,6 +257,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					dispose();
 					publish(new ThreadCommand("ERROR", "<html>No mod with code " + code + " was found on ME3Tweaks ModMaker.</html>"));
 					running = false;
+					FileUtils.deleteQuietly(downloadedFile);
 					return;
 				}
 				parseModInfo();
@@ -436,6 +440,13 @@ public class ModMakerCompilerWindow extends JDialog {
 				new CoalDownloadWorker(coals, currentStepProgress).execute();
 			} catch (Exception e) {
 				ModManager.debugLogger.writeException(e);
+			}
+		}
+
+		protected void done() {
+			if (!running) {
+				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compile failed");
+				ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			}
 		}
 	}
@@ -1021,8 +1032,8 @@ public class ModMakerCompilerWindow extends JDialog {
 									if (path.equals("")) {
 										//will never find.
 										dispose();
-										JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Unable to compile mod.<br>Path for property is empty: " + newPropName + ".<br>Module: "
-												+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+										JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Unable to compile mod.<br>Path for property is empty: " + newPropName
+												+ ".<br>Module: " + intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 										error = true;
 										return null;
 									}
@@ -1056,8 +1067,8 @@ public class ModMakerCompilerWindow extends JDialog {
 											ModManager.debugLogger.writeError("Could not find property to update: " + path + " for property " + newPropName + " in module "
 													+ intCoalName + ". PArt of the file: " + iniFileName);
 
-											JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: "
-													+ intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+											JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Could not find the path " + path + " for property " + newPropName
+													+ ".<br>Module: " + intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 											error = true;
 											return null;
 										}
@@ -1066,8 +1077,8 @@ public class ModMakerCompilerWindow extends JDialog {
 										//we didn't find what we wanted...
 										dispose();
 										error = true;
-										JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Could not find the path " + path + " for property " + newPropName + ".<br>Module: " + intCoalName
-												+ "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+										JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "<html>Could not find the path " + path + " for property " + newPropName
+												+ ".<br>Module: " + intCoalName + "<br>File: " + iniFileName + "</html>", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 										return null;
 									}
 									if (operation.equals("addition")) {
@@ -1881,6 +1892,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			}
 			finishModMaker(newMod);
 		} else {
+			ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 			dispose();
 		}
 	}
@@ -1894,16 +1906,16 @@ public class ModMakerCompilerWindow extends JDialog {
 		}
 		ModManager.debugLogger.writeMessage("Running AutoTOC on new mod: " + modName);
 		new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
+		ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 		overallProgress.setValue(100);
 		stepsCompleted++;
 		ModManager.debugLogger.writeMessage("Mod successfully created:" + modName);
 		ModManager.debugLogger.writeMessage("===========END OF MODMAKER========");
 		//Mod Created!
-		dispose();
 		if (mod == null) {
 			//updater supresses this window
 			for (ModJob job : newMod.jobs) {
-				if (job.getJobName().equals(ModType.BINI)) {
+				if (job.getJobName().equals(ModTypeConstants.BINI)) {
 					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
 							//loader installed, no balance changes replacer
@@ -1919,11 +1931,13 @@ public class ModMakerCompilerWindow extends JDialog {
 					break;
 				}
 			}
+			dispose();
 			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			ModManagerWindow.ACTIVE_WINDOW.highlightMod(newMod);
 			JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, modName + " was successfully created!", "Mod Created", JOptionPane.INFORMATION_MESSAGE);
-
 		}
+		dispose();
+
 	}
 
 	private boolean hasKeybindsOverride() {

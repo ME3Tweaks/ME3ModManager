@@ -47,7 +47,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModType;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
 import com.me3tweaks.modmanager.repairdb.RepairFileInfo;
@@ -352,10 +352,10 @@ public class ModInstallWindow extends JDialog {
 				precheckJobs.addAll(mod.jobs);
 			}
 			for (ModJob job : precheckJobs) {
-				if (job.getJobName().equals(ModType.CUSTOMDLC) || job.getJobName().equals(ModType.TESTPATCH)) {
+				if (job.getJobName().equals(ModTypeConstants.CUSTOMDLC) || job.getJobName().equals(ModTypeConstants.TESTPATCH)) {
 					continue;
 				}
-				if ((job.getJobName().equals(ModType.BASEGAME) && job.getFilesToReplaceTargets().size() == 0 && job.getFilesToRemoveTargets().size() == 0)) {
+				if ((job.getJobName().equals(ModTypeConstants.BASEGAME) && job.getFilesToReplaceTargets().size() == 0 && job.getFilesToRemoveTargets().size() == 0)) {
 					continue;
 				}
 
@@ -635,7 +635,7 @@ public class ModInstallWindow extends JDialog {
 					Path originalpath = Paths.get(unpacked.toString());
 					if (!unpacked.getAbsolutePath().toLowerCase().endsWith("pcconsoletoc.bin")) {
 						try {
-							publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
+							publish(ModTypeConstants.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 							Path newfilepath = Paths.get(newFile);
 							Files.copy(newfilepath, originalpath, StandardCopyOption.REPLACE_EXISTING);
 							completedTaskSteps++;
@@ -662,7 +662,7 @@ public class ModInstallWindow extends JDialog {
 				File installFile = new File(me3dir + fileToAddTarget);
 				Path installPath = Paths.get(installFile.toString());
 				try {
-					publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(fileToAdd));
+					publish(ModTypeConstants.BASEGAME + ": Installing " + FilenameUtils.getName(fileToAdd));
 					Path newfilepath = Paths.get(fileToAdd);
 					if (installFile.exists()) {
 						installFile.delete();
@@ -723,7 +723,7 @@ public class ModInstallWindow extends JDialog {
 					File unpacked = new File(me3dir + fileToReplace);
 					Path originalpath = Paths.get(unpacked.toString());
 					try {
-						publish(ModType.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
+						publish(ModTypeConstants.BASEGAME + ": Installing " + FilenameUtils.getName(newFile));
 						Path newfilepath = Paths.get(newFile);
 						if (!unpacked.getParentFile().exists()) {
 							unpacked.getParentFile().mkdirs();
@@ -768,7 +768,7 @@ public class ModInstallWindow extends JDialog {
 			if (job.TESTPATCH) {
 				sfarName = "Patch_001.sfar";
 			}
-			long knownsfarsize = ModType.getSizesMap().get(job.getJobName());
+			long knownsfarsize = ModTypeConstants.getSizesMap().get(job.getJobName());
 			String sfarPath = ModManager.appendSlash(bioGameDir) + ModManager.appendSlash(job.getDLCFilePath()) + sfarName;
 			File sfarFile = new File(sfarPath);
 			if (sfarFile.exists()) {
@@ -955,7 +955,8 @@ public class ModInstallWindow extends JDialog {
 					// validate file to backup.
 					boolean justInstall = false;
 					if (rfi == null) {
-						int reply = JOptionPane.showOptionDialog(ModInstallWindow.this, "<html><div style=\"width: 400px\">The file:<br>" + relative + "<br>is not in the repair database. "
+						int reply = JOptionPane.showOptionDialog(ModInstallWindow.this, "<html><div style=\"width: 400px\">The file:<br>" + relative
+								+ "<br>is not in the repair database. "
 								+ "Installing/Removing this file may overwrite your default setup if you restore and have custom mods like texture swaps installed.</div></html>",
 								"Backing Up Unverified File", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
 								new String[] { "Add to DB and install", "Install file", "Cancel mod installation" }, "default");
@@ -1198,6 +1199,12 @@ public class ModInstallWindow extends JDialog {
 					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Deleting existing CustomDLC folder: " + dlcFolder);
 					FileUtils.deleteQuietly(dlcFolder);
 				}
+
+				dlcFolder = new File(dlcdir + File.separator + "x" + folder);
+				if (dlcFolder.exists() && dlcFolder.isDirectory()) {
+					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Deleting disabled CustomDLC folder: " + dlcFolder);
+					FileUtils.deleteQuietly(dlcFolder);
+				}
 			}
 			taskSteps = job.getFilesToReplaceTargets().size();
 			completedTaskSteps = 0;
@@ -1208,7 +1215,7 @@ public class ModInstallWindow extends JDialog {
 				String fileSource = job.getFilesToReplace().get(i);
 				// install file.
 				try {
-					publish(ModType.CUSTOMDLC + ": Installing " + FilenameUtils.getName(fileSource));
+					publish(ModTypeConstants.CUSTOMDLC + ": Installing " + FilenameUtils.getName(fileSource));
 					Path sourcePath = Paths.get(fileSource);
 					Path destPath = Paths.get(fileDestination);
 					File dest = new File(fileDestination);
@@ -1277,7 +1284,7 @@ public class ModInstallWindow extends JDialog {
 					String outdated = entry.getValue();
 
 					int result = JOptionPane.showConfirmDialog(ModInstallWindow.this, "<html><div style='width: 400px'>" + modname
-							+ "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "(" + ME3TweaksUtils.getThirdPartyModName(outdated)
+							+ "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "(" + ME3TweaksUtils.getThirdPartyModName(outdated, false)
 							+ ") is not compatible/no longer necessary for this mod. The mod indicates they should be deleted as they may conflict with this mod.<br><br>Delete the Custom DLC folder "
 							+ outdated + "?</div></html>", "Outdated CustomDLC detected", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {
@@ -1333,7 +1340,7 @@ public class ModInstallWindow extends JDialog {
 												"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
 												"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 										if (result == JOptionPane.YES_OPTION) {
-											new ASIModWindow(new File(bioGameDir).getParent());
+											new ASIModWindow(new File(bioGameDir).getParent(), true);
 										}
 									}
 								} else {
@@ -1343,7 +1350,7 @@ public class ModInstallWindow extends JDialog {
 											"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the binkw32 ASI loader installed as well as the Balance Changes Replacer ASI.\nOpen the ASI management window to install these?",
 											"ASI Loader + ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 									if (result == JOptionPane.YES_OPTION) {
-										new ASIModWindow(new File(bioGameDir).getParent());
+										new ASIModWindow(new File(bioGameDir).getParent(), true);
 									}
 								}
 							}
