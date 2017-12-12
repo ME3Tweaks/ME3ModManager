@@ -1649,7 +1649,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		backupCreateVanillaCopy = new JCheckBoxMenuItem("Create complete game backup (Unmodified)");
 		backupCreateVanillaCopy
 				.setToolTipText("<html>Create an entire copy of the game so you can do a complete restore in the future.<br>Useful if you are doing texture modding.</html>");
-		if (VanillaBackupWindow.GetFullBackupPath() != null) {
+		if (VanillaBackupWindow.GetFullBackupPath(false) != null) {
 			backupCreateVanillaCopy.setSelected(true);
 			backupCreateVanillaCopy.setText("Game has been fully backed up");
 			backupCreateVanillaCopy
@@ -2334,9 +2334,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == backupCreateVanillaCopy || e.getSource() == restoreVanillaCopy) {
-			backupCreateVanillaCopy.setSelected(VanillaBackupWindow.GetFullBackupPath() != null);
 			new VanillaBackupWindow(e.getSource() == backupCreateVanillaCopy);
-			backupCreateVanillaCopy.setSelected(VanillaBackupWindow.GetFullBackupPath() != null);
+			ModManager.debugLogger.writeMessage("Exit backup window - updating button status");
+			backupCreateVanillaCopy.setSelected(VanillaBackupWindow.GetFullBackupPath(false) != null);
 		} else if (e.getSource() == backupCreateGDB) {
 			if (validateBIOGameDir()) {
 				createBasegameDB(GetBioGameDir());
@@ -3265,7 +3265,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	private static void setBottomButtonState(boolean b) {
 		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir != null) {
-			ModManagerWindow.ACTIVE_WINDOW.buttonApplyMod.setEnabled(b);
+			ModManagerWindow.ACTIVE_WINDOW.buttonApplyMod.setEnabled(ACTIVE_WINDOW.modList.getSelectedIndex() >= 0 ? b : false);
 			ModManagerWindow.ACTIVE_WINDOW.buttonStartGame.setEnabled(b);
 		}
 	}
@@ -3323,43 +3323,47 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private boolean applyMod() {
 		ModManager.debugLogger.writeMessage("applyMod() method is executing.");
 		// Precheck for ALOT
-		Mod mod = modModel.get(modList.getSelectedIndex());
-		if (ModManager.CHECK_FOR_ALOT_INSTALL && ModManager.isALOTInstalled(GetBioGameDir())) {
-			boolean hasPCCInstall = false;
-			ModManager.debugLogger.writeMessage("ALOT is installed, checking for installation of non-testpatch PCC files...");
+		int index = modList.getSelectedIndex();
+		if (index >= 0) {
+			Mod mod = modModel.get(index);
+			if (ModManager.CHECK_FOR_ALOT_INSTALL && ModManager.isALOTInstalled(GetBioGameDir())) {
+				boolean hasPCCInstall = false;
+				ModManager.debugLogger.writeMessage("ALOT is installed, checking for installation of non-testpatch PCC files...");
 
-			for (ModJob job : mod.getJobs()) {
-				if (job.getJobName().equals(ModTypeConstants.TESTPATCH)) {
-					continue; //we don't are about this
-				}
-				for (String destFile : job.getFilesToReplaceTargets()) {
-					if (FilenameUtils.getExtension(destFile).toLowerCase().equals("pcc")) {
-						hasPCCInstall = true;
-						ModManager.debugLogger.writeMessage("Detected PCC file attempting to install over ALOT installation: " + destFile);
+				for (ModJob job : mod.getJobs()) {
+					if (job.getJobName().equals(ModTypeConstants.TESTPATCH)) {
+						continue; //we don't are about this
+					}
+					for (String destFile : job.getFilesToReplaceTargets()) {
+						if (FilenameUtils.getExtension(destFile).toLowerCase().equals("pcc")) {
+							hasPCCInstall = true;
+							ModManager.debugLogger.writeMessage("Detected PCC file attempting to install over ALOT installation: " + destFile);
+							break;
+						}
+					}
+					if (hasPCCInstall) {
 						break;
 					}
 				}
+
 				if (hasPCCInstall) {
-					break;
+					installBlockedByALOT(false);
+					return false;
+				} else {
+					ModManager.debugLogger.writeMessage("ALOT is installed, did not detect any potential issues for this mod install.");
 				}
 			}
 
-			if (hasPCCInstall) {
-				installBlockedByALOT(false);
-				return false;
-			} else {
-				ModManager.debugLogger.writeMessage("ALOT is installed, did not detect any potential issues for this mod install.");
+			int jobCode = submitBackgroundJob("ModInstall");
+			labelStatus.setText("Installing " + mod.getModName() + "...");
+			if (mod.getJobs().length > 0) {
+				checkDLCIsBackedUp(mod);
+				new ModInstallWindow(this, mod, null);
 			}
+			submitJobCompletion(jobCode);
+			return true;
 		}
-
-		int jobCode = submitBackgroundJob("ModInstall");
-		labelStatus.setText("Installing " + mod.getModName() + "...");
-		if (mod.getJobs().length > 0) {
-			checkDLCIsBackedUp(mod);
-			new ModInstallWindow(this, mod, null);
-		}
-		submitJobCompletion(jobCode);
-		return true;
+		return false;
 	}
 
 	/**
