@@ -1,9 +1,11 @@
 package com.me3tweaks.modmanager;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +47,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.me3tweaks.modmanager.objects.ProcessResult;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.utilities.datatypeconverter.DatatypeConverter;
 
 public class TLKTool {
@@ -66,6 +69,40 @@ public class TLKTool {
 	}
 
 	public static void main(String[] args) throws Exception {
+		ArrayList<String> sizeLines = new ArrayList<String>();
+		File f = new File("E:\\Documents\\Visual Studio 2015\\Projects\\AlotAddOnGUI\\AlotAddOnGUI\\bin\\x64\\Debug\\logs\\alotaddoninstaller-20171210.txt");
+		try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+			for (String line; (line = br.readLine()) != null;) {
+				// process the line.
+				if (line.contains("[SIZE]")) {
+					sizeLines.add(line);
+					System.out.println(line);
+				}
+			}
+			// line is not visible here.
+		}
+		long firstSize = 0;
+		long biggestSize = Long.MAX_VALUE;
+
+		int lastIndexOfSpace = sizeLines.get(0).lastIndexOf(" ");
+		firstSize = Long.parseLong(sizeLines.get(0).substring(lastIndexOfSpace + 1, sizeLines.get(0).length()));
+
+		System.out.println("Starting size: " + firstSize);
+
+		for (String str : sizeLines) {
+			lastIndexOfSpace = str.lastIndexOf(" ");
+			long size = Long.parseLong(str.substring(lastIndexOfSpace + 1, str.length()));
+			if (size < biggestSize) {
+				biggestSize = size;
+			}
+		}
+
+		System.out.println("Smallest size is " + biggestSize);
+		System.out.println("At most the disk space required was " + ResourceUtils.humanReadableByteCount((firstSize - biggestSize), true));
+
+		if (true) {
+			return;
+		}
 		orderINTFile();
 		buildITAFromINTSPController();
 		replacePCPlaceholdersWithXbox();

@@ -181,7 +181,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private JMenuItem toolsAutoTOCGame;
 	private JMenu restoreMenuAdvanced;
 	private boolean loadedFirstTime = false;
-	private JMenuItem toolMassEffectModder;
+	private JMenuItem toolAlotInstaller;
 	private ArrayList<MainUIBackgroundJob> backgroundJobs;
 	private JXCollapsiblePane activityPanel;
 
@@ -458,7 +458,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				isUpdate = false; //no mas
 				checkForContentUpdates(force || forcedByUpdate == true);
 			}
-			checkForMassEffectModderUpdates();
+			checkForALOTInstallerUpdates();
 			return null;
 		}
 
@@ -568,25 +568,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		 * Checks for the latest github release of MEM and stores the values in
 		 * memory. The values are used when attempting to start MEM.
 		 */
-		private void checkForMassEffectModderUpdates() {
+		private void checkForALOTInstallerUpdates() {
 			try {
-				String memEXELoc = ModManager.getMEMDirectory() + "MassEffectModder.exe";
-				File memEXE = new File(memEXELoc);
-				int localversion = 0;
-				if (memEXE.exists()) {
-					localversion = EXEFileInfo.getMajorVersionOfProgram(memEXELoc);
-				}
-
-				String memReleaseAPIEndpoint = "https://api.github.com/repos/MassEffectModder/MassEffectModder/releases/latest";
-				String response = IOUtils.toString(new URL(memReleaseAPIEndpoint), StandardCharsets.UTF_8);
+				String alotInstallerReleaseAPIEndpoint = "https://api.github.com/repos/Mgamerz/ALOTAddonGUI/releases/latest";
+				String response = IOUtils.toString(new URL(alotInstallerReleaseAPIEndpoint), StandardCharsets.UTF_8);
 				JSONParser parser = new JSONParser();
 				JSONObject latestRelease = (JSONObject) parser.parse(response);
 				String version = (String) latestRelease.get("tag_name");
-				int serverVersion = 0;
 				try {
-					serverVersion = Integer.parseInt(version);
-					ModManager.MASSEFFECTMODDER_LATESTVERSION = serverVersion;
-					ModManager.debugLogger.writeMessage("Latest MEM version on github: v" + ModManager.MASSEFFECTMODDER_LATESTVERSION);
+					ModManager.ALOTINSTALLER_LATESTVERSION = new Version(version);
+					ModManager.debugLogger.writeMessage("Latest ALOT Installer version on github: v" + ModManager.ALOTINSTALLER_LATESTVERSION);
 				} catch (NumberFormatException e) {
 					return;
 				}
@@ -594,12 +585,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				JSONArray assets = (JSONArray) latestRelease.get("assets");
 				if (assets.size() > 0) {
 					JSONObject releaseAsset = (JSONObject) assets.get(0);
-					ModManager.MASSEFFECTMODDER_DOWNLOADLINK = (String) releaseAsset.get("browser_download_url");
+					ModManager.ALOTINSTALLER_DOWNLOADLINK = (String) releaseAsset.get("browser_download_url");
 				}
 			} catch (IOException e) {
-				ModManager.debugLogger.writeErrorWithException("I/O Exception when checking Github for MEM update check:", e);
+				ModManager.debugLogger.writeErrorWithException("I/O Exception when checking Github for ALOT Installer update check:", e);
 			} catch (ParseException e1) {
-				ModManager.debugLogger.writeErrorWithException("Error in JSON returned from Github for MEM update check:", e1);
+				ModManager.debugLogger.writeErrorWithException("Error in JSON returned from Github for ALOT Installer update check:", e1);
 			}
 		}
 
@@ -1424,13 +1415,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		actionOptions = new JMenuItem("Options");
 		actionOptions.setToolTipText("Configure Mod Manager Options");
 
-		toolMassEffectModder = new JMenuItem("Mass Effect Modder");
+		toolAlotInstaller = new JMenuItem("ALOT Installer");
 		if (ResourceUtils.is64BitWindows()) {
-			toolMassEffectModder.setToolTipText(
-					"<html>Runs Mass Effect Modder.<br>Mass Effect Modder is a texturing tool for the Mass Effect series.<br>This tool is used to install ALOT and is much faster than ME3Explorer for installing textures.<br>Note: This is an external program and is not supported by ME3Tweaks.</html>");
+			toolAlotInstaller.setToolTipText(
+					"<html>Runs the ALOT installer.<br>The ALOT installer allows you to install high resolution texture packs for all three Mass Effect Trilogy games. It also includes ALOT Installer, a texturing program.<br>Note: This is an external program.</html>");
 		} else {
-			toolMassEffectModder.setToolTipText("<html>Mass Effect Modder requires 64-bit Windows</html>");
-			toolMassEffectModder.setEnabled(false);
+			toolAlotInstaller.setToolTipText("<html>ALOT Installer requires 64-bit Windows</html>");
+			toolAlotInstaller.setEnabled(false);
 		}
 		toolME3Explorer = new JMenuItem("ME3Explorer (ME3Tweaks Fork)");
 		toolME3Explorer.setToolTipText(
@@ -1597,7 +1588,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolME3Config.addActionListener(this);
 		toolsPCCDataDumper.addActionListener(this);
 		toolME3Explorer.addActionListener(this);
-		toolMassEffectModder.addActionListener(this);
+		toolAlotInstaller.addActionListener(this);
 		toolTankmasterTLK.addActionListener(this);
 		toolTankmasterCoalUI.addActionListener(this);
 
@@ -1625,7 +1616,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.add(toolsGrantWriteAccess);
 		toolsMenu.addSeparator();
 		toolsMenu.add(toolME3Config);
-		toolsMenu.add(toolMassEffectModder);
+		toolsMenu.add(toolAlotInstaller);
 		toolsMenu.add(toolME3Explorer);
 		toolsMenu.add(toolsPCCDataDumper);
 		//toolsMenu.add(parsersMenu); not enough content for this to be useful.
@@ -1649,7 +1640,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		backupCreateVanillaCopy = new JCheckBoxMenuItem("Create complete game backup (Unmodified)");
 		backupCreateVanillaCopy
 				.setToolTipText("<html>Create an entire copy of the game so you can do a complete restore in the future.<br>Useful if you are doing texture modding.</html>");
-		if (VanillaBackupWindow.GetFullBackupPath() != null) {
+		if (VanillaBackupWindow.GetFullBackupPath(false) != null) {
 			backupCreateVanillaCopy.setSelected(true);
 			backupCreateVanillaCopy.setText("Game has been fully backed up");
 			backupCreateVanillaCopy
@@ -2045,7 +2036,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under construction and is not fully functional in this build yet.");
+				//JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under construction and is not fully functional in this build yet.");
 				new ModDescEditorWindow(mod);
 			}
 
@@ -2334,9 +2325,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						"Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
 			}
 		} else if (e.getSource() == backupCreateVanillaCopy || e.getSource() == restoreVanillaCopy) {
-			backupCreateVanillaCopy.setSelected(VanillaBackupWindow.GetFullBackupPath() != null);
 			new VanillaBackupWindow(e.getSource() == backupCreateVanillaCopy);
-			backupCreateVanillaCopy.setSelected(VanillaBackupWindow.GetFullBackupPath() != null);
+			ModManager.debugLogger.writeMessage("Exit backup window - updating button status");
+			backupCreateVanillaCopy.setSelected(VanillaBackupWindow.GetFullBackupPath(false) != null);
 		} else if (e.getSource() == backupCreateGDB) {
 			if (validateBIOGameDir()) {
 				createBasegameDB(GetBioGameDir());
@@ -2691,69 +2682,73 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
 				new NetFrameworkMissingWindow("ME3Explorer requires .NET 4.5.2 or higher in order to run.");
 			}
-		} else if (e.getSource() == toolMassEffectModder) {
+		} else if (e.getSource() == toolAlotInstaller) {
 			if (ModManager.validateNETFrameworkIsInstalled()) {
 				updateApplyButton();
 				boolean prompt = false;
-				String extVersionStr = null;
-				File memEXE = new File(ModManager.getMEMDirectory() + "MassEffectModder.exe");
+				File alotInstallerEXE = new File(ModManager.getALOTInstallerDirectory() + "ALOTInstaller.exe");
 				String promptMessage = "Placeholder";
 				String promptTitle = "Placeholder";
 				int promptIcon = JOptionPane.ERROR_MESSAGE;
 
-				if (!memEXE.exists()) {
-					promptMessage = "Mass Effect Modder is not included in Mod Manager and must be downloaded.\nMod Manager can download version "
-							+ ModManager.MASSEFFECTMODDER_LATESTVERSION + " for you.\nDownload?";
+				if (!alotInstallerEXE.exists() && ModManager.ALOTINSTALLER_LATESTVERSION != null && ModManager.ALOTINSTALLER_DOWNLOADLINK != null) {
+					String latestVersion = ModManager.ALOTINSTALLER_LATESTVERSION.toString();
+					promptMessage = "ALOT Installer is not included in Mod Manager and must be downloaded.\nMod Manager can download version " + latestVersion
+							+ " for you.\nDownload?";
 					promptIcon = JOptionPane.WARNING_MESSAGE;
 					promptTitle = "Download required";
 					prompt = true;
-				} else {
-					if (ModManager.MASSEFFECTMODDER_LATESTVERSION > 0) {
-						int existingVersion = EXEFileInfo.getMajorVersionOfProgram(memEXE.getAbsolutePath());
-						if (existingVersion < ModManager.MASSEFFECTMODDER_LATESTVERSION) {
-							promptMessage = "Your local copy of Mass Effect Modder is out of date.\nLocal version: " + existingVersion + "\nLatest version: "
-									+ ModManager.MASSEFFECTMODDER_LATESTVERSION + "\nDownload latest version?";
-							promptIcon = JOptionPane.WARNING_MESSAGE;
-							promptTitle = "Update available";
-							prompt = true;
-						}
+				} else if (ModManager.ALOTINSTALLER_LATESTVERSION != null && ModManager.ALOTINSTALLER_DOWNLOADLINK != null) {
+					Version existingVersion = EXEFileInfo.getVersion(alotInstallerEXE.getAbsolutePath());
+					if (existingVersion.compareTo(ModManager.ALOTINSTALLER_LATESTVERSION) < 0) {
+						promptMessage = "Your local copy of ALOT Installer is out of date.\nLocal version: " + existingVersion + "\nLatest version: "
+								+ ModManager.ALOTINSTALLER_LATESTVERSION + "\nDownload latest version?";
+						promptIcon = JOptionPane.WARNING_MESSAGE;
+						promptTitle = "Update available";
+						prompt = true;
 					}
+				} else {
+					ModManager.debugLogger.writeMessage("No network connection at startup - no known way to download ALOT Installer.");
+					labelStatus.setText("Mod Manager needs network connection at startup");
 				}
 				if (prompt) {
 					// Show update
 					int update = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW, promptMessage, promptTitle, JOptionPane.YES_NO_OPTION, promptIcon);
 					if (update == JOptionPane.YES_OPTION) {
-						new MassEffectModderUpdaterWindow(ModManager.MASSEFFECTMODDER_LATESTVERSION, true);
+						new ALOTInstallerUpdaterWindow(ModManager.ALOTINSTALLER_LATESTVERSION, true);
 					} else {
-						if (memEXE.exists()) {
-							ModManager.debugLogger.writeMessage("Launching Mass Effect Modder");
-							ProcessBuilder pb = new ProcessBuilder(memEXE.getAbsolutePath());
+						if (alotInstallerEXE.exists()) {
+							ModManager.debugLogger.writeMessage("Launching ALOT Installer");
+							ProcessBuilder pb = new ProcessBuilder(alotInstallerEXE.getAbsolutePath());
+							pb.directory(new File(ModManager.getALOTInstallerDirectory()));
 							ModManager.runProcessDetached(pb);
-							labelStatus.setText("Launched Mass Effect Modder");
+							labelStatus.setText("Launched ALOT Installer");
 
 						} else {
-							ModManager.debugLogger.writeMessage("Aboring MEM launch - does not exist locally");
-							labelStatus.setText("Mass Effect Modder not available");
+							ModManager.debugLogger.writeMessage("Aboring ALOT Installer launch - does not exist locally");
+							labelStatus.setText("ALOT Installer not available");
 						}
 					}
 				} else {
-					if (memEXE.exists()) {
+					if (alotInstallerEXE.exists()) {
 						//run it
-						ModManager.debugLogger.writeMessage("Launching Mass Effect Modder");
-						ProcessBuilder pb = new ProcessBuilder(memEXE.getAbsolutePath());
+						ModManager.debugLogger.writeMessage("Launching ALOT Installer");
+						ProcessBuilder pb = new ProcessBuilder(alotInstallerEXE.getAbsolutePath());
 						ModManager.runProcessDetached(pb);
-						labelStatus.setText("Launched Mass Effect Modder");
+						labelStatus.setText("Launched ALOT Installer");
 					}
 				}
 
 			} else {
 				updateApplyButton();
 				labelStatus.setText(".NET Framework 4.5.2 or higher is missing");
-				ModManager.debugLogger.writeMessage("Run MEM: .NET is not installed");
-				new NetFrameworkMissingWindow("Mass Effect Modder requires .NET 4.5.2 or higher in order to run.");
+				ModManager.debugLogger.writeMessage("Run ALOT Installer: .NET is not installed");
+				new NetFrameworkMissingWindow("ALOT Installer requires .NET 4.5.2 or higher in order to run.");
 			}
 
-		} else if (e.getSource() == modManagementOpenModsFolder) {
+		} else if (e.getSource() == modManagementOpenModsFolder)
+
+		{
 			ResourceUtils.openDir(ModManager.getModsDir());
 		} else if (e.getSource() == modManagementClearPatchLibraryCache) {
 			File libraryDir = new File(ModManager.getPatchesDir() + "source");
@@ -3265,7 +3260,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	private static void setBottomButtonState(boolean b) {
 		if (ModManagerWindow.ACTIVE_WINDOW != null && ModManagerWindow.ACTIVE_WINDOW.comboboxBiogameDir != null) {
-			ModManagerWindow.ACTIVE_WINDOW.buttonApplyMod.setEnabled(b);
+			ModManagerWindow.ACTIVE_WINDOW.buttonApplyMod.setEnabled(ACTIVE_WINDOW.modList.getSelectedIndex() >= 0 ? b : false);
 			ModManagerWindow.ACTIVE_WINDOW.buttonStartGame.setEnabled(b);
 		}
 	}
@@ -3323,43 +3318,48 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private boolean applyMod() {
 		ModManager.debugLogger.writeMessage("applyMod() method is executing.");
 		// Precheck for ALOT
-		Mod mod = modModel.get(modList.getSelectedIndex());
-		if (ModManager.CHECK_FOR_ALOT_INSTALL && ModManager.isALOTInstalled(GetBioGameDir())) {
-			boolean hasPCCInstall = false;
-			ModManager.debugLogger.writeMessage("ALOT is installed, checking for installation of non-testpatch PCC files...");
+		int index = modList.getSelectedIndex();
+		if (index >= 0) {
+			Mod mod = modModel.get(index);
+			if (ModManager.CHECK_FOR_ALOT_INSTALL && ModManager.isALOTInstalled(GetBioGameDir())) {
+				boolean hasPCCInstall = false;
+				ModManager.debugLogger.writeMessage("ALOT is installed, checking for installation of non-testpatch PCC files...");
 
-			for (ModJob job : mod.getJobs()) {
-				if (job.getJobName().equals(ModTypeConstants.TESTPATCH)) {
-					continue; //we don't are about this
-				}
-				for (String destFile : job.getFilesToReplaceTargets()) {
-					if (FilenameUtils.getExtension(destFile).toLowerCase().equals("pcc")) {
-						hasPCCInstall = true;
-						ModManager.debugLogger.writeMessage("Detected PCC file attempting to install over ALOT installation: " + destFile);
+				for (ModJob job : mod.getJobs()) {
+					if (job.getJobName().equals(ModTypeConstants.TESTPATCH)) {
+						continue; //we don't are about this
+					}
+					for (String destFile : job.getFilesToReplaceTargets()) {
+						String extension = FilenameUtils.getExtension(destFile);
+						if (FilenameUtils.getExtension(destFile).toLowerCase().equals("pcc")) {
+							hasPCCInstall = true;
+							ModManager.debugLogger.writeMessage("Detected PCC file attempting to install over ALOT installation: " + destFile);
+							break;
+						}
+					}
+					if (hasPCCInstall) {
 						break;
 					}
 				}
+
 				if (hasPCCInstall) {
-					break;
+					installBlockedByALOT(false);
+					return false;
+				} else {
+					ModManager.debugLogger.writeMessage("ALOT is installed, did not detect any potential issues for this mod install.");
 				}
 			}
 
-			if (hasPCCInstall) {
-				installBlockedByALOT(false);
-				return false;
-			} else {
-				ModManager.debugLogger.writeMessage("ALOT is installed, did not detect any potential issues for this mod install.");
+			int jobCode = submitBackgroundJob("ModInstall");
+			labelStatus.setText("Installing " + mod.getModName() + "...");
+			if (mod.getJobs().length > 0) {
+				checkDLCIsBackedUp(mod);
+				new ModInstallWindow(this, mod, null);
 			}
+			submitJobCompletion(jobCode);
+			return true;
 		}
-
-		int jobCode = submitBackgroundJob("ModInstall");
-		labelStatus.setText("Installing " + mod.getModName() + "...");
-		if (mod.getJobs().length > 0) {
-			checkDLCIsBackedUp(mod);
-			new ModInstallWindow(this, mod, null);
-		}
-		submitJobCompletion(jobCode);
-		return true;
+		return false;
 	}
 
 	/**

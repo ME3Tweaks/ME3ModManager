@@ -69,6 +69,13 @@ public class AlternateFile {
 		associatedJobName = alt.associatedJobName;
 	}
 
+	/**
+	 * Empty constructor. Used for adding a new AlternateFile to a mod.
+	 */
+	public AlternateFile() {
+		// TODO Auto-generated constructor stub
+	}
+
 	public String getDescription() {
 		return description;
 	}

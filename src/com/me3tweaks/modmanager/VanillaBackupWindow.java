@@ -87,31 +87,34 @@ public class VanillaBackupWindow extends JDialog {
 	 * @return Filepath from registry to full backup path. If none exists, this
 	 *         returns null.
 	 */
-	public static String GetFullBackupPath() {
+	public static String GetFullBackupPath(boolean returnEvenIfInvalid) {
 		String backupPath = null;
 		try {
 			backupPath = Advapi32Util.registryGetStringValue(HKEY_CURRENT_USER, VanillaUserRegistryKey, VanillaUserRegistryValue);
 			File backupDir = new File(backupPath);
-
-			if (backupDir.exists() && backupDir.isDirectory() && verifyVanillaBackup(backupDir)) {
+			if (verifyVanillaBackup(backupDir)) {
 				ModManager.debugLogger.writeMessage("Found valid vanilla copy location in registry: " + backupPath);
 			} else {
-				ModManager.debugLogger.writeError("Found vanilla copy location in registry, but it doesn't seem to be valid, one of the validation checks failed");
-				backupPath = null;
+				ModManager.debugLogger.writeError("Found vanilla copy location in registry, but it doesn't seem to be valid, at least one of the validation checks failed");
 			}
 		} catch (Win32Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Win32Exception reading registry - assuming no backup exists yet (this is not really an error... mostly).", e);
 		}
 
-		if (backupPath != null && new File(backupPath).exists() && new File(backupPath).isDirectory()) {
-			return backupPath;
-
-		} else {
-			return null;
+		if (backupPath != null) {
+			if (new File(backupPath).exists() && new File(backupPath).isDirectory()) {
+				return backupPath;
+			} else if (returnEvenIfInvalid) {
+				ModManager.debugLogger.writeError("returnEvenIfInvalid - returning path anyways.");
+				return backupPath;
+			}
 		}
+		return null;
 	}
 
 	private void setupWindow(boolean isBackup) {
+		backupPath = GetFullBackupPath(true);
+
 		setTitle("Full Game Restoration");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setIconImages(ModManager.ICONS);
@@ -119,26 +122,36 @@ public class VanillaBackupWindow extends JDialog {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 
 		JPanel northPanel = new JPanel(new BorderLayout());
-		JLabel vanillaWindowDescription = new JLabel(
-				"<html><div style=\"width: 300px\">Mod Manager can create a full game snapshot that you can use to do a complete game restore from. This is known in Mod Manager as restoring to vanilla - where items are in an unmodded state.</div></html>");
-
-		northPanel.add(vanillaWindowDescription, BorderLayout.NORTH);
-		backupPath = GetFullBackupPath();
 
 		backupButton = new JButton("Create Backup");
 		restoreButton = new JButton("Restore Backup");
 
+		String message = "";
 		String backupLocMessage = "";
-		if (backupPath != null && new File(backupPath).exists() && new File(backupPath).isDirectory()) {
-			long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(backupPath), false);
-			String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
-			backupLocMessage = "Backup location: " + backupPath + ", " + sizeHR;
+		if (backupPath != null) {
+			if (new File(backupPath).exists() && new File(backupPath).isDirectory()) {
+				long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(backupPath), false);
+				String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
+				backupLocMessage = "Backup location: " + backupPath + ", " + sizeHR;
+				message = "<html><div style=\"width: 300px\">A full backup is available on disk.<br>This backup is shared with the ALOT Installer.</div></html>";
+			} else {
+				long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(ModManagerWindow.GetBioGameDir()), false);
+				String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
+				backupLocMessage = "No complete backup is available. Creating a new one will require about " + sizeHR + ".";
+				restoreButton.setEnabled(false);
+				message = "<html><div style=\"width: 300px\">A full backup indicator exists, but the listed directory doesn't exist:<br>" + backupPath + "</div></html>";
+
+			}
 		} else {
 			long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(ModManagerWindow.GetBioGameDir()), false);
 			String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
 			backupLocMessage = "No complete backup has been created. Creating one will require about " + sizeHR + ".";
 			restoreButton.setEnabled(false);
+			message = "<html><div style=\"width: 300px\">Mod Manager can create a full game snapshot that you can use to do a complete game restore from. This is known in Mod Manager as restoring to vanilla - where items are in an unmodded state.</div></html>";
 		}
+
+		JLabel vanillaWindowDescription = new JLabel(message);
+		northPanel.add(vanillaWindowDescription, BorderLayout.NORTH);
 
 		backupLocation = new JLabel(backupLocMessage);
 		northPanel.add(new JSeparator(), BorderLayout.CENTER);
@@ -263,7 +276,7 @@ public class VanillaBackupWindow extends JDialog {
 						chooser.setInitialDirectory(new java.io.File("."));
 						chooser.setTitle("Select backup directory");
 						File chosenDir = chooser.showDialog(null);
-						
+
 						if (chosenDir != null) {
 							long availableSpace = chosenDir.getUsableSpace();
 							if (availableSpace > gamedirsize) {
@@ -349,7 +362,6 @@ public class VanillaBackupWindow extends JDialog {
 	}
 
 	private static boolean verifyVanillaBackup(File backupDir) {
-
 		ModManager.debugLogger.writeMessage("Performing quick verify on backup directory: " + backupDir.getAbsolutePath());
 		for (String testSubpath : VanillaTestFiles) {
 			File testFile = new File(backupDir.getAbsolutePath() + File.separator + testSubpath);
