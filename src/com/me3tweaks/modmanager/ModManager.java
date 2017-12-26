@@ -73,6 +73,7 @@ import com.me3tweaks.modmanager.utilities.DebugLogger;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import com.me3tweaks.modmanager.utilities.Version;
 import com.sun.jna.Native;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.Kernel32;
@@ -90,7 +91,7 @@ public class ModManager {
 
 	public static final String VERSION = "5.0.7";
 	public static long BUILD_NUMBER = 82L;
-	public static final String BUILD_DATE = "12/03/2017";
+	public static final String BUILD_DATE = "12/25/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -131,8 +132,8 @@ public class ModManager {
 	public static boolean USE_WINDOWS_UI;
 	protected static boolean COMPRESS_COMPAT_OUTPUT = false;
 
-	public static String MASSEFFECTMODDER_DOWNLOADLINK;
-	public static int MASSEFFECTMODDER_LATESTVERSION;
+	public static String ALOTINSTALLER_DOWNLOADLINK;
+	public static Version ALOTINSTALLER_LATESTVERSION;
 
 	public static String TIPS_SERVICE_JSON;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
@@ -1705,6 +1706,9 @@ public class ModManager {
 	 * @return true if bink23 exists and bink32 hash fails, false otherwise
 	 */
 	public static boolean checkIfBinkBypassIsInstalled(String biogameDir) {
+		if (biogameDir == null) {
+			return false;
+		}
 		File bgdir = new File(biogameDir);
 		if (!bgdir.exists()) {
 			return false;
@@ -2581,10 +2585,10 @@ public class ModManager {
 
 	/**
 	 * 
-	 * @return data\MassEffectModder\
+	 * @return data\ALOTInstaller\
 	 */
-	public static String getMEMDirectory() {
-		File file = new File(getDataDir() + "MassEffectModder\\");
+	public static String getALOTInstallerDirectory() {
+		File file = new File(getDataDir() + "ALOTInstaller\\");
 		file.mkdirs();
 		return appendSlash(file.getAbsolutePath());
 	}

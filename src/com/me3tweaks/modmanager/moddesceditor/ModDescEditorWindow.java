@@ -58,9 +58,11 @@ public class ModDescEditorWindow extends JXFrame {
 	private Mod mod;
 	private static int SUBPANEL_INSET_LEFT = 30;
 	private ArrayList<MDECustomDLC> customDLCSelections = new ArrayList<>();
+	private ArrayList<MDEConditionalFileItem> conditionalFileItems = new ArrayList<MDEConditionalFileItem>();
+	private JLabel noAltFilesLabel;
 
 	public ModDescEditorWindow(Mod mod) {
-		ModManager.debugLogger.writeMessage("Reloading "+mod.getModName()+" without automatic alternates applied.");
+		ModManager.debugLogger.writeMessage("Reloading " + mod.getModName() + " without automatic alternates applied.");
 		Mod noAutoParse = new Mod();
 		noAutoParse.setShouldApplyAutos(false);
 		noAutoParse.loadMod(mod.getDescFile());
@@ -400,7 +402,7 @@ public class ModDescEditorWindow extends JXFrame {
 					gbc.gridy++;
 					jobPanel.add(additionsListPanel, gbc);
 				}
-				
+
 				//MANUAL ALTFILES
 				//ADD FILES
 				{
@@ -509,8 +511,7 @@ public class ModDescEditorWindow extends JXFrame {
 					jobPanel.add(additionsListPanel, gbc);
 				}
 			}
-			
-			
+
 			//REQUIREMENTS
 			if (!mdeJob.getRawHeader().equals(ModTypeConstants.BASEGAME)) {
 				JLabel requirementLabel = new JLabel("Reason for this task: " + mdeJob.getRawRequirementText());
@@ -530,8 +531,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 			baseOfficialPanel.add(jobHeaderPanel);
 			baseOfficialPanel.add(jobPane);
-			
-			
+
 		}
 
 		JButton addNewHeader = new JButton("Add new official files task");
@@ -635,35 +635,56 @@ public class ModDescEditorWindow extends JXFrame {
 						repaint();
 					}
 				} else {
-					JOptionPane.showMessageDialog(ModDescEditorWindow.this, "No folders in the mod folder are not already in use for installation.", "No folders available",
-							JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ModDescEditorWindow.this,
+							"No folders in the mod folder are not already in use for installation.\nCustomDLC folders must be in the root of the mod directory.",
+							"No folders available", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
 
 		//altfiles
 		JXPanel altFilesPanel = new JXPanel();
-		altFilesPanel.setLayout(new VerticalLayout(3));//(altFilesPanel, BoxLayout.Y_AXIS));
+		altFilesPanel.setLayout(new VerticalLayout());//(altFilesPanel, BoxLayout.Y_AXIS));
 		altFilesPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+		JPanel altFileRowsPanel = new JPanel(new VerticalLayout(3));
+		altFilesPanel.add(altFileRowsPanel);
 		{
 			JLabel altFilesIntroText = new JLabel(
 					"<html>You can specify that specific files are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>",
 					SwingConstants.LEFT);
 
 			altFilesIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
-			altFilesPanel.add(altFilesIntroText);
+			altFileRowsPanel.add(altFilesIntroText);
 
+			noAltFilesLabel = new JLabel("No alternate files specified.");
+			altFilesPanel.add(noAltFilesLabel);
 			if (mod.rawAltFilesText != null) {
 				expandCondFiles = true;
 
 				for (AlternateFile af : mod.getAlternateFiles()) {
 					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(this, af);
-					altFilesPanel.add(mdecfi.getPanel());
+					altFileRowsPanel.add(mdecfi.getPanel());
+					conditionalFileItems.add(mdecfi);
+					noAltFilesLabel.setVisible(false);
 				}
-			} else {
-
-				altFilesPanel.add(new JLabel("No altfiles specified."));
+				noAltFilesLabel.setVisible(false);
 			}
+
+			JButton addAltFile = new JButton("Add Alternate File");
+			addAltFile.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(ModDescEditorWindow.this, (AlternateFile) null);
+					altFileRowsPanel.add(mdecfi.getPanel());
+					mdecfi.getPanel().setCollapsed(false);
+					conditionalFileItems.add(mdecfi);
+					noAltFilesLabel.setVisible(false);
+				}
+			});
+			JPanel addAltFilePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			addAltFilePanel.add(addAltFile);
+			altFilesPanel.add(addAltFilePanel);
 		}
 		//altdlc in customdlc header.
 		JXPanel altDLCPanel = new JXPanel();
@@ -674,9 +695,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 		altDLCIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
 		altDLCPanel.add(altDLCIntroText);
-
 		{
-
 			if (mod.rawAltDlcText != null) {
 				expandCondDLC = true;
 				for (AlternateCustomDLC ad : mod.getAlternateCustomDLC()) {
@@ -815,5 +834,10 @@ public class ModDescEditorWindow extends JXFrame {
 
 	public void setMod(Mod mod) {
 		this.mod = mod;
+	}
+	
+	public void removeConditionalFileItem(MDEConditionalFileItem mdeConditionalFileItem) {
+		conditionalFileItems.remove(mdeConditionalFileItem);
+		noAltFilesLabel.setVisible(conditionalFileItems.size() == 0);
 	}
 }

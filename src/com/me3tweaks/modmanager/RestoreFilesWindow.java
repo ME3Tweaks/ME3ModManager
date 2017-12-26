@@ -711,12 +711,12 @@ public class RestoreFilesWindow extends JDialog {
 
 			if (backupSfar == null) {
 				//no normal backup.
-				String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath();
+				String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
 				if (vanillaBackupPath == null) {
 					//no backup!
 					publish(jobName + ": No backup exists, cannot restore.");
 					JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>No backup for " + jobName
-							+ " exists, you'll have to restore through Origin's Repair Game.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
+							+ " exists, you'll have to restore through Origin's Repair Game.<br>Select Backup > Backup DLC to avoid this issue after the game is restored.</html>",
 							"Error", JOptionPane.ERROR_MESSAGE);
 					return false;
 				}

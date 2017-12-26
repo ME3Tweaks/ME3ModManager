@@ -18,6 +18,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import org.jdesktop.swingx.HorizontalLayout;
+import org.jdesktop.swingx.JXCollapsiblePane;
 
 import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
@@ -30,10 +31,10 @@ import javafx.application.Platform;
 import javafx.stage.FileChooser;
 
 public class MDEConditionalFileItem {
-	private JPanel panel;
+	private JXCollapsiblePane collapsablePanel;
 
-	public JPanel getPanel() {
-		return panel;
+	public JXCollapsiblePane getPanel() {
+		return collapsablePanel;
 	}
 
 	public AlternateFile getAf() {
@@ -96,15 +97,30 @@ public class MDEConditionalFileItem {
 	public MDEConditionalFileItem(ModDescEditorWindow owningWindow, AlternateFile af) {
 		this.mod = owningWindow.getMod();
 		this.owningWindow = owningWindow;
+		boolean startCollapsed = false;
+		if (af == null) {
+			af = new AlternateFile();
+			startCollapsed = true;
+		}
 		this.af = af;
 		setupPanel();
+		collapsablePanel.setCollapsed(startCollapsed);
 	}
 
 	private void setupPanel() {
-		panel = new JPanel(new HorizontalLayout());
-
+		collapsablePanel = new JXCollapsiblePane();
+		JPanel panel = new JPanel(new HorizontalLayout());
+		collapsablePanel.add(panel);
 		minusButton = new JButton("-");
 		panel.add(minusButton);
+		minusButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				collapsablePanel.setCollapsed(true);
+				owningWindow.removeConditionalFileItem(MDEConditionalFileItem.this);
+			}
+		});
 
 		conditionBox = new JComboBox<String>(conditionsHuman);
 		operationBox = new JComboBox<String>(operationsHuman);
@@ -227,29 +243,42 @@ public class MDEConditionalFileItem {
 			}
 		});
 
-		switch (af.getCondition()) {
-		case AlternateFile.CONDITION_DLC_NOT_PRESENT:
-			conditionBox.setSelectedIndex(0);
-			break;
-		case AlternateFile.CONDITION_DLC_PRESENT:
-			conditionBox.setSelectedIndex(1);
-			break;
-		case AlternateFile.CONDITION_MANUAL:
+		if (af.getCondition() != null) {
+			switch (af.getCondition()) {
+			case AlternateFile.CONDITION_DLC_NOT_PRESENT:
+				conditionBox.setSelectedIndex(0);
+				break;
+			case AlternateFile.CONDITION_DLC_PRESENT:
+				conditionBox.setSelectedIndex(1);
+				break;
+			case AlternateFile.CONDITION_MANUAL:
+				conditionBox.setSelectedIndex(2);
+				break;
+			}
+		} else {
 			conditionBox.setSelectedIndex(2);
-			break;
 		}
 
-		switch (af.getOperation()) {
-		case AlternateFile.OPERATION_INSTALL:
-			operationBox.setSelectedIndex(0);
-			break;
-		case AlternateFile.OPERATION_NOINSTALL:
-			operationBox.setSelectedIndex(1);
-			break;
-		case AlternateFile.OPERATION_SUBSTITUTE:
+		if (af.getOperation() != null) {
+			switch (af.getOperation()) {
+			case AlternateFile.OPERATION_INSTALL:
+				operationBox.setSelectedIndex(0);
+				break;
+			case AlternateFile.OPERATION_NOINSTALL:
+				operationBox.setSelectedIndex(1);
+				break;
+			case AlternateFile.OPERATION_SUBSTITUTE:
+				operationBox.setSelectedIndex(2);
+				break;
+			}
+		} else {
 			operationBox.setSelectedIndex(2);
-			break;
 		}
 
+	}
+
+	private JPanel JXCollapsablePanel() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

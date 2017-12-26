@@ -39,18 +39,19 @@ import org.w3c.dom.Node;
 
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import com.me3tweaks.modmanager.utilities.Version;
 
 @SuppressWarnings("serial")
-public class MassEffectModderUpdaterWindow extends JDialog implements PropertyChangeListener {
+public class ALOTInstallerUpdaterWindow extends JDialog implements PropertyChangeListener {
 	// String downloadLink, updateScriptLink;
 	boolean error = false;
-	int version;
+	Version version;
 	JLabel introLabel, statusLabel;
 	JProgressBar downloadProgress;
 	private boolean startAfterFinish;
 
-	public MassEffectModderUpdaterWindow(int version, boolean startAfterFinish) {
-		ModManager.debugLogger.writeMessage("Opening MassEffecTModderUpdaterWindow - Download link: " + ModManager.MASSEFFECTMODDER_DOWNLOADLINK);
+	public ALOTInstallerUpdaterWindow(Version version, boolean startAfterFinish) {
+		ModManager.debugLogger.writeMessage("Opening ALOTInstaller - Download link: " + ModManager.ALOTINSTALLER_DOWNLOADLINK);
 		this.startAfterFinish = startAfterFinish;
 		this.version = version;
 
@@ -58,13 +59,13 @@ public class MassEffectModderUpdaterWindow extends JDialog implements PropertyCh
 
 		DownloadTask task = new DownloadTask(ModManager.getTempDir());
 		task.addPropertyChangeListener(this);
-		ModManager.debugLogger.writeMessage("Downloading Mass Effect Modder v" + version);
+		ModManager.debugLogger.writeMessage("Downloading ALOT Installer v" + version);
 		task.execute();
 		setVisible(true);
 	}
 
 	private void setupWindow() {
-		setTitle("Downloading Mass Effect Modder");
+		setTitle("Downloading ALOT Installer");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setResizable(false);
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
@@ -73,8 +74,8 @@ public class MassEffectModderUpdaterWindow extends JDialog implements PropertyCh
 		JPanel panel = new JPanel(new BorderLayout());
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
-		introLabel = new JLabel("Mod Manager is downloading Mass Effect Modder.");
-		statusLabel = new JLabel("<html>Downloading MEM from GitHub...<br>Mass Effect Modder is not part of Mod Manager.</html>");
+		introLabel = new JLabel("Mod Manager is downloading ALOT Installer.");
+		statusLabel = new JLabel("<html>Downloading ALOT Installer from GitHub...<br>ALOT Installer is not part of Mod Manager.</html>");
 
 		downloadProgress = new JProgressBar();
 		downloadProgress.setStringPainted(true);
@@ -133,7 +134,7 @@ public class MassEffectModderUpdaterWindow extends JDialog implements PropertyCh
 
 				// Download update
 				HTTPDownloadUtil util = new HTTPDownloadUtil();
-				util.downloadFile(ModManager.MASSEFFECTMODDER_DOWNLOADLINK);
+				util.downloadFile(ModManager.ALOTINSTALLER_DOWNLOADLINK);
 
 				// set file information on the GUI
 
@@ -161,21 +162,21 @@ public class MassEffectModderUpdaterWindow extends JDialog implements PropertyCh
 
 				util.disconnect();
 				publish(new ThreadCommand("SET_PROGRESSBAR_INDETERMINATE"));
-				publish(new ThreadCommand("SET_STATUS_TEXT", "<html>Extracting Mass Effect Modder...<br>Mass Effect Modder is not part of Mod Manager.</html>"));
+				publish(new ThreadCommand("SET_STATUS_TEXT", "<html>Extracting ALOT Installer...<br>ALOT Installer is not part of Mod Manager.</html>"));
 
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(ModManager.get7zExePath());
 				commandBuilder.add("-y"); // overwrite
 				commandBuilder.add("x"); // extract
 				commandBuilder.add(saveFilePath);// 7z file
-				commandBuilder.add("-o" + ModManager.getMEMDirectory()); // extraction path
+				commandBuilder.add("-o" + ModManager.getALOTInstallerDirectory()); // extraction path
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
-				ModManager.debugLogger.writeMessage("Extracting Mass Effect Modder...");
+				ModManager.debugLogger.writeMessage("Extracting ALOT Installer...");
 				ProcessBuilder pb = new ProcessBuilder(command);
 				ModManager.runProcess(pb);
 
 			} catch (IOException ex) {
-				ModManager.debugLogger.writeErrorWithException("Error downloading Mass Effect Modder: ", ex);
+				ModManager.debugLogger.writeErrorWithException("Error downloading ALOT Installer: ", ex);
 				publish(new ThreadCommand("DOWNLOAD_ERROR","Error downloading file:\n" + ex.getMessage()));
 				setProgress(0);
 				error = true;
@@ -196,7 +197,7 @@ public class MassEffectModderUpdaterWindow extends JDialog implements PropertyCh
 					statusLabel.setText(tc.getMessage());
 					break;
 				case "DOWNLOAD_ERROR":
-					JOptionPane.showMessageDialog(MassEffectModderUpdaterWindow.this, tc.getMessage(), "Download Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(ALOTInstallerUpdaterWindow.this, tc.getMessage(), "Download Error", JOptionPane.ERROR_MESSAGE);
 					break;
 				}
 			}
@@ -207,10 +208,11 @@ public class MassEffectModderUpdaterWindow extends JDialog implements PropertyCh
 		 */
 		@Override
 		protected void done() {
-			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updated Mass Effect Modder");
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updated ALOT Installer");
 			dispose();
 			if (startAfterFinish) {
-				ProcessBuilder pb = new ProcessBuilder(ModManager.getMEMDirectory() + "MassEffectModder.exe");
+				ProcessBuilder pb = new ProcessBuilder(ModManager.getALOTInstallerDirectory() + "ALOTInstaller.exe");
+				pb.directory(new File(ModManager.getALOTInstallerDirectory()));
 				ModManager.runProcessDetached(pb);
 			}
 		}
@@ -231,7 +233,7 @@ public class MassEffectModderUpdaterWindow extends JDialog implements PropertyCh
 		 */
 		private InputStream inputStream;
 
-		private String fileName = "MassEffectModderUpdate.7z";
+		private String fileName = "ALOTInstallerUpdate.7z";
 		private int contentLength;
 
 		/**
