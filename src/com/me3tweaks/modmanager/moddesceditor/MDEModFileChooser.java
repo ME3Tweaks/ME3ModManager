@@ -17,6 +17,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.apache.commons.io.FilenameUtils;
+
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.objects.ModJob;
 
@@ -41,9 +43,7 @@ public class MDEModFileChooser extends JDialog {
 
 	public void setupWindow(ModDescEditorWindow callingWindow, String currentOption, int optionType, ModJob job) {
 		JPanel contentPanel = new JPanel(new BorderLayout());
-
 		DefaultListModel<String> model = new DefaultListModel<String>();
-
 		if (optionType == OPTIONTYPE_SELECTONLY) {
 			//add files
 			for (String file : job.getFilesToReplaceTargets()) {
@@ -59,14 +59,18 @@ public class MDEModFileChooser extends JDialog {
 
 		JList<String> mainFileList = new JList<String>(model);
 		JScrollPane listScroller = new JScrollPane(mainFileList);
-		JTextField itemField = new JTextField(currentOption == null ? "Select file from the list" : currentOption);
+		String textForField = currentOption;
+		if (optionType == OPTIONTYPE_ADDONLY) {
+			textForField = FilenameUtils.getName(currentOption);
+		}
+		JTextField itemField = new JTextField(currentOption == null ? "Select file from the list" : textForField);
 
 		mainFileList.addListSelectionListener(new ListSelectionListener() {
 
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				// TODO Auto-generated method stub
-				if (!e.getValueIsAdjusting()) {
+				if (!e.getValueIsAdjusting() && optionType == OPTIONTYPE_SELECTONLY) {
 					itemField.setText(mainFileList.getSelectedValue());
 				}
 			}
@@ -79,11 +83,18 @@ public class MDEModFileChooser extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				selectedFile = itemField.getText();
-				dispose();
+				if (validateFields()) {
+					selectedFile = itemField.getText();
+					dispose();
+				}
+			}
+
+			private boolean validateFields() {
+				// TODO Auto-generated method stub
+				return true;
 			}
 		});
-		JLabel label = new JLabel("Type in a file path to install the extra file to.\nEntry must start with one of the options listed above.");
+		JLabel label = new JLabel("<html>Type in a file name to install the extra file to.<br>Entry will be put into the folder listed above.</html>");
 		bottomPanel.add(label, BorderLayout.NORTH);
 		bottomPanel.add(itemField, BorderLayout.CENTER);
 		bottomPanel.add(setFile, BorderLayout.EAST);

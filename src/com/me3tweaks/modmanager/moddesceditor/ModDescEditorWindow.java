@@ -823,6 +823,7 @@ public class ModDescEditorWindow extends JXFrame {
 		JButton subtractButton = new JButton("-");
 		custDLCLineItem.add(subtractButton);
 		String custDLCLine = src + " -> " + dest + " [mod folder -> installed folder]";
+		custDLCLineItem.add(Box.createRigidArea(new Dimension(5,5)));
 		custDLCLineItem.add(new JLabel(custDLCLine));
 		custDLCLineItem.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return new MDECustomDLC(custDLCLineItem, subtractButton, new AbstractMap.SimpleEntry<String, String>(src, dest));

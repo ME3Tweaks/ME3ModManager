@@ -302,11 +302,13 @@ public class ImportEntryWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since this is optional we will ignore this error: ", e);
 				}
 			}
-			String localModPath = ModManager.getModsDir() + modName;
+			String fileSystemName = modName.replaceAll("[\\\\/:*?\"<>|]", "_");
+
+			String localModPath = ModManager.getModsDir() + fileSystemName;
 			File localModPathFile = new File(localModPath);
 			localModPathFile.mkdirs();
 			ModManager.debugLogger.writeMessage("Importing mod: " + dlcModName + " to " + localModPathFile.getAbsolutePath());
-
+			
 			File exportF = new File(localModPathFile + File.separator + dlcModName);
 			FileUtils.deleteQuietly(exportF);
 			ModManager.debugLogger.writeMessage("Copying DLC folder: " + importF + " to " + exportF);
