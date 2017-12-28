@@ -1736,6 +1736,9 @@ public class ModManager {
 	 *         false otherwise
 	 */
 	public static boolean checkIfASIBinkBypassIsInstalled(String biogameDir) {
+		if (biogameDir == null) {
+			return false;
+		}
 		ModManager.debugLogger.writeMessage("Checking for ASI Binkw32 ASI with biogame location: " + biogameDir);
 		File bgdir = new File(biogameDir);
 		if (!bgdir.exists()) {
