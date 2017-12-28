@@ -27,3 +27,7 @@ patches/
 derby.log
 data/Coalesced.original
 /bin/
+data/me3tweaksservicescache/tipsservice.json
+data/help/DLC_AUTH_FAIL.png
+data/ALOTInstaller
+data/me3tweaksservicescache

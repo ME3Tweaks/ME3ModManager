@@ -86,12 +86,12 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.embed.swing.JFXPanel;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0.7";
+	public static final String VERSION = "5.0.7 MR1";
 	public static long BUILD_NUMBER = 82L;
-	public static final String BUILD_DATE = "12/25/2017";
+	public static final String BUILD_DATE = "12/27/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -1736,6 +1736,9 @@ public class ModManager {
 	 *         false otherwise
 	 */
 	public static boolean checkIfASIBinkBypassIsInstalled(String biogameDir) {
+		if (biogameDir == null) {
+			return false;
+		}
 		ModManager.debugLogger.writeMessage("Checking for ASI Binkw32 ASI with biogame location: " + biogameDir);
 		File bgdir = new File(biogameDir);
 		if (!bgdir.exists()) {
