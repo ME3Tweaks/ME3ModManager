@@ -719,7 +719,7 @@ public class ME3TweaksUtils {
 		}
 		return null;
 	}
-	
+
 	public static ArrayList<ThirdPartyImportingInfo> getThirdPartyImportingInfosBySize(long size) {
 		if (ModManager.THIRD_PARTY_IMPORTING_JSON == null) {
 			return null;
@@ -732,9 +732,22 @@ public class ME3TweaksUtils {
 			for (Object key : dbObj.keySet()) {
 				//based on you key types
 				String keyStr = (String) key;
-				JSONArray importingInfo = (JSONArray) dbObj.get(keyStr);
-				if (importingInfo != null) {
-					//TODO - GET INFO...
+				if (keyStr.equals(Long.toString(size))) {
+					JSONArray importingInfo = (JSONArray) dbObj.get(keyStr);
+					if (importingInfo != null) {
+
+						ArrayList<ThirdPartyImportingInfo> items = new ArrayList<>();
+						for (Object obj : importingInfo) {
+							JSONObject jobj = (JSONObject) obj;
+							String md5 = (String) jobj.get("md5");
+							String inarchivepathtosearch = (String) jobj.get("inarchivepathtosearch");
+							String filename = (String) jobj.get("filename");
+							int subdirectorydepth = Integer.parseInt((String) jobj.get("subdirectorydepth"));
+							ThirdPartyImportingInfo tpii = new ThirdPartyImportingInfo(md5, inarchivepathtosearch, filename, subdirectorydepth);
+							items.add(tpii);
+						}
+						return items;
+					}
 				}
 			}
 		} catch (ParseException e) {

@@ -8,7 +8,6 @@ import org.json.simple.JSONObject;
 public class ThirdPartyModInfo {
 	private String modname, modauthor, customDLCfolder, moddescription, modsite;
 	private int mountpriority; //unsigned short
-	private ArrayList<ImportingInfo> importingInfos;
 
 	/**
 	 * Copy constructor
@@ -28,10 +27,6 @@ public class ThirdPartyModInfo {
 		this.moddescription = original.moddescription;
 		this.modsite = original.modsite;
 		this.mountpriority = original.mountpriority;
-		this.importingInfos = new ArrayList<>();
-		for (ImportingInfo impinf : original.importingInfos) {
-			importingInfos.add(new ImportingInfo(impinf));
-		}
 	}
 
 	public ThirdPartyModInfo(String customdlcfolder, JSONObject modinfo) {
@@ -42,17 +37,6 @@ public class ThirdPartyModInfo {
 		this.modsite = (String) modinfo.get("modsite");
 		String priority = (String) modinfo.get("mountpriority");
 		this.mountpriority = Integer.parseInt(priority);
-		this.importingInfos = new ArrayList<>();
-		JSONArray importingInfo = (JSONArray) modinfo.get("importinginfo");
-		if (importingInfo != null) {
-			for (Object obj : importingInfo) {
-				JSONObject jsonObj = (JSONObject) obj;
-				ImportingInfo info = new ImportingInfo();
-				info.setMd5((String) jsonObj.get("md5"));
-				info.setSubPathToSearch((String) jsonObj.get("inarchivepathtosearch"));
-				System.out.println(info);
-			}
-		}
 	}
 
 	public String getModname() {

@@ -8,15 +8,12 @@ import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.CharSet;
 import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.ModImportArchiveWindow;
@@ -27,6 +24,7 @@ import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.CompressedMod;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ThirdPartyImportingInfo;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 
@@ -55,6 +53,7 @@ public class SevenZipCompressedModInspector {
 			this.parentPathsToExtract = parentPathsToExtract;
 			this.importworker = importworker;
 			this.compressedMod = compressedMod; //can be null. only used if mod is directly zipped or is unofficial
+			this.numCompletedFiles = 0;
 		}
 
 		public ISequentialOutStream getStream(int index, ExtractAskMode extractAskMode) throws SevenZipException {
@@ -63,28 +62,31 @@ public class SevenZipCompressedModInspector {
 			}
 
 			String outputDirectory = (String) inArchive.getProperty(index, PropID.PATH);
-			boolean modFound = false;
-			String modName = compressedMod.getModName();
-			modName = modName.replaceAll("/", "-");
-			modName = modName.replaceAll("\\\\", "-");
-			for (String modpath : parentPathsToExtract) {
-				if (modpath == null || outputDirectory.startsWith(modpath)) {
-					if (modpath == null) {
-						//prevents path creation
-						outputDirectory = modName + File.separator + outputDirectory;
-					} else {
-						File path = new File(modpath);
-						String parent = path.getParent();
-						if (parent != null) {
-							outputDirectory = ResourceUtils.getRelativePath(outputDirectory, parent, File.separator);
+			boolean folder = (boolean) inArchive.getProperty(index, PropID.IS_FOLDER);
+			if (folder) {
+				boolean modFound = false;
+				String modName = compressedMod.getModName();
+				modName = modName.replaceAll("/", "-");
+				modName = modName.replaceAll("\\\\", "-");
+				for (String modpath : parentPathsToExtract) {
+					if (modpath == null || outputDirectory.startsWith(modpath)) {
+						if (modpath == null) {
+							//prevents path creation
+							outputDirectory = modName + File.separator + outputDirectory;
 						} else {
-							outputDirectory = modName + "\\" + outputDirectory;
+							File path = new File(modpath);
+							String parent = path.getParent();
+							if (parent != null) {
+								outputDirectory = ResourceUtils.getRelativePath(outputDirectory, parent, File.separator);
+							} else {
+								outputDirectory = modName + "\\" + outputDirectory;
+							}
 						}
-					}
 
-					//this file is part of this modpath...
-					modFound = true;
-					break;
+						//this file is part of this modpath...
+						modFound = true;
+						break;
+					}
 				}
 			}
 			if (!modFound) {
@@ -104,7 +106,9 @@ public class SevenZipCompressedModInspector {
 			if (importworker != null) {
 				importworker.publishUpdate(new ThreadCommand("EXTRACTING_FILE", FilenameUtils.getName(finaldir)));
 			}
-
+			numCompletedFiles++;
+			int progress = (int) Math.min(100, (numCompletedFiles * 100.0 / numTotalFiles));
+			importworker.setProgressValue(progress);
 			return new ISequentialOutStream() {
 
 				public int write(byte[] data) throws SevenZipException {
@@ -133,7 +137,7 @@ public class SevenZipCompressedModInspector {
 							ModManager.debugLogger.writeErrorWithException("Could not close FileOutputStream", e);
 						}
 					}
-					return data.length; // Return amount of proceed data
+					return data.length; // Return amount of processed data
 				}
 			};
 		}
@@ -144,16 +148,11 @@ public class SevenZipCompressedModInspector {
 		public void setOperationResult(ExtractOperationResult extractOperationResult) throws SevenZipException {
 			if (extractOperationResult != ExtractOperationResult.OK) {
 				System.err.println("Extraction error");
-			} else {
-				//System.out.println("Extraction done.");
-				numCompletedFiles++;
-				int progress = (int) Math.min(100, ((numCompletedFiles * 1.0) / numTotalFiles) * 100);
-				System.out.println("Progress: " + numCompletedFiles + "/" + numTotalFiles + "*100 = " + ((numCompletedFiles * 1.0) / numTotalFiles) * 100);
-				importworker.setProgressValue(progress);
 			}
 		}
 
 		public void setCompleted(long completeValue) throws SevenZipException {
+
 		}
 
 		public void setTotal(long total) throws SevenZipException {
@@ -258,11 +257,11 @@ public class SevenZipCompressedModInspector {
 			String extractTop = cm.getDescLocationInArchive();
 			File parent = null;
 			if (extractTop != null) {
+				//Descfile Extracting
 				parent = new File(extractTop).getParentFile();
-			} else if (cm.getUnofficialImportRoot() != null) {
-				parent = new File(cm.getModName() + "\\" + cm.getUnofficialImportRoot());
 			}
 			if (parent == null) {
+				//top level extract
 				String modName = cm.getModName();
 				modName = modName.replaceAll("/", "-");
 				modName = modName.replaceAll("\\\\", "-"); //prevents path creation
@@ -302,10 +301,10 @@ public class SevenZipCompressedModInspector {
 					new RandomAccessFileInStream(randomAccessFile));
 
 			int count = inArchive.getNumberOfItems();
-			ArrayList<Integer> itemsToExtract = new ArrayList<Integer>();
 
 			//get parent paths of mods.
 			for (CompressedMod compressedMod : compressedModsToExtract) {
+				ArrayList<Integer> itemsToExtract = new ArrayList<Integer>();
 				ArrayList<String> parentPathsToExtract = new ArrayList<String>();
 				if (compressedMod.isOfficiallySupported()) {
 					String parent = new File(compressedMod.getDescLocationInArchive()).getParent();
@@ -336,9 +335,10 @@ public class SevenZipCompressedModInspector {
 				int[] items = new int[itemsToExtract.size()];
 				int i = 0;
 				for (Integer integer : itemsToExtract) {
-					items[i++] = integer.intValue();
+					items[i++] = integer.intValue(); //indexes to extract
 					//System.out.println(integer + " " + inArchive.getProperty(integer, PropID.PATH));
 				}
+				importWorker.publishUpdate(new ThreadCommand("EXTRACTING_MOD", compressedMod.getModName()));
 				DecompressModToDiskCallback dftmc = new DecompressModToDiskCallback(inArchive, parentPathsToExtract, numItems, compressedMod, importWorker);
 				inArchive.extract(items, false, // Non-test mode
 						dftmc);
@@ -396,6 +396,9 @@ public class SevenZipCompressedModInspector {
 
 		try {
 			randomAccessFile = new RandomAccessFile(archivePath, "r");
+			long fileSize = randomAccessFile.length();
+			ArrayList<ThirdPartyImportingInfo> thirdPartyImportsWithThisSize = ME3TweaksUtils.getThirdPartyImportingInfosBySize(fileSize);
+
 			inArchive = SevenZip.openInArchive(null, // autodetect archive type
 					new RandomAccessFileInStream(randomAccessFile));
 
@@ -424,11 +427,9 @@ public class SevenZipCompressedModInspector {
 						itemsToExtract.add(i);
 					}
 				}
-				if (path.startsWith("DLC_") && path.contains("\\CookedPCConsole\\Mount.dlc")) {
-					rootDLCFolders.add(path.substring(0, path.indexOf("\\")));
-				}
 			}
 
+			//Decompress moddesc.ini
 			if (!itemsToExtract.isEmpty()) {
 				int[] items = new int[itemsToExtract.size()];
 				int i = 0;
@@ -459,7 +460,95 @@ public class SevenZipCompressedModInspector {
 					compressed.add(cm);
 				}
 				return compressed;
-			} else if (rootDLCFolders.size() > 0) {
+			}
+
+			//No moddesc.ini files found. Lets do a second pass via size
+
+			if (thirdPartyImportsWithThisSize != null && thirdPartyImportsWithThisSize.size() > 0) {
+				//hash file
+				scanworker.publishUpdate(new ThreadCommand("SET_SUBTEXT_SCANNING", "Looking up importing info from Third Party Importing Service..."));
+				String hash = MD5Checksum.getMD5Checksum(archivePath);
+				ThirdPartyImportingInfo impinfo = null;
+				System.out.println("HASH: " + hash);
+
+				for (ThirdPartyImportingInfo info : thirdPartyImportsWithThisSize) {
+					System.out.println("fhash: " + info.getMd5() + " " + info.getFilename());
+
+					if (info.getMd5().equals(hash)) {
+						impinfo = info;
+						break;
+					}
+				}
+				if (impinfo != null) {
+					ArrayList<CompressedMod> compressed = new ArrayList<>();
+					ModManager.debugLogger.writeMessage("Got third party importing info TPIS.");
+					ArrayList<String> modFolders = new ArrayList<>();
+					for (int i = 0; i < count; i++) {
+						boolean isFolder = (boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
+						if (isFolder) {
+							String path = (String) inArchive.getProperty(i, PropID.PATH);
+							if (path.startsWith(impinfo.getInarchivepathtosearch()) && path.contains("CookedPCConsole") && path.contains("DLC_")) {
+								String withoutParentInfo = path.substring(impinfo.getInarchivepathtosearch().length());
+								if (withoutParentInfo.startsWith("\\")) {
+									withoutParentInfo = withoutParentInfo.substring(1);
+								}
+
+								int currentSubIndex = impinfo.getSubidrectorydepth();
+								while (currentSubIndex > 0) {
+									int subDirIndicatorIndex = withoutParentInfo.indexOf("\\");
+									if (subDirIndicatorIndex >= 0) {
+										withoutParentInfo = withoutParentInfo.substring(subDirIndicatorIndex);
+										if (withoutParentInfo.startsWith("\\")) {
+											withoutParentInfo = withoutParentInfo.substring(1);
+										} else {
+											break;
+										}
+									}
+									currentSubIndex--;
+								}
+
+								String cookedPCConsoleFolder = path;
+								String dlcFolderName = new File(cookedPCConsoleFolder).getParentFile().getName();
+								if (dlcFolderName != null) {
+									ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dlcFolderName);
+									if (tpmi != null) {
+										ModManager.debugLogger.writeMessage("Generating compressed mod (TPMI-based) for " + tpmi.getModname());
+										Wini moddesc = new Wini();
+										moddesc.add("ModManager", "cmmver", ModManager.MODDESC_VERSION_SUPPORT);
+										moddesc.add("ModInfo", "modname", tpmi.getModname());
+										moddesc.add("ModInfo", "moddev", tpmi.getModauthor());
+										moddesc.add("ModInfo", "modsite", tpmi.getModsite());
+										moddesc.add("ModInfo", "moddesc", tpmi.getModdescription());
+										moddesc.add("ModInfo", "unofficial", "true");
+										moddesc.add("CUSTOMDLC", "sourcedirs", dlcFolderName);
+										moddesc.add("CUSTOMDLC", "destdirs", dlcFolderName);
+										StringWriter writer = new StringWriter();
+										moddesc.store(writer);
+
+										Mod mod = new Mod(writer);
+										CompressedMod cm = new CompressedMod();
+										cm.setUnofficialModDescString(writer.toString());
+										File extractRoot = new File(cookedPCConsoleFolder).getParentFile(); //will be DLC_xxxxx
+										if (extractRoot.getParentFile() != null) {
+											//extract, keeping name
+											extractRoot = extractRoot.getParentFile();
+										}
+										cm.setUnofficialImportRoot(extractRoot.toString());
+										cm.setModDescMod(mod);
+										cm.setModDescription(mod.getModDisplayDescription());
+										cm.setModName(mod.getModName());
+										compressed.add(cm);
+									}
+								}
+							}
+						}
+					}
+					return compressed;
+				}
+			}
+
+			//Root files were found and no third party data was available, final pass
+			if (rootDLCFolders.size() > 0) {
 				//maybe we can pull mod from here
 				ArrayList<CompressedMod> compressed = new ArrayList<>();
 

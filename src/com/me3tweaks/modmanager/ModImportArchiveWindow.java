@@ -336,6 +336,10 @@ public class ModImportArchiveWindow extends JDialog {
 					rside += "\n\nReading mod data from archive, please wait...";
 					descriptionArea.setText(rside);
 					break;
+				case "SET_SUBTEXT_SCANNING":
+					String dside = "Scanning archive for Mod Manager mods...\n\n" + command.getMessage();
+					descriptionArea.setText(dside);
+					break;
 				case "RELEASE_WINDOW":
 					setModalityType(ModalityType.MODELESS);
 					break;
@@ -395,6 +399,7 @@ public class ModImportArchiveWindow extends JDialog {
 		private ArrayList<CompressedMod> modsToImport;
 		private String archiveFilePath;
 		private int jobCode;
+		private String CURRENT_MOD_NAME = "";
 
 		public ImportWorker(String archiveFilePath, ArrayList<CompressedMod> modsToImport) {
 			// TODO Auto-generated constructor stub
@@ -440,8 +445,11 @@ public class ModImportArchiveWindow extends JDialog {
 						ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = false;
 					}
 					break;
+				case "EXTRACTING_MOD":
+					CURRENT_MOD_NAME = command.getMessage();
+					break;
 				case "EXTRACTING_FILE":
-					descriptionArea.setText("Importing mods into Mod Manager...\n\nExtracting\n - " + command.getMessage());
+					descriptionArea.setText("Importing mods into Mod Manager...\n\nExtracting " + CURRENT_MOD_NAME + "\n - " + command.getMessage());
 					break;
 				}
 			}
