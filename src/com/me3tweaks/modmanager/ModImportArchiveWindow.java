@@ -186,7 +186,12 @@ public class ModImportArchiveWindow extends JDialog {
 						descriptionArea.setText("Select a mod on the left to view its description.");
 					} else {
 						CompressedMod mod = compressedMods.get(selectedModIndex);
-						descriptionArea.setText(mod.getModDescription());
+						String modDescToDisplay = mod.getModDescription();
+						if (!mod.isOfficiallySupported()) {
+							modDescToDisplay = "This mod archive was not built for use with Mod Manager in mind - importing it this way is experimental. If you encounter issues with this mod, it may be an issue due to importing and not from the mod developer.\n\n"
+									+ modDescToDisplay;
+						}
+						descriptionArea.setText(modDescToDisplay);
 						descriptionArea.setCaretPosition(0);
 					}
 
@@ -423,7 +428,7 @@ public class ModImportArchiveWindow extends JDialog {
 				case "SIDELOAD_OR_NEW_PROMPT":
 					Object[] choices = { "SIDELOAD as update", "Import as NEW", "Cancel importing" };
 					String message = "You are importing " + command.getMessage()
-							+ ", which is already in imported into Mod Manager.\nPlease choose from one of the following options:\n\nSIDELOAD: Import mod as an update, overwriting local files with ones from this archive\nNEW: Delete local imported mod, and import mod from archive as a new mod\n\nIf you weren't instructed to select 'SIDELOAD as update' you should do 'Import as NEW'.\n\nSelect what you'd like to do.";
+							+ ", which is already imported into Mod Manager.\nPlease choose from one of the following options:\n\nSIDELOAD: Import mod as an update, overwriting local files with ones from this archive\nNEW: Delete local imported mod, and import mod from archive as a new mod\n\nIf you weren't instructed to select 'SIDELOAD as update' you should do 'Import as NEW'.\n\nSelect what you'd like to do.";
 
 					synchronized (lock) {
 						sideloadresult = JOptionPane.showOptionDialog(ModImportArchiveWindow.this, message, "Mod to import already exists", JOptionPane.YES_NO_CANCEL_OPTION,
@@ -468,13 +473,20 @@ public class ModImportArchiveWindow extends JDialog {
 			repaint();
 			if (!error) {
 				ModManager.debugLogger.writeMessage("[IMPORTWORKER] Import successful.");
-				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
-				ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
-				dispose();
-				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
-				if (modsToImport.size() == 1) {
-					//Highlight it
-					//don't have a way to figure out what was just imported...
+				try {
+					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+					ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
+
+					dispose();
+					JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
+					if (modsToImport.size() == 1) {
+						//Highlight it
+						//don't have a way to figure out what was just imported...
+					}
+				} catch (Exception e) {
+					dispose();
+					JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mod import succeeded, but one of the mods was unable to load.", "Import Failed",
+							JOptionPane.ERROR_MESSAGE);
 				}
 				return;
 			} else {

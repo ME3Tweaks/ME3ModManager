@@ -519,7 +519,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				try {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
 					ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
-					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice?highprioritysupport=true"),
+					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyidentificationservice2?highprioritysupport=true"),
 							ModManager.getThirdPartyModDBFile());
 					ModManager.THIRD_PARTY_MOD_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModDBFile(), StandardCharsets.UTF_8);
 					ModManager.debugLogger.writeMessage("Downloaded third party mod data from identification service");
@@ -531,6 +531,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					// TODO Auto-generated catch block
 					ModManager.debugLogger.writeErrorWithException("Failed to download third party identification data: ", e);
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party mod identification info"));
+				}
+				
+				//THIRD PARTY MOD IMPORTING SERVICE
+				try {
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod importing info"));
+					ModManager.debugLogger.writeMessage("Downloading third party importing data from importing service");
+					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyimportingservice"),
+							ModManager.getThirdPartyModDBFile());
+					ModManager.THIRD_PARTY_IMPORTING_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModImportingDBFile(), StandardCharsets.UTF_8);
+					ModManager.debugLogger.writeMessage("Downloaded third party importing data from importing service");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod importing info"));
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					ModManager.debugLogger.writeErrorWithException("Failed to download third party importing data: ", e);
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party importing info"));
 				}
 
 				//TIPS SERVICE

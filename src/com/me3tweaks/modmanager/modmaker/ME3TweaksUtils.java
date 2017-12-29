@@ -17,6 +17,7 @@ import org.json.simple.parser.ParseException;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
+import com.me3tweaks.modmanager.objects.ThirdPartyImportingInfo;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 
 /**
@@ -711,6 +712,29 @@ public class ME3TweaksUtils {
 				//System.out.println(mountpriority);
 				if (mountpriority.equalsIgnoreCase(priorityString)) {
 					return new ThirdPartyModInfo(keyStr, modinfo);
+				}
+			}
+		} catch (ParseException e) {
+			ModManager.debugLogger.writeErrorWithException("Failed to parse 3rd party mod information: ", e);
+		}
+		return null;
+	}
+	
+	public static ArrayList<ThirdPartyImportingInfo> getThirdPartyImportingInfosBySize(long size) {
+		if (ModManager.THIRD_PARTY_IMPORTING_JSON == null) {
+			return null;
+		}
+		ModManager.debugLogger.writeMessage("Looking up importing information by archive size: " + size);
+		try {
+			JSONParser parser = new JSONParser();
+			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_IMPORTING_JSON);
+
+			for (Object key : dbObj.keySet()) {
+				//based on you key types
+				String keyStr = (String) key;
+				JSONArray importingInfo = (JSONArray) dbObj.get(keyStr);
+				if (importingInfo != null) {
+					//TODO - GET INFO...
 				}
 			}
 		} catch (ParseException e) {

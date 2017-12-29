@@ -86,7 +86,7 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.embed.swing.JFXPanel;
 
 public class ModManager {
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
 	public static final String VERSION = "5.0.7 MR1";
@@ -134,7 +134,7 @@ public class ModManager {
 
 	public static String ALOTINSTALLER_DOWNLOADLINK;
 	public static Version ALOTINSTALLER_LATESTVERSION;
-
+	public static String THIRD_PARTY_IMPORTING_JSON;
 	public static String TIPS_SERVICE_JSON;
 	protected final static int COALESCED_MAGIC_NUMBER = 1836215654;
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
@@ -523,6 +523,13 @@ public class ModManager {
 			} else {
 				ModManager.debugLogger.writeMessage("No third party identification service JSON found. May not have been downloaded yet...");
 			}
+			
+			if (ModManager.getThirdPartyModImportingDBFile().exists()) {
+				ModManager.debugLogger.writeMessage("Loading third party importing service JSON into memory");
+				ModManager.THIRD_PARTY_IMPORTING_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModImportingDBFile(), StandardCharsets.UTF_8);
+			} else {
+				ModManager.debugLogger.writeMessage("No third party importing service JSON found. May not have been downloaded yet...");
+			}
 
 			if (ModManager.getTipsServiceFile().exists()) {
 				ModManager.debugLogger.writeMessage("Loading ME3Tweaks Tips Service JSON into memory");
@@ -595,6 +602,10 @@ public class ModManager {
 					"Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.", "Mod Manager has crashed",
 					JOptionPane.ERROR_MESSAGE);
 		}
+	}
+
+	public static File getThirdPartyModImportingDBFile() {
+		return new File(getME3TweaksServicesCache() + "thirdpartyimportingdb.json");
 	}
 
 	/**

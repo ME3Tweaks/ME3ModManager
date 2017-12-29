@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,6 +16,7 @@ import java.util.TreeSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -67,6 +70,7 @@ public class Mod implements Comparable<Mod> {
 	public String rawAltFilesText;
 	public ArrayList<String> requiredDLC = new ArrayList<>();
 	private String rawOutdatedCustomDLCText;
+	private boolean modIsUnofficial;
 
 	public ArrayList<AlternateCustomDLC> getAppliedAutomaticAlternateCustomDLC() {
 		return appliedAutomaticAlternateCustomDLC;
@@ -74,6 +78,14 @@ public class Mod implements Comparable<Mod> {
 
 	public void setAppliedAutomaticAlternateCustomDLC(ArrayList<AlternateCustomDLC> appliedAutomaticAlternateCustomDLC) {
 		this.appliedAutomaticAlternateCustomDLC = appliedAutomaticAlternateCustomDLC;
+	}
+
+	public boolean isModIsUnofficial() {
+		return modIsUnofficial;
+	}
+
+	public void setModIsUnofficial(boolean modIsUnofficial) {
+		this.modIsUnofficial = modIsUnofficial;
 	}
 
 	public String getServerModFolder() {
@@ -129,7 +141,11 @@ public class Mod implements Comparable<Mod> {
 		try {
 			readDesc(new Wini(modDescFile));
 		} catch (Exception e) {
+			if (modName == null) {
+				modName = "Unknown mod";
+			}
 			ModManager.debugLogger.writeErrorWithException("Error reading moddesc.ini:", e);
+			setFailedReason("An exception occured reading moddesc.ini for this mod: " + ExceptionUtils.getStackTrace(e));
 			setValidMod(false);
 			return;
 		}
@@ -149,6 +165,28 @@ public class Mod implements Comparable<Mod> {
 		try {
 			Wini wini = new Wini();
 			wini.load(bytes.getInputStream());
+			readDesc(wini);
+		} catch (Exception e) {
+			ModManager.debugLogger.writeErrorWithException("Error reading moddesc.ini from stream:", e);
+			setValidMod(false);
+			return;
+		}
+	}
+
+	/**
+	 * Loads a moddesc from a stringwriter. This is used when dynamically
+	 * generating one for import from an unsupported mod.
+	 * 
+	 * @param writer
+	 */
+	public Mod(StringWriter writer) {
+		modDescFile = new File(System.getProperty("user.dir"));
+		ignoreLoadErrors = true;
+		modifyString = "";
+		jobs = new ArrayList<ModJob>();
+		try {
+			Wini wini = new Wini();
+			wini.load(new StringReader(writer.toString()));
 			readDesc(wini);
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Error reading moddesc.ini from stream:", e);
@@ -254,6 +292,8 @@ public class Mod implements Comparable<Mod> {
 			ModManager.debugLogger.writeError("Mod does not have a modname descriptor - marking invalid (" + modName + ") - will delay failing until update code is parsed.");
 			delayedFailure = "This mod does not have a moddesc descriptor under the [ModInfo] header in its moddesc.ini file. All Mod Manager mods must have a moddesc descriptor, which is the description shown to users in the right pane of the main Mod Manager window.";
 		}
+
+		modIsUnofficial = modini.get("ModInfo", "unofficial") != null;
 
 		// Check if this mod has been made for Mod Manager 2.0+ or legacy mode
 		modCMMVer = 1.0f;
@@ -671,7 +711,7 @@ public class Mod implements Comparable<Mod> {
 		if (modCMMVer >= 3.1)
 
 		{
-			ModManager.debugLogger.writeMessageConditionally("Mod built for CMM 3.1+, checking for CUSTOMDLC header", ModManager.LOG_MOD_INIT);
+			ModManager.debugLogger.writeMessageConditionally("Mod built for ModManager 3.1+, checking for CUSTOMDLC header", ModManager.LOG_MOD_INIT);
 			String iniModDir = modini.get(ModTypeConstants.CUSTOMDLC, "sourcedirs");
 			if (iniModDir != null && !iniModDir.equals("")) {
 				ModManager.debugLogger.writeMessageConditionally("Found CUSTOMDLC header", ModManager.LOG_MOD_INIT);
@@ -918,7 +958,7 @@ public class Mod implements Comparable<Mod> {
 			}
 		}
 
-		ModManager.debugLogger.writeMessageConditionally("Number of Mod Jobs:" + jobs.size(), ModManager.LOG_MOD_INIT);
+		ModManager.debugLogger.writeMessageConditionally("Number of Mod Jobs: " + jobs.size(), ModManager.LOG_MOD_INIT);
 		if (jobs.size() > 0) {
 			ModManager.debugLogger.writeMessageConditionally("Verified source files, mod should be OK to install", ModManager.LOG_MOD_INIT);
 			validMod = true;
@@ -1175,6 +1215,11 @@ public class Mod implements Comparable<Mod> {
 		// Add developer
 		if (modAuthor != null) {
 			modDisplayDescription += "\nMod Developer: " + modAuthor;
+		}
+
+		// Add developer
+		if (modIsUnofficial) {
+			modDisplayDescription += "\nThis mod was imported by Mod Manager using the ME3Tweaks Third Party Mod Identification Service.";
 		}
 
 		// Add mod manager build version
@@ -1771,6 +1816,9 @@ public class Mod implements Comparable<Mod> {
 
 	@Override
 	public int compareTo(Mod other) {
+		if (!validMod) {
+			return -1;
+		}
 		return getModName().toLowerCase().compareTo(other.getModName().toLowerCase());
 	}
 

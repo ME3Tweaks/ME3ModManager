@@ -262,5 +262,6 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 		deleteButton.setEnabled(true);
 		deleteButton.setToolTipText("Delete this mod from Mod Manager's library");
 		failedModDesc.setText(description);
+		failedModDesc.setCaretPosition(0);
 	}
 }
