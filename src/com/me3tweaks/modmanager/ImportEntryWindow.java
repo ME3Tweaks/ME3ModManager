@@ -403,7 +403,6 @@ public class ImportEntryWindow extends JDialog {
 				ex = e;
 			}
 			ModManager.debugLogger.writeMessage("Import of mod complete. Result code: " + result);
-			dispose();
 			if (result == OK) {
 				callingWindow.dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
@@ -420,8 +419,8 @@ public class ImportEntryWindow extends JDialog {
 					JOptionPane.showMessageDialog(ImportEntryWindow.this, "The mod that was imported could not be loaded. This may be an issue with Mod Manager.", "Import Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
-
 			}
+			dispose();
 		}
 
 	}

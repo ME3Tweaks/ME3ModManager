@@ -119,6 +119,7 @@ import com.sun.jna.platform.win32.Advapi32Util;
 
 import javafx.application.Platform;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import net.iharder.dnd.FileDrop;
 
 /**
@@ -532,13 +533,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeErrorWithException("Failed to download third party identification data: ", e);
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party mod identification info"));
 				}
-				
+
 				//THIRD PARTY MOD IMPORTING SERVICE
 				try {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod importing info"));
 					ModManager.debugLogger.writeMessage("Downloading third party importing data from importing service");
-					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyimportingservice"),
-							ModManager.getThirdPartyModImportingDBFile());
+					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyimportingservice"), ModManager.getThirdPartyModImportingDBFile());
 					ModManager.THIRD_PARTY_IMPORTING_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModImportingDBFile(), StandardCharsets.UTF_8);
 					ModManager.debugLogger.writeMessage("Downloaded third party importing data from importing service");
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod importing info"));
@@ -1202,8 +1202,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				"Mass Effect 3 BIOGame Directory (Installation Target)");
 
 		buttonBioGameDir = new JButton(useAddInstead ? "Add Target" : "Browse...");
-		buttonBioGameDir.setToolTipText(
-				"<html>Add a new BIOGame directory target.<br>This is located in the installation directory for Mass Effect 3.<br>This is located in the Origin Games folder.</html>");
+		buttonBioGameDir.setToolTipText("<html>Add a new game installation for installing mods to.</html>");
 		buttonBioGameDir.setPreferredSize(new Dimension(useAddInstead ? 105 : 90, 14));
 
 		buttonBioGameDir.addActionListener(this);
@@ -2226,22 +2225,23 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		// too bad we can't do a switch statement on the object :(
 		if (e.getSource() == buttonBioGameDir) {
 			Platform.runLater(() -> {
-				DirectoryChooser dirChooser = new DirectoryChooser();
+				FileChooser exeChooser = new FileChooser();
+				exeChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Mass Effect 3 Executable", "MassEffect3.exe"));
 				String biogamedir = GetBioGameDir();
 				if (biogamedir != null) {
 					File tryDir = new File(biogamedir);
 					if (tryDir.exists()) {
-						dirChooser.setInitialDirectory(new File(GetBioGameDir()));
+						exeChooser.setInitialDirectory(new File(GetBioGameDir()));
 					} else {
 						ModManager.debugLogger.writeMessage("Directory " + GetBioGameDir() + " does not exist, defaulting to working directory.");
 					}
 				} else {
-					dirChooser.setInitialDirectory(new java.io.File("."));
+					exeChooser.setInitialDirectory(new java.io.File("."));
 				}
-				dirChooser.setTitle("Select BIOGame directory");
-				File chosenDirectory = dirChooser.showDialog(null);
-				if (chosenDirectory != null) {
-					checkForValidBioGame(chosenDirectory);
+				exeChooser.setTitle("Select Mass Effect 3 Executable");
+				File chosenFile = exeChooser.showOpenDialog(null);
+				if (chosenFile != null) {
+					checkForValidBioGame(chosenFile);
 				} else {
 					ModManager.debugLogger.writeMessage("No directory selected...");
 				}
@@ -3138,8 +3138,52 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	private void checkForValidBioGame(File chosenFile) {
 		String chosenPath = chosenFile.getAbsolutePath();
+
+		if (FilenameUtils.getName(chosenPath).equals("MassEffect3.exe")) {
+			//adjust to biogame
+			File f = new File(chosenPath);
+			boolean showBadMessage = false;
+			if (f != null) {
+				f = f.getParentFile(); //Win32
+			}
+			if (f != null) {
+				f = f.getParentFile(); //Binaries
+			} else {
+				showBadMessage = true;
+			}
+
+			System.out.println(f);
+
+			if (f != null) {
+				f = f.getParentFile(); //Mass Effect 3
+			} else {
+				showBadMessage = true;
+			}
+
+			System.out.println(f);
+
+			if (f == null) {
+				showBadMessage = true;
+			}
+
+			if (showBadMessage) {
+				ModManager.debugLogger.writeMessage("Selected EXE is not part of a game installation because not enough parent directories exist.");
+				JOptionPane.showMessageDialog(ModManagerWindow.this,
+						"The selected EXE is not in a valid game installation,\nnot enough parent folders exist.\nMod Manager cannot use this as a installation target.",
+						"Protected Directory Selected", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			String gameDir = f.toString() + "\\BIOGame";
+			chosenPath = gameDir;
+		}
+
+		ModManager.debugLogger.writeMessage("User chose EXE - Game directory being checked is " + chosenPath);
+
 		if (internalValidateBIOGameDir(chosenPath)) {
-			chosenPath = new File(chosenPath).getParent();
+			String biogamePath = chosenPath;
+			chosenPath = new File(chosenPath).getParent(); //Game Directory
+			ModManager.debugLogger.writeMessage("Parent (after internal validation passed):" + chosenPath);
 
 			// Check to make sure path is not a backup path
 			File cmm_vanilla = new File(chosenPath + File.separator + "cmm_vanilla");
@@ -3153,7 +3197,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			// Check to make sure mod manager folder is not a subset
 			String localpath = System.getProperty("user.dir");
-			ModManager.debugLogger.writeMessage("Checking if biogame directory is a subdirectory of the game: " + chosenPath);
+			ModManager.debugLogger.writeMessage("Checking if mod manager directory is a subdirectory of the game: " + chosenPath);
 			ModManager.debugLogger.writeMessage("CMM Directory: " + localpath);
 			try {
 				String relativePath = ResourceUtils.getRelativePath(localpath, chosenPath, File.separator);
@@ -3174,7 +3218,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			int size = model.getSize();
 			for (int i = 0; i < size; i++) {
 				String element = model.getElementAt(i);
-				if (element.equalsIgnoreCase(chosenPath)) {
+				if (element.equalsIgnoreCase(biogamePath)) {
 					continue; //we'll put ours at the top of the list
 				}
 				biogameDirectories.add(element);
@@ -3182,13 +3226,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			comboboxBiogameDir.removeItemListener(BIOGAME_ITEM_LISTENER);
 			comboboxBiogameDir.removeAllItems();
-			comboboxBiogameDir.addItem(chosenPath); //our selected item
+			comboboxBiogameDir.addItem(biogamePath); //our selected item
 
 			for (String biodir : biogameDirectories) {
 				comboboxBiogameDir.addItem(biodir); //all the others
 			}
 
-			biogameDirectories.add(0, chosenPath);
+			biogameDirectories.add(0, biogamePath);
 
 			saveBiogamePath(biogameDirectories);
 			labelStatus.setText("Set game target directory");
@@ -3869,7 +3913,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		public void itemStateChanged(ItemEvent event) {
 			if (event.getStateChange() == ItemEvent.SELECTED) {
 				String selectedPath = (String) event.getItem();
-				String selectedGamePath = new File(selectedPath).getParent();
+				String selectedGamePath = new File(selectedPath).getParent(); //Game directory
 
 				//UPDATE REGISTRY KEY
 				String currentpath = ModManager.LookupGamePathViaRegistryKey(false);
@@ -3909,10 +3953,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 
 				//CHECK WRITE PERMISSIONS
-				boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
-						&& ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
-				if (!hasWritePermissions) {
-					showFolderPermissionsGrantDialog(selectedGamePath);
+				File biogame = new File(selectedGamePath + "\\BIOGame");
+				File selectedGamePathF = new File(selectedGamePath);
+				File cookedPCConsole = new File(selectedGamePath + "\\BIOGame\\CookedPCConsole");
+
+				if (biogame.exists() && selectedGamePathF.exists() && cookedPCConsole.exists()) { //prevents it from thinking it is unable to write due to non-existence
+					if (biogame.isDirectory() && selectedGamePathF.isDirectory() && cookedPCConsole.isDirectory()) { //make sure it is a folder so we can write into sub
+						boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
+								&& ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
+						if (!hasWritePermissions) {
+							showFolderPermissionsGrantDialog(selectedGamePath);
+						}
+					}
 				}
 			}
 		}
