@@ -5,10 +5,11 @@ import java.util.ArrayList;
 public class CompressedMod {
 
 	public int fileIndexInArchive;
-	public Mod modDescMod; //this will fail to be valid because the files are not decompressed yet.
+	public Mod modDescMod; // this will fail to be valid because the files are not decompressed yet.
 	public String modName, modDescription;
 	public long filesize = 0;
 	private String unofficialModDescString;
+
 	public String getUnofficialModDescString() {
 		return unofficialModDescString;
 	}
@@ -22,6 +23,7 @@ public class CompressedMod {
 	private String manifestLocationInArchive;
 	private boolean isOfficiallySupported = false;
 	private String unofficialImportRoot;
+	private boolean fullyUnofficial;
 
 	public boolean isOfficiallySupported() {
 		return isOfficiallySupported;
@@ -101,6 +103,14 @@ public class CompressedMod {
 
 	public String getUnofficialImportRoot() {
 		return unofficialImportRoot;
+	}
+
+	public void setFullyUnofficial() {
+		fullyUnofficial = true;
+	}
+
+	public boolean isFullyUnofficial() {
+		return fullyUnofficial;
 	}
 
 }

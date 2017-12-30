@@ -451,6 +451,9 @@ public class ModImportArchiveWindow extends JDialog {
 				case "EXTRACTING_FILE":
 					descriptionArea.setText("Importing mods into Mod Manager...\n\nExtracting " + CURRENT_MOD_NAME + "\n - " + command.getMessage());
 					break;
+				case "SET_MAINWINDOW_TEXT":
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(command.getMessage());
+					break;
 				}
 			}
 		}
