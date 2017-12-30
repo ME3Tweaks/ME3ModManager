@@ -3121,11 +3121,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	private void checkForValidBioGame(File chosenFile) {
 		String chosenPath = chosenFile.getAbsolutePath();
 		if (internalValidateBIOGameDir(chosenPath)) {
-			chosenPath = new File(chosenPath).getParent();
+			String biogamePath = chosenPath;
+			chosenPath = new File(chosenPath).getParent(); //Game Directory
+			ModManager.debugLogger.writeMessage("Parent (after internal validation passed):" + chosenPath);
 
 			// Check to make sure path is not a backup path
 			File cmm_vanilla = new File(chosenPath + File.separator + "cmm_vanilla");
-			ModManager.debugLogger.writeMessage("Checking if biogame directory is a vanilla backup: " + cmm_vanilla);
+			ModManager.debugLogger.writeMessage("Checking if mod manager directory is a vanilla backup: " + cmm_vanilla);
 			if (cmm_vanilla.exists()) {
 				ModManager.debugLogger.writeMessage("Selected directory is a vanilla backup, rejecting biogame choice.");
 				JOptionPane.showMessageDialog(ModManagerWindow.this, "The selected directory is marked as a vanilla backup.\nMod Manager cannot use this as a installation target.",
@@ -3156,7 +3158,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			int size = model.getSize();
 			for (int i = 0; i < size; i++) {
 				String element = model.getElementAt(i);
-				if (element.equalsIgnoreCase(chosenPath)) {
+				if (element.equalsIgnoreCase(biogamePath)) {
 					continue; //we'll put ours at the top of the list
 				}
 				biogameDirectories.add(element);
@@ -3164,7 +3166,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 			comboboxBiogameDir.removeItemListener(BIOGAME_ITEM_LISTENER);
 			comboboxBiogameDir.removeAllItems();
-			comboboxBiogameDir.addItem(chosenPath); //our selected item
+			comboboxBiogameDir.addItem(biogamePath); //our selected item
 
 			for (String biodir : biogameDirectories) {
 				comboboxBiogameDir.addItem(biodir); //all the others
@@ -3175,7 +3177,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			saveBiogamePath(biogameDirectories);
 			labelStatus.setText("Set game target directory");
 			labelStatus.setVisible(true);
-			comboboxBiogameDir.setSelectedItem(chosenPath);
+			comboboxBiogameDir.setSelectedItem(biogamePath);
 			comboboxBiogameDir.addItemListener(BIOGAME_ITEM_LISTENER);
 			validateBIOGameDir();
 		} else {
@@ -3891,10 +3893,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 
 				//CHECK WRITE PERMISSIONS
-				boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
-						&& ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
-				if (!hasWritePermissions) {
-					showFolderPermissionsGrantDialog(selectedGamePath);
+				File biogame = new File(selectedGamePath + "\\BIOGame");
+				File selectedGamePathF = new File(selectedGamePath);
+				File cookedPCConsole = new File(selectedGamePath + "\\BIOGame\\CookedPCConsole");
+
+				if (biogame.exists() && selectedGamePathF.exists() && cookedPCConsole.exists()) { //prevents it from thinking it is unable to write due to non-existence
+					if (biogame.isDirectory() && selectedGamePathF.isDirectory() && cookedPCConsole.isDirectory()) { //make sure it is a folder so we can write into sub
+						boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
+								&& ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
+						if (!hasWritePermissions) {
+							showFolderPermissionsGrantDialog(selectedGamePath);
+						}
+					}
 				}
 			}
 		}
