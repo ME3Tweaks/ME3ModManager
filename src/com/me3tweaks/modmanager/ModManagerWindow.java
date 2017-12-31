@@ -1029,14 +1029,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		setPreferredSize(minSize);
 		setMinimumSize(minSize);
 		ArrayList<String> directories = ModManager.getSavedBIOGameDirectories();
-
+		ArrayList<String> displayedDirectories = new ArrayList<String>();
 		DefaultComboBoxModel<String> biogameDirectoriesModel = new DefaultComboBoxModel<>();
 
 		comboboxBiogameDir = new JComboBox<String>();
 		comboboxBiogameDir.setModel(biogameDirectoriesModel);
 
 		for (String dir : directories) {
-			biogameDirectoriesModel.addElement(dir);
+			if (internalValidateBIOGameDir(dir)) {
+				biogameDirectoriesModel.addElement(dir);
+				displayedDirectories.add(dir);
+			} else {
+				ModManager.debugLogger.writeError("Saved biogame directory failed validation: " + dir);
+			}
 		}
 
 		ModManager.debugLogger.writeMessage("Setting active biogame directory from registry...");
@@ -1044,7 +1049,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		boolean useAddInstead = comboboxBiogameDir.getModel().getSize() > 0;
 		if (registrykey != null) {
 			registrykey = ResourceUtils.removeTrailingSlashes(registrykey);
-			int index = directories.indexOf(registrykey);
+			int index = displayedDirectories.indexOf(registrykey);
 			String gamedir = new File(registrykey).getParent();
 			if (index >= 0) {
 				comboboxBiogameDir.setSelectedIndex(index);
@@ -3913,8 +3918,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		public void itemStateChanged(ItemEvent event) {
 			if (event.getStateChange() == ItemEvent.SELECTED) {
 				String selectedPath = (String) event.getItem();
+				ModManager.debugLogger.writeMessage("Switching game targets to " + selectedPath);
 				String selectedGamePath = new File(selectedPath).getParent(); //Game directory
-
 				//UPDATE REGISTRY KEY
 				String currentpath = ModManager.LookupGamePathViaRegistryKey(false);
 				if (currentpath != null) {
@@ -3966,6 +3971,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						}
 					}
 				}
+				validateBIOGameDir(); //reset upper state
 			}
 		}
 	}

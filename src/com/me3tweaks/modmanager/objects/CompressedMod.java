@@ -9,6 +9,19 @@ public class CompressedMod {
 	public String modName, modDescription;
 	public long filesize = 0;
 	private String unofficialModDescString;
+	private String customDLCFolderName = "";
+
+	public String getCustomDLCFolderName() {
+		return customDLCFolderName;
+	}
+
+	public void setCustomDLCFolderName(String customDLCFolderName) {
+		this.customDLCFolderName = customDLCFolderName;
+	}
+
+	public void setFullyUnofficial(boolean fullyUnofficial) {
+		this.fullyUnofficial = fullyUnofficial;
+	}
 
 	public String getUnofficialModDescString() {
 		return unofficialModDescString;

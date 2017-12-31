@@ -37,7 +37,9 @@ import javax.swing.table.DefaultTableModel;
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.CompressedMod;
+import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.SevenZipCompressedModInspector;
@@ -370,6 +372,21 @@ public class ModImportArchiveWindow extends JDialog {
 			browseButton.setEnabled(true);
 
 			for (CompressedMod cm : compressedMods) {
+				if (!cm.isOfficiallySupported()) {
+					//Check for blacklist
+					ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(cm.getCustomDLCFolderName());
+					if (tpmi != null && tpmi.isBlacklistedForModImport()) {
+						progressBar.setIndeterminate(false);
+						progressBar.setVisible(false);
+						importButton.setVisible(true);
+						importButton.setEnabled(false);
+						importButton.setText("Mod cannot be imported");
+						descriptionArea.setText(tpmi.getModname()+" cannot be imported into Mod Manager - the mod setup is too complex for the Third Party Importing Service to build installation information for.");
+						return;
+
+					}
+				}
+
 				JCheckBox importBox = new JCheckBox(cm.getModName());
 				importBox.setSelected(true);
 				checkMap.put(importBox, cm);
@@ -486,19 +503,27 @@ public class ModImportArchiveWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("[IMPORTWORKER] Import successful.");
 				try {
 					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
-					ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
+					boolean checkForUpdates = false;
+					for (CompressedMod m : modsToImport) {
+						if (m.getModDescMod().isME3TweaksUpdatable()) {
+							checkForUpdates = true;
+							break;
+						}
+					}
 
-					dispose();
-					JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
+					if (checkForUpdates) {
+						ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
+					}
 					if (modsToImport.size() == 1) {
 						//Highlight it
-						//don't have a way to figure out what was just imported...
+						ModManagerWindow.ACTIVE_WINDOW.highlightMod(modsToImport.get(0).getModDescMod());
 					}
+					JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
 				} catch (Exception e) {
-					dispose();
 					JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mod import succeeded, but one of the mods was unable to load.", "Import Failed",
 							JOptionPane.ERROR_MESSAGE);
 				}
+				dispose();
 				return;
 			} else {
 				ModManager.debugLogger.writeError("[IMPORTWORKER] Import was not fully successful");
