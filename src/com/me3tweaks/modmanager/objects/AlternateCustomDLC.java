@@ -100,6 +100,13 @@ public class AlternateCustomDLC {
 		hasBeenChosen = alt.hasBeenChosen;
 	}
 
+	/**
+	 * Empty constructor, for use when building a new Conditional Custom DLC object
+	 */
+	public AlternateCustomDLC() {
+		// TODO Auto-generated constructor stub
+	}
+
 	public String getDescription() {
 		return description;
 	}

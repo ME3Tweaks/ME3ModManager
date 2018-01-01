@@ -1234,7 +1234,12 @@ public class ModInstallWindow extends JDialog {
 				try {
 					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
 					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Writing custom DLC metadata file: " + metadatapath);
-					FileUtils.writeStringToFile(new File(metadatapath), job.getOwningMod().getModName() + " " + job.getOwningMod().getVersion(), StandardCharsets.UTF_8);
+					String metadatatext = job.getOwningMod().getModName();
+					metadatatext += "\n"+job.getOwningMod().getVersion();
+					metadatatext += "\n"+ModManager.BUILD_NUMBER;
+					metadatatext += "\n"+ModManager.getGUID();
+					
+					FileUtils.writeStringToFile(new File(metadatapath), metadatatext, StandardCharsets.UTF_8);
 				} catch (IOException e) {
 					ModManager.debugLogger.writeErrorWithException("[CUSTOMDLC JOB]Couldn't write custom dlc metadata file:", e);
 				}

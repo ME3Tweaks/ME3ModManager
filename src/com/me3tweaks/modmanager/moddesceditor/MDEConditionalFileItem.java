@@ -14,6 +14,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
@@ -69,6 +70,14 @@ public class MDEConditionalFileItem {
 		return descriptionField;
 	}
 
+	public JTextField getUserReasonField() {
+		return userReasonField;
+	}
+
+	public void setUserReasonField(JTextField userReasonField) {
+		this.userReasonField = userReasonField;
+	}
+
 	private AlternateFile af;
 
 	private JComboBox<String> conditionBox;
@@ -80,7 +89,7 @@ public class MDEConditionalFileItem {
 	private static String[] operationsHuman = { "add an extra file", "don't install file", "substitute file" };
 
 	private JButton minusButton;
-	private JTextField descriptionField;
+	private JTextField descriptionField, userReasonField;
 
 	private Mod mod;
 
@@ -114,7 +123,7 @@ public class MDEConditionalFileItem {
 		minusButton = new JButton("-");
 		panel.add(minusButton);
 		minusButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				collapsablePanel.setCollapsed(true);
@@ -124,7 +133,12 @@ public class MDEConditionalFileItem {
 
 		conditionBox = new JComboBox<String>(conditionsHuman);
 		operationBox = new JComboBox<String>(operationsHuman);
-
+		userReasonField = new JTextField(af.getFriendlyName());
+		userReasonField.setToolTipText("User friendly name. If one is not entered, a automatically generated one is displayed instead.");
+		userReasonField.setColumns(30);
+		panel.add(userReasonField);
+		panel.add(Box.createRigidArea(new Dimension(itemSpacing * 2, 3)));
+		panel.add(new JSeparator(JSeparator.VERTICAL));
 		JLabel ifLabel = new JLabel("If");
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		panel.add(ifLabel);

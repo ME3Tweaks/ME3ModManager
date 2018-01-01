@@ -74,14 +74,26 @@ public class SevenZipCompressedModInspector {
 						outputDirectory = modName + File.separator + outputDirectory;
 					} else {
 						File path = new File(inArchivePathParent);
-						String parent = path.getParent();
 						if (compressedMod.isOfficiallySupported()) {
+							String descPos = compressedMod.getDescLocationInArchive();
+							File parent = new File(descPos).getParentFile();
 							if (parent != null) {
-								outputDirectory = ResourceUtils.getRelativePath(outputDirectory, parent, File.separator);
+								//check to see if this is more than 1 deep
+								File descParent = parent;
+								parent = parent.getParentFile();
+								if (parent != null) {
+									//make only one deep with in-archive name
+									outputDirectory = ResourceUtils.getRelativePath(outputDirectory, descParent.toString(), File.separator);
+								} else {
+									//it's only one deep, do nothing.
+								}
 							} else {
+								//it's at root. Put under mod name.
 								outputDirectory = modName + "\\" + outputDirectory;
 							}
 						} else {
+							String parent = path.getParent();
+
 							String shortenedOutput = outputDirectory;
 							if (inArchivePathParent.contains("\\")) {
 								shortenedOutput = outputDirectory.substring(inArchivePathParent.length());

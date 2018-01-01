@@ -381,7 +381,8 @@ public class ModImportArchiveWindow extends JDialog {
 						importButton.setVisible(true);
 						importButton.setEnabled(false);
 						importButton.setText("Mod cannot be imported");
-						descriptionArea.setText(tpmi.getModname()+" cannot be imported into Mod Manager - the mod setup is too complex for the Third Party Importing Service to build installation information for.");
+						descriptionArea.setText(tpmi.getModname()
+								+ " cannot be imported into Mod Manager - the mod setup is too complex for the Third Party Importing Service to build installation information for.");
 						return;
 
 					}
@@ -518,7 +519,8 @@ public class ModImportArchiveWindow extends JDialog {
 						//Highlight it
 						ModManagerWindow.ACTIVE_WINDOW.highlightMod(modsToImport.get(0).getModDescMod());
 					}
-					JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
+					dispose();
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mod import succeeded, but one of the mods was unable to load.", "Import Failed",
 							JOptionPane.ERROR_MESSAGE);

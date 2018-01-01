@@ -135,6 +135,11 @@ public class ModManager {
 	public final static String[] KNOWN_GUI_CUSTOMDLC_MODS = { "DLC_CON_XBX", "DLC_CON_UIScaling", "DLC_CON_UIScaling_Shared" };
 	public static final String[] SUPPORTED_GAME_LANGUAGES = { "INT", "ESN", "DEU", "ITA", "FRA", "RUS", "POL", "JPN" };
 	public static ImageIcon ACTIVITY_ICON;
+	private static String GUID;
+
+	public static String getGUID() {
+		return GUID;
+	}
 
 	public static final class Lock {
 	} //threading wait() and notifyall();
@@ -179,7 +184,18 @@ public class ModManager {
 					debugLogger.writeMessage("Using system JRE, not the bundled version.");
 				}
 				debugLogger.writeMessage("--------Mod Manager Main Startup--------");
-
+				String guid = settingsini.get("Settings","InstallationGUID");
+				if (guid == null || guid.equals("")) {
+					//Generate a GUID for this install so we can tell that this copy did X.
+					guid = java.util.UUID.randomUUID().toString();
+					settingsini.put("Settings", "InstallationGUID", guid);
+					settingsini.store();
+					ModManager.debugLogger.writeMessage("Generated GUID for this installation of Mod Manager");
+				} else {
+					ModManager.debugLogger.writeMessage("This installation has a GUID assigned to it");
+				}
+				GUID = guid;
+				
 				String verString = settingsini.get("Settings", "initialmodmanagerversionbuild");
 				if (verString == null || verString.equals("")) {
 					settingsini.put("Settings", "initialmodmanagerversionbuild", "Before " + ModManager.VERSION + "-b" + ModManager.BUILD_NUMBER);
