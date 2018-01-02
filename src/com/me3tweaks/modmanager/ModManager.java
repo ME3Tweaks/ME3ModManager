@@ -81,12 +81,12 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.embed.swing.JFXPanel;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.1";
+	public static final String VERSION = "5.1 Beta 1";
 	public static long BUILD_NUMBER = 83L;
-	public static final String BUILD_DATE = "12/30/2017";
+	public static final String BUILD_DATE = "1/2/2018";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
