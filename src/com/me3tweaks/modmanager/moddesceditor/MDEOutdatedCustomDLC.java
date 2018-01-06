@@ -25,6 +25,7 @@ import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -72,6 +73,8 @@ public class MDEOutdatedCustomDLC {
 		});
 
 		userReasonField = new JTextField(outdatedCustomDLC);
+		userReasonField.setUI(new HintTextFieldUI("DLC_MOD_OLDName"));
+
 		userReasonField.setToolTipText("User friendly name. If one is not entered, a automatically generated one is displayed instead.");
 		userReasonField.setColumns(30);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, itemSpacing)));

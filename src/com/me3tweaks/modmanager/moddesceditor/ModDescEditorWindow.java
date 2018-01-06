@@ -75,6 +75,18 @@ public class ModDescEditorWindow extends JXFrame {
 		setVisible(true);
 	}
 
+	public ArrayList<MDECustomDLC> getCustomDLCSelections() {
+		return customDLCSelections;
+	}
+
+	public JLabel getNoOutdatedCustomDLCLabel() {
+		return noOutdatedCustomDLCLabel;
+	}
+
+	public ArrayList<MDEOutdatedCustomDLC> getOutdatedCustomDLCItems() {
+		return outdatedCustomDLCItems;
+	}
+
 	private void setupWindow(Mod mod) {
 		this.setTitle(mod.getModName() + " - ModDesc Editor");
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -82,8 +94,8 @@ public class ModDescEditorWindow extends JXFrame {
 
 		JXPanel optionsPanel = new JXPanel(new VerticalLayout());
 		optionsPanel.setScrollableHeightHint(ScrollableSizeHint.NONE);
-		//METADATA PANEL==================================================
-		//Mod Name & ModDesc version
+		// METADATA PANEL==================================================
+		// Mod Name & ModDesc version
 		JXPanel metadataPanel = new JXPanel();
 		metadataPanel.setLayout(new VerticalLayout());
 
@@ -92,25 +104,29 @@ public class ModDescEditorWindow extends JXFrame {
 		nameFieldPanel.setLayout(new BoxLayout(nameFieldPanel, BoxLayout.X_AXIS));
 		namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.X_AXIS));
 
-		TitledBorder nameBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Name (Required)");
+		TitledBorder nameBorder = BorderFactory
+				.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Name (Required)");
 		nameFieldPanel.setBorder(nameBorder);
 		JTextField modNameField = new JTextField(mod.getModName());
 		modNameField.setToolTipText("Display name for your mod in Mod Manager.");
 		nameFieldPanel.add(modNameField);
 
 		namePanel.add(nameFieldPanel);
-		//RIGHT SIDE NAME PANEL
+		// RIGHT SIDE NAME PANEL
 		JXPanel versionPanel = new JXPanel();
-		TitledBorder versionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Version Info (Required)");
+		TitledBorder versionBorder = BorderFactory
+				.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Version Info (Required)");
 		versionPanel.setBorder(versionBorder);
 		versionPanel.setLayout(new BoxLayout(versionPanel, BoxLayout.X_AXIS));
 
 		JXPanel devPanel = new JXPanel();
 		devPanel.setLayout(new BoxLayout(devPanel, BoxLayout.X_AXIS));
-		TitledBorder devBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Developer Name (Required)");
+		TitledBorder devBorder = BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Developer Name (Required)");
 		devPanel.setBorder(devBorder);
 		JTextField modDevField = new JTextField(mod.getAuthor());
-		modDevField.setToolTipText("<html>Name of the mod developer. This should be your username/alias you go by in the modding scene.</html>");
+		modDevField.setToolTipText(
+				"<html>Name of the mod developer. This should be your username/alias you go by in the modding scene.</html>");
 		devPanel.add(modDevField, BorderLayout.NORTH);
 		namePanel.add(devPanel);
 
@@ -148,12 +164,13 @@ public class ModDescEditorWindow extends JXFrame {
 
 		namePanel.add(versionPanel);
 
-		//Mod Site Panel row
+		// Mod Site Panel row
 		JXPanel secondRowPanel = new JXPanel();
 		secondRowPanel.setLayout(new BoxLayout(secondRowPanel, BoxLayout.X_AXIS));
 
 		JXPanel sitePanel = new JXPanel(new BorderLayout());
-		TitledBorder siteBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Website/URL (Recommended)");
+		TitledBorder siteBorder = BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Website/URL (Recommended)");
 		sitePanel.setBorder(siteBorder);
 		JTextField modSiteField = new JTextField(mod.getModSite());
 		modSiteField.setToolTipText(
@@ -162,9 +179,10 @@ public class ModDescEditorWindow extends JXFrame {
 
 		secondRowPanel.add(sitePanel);
 
-		//Mod Description Panel
+		// Mod Description Panel
 		JXPanel descriptionPanel = new JXPanel(new BorderLayout());
-		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description (Required)");
+		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description (Required)");
 		descriptionPanel.setBorder(descriptionBorder);
 		JTextArea modDescriptionField = new JTextArea(ResourceUtils.convertBrToNewline(mod.getModDescription()));
 		modDescriptionField.setToolTipText(
@@ -185,7 +203,7 @@ public class ModDescEditorWindow extends JXFrame {
 		//
 		boolean expandBaseDLC = false, expandCustomDLC = false, expandCondFiles = false, expandCondDLC = false;
 
-		//BASEGAME + OFFICIAL DLC MODIFICATIONS PANEL
+		// BASEGAME + OFFICIAL DLC MODIFICATIONS PANEL
 		JXPanel baseOfficialPanel = new JXPanel();
 		baseOfficialPanel.setLayout(new VerticalLayout());
 		baseOfficialPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
@@ -195,10 +213,11 @@ public class ModDescEditorWindow extends JXFrame {
 		baseOfficialPanel.add(baseOfficialIntro);
 		for (MDEOfficialJob mdeJob : mod.rawOfficialJobs) {
 			expandBaseDLC = true;
-			//Task Header Panel
+			// Task Header Panel
 			JButton button = new JButton();
 
-			JLabel taskHeaderLabel = new JLabel(mdeJob.getRawHeader() + " (in " + mdeJob.getRawFolder() + ")", SwingConstants.LEFT);
+			JLabel taskHeaderLabel = new JLabel(mdeJob.getRawHeader() + " (in " + mdeJob.getRawFolder() + ")",
+					SwingConstants.LEFT);
 			taskHeaderLabel.setFont(taskHeaderLabel.getFont().deriveFont(16f));
 			taskHeaderLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			taskHeaderLabel.addMouseListener(new MouseAdapter() {
@@ -212,7 +231,7 @@ public class ModDescEditorWindow extends JXFrame {
 			jobHeaderPanel.add(button);
 			jobHeaderPanel.add(taskHeaderLabel);
 
-			//Task Details (Collapsable)
+			// Task Details (Collapsable)
 			JXPanel jobPanel = new JXPanel(new GridBagLayout());
 			jobPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 			GridBagConstraints gbc = new GridBagConstraints();
@@ -224,9 +243,9 @@ public class ModDescEditorWindow extends JXFrame {
 			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.weightx = 1.0;
 
-			//TASK DETAILS
+			// TASK DETAILS
 			Insets columnRightSideInsets = new Insets(0, 0, 0, 10);
-			//REPLACEMENTS
+			// REPLACEMENTS
 			{
 				JXPanel replacementsListPanel = new JXPanel(new GridBagLayout());
 				replacementsListPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
@@ -300,7 +319,7 @@ public class ModDescEditorWindow extends JXFrame {
 				jobPanel.add(replacementsListPanel, gbc);
 			}
 			if (!mdeJob.getRawHeader().equals(ModTypeConstants.BINI)) {
-				//ADD FILES
+				// ADD FILES
 				{
 					JXPanel additionsListPanel = new JXPanel(new GridBagLayout());
 					additionsListPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
@@ -313,10 +332,11 @@ public class ModDescEditorWindow extends JXFrame {
 
 					if (mdeJob.getRawAddFiles() != null && mdeJob.getRawAddTargetFiles() != null) {
 
-						//Get Raad-only
+						// Get Raad-only
 						ArrayList<String> readOnlyFiles = new ArrayList<String>();
 						if (mdeJob.getRawAddReadOnlyTargetFiles() != null) {
-							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(mdeJob.getRawAddReadOnlyTargetFiles(), ";");
+							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(
+									mdeJob.getRawAddReadOnlyTargetFiles(), ";");
 
 							while (addTargetReadOnlyStrok.hasMoreTokens()) {
 								String readonlytarget = addTargetReadOnlyStrok.nextToken();
@@ -383,7 +403,8 @@ public class ModDescEditorWindow extends JXFrame {
 							additionsListPanel.add(readOnly, gridC);
 						}
 					} else {
-						JLabel noAdditions = new JLabel("No files are added to the game by this job.", SwingConstants.LEFT);
+						JLabel noAdditions = new JLabel("No files are added to the game by this job.",
+								SwingConstants.LEFT);
 						gridC.gridy++;
 						gridC.gridx = 0;
 						gridC.weightx = 1;
@@ -402,13 +423,13 @@ public class ModDescEditorWindow extends JXFrame {
 					JButton addNewFile = new JButton("Add additional file to " + mdeJob.getRawHeader());
 					additionsListPanel.add(addNewFile, gridC);
 
-					//end add panel
+					// end add panel
 					gbc.gridy++;
 					jobPanel.add(additionsListPanel, gbc);
 				}
 
-				//MANUAL ALTFILES
-				//ADD FILES
+				// MANUAL ALTFILES
+				// ADD FILES
 				{
 					JXPanel additionsListPanel = new JXPanel(new GridBagLayout());
 					additionsListPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
@@ -421,10 +442,11 @@ public class ModDescEditorWindow extends JXFrame {
 
 					if (mdeJob.getRawAddFiles() != null && mdeJob.getRawAddTargetFiles() != null) {
 
-						//Get Raad-only
+						// Get Raad-only
 						ArrayList<String> readOnlyFiles = new ArrayList<String>();
 						if (mdeJob.getRawAddReadOnlyTargetFiles() != null) {
-							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(mdeJob.getRawAddReadOnlyTargetFiles(), ";");
+							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(
+									mdeJob.getRawAddReadOnlyTargetFiles(), ";");
 
 							while (addTargetReadOnlyStrok.hasMoreTokens()) {
 								String readonlytarget = addTargetReadOnlyStrok.nextToken();
@@ -491,7 +513,8 @@ public class ModDescEditorWindow extends JXFrame {
 							additionsListPanel.add(readOnly, gridC);
 						}
 					} else {
-						JLabel noAdditions = new JLabel("No user selection options are available for this job.", SwingConstants.LEFT);
+						JLabel noAdditions = new JLabel("No user selection options are available for this job.",
+								SwingConstants.LEFT);
 						gridC.gridy++;
 						gridC.gridx = 0;
 						gridC.weightx = 1;
@@ -510,13 +533,13 @@ public class ModDescEditorWindow extends JXFrame {
 					JButton addNewFile = new JButton("Add user selectable option to " + mdeJob.getRawHeader());
 					additionsListPanel.add(addNewFile, gridC);
 
-					//end add panel
+					// end add panel
 					gbc.gridy++;
 					jobPanel.add(additionsListPanel, gbc);
 				}
 			}
 
-			//REQUIREMENTS
+			// REQUIREMENTS
 			if (!mdeJob.getRawHeader().equals(ModTypeConstants.BASEGAME)) {
 				JLabel requirementLabel = new JLabel("Reason for this task: " + mdeJob.getRawRequirementText());
 				gbc.gridy++;
@@ -544,7 +567,8 @@ public class ModDescEditorWindow extends JXFrame {
 		addNewTaskPanel.add(addNewHeader);
 		baseOfficialPanel.add(addNewTaskPanel);
 
-		//CUSTOM DLC PANEL ======================================================================
+		// CUSTOM DLC PANEL
+		// ======================================================================
 		JXPanel customDLCPanel = new JXPanel();
 		customDLCPanel.setLayout(new BoxLayout(customDLCPanel, BoxLayout.Y_AXIS));
 		customDLCPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
@@ -572,7 +596,8 @@ public class ModDescEditorWindow extends JXFrame {
 					@Override
 					public void actionPerformed(ActionEvent e) {
 						// TODO Auto-generated method stub
-						ModManager.debugLogger.writeMessage("MDE Custom DLC Remove button clicked: " + mde.getPair().getKey());
+						ModManager.debugLogger
+								.writeMessage("MDE Custom DLC Remove button clicked: " + mde.getPair().getKey());
 						customDLCPanel.remove(mde.getCustDLCLineItem());
 						customDLCSelections.remove(mde);
 						if (customDLCSelections.size() == 0) {
@@ -609,18 +634,19 @@ public class ModDescEditorWindow extends JXFrame {
 				}
 
 				if (directoryList.size() > 0) {
-					//there are folders that can be added.
-					//Prsent the list
+					// there are folders that can be added.
+					// Prsent the list
 					ModDescEditorDirectoryChooser chooser = new ModDescEditorDirectoryChooser(directoryList);
 					if (chooser.getChosenFile() != null) {
 						String src = chooser.getChosenFile().getName();
-						final MDECustomDLC mde = generateMDECustomDLC(src, src); //same input, dest
+						final MDECustomDLC mde = generateMDECustomDLC(src, src); // same input, dest
 						mde.getSubtractButton().addActionListener(new ActionListener() {
 
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								// TODO Auto-generated method stub
-								ModManager.debugLogger.writeMessage("MDE Custom DLC Remove button clicked: " + mde.getPair().getKey());
+								ModManager.debugLogger.writeMessage(
+										"MDE Custom DLC Remove button clicked: " + mde.getPair().getKey());
 								customDLCPanel.remove(mde.getCustDLCLineItem());
 								customDLCSelections.remove(mde);
 								if (customDLCSelections.size() == 0) {
@@ -633,7 +659,7 @@ public class ModDescEditorWindow extends JXFrame {
 						customDLCPanel.add(mde.getCustDLCLineItem());
 						customDLCSelections.add(mde);
 						customDLCPanel.remove(addCustomDLC);
-						customDLCPanel.add(addCustomDLC); //add to bottom.
+						customDLCPanel.add(addCustomDLC); // add to bottom.
 						labelNoCustomDLC.setVisible(false);
 						revalidate();
 						repaint();
@@ -646,9 +672,9 @@ public class ModDescEditorWindow extends JXFrame {
 			}
 		});
 
-		//altfiles
+		// altfiles
 		JXPanel altFilesPanel = new JXPanel();
-		altFilesPanel.setLayout(new VerticalLayout());//(altFilesPanel, BoxLayout.Y_AXIS));
+		altFilesPanel.setLayout(new VerticalLayout());// (altFilesPanel, BoxLayout.Y_AXIS));
 		altFilesPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 		JPanel altFileRowsPanel = new JPanel(new VerticalLayout(3));
 		altFilesPanel.add(altFileRowsPanel);
@@ -679,7 +705,8 @@ public class ModDescEditorWindow extends JXFrame {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(ModDescEditorWindow.this, (AlternateFile) null);
+					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(ModDescEditorWindow.this,
+							(AlternateFile) null);
 					altFileRowsPanel.add(mdecfi.getPanel());
 					mdecfi.getPanel().setCollapsed(false);
 					conditionalFileItems.add(mdecfi);
@@ -691,7 +718,7 @@ public class ModDescEditorWindow extends JXFrame {
 			altFilesPanel.add(addAltFilePanel);
 		}
 
-		//altdlc in customdlc header.
+		// altdlc in customdlc header.
 		JXPanel altDLCPanel = new JXPanel();
 		altDLCPanel.setLayout(new BoxLayout(altDLCPanel, BoxLayout.Y_AXIS));
 		altDLCPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
@@ -731,7 +758,8 @@ public class ModDescEditorWindow extends JXFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				MDEConditionalDLCItem mdecdlc = new MDEConditionalDLCItem(ModDescEditorWindow.this, (AlternateCustomDLC) null);
+				MDEConditionalDLCItem mdecdlc = new MDEConditionalDLCItem(ModDescEditorWindow.this,
+						(AlternateCustomDLC) null);
 				altDLCRowsPanel.add(mdecdlc.getPanel());
 				mdecdlc.getPanel().setCollapsed(false);
 				conditionalDLCItems.add(mdecdlc);
@@ -739,31 +767,55 @@ public class ModDescEditorWindow extends JXFrame {
 			}
 		});
 
-		//outdatedcustomdlc
-		JXPanel oudatedFoldersPanel = new JXPanel();
-		oudatedFoldersPanel.setLayout(new BoxLayout(oudatedFoldersPanel, BoxLayout.Y_AXIS));
-		oudatedFoldersPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+		// outdatedcustomdlc
+		JXPanel outdatedFoldersPanel = new JXPanel();
+		outdatedFoldersPanel.setLayout(new VerticalLayout());
+		outdatedFoldersPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 		JPanel oudatedFolderRowsPanel = new JPanel(new VerticalLayout(3));
-		
+
 		JLabel outdatedDLCIntroText = new JLabel(
 				"<html>DLC folders in this list will be prompted for removal if they are found installed after installation of the mod.<br>Using this feature you can remove old versions of your mod (+old compatibility packs) if the DLC folder name changed.</html>");
 
 		outdatedDLCIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
 		oudatedFolderRowsPanel.add(outdatedDLCIntroText);
-		
-		oudatedFoldersPanel.add(oudatedFolderRowsPanel);
+
+		outdatedFoldersPanel.add(oudatedFolderRowsPanel);
+		noOutdatedCustomDLCLabel = new JLabel("No outdated custom DLC folders will be removed when this mod is installed.");
 		boolean expandOutdated = false;
 		for (String str : mod.getOutdatedDLCModules()) {
 			MDEOutdatedCustomDLC mdeocdlc = new MDEOutdatedCustomDLC(this, str);
 			outdatedCustomDLCItems.add(mdeocdlc);
 			oudatedFolderRowsPanel.add(mdeocdlc.getPanel());
 			expandOutdated = true;
+			noOutdatedCustomDLCLabel.setVisible(false);
+			;
 		}
 
-		noOutdatedCustomDLCLabel = new JLabel("No outdated custom DLC will be removed when mod is installed");
-		customDLCPanel.add(noOutdatedCustomDLCLabel);
+		noOutdatedCustomDLCLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		outdatedFoldersPanel.add(noOutdatedCustomDLCLabel);
+		JButton addOutdatedFolderButton = new JButton("Add outdated folder");
+		JPanel addOutdatedFolderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		addOutdatedFolderPanel.add(addOutdatedFolderButton);
+		outdatedFoldersPanel.add(addOutdatedFolderPanel);
+		addOutdatedFolderButton.addActionListener(new ActionListener() {
 
-		//Sections Top Level =================================
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				for (MDEOutdatedCustomDLC mdeexist : outdatedCustomDLCItems) {
+					if (mdeexist.getUserReasonField().getText().equals("")) {
+						return; // do nothing
+					}
+				}
+				MDEOutdatedCustomDLC mdeocdlc = new MDEOutdatedCustomDLC(ModDescEditorWindow.this, "");
+				outdatedCustomDLCItems.add(mdeocdlc);
+				oudatedFolderRowsPanel.add(mdeocdlc.getPanel());
+				noOutdatedCustomDLCLabel.setVisible(false);
+				mdeocdlc.getPanel().setCollapsed(false);
+				invalidate();// required here for some reason
+			}
+		});
+
+		// Sections Top Level =================================
 		JXCollapsiblePane metadataPane = new JXCollapsiblePane();
 		metadataPane.add(metadataPanel);
 
@@ -784,7 +836,7 @@ public class ModDescEditorWindow extends JXFrame {
 		condDLCPane.setCollapsed(!expandCondDLC);
 
 		JXCollapsiblePane outdatedFoldersPane = new JXCollapsiblePane();
-		outdatedFoldersPane.add(oudatedFoldersPanel);
+		outdatedFoldersPane.add(outdatedFoldersPanel);
 		outdatedFoldersPane.setCollapsed(!expandOutdated);
 
 		JLabel metaPanelTitle = new JLabel("Mod Metadata");
@@ -801,7 +853,7 @@ public class ModDescEditorWindow extends JXFrame {
 		JButton condDLCPanelButton = new JButton();
 		JButton oudatedFoldersPanelButton = new JButton();
 
-		//Set fonts
+		// Set fonts
 		metaPanelTitle.setFont(baseOfficialPanelTitle.getFont().deriveFont(18f));
 		baseOfficialPanelTitle.setFont(baseOfficialPanelTitle.getFont().deriveFont(18f));
 		customDLCPanelTitle.setFont(customDLCPanelTitle.getFont().deriveFont(18f));
@@ -809,11 +861,14 @@ public class ModDescEditorWindow extends JXFrame {
 		conditionalCustomDLCPanelTitle.setFont(conditionalCustomDLCPanelTitle.getFont().deriveFont(18f));
 		outdatedFoldersPanelTitle.setFont(conditionalCustomDLCPanelTitle.getFont().deriveFont(18f));
 
-		//Button Clicks
+		// Button Clicks
 
-		JLabel[] labels = { metaPanelTitle, baseOfficialPanelTitle, customDLCPanelTitle, conditionalFilesPanelTitle, conditionalCustomDLCPanelTitle, outdatedFoldersPanelTitle };
-		JButton[] expanders = { metaPanelButton, basePanelButton, customPanelButton, condFilePanelButton, condDLCPanelButton, oudatedFoldersPanelButton };
-		JXCollapsiblePane[] expanderPanes = { metadataPane, baseDLCPane, customDLCPane, condFilesPane, condDLCPane, outdatedFoldersPane };
+		JLabel[] labels = { metaPanelTitle, baseOfficialPanelTitle, customDLCPanelTitle, conditionalFilesPanelTitle,
+				conditionalCustomDLCPanelTitle, outdatedFoldersPanelTitle };
+		JButton[] expanders = { metaPanelButton, basePanelButton, customPanelButton, condFilePanelButton,
+				condDLCPanelButton, oudatedFoldersPanelButton };
+		JXCollapsiblePane[] expanderPanes = { metadataPane, baseDLCPane, customDLCPane, condFilesPane, condDLCPane,
+				outdatedFoldersPane };
 
 		for (int i = 0; i < expanders.length; i++) {
 			JButton button = expanders[i];
@@ -825,7 +880,7 @@ public class ModDescEditorWindow extends JXFrame {
 			button.setAction(toggleAction);
 			button.setText("");
 
-			//make label clickable
+			// make label clickable
 			label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			label.addMouseListener(new MouseAdapter() {
 				@Override
@@ -835,7 +890,7 @@ public class ModDescEditorWindow extends JXFrame {
 			});
 		}
 
-		//Header Panels
+		// Header Panels
 		JXPanel metaHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
 		JXPanel baseHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
 		JXPanel customHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
@@ -857,7 +912,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 		condDLCHeaderPanel.add(condDLCPanelButton);
 		condDLCHeaderPanel.add(conditionalCustomDLCPanelTitle);
-		
+
 		outdatedFoldersHeaderPanel.add(oudatedFoldersPanelButton);
 		outdatedFoldersHeaderPanel.add(outdatedFoldersPanelTitle);
 
@@ -875,15 +930,16 @@ public class ModDescEditorWindow extends JXFrame {
 
 		optionsPanel.add(condDLCHeaderPanel);
 		optionsPanel.add(condDLCPane);
-		
+
 		optionsPanel.add(outdatedFoldersHeaderPanel);
 		optionsPanel.add(outdatedFoldersPane);
 
-		JScrollPane topScrollPane = new JScrollPane(optionsPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		JScrollPane topScrollPane = new JScrollPane(optionsPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-		//JComponent cont = (JComponent) getContentPane();
-		//cont.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		//this.setPreferredSize(new Dimension(800, 600));
+		// JComponent cont = (JComponent) getContentPane();
+		// cont.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		// this.setPreferredSize(new Dimension(800, 600));
 		this.getContentPane().add(topScrollPane);
 		this.pack();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
@@ -897,7 +953,8 @@ public class ModDescEditorWindow extends JXFrame {
 		custDLCLineItem.add(Box.createRigidArea(new Dimension(5, 5)));
 		custDLCLineItem.add(new JLabel(custDLCLine));
 		custDLCLineItem.setAlignmentX(Component.LEFT_ALIGNMENT);
-		return new MDECustomDLC(custDLCLineItem, subtractButton, new AbstractMap.SimpleEntry<String, String>(src, dest));
+		return new MDECustomDLC(custDLCLineItem, subtractButton,
+				new AbstractMap.SimpleEntry<String, String>(src, dest));
 	}
 
 	public Mod getMod() {
@@ -923,7 +980,7 @@ public class ModDescEditorWindow extends JXFrame {
 	}
 
 	public void removeOutdatedCustomDLCItem(MDEOutdatedCustomDLC mdeOutdatedCustomDLC) {
-		// TODO Auto-generated method stub
-		
+		outdatedCustomDLCItems.remove(mdeOutdatedCustomDLC);
+		noOutdatedCustomDLCLabel.setVisible(outdatedCustomDLCItems.size() == 0);
 	}
 }

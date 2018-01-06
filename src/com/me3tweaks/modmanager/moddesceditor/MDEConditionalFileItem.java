@@ -25,6 +25,7 @@ import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -134,6 +135,7 @@ public class MDEConditionalFileItem {
 		conditionBox = new JComboBox<String>(conditionsHuman);
 		operationBox = new JComboBox<String>(operationsHuman);
 		userReasonField = new JTextField(af.getFriendlyName());
+		userReasonField.setUI(new HintTextFieldUI("User friendly string e.g. Fixes X if Y is present"));
 		userReasonField.setToolTipText("User friendly name. If one is not entered, a automatically generated one is displayed instead.");
 		userReasonField.setColumns(30);
 		panel.add(userReasonField);
@@ -144,6 +146,8 @@ public class MDEConditionalFileItem {
 		panel.add(ifLabel);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		JTextField conditionalDLC = new JTextField(af.getConditionalDLC(), 16);
+		conditionalDLC.setUI(new HintTextFieldUI("LEVIATHAN"));
+		conditionalDLC.setToolTipText("<html><div style='width: 300px'>Sets a conditional item. Must be a DLC folder name or a header name. The following are some examples.</div><br> - DLC_EXP_Pack003<br> - LEVIATHAN<br> - DLC_MOD_BPP1<br><br>This field is used for automatic alternates. If the condition type is set to manual, this field is not used.</html>");
 		panel.add(conditionalDLC);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		panel.add(operationBox);
@@ -252,11 +256,38 @@ public class MDEConditionalFileItem {
 						forLabel.setVisible(true);
 						break;
 					}
-
 				}
 			}
 		});
 
+		conditionBox.addItemListener(new ItemListener() {
+			
+			private String originalText;
+
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// TODO Auto-generated method stub
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					int index = conditionBox.getSelectedIndex();
+					switch (index) {
+					case 0: //auto
+					case 1: //auto
+						if (!conditionalDLC.isEnabled()) {
+							conditionalDLC.setText(originalText);	
+							conditionalDLC.setEnabled(true);
+						}
+						break;
+					case 2: //user selected
+						conditionalDLC.setEnabled(false);
+						originalText = conditionalDLC.getText();
+						conditionalDLC.setText("N/A");
+						break;
+					}
+
+				}
+			}
+		});
+		
 		if (af.getCondition() != null) {
 			switch (af.getCondition()) {
 			case AlternateFile.CONDITION_DLC_NOT_PRESENT:

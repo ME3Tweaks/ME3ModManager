@@ -6,6 +6,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -22,14 +24,15 @@ import org.jdesktop.swingx.HorizontalLayout;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
 import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
-import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 import javafx.application.Platform;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 
 public class MDEConditionalDLCItem {
@@ -82,12 +85,15 @@ public class MDEConditionalDLCItem {
 	private AlternateCustomDLC altdlc;
 
 	private JComboBox<String> conditionBox;
-	private static String[] conditions = { AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT, AlternateCustomDLC.CONDITION_DLC_PRESENT, AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT,
+	private static String[] conditions = { AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT,
+			AlternateCustomDLC.CONDITION_DLC_PRESENT, AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT,
 			AlternateCustomDLC.CONDITION_ANY_DLC_NOT_PRESENT, AlternateCustomDLC.CONDITION_MANUAL };
-	private static String[] conditionsHuman = { "is not installed", "is installed", "are all installed", "any is not installed", "is selected by user" };
+	private static String[] conditionsHuman = { "is not installed", "is installed", "are all installed",
+			"any is not installed", "is selected by user" };
 
 	private JComboBox<String> operationBox;
-	private static String[] operations = { AlternateCustomDLC.OPERATION_ADD_CUSTOMDLC_JOB, AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER };
+	private static String[] operations = { AlternateCustomDLC.OPERATION_ADD_CUSTOMDLC_JOB,
+			AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER };
 	private static String[] operationsHuman = { "add additional custom DLC", "merge folder" };
 
 	private JButton minusButton;
@@ -102,7 +108,7 @@ public class MDEConditionalDLCItem {
 	private SwingLink destLabel;
 	private static int itemSpacing = 5;
 
-	//private String altFile;
+	// private String altFile;
 	private String modFile;
 
 	public MDEConditionalDLCItem(ModDescEditorWindow owningWindow, AlternateCustomDLC af2) {
@@ -136,7 +142,10 @@ public class MDEConditionalDLCItem {
 		conditionBox = new JComboBox<String>(conditionsHuman);
 		operationBox = new JComboBox<String>(operationsHuman);
 		userReasonField = new JTextField(altdlc.getFriendlyName());
-		userReasonField.setToolTipText("User friendly name. If one is not entered, a automatically generated one is displayed instead.");
+		userReasonField.setUI(new HintTextFieldUI("User friendly string e.g. Fixes X if Y is present"));
+
+		userReasonField.setToolTipText(
+				"User friendly name. If one is not entered, a automatically generated one is displayed instead.");
 		userReasonField.setColumns(30);
 		panel.add(userReasonField);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing * 2, 3)));
@@ -147,6 +156,7 @@ public class MDEConditionalDLCItem {
 		panel.add(ifLabel);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		JTextField conditionalDLC = new JTextField(altdlc.getConditionalDLC(), 16);
+		conditionalDLC.setUI(new HintTextFieldUI("DLC_MOD_Condition"));
 		panel.add(conditionalDLC);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		panel.add(operationBox);
@@ -170,28 +180,45 @@ public class MDEConditionalDLCItem {
 			public void actionPerformed(ActionEvent arg0) {
 				// TODO Auto-generated method stub
 				Platform.runLater(() -> {
-					FileChooser fileChooser = new FileChooser();
-					fileChooser.setInitialDirectory(new File(mod.getModPath()));
-					//Set extension filter
-					FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("Mod File", "*.*");
-					fileChooser.getExtensionFilters().addAll(extFilterJPG);
+					if (operationBox.getSelectedIndex() == 0) {
+						// must be top level folder
+						File[] directories = new File(mod.getModPath()).listFiles(File::isDirectory);
+						ArrayList<File> directoryList = new ArrayList<File>(Arrays.asList(directories));
+						for (MDECustomDLC dlc : owningWindow.getCustomDLCSelections()) {
+							String name = dlc.getPair().getKey();
+							File f = new File(mod.getModPath() + name);
+							directoryList.remove(f);
+						}
 
-					//Show open file dialog
-					File file = fileChooser.showOpenDialog(null);
+						if (directoryList.size() == 0) {
+							JOptionPane.showMessageDialog(owningWindow,
+									"Adding a custom DLC folder for installation requires the folder to be in the top level directory.\nAll folders are already automatically installed, so there is no possible valid option right now. Add a new Custom DLC folder to use this option.",
+									"No available options", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+					}
+
+					DirectoryChooser fileChooser = new DirectoryChooser();
+					fileChooser.setInitialDirectory(new File(mod.getModPath()));
+
+					// Show open file dialog
+					File file = fileChooser.showDialog(null);
 					if (file != null) {
 						SwingUtilities.invokeLater(new Runnable() {
 							public void run() {
-								//Run on UI thread
+								// Run on UI thread
 
-								//we need to verify file...
-								String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), mod.getModPath(), File.separator);
+								// we need to verify file...
+								String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(),
+										mod.getModPath(), File.separator);
 								if (relativePath.contains("..")) {
-									//reject as out of mod folder.
+									// reject as out of mod folder.
 
-									JOptionPane.showMessageDialog(owningWindow, "This file is not in the mod folder.", "Invalid file", JOptionPane.ERROR_MESSAGE);
+									JOptionPane.showMessageDialog(owningWindow, "This file is not in the mod folder.",
+											"Invalid file", JOptionPane.ERROR_MESSAGE);
 								}
 
-								//File is valid
+								// File is valid
 								srcLabel.setText(relativePath);
 							}
 						});
@@ -200,11 +227,12 @@ public class MDEConditionalDLCItem {
 			}
 		};
 		srcLabel = new SwingLink(altdlc.getAltDLC(), "Click to change file", srcChangeAction);
+
 		rightSideVerticalPanel.add(srcLabel);
 
 		JLabel intoLabel = new JLabel("into");
-		//Component forSpace = Box.createRigidArea(new Dimension(itemSpacing, 3));
-		//panel.add(forSpace);
+		// Component forSpace = Box.createRigidArea(new Dimension(itemSpacing, 3));
+		// panel.add(forSpace);
 		rightSideVerticalPanel.add(intoLabel);
 
 		ActionListener changeDestAction = new ActionListener() {
@@ -213,8 +241,8 @@ public class MDEConditionalDLCItem {
 				ModJob job = mod.getJobByModuleName(ModTypeConstants.CUSTOMDLC);
 				if (job != null) {
 					int index = operationBox.getSelectedIndex();
-					if (index > 0) { //if 0, add mode
-						index = MDEModFileChooser.OPTIONTYPE_SELECTONLY; //select only
+					if (index > 0) { // if 0, add mode
+						index = MDEModFileChooser.OPTIONTYPE_SELECTONLY; // select only
 					} else {
 						index = MDEModFileChooser.OPTIONTYPE_ADDONLY;
 					}
@@ -228,7 +256,7 @@ public class MDEConditionalDLCItem {
 		};
 		modFile = altdlc.getDestDLC();
 		destLabel = new SwingLink(modFile, "Click to change file", changeDestAction);
-		//panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
+		// panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		rightSideVerticalPanel.add(destLabel);
 		rightSideVerticalPanel.add(Box.createVerticalGlue());
 
@@ -242,11 +270,11 @@ public class MDEConditionalDLCItem {
 				if (e.getStateChange() == ItemEvent.SELECTED) {
 					int index = operationBox.getSelectedIndex();
 					switch (index) {
-					case 0: //add
+					case 0: // add
 						destLabel.setVisible(false);
 						intoLabel.setVisible(false);
 						break;
-					case 1: //merge
+					case 1: // merge
 						destLabel.setVisible(true);
 						intoLabel.setVisible(true);
 						break;
@@ -254,14 +282,13 @@ public class MDEConditionalDLCItem {
 				}
 			}
 		});
-		
-		//hide into/dest for add
+
+		// hide into/dest for add
 		if (operationBox.getSelectedIndex() == 0) {
 			destLabel.setVisible(false);
 			intoLabel.setVisible(false);
 		}
-		
-		
+
 		if (altdlc.getCondition() != null) {
 			switch (altdlc.getCondition()) {
 			case AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT:
@@ -281,7 +308,7 @@ public class MDEConditionalDLCItem {
 				break;
 			}
 		} else {
-			conditionBox.setSelectedIndex(0); //default
+			conditionBox.setSelectedIndex(0); // default
 		}
 
 		if (altdlc.getOperation() != null) {
