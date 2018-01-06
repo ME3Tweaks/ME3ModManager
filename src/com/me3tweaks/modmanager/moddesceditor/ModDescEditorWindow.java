@@ -686,7 +686,7 @@ public class ModDescEditorWindow extends JXFrame {
 			altFilesIntroText.setAlignmentX(Component.LEFT_ALIGNMENT);
 			altFileRowsPanel.add(altFilesIntroText);
 
-			noAltFilesLabel = new JLabel("No alternate files specified.");
+			noAltFilesLabel = new JLabel("No Alternate Files specified.");
 			altFilesPanel.add(noAltFilesLabel);
 			if (mod.rawAltFilesText != null) {
 				expandCondFiles = true;
@@ -720,7 +720,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 		// altdlc in customdlc header.
 		JXPanel altDLCPanel = new JXPanel();
-		altDLCPanel.setLayout(new BoxLayout(altDLCPanel, BoxLayout.Y_AXIS));
+		altDLCPanel.setLayout(new VerticalLayout());
 		altDLCPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 		JPanel altDLCRowsPanel = new JPanel(new VerticalLayout(3));
 		altDLCPanel.add(altDLCRowsPanel);
@@ -745,8 +745,6 @@ public class ModDescEditorWindow extends JXFrame {
 				conditionalDLCItems.add(mdecfi);
 				noAltDLCLabel.setVisible(false);
 			}
-			noAltFilesLabel.setVisible(false);
-
 			noAltDLCLabel.setVisible(false);
 		}
 

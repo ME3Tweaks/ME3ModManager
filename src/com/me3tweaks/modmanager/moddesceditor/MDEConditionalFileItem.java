@@ -134,6 +134,9 @@ public class MDEConditionalFileItem {
 
 		conditionBox = new JComboBox<String>(conditionsHuman);
 		operationBox = new JComboBox<String>(operationsHuman);
+		operationBox.setToolTipText("<html><div style='width: 400px;'>Operation type to perform when the condition is met. Different conditions require different information, changing this will update the interface with the options.</div></centered>");
+		conditionBox.setToolTipText("<html><div style='width: 400px;'>Type of condition. The `Selected by user` condition means must be manually chosen by user in the alternate installation options menu, all others are automatically applied when the mod is loaded or applied. Mods that use this feature must have a valid biogame or they will fail to load - this is typically not a problem unless a user has significantly modified and broken their game, or their game is pirated.</div></centered>");
+
 		userReasonField = new JTextField(af.getFriendlyName());
 		userReasonField.setUI(new HintTextFieldUI("User friendly string e.g. Fixes X if Y is present"));
 		userReasonField.setToolTipText("User friendly name. If one is not entered, a automatically generated one is displayed instead.");
@@ -200,7 +203,8 @@ public class MDEConditionalFileItem {
 				});
 			}
 		};
-		srcLabel = new SwingLink(af.getAltFile(), "Click to change file", srcChangeAction);
+		String strToDisplay = af.getAltFile() == null ? "Click to set value" : af.getAltFile();
+		srcLabel = new SwingLink(strToDisplay, "Click to change file", srcChangeAction);
 		rightSideVerticalPanel.add(srcLabel);
 
 		JLabel forLabel = new JLabel("for");
@@ -228,7 +232,9 @@ public class MDEConditionalFileItem {
 			}
 		};
 		modFile = af.getModFile();
-		destLabel = new SwingLink(modFile, "Click to change file", changeDestAction);
+		strToDisplay = modFile == null ? "Click to set value" : modFile;
+
+		destLabel = new SwingLink(strToDisplay, "Click to change file", changeDestAction);
 		//panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		rightSideVerticalPanel.add(destLabel);
 		rightSideVerticalPanel.add(Box.createVerticalGlue());
