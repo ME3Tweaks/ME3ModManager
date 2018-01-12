@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -64,6 +66,14 @@ public class ModDescEditorWindow extends JXFrame {
 	private JLabel noAltDLCLabel;
 	private JLabel noOutdatedCustomDLCLabel;
 	private ArrayList<MDEOutdatedCustomDLC> outdatedCustomDLCItems = new ArrayList<MDEOutdatedCustomDLC>();
+	private JButton saveButton;
+	private JLabel statusLabel;
+	private JTextField modNameField;
+	private JTextField modDevField;
+	private JTextField modVerField;
+	private JComboBox<String> cmmverCombobox;
+	private JTextField modSiteField;
+	private JTextArea modDescriptionField;
 
 	public ModDescEditorWindow(Mod mod) {
 		ModManager.debugLogger.writeMessage("Reloading " + mod.getModName() + " without automatic alternates applied.");
@@ -107,7 +117,7 @@ public class ModDescEditorWindow extends JXFrame {
 		TitledBorder nameBorder = BorderFactory
 				.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Name (Required)");
 		nameFieldPanel.setBorder(nameBorder);
-		JTextField modNameField = new JTextField(mod.getModName());
+		modNameField = new JTextField(mod.getModName());
 		modNameField.setToolTipText("Display name for your mod in Mod Manager.");
 		nameFieldPanel.add(modNameField);
 
@@ -124,7 +134,7 @@ public class ModDescEditorWindow extends JXFrame {
 		TitledBorder devBorder = BorderFactory.createTitledBorder(
 				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Developer Name (Required)");
 		devPanel.setBorder(devBorder);
-		JTextField modDevField = new JTextField(mod.getAuthor());
+		modDevField = new JTextField(mod.getAuthor());
 		modDevField.setToolTipText(
 				"<html>Name of the mod developer. This should be your username/alias you go by in the modding scene.</html>");
 		devPanel.add(modDevField, BorderLayout.NORTH);
@@ -135,7 +145,7 @@ public class ModDescEditorWindow extends JXFrame {
 		modVer.setToolTipText(modVerTooltip);
 		versionPanel.add(modVer);
 		versionPanel.add(Box.createRigidArea(new Dimension(5, 5)));
-		JTextField modVerField = new JTextField(Double.toString(mod.getVersion()), 8);
+		modVerField = new JTextField(Double.toString(mod.getVersion()), 8);
 		modVerField.setColumns(8);
 		modVerField.setToolTipText(modVerTooltip);
 		modVerField.setMaximumSize(modVerField.getPreferredSize());
@@ -152,7 +162,7 @@ public class ModDescEditorWindow extends JXFrame {
 		versionPanel.add(cmmVer);
 		versionPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 
-		JComboBox<String> cmmverCombobox = new JComboBox<String>();
+		cmmverCombobox = new JComboBox<String>();
 		cmmverCombobox.addItem(Double.toString(mod.modCMMVer));
 		if (mod.modCMMVer != ModManager.MODDESC_VERSION_SUPPORT) {
 			cmmverCombobox.addItem(Double.toString(ModManager.MODDESC_VERSION_SUPPORT));
@@ -172,7 +182,7 @@ public class ModDescEditorWindow extends JXFrame {
 		TitledBorder siteBorder = BorderFactory.createTitledBorder(
 				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Website/URL (Recommended)");
 		sitePanel.setBorder(siteBorder);
-		JTextField modSiteField = new JTextField(mod.getModSite());
+		modSiteField = new JTextField(mod.getModSite());
 		modSiteField.setToolTipText(
 				"<html>Website URL for your mod.<br>This URL will appear at the bottom of the description panel and provides an easy way for the user to find your mod online for updates, support, etc.</html>");
 		sitePanel.add(modSiteField, BorderLayout.NORTH);
@@ -184,7 +194,7 @@ public class ModDescEditorWindow extends JXFrame {
 		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(
 				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description (Required)");
 		descriptionPanel.setBorder(descriptionBorder);
-		JTextArea modDescriptionField = new JTextArea(ResourceUtils.convertBrToNewline(mod.getModDescription()));
+		modDescriptionField = new JTextArea(ResourceUtils.convertBrToNewline(mod.getModDescription()));
 		modDescriptionField.setToolTipText(
 				"<html>Description of the mod, which appears in the right pane of the main Mod Manager window.<br>Be brief but include important information.<br>Items at the bottom of the description pane are automatically generated.<br>This field is required for all mods.</html>");
 		modDescriptionField.setRows(7);
@@ -778,7 +788,8 @@ public class ModDescEditorWindow extends JXFrame {
 		oudatedFolderRowsPanel.add(outdatedDLCIntroText);
 
 		outdatedFoldersPanel.add(oudatedFolderRowsPanel);
-		noOutdatedCustomDLCLabel = new JLabel("No outdated custom DLC folders will be removed when this mod is installed.");
+		noOutdatedCustomDLCLabel = new JLabel(
+				"No outdated custom DLC folders will be removed when this mod is installed.");
 		boolean expandOutdated = false;
 		for (String str : mod.getOutdatedDLCModules()) {
 			MDEOutdatedCustomDLC mdeocdlc = new MDEOutdatedCustomDLC(this, str);
@@ -786,7 +797,6 @@ public class ModDescEditorWindow extends JXFrame {
 			oudatedFolderRowsPanel.add(mdeocdlc.getPanel());
 			expandOutdated = true;
 			noOutdatedCustomDLCLabel.setVisible(false);
-			;
 		}
 
 		noOutdatedCustomDLCLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -809,7 +819,8 @@ public class ModDescEditorWindow extends JXFrame {
 				oudatedFolderRowsPanel.add(mdeocdlc.getPanel());
 				noOutdatedCustomDLCLabel.setVisible(false);
 				mdeocdlc.getPanel().setCollapsed(false);
-				invalidate();// required here for some reason
+				revalidate();
+				repaint();
 			}
 		});
 
@@ -935,12 +946,58 @@ public class ModDescEditorWindow extends JXFrame {
 		JScrollPane topScrollPane = new JScrollPane(optionsPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
+		JPanel mainContentLayout = new JPanel(new BorderLayout());
+		mainContentLayout.add(topScrollPane, BorderLayout.CENTER);
+
+		JPanel statusBarPanel = new JPanel();
+		statusBarPanel.setLayout(new BoxLayout(statusBarPanel, BoxLayout.X_AXIS));
+
+		statusLabel = new JLabel("");
+		saveButton = new JButton("Save");
+		saveButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				boolean isValid = performValidation();
+			}
+		});
+
+		statusBarPanel.add(statusLabel);
+		statusBarPanel.add(Box.createHorizontalGlue());
+		statusBarPanel.add(saveButton);
+		statusBarPanel.setBorder(new EmptyBorder(3, 5, 3, 5));
+		mainContentLayout.add(statusBarPanel, BorderLayout.SOUTH);
+
 		// JComponent cont = (JComponent) getContentPane();
 		// cont.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		// this.setPreferredSize(new Dimension(800, 600));
-		this.getContentPane().add(topScrollPane);
+		this.getContentPane().add(mainContentLayout);
 		this.pack();
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+	}
+
+	/**
+	 * validates the moddesc fields.
+	 * This is going to be ugly
+	 * @return true if valid, false otherwise
+	 */
+	protected boolean performValidation() {
+		String modName = modNameField.getText();
+		if (modName.length() == 0 || modName.length() > 60) {
+			statusLabel.setText("Mod name must be between 1 and 60 characters long");
+			return false;
+		}
+		String modDev = modDevField.getText();
+		if (modDev.length() == 0) {
+			statusLabel.setText("Mod Developer field cannot be empty");
+			return false;
+		}
+		String modVersion = modVerField.getText();
+		if (modVersion.length() == 0) {
+			statusLabel.setText("Mod Version field cannot be empty. Floating point value is recommended.");
+			return false;
+		}
+		return false;
 	}
 
 	private MDECustomDLC generateMDECustomDLC(String src, String dest) {

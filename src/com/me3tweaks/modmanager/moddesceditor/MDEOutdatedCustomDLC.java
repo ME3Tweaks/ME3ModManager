@@ -59,6 +59,7 @@ public class MDEOutdatedCustomDLC {
 
 	private void setupPanel(String outdatedCustomDLC) {
 		collapsablePanel = new JXCollapsiblePane();
+		collapsablePanel.setCollapsed(true);
 		JPanel panel = new JPanel(new HorizontalLayout());
 		collapsablePanel.add(panel);
 		minusButton = new JButton("-");
