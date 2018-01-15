@@ -327,9 +327,4 @@ public class MDEConditionalFileItem {
 		}
 
 	}
-
-	private JPanel JXCollapsablePanel() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }

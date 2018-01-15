@@ -14,7 +14,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.StringTokenizer;
@@ -40,6 +43,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import org.ini4j.Wini;
 import org.jdesktop.swingx.HorizontalLayout;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdesktop.swingx.JXFrame;
@@ -114,8 +118,7 @@ public class ModDescEditorWindow extends JXFrame {
 		nameFieldPanel.setLayout(new BoxLayout(nameFieldPanel, BoxLayout.X_AXIS));
 		namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.X_AXIS));
 
-		TitledBorder nameBorder = BorderFactory
-				.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Name (Required)");
+		TitledBorder nameBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Name (Required)");
 		nameFieldPanel.setBorder(nameBorder);
 		modNameField = new JTextField(mod.getModName());
 		modNameField.setToolTipText("Display name for your mod in Mod Manager.");
@@ -124,19 +127,16 @@ public class ModDescEditorWindow extends JXFrame {
 		namePanel.add(nameFieldPanel);
 		// RIGHT SIDE NAME PANEL
 		JXPanel versionPanel = new JXPanel();
-		TitledBorder versionBorder = BorderFactory
-				.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Version Info (Required)");
+		TitledBorder versionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Version Info (Required)");
 		versionPanel.setBorder(versionBorder);
 		versionPanel.setLayout(new BoxLayout(versionPanel, BoxLayout.X_AXIS));
 
 		JXPanel devPanel = new JXPanel();
 		devPanel.setLayout(new BoxLayout(devPanel, BoxLayout.X_AXIS));
-		TitledBorder devBorder = BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Developer Name (Required)");
+		TitledBorder devBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Developer Name (Required)");
 		devPanel.setBorder(devBorder);
 		modDevField = new JTextField(mod.getAuthor());
-		modDevField.setToolTipText(
-				"<html>Name of the mod developer. This should be your username/alias you go by in the modding scene.</html>");
+		modDevField.setToolTipText("<html>Name of the mod developer. This should be your username/alias you go by in the modding scene.</html>");
 		devPanel.add(modDevField, BorderLayout.NORTH);
 		namePanel.add(devPanel);
 
@@ -179,8 +179,7 @@ public class ModDescEditorWindow extends JXFrame {
 		secondRowPanel.setLayout(new BoxLayout(secondRowPanel, BoxLayout.X_AXIS));
 
 		JXPanel sitePanel = new JXPanel(new BorderLayout());
-		TitledBorder siteBorder = BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Website/URL (Recommended)");
+		TitledBorder siteBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Website/URL (Recommended)");
 		sitePanel.setBorder(siteBorder);
 		modSiteField = new JTextField(mod.getModSite());
 		modSiteField.setToolTipText(
@@ -191,8 +190,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 		// Mod Description Panel
 		JXPanel descriptionPanel = new JXPanel(new BorderLayout());
-		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description (Required)");
+		TitledBorder descriptionBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Mod Description (Required)");
 		descriptionPanel.setBorder(descriptionBorder);
 		modDescriptionField = new JTextArea(ResourceUtils.convertBrToNewline(mod.getModDescription()));
 		modDescriptionField.setToolTipText(
@@ -226,8 +224,7 @@ public class ModDescEditorWindow extends JXFrame {
 			// Task Header Panel
 			JButton button = new JButton();
 
-			JLabel taskHeaderLabel = new JLabel(mdeJob.getRawHeader() + " (in " + mdeJob.getRawFolder() + ")",
-					SwingConstants.LEFT);
+			JLabel taskHeaderLabel = new JLabel(mdeJob.getRawHeader() + " (in " + mdeJob.getRawFolder() + ")", SwingConstants.LEFT);
 			taskHeaderLabel.setFont(taskHeaderLabel.getFont().deriveFont(16f));
 			taskHeaderLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			taskHeaderLabel.addMouseListener(new MouseAdapter() {
@@ -345,8 +342,7 @@ public class ModDescEditorWindow extends JXFrame {
 						// Get Raad-only
 						ArrayList<String> readOnlyFiles = new ArrayList<String>();
 						if (mdeJob.getRawAddReadOnlyTargetFiles() != null) {
-							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(
-									mdeJob.getRawAddReadOnlyTargetFiles(), ";");
+							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(mdeJob.getRawAddReadOnlyTargetFiles(), ";");
 
 							while (addTargetReadOnlyStrok.hasMoreTokens()) {
 								String readonlytarget = addTargetReadOnlyStrok.nextToken();
@@ -413,8 +409,7 @@ public class ModDescEditorWindow extends JXFrame {
 							additionsListPanel.add(readOnly, gridC);
 						}
 					} else {
-						JLabel noAdditions = new JLabel("No files are added to the game by this job.",
-								SwingConstants.LEFT);
+						JLabel noAdditions = new JLabel("No files are added to the game by this job.", SwingConstants.LEFT);
 						gridC.gridy++;
 						gridC.gridx = 0;
 						gridC.weightx = 1;
@@ -455,8 +450,7 @@ public class ModDescEditorWindow extends JXFrame {
 						// Get Raad-only
 						ArrayList<String> readOnlyFiles = new ArrayList<String>();
 						if (mdeJob.getRawAddReadOnlyTargetFiles() != null) {
-							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(
-									mdeJob.getRawAddReadOnlyTargetFiles(), ";");
+							StringTokenizer addTargetReadOnlyStrok = new StringTokenizer(mdeJob.getRawAddReadOnlyTargetFiles(), ";");
 
 							while (addTargetReadOnlyStrok.hasMoreTokens()) {
 								String readonlytarget = addTargetReadOnlyStrok.nextToken();
@@ -523,8 +517,7 @@ public class ModDescEditorWindow extends JXFrame {
 							additionsListPanel.add(readOnly, gridC);
 						}
 					} else {
-						JLabel noAdditions = new JLabel("No user selection options are available for this job.",
-								SwingConstants.LEFT);
+						JLabel noAdditions = new JLabel("No user selection options are available for this job.", SwingConstants.LEFT);
 						gridC.gridy++;
 						gridC.gridx = 0;
 						gridC.weightx = 1;
@@ -606,8 +599,7 @@ public class ModDescEditorWindow extends JXFrame {
 					@Override
 					public void actionPerformed(ActionEvent e) {
 						// TODO Auto-generated method stub
-						ModManager.debugLogger
-								.writeMessage("MDE Custom DLC Remove button clicked: " + mde.getPair().getKey());
+						ModManager.debugLogger.writeMessage("MDE Custom DLC Remove button clicked: " + mde.getPair().getKey());
 						customDLCPanel.remove(mde.getCustDLCLineItem());
 						customDLCSelections.remove(mde);
 						if (customDLCSelections.size() == 0) {
@@ -655,8 +647,7 @@ public class ModDescEditorWindow extends JXFrame {
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								// TODO Auto-generated method stub
-								ModManager.debugLogger.writeMessage(
-										"MDE Custom DLC Remove button clicked: " + mde.getPair().getKey());
+								ModManager.debugLogger.writeMessage("MDE Custom DLC Remove button clicked: " + mde.getPair().getKey());
 								customDLCPanel.remove(mde.getCustDLCLineItem());
 								customDLCSelections.remove(mde);
 								if (customDLCSelections.size() == 0) {
@@ -715,8 +706,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(ModDescEditorWindow.this,
-							(AlternateFile) null);
+					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(ModDescEditorWindow.this, (AlternateFile) null);
 					altFileRowsPanel.add(mdecfi.getPanel());
 					mdecfi.getPanel().setCollapsed(false);
 					conditionalFileItems.add(mdecfi);
@@ -766,8 +756,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				MDEConditionalDLCItem mdecdlc = new MDEConditionalDLCItem(ModDescEditorWindow.this,
-						(AlternateCustomDLC) null);
+				MDEConditionalDLCItem mdecdlc = new MDEConditionalDLCItem(ModDescEditorWindow.this, (AlternateCustomDLC) null);
 				altDLCRowsPanel.add(mdecdlc.getPanel());
 				mdecdlc.getPanel().setCollapsed(false);
 				conditionalDLCItems.add(mdecdlc);
@@ -788,8 +777,7 @@ public class ModDescEditorWindow extends JXFrame {
 		oudatedFolderRowsPanel.add(outdatedDLCIntroText);
 
 		outdatedFoldersPanel.add(oudatedFolderRowsPanel);
-		noOutdatedCustomDLCLabel = new JLabel(
-				"No outdated custom DLC folders will be removed when this mod is installed.");
+		noOutdatedCustomDLCLabel = new JLabel("No outdated custom DLC folders will be removed when this mod is installed.");
 		boolean expandOutdated = false;
 		for (String str : mod.getOutdatedDLCModules()) {
 			MDEOutdatedCustomDLC mdeocdlc = new MDEOutdatedCustomDLC(this, str);
@@ -872,12 +860,9 @@ public class ModDescEditorWindow extends JXFrame {
 
 		// Button Clicks
 
-		JLabel[] labels = { metaPanelTitle, baseOfficialPanelTitle, customDLCPanelTitle, conditionalFilesPanelTitle,
-				conditionalCustomDLCPanelTitle, outdatedFoldersPanelTitle };
-		JButton[] expanders = { metaPanelButton, basePanelButton, customPanelButton, condFilePanelButton,
-				condDLCPanelButton, oudatedFoldersPanelButton };
-		JXCollapsiblePane[] expanderPanes = { metadataPane, baseDLCPane, customDLCPane, condFilesPane, condDLCPane,
-				outdatedFoldersPane };
+		JLabel[] labels = { metaPanelTitle, baseOfficialPanelTitle, customDLCPanelTitle, conditionalFilesPanelTitle, conditionalCustomDLCPanelTitle, outdatedFoldersPanelTitle };
+		JButton[] expanders = { metaPanelButton, basePanelButton, customPanelButton, condFilePanelButton, condDLCPanelButton, oudatedFoldersPanelButton };
+		JXCollapsiblePane[] expanderPanes = { metadataPane, baseDLCPane, customDLCPane, condFilesPane, condDLCPane, outdatedFoldersPane };
 
 		for (int i = 0; i < expanders.length; i++) {
 			JButton button = expanders[i];
@@ -943,8 +928,7 @@ public class ModDescEditorWindow extends JXFrame {
 		optionsPanel.add(outdatedFoldersHeaderPanel);
 		optionsPanel.add(outdatedFoldersPane);
 
-		JScrollPane topScrollPane = new JScrollPane(optionsPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		JScrollPane topScrollPane = new JScrollPane(optionsPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 		JPanel mainContentLayout = new JPanel(new BorderLayout());
 		mainContentLayout.add(topScrollPane, BorderLayout.CENTER);
@@ -955,10 +939,13 @@ public class ModDescEditorWindow extends JXFrame {
 		statusLabel = new JLabel("");
 		saveButton = new JButton("Save");
 		saveButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				boolean isValid = performValidation();
+				if (isValid) {
+					String modDescStr = buildModDesc();
+				}
 			}
 		});
 
@@ -976,9 +963,60 @@ public class ModDescEditorWindow extends JXFrame {
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
+	protected String buildModDesc() {
+		try {
+			Wini moddesc = new Wini();
+			moddesc.put("ModManager", "cmmver", cmmverCombobox.getSelectedItem());
+
+			moddesc.put("ModInfo", "modname", modNameField.getText());
+			moddesc.put("ModInfo", "moddev", modDevField.getText());
+			moddesc.put("ModInfo", "modver", modVerField.getText());
+			String site = modSiteField.getText();
+			if (!site.equals("")) {
+				//will have been validated as url
+				moddesc.put("ModInfo", "modsite", site);
+			}
+
+			String description = modDescriptionField.getText();
+			description = ResourceUtils.convertNewlineToBr(description);
+			moddesc.put("ModInfo", "moddesc", description);
+
+			if (customDLCSelections.size() > 0) {
+				//has a custom DLC job
+				StringBuilder srcdirs = new StringBuilder();
+				StringBuilder destdirs = new StringBuilder();
+				boolean isFirst = true;
+				for (MDECustomDLC mdecdlc : customDLCSelections) {
+					if (!isFirst) {
+						srcdirs.append(";");
+						destdirs.append(";");
+					} else {
+						isFirst = false;
+					}
+					SimpleEntry<String, String> pair = mdecdlc.getPair();
+					srcdirs.append(pair.getKey());
+					destdirs.append(pair.getValue());
+				}
+				moddesc.put("CUSTOMDLC", "sourcedirs", srcdirs.toString());
+				moddesc.put("CUSTOMDLC", "destdirs", destdirs.toString());
+			}
+
+			StringWriter writer = new StringWriter();
+			moddesc.store(writer);
+			String written = writer.toString();
+			System.out.println(written);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	/**
-	 * validates the moddesc fields.
-	 * This is going to be ugly
+	 * validates the moddesc fields. This is going to be ugly
+	 * 
 	 * @return true if valid, false otherwise
 	 */
 	protected boolean performValidation() {
@@ -997,7 +1035,7 @@ public class ModDescEditorWindow extends JXFrame {
 			statusLabel.setText("Mod Version field cannot be empty. Floating point value is recommended.");
 			return false;
 		}
-		return false;
+		return true;
 	}
 
 	private MDECustomDLC generateMDECustomDLC(String src, String dest) {
@@ -1008,8 +1046,7 @@ public class ModDescEditorWindow extends JXFrame {
 		custDLCLineItem.add(Box.createRigidArea(new Dimension(5, 5)));
 		custDLCLineItem.add(new JLabel(custDLCLine));
 		custDLCLineItem.setAlignmentX(Component.LEFT_ALIGNMENT);
-		return new MDECustomDLC(custDLCLineItem, subtractButton,
-				new AbstractMap.SimpleEntry<String, String>(src, dest));
+		return new MDECustomDLC(custDLCLineItem, subtractButton, new AbstractMap.SimpleEntry<String, String>(src, dest));
 	}
 
 	public Mod getMod() {
