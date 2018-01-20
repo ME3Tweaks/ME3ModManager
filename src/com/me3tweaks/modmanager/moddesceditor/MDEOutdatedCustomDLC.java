@@ -39,7 +39,7 @@ public class MDEOutdatedCustomDLC {
 		return collapsablePanel;
 	}
 
-	public JTextField getUserReasonField() {
+	public JTextField getOutdatedDLCNameField() {
 		return userReasonField;
 	}
 
@@ -80,6 +80,7 @@ public class MDEOutdatedCustomDLC {
 		userReasonField.setColumns(30);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, itemSpacing)));
 		panel.add(userReasonField);
+		collapsablePanel.add(panel);
 
 	}
 }

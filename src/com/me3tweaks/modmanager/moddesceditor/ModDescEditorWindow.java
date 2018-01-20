@@ -35,6 +35,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -57,12 +58,13 @@ import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
 import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class ModDescEditorWindow extends JXFrame {
 
 	private Mod mod;
-	private static int SUBPANEL_INSET_LEFT = 30;
+	private static int SUBPANEL_INSET_LEFT = 6;
 	private ArrayList<MDECustomDLC> customDLCSelections = new ArrayList<>();
 	private ArrayList<MDEConditionalFileItem> conditionalFileItems = new ArrayList<MDEConditionalFileItem>();
 	private ArrayList<MDEConditionalDLCItem> conditionalDLCItems = new ArrayList<MDEConditionalDLCItem>();
@@ -78,6 +80,8 @@ public class ModDescEditorWindow extends JXFrame {
 	private JComboBox<String> cmmverCombobox;
 	private JTextField modSiteField;
 	private JTextArea modDescriptionField;
+	private JTextField updateFolderField;
+	private JTextField updateCodeField;
 
 	public ModDescEditorWindow(Mod mod) {
 		ModManager.debugLogger.writeMessage("Reloading " + mod.getModName() + " without automatic alternates applied.");
@@ -108,11 +112,27 @@ public class ModDescEditorWindow extends JXFrame {
 
 		JXPanel optionsPanel = new JXPanel(new VerticalLayout());
 		optionsPanel.setScrollableHeightHint(ScrollableSizeHint.NONE);
+
+		JTabbedPane tabbedPane = new JTabbedPane();
+		JLabel metaPanelTitle = new JLabel("Mod Metadata");
+		JLabel baseOfficialPanelTitle = new JLabel("Basegame + Official DLC + Balance Changes Modifications");
+		JLabel customDLCPanelTitle = new JLabel("Always-installed Custom DLC");
+		JLabel conditionalFilesPanelTitle = new JLabel("Compatibility + Manual options files");
+		JLabel conditionalCustomDLCPanelTitle = new JLabel("Compatibility + Manual options DLC");
+		JLabel outdatedFoldersPanelTitle = new JLabel("Outdated mod DLC folders");
+
+		// Set fonts
+		metaPanelTitle.setFont(baseOfficialPanelTitle.getFont().deriveFont(18f));
+		baseOfficialPanelTitle.setFont(baseOfficialPanelTitle.getFont().deriveFont(18f));
+		customDLCPanelTitle.setFont(customDLCPanelTitle.getFont().deriveFont(18f));
+		conditionalFilesPanelTitle.setFont(conditionalFilesPanelTitle.getFont().deriveFont(18f));
+		conditionalCustomDLCPanelTitle.setFont(conditionalCustomDLCPanelTitle.getFont().deriveFont(18f));
+		outdatedFoldersPanelTitle.setFont(conditionalCustomDLCPanelTitle.getFont().deriveFont(18f));
+
 		// METADATA PANEL==================================================
 		// Mod Name & ModDesc version
 		JXPanel metadataPanel = new JXPanel();
 		metadataPanel.setLayout(new VerticalLayout());
-
 		JXPanel namePanel = new JXPanel();
 		JXPanel nameFieldPanel = new JXPanel();
 		nameFieldPanel.setLayout(new BoxLayout(nameFieldPanel, BoxLayout.X_AXIS));
@@ -204,23 +224,74 @@ public class ModDescEditorWindow extends JXFrame {
 		modDescriptionField.setLineWrap(true);
 		descriptionPanel.add(scrollPane, BorderLayout.CENTER);
 
+		//Updater Panel
+		JXPanel updaterPanel = new JXPanel();
+		updaterPanel.setLayout(new BoxLayout(updaterPanel, BoxLayout.X_AXIS));
+		TitledBorder updaterBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "ME3Tweaks Updater Service Information (Optional)");
+		updaterPanel.setBorder(updaterBorder);
+
+		JCheckBox useUpdaterCB = new JCheckBox("Use ME3Tweaks Updater Service");
+		useUpdaterCB.setToolTipText(
+				"<html>ME3Tweaks Updater Service allows your mod to automatically update in Mod Manager for end users.<br>Using this feature requires an update code which you can request from FemShep.</html>");
+		JLabel updateCodeLabel = new JLabel("Update Code:");
+		JLabel updateFolderLabel = new JLabel("Server Folder:");
+		useUpdaterCB.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				updateCodeField.setEnabled(useUpdaterCB.isSelected());
+				updateFolderField.setEnabled(useUpdaterCB.isSelected());
+				updateCodeLabel.setEnabled(useUpdaterCB.isSelected());
+				updateFolderLabel.setEnabled(useUpdaterCB.isSelected());
+			}
+		});
+		updateCodeField = new JTextField();
+		updateCodeField.setUI(new HintTextFieldUI("Code"));
+		updateCodeField.setColumns(4);
+		updateFolderField = new JTextField();
+		updateFolderField.setUI(new HintTextFieldUI("Server Folder"));
+
+		if (mod.getClassicUpdateCode() > 0 && mod.getServerModFolder() != null) {
+			useUpdaterCB.setSelected(true);
+			updateCodeField.setText(Integer.toString(mod.getClassicUpdateCode()));
+			updateFolderField.setText(mod.getServerModFolder());
+		}
+
+		updateCodeField.setEnabled(useUpdaterCB.isSelected());
+		updateFolderField.setEnabled(useUpdaterCB.isSelected());
+		updateCodeLabel.setEnabled(useUpdaterCB.isSelected());
+		updateFolderLabel.setEnabled(useUpdaterCB.isSelected());
+
+		updaterPanel.add(useUpdaterCB);
+		updaterPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		updaterPanel.add(new JSeparator(JSeparator.VERTICAL));
+		updaterPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		updaterPanel.add(updateCodeLabel);
+		updaterPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+
+		updaterPanel.add(updateCodeField);
+		updaterPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		updaterPanel.add(updateFolderLabel);
+		updaterPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		updaterPanel.add(updateFolderField);
+		updaterPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		secondRowPanel.add(updaterPanel);
+		metadataPanel.add(metaPanelTitle);
 		metadataPanel.add(namePanel);
 		metadataPanel.add(secondRowPanel);
 		metadataPanel.add(descriptionPanel);
-
-		//
-		boolean expandBaseDLC = false, expandCustomDLC = false, expandCondFiles = false, expandCondDLC = false;
 
 		// BASEGAME + OFFICIAL DLC MODIFICATIONS PANEL
 		JXPanel baseOfficialPanel = new JXPanel();
 		baseOfficialPanel.setLayout(new VerticalLayout());
 		baseOfficialPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 		baseOfficialPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		baseOfficialPanel.add(baseOfficialPanelTitle);
+		baseOfficialPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		JLabel baseOfficialIntro = new JLabel(
 				"<html>Basegame and official DLC modifiers should be used in circumstances where DLC cannot be added (e.g. in MP for gameplay mods, but not additional MP content mods).<br>You should also use them for items in TESTPATCH or files that must be modified as they load before the main menu (e.g. SFXGame).<br>There is very rarely a need to modify SP DLC using this method, use Custom DLC instead.</html>");
 		baseOfficialPanel.add(baseOfficialIntro);
 		for (MDEOfficialJob mdeJob : mod.rawOfficialJobs) {
-			expandBaseDLC = true;
 			// Task Header Panel
 			JButton button = new JButton();
 
@@ -575,6 +646,9 @@ public class ModDescEditorWindow extends JXFrame {
 		JXPanel customDLCPanel = new JXPanel();
 		customDLCPanel.setLayout(new BoxLayout(customDLCPanel, BoxLayout.Y_AXIS));
 		customDLCPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+		customDLCPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		customDLCPanel.add(customDLCPanelTitle);
+		
 		JLabel customDLCIntroText = new JLabel(
 				"<html>Custom DLC are additional DLC folders that will be added to the game DLC directory.<br>Files with the same name as in other DLC or basegame will be overriden if the DLC has a higher mount priority.<br>Files that are loaded before the main menu can't be overriden this way.</html>");
 
@@ -586,8 +660,6 @@ public class ModDescEditorWindow extends JXFrame {
 		labelNoCustomDLC.setAlignmentX(Component.LEFT_ALIGNMENT);
 		customDLCPanel.add(labelNoCustomDLC);
 		if (mod.rawcustomDLCDestDirs != null && mod.rawCustomDLCSourceDirs != null) {
-			expandCustomDLC = true;
-
 			StringTokenizer srcStrok = new StringTokenizer(mod.rawcustomDLCDestDirs, ";");
 			StringTokenizer destStrok = new StringTokenizer(mod.rawCustomDLCSourceDirs, ";");
 			while (srcStrok.hasMoreTokens()) {
@@ -677,6 +749,8 @@ public class ModDescEditorWindow extends JXFrame {
 		JXPanel altFilesPanel = new JXPanel();
 		altFilesPanel.setLayout(new VerticalLayout());// (altFilesPanel, BoxLayout.Y_AXIS));
 		altFilesPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+		altFilesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		altFilesPanel.add(conditionalFilesPanelTitle);
 		JPanel altFileRowsPanel = new JPanel(new VerticalLayout(3));
 		altFilesPanel.add(altFileRowsPanel);
 		{
@@ -690,8 +764,6 @@ public class ModDescEditorWindow extends JXFrame {
 			noAltFilesLabel = new JLabel("No Alternate Files specified.");
 			altFilesPanel.add(noAltFilesLabel);
 			if (mod.rawAltFilesText != null) {
-				expandCondFiles = true;
-
 				for (AlternateFile af : mod.getAlternateFiles()) {
 					MDEConditionalFileItem mdecfi = new MDEConditionalFileItem(this, af);
 					altFileRowsPanel.add(mdecfi.getPanel());
@@ -722,9 +794,11 @@ public class ModDescEditorWindow extends JXFrame {
 		JXPanel altDLCPanel = new JXPanel();
 		altDLCPanel.setLayout(new VerticalLayout());
 		altDLCPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+		
 		JPanel altDLCRowsPanel = new JPanel(new VerticalLayout(3));
 		altDLCPanel.add(altDLCRowsPanel);
-
+		altDLCPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		altDLCPanel.add(conditionalCustomDLCPanelTitle);
 		JLabel altDLCIntroText = new JLabel(
 				"<html>You can specify that specific CustomDLC are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>");
 
@@ -733,7 +807,6 @@ public class ModDescEditorWindow extends JXFrame {
 		noAltDLCLabel = new JLabel("No Alternate DLC specified.");
 		altDLCPanel.add(noAltDLCLabel);
 		if (mod.rawAltDlcText != null) {
-			expandCondDLC = true;
 			/*
 			 * for (AlternateCustomDLC ad : mod.getAlternateCustomDLC()) {
 			 * altDLCRowsPanel.add(new JLabel(ad.getFriendlyName())); }
@@ -768,6 +841,8 @@ public class ModDescEditorWindow extends JXFrame {
 		JXPanel outdatedFoldersPanel = new JXPanel();
 		outdatedFoldersPanel.setLayout(new VerticalLayout());
 		outdatedFoldersPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
+		outdatedFoldersPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		outdatedFoldersPanel.add(outdatedFoldersPanelTitle);
 		JPanel oudatedFolderRowsPanel = new JPanel(new VerticalLayout(3));
 
 		JLabel outdatedDLCIntroText = new JLabel(
@@ -778,12 +853,11 @@ public class ModDescEditorWindow extends JXFrame {
 
 		outdatedFoldersPanel.add(oudatedFolderRowsPanel);
 		noOutdatedCustomDLCLabel = new JLabel("No outdated custom DLC folders will be removed when this mod is installed.");
-		boolean expandOutdated = false;
 		for (String str : mod.getOutdatedDLCModules()) {
 			MDEOutdatedCustomDLC mdeocdlc = new MDEOutdatedCustomDLC(this, str);
 			outdatedCustomDLCItems.add(mdeocdlc);
 			oudatedFolderRowsPanel.add(mdeocdlc.getPanel());
-			expandOutdated = true;
+			mdeocdlc.getPanel().setCollapsed(false);
 			noOutdatedCustomDLCLabel.setVisible(false);
 		}
 
@@ -798,7 +872,7 @@ public class ModDescEditorWindow extends JXFrame {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				for (MDEOutdatedCustomDLC mdeexist : outdatedCustomDLCItems) {
-					if (mdeexist.getUserReasonField().getText().equals("")) {
+					if (mdeexist.getOutdatedDLCNameField().getText().equals("")) {
 						return; // do nothing
 					}
 				}
@@ -818,120 +892,36 @@ public class ModDescEditorWindow extends JXFrame {
 
 		JXCollapsiblePane baseDLCPane = new JXCollapsiblePane();
 		baseDLCPane.add(baseOfficialPanel);
-		baseDLCPane.setCollapsed(!expandBaseDLC);
 
 		JXCollapsiblePane customDLCPane = new JXCollapsiblePane();
 		customDLCPane.add(customDLCPanel);
-		customDLCPane.setCollapsed(!expandCustomDLC);
 
 		JXCollapsiblePane condFilesPane = new JXCollapsiblePane();
 		condFilesPane.add(altFilesPanel);
-		condFilesPane.setCollapsed(!expandCondFiles);
 
 		JXCollapsiblePane condDLCPane = new JXCollapsiblePane();
 		condDLCPane.add(altDLCPanel);
-		condDLCPane.setCollapsed(!expandCondDLC);
 
 		JXCollapsiblePane outdatedFoldersPane = new JXCollapsiblePane();
 		outdatedFoldersPane.add(outdatedFoldersPanel);
-		outdatedFoldersPane.setCollapsed(!expandOutdated);
 
-		JLabel metaPanelTitle = new JLabel("Mod Metadata");
-		JLabel baseOfficialPanelTitle = new JLabel("Basegame + Official DLC + Balance Changes Modifications");
-		JLabel customDLCPanelTitle = new JLabel("Always-installed Custom DLC");
-		JLabel conditionalFilesPanelTitle = new JLabel("Compatibility + Manual options files");
-		JLabel conditionalCustomDLCPanelTitle = new JLabel("Compatibility + Manual options DLC");
-		JLabel outdatedFoldersPanelTitle = new JLabel("Outdated mod DLC folders");
-
-		JButton metaPanelButton = new JButton();
-		JButton basePanelButton = new JButton();
-		JButton customPanelButton = new JButton();
-		JButton condFilePanelButton = new JButton();
-		JButton condDLCPanelButton = new JButton();
-		JButton oudatedFoldersPanelButton = new JButton();
-
-		// Set fonts
-		metaPanelTitle.setFont(baseOfficialPanelTitle.getFont().deriveFont(18f));
-		baseOfficialPanelTitle.setFont(baseOfficialPanelTitle.getFont().deriveFont(18f));
-		customDLCPanelTitle.setFont(customDLCPanelTitle.getFont().deriveFont(18f));
-		conditionalFilesPanelTitle.setFont(conditionalFilesPanelTitle.getFont().deriveFont(18f));
-		conditionalCustomDLCPanelTitle.setFont(conditionalCustomDLCPanelTitle.getFont().deriveFont(18f));
-		outdatedFoldersPanelTitle.setFont(conditionalCustomDLCPanelTitle.getFont().deriveFont(18f));
-
-		// Button Clicks
-
-		JLabel[] labels = { metaPanelTitle, baseOfficialPanelTitle, customDLCPanelTitle, conditionalFilesPanelTitle, conditionalCustomDLCPanelTitle, outdatedFoldersPanelTitle };
-		JButton[] expanders = { metaPanelButton, basePanelButton, customPanelButton, condFilePanelButton, condDLCPanelButton, oudatedFoldersPanelButton };
-		JXCollapsiblePane[] expanderPanes = { metadataPane, baseDLCPane, customDLCPane, condFilesPane, condDLCPane, outdatedFoldersPane };
-
-		for (int i = 0; i < expanders.length; i++) {
-			JButton button = expanders[i];
-			JXCollapsiblePane pane = expanderPanes[i];
-			JLabel label = labels[i];
-			Action toggleAction = pane.getActionMap().get(JXCollapsiblePane.TOGGLE_ACTION);
-			toggleAction.putValue(JXCollapsiblePane.COLLAPSE_ICON, UIManager.getIcon("Tree.expandedIcon"));
-			toggleAction.putValue(JXCollapsiblePane.EXPAND_ICON, UIManager.getIcon("Tree.collapsedIcon"));
-			button.setAction(toggleAction);
-			button.setText("");
-
-			// make label clickable
-			label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			label.addMouseListener(new MouseAdapter() {
-				@Override
-				public void mouseClicked(MouseEvent e) {
-					button.doClick();
-				}
-			});
-		}
-
-		// Header Panels
-		JXPanel metaHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
-		JXPanel baseHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
-		JXPanel customHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
-		JXPanel condFileHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
-		JXPanel condDLCHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
-		JXPanel outdatedFoldersHeaderPanel = new JXPanel(new FlowLayout(FlowLayout.LEFT));
-
-		metaHeaderPanel.add(metaPanelButton);
-		metaHeaderPanel.add(metaPanelTitle);
-
-		baseHeaderPanel.add(basePanelButton);
-		baseHeaderPanel.add(baseOfficialPanelTitle);
-
-		customHeaderPanel.add(customPanelButton);
-		customHeaderPanel.add(customDLCPanelTitle);
-
-		condFileHeaderPanel.add(condFilePanelButton);
-		condFileHeaderPanel.add(conditionalFilesPanelTitle);
-
-		condDLCHeaderPanel.add(condDLCPanelButton);
-		condDLCHeaderPanel.add(conditionalCustomDLCPanelTitle);
-
-		outdatedFoldersHeaderPanel.add(oudatedFoldersPanelButton);
-		outdatedFoldersHeaderPanel.add(outdatedFoldersPanelTitle);
-
-		optionsPanel.add(metaHeaderPanel);
-		optionsPanel.add(metadataPane);
-
-		optionsPanel.add(baseHeaderPanel);
-		optionsPanel.add(baseDLCPane);
-
-		optionsPanel.add(customHeaderPanel);
-		optionsPanel.add(customDLCPane);
-
-		optionsPanel.add(condFileHeaderPanel);
-		optionsPanel.add(condFilesPane);
-
-		optionsPanel.add(condDLCHeaderPanel);
-		optionsPanel.add(condDLCPane);
-
-		optionsPanel.add(outdatedFoldersHeaderPanel);
-		optionsPanel.add(outdatedFoldersPane);
+		tabbedPane.addTab("Mod Info", null, new JScrollPane(metadataPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
+				"Edit user-visible mod information");
+		tabbedPane.addTab("Basegame / Official DLC / Balance Changes", null,
+				new JScrollPane(baseDLCPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
+				"Specify modification for the Basegame, Official BioWare DLC and Balance Changes file");
+		tabbedPane.addTab("Custom DLC", null, new JScrollPane(customDLCPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
+				"Specify custom DLC that will be installed");
+		tabbedPane.addTab("Compatibility & Alternative Installation Options", null,
+				new JScrollPane(condFilesPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
+				"Specify compatibility conditions and alternative files/folders for installation");
+		tabbedPane.addTab("Outdated DLC", null, new JScrollPane(outdatedFoldersPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
+				"Specify outdated DLC foldernames to delete on install");
 
 		JScrollPane topScrollPane = new JScrollPane(optionsPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 		JPanel mainContentLayout = new JPanel(new BorderLayout());
-		mainContentLayout.add(topScrollPane, BorderLayout.CENTER);
+		mainContentLayout.add(tabbedPane, BorderLayout.CENTER);
 
 		JPanel statusBarPanel = new JPanel();
 		statusBarPanel.setLayout(new BoxLayout(statusBarPanel, BoxLayout.X_AXIS));
@@ -981,6 +971,8 @@ public class ModDescEditorWindow extends JXFrame {
 			description = ResourceUtils.convertNewlineToBr(description);
 			moddesc.put("ModInfo", "moddesc", description);
 
+			//if (Selections)
+
 			if (customDLCSelections.size() > 0) {
 				//has a custom DLC job
 				StringBuilder srcdirs = new StringBuilder();
@@ -999,6 +991,32 @@ public class ModDescEditorWindow extends JXFrame {
 				}
 				moddesc.put("CUSTOMDLC", "sourcedirs", srcdirs.toString());
 				moddesc.put("CUSTOMDLC", "destdirs", destdirs.toString());
+			}
+			
+			if (outdatedCustomDLCItems.size() > 0) {
+				//has a custom DLC job
+				StringBuilder outdatedDLCDirs = new StringBuilder();
+				boolean isFirst = true;
+				for (MDEOutdatedCustomDLC mdeocdlc : outdatedCustomDLCItems) {
+					if (!isFirst) {
+						outdatedDLCDirs.append(";");
+					} else {
+						isFirst = false;
+					}
+					String dlcFolderName = mdeocdlc.getOutdatedDLCNameField().getText();
+					outdatedDLCDirs.append(dlcFolderName);
+				}
+				moddesc.put("CUSTOMDLC", "outdatedcustomdlc", outdatedDLCDirs.toString());
+			}
+			
+			if (true) {
+				String updateCodeStr = updateCodeField.getText();
+				String updateFolder = updateFolderField.getText();
+				
+				moddesc.put("ModInfo", "updatecode", updateCodeStr);
+				moddesc.put("UPDATES", "serverfolder", updateFolder);
+				moddesc.put("UPDATES", "blacklistedfiles", "Placeholder");
+
 			}
 
 			StringWriter writer = new StringWriter();
