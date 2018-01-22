@@ -8,6 +8,7 @@ import java.awt.event.ItemListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.StringTokenizer;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -30,10 +31,10 @@ import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
 
 import javafx.application.Platform;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 
 public class MDEConditionalDLCItem {
 	private JXCollapsiblePane collapsablePanel;
@@ -85,15 +86,12 @@ public class MDEConditionalDLCItem {
 	private AlternateCustomDLC altdlc;
 
 	private JComboBox<String> conditionBox;
-	private static String[] conditions = { AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT,
-			AlternateCustomDLC.CONDITION_DLC_PRESENT, AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT,
+	private static String[] conditions = { AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT, AlternateCustomDLC.CONDITION_DLC_PRESENT, AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT,
 			AlternateCustomDLC.CONDITION_ANY_DLC_NOT_PRESENT, AlternateCustomDLC.CONDITION_MANUAL };
-	private static String[] conditionsHuman = { "is not installed", "is installed", "are all installed",
-			"any is not installed", "is selected by user" };
+	private static String[] conditionsHuman = { "is not installed", "is installed", "are all installed", "any is not installed", "is selected by user" };
 
 	private JComboBox<String> operationBox;
-	private static String[] operations = { AlternateCustomDLC.OPERATION_ADD_CUSTOMDLC_JOB,
-			AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER };
+	private static String[] operations = { AlternateCustomDLC.OPERATION_ADD_CUSTOMDLC_JOB, AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER };
 	private static String[] operationsHuman = { "add additional custom DLC", "merge folder" };
 
 	private JButton minusButton;
@@ -110,6 +108,8 @@ public class MDEConditionalDLCItem {
 
 	// private String altFile;
 	private String modFile;
+
+	private JTextField conditionalDLC;
 
 	public MDEConditionalDLCItem(ModDescEditorWindow owningWindow, AlternateCustomDLC af2) {
 		this.mod = owningWindow.getMod();
@@ -144,8 +144,7 @@ public class MDEConditionalDLCItem {
 		userReasonField = new JTextField(altdlc.getFriendlyName());
 		userReasonField.setUI(new HintTextFieldUI("User friendly string e.g. Fixes X if Y is present"));
 
-		userReasonField.setToolTipText(
-				"User friendly name. If one is not entered, a automatically generated one is displayed instead.");
+		userReasonField.setToolTipText("User friendly name. If one is not entered, a automatically generated one is displayed instead.");
 		userReasonField.setColumns(30);
 		panel.add(userReasonField);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing * 2, 3)));
@@ -155,7 +154,8 @@ public class MDEConditionalDLCItem {
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		panel.add(ifLabel);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
-		JTextField conditionalDLC = new JTextField(altdlc.getConditionalDLC(), 16);
+		String condDLCStr = altdlc.getConditionalDLC().replaceAll("\\(", "").replaceAll("\\)", "");
+		conditionalDLC = new JTextField(condDLCStr, 16);
 		conditionalDLC.setUI(new HintTextFieldUI("DLC_MOD_Condition"));
 		panel.add(conditionalDLC);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
@@ -209,13 +209,11 @@ public class MDEConditionalDLCItem {
 								// Run on UI thread
 
 								// we need to verify file...
-								String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(),
-										mod.getModPath(), File.separator);
+								String relativePath = ResourceUtils.getRelativePath(file.getAbsolutePath(), mod.getModPath(), File.separator);
 								if (relativePath.contains("..")) {
 									// reject as out of mod folder.
 
-									JOptionPane.showMessageDialog(owningWindow, "This file is not in the mod folder.",
-											"Invalid file", JOptionPane.ERROR_MESSAGE);
+									JOptionPane.showMessageDialog(owningWindow, "This file is not in the mod folder.", "Invalid file", JOptionPane.ERROR_MESSAGE);
 								}
 
 								// File is valid
@@ -323,10 +321,94 @@ public class MDEConditionalDLCItem {
 		} else {
 			operationBox.setSelectedIndex(0);
 		}
-
 	}
 
 	public String getDLCDestination() {
 		return destLabel.getRawText();
+	}
+
+	public String generateModDescStr() {
+		/*
+		 * conditionalDLC = ValueParserLib.getStringProperty(altfileText,
+		 * "ConditionalDLC", false); modFile =
+		 * ValueParserLib.getStringProperty(altfileText, "ModFile", false); if
+		 * (modFile.charAt(0) != '/' && modFile.charAt(0) != '\\') { modFile =
+		 * "/" + modFile; } altFile =
+		 * ValueParserLib.getStringProperty(altfileText, "ModAltFile", false);
+		 * if (altFile == null) { altFile =
+		 * ValueParserLib.getStringProperty(altfileText, "AltFile", false); }
+		 * condition = ValueParserLib.getStringProperty(altfileText,
+		 * "Condition", false); description =
+		 * ValueParserLib.getStringProperty(altfileText, "Description", true);
+		 * operation = ValueParserLib.getStringProperty(altfileText,
+		 * "ModOperation", false); friendlyName =
+		 * ValueParserLib.getStringProperty(altfileText, "FriendlyName", true);
+		 * substitutefile = ValueParserLib.getStringProperty(altfileText,
+		 * "SubstituteFile", false);
+		 */
+
+		String str = "(";
+		int conditionIndex = getConditionBox().getSelectedIndex();
+
+		//Condition
+		switch (conditionIndex) {
+		case 0:
+			str += ValueParserLib.generateValue("Condition", AlternateCustomDLC.CONDITION_DLC_NOT_PRESENT, false);
+			break;
+		case 1:
+			str += ValueParserLib.generateValue("Condition", AlternateCustomDLC.CONDITION_DLC_PRESENT, false);
+			break;
+		case 2:
+			str += ValueParserLib.generateValue("Condition", AlternateCustomDLC.CONDITION_ALL_DLC_PRESENT, false);
+			break;
+		case 3:
+			str += ValueParserLib.generateValue("Condition", AlternateCustomDLC.CONDITION_ANY_DLC_NOT_PRESENT, false);
+			break;
+		case 4:
+			str += ValueParserLib.generateValue("Condition", AlternateCustomDLC.CONDITION_MANUAL, false);
+			break;
+		}
+
+		str += ",";
+
+		//ConditionalDLC=
+		switch (conditionIndex) {
+		case 0:
+		case 1:
+			str += ValueParserLib.generateValue("ConditionalDLC", conditionalDLC.getText(), false);
+			str += ",";
+			break;
+		case 2:
+		case 3:
+			ArrayList<String> values = new ArrayList<String>();
+			StringTokenizer st = new StringTokenizer(conditionalDLC.getText(), ";");
+			while (st.hasMoreTokens()) {
+				values.add(st.nextToken());
+			}
+			str += ValueParserLib.generateValueList("ConditionalDLC", values);
+			str += ",";
+			break;
+		}
+		
+		//ModOperation
+		int operationIndex = getOperationBox().getSelectedIndex();
+
+		//Condition
+		switch (operationIndex) {
+		case 0:
+			str += ValueParserLib.generateValue("ModOperation", AlternateCustomDLC.OPERATION_ADD_CUSTOMDLC_JOB, false);
+			break;
+		case 1:
+			str += ValueParserLib.generateValue("ModOperation", AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER, false);
+			break;
+		}
+		
+		str += ",";
+		
+		//FriendlyName
+		str += ValueParserLib.generateValue("FriendlyName", userReasonField.getText(), true);
+
+		str += ")";
+		return str;
 	}
 }

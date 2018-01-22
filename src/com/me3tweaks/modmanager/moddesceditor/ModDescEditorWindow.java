@@ -12,7 +12,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -29,7 +28,6 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -82,6 +80,7 @@ public class ModDescEditorWindow extends JXFrame {
 	private JTextArea modDescriptionField;
 	private JTextField updateFolderField;
 	private JTextField updateCodeField;
+	private JCheckBox useUpdaterCB;
 
 	public ModDescEditorWindow(Mod mod) {
 		ModManager.debugLogger.writeMessage("Reloading " + mod.getModName() + " without automatic alternates applied.");
@@ -230,7 +229,7 @@ public class ModDescEditorWindow extends JXFrame {
 		TitledBorder updaterBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "ME3Tweaks Updater Service Information (Optional)");
 		updaterPanel.setBorder(updaterBorder);
 
-		JCheckBox useUpdaterCB = new JCheckBox("Use ME3Tweaks Updater Service");
+		useUpdaterCB = new JCheckBox("Use ME3Tweaks Updater Service");
 		useUpdaterCB.setToolTipText(
 				"<html>ME3Tweaks Updater Service allows your mod to automatically update in Mod Manager for end users.<br>Using this feature requires an update code which you can request from FemShep.</html>");
 		JLabel updateCodeLabel = new JLabel("Update Code:");
@@ -248,6 +247,8 @@ public class ModDescEditorWindow extends JXFrame {
 		updateCodeField = new JTextField();
 		updateCodeField.setUI(new HintTextFieldUI("Code"));
 		updateCodeField.setColumns(4);
+		updateCodeField.setMaximumSize(new Dimension(updateCodeField.getPreferredSize().width, Integer.MAX_VALUE));
+
 		updateFolderField = new JTextField();
 		updateFolderField.setUI(new HintTextFieldUI("Server Folder"));
 
@@ -274,7 +275,6 @@ public class ModDescEditorWindow extends JXFrame {
 		updaterPanel.add(updateFolderLabel);
 		updaterPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 		updaterPanel.add(updateFolderField);
-		updaterPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 		secondRowPanel.add(updaterPanel);
 		metadataPanel.add(metaPanelTitle);
 		metadataPanel.add(namePanel);
@@ -648,7 +648,7 @@ public class ModDescEditorWindow extends JXFrame {
 		customDLCPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
 		customDLCPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		customDLCPanel.add(customDLCPanelTitle);
-		
+
 		JLabel customDLCIntroText = new JLabel(
 				"<html>Custom DLC are additional DLC folders that will be added to the game DLC directory.<br>Files with the same name as in other DLC or basegame will be overriden if the DLC has a higher mount priority.<br>Files that are loaded before the main menu can't be overriden this way.</html>");
 
@@ -794,11 +794,11 @@ public class ModDescEditorWindow extends JXFrame {
 		JXPanel altDLCPanel = new JXPanel();
 		altDLCPanel.setLayout(new VerticalLayout());
 		altDLCPanel.setBorder(new EmptyBorder(3, SUBPANEL_INSET_LEFT, 3, 3));
-		
+		altDLCPanel.add(conditionalCustomDLCPanelTitle);
+
 		JPanel altDLCRowsPanel = new JPanel(new VerticalLayout(3));
 		altDLCPanel.add(altDLCRowsPanel);
 		altDLCPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		altDLCPanel.add(conditionalCustomDLCPanelTitle);
 		JLabel altDLCIntroText = new JLabel(
 				"<html>You can specify that specific CustomDLC are to be substituted, added, or removed from a Custom DLC folder you are installing if another Official or Custom DLC is present.<br>These options allow you to automatically include compatibility fixes as well as add options for users to configure the mod in an officially developer sanctioned way.</html>");
 
@@ -912,9 +912,11 @@ public class ModDescEditorWindow extends JXFrame {
 				"Specify modification for the Basegame, Official BioWare DLC and Balance Changes file");
 		tabbedPane.addTab("Custom DLC", null, new JScrollPane(customDLCPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
 				"Specify custom DLC that will be installed");
-		tabbedPane.addTab("Compatibility & Alternative Installation Options", null,
-				new JScrollPane(condFilesPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
+		tabbedPane.addTab("Compatibility - File Based", null, new JScrollPane(condFilesPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
 				"Specify compatibility conditions and alternative files/folders for installation");
+		tabbedPane.addTab("Compatibility - DLC Based", null, new JScrollPane(condDLCPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
+				"Specify compatibility conditions and DLC modifications based on game state/user selection");
+
 		tabbedPane.addTab("Outdated DLC", null, new JScrollPane(outdatedFoldersPane, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
 				"Specify outdated DLC foldernames to delete on install");
 
@@ -991,8 +993,23 @@ public class ModDescEditorWindow extends JXFrame {
 				}
 				moddesc.put("CUSTOMDLC", "sourcedirs", srcdirs.toString());
 				moddesc.put("CUSTOMDLC", "destdirs", destdirs.toString());
+
+				if (conditionalDLCItems.size() > 0) {
+					StringBuilder condDLCSB = new StringBuilder();
+					boolean isFirst2 = true;
+					for (MDEConditionalDLCItem mdecdlc : conditionalDLCItems) {
+						String altText = mdecdlc.generateModDescStr();
+						if (isFirst2) {
+							isFirst2 = false;
+						} else {
+							condDLCSB.append(",");
+						}
+						condDLCSB.append(altText);
+					}
+					moddesc.put("CUSTOMDLC", "altdlc", condDLCSB.toString());
+				}
 			}
-			
+
 			if (outdatedCustomDLCItems.size() > 0) {
 				//has a custom DLC job
 				StringBuilder outdatedDLCDirs = new StringBuilder();
@@ -1008,15 +1025,14 @@ public class ModDescEditorWindow extends JXFrame {
 				}
 				moddesc.put("CUSTOMDLC", "outdatedcustomdlc", outdatedDLCDirs.toString());
 			}
-			
-			if (true) {
+
+			if (useUpdaterCB.isSelected()) {
 				String updateCodeStr = updateCodeField.getText();
 				String updateFolder = updateFolderField.getText();
-				
+
 				moddesc.put("ModInfo", "updatecode", updateCodeStr);
 				moddesc.put("UPDATES", "serverfolder", updateFolder);
 				moddesc.put("UPDATES", "blacklistedfiles", "Placeholder");
-
 			}
 
 			StringWriter writer = new StringWriter();
