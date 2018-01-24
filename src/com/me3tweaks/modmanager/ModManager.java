@@ -84,9 +84,9 @@ public class ModManager {
 	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.0.7 MR2";
-	public static long BUILD_NUMBER = 82L;
-	public static final String BUILD_DATE = "12/30/2017";
+	public static final String VERSION = "5.0.8";
+	public static long BUILD_NUMBER = 83L;
+	public static final String BUILD_DATE = "01/23/2017";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -103,7 +103,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 27;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 29;
 
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;
