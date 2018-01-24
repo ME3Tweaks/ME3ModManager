@@ -81,12 +81,12 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.embed.swing.JFXPanel;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 	public final static boolean FORCE_32BIT_MODE = false; //set to true to force it to think it is running 32-bit for (most things)
 
-	public static final String VERSION = "5.1 Beta 1";
+	public static final String VERSION = "5.1 Beta 2";
 	public static long BUILD_NUMBER = 83L;
-	public static final String BUILD_DATE = "1/22/2018";
+	public static final String BUILD_DATE = "1/23/2018";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -103,7 +103,7 @@ public class ModManager {
 	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
 	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public final static int MIN_REQUIRED_CMDLINE_REV = 28;
+	public final static int MIN_REQUIRED_CMDLINE_REV = 29;
 
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
 	public static ArrayList<Image> ICONS;

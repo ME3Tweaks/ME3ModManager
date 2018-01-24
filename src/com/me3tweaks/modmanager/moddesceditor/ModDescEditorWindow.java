@@ -83,6 +83,9 @@ public class ModDescEditorWindow extends JXFrame {
 	private JCheckBox useUpdaterCB;
 
 	public ModDescEditorWindow(Mod mod) {
+		ModManager.debugLogger.writeMessage("Opening ModDesc Editor for " + mod.getModName());
+		JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "This tool is under development and is not yet functional.", "Tool not yet functional",
+				JOptionPane.WARNING_MESSAGE);
 		ModManager.debugLogger.writeMessage("Reloading " + mod.getModName() + " without automatic alternates applied.");
 		Mod noAutoParse = new Mod();
 		noAutoParse.setShouldApplyAutos(false);
@@ -943,7 +946,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 		statusBarPanel.add(statusLabel);
 		statusBarPanel.add(Box.createHorizontalGlue());
-		statusBarPanel.add(saveButton);
+		//statusBarPanel.add(saveButton);
 		statusBarPanel.setBorder(new EmptyBorder(3, 5, 3, 5));
 		mainContentLayout.add(statusBarPanel, BorderLayout.SOUTH);
 
