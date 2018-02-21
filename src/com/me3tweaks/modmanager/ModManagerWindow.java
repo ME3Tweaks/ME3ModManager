@@ -761,6 +761,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				String latestCommandLineToolsLink = (String) latest_object.get("latest_commandlinetools_link" + arch);
 				ModManager.LATEST_ME3EXPLORER_VERSION = (String) latest_object.get("latest_me3explorer_version");
 				ModManager.LATEST_ME3EXPLORER_URL = (String) latest_object.get("latest_me3explorer_download_link");
+				String commandLineToolsRequiredVersion = (String) latest_object.get("latest_commandlinetools_version");
+				if (commandLineToolsRequiredVersion != null) {
+					try {
+						ModManager.MIN_REQUIRED_CMDLINE_REV = Integer.parseInt(commandLineToolsRequiredVersion);
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeMessage("Could not parse a command line tools requiredversion from online manifest. We will default to the built in value of "
+								+ ModManager.MIN_REQUIRED_CMDLINE_REV);
+					}
+				}
 
 				if (latest_build < ModManager.BUILD_NUMBER) {
 					// build is newer than current
