@@ -45,6 +45,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.objects.MetaCMM;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
@@ -1231,13 +1232,8 @@ public class ModInstallWindow extends JDialog {
 			}
 			//autotoc if necessary, create metadata file
 			for (String str : job.getDestFolders()) {
-				try {
-					String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
-					ModManager.debugLogger.writeMessage("[CUSTOMDLC JOB]Writing custom DLC metadata file: " + metadatapath);
-					FileUtils.writeStringToFile(new File(metadatapath), job.getOwningMod().getModName() + " " + job.getOwningMod().getVersion(), StandardCharsets.UTF_8);
-				} catch (IOException e) {
-					ModManager.debugLogger.writeErrorWithException("[CUSTOMDLC JOB]Couldn't write custom dlc metadata file:", e);
-				}
+				String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
+				MetaCMM.writeMetaCMMFile(job.getOwningMod(), metadatapath);
 			}
 			return true;
 		}

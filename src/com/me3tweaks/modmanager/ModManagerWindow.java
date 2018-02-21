@@ -120,6 +120,7 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 
 import javafx.application.Platform;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import net.iharder.dnd.FileDrop;
 
@@ -555,7 +556,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party mod identification info"));
 				}
 
-				// TIPS SERVICE
+
+				//THIRD PARTY MOD IMPORTING SERVICE
+				try {
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod importing info"));
+					ModManager.debugLogger.writeMessage("Downloading third party importing data from importing service");
+					FileUtils.copyURLToFile(new URL("https://me3tweaks.com/mods/dlc_mods/thirdpartyimportingservice"), ModManager.getThirdPartyModImportingDBFile());
+					ModManager.THIRD_PARTY_IMPORTING_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModImportingDBFile(), StandardCharsets.UTF_8);
+					ModManager.debugLogger.writeMessage("Downloaded third party importing data from importing service");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloaded 3rd party mod importing info"));
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					ModManager.debugLogger.writeErrorWithException("Failed to download third party importing data: ", e);
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party importing info"));
+				}
+
+				//TIPS SERVICE
 				try {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading tips service data"));
 					ModManager.debugLogger.writeMessage("Downloading tips from ME3Tweaks Tips Service");
@@ -1224,8 +1243,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				"Mass Effect 3 BIOGame Directory (Installation Target)");
 
 		buttonBioGameDir = new JButton(useAddInstead ? "Add Target" : "Browse...");
-		buttonBioGameDir.setToolTipText(
-				"<html>Add a new BIOGame directory target.<br>This is located in the installation directory for Mass Effect 3.<br>This is located in the Origin Games folder.</html>");
+		buttonBioGameDir.setToolTipText("<html>Add a new game installation for installing mods to.</html>");
 		buttonBioGameDir.setPreferredSize(new Dimension(useAddInstead ? 105 : 90, 14));
 
 		buttonBioGameDir.addActionListener(this);
@@ -3187,14 +3205,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		String chosenPath = chosenFile.getAbsolutePath();
 
 		if (FilenameUtils.getName(chosenPath).equals("MassEffect3.exe")) {
-			// adjust to biogame
+			//adjust to biogame
 			File f = new File(chosenPath);
 			boolean showBadMessage = false;
 			if (f != null) {
-				f = f.getParentFile(); // Win32
+				f = f.getParentFile(); //Win32
 			}
 			if (f != null) {
-				f = f.getParentFile(); // Binaries
+				f = f.getParentFile(); //Binaries
 			} else {
 				showBadMessage = true;
 			}
@@ -3974,10 +3992,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 				String selectedPath = (String) event.getItem();
 				ModManager.debugLogger.writeMessage("Switching game targets to " + selectedPath);
-
-				String selectedGamePath = new File(selectedPath).getParent();
-
-				// UPDATE REGISTRY KEY
+				String selectedGamePath = new File(selectedPath).getParent(); //Game directory
+				//UPDATE REGISTRY KEY
 				String currentpath = ModManager.LookupGamePathViaRegistryKey(false);
 				if (currentpath != null) {
 					if (currentpath.endsWith("\\")) {
@@ -4019,23 +4035,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				File selectedGamePathF = new File(selectedGamePath);
 				File cookedPCConsole = new File(selectedGamePath + "\\BIOGame\\CookedPCConsole");
 
-				if (biogame.exists() && selectedGamePathF.exists() && cookedPCConsole.exists()) { // prevents it from
-																									// thinking it is
-																									// unable to write
-																									// due to
-																									// non-existence
-					if (biogame.isDirectory() && selectedGamePathF.isDirectory() && cookedPCConsole.isDirectory()) { // make
-																														// sure
-																														// it
-																														// is
-																														// a
-																														// folder
-																														// so
-																														// we
-																														// can
-																														// write
-																														// into
-																														// sub
+				if (biogame.exists() && selectedGamePathF.exists() && cookedPCConsole.exists()) { //prevents it from thinking it is unable to write due to non-existence
+					if (biogame.isDirectory() && selectedGamePathF.isDirectory() && cookedPCConsole.isDirectory()) { //make sure it is a folder so we can write into sub
 						boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
 								&& ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
 						if (!hasWritePermissions) {

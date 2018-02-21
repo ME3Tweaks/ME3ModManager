@@ -139,8 +139,7 @@ public class ModXMLTools {
 
 			}
 
-			File manifestFile = new File(
-					ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
+			File manifestFile = new File(ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
 
 			//SIMULATE REVERSE UPDATE
 			//CHECK FOR FILE EXISTENCE IN MOD UPDATE FOLDER, LZMA HASHES.
@@ -198,12 +197,9 @@ public class ModXMLTools {
 			//Compressing mod to /serverupdate
 
 			long startTime = System.currentTimeMillis();
-			String sideloadoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Sideload" + File.separator + foldername
-					+ File.separator;
-			String compressedfulloutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Full" + File.separator + foldername
-					+ File.separator;
-			String compressedupdateoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "UpdateDelta" + File.separator
-					+ foldername + File.separator;
+			String sideloadoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Sideload" + File.separator + foldername + File.separator;
+			String compressedfulloutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Full" + File.separator + foldername + File.separator;
+			String compressedupdateoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "UpdateDelta" + File.separator + foldername + File.separator;
 
 			if (!manifestFile.exists()) {
 				compressedupdateoutputfolder = compressedfulloutputfolder; //don't use update folder
@@ -741,7 +737,7 @@ public class ModXMLTools {
 			ModManager.debugLogger.writeMessage("Getting latest mod info from link: " + uri.toASCIIString());
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			responseString = new BasicResponseHandler().handleResponse(response);
-			ModManager.debugLogger.writeMessage("Response from server:\n" + responseString);
+			ModManager.debugLogger.writeMessageConditionally("Response from server:\n" + responseString, ModManager.LOG_MOD_INIT);
 		} catch (URISyntaxException e) {
 			ModManager.debugLogger.writeErrorWithException("Error getting online mod update info:", e);
 		} catch (ClientProtocolException e) {

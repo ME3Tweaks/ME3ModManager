@@ -37,7 +37,9 @@ import javax.swing.table.DefaultTableModel;
 import org.apache.commons.io.FilenameUtils;
 
 import com.me3tweaks.modmanager.ModManager.Lock;
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.CompressedMod;
+import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.SevenZipCompressedModInspector;
@@ -186,7 +188,12 @@ public class ModImportArchiveWindow extends JDialog {
 						descriptionArea.setText("Select a mod on the left to view its description.");
 					} else {
 						CompressedMod mod = compressedMods.get(selectedModIndex);
-						descriptionArea.setText(mod.getModDescription());
+						String modDescToDisplay = mod.getModDescription();
+						if (!mod.isOfficiallySupported()) {
+							modDescToDisplay = "This mod archive was not built for use with Mod Manager in mind - importing it this way is experimental. If you encounter issues with this mod, it may be an issue due to importing and not from the mod developer.\n\n"
+									+ modDescToDisplay;
+						}
+						descriptionArea.setText(modDescToDisplay);
 						descriptionArea.setCaretPosition(0);
 					}
 
@@ -331,6 +338,10 @@ public class ModImportArchiveWindow extends JDialog {
 					rside += "\n\nReading mod data from archive, please wait...";
 					descriptionArea.setText(rside);
 					break;
+				case "SET_SUBTEXT_SCANNING":
+					String dside = "Scanning archive for Mod Manager mods...\n\n" + command.getMessage();
+					descriptionArea.setText(dside);
+					break;
 				case "RELEASE_WINDOW":
 					setModalityType(ModalityType.MODELESS);
 					break;
@@ -361,6 +372,22 @@ public class ModImportArchiveWindow extends JDialog {
 			browseButton.setEnabled(true);
 
 			for (CompressedMod cm : compressedMods) {
+				if (!cm.isOfficiallySupported()) {
+					//Check for blacklist
+					ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(cm.getCustomDLCFolderName());
+					if (tpmi != null && tpmi.isBlacklistedForModImport()) {
+						progressBar.setIndeterminate(false);
+						progressBar.setVisible(false);
+						importButton.setVisible(true);
+						importButton.setEnabled(false);
+						importButton.setText("Mod cannot be imported");
+						descriptionArea.setText(tpmi.getModname()
+								+ " cannot be imported into Mod Manager - the mod setup is too complex for the Third Party Importing Service to build installation information for.");
+						return;
+
+					}
+				}
+
 				JCheckBox importBox = new JCheckBox(cm.getModName());
 				importBox.setSelected(true);
 				checkMap.put(importBox, cm);
@@ -390,6 +417,7 @@ public class ModImportArchiveWindow extends JDialog {
 		private ArrayList<CompressedMod> modsToImport;
 		private String archiveFilePath;
 		private int jobCode;
+		private String CURRENT_MOD_NAME = "";
 
 		public ImportWorker(String archiveFilePath, ArrayList<CompressedMod> modsToImport) {
 			// TODO Auto-generated constructor stub
@@ -423,7 +451,7 @@ public class ModImportArchiveWindow extends JDialog {
 				case "SIDELOAD_OR_NEW_PROMPT":
 					Object[] choices = { "SIDELOAD as update", "Import as NEW", "Cancel importing" };
 					String message = "You are importing " + command.getMessage()
-							+ ", which is already in imported into Mod Manager.\nPlease choose from one of the following options:\n\nSIDELOAD: Import mod as an update, overwriting local files with ones from this archive\nNEW: Delete local imported mod, and import mod from archive as a new mod\n\nIf you weren't instructed to select 'SIDELOAD as update' you should do 'Import as NEW'.\n\nSelect what you'd like to do.";
+							+ ", which is already imported into Mod Manager.\nPlease choose from one of the following options:\n\nSIDELOAD: Import mod as an update, overwriting local files with ones from this archive\nNEW: Delete local imported mod, and import mod from archive as a new mod\n\nIf you weren't instructed to select 'SIDELOAD as update' you should do 'Import as NEW'.\n\nSelect what you'd like to do.";
 
 					synchronized (lock) {
 						sideloadresult = JOptionPane.showOptionDialog(ModImportArchiveWindow.this, message, "Mod to import already exists", JOptionPane.YES_NO_CANCEL_OPTION,
@@ -435,8 +463,14 @@ public class ModImportArchiveWindow extends JDialog {
 						ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = false;
 					}
 					break;
+				case "EXTRACTING_MOD":
+					CURRENT_MOD_NAME = command.getMessage();
+					break;
 				case "EXTRACTING_FILE":
-					descriptionArea.setText("Importing mods into Mod Manager...\n\nExtracting\n - " + command.getMessage());
+					descriptionArea.setText("Importing mods into Mod Manager...\n\nExtracting " + CURRENT_MOD_NAME + "\n - " + command.getMessage());
+					break;
+				case "SET_MAINWINDOW_TEXT":
+					ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(command.getMessage());
 					break;
 				}
 			}
@@ -468,14 +502,30 @@ public class ModImportArchiveWindow extends JDialog {
 			repaint();
 			if (!error) {
 				ModManager.debugLogger.writeMessage("[IMPORTWORKER] Import successful.");
-				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
-				ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
-				dispose();
-				JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
-				if (modsToImport.size() == 1) {
-					//Highlight it
-					//don't have a way to figure out what was just imported...
+				try {
+					ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
+					boolean checkForUpdates = false;
+					for (CompressedMod m : modsToImport) {
+						if (m.getModDescMod().isME3TweaksUpdatable()) {
+							checkForUpdates = true;
+							break;
+						}
+					}
+
+					if (checkForUpdates) {
+						ModManagerWindow.ACTIVE_WINDOW.checkAllModsForUpdates(false); //should force an update check on new mod.
+					}
+					if (modsToImport.size() == 1) {
+						//Highlight it
+						ModManagerWindow.ACTIVE_WINDOW.highlightMod(modsToImport.get(0).getModDescMod());
+					}
+					dispose();
+					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mods have been imported.", "Import Successful", JOptionPane.INFORMATION_MESSAGE);
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "Mod import succeeded, but one of the mods was unable to load.", "Import Failed",
+							JOptionPane.ERROR_MESSAGE);
 				}
+				dispose();
 				return;
 			} else {
 				ModManager.debugLogger.writeError("[IMPORTWORKER] Import was not fully successful");

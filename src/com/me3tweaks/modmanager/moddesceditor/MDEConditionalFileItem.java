@@ -14,6 +14,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
@@ -24,6 +25,7 @@ import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -69,6 +71,14 @@ public class MDEConditionalFileItem {
 		return descriptionField;
 	}
 
+	public JTextField getUserReasonField() {
+		return userReasonField;
+	}
+
+	public void setUserReasonField(JTextField userReasonField) {
+		this.userReasonField = userReasonField;
+	}
+
 	private AlternateFile af;
 
 	private JComboBox<String> conditionBox;
@@ -80,7 +90,7 @@ public class MDEConditionalFileItem {
 	private static String[] operationsHuman = { "add an extra file", "don't install file", "substitute file" };
 
 	private JButton minusButton;
-	private JTextField descriptionField;
+	private JTextField descriptionField, userReasonField;
 
 	private Mod mod;
 
@@ -114,7 +124,7 @@ public class MDEConditionalFileItem {
 		minusButton = new JButton("-");
 		panel.add(minusButton);
 		minusButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				collapsablePanel.setCollapsed(true);
@@ -124,12 +134,23 @@ public class MDEConditionalFileItem {
 
 		conditionBox = new JComboBox<String>(conditionsHuman);
 		operationBox = new JComboBox<String>(operationsHuman);
+		operationBox.setToolTipText("<html><div style='width: 400px;'>Operation type to perform when the condition is met. Different conditions require different information, changing this will update the interface with the options.</div></centered>");
+		conditionBox.setToolTipText("<html><div style='width: 400px;'>Type of condition. The `Selected by user` condition means must be manually chosen by user in the alternate installation options menu, all others are automatically applied when the mod is loaded or applied. Mods that use this feature must have a valid biogame or they will fail to load - this is typically not a problem unless a user has significantly modified and broken their game, or their game is pirated.</div></centered>");
 
+		userReasonField = new JTextField(af.getFriendlyName());
+		userReasonField.setUI(new HintTextFieldUI("User friendly string e.g. Fixes X if Y is present"));
+		userReasonField.setToolTipText("User friendly name. If one is not entered, a automatically generated one is displayed instead.");
+		userReasonField.setColumns(30);
+		panel.add(userReasonField);
+		panel.add(Box.createRigidArea(new Dimension(itemSpacing * 2, 3)));
+		panel.add(new JSeparator(JSeparator.VERTICAL));
 		JLabel ifLabel = new JLabel("If");
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		panel.add(ifLabel);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		JTextField conditionalDLC = new JTextField(af.getConditionalDLC(), 16);
+		conditionalDLC.setUI(new HintTextFieldUI("LEVIATHAN"));
+		conditionalDLC.setToolTipText("<html><div style='width: 300px'>Sets a conditional item. Must be a DLC folder name or a header name. The following are some examples.</div><br> - DLC_EXP_Pack003<br> - LEVIATHAN<br> - DLC_MOD_BPP1<br><br>This field is used for automatic alternates. If the condition type is set to manual, this field is not used.</html>");
 		panel.add(conditionalDLC);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		panel.add(operationBox);
@@ -182,7 +203,8 @@ public class MDEConditionalFileItem {
 				});
 			}
 		};
-		srcLabel = new SwingLink(af.getAltFile(), "Click to change file", srcChangeAction);
+		String strToDisplay = af.getAltFile() == null ? "Click to set value" : af.getAltFile();
+		srcLabel = new SwingLink(strToDisplay, "Click to change file", srcChangeAction);
 		rightSideVerticalPanel.add(srcLabel);
 
 		JLabel forLabel = new JLabel("for");
@@ -210,7 +232,9 @@ public class MDEConditionalFileItem {
 			}
 		};
 		modFile = af.getModFile();
-		destLabel = new SwingLink(modFile, "Click to change file", changeDestAction);
+		strToDisplay = modFile == null ? "Click to set value" : modFile;
+
+		destLabel = new SwingLink(strToDisplay, "Click to change file", changeDestAction);
 		//panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		rightSideVerticalPanel.add(destLabel);
 		rightSideVerticalPanel.add(Box.createVerticalGlue());
@@ -238,11 +262,38 @@ public class MDEConditionalFileItem {
 						forLabel.setVisible(true);
 						break;
 					}
-
 				}
 			}
 		});
 
+		conditionBox.addItemListener(new ItemListener() {
+			
+			private String originalText;
+
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// TODO Auto-generated method stub
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					int index = conditionBox.getSelectedIndex();
+					switch (index) {
+					case 0: //auto
+					case 1: //auto
+						if (!conditionalDLC.isEnabled()) {
+							conditionalDLC.setText(originalText);	
+							conditionalDLC.setEnabled(true);
+						}
+						break;
+					case 2: //user selected
+						conditionalDLC.setEnabled(false);
+						originalText = conditionalDLC.getText();
+						conditionalDLC.setText("N/A");
+						break;
+					}
+
+				}
+			}
+		});
+		
 		if (af.getCondition() != null) {
 			switch (af.getCondition()) {
 			case AlternateFile.CONDITION_DLC_NOT_PRESENT:
@@ -275,10 +326,5 @@ public class MDEConditionalFileItem {
 			operationBox.setSelectedIndex(2);
 		}
 
-	}
-
-	private JPanel JXCollapsablePanel() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }

@@ -27,6 +27,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.objects.MetaCMM;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 
@@ -39,7 +40,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 	protected boolean reloadWhenClosed;
 
 	public ModImportDLCWindow(JFrame callingWindow, String biogameDir) {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+		super(null, Dialog.ModalityType.APPLICATION_MODAL);
 		ModManager.debugLogger.writeMessage("Opening ModImportWindow (DLC Import)");
 		this.biogameDir = biogameDir;
 		setupWindow(callingWindow);
@@ -65,6 +66,15 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 			}
 			//add to list
 			File metacmm = new File(mainDlcDir + File.separator + dir + File.separator + "_metacmm.txt");
+			if (metacmm.exists()) {
+				//read it so we find our guid
+				MetaCMM metafile = new MetaCMM(metacmm);
+				if (metafile.getInstallationGUID().equals(ModManager.getGUID())) {
+					continue; //installed by us
+				}
+			}
+			
+			
 			File mountfile = new File(mainDlcDir + File.separator + dir + File.separator + "CookedPCConsole" + File.separator + "mount.dlc");
 			if (dir.toUpperCase().startsWith("DLC_") && !metacmm.exists() && mountfile.exists()) {
 				ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dir);

@@ -29,6 +29,34 @@ public class ValueParserLib {
 		bd = bd.setScale(places, RoundingMode.HALF_UP);
 		return bd.doubleValue();
 	}
+	
+	public static String generateValue(String name, String value, boolean quoted) {
+		String ret = name + "=";
+		if (quoted) {
+			ret += "\"";
+		}
+		ret += value;
+		if (quoted) {
+			ret += "\"";
+		}
+		return ret;
+	}
+	
+	public static String generateValueList(String name, ArrayList<String> values) {
+		String ret = name + "=(";
+		boolean isFirst = true;
+		for(String str : values) {
+			if (isFirst) {
+				isFirst = false;
+			} else {
+				ret += ";";
+			}
+			ret += str;
+		}
+		
+		ret += ")";
+		return ret;
+	}
 
 	public static ArrayList<String> getSplitValues(String inputString) {
 		try {

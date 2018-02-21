@@ -1,12 +1,30 @@
 package com.me3tweaks.modmanager.objects;
 
+import java.util.ArrayList;
+
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 public class ThirdPartyModInfo {
+	public boolean isBlacklistedForModImport() {
+		return blacklistedForModImport;
+	}
+
+	public void setBlacklistedForModImport(boolean blacklistedForModImport) {
+		this.blacklistedForModImport = blacklistedForModImport;
+	}
+
+	public int getMountpriority() {
+		return mountpriority;
+	}
+
 	private String modname, modauthor, customDLCfolder, moddescription, modsite;
 	private int mountpriority; //unsigned short
+	private boolean blacklistedForModImport;
+
 	/**
 	 * Copy constructor
+	 * 
 	 * @param modname
 	 * @param modauthor
 	 * @param customDLCfolder
@@ -14,14 +32,15 @@ public class ThirdPartyModInfo {
 	 * @param modsite
 	 * @param mountpriority
 	 */
-	public ThirdPartyModInfo(String modname, String modauthor, String customDLCfolder, String moddescription, String modsite, short mountpriority) {
+	public ThirdPartyModInfo(ThirdPartyModInfo original) {
 		super();
-		this.modname = modname;
-		this.modauthor = modauthor;
-		this.customDLCfolder = customDLCfolder;
-		this.moddescription = moddescription;
-		this.modsite = modsite;
-		this.mountpriority = mountpriority;
+		this.modname = original.modname;
+		this.modauthor = original.modauthor;
+		this.customDLCfolder = original.customDLCfolder;
+		this.moddescription = original.moddescription;
+		this.modsite = original.modsite;
+		this.mountpriority = original.mountpriority;
+		this.blacklistedForModImport = original.blacklistedForModImport;
 	}
 
 	public ThirdPartyModInfo(String customdlcfolder, JSONObject modinfo) {
@@ -32,8 +51,11 @@ public class ThirdPartyModInfo {
 		this.modsite = (String) modinfo.get("modsite");
 		String priority = (String) modinfo.get("mountpriority");
 		this.mountpriority = Integer.parseInt(priority);
+		String blacklistedForImport = (String) modinfo.get("preventimport");
+		if (blacklistedForImport != null) {
+			this.blacklistedForModImport = Integer.parseInt(blacklistedForImport) != 0;
+		}
 	}
-	
 
 	public String getModname() {
 		return modname;
