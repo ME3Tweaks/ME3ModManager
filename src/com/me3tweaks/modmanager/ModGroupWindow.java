@@ -135,15 +135,26 @@ public class ModGroupWindow extends JDialog implements ListSelectionListener {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (ModManagerWindow.validateBIOGameDir()) {
-					
-					if (ModManager.CHECK_FOR_ALOT_INSTALL && ModManager.isALOTInstalled(ModManagerWindow.GetBioGameDir())) {
-						ModManagerWindow.ACTIVE_WINDOW.installBlockedByALOT(true);
-						return;
+
+					if (ModManager.isALOTInstalled(ModManagerWindow.GetBioGameDir())) {
+						if (ModManager.CHECK_FOR_ALOT_INSTALL) {
+							ModManagerWindow.ACTIVE_WINDOW.installBlockedByALOT(true);
+							return;
+						} else {
+							ModManager.debugLogger.writeMessage("ALOT is installed, found conflicts. User has allow install check off, but we are going to warn anyways.");
+							int result = JOptionPane.showOptionDialog(ModGroupWindow.this,
+									"ALOT is installed.\nYou should only install mods when ALOT is installed if you\nreally know what you are doing as you WILL break the game.\nSeriously - if you don't know what you are actually doing, do\nnot continue.\n\nInstall anyways?",
+									"Warning: ALOT is installed", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, null, new String[] { "Yes", "No" }, "No");
+							if (result == JOptionPane.NO_OPTION) {
+								return;
+							}
+							ModManager.debugLogger.writeMessage("User says they know what they are doing. Hope you don't regret this!");
+						}
 					}
 					boolean wasCanceled = false;
 					ModInstallWindow.BatchPackage bp = new ModInstallWindow.BatchPackage();
 					bp.totalBatchMods = groupContentsModel.size();
-					
+
 					for (int i = 0; i < groupContentsModel.size(); i++) {
 						Mod mod = groupContentsModel.get(i);
 						mod = new Mod(mod.getDescFile()); //This is so that automatic configuration of the mod being installed can take place.
