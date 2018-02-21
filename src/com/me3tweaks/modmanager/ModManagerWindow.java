@@ -548,7 +548,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		private void checkForContentUpdates(boolean force) {
 			if (!ResourceUtils.is64BitWindows()
-					&& LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2017-05-15"))) {
+					&& LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2018-05-15"))) {
 				ModManager.debugLogger.writeMessage(
 						"Mod Manager on 32-bit windows is no longer supported. Networking support was disabled May 15th, 2018.");
 				publish(new ThreadCommand("SET_STATUSBAR_TEXT",

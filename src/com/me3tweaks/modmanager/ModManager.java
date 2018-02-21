@@ -517,7 +517,7 @@ public class ModManager {
 			} else {
 				ModManager.debugLogger.writeMessage("No third party identification service JSON found. May not have been downloaded yet...");
 			}
-			
+
 			if (ModManager.getThirdPartyModImportingDBFile().exists()) {
 				ModManager.debugLogger.writeMessage("Loading third party importing service JSON into memory");
 				ModManager.THIRD_PARTY_IMPORTING_JSON = FileUtils.readFileToString(ModManager.getThirdPartyModImportingDBFile(), StandardCharsets.UTF_8);
@@ -582,13 +582,19 @@ public class ModManager {
 		} catch (Exception e) {
 			System.err.println("Couldn't set the UI interface style");
 		}
-		
+
 		ModManager.debugLogger.writeMessage("Loading JavaFX");
 		new JFXPanel(); // used for initializing javafx thread (ideally called once)
 		ModManager.debugLogger.writeMessage("Loaded JavaFX");
 
-		
 		try {
+			String fakepath = ModManager.getDataDir() + "modman\\ME3CMM.exe"; // Fuck you jackass whoever made this. Seriously, fuck you.
+			if (new File(fakepath).exists()) {
+				JOptionPane.showMessageDialog(null,
+						"<html><div style='width: 400px'>This version of Mod Manager may have been bundled with malicious cryptocurrency mining software. An unauthorized version of Mod Manager was uploaded to NexusMods as a new file on February 17, 2018, which was downloaded by some users according to NexusMods stats.<br><br>This was not an authorized copy of Mod Manager and was bundled with malicious cryptocurrency mining software. This update of Mod Manager has detected that this installation may be this version.<br><br>As Mgamerz, the developer of Mod Manager, I ask you delete this installation of Mod Manager (in its entirety) and download a legimitate copy from my website ME3Tweaks. You can access this at https://me3tweaks.com/modmanager. You should also kill any processes with names related to mining as starting this program may have booted this mining software without your approval.</div></html>",
+						"Potentially malicious version detected", JOptionPane.ERROR_MESSAGE);
+				ResourceUtils.openWebpage("https://me3tweaks.com/modmanager");
+			}
 			new ModManagerWindow(isUpdate);
 		} catch (Throwable e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught throwable during runtime:", e);

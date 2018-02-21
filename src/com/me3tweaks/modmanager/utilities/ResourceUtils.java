@@ -495,7 +495,6 @@ public class ResourceUtils {
 	 * @return true if 64bit, false otherwise
 	 */
 	public static boolean is64BitWindows() {
-		if (true) return false;
 		if (System.getProperty("os.name").contains("Windows")) {
 			return (System.getenv("ProgramFiles(x86)") != null);
 		} else {
