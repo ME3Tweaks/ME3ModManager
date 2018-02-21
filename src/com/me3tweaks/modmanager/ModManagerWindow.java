@@ -29,6 +29,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -195,7 +197,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	 */
 	public ModManagerWindow(boolean isUpdate) {
 		if (ACTIVE_WINDOW != null) {
-			backgroundJobs = ACTIVE_WINDOW.backgroundJobs; //carry background job indicators.
+			backgroundJobs = ACTIVE_WINDOW.backgroundJobs; // carry background job indicators.
 			ACTIVE_WINDOW.dispose();
 			ACTIVE_WINDOW = null;
 		} else {
@@ -320,6 +322,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		@Override
 		public Void doInBackground() {
 			{
+				if (!ResourceUtils.is64BitWindows() && LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2018-05-15"))) {
+					ModManager.debugLogger.writeMessage("Mod Manager on 32-bit windows is no longer supported. Networking support was disabled May 15th, 2018.");
+					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Network support for 32-bit Mod Manager ended May 15, 2018"));
+					return null;
+				}
+
 				File f7z = new File(ModManager.get7zExePath());
 				if (!f7z.exists()) {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 7z"));
@@ -448,17 +456,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 
 			if (ModManager.AUTO_UPDATE_MOD_MANAGER && !ModManager.CHECKED_FOR_UPDATE_THIS_SESSION) {
-				JSONObject latestinfo = checkForModManagerUpdates();
-				checkForJREUpdates(latestinfo);
-
+				if (ResourceUtils.is64BitWindows()) {
+					JSONObject latestinfo = checkForModManagerUpdates();
+					checkForJREUpdates(latestinfo);
+				} else {
+					labelStatus.setText("Mod Manager 32-bit updates have ended");
+					ModManager.debugLogger.writeMessage("Skipping update check - Windows 32 bit support has ended.");
+				}
 			}
-			//checkForME3ExplorerUpdates();
+
+			// checkForME3ExplorerUpdates();
 			checkForCommandLineToolUpdates();
-			if (isUpdate || ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
+			if (isUpdate || ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force)
+
+			{
 				boolean forcedByUpdate = isUpdate;
-				isUpdate = false; //no mas
+				isUpdate = false; // no mas
 				checkForContentUpdates(force || forcedByUpdate == true);
 			}
+
 			checkForALOTInstallerUpdates();
 			return null;
 		}
@@ -498,6 +514,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		private void checkForContentUpdates(boolean force) {
+			if (!ResourceUtils.is64BitWindows() && LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2018-05-15"))) {
+				ModManager.debugLogger.writeMessage("Mod Manager on 32-bit windows is no longer supported. Networking support was disabled May 15th, 2018.");
+				publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Network support for 32-bit Mod Manager ended May 15, 2018"));
+				return;
+			}
+
 			// Check for updates
 			if (System.currentTimeMillis() - ModManager.LAST_AUTOUPDATE_CHECK > ModManager.AUTO_CHECK_INTERVAL_MS || forceUpdateOnReloadList.size() > 0 || force) {
 				ModManager.debugLogger.writeMessage("Running auto-updater, it has been "
@@ -516,7 +538,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Mod update check complete"));
 				}
 
-				//THIRD PARTY MOD IDENTIFICATION SERVICE
+				// THIRD PARTY MOD IDENTIFICATION SERVICE
 				try {
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Downloading 3rd party mod identification info"));
 					ModManager.debugLogger.writeMessage("Downloading third party mod data from identification service");
@@ -533,6 +555,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeErrorWithException("Failed to download third party identification data: ", e);
 					publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Failed to get 3rd party mod identification info"));
 				}
+
 
 				//THIRD PARTY MOD IMPORTING SERVICE
 				try {
@@ -668,12 +691,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			String latestjavaexehash = (String) latest_object.get("jre_latest_version");
 
 			if (ModManager.isUsingBundledJRE() || ResourceUtils.is64BitWindows() && ArchUtils.getProcessor().is32Bit()) {
-				//32-bit JVM on 64-bit windows - should check
-				//Is using the bundled x64 JRE - should check
+				// 32-bit JVM on 64-bit windows - should check
+				// Is using the bundled x64 JRE - should check
 				boolean hashMismatch = false;
 				File f = new File(ModManager.getBundledJREPath() + "bin\\java.exe");
 				if (f.exists()) {
-					//get hash
+					// get hash
 					String bundledHash = "";
 					try {
 						bundledHash = MD5Checksum.getMD5Checksum(f.getAbsolutePath());
@@ -687,7 +710,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						ModManager.debugLogger.writeMessage("Bundled JRE hash does not match server - likely out of date.");
 					}
 				} else {
-					//doesn't exist - failed hash check
+					// doesn't exist - failed hash check
 					hashMismatch = true;
 					ModManager.debugLogger.writeMessage("Bundled JRE does not exist, but we should be using one.");
 				}
@@ -710,7 +733,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				String serverJSON = null;
 				try {
 					serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);
-					//System.out.println(update_check_link);
+					// System.out.println(update_check_link);
 				} catch (Exception e) {
 					ModManager.debugLogger.writeError("Error checking for updates:");
 					ModManager.debugLogger.writeException(e);
@@ -757,6 +780,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				String latestCommandLineToolsLink = (String) latest_object.get("latest_commandlinetools_link" + arch);
 				ModManager.LATEST_ME3EXPLORER_VERSION = (String) latest_object.get("latest_me3explorer_version");
 				ModManager.LATEST_ME3EXPLORER_URL = (String) latest_object.get("latest_me3explorer_download_link");
+				String commandLineToolsRequiredVersion = (String) latest_object.get("latest_commandlinetools_version");
+				if (commandLineToolsRequiredVersion != null) {
+					try {
+						ModManager.MIN_REQUIRED_CMDLINE_REV = Integer.parseInt(commandLineToolsRequiredVersion);
+					} catch (NumberFormatException e) {
+						ModManager.debugLogger.writeMessage("Could not parse a command line tools requiredversion from online manifest. We will default to the built in value of "
+								+ ModManager.MIN_REQUIRED_CMDLINE_REV);
+					}
+				}
 
 				if (latest_build < ModManager.BUILD_NUMBER) {
 					// build is newer than current
@@ -1082,7 +1114,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				// only works with first file
 				if (validateBIOGameDir()) {
 					if (files.length > 0 && files[0].exists()) {
-						//Verify all file types are the same.
+						// Verify all file types are the same.
 						String extension = FilenameUtils.getExtension(files[0].toString()).toLowerCase();
 						ArrayList<Path> paths = new ArrayList<>();
 						for (File file : files) {
@@ -1153,12 +1185,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 								}
 								break;
 							case "bin": // read magic at beginning to find out
-								//what type // of // file this is 
+								// what type // of // file this is
 								if (files.length == 1) {
 									byte[] buffer = new byte[4];
 
 									try (InputStream is = new FileInputStream(files[0])) {
-										if (is.read(buffer) != buffer.length) { // do something 
+										if (is.read(buffer) != buffer.length) { // do something
 
 											ModManager.debugLogger.writeMessage("Dropped file not a coalesced file.");
 											labelStatus.setText("Dropped file is not a coalesced file");
@@ -1199,7 +1231,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		// Title Panel
 		JPanel titlePanel = new JPanel(new BorderLayout());
-		titlePanel.add(new JLabel("Mass Effect 3 Mod Manager " + ModManager.VERSION + (ModManager.IS_DEBUG ? " [DEBUG MODE]" : ""), SwingConstants.LEFT), BorderLayout.WEST);
+		String titleVal = "Mass Effect 3 Mod Manager " + ModManager.VERSION + (ModManager.IS_DEBUG ? " [DEBUG MODE]" : "");
+		if (!ResourceUtils.is64BitWindows()) {
+			titleVal += " (final 32-bit windows version)";
+		}
+		titlePanel.add(new JLabel(titleVal, SwingConstants.LEFT), BorderLayout.WEST);
 
 		// BioGameDir Panel
 		cookedDirPanel = new JPanel(new BorderLayout());
@@ -1532,9 +1568,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		// Tools
 		toolsMenu = new JMenu("Tools");
 
-		//toolsMergeMod = new JMenuItem("Mod Merging Utility");
-		//toolsMergeMod.setToolTipText(
-		//		"<html>Allows you to merge Mod Manager mods together and resolve conflicts between mods<br>This tool is deprecated and may be removed in the future</html>");
+		// toolsMergeMod = new JMenuItem("Mod Merging Utility");
+		// toolsMergeMod.setToolTipText(
+		// "<html>Allows you to merge Mod Manager mods together and resolve conflicts
+		// between mods<br>This tool is deprecated and may be removed in the
+		// future</html>");
 
 		toolsOpenME3Dir = new JMenuItem("Open BIOGame directory");
 		toolsOpenME3Dir.setToolTipText("Opens a Windows Explorer window in the BIOGame Directory");
@@ -1575,7 +1613,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		modManagementModMaker.addActionListener(this);
 		modManagementASI.addActionListener(this);
 		modManagementConflictDetector.addActionListener(this);
-		//toolsMergeMod.addActionListener(this);
+		// toolsMergeMod.addActionListener(this);
 		modManagementCheckallmodsforupdate.addActionListener(this);
 		toolsUnpackDLC.addActionListener(this);
 		toolsInstallLauncherWV.addActionListener(this);
@@ -1625,7 +1663,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		sqlDifficultyParser.addActionListener(this);
 		sqlAIWeaponParser.addActionListener(this);
 		sqlPowerCustomActionParser.addActionListener(this);
-		//sqlPowerCustomActionParser2.addActionListener(this); //Outputs SQL only. Disabled.
+		// sqlPowerCustomActionParser2.addActionListener(this); //Outputs SQL only.
+		// Disabled.
 
 		parsersMenu.add(sqlWavelistParser);
 		parsersMenu.add(sqlDifficultyParser);
@@ -1641,10 +1680,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		toolsMenu.add(toolAlotInstaller);
 		toolsMenu.add(toolME3Explorer);
 		toolsMenu.add(toolsPCCDataDumper);
-		//toolsMenu.add(parsersMenu); not enough content for this to be useful.
+		// toolsMenu.add(parsersMenu); not enough content for this to be useful.
 		toolsMenu.add(devMenu);
 		toolsMenu.addSeparator();
-		//toolsMenu.add(toolsInstallLauncherWV);
+		// toolsMenu.add(toolsInstallLauncherWV);
 		toolsMenu.add(toolsInstallBinkw32);
 		toolsMenu.add(toolsInstallBinkw32asi);
 		toolsMenu.add(toolsUninstallBinkw32);
@@ -1798,7 +1837,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			toolsInstallBinkw32.setSelected(true);
 			toolsInstallBinkw32.setText("Binkw32 bypass is installed");
 		} else {
-			toolsInstallBinkw32.setVisible(true); //will be hidden again if asi version is installed.
+			toolsInstallBinkw32.setVisible(true); // will be hidden again if asi version is installed.
 			toolsInstallBinkw32.setSelected(false);
 			toolsInstallBinkw32.setText("Install Binkw32 DLC Bypass");
 		}
@@ -1810,7 +1849,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			toolsInstallBinkw32asi.setSelected(false);
 			toolsInstallBinkw32asi.setText("Install Binkw32 DLC Bypass (ASI version)");
 		}
-		//no bypass installed
+		// no bypass installed
 		toolsUninstallBinkw32.setVisible(ModManager.checkIfBinkBypassIsInstalled(GetBioGameDir()));
 	}
 
@@ -1820,18 +1859,20 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JMenuItem modutilsInstallCustomKeybinds = new JMenuItem("Install custom keybinds into this mod");
 		// check if BioInput.xml exists.
 		if (!checkForKeybindsOverride()) {
-			//ModManager.debugLogger.writeMessage("No keybinds file in the override directory (bioinput.xml)");
+			// ModManager.debugLogger.writeMessage("No keybinds file in the override
+			// directory (bioinput.xml)");
 			modutilsInstallCustomKeybinds.setEnabled(false);
 			modutilsInstallCustomKeybinds.setToolTipText("<html>To enable installing custom keybinds put a<br>BioInput.xml file in the data/override/ directory.</html>");
 		} else {
-			//ModManager.debugLogger.writeMessage("Found keybinds file in the override directory (bioinput.xml)");
+			// ModManager.debugLogger.writeMessage("Found keybinds file in the override
+			// directory (bioinput.xml)");
 			modutilsInstallCustomKeybinds.setToolTipText("<html>Replace BioInput.xml in the BASEGAME Coalesced file</html>");
 		}
 
 		JMenuItem modutilsInfoEditor = new JMenuItem("Edit name/description/site");
 		modutilsInfoEditor.setToolTipText("Rename this mod and change the description/site shown in the description pane");
 
-		//Variants
+		// Variants
 		JMenuItem modNoDeltas = new JMenuItem("No included variants");
 		modNoDeltas.setToolTipText("<html>Variants are Coalesced patches that can make small changes like turning on motion blur.<br>See the FAQ on how to create them.</html>");
 		modNoDeltas.setEnabled(false);
@@ -1881,7 +1922,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 		}
 
-		//ALTERNATES
+		// ALTERNATES
 		JMenu modAlternatesMenu = new JMenu();
 		modAlternatesMenu.removeAll();
 
@@ -1987,7 +2028,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		JMenuItem modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
 		modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes");
 
-		//UPDATES CHECK
+		// UPDATES CHECK
 		JMenuItem modutilsRestoreMod = new JMenuItem("Restore mod from ME3Tweaks");
 		modutilsRestoreMod.setToolTipText("Forces mod to update (even if on latest version) which restores mod to vanilla state (from ME3Tweaks)");
 		JMenuItem modutilsCheckforupdate = new JMenuItem();
@@ -2015,25 +2056,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
 		}
 
-		//DEVELOPER MENU
+		// DEVELOPER MENU
 		JMenu modDeveloperMenu = new JMenu("Developer options");
 
-		//MODDESC EDITOR
+		// MODDESC EDITOR
 		JMenuItem modutilsDeploy = new JMenuItem("Deploy Mod");
 		modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
 
-		//DEPLOYMENT
+		// DEPLOYMENT
 		JMenuItem modutilsModdescEditor = new JMenuItem("Installation editor (moddesc)");
 		modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
 
-		//OPEN MOD FOLDER
+		// OPEN MOD FOLDER
 		JMenuItem modutilsOpenFolder = new JMenuItem("Open mod folder");
 		modutilsOpenFolder.setToolTipText("<html>Opens this mod's folder in File Explorer.<br>" + mod.getModPath() + "</html>");
 
 		modDeveloperMenu.add(modutilsModdescEditor);
 		modDeveloperMenu.add(modutilsDeploy);
 
-		//DELETE MOD
+		// DELETE MOD
 		JMenuItem modutilsDeleteMod = new JMenuItem("Delete mod from library");
 		modutilsDeleteMod.setToolTipText("<html>Delete this mod from Mod Manager.<br>This does not remove this mod if it is installed</html>");
 
@@ -2058,7 +2099,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				//JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under construction and is not fully functional in this build yet.");
+				// JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under
+				// construction and is not fully functional in this build yet.");
 				new ModDescEditorWindow(mod);
 			}
 
@@ -2248,10 +2290,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (chosenFile != null) {
 					checkForValidBioGame(chosenFile);
 				} else {
-					ModManager.debugLogger.writeMessage("No directory selected...");
+					ModManager.debugLogger.writeMessage("No executable selected...");
 				}
 			});
 		} else if (e.getSource() == modManagementModMaker) {
+			if (!ResourceUtils.is64BitWindows() && LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2018-05-15"))) {
+				labelStatus.setText("ModMaker support on 32-bit windows ended May 15, 2018");
+				return;
+			}
 			if (validateBIOGameDir()) {
 				if (ModManager.validateNETFrameworkIsInstalled()) {
 					ModManager.debugLogger.writeMessage("Opening ModMaker Entry Window");
@@ -2585,6 +2631,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			// Reload this jframe
 			new ModManagerWindow(false);
 		} else if (e.getSource() == modManagementCheckallmodsforupdate) {
+
 			if (!validateBIOGameDir()) {
 				JOptionPane.showMessageDialog(this, "Your BIOGame directory is not correctly set.\nOnly non-ModMaker mods will be checked for updates.",
 						"Invalid BIOGame Directory", JOptionPane.WARNING_MESSAGE);
@@ -2652,6 +2699,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				int promptIcon = JOptionPane.ERROR_MESSAGE;
 
 				if (!me3exp.exists()) {
+					if (!ResourceUtils.is64BitWindows() && LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2018-05-15"))) {
+						labelStatus.setText("Network support for 32-bit Mod Manager ended May 15, 2018");
+						return;
+					}
+
 					promptMessage = "ME3Explorer is not included in Mod Manager and must be downloaded.\nMod Manager can download version " + ModManager.LATEST_ME3EXPLORER_VERSION
 							+ " for you.\nDownload?";
 					promptIcon = JOptionPane.WARNING_MESSAGE;
@@ -2662,6 +2714,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						int[] existingVersionInfo = EXEFileInfo.getVersionInfo(me3exp.getAbsolutePath());
 						extVersionStr = existingVersionInfo[0] + "." + existingVersionInfo[1] + "." + existingVersionInfo[2] + "." + existingVersionInfo[3];
 						if (EXEFileInfo.versionCompare(ModManager.LATEST_ME3EXPLORER_VERSION, extVersionStr) > 0) {
+							if (!ResourceUtils.is64BitWindows() && LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2018-05-15"))) {
+								labelStatus.setText("Network support for 32-bit Mod Manager ended May 15, 2018");
+								return;
+							}
 							promptMessage = "Your local copy of ME3Explorer is out of date.\nLocal version: " + extVersionStr + "\nLatest version: "
 									+ ModManager.LATEST_ME3EXPLORER_VERSION + "\nDownload latest version?";
 							promptIcon = JOptionPane.WARNING_MESSAGE;
@@ -2690,7 +2746,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				} else {
 					if (me3exp.exists()) {
-						//run it
+						// run it
 						ProcessBuilder pb = new ProcessBuilder(me3exp.getAbsolutePath());
 						File workingdir = new File(me3exp.getAbsolutePath()).getParentFile();
 						pb.directory(workingdir);
@@ -2754,7 +2810,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					}
 				} else {
 					if (alotInstallerEXE.exists()) {
-						//run it
+						// run it
 						ModManager.debugLogger.writeMessage("Launching ALOT Installer");
 						ProcessBuilder pb = new ProcessBuilder(alotInstallerEXE.getAbsolutePath());
 						ModManager.runProcessDetached(pb);
@@ -3034,6 +3090,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	public void checkAllModsForUpdates(boolean isManualCheck) {
+		if (!ResourceUtils.is64BitWindows() && LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2018-05-15"))) {
+			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod updating support on 32-bit windows ended May 15, 2018");
+			return;
+		}
 		ArrayList<Mod> updatableMods = new ArrayList<Mod>();
 		for (int i = 0; i < modModel.size(); i++) {
 			Mod mod = modModel.get(i);
@@ -3160,7 +3220,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			System.out.println(f);
 
 			if (f != null) {
-				f = f.getParentFile(); //Mass Effect 3
+				f = f.getParentFile(); // Mass Effect 3
 			} else {
 				showBadMessage = true;
 			}
@@ -3187,7 +3247,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 		if (internalValidateBIOGameDir(chosenPath)) {
 			String biogamePath = chosenPath;
-			chosenPath = new File(chosenPath).getParent(); //Game Directory
+			chosenPath = new File(chosenPath).getParent(); // Game Directory
 			ModManager.debugLogger.writeMessage("Parent (after internal validation passed):" + chosenPath);
 
 			// Check to make sure path is not a backup path
@@ -3224,17 +3284,17 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			for (int i = 0; i < size; i++) {
 				String element = model.getElementAt(i);
 				if (element.equalsIgnoreCase(biogamePath)) {
-					continue; //we'll put ours at the top of the list
+					continue; // we'll put ours at the top of the list
 				}
 				biogameDirectories.add(element);
-				//System.out.println("Element at " + i + " = " + element);
+				// System.out.println("Element at " + i + " = " + element);
 			}
 			comboboxBiogameDir.removeItemListener(BIOGAME_ITEM_LISTENER);
 			comboboxBiogameDir.removeAllItems();
-			comboboxBiogameDir.addItem(biogamePath); //our selected item
+			comboboxBiogameDir.addItem(biogamePath); // our selected item
 
 			for (String biodir : biogameDirectories) {
-				comboboxBiogameDir.addItem(biodir); //all the others
+				comboboxBiogameDir.addItem(biodir); // all the others
 			}
 
 			biogameDirectories.add(0, biogamePath);
@@ -3388,13 +3448,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		int index = modList.getSelectedIndex();
 		if (index >= 0) {
 			Mod mod = modModel.get(index);
-			if (ModManager.CHECK_FOR_ALOT_INSTALL && ModManager.isALOTInstalled(GetBioGameDir())) {
+			if (ModManager.isALOTInstalled(GetBioGameDir())) {
 				boolean hasPCCInstall = false;
 				ModManager.debugLogger.writeMessage("ALOT is installed, checking for installation of non-testpatch PCC files...");
 
 				for (ModJob job : mod.getJobs()) {
 					if (job.getJobName().equals(ModTypeConstants.TESTPATCH)) {
-						continue; //we don't are about this
+						continue; // we don't are about this
 					}
 					for (String destFile : job.getFilesToReplaceTargets()) {
 						String extension = FilenameUtils.getExtension(destFile);
@@ -3410,8 +3470,20 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 
 				if (hasPCCInstall) {
-					installBlockedByALOT(false);
-					return false;
+					if (ModManager.CHECK_FOR_ALOT_INSTALL) {
+						installBlockedByALOT(false);
+						return false;
+					} else {
+						ModManager.debugLogger.writeMessage("ALOT is installed, found conflicts. User has allow install check off, but we are going to warn anyways.");
+						int result = JOptionPane.showOptionDialog(this,
+								"ALOT is installed and this mod installs PCC files.\nYou should only install this if you really know what you are doing as you WILL break the game.\nSeriously - if you don't know what you are actually doing, do not continue.\n\nInstall anyways?",
+								"Warning: ALOT is installed", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, null, new String[] { "Yes", "No" }, "No");
+						if (result == JOptionPane.NO_OPTION) {
+							return false;
+						}
+						ModManager.debugLogger.writeMessage("User says they know what they are doing. Hope you don't regret this!");
+					}
+
 				} else {
 					ModManager.debugLogger.writeMessage("ALOT is installed, did not detect any potential issues for this mod install.");
 				}
@@ -3917,6 +3989,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		@Override
 		public void itemStateChanged(ItemEvent event) {
 			if (event.getStateChange() == ItemEvent.SELECTED) {
+
 				String selectedPath = (String) event.getItem();
 				ModManager.debugLogger.writeMessage("Switching game targets to " + selectedPath);
 				String selectedGamePath = new File(selectedPath).getParent(); //Game directory
@@ -3930,7 +4003,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("Current registry path: " + currentpath);
 					ModManager.debugLogger.writeMessage("Selected path: " + selectedGamePath);
 					if (currentpath != null && !currentpath.equalsIgnoreCase(selectedGamePath)) {
-						//Update registry key.
+						// Update registry key.
 						boolean is64bit = ResourceUtils.is64BitWindows();
 						String keypath = is64bit ? "HKLM\\SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3" : "HKLM\\SOFTWARE\\BioWare\\Mass Effect 3";
 						ArrayList<String> command = new ArrayList<String>();
@@ -3957,7 +4030,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					ModManager.debugLogger.writeMessage("REGISTRY PATH NOT FOUND. There's a likely reason...");
 				}
 
-				//CHECK WRITE PERMISSIONS
+				// CHECK WRITE PERMISSIONS
 				File biogame = new File(selectedGamePath + "\\BIOGame");
 				File selectedGamePathF = new File(selectedGamePath);
 				File cookedPCConsole = new File(selectedGamePath + "\\BIOGame\\CookedPCConsole");
@@ -3971,7 +4044,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						}
 					}
 				}
-				validateBIOGameDir(); //reset upper state
+				validateBIOGameDir(); // reset upper state
 			}
 		}
 	}
@@ -3993,7 +4066,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		if (result == JOptionPane.YES_OPTION) {
 			if (ModManager.GrantPermissionsToDirectory(folder, username)) {
 				ModManager.debugLogger.writeMessage("Granted permissions to folder: " + folder);
-				if (labelStatus != null) { //Can be null if permissions check is running at startup.
+				if (labelStatus != null) { // Can be null if permissions check is running at startup.
 					labelStatus.setText("Granted write permissions to game directory");
 				}
 			}
@@ -4022,7 +4095,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 	}
 
 	private void setActivityIcon(boolean visbiility) {
-		//labelStatus.setIcon(visbiility ? ModManager.ACTIVITY_ICON : null);
+		// labelStatus.setIcon(visbiility ? ModManager.ACTIVITY_ICON : null);
 		activityPanel.setCollapsed(!visbiility);
 	}
 
@@ -4043,13 +4116,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			File stagingdirfile = new File(stagingdir);
 			FileUtils.deleteQuietly(stagingdirfile);
 			stagingdirfile.mkdirs();
-			//System.out.println("Staging dir: " + stagingdir);
+			// System.out.println("Staging dir: " + stagingdir);
 
-			//Identify files the mod uses.
+			// Identify files the mod uses.
 			String modbasepath = mod.getModPath();
 			int stagedfilecount = 0;
 			for (ModJob job : mod.jobs) {
-				//Files to replace
+				// Files to replace
 				for (String str : job.getFilesToReplace()) {
 					String relativepath = ResourceUtils.getRelativePath(str, modbasepath, File.separator);
 					String outputpath = stagingdir + relativepath;
@@ -4059,7 +4132,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
 				}
 
-				//Files to add
+				// Files to add
 				for (String str : job.getFilesToAdd()) {
 					String relativepath = ResourceUtils.getRelativePath(str, modbasepath, File.separator);
 					String outputpath = stagingdir + relativepath;
@@ -4069,7 +4142,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
 				}
 
-				//Manual Alternates
+				// Manual Alternates
 				for (AlternateFile af : job.getAlternateFiles()) {
 					String substitutefile = af.getSubtituteFile();
 					if (substitutefile != null) {
@@ -4090,7 +4163,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 
-			//Automatically applied alternates
+			// Automatically applied alternates
 			for (AlternateFile af : mod.getAlternateFiles()) {
 				String substitutefile = af.getSubtituteFile();
 				if (substitutefile != null) {
@@ -4110,7 +4183,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 
-			//Alternate Custom DLC
+			// Alternate Custom DLC
 			ArrayList<String> altDLCFoldersToStage = new ArrayList<>();
 			for (AlternateCustomDLC altdlc : mod.getAlternateCustomDLC()) {
 				String altDLCRelativePath = altdlc.getAltDLC();
@@ -4134,7 +4207,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				}
 			}
 
-			//Variants/Deltas
+			// Variants/Deltas
 			for (ModDelta d : mod.getModDeltas()) {
 				String relativepath = ResourceUtils.getRelativePath(d.getDeltaFilepath(), modbasepath, File.separator);
 				String outputpath = stagingdir + relativepath;
