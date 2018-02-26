@@ -154,7 +154,8 @@ public class MDEConditionalDLCItem {
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		panel.add(ifLabel);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
-		String condDLCStr = altdlc.getConditionalDLC().replaceAll("\\(", "").replaceAll("\\)", "");
+		String condition = altdlc.getConditionalDLC() == null ? "" : altdlc.getConditionalDLC();
+		String condDLCStr = condition.replaceAll("\\(", "").replaceAll("\\)", "");
 		conditionalDLC = new JTextField(condDLCStr, 16);
 		conditionalDLC.setUI(new HintTextFieldUI("DLC_MOD_Condition"));
 		panel.add(conditionalDLC);
@@ -389,7 +390,7 @@ public class MDEConditionalDLCItem {
 			str += ",";
 			break;
 		}
-		
+
 		//ModOperation
 		int operationIndex = getOperationBox().getSelectedIndex();
 
@@ -402,9 +403,9 @@ public class MDEConditionalDLCItem {
 			str += ValueParserLib.generateValue("ModOperation", AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER, false);
 			break;
 		}
-		
+
 		str += ",";
-		
+
 		//FriendlyName
 		str += ValueParserLib.generateValue("FriendlyName", userReasonField.getText(), true);
 
