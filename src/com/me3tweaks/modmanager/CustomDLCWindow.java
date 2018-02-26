@@ -31,6 +31,7 @@ import javax.swing.table.DefaultTableModel;
 import org.apache.commons.io.FileUtils;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.objects.MetaCMM;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.objects.MountFile;
 import com.me3tweaks.modmanager.ui.ButtonColumn;
@@ -91,10 +92,10 @@ public class CustomDLCWindow extends JDialog {
 			String dlcName = "Unknown";
 			File metaFile = new File(path + ModInstallWindow.CUSTOMDLC_METADATA_FILE);
 			if (metaFile.exists()) {
-				try {
-					dlcName = FileUtils.readFileToString(metaFile);
-				} catch (IOException e1) {
-					ModManager.debugLogger.writeErrorWithException("Unable to read metadata file about customdlc:", e1);
+				MetaCMM meta = new MetaCMM(metaFile);
+				dlcName = meta.getModName();
+				if (meta.getModVersion() != null) {
+					dlcName += " " + meta.getModVersion();
 				}
 			} else {
 				// try to lookup via 3rd party service
