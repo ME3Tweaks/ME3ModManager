@@ -311,8 +311,7 @@ public class ModDescEditorWindow extends JXFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				// TODO Auto-generated method stub
-				
+				MDEOfficialTaskSelector ts = new MDEOfficialTaskSelector(this);
 			}
 		});
 
