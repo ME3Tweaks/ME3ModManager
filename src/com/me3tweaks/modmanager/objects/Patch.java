@@ -430,6 +430,7 @@ public class Patch implements Comparable<Patch> {
 			File outfile = new File(modSourceFile);
 			if (!finalizer && outfile.length() != targetSize) {
 				//filesize has changed but this is not a finalizer
+				ModManager.debugLogger.writeError("Filesize has changed of file. Filesize is now: "+outfile.length()+". This file is not marked as a finalizer - may be an issue with patch or with source file.");
 				return APPLY_FAILED_SIZE_CHANGED;
 			}
 
