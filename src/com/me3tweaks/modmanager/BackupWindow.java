@@ -61,7 +61,6 @@ public class BackupWindow extends JDialog {
 	 * Manually invoked backup window
 	 * 
 	 * @param callingWindow
-	 * @param BioGameDir
 	 */
 	public BackupWindow(ModManagerWindow callingWindow) {
 		super(null, Dialog.ModalityType.APPLICATION_MODAL);
@@ -73,9 +72,8 @@ public class BackupWindow extends JDialog {
 
 	/**
 	 * Automated backup window
-	 * 
-	 * @param modManagerWindow
-	 * @param bioGameDir
+	 *
+	 * @param callingWindow
 	 * @param dlcName
 	 *            DLC to backup
 	 */
@@ -269,6 +267,32 @@ public class BackupWindow extends JDialog {
 		this.setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
 	}
 
+	private boolean isAllAvailableDLCIsBackedUp(){
+		String[] headerArray = ModTypeConstants.getDLCHeaderNameArray();
+		for (String dlcName : headerArray) {
+			String filepath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
+			File dlcPath = new File(filepath);
+			if (!dlcPath.exists()) {
+				continue;
+			}
+
+			// The folder exists.
+			File mainSfar = new File(dlcPath + "\\Default.sfar");
+			File testpatchSfar = new File(dlcPath + "\\Patch_001.sfar");
+			ModManager.debugLogger.writeMessage("Looking for Default.sfar, Patch_001.sfar in " + filepath);
+
+			if (mainSfar.exists() || testpatchSfar.exists()) {
+				// File exists.
+				File mainSfarbackup = new File(dlcPath + "\\Default.sfar.bak");
+				File testpathSfarbackup = new File(dlcPath + "\\Patch_001.sfar.bak");
+				if (!mainSfarbackup.exists() && !testpathSfarbackup.exists()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Refreshes the interface's collapse and uncollapsed panels, as well as
 	 * hiding/showing the backup button and indicators of no content in both
@@ -371,6 +395,11 @@ public class BackupWindow extends JDialog {
 		pack();
 	}
 
+	/**
+	 * Sets up the window for an automated session.
+	 * @param dlcName THe name of the DLC to backup.
+	 * @param callingWindow The calling window to center against. Can be null.
+	 */
 	private void setupWindowAutomated(String dlcName, JFrame callingWindow) {
 		JPanel rootPanel = new JPanel(new BorderLayout());
 		JPanel northPanel = new JPanel(new BorderLayout());
@@ -595,6 +624,7 @@ public class BackupWindow extends JDialog {
 				refreshViewState();
 				infoLabel.setText("<html><center>Backup job completed.<br>You can restore these DLC files via the Restore Menu by using the SFAR options.</center></html>");
 				statusLabel.setText("");
+				backupButton.setEnabled(isAllAvailableDLCIsBackedUp());
 			}
 		}
 	}

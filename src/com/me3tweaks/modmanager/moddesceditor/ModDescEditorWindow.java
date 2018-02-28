@@ -1,17 +1,22 @@
 package com.me3tweaks.modmanager.moddesceditor;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
+import com.me3tweaks.modmanager.objects.AlternateFile;
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import org.ini4j.Wini;
+import org.jdesktop.swingx.*;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -20,44 +25,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.StringTokenizer;
-
-import javax.swing.Action;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.UIManager;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
-
-import org.ini4j.Wini;
-import org.jdesktop.swingx.HorizontalLayout;
-import org.jdesktop.swingx.JXCollapsiblePane;
-import org.jdesktop.swingx.JXFrame;
-import org.jdesktop.swingx.JXPanel;
-import org.jdesktop.swingx.ScrollableSizeHint;
-import org.jdesktop.swingx.VerticalLayout;
-
-import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
-import com.me3tweaks.modmanager.objects.AlternateFile;
-import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModTypeConstants;
-import com.me3tweaks.modmanager.ui.HintTextFieldUI;
-import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
 public class ModDescEditorWindow extends JXFrame {
 
@@ -70,6 +37,7 @@ public class ModDescEditorWindow extends JXFrame {
 	private JLabel noAltDLCLabel;
 	private JLabel noOutdatedCustomDLCLabel;
 	private ArrayList<MDEOutdatedCustomDLC> outdatedCustomDLCItems = new ArrayList<MDEOutdatedCustomDLC>();
+	private ArrayList<MDEOfficialJob> officalJobs = new ArrayList<MDEOfficialJob>();
 	private JButton saveButton;
 	private JLabel statusLabel;
 	private JTextField modNameField;
@@ -298,6 +266,7 @@ public class ModDescEditorWindow extends JXFrame {
 				"<html>Basegame and official DLC modifiers should be used in circumstances where DLC cannot be added (e.g. in MP for gameplay mods, but not additional MP content mods).<br>You should also use them for items in TESTPATCH or files that must be modified as they load before the main menu (e.g. SFXGame).<br>There is very rarely a need to modify SP DLC using this method, use Custom DLC instead.</html>");
 		baseOfficialPanel.add(baseOfficialIntro);
 		for (MDEOfficialJob mdeJob : mod.rawOfficialJobs) {
+			officalJobs.add(mdeJob);
 			baseOfficialPanel.add(mdeJob.getPanel());
 		}
 
@@ -311,7 +280,8 @@ public class ModDescEditorWindow extends JXFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				MDEOfficialTaskSelector ts = new MDEOfficialTaskSelector(this);
+				MDEOfficialTaskSelector ts = new MDEOfficialTaskSelector(ModDescEditorWindow.this);
+				ts.setVisible(true);
 			}
 		});
 
@@ -789,5 +759,9 @@ public class ModDescEditorWindow extends JXFrame {
 	public void removeOutdatedCustomDLCItem(MDEOutdatedCustomDLC mdeOutdatedCustomDLC) {
 		outdatedCustomDLCItems.remove(mdeOutdatedCustomDLC);
 		noOutdatedCustomDLCLabel.setVisible(outdatedCustomDLCItems.size() == 0);
+	}
+
+	public ArrayList<MDEOfficialJob> getOfficialJobs() {
+		return officalJobs;
 	}
 }

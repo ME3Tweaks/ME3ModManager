@@ -1,18 +1,13 @@
 package com.me3tweaks.modmanager.moddesceditor;
 
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-
+import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import org.jdesktop.swingx.HorizontalLayout;
 import org.jdesktop.swingx.JXCollapsiblePane;
 
-import com.me3tweaks.modmanager.ui.HintTextFieldUI;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class MDEOutdatedCustomDLC {
 	private JXCollapsiblePane collapsablePanel;
