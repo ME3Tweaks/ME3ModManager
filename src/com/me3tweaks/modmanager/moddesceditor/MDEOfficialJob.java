@@ -32,6 +32,18 @@ public class MDEOfficialJob {
 		return collapsablePanel;
 	}
 
+	/**
+	 * Populated constructor for when you are loading a moddesc.ini official job.
+	 * @param rawHeader Header name
+	 * @param rawFolder moddir value
+	 * @param rawNewFiles newfiles list
+	 * @param rawReplaceFiles replacefiles list
+	 * @param rawAddFiles addfiles list
+	 * @param rawAddTargetFiles addfilestargets list
+	 * @param rawAddReadOnlyTargetFiles addfilesreadonlytargets list
+	 * @param removeFiles removefiles list
+	 * @param rawRequirementText text to show user when the dlc is missing
+	 */
 	public MDEOfficialJob(String rawHeader, String rawFolder, String rawNewFiles, String rawReplaceFiles, String rawAddFiles, String rawAddTargetFiles,
 			String rawAddReadOnlyTargetFiles, String removeFiles, String rawRequirementText) {
 		this.rawHeader = rawHeader;
@@ -43,6 +55,22 @@ public class MDEOfficialJob {
 		this.rawAddReadOnlyTargetFiles = rawAddReadOnlyTargetFiles;
 		this.rawRemoveFiles = removeFiles;
 		this.rawRequirementText = rawRequirementText;
+		setupPanel();
+	}
+
+	/**
+	 * Blank constructor for when creating a new MDEOfficialJob. Requires a header.
+	 */
+	public MDEOfficialJob(String rawHeader, String rawFolder){
+		this.rawHeader = rawHeader;
+		this.rawFolder = rawFolder;
+		this.rawNewFiles = "";
+		this.rawReplaceFiles = "";
+		this.rawAddFiles = "";
+		this.rawAddTargetFiles = "";
+		this.rawAddReadOnlyTargetFiles = "";
+		this.rawRemoveFiles = "";
+		this.rawRequirementText = "";
 		setupPanel();
 	}
 
