@@ -5,6 +5,7 @@ import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
 import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import org.ini4j.Wini;
@@ -282,6 +283,20 @@ public class ModDescEditorWindow extends JXFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				MDEOfficialTaskSelector ts = new MDEOfficialTaskSelector(ModDescEditorWindow.this);
 				ts.setVisible(true);
+				// will block until closed
+				int result = ts.getResult();
+				if (result >= 0) {
+					//we have a result
+					String[] headerArray = ModTypeConstants.getDLCHeaderNameArray();
+					ArrayList<String> headerList = new ArrayList<>(Arrays.asList(headerArray));
+					headerList.add(0,"BASEGAME"); //add basegame header
+					String chosenHeader = headerList.get(result);
+					System.out.println("You chose "+chosenHeader);
+					MDEOfficialJob mdeoj = new MDEOfficialJob(chosenHeader, "RAW");
+					officalJobs.add(mdeoj);
+					baseOfficialPanel.add(mdeoj.getPanel());
+					repaint();
+				}
 			}
 		});
 

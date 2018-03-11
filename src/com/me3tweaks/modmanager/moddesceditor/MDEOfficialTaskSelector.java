@@ -24,11 +24,11 @@ public class MDEOfficialTaskSelector extends JDialog {
     }
 
     private void setupWindow() {
-        this.setTitle("Add Custom DLC Folder for installation");
+        this.setTitle("Select task header");
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         this.setIconImages(ModManager.ICONS);
         this.setModalityType(Dialog.ModalityType.DOCUMENT_MODAL);
-        this.setMinimumSize(new Dimension(300, 300));
+        this.setMinimumSize(new Dimension(200, 300));
 
         ArrayList<MDEOfficialJob> jobs = windowRef.getOfficialJobs();
 
