@@ -270,6 +270,37 @@ public class MDEConditionalDLCItem {
 			}
 		});
 
+		conditionBox.addItemListener(new ItemListener() {
+
+			private String originalText;
+
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// TODO Auto-generated method stub
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					int index = conditionBox.getSelectedIndex();
+					switch (index) {
+						case 0: //auto
+						case 1: //auto
+						case 2: //auto
+						case 3: //auto
+
+							if (!conditionalDLC.isEnabled()) {
+								conditionalDLC.setText(originalText);
+								conditionalDLC.setEnabled(true);
+							}
+							break;
+						case 4: //user selected
+							conditionalDLC.setEnabled(false);
+							originalText = conditionalDLC.getText();
+							conditionalDLC.setText("N/A");
+							break;
+					}
+
+				}
+			}
+		});
+
 		// hide into/dest for add
 		if (operationBox.getSelectedIndex() == 0) {
 			destLabel.setVisible(false);
@@ -292,6 +323,8 @@ public class MDEConditionalDLCItem {
 				break;
 			case AlternateCustomDLC.CONDITION_MANUAL:
 				conditionBox.setSelectedIndex(4);
+				conditionalDLC.setEnabled(false);
+				conditionalDLC.setText("N/A");
 				break;
 			}
 		} else {

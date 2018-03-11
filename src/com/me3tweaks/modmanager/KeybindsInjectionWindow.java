@@ -150,7 +150,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						//System.out.println(relativepath);
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModTypeConstants.BASEGAME, ME3TweaksUtils.HEADER)),
 								new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Coalesced.bin"));
-						job.addFileReplace(mod.getModPath() + relativepath + "Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin", false);
+						job.addFileReplace(mod.getModPath() + relativepath + "Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin", false, false);
 						destinationBasegamecoal = ModManager.appendSlash(mod.getModPath()) + relativepath + "Coalesced.bin";
 						break;
 					}
@@ -166,7 +166,7 @@ public class KeybindsInjectionWindow extends JDialog {
 					FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModTypeConstants.BASEGAME, ME3TweaksUtils.HEADER)),
 							new File(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin"));
 					destinationBasegamecoal = mod.getModPath() + "BASEGAME/Coalesced.bin";
-					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin", false);
+					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/Coalesced.bin", "\\BIOGame\\CookedPCConsole\\Coalesced.bin", false, false);
 
 					//Add TOC
 					if (!ModManager.hasPristineTOC("BASEGAME", ME3TweaksUtils.HEADER)) {
@@ -175,7 +175,7 @@ public class KeybindsInjectionWindow extends JDialog {
 
 					File destTOC = new File(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/PCConsoleTOC.bin");
 					FileUtils.copyFile(new File(ModManager.getPristineTOC("BASEGAME", ME3TweaksUtils.HEADER)), destTOC);
-					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/PCConsoleTOC.bin", "\\BIOGame\\PCConsoleTOC.bin", false);
+					job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "BASEGAME/PCConsoleTOC.bin", "\\BIOGame\\PCConsoleTOC.bin", false, false);
 					mod.addTask("BASEGAME", job);
 				}
 
@@ -238,7 +238,7 @@ public class KeybindsInjectionWindow extends JDialog {
 									new File(ModManager.appendSlash(mod.getModPath()) + relativepath + "Default_DLC_CON_MP5.bin"));
 							destinationMP5coal = origMod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin";
 							job.addFileReplace(mod.getModPath() + relativepath + "Default_DLC_CON_MP5.bin", "/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin",
-									false);
+									false, false);
 							break;
 						}
 					}
@@ -253,7 +253,7 @@ public class KeybindsInjectionWindow extends JDialog {
 						FileUtils.copyFile(new File(ModManager.getPristineCoalesced(ModTypeConstants.MP5, ME3TweaksUtils.HEADER)),
 								new File(ModManager.appendSlash(mod.getModPath()) + "MP5/Default_DLC_CON_MP5.bin"));
 						job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "MP5/Default_DLC_CON_MP5.bin",
-								"/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin", false);
+								"/BIOGame/DLC/DLC_CON_MP5/CookedPCConsole/Default_DLC_CON_MP5.bin", false, false);
 						destinationMP5coal = origMod.getModPath() + "MP5/Default_DLC_CON_MP5.bin";
 
 						//Add TOC
@@ -263,7 +263,7 @@ public class KeybindsInjectionWindow extends JDialog {
 
 						File destTOC = new File(ModManager.appendSlash(mod.getModPath()) + "MP5/PCConsoleTOC.bin");
 						FileUtils.copyFile(new File(ModManager.getPristineTOC(ModTypeConstants.MP5, ME3TweaksUtils.HEADER)), destTOC);
-						job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "MP5/PCConsoleTOC.bin", "/BIOGame/DLC/DLC_CON_MP5/PCConsoleTOC.bin", false);
+						job.addFileReplace(ModManager.appendSlash(mod.getModPath()) + "MP5/PCConsoleTOC.bin", "/BIOGame/DLC/DLC_CON_MP5/PCConsoleTOC.bin", false, false);
 
 						mod.addTask(ModTypeConstants.MP5, job);
 					}

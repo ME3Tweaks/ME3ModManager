@@ -17,10 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -1231,7 +1228,11 @@ public class ModInstallWindow extends JDialog {
 				}
 			}
 			//autotoc if necessary, create metadata file
-			for (String str : job.getDestFolders()) {
+			Set<String> destinationFoldersUnique = new HashSet<>(job.getDestFolders());
+			for (String str : destinationFoldersUnique) {
+				if (str.contains("\\") || str.contains("/")) {
+					continue; //skip
+				}
 				String metadatapath = dlcdir + File.separator + str + File.separator + CUSTOMDLC_METADATA_FILE;
 				MetaCMM.writeMetaCMMFile(job.getOwningMod(), metadatapath);
 			}

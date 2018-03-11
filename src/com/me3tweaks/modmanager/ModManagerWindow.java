@@ -108,6 +108,7 @@ import com.me3tweaks.modmanager.objects.ProcessResult;
 import com.me3tweaks.modmanager.objects.RestoreMode;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
+import com.me3tweaks.modmanager.ui.StayOpenJCheckboxMenuItem;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
@@ -120,7 +121,6 @@ import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
 import com.sun.jna.platform.win32.Advapi32Util;
 
 import javafx.application.Platform;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import net.iharder.dnd.FileDrop;
 
@@ -1946,17 +1946,27 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 
 			ArrayList<AlternateFile> autoAlts = mod.getApplicableAutomaticAlternates(GetBioGameDir());
-			for (AlternateFile af : alts) {
+			for (AlternateFile af : alts) { //alts not autoalts.
 				String friendlyname = af.getOperation() + " due to " + af.getCondition() + " for " + af.getConditionalDLC();
 				if (af.getFriendlyName() != null) {
 					friendlyname = af.getFriendlyName();
 				}
-				JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+				StayOpenJCheckboxMenuItem item = new StayOpenJCheckboxMenuItem(friendlyname);
 				item.setToolTipText(af.getDescription());
-				item.setEnabled(false);
+				item.setEnabled(af.getCondition().equals(AlternateFile.CONDITION_MANUAL));
 				if (autoAlts.contains(af)) {
 					item.setSelected(true);
 				}
+				item.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						af.setHasBeenChosen(item.isSelected());
+						ModManager.debugLogger.writeMessage(
+								"[" + mod.getModName() + "] User has toggled an optional CUSTOMDLC ALTFILE addin " + item.getText() + " to " + (item.isSelected() ? "on" : "off") + ".");
+						labelStatus.setText(item.getText() + " set to " + (item.isSelected() ? "enabled" : "disabled"));
+					}
+				});
 				modAlternatesMenu.add(item);
 			}
 
@@ -1970,7 +1980,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					if (af.getFriendlyName() != null) {
 						friendlyname = af.getFriendlyName();
 					}
-					JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+					StayOpenJCheckboxMenuItem item = new StayOpenJCheckboxMenuItem(friendlyname);
 					item.setToolTipText(af.getDescription());
 					item.setEnabled(true); // Can only do
 											// CONDITION_MANUAL
@@ -1996,7 +2006,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 					if (altdlc.getFriendlyName() != null) {
 						friendlyname = altdlc.getFriendlyName();
 					}
-					JCheckBoxMenuItem item = new JCheckBoxMenuItem(friendlyname);
+					StayOpenJCheckboxMenuItem item = new StayOpenJCheckboxMenuItem(friendlyname);
 					item.setToolTipText(altdlc.getDescription());
 					if (!altdlc.getCondition().equals(AlternateCustomDLC.CONDITION_MANUAL)) {
 						item.setEnabled(false);
