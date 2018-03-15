@@ -1,21 +1,14 @@
 package com.me3tweaks.modmanager.moddesceditor;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Rectangle;
+import com.me3tweaks.modmanager.ModManager;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
-
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-
-import com.me3tweaks.modmanager.ModManager;
 
 public class ModDescEditorDirectoryChooser extends JDialog {
 	private File chosenFile;

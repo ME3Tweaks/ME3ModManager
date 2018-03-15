@@ -1,9 +1,7 @@
 package com.me3tweaks.modmanager.moddesceditor;
 
+import javax.swing.*;
 import java.util.AbstractMap.SimpleEntry;
-
-import javax.swing.JButton;
-import javax.swing.JPanel;
 
 public class MDECustomDLC {
 

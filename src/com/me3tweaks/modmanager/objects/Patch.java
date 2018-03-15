@@ -1,10 +1,8 @@
 package com.me3tweaks.modmanager.objects;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import org.apache.commons.io.FileUtils;
@@ -14,7 +12,6 @@ import org.ini4j.Wini;
 
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManager.Lock;
-import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 
@@ -325,7 +322,7 @@ public class Patch implements Comparable<Patch> {
 						//ADD PATCH FILE TO JOB
 						File modFilePath = new File(ModManager.appendSlash(mod.getModPath()) + relativepath + filename);
 						ModManager.debugLogger.writeMessage("Adding new mod task => " + targetModule + ": add " + modFilePath.getAbsolutePath());
-						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath, false);
+						job.addFileReplace(modFilePath.getAbsolutePath(), targetPath, false, false);
 
 						//CHECK IF JOB HAS TOC - SOME MIGHT NOT, FOR SOME WEIRD REASON
 						//copy toc
@@ -339,7 +336,7 @@ public class Patch implements Comparable<Patch> {
 						String tocTask = mod.getModTaskPath(ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)), targetModule);
 						if (tocTask == null) {
 							//add toc replacejob
-							job.addFileReplace(tocFile.getAbsolutePath(), targetPath, false);
+							job.addFileReplace(tocFile.getAbsolutePath(), targetPath, false, false);
 						}
 						break;
 					}
@@ -364,14 +361,14 @@ public class Patch implements Comparable<Patch> {
 					File tocSource = new File(ModManager.getPristineTOC(targetModule, ME3TweaksUtils.HEADER));
 					File tocDest = new File(modulefolder + File.separator + "PCConsoleTOC.bin");
 					FileUtils.copyFile(tocSource, tocDest);
-					job.addFileReplace(tocDest.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)), false);
+					job.addFileReplace(tocDest.getAbsolutePath(), ME3TweaksUtils.coalFileNameToDLCTOCDir(ME3TweaksUtils.headerNameToCoalFilename(targetModule)), false, false);
 
 					ModManager.debugLogger.writeMessage("Adding " + filename + " to new job");
 					/*
 					 * File modFile = new File(modulefolder + File.separator +
 					 * filename); FileUtils.copyFile(libraryFile, modFile);
 					 */
-					job.addFileReplace(modFile.getAbsolutePath(), targetPath, false);
+					job.addFileReplace(modFile.getAbsolutePath(), targetPath, false, false);
 					mod.addTask(targetModule, job);
 					mod.modCMMVer = newCmmVer;
 				}
@@ -430,6 +427,7 @@ public class Patch implements Comparable<Patch> {
 			File outfile = new File(modSourceFile);
 			if (!finalizer && outfile.length() != targetSize) {
 				//filesize has changed but this is not a finalizer
+				ModManager.debugLogger.writeError("Filesize has changed of file. Filesize is now: "+outfile.length()+". This file is not marked as a finalizer - may be an issue with patch or with source file.");
 				return APPLY_FAILED_SIZE_CHANGED;
 			}
 
