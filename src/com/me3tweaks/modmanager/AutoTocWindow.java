@@ -14,13 +14,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.BorderFactory;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.SwingWorker;
+import javax.swing.*;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -110,7 +104,8 @@ public class AutoTocWindow extends JDialog {
 		setIconImages(ModManager.ICONS);
 
 		JPanel aboutPanel = new JPanel(new BorderLayout());
-		infoLabel = new JLabel("<html>" + labelText + "</html>");
+		infoLabel = new JLabel("<html><center>" + labelText + "</center></html>");
+		infoLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		aboutPanel.add(infoLabel, BorderLayout.NORTH);
 		progressBar = new JProgressBar(0, 100);
 		progressBar.setIndeterminate(false);

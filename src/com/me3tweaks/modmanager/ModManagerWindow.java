@@ -602,6 +602,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 						ModManager.debugLogger.writeMessage("Installed ASIs are up to date (if any are installed)");
 					}
 				}
+				Wini ini;
+				try {
+					File settings = new File(ModManager.SETTINGS_FILENAME);
+					if (!settings.exists())
+						settings.createNewFile();
+					ini = new Wini(settings);
+					ini.put("Settings", "lastautocheck", System.currentTimeMillis());
+					ModManager.debugLogger.writeMessage("Updating last-autocheck date in ini");
+					ini.store();
+					ModManager.LAST_AUTOUPDATE_CHECK = System.currentTimeMillis();
+				} catch (InvalidFileFormatException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
+				}
 			}
 		}
 
@@ -3122,22 +3137,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				JOptionPane.showMessageDialog(ModManagerWindow.this,
 						"No mods are eligible for the Mod Manager update service.\nEligible mods include ModMaker mods and ones hosted on ME3Tweaks.com.", "No updatable mods",
 						JOptionPane.WARNING_MESSAGE);
-			}
-
-			Wini ini;
-			try {
-				File settings = new File(ModManager.SETTINGS_FILENAME);
-				if (!settings.exists())
-					settings.createNewFile();
-				ini = new Wini(settings);
-				ini.put("Settings", "lastautocheck", System.currentTimeMillis());
-				ModManager.debugLogger.writeMessage("Updating last-autocheck date in ini");
-				ini.store();
-				ModManager.LAST_AUTOUPDATE_CHECK = System.currentTimeMillis();
-			} catch (InvalidFileFormatException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				ModManager.debugLogger.writeErrorWithException("Settings file encountered an I/O error while attempting to write it. Settings not saved.", e);
 			}
 		}
 	}
