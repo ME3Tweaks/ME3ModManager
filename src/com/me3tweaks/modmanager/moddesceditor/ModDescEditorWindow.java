@@ -292,7 +292,7 @@ public class ModDescEditorWindow extends JXFrame {
 					headerList.add(0,"BASEGAME"); //add basegame header
 					String chosenHeader = headerList.get(result);
 					System.out.println("You chose "+chosenHeader);
-					MDEOfficialJob mdeoj = new MDEOfficialJob(chosenHeader, "RAW");
+					MDEOfficialJob mdeoj = new MDEOfficialJob(ModDescEditorWindow.this,chosenHeader, "RAW");
 					officalJobs.add(mdeoj);
 					baseOfficialPanel.add(mdeoj.getPanel());
 					repaint();

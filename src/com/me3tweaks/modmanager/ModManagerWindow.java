@@ -227,6 +227,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		validateBIOGameDir();
 		ModManager.debugLogger.writeMessage("Mod Manager Window UI: Now setting visible.");
 		try {
+			if (!modModel.isEmpty()) {
+				modList.setSelectedIndex(0);
+				new ModDescEditorWindow(modModel.firstElement());
+			}
 			setVisible(true);
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);

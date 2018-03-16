@@ -1,5 +1,6 @@
 package com.me3tweaks.modmanager.moddesceditor;
 
+import com.me3tweaks.modmanager.objects.AlternateFile;
 import com.me3tweaks.modmanager.objects.ModTypeConstants;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
@@ -10,6 +11,8 @@ import org.jdesktop.swingx.VerticalLayout;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -27,6 +30,7 @@ public class MDEOfficialJob {
     private String rawFolder;
     private JXCollapsiblePane collapsablePanel;
     private JTextField requirementLabel;
+    private ModDescEditorWindow windowRef;
 
     public JXCollapsiblePane getPanel() {
         return collapsablePanel;
@@ -47,6 +51,7 @@ public class MDEOfficialJob {
      */
     public MDEOfficialJob(String rawHeader, String rawFolder, String rawNewFiles, String rawReplaceFiles, String rawAddFiles, String rawAddTargetFiles,
                           String rawAddReadOnlyTargetFiles, String removeFiles, String rawRequirementText) {
+        this.windowRef = windowRef;
         this.rawHeader = rawHeader;
         this.rawFolder = rawFolder;
         this.rawNewFiles = rawNewFiles;
@@ -62,7 +67,8 @@ public class MDEOfficialJob {
     /**
      * Blank constructor for when creating a new MDEOfficialJob. Requires a header.
      */
-    public MDEOfficialJob(String rawHeader, String rawFolder) {
+    public MDEOfficialJob(ModDescEditorWindow windowRef, String rawHeader, String rawFolder) {
+        this.windowRef = windowRef;
         this.rawHeader = rawHeader;
         this.rawFolder = rawFolder;
         this.rawNewFiles = "";
@@ -169,7 +175,7 @@ public class MDEOfficialJob {
         jobHeaderPanel.add(button);
         jobHeaderPanel.add(taskHeaderLabel);
 
-        // Task Details (Collapsable)
+        // Task Details (Collapsible)
         JXPanel jobPanel = new JXPanel(new GridBagLayout());
         jobPanel.setBorder(new EmptyBorder(3, ModDescEditorWindow.SUBPANEL_INSET_LEFT, 3, 3));
         GridBagConstraints gbc = new GridBagConstraints();
@@ -178,8 +184,8 @@ public class MDEOfficialJob {
         gbc.gridwidth = 1;
         gbc.gridheight = 1;
         gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // TASK DETAILS
         Insets columnRightSideInsets = new Insets(0, 0, 0, 10);
@@ -193,7 +199,11 @@ public class MDEOfficialJob {
             replacementsHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
             jobPanel.add(replacementsHeader, gbc);
             gbc.gridy++;
-
+            gridC.insets = columnRightSideInsets;
+            gridC.fill = GridBagConstraints.HORIZONTAL;
+            gridC.anchor = GridBagConstraints.WEST;
+            gridC.gridx = 0;
+            gridC.gridy = 0;
             if (getRawNewFiles() != null && getRawReplaceFiles() != null) {
                 StringTokenizer newStrok = new StringTokenizer(getRawNewFiles(), ";");
                 StringTokenizer oldStrok = new StringTokenizer(getRawReplaceFiles(), ";");
@@ -203,11 +213,8 @@ public class MDEOfficialJob {
                     JLabel replaceHeader = new JLabel("In-game path to replace");
                     sourceHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
                     replaceHeader.setFont(replacementsHeader.getFont().deriveFont(14f));
-                    gridC.fill = GridBagConstraints.HORIZONTAL;
                     gridC.gridx = 1;
-                    gridC.insets = columnRightSideInsets;
                     gridC.weightx = 0;
-                    gridC.anchor = GridBagConstraints.WEST;
                     replacementsListPanel.add(sourceHeader, gridC);
                     gridC.gridx = 2;
                     gridC.weightx = 1;
@@ -239,9 +246,10 @@ public class MDEOfficialJob {
                     }
                 } else {
                     //empty list, maybe just added.
+                    gridC.weightx = 1;
                     JLabel noReplacements = new JLabel("No files are replaced in this job.");
                     replacementsListPanel.add(noReplacements, gridC);
-                    gbc.gridy++;
+                    gridC.gridy++;
                 }
             } else {
                 // no replace targets
@@ -298,53 +306,62 @@ public class MDEOfficialJob {
                     /*
                      * gbc.gridy++;
                      */
-
-                    JLabel sourceHeader = new JLabel("New file");
-                    JLabel replaceHeader = new JLabel("In-game path to add to");
-                    sourceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
-                    replaceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
                     gridC.insets = columnRightSideInsets;
                     gridC.fill = GridBagConstraints.HORIZONTAL;
-                    gridC.gridx = 1;
-                    additionsListPanel.add(sourceHeader, gridC);
-                    gridC.gridx = 2;
-                    additionsListPanel.add(replaceHeader, gridC);
-                    gridC.gridy++;
                     gridC.anchor = GridBagConstraints.WEST;
-
-                    while (addStrok.hasMoreTokens()) {
-
-                        JButton minusButton = new JButton("-");
-
-                        gridC.fill = GridBagConstraints.NONE;
-                        gridC.gridy++;
-                        gridC.gridx = 0;
-                        gridC.weightx = 0;
-                        additionsListPanel.add(minusButton, gridC);
-
-                        String newFile = addStrok.nextToken();
-                        String oldFile = addTargetsStrok.nextToken();
-
-                        JLabel fileReplaceLabel = new JLabel(newFile);
-                        JLabel replacePathLabel = new JLabel(oldFile);
-
+                    gridC.gridx = 0;
+                    gridC.gridy = 0;
+                    if (addStrok.countTokens() > 0) {
+                        JLabel sourceHeader = new JLabel("New file");
+                        JLabel replaceHeader = new JLabel("In-game path to add to");
+                        sourceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
+                        replaceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
                         gridC.gridx = 1;
-
-                        additionsListPanel.add(fileReplaceLabel, gridC);
+                        additionsListPanel.add(sourceHeader, gridC);
                         gridC.gridx = 2;
-                        gridC.weightx = 0;
+                        additionsListPanel.add(replaceHeader, gridC);
+                        gridC.gridy++;
 
-                        additionsListPanel.add(replacePathLabel, gridC);
-                        gridC.fill = GridBagConstraints.HORIZONTAL;
+                        while (addStrok.hasMoreTokens()) {
 
-                        gridC.gridx = 3;
-                        gridC.weightx = 1;
+                            JButton minusButton = new JButton("-");
 
-                        JCheckBox readOnly = new JCheckBox("Read only");
-                        if (readOnlyFiles.contains(oldFile)) {
-                            readOnly.setSelected(true);
+                            gridC.fill = GridBagConstraints.NONE;
+                            gridC.gridy++;
+                            gridC.gridx = 0;
+                            gridC.weightx = 0;
+                            additionsListPanel.add(minusButton, gridC);
+
+                            String newFile = addStrok.nextToken();
+                            String oldFile = addTargetsStrok.nextToken();
+
+                            JLabel fileReplaceLabel = new JLabel(newFile);
+                            JLabel replacePathLabel = new JLabel(oldFile);
+
+                            gridC.gridx = 1;
+
+                            additionsListPanel.add(fileReplaceLabel, gridC);
+                            gridC.gridx = 2;
+                            gridC.weightx = 0;
+
+                            additionsListPanel.add(replacePathLabel, gridC);
+                            gridC.fill = GridBagConstraints.HORIZONTAL;
+
+                            gridC.gridx = 3;
+                            gridC.weightx = 1;
+
+                            JCheckBox readOnly = new JCheckBox("Read only");
+                            if (readOnlyFiles.contains(oldFile)) {
+                                readOnly.setSelected(true);
+                            }
+                            additionsListPanel.add(readOnly, gridC);
                         }
-                        additionsListPanel.add(readOnly, gridC);
+                    } else {
+                        //
+                        gridC.weightx = 1;
+                        JLabel noAdditions = new JLabel("No files are added to the game by this job.", SwingConstants.LEFT);
+                        additionsListPanel.add(noAdditions, gridC);
+                        gridC.gridy++;
                     }
                 } else {
                     JLabel noAdditions = new JLabel("No files are added to the game by this job.", SwingConstants.LEFT);
@@ -374,8 +391,8 @@ public class MDEOfficialJob {
             // MANUAL ALTFILES
             // ADD FILES
             {
-                JXPanel additionsListPanel = new JXPanel(new GridBagLayout());
-                additionsListPanel.setBorder(new EmptyBorder(3, ModDescEditorWindow.SUBPANEL_INSET_LEFT, 3, 3));
+                JXPanel userSelectablePanel = new JXPanel(new GridBagLayout());
+                userSelectablePanel.setBorder(new EmptyBorder(3, ModDescEditorWindow.SUBPANEL_INSET_LEFT, 3, 3));
                 GridBagConstraints gridC = new GridBagConstraints();
                 gbc.gridy++;
                 JLabel newFilesHeader = new JLabel("User selectable options");
@@ -407,52 +424,63 @@ public class MDEOfficialJob {
                      * gbc.gridy++;
                      */
 
-                    JLabel sourceHeader = new JLabel("New file");
-                    JLabel replaceHeader = new JLabel("In-game path to add to");
-                    sourceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
-                    replaceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
                     gridC.insets = columnRightSideInsets;
                     gridC.fill = GridBagConstraints.HORIZONTAL;
-                    gridC.gridx = 1;
-                    additionsListPanel.add(sourceHeader, gridC);
-                    gridC.gridx = 2;
-                    additionsListPanel.add(replaceHeader, gridC);
-                    gridC.gridy++;
                     gridC.anchor = GridBagConstraints.WEST;
-
-                    while (addStrok.hasMoreTokens()) {
-
-                        JButton minusButton = new JButton("-");
-
-                        gridC.fill = GridBagConstraints.NONE;
-                        gridC.gridy++;
-                        gridC.gridx = 0;
-                        gridC.weightx = 0;
-                        additionsListPanel.add(minusButton, gridC);
-
-                        String newFile = addStrok.nextToken();
-                        String oldFile = addTargetsStrok.nextToken();
-
-                        JLabel fileReplaceLabel = new JLabel(newFile);
-                        JLabel replacePathLabel = new JLabel(oldFile);
-
+                    gridC.gridx = 0;
+                    gridC.gridy = 0;
+                    if (addStrok.countTokens() > 0) {
+                        JLabel sourceHeader = new JLabel("New file");
+                        JLabel replaceHeader = new JLabel("In-game path to add to");
+                        sourceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
+                        replaceHeader.setFont(newFilesHeader.getFont().deriveFont(14f));
                         gridC.gridx = 1;
-
-                        additionsListPanel.add(fileReplaceLabel, gridC);
+                        userSelectablePanel.add(sourceHeader, gridC);
                         gridC.gridx = 2;
-                        gridC.weightx = 0;
+                        userSelectablePanel.add(replaceHeader, gridC);
+                        gridC.gridy++;
 
-                        additionsListPanel.add(replacePathLabel, gridC);
-                        gridC.fill = GridBagConstraints.HORIZONTAL;
+                        while (addStrok.hasMoreTokens()) {
 
-                        gridC.gridx = 3;
-                        gridC.weightx = 1;
+                            JButton minusButton = new JButton("-");
 
-                        JCheckBox readOnly = new JCheckBox("Read only");
-                        if (readOnlyFiles.contains(oldFile)) {
-                            readOnly.setSelected(true);
+                            gridC.fill = GridBagConstraints.NONE;
+                            gridC.gridy++;
+                            gridC.gridx = 0;
+                            gridC.weightx = 0;
+                            userSelectablePanel.add(minusButton, gridC);
+
+                            String newFile = addStrok.nextToken();
+                            String oldFile = addTargetsStrok.nextToken();
+
+                            JLabel fileReplaceLabel = new JLabel(newFile);
+                            JLabel replacePathLabel = new JLabel(oldFile);
+
+                            gridC.gridx = 1;
+
+                            userSelectablePanel.add(fileReplaceLabel, gridC);
+                            gridC.gridx = 2;
+                            gridC.weightx = 0;
+
+                            userSelectablePanel.add(replacePathLabel, gridC);
+                            gridC.fill = GridBagConstraints.HORIZONTAL;
+
+                            gridC.gridx = 3;
+                            gridC.weightx = 1;
+
+                            JCheckBox readOnly = new JCheckBox("Read only");
+                            if (readOnlyFiles.contains(oldFile)) {
+                                readOnly.setSelected(true);
+                            }
+                            userSelectablePanel.add(readOnly, gridC);
                         }
-                        additionsListPanel.add(readOnly, gridC);
+                    } else {
+                        //empty list, maybe just added.
+                        gridC.weightx = 1;
+                        gridC.gridwidth = 3;
+                        JLabel noAdditions = new JLabel("No user selection options are available for this job.", SwingConstants.LEFT);
+                        userSelectablePanel.add(noAdditions, gridC);
+                        gridC.gridy++;
                     }
                 } else {
                     JLabel noAdditions = new JLabel("No user selection options are available for this job.", SwingConstants.LEFT);
@@ -461,8 +489,8 @@ public class MDEOfficialJob {
                     gridC.weightx = 1;
                     gridC.anchor = GridBagConstraints.WEST;
                     gridC.gridwidth = 3;
-                    gridC.fill = GridBagConstraints.NONE;
-                    additionsListPanel.add(noAdditions, gridC);
+                    gridC.fill = GridBagConstraints.HORIZONTAL;
+                    userSelectablePanel.add(noAdditions, gridC);
                 }
 
                 gridC.gridy++;
@@ -471,12 +499,22 @@ public class MDEOfficialJob {
                 gridC.anchor = GridBagConstraints.WEST;
                 gridC.gridwidth = 3;
                 gridC.fill = GridBagConstraints.NONE;
-                JButton addNewFile = new JButton("Add user selectable option to " + getRawHeader());
-                additionsListPanel.add(addNewFile, gridC);
+                JButton addNewUserSelectableOption = new JButton("Add user selectable option to " + getRawHeader());
+                addNewUserSelectableOption.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        gridC.gridy++;
+                        MDEOfficialJobConditionalFileItem mdecfi = new MDEOfficialJobConditionalFileItem(MDEOfficialJob.this,(AlternateFile)null);
+                        userSelectablePanel.add(mdecfi.getPanel(),gridC);
+                        getWindowRef().repaint();
+                        mdecfi.getPanel().setCollapsed(false);
+                    }
+                });
+                userSelectablePanel.add(addNewUserSelectableOption, gridC);
 
                 // end add panel
                 gbc.gridy++;
-                jobPanel.add(additionsListPanel, gbc);
+                jobPanel.add(userSelectablePanel, gbc);
             }
         }
 
@@ -493,7 +531,7 @@ public class MDEOfficialJob {
                 reason = getRawRequirementText();
             }
             requirementLabel = new JTextField(reason);
-            requirementLabel.setUI(new HintTextFieldUI("Specify a reason"));
+            requirementLabel.setUI(new HintTextFieldUI("Specify a reason this job exists in the mod, e.g. fixes stuff in X"));
 
             gbc.gridy++;
             jobPanel.add(requirementLabel, gbc);
@@ -511,5 +549,9 @@ public class MDEOfficialJob {
 
         panel.add(jobHeaderPanel);
         panel.add(jobPane);
+    }
+
+    public ModDescEditorWindow getWindowRef() {
+        return windowRef;
     }
 }
