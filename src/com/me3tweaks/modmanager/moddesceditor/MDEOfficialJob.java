@@ -49,7 +49,7 @@ public class MDEOfficialJob {
      * @param removeFiles               removefiles list
      * @param rawRequirementText        text to show user when the dlc is missing
      */
-    public MDEOfficialJob(String rawHeader, String rawFolder, String rawNewFiles, String rawReplaceFiles, String rawAddFiles, String rawAddTargetFiles,
+    public MDEOfficialJob(ModDescEditorWindow windowRef, String rawHeader, String rawFolder, String rawNewFiles, String rawReplaceFiles, String rawAddFiles, String rawAddTargetFiles,
                           String rawAddReadOnlyTargetFiles, String removeFiles, String rawRequirementText) {
         this.windowRef = windowRef;
         this.rawHeader = rawHeader;
@@ -266,6 +266,13 @@ public class MDEOfficialJob {
                 gridC.gridwidth = 3;
                 gridC.fill = GridBagConstraints.NONE;
                 JButton addReplacementFile = new JButton("Add replacement file to " + getRawHeader());
+                addReplacementFile.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        MDEModFileChooser mdefc = new MDEModFileChooser(windowRef,"",MDEModFileChooser.OPTIONTYPE_SELECTONLY, null);
+
+                    }
+                });
                 replacementsListPanel.add(addReplacementFile, gridC);
             }
 
