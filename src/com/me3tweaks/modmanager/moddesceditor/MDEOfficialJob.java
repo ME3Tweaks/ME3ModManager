@@ -30,8 +30,6 @@ public class MDEOfficialJob {
     private String rawFolder;
     private JXCollapsiblePane collapsablePanel;
     private JTextField requirementLabel;
-    private ModDescEditorWindow windowRef;
-
     public JXCollapsiblePane getPanel() {
         return collapsablePanel;
     }
@@ -49,9 +47,8 @@ public class MDEOfficialJob {
      * @param removeFiles               removefiles list
      * @param rawRequirementText        text to show user when the dlc is missing
      */
-    public MDEOfficialJob(ModDescEditorWindow windowRef, String rawHeader, String rawFolder, String rawNewFiles, String rawReplaceFiles, String rawAddFiles, String rawAddTargetFiles,
+    public MDEOfficialJob(String rawHeader, String rawFolder, String rawNewFiles, String rawReplaceFiles, String rawAddFiles, String rawAddTargetFiles,
                           String rawAddReadOnlyTargetFiles, String removeFiles, String rawRequirementText) {
-        this.windowRef = windowRef;
         this.rawHeader = rawHeader;
         this.rawFolder = rawFolder;
         this.rawNewFiles = rawNewFiles;
@@ -67,8 +64,7 @@ public class MDEOfficialJob {
     /**
      * Blank constructor for when creating a new MDEOfficialJob. Requires a header.
      */
-    public MDEOfficialJob(ModDescEditorWindow windowRef, String rawHeader, String rawFolder) {
-        this.windowRef = windowRef;
+    public MDEOfficialJob(String rawHeader, String rawFolder) {
         this.rawHeader = rawHeader;
         this.rawFolder = rawFolder;
         this.rawNewFiles = "";
@@ -269,7 +265,7 @@ public class MDEOfficialJob {
                 addReplacementFile.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        MDEModFileChooser mdefc = new MDEModFileChooser(windowRef,"",MDEModFileChooser.OPTIONTYPE_SELECTONLY, null);
+                        MDEModFileChooser mdefc = new MDEModFileChooser(ModDescEditorWindow.ACTIVE_WINDOW,"",MDEModFileChooser.OPTIONTYPE_SELECTONLY, null);
 
                     }
                 });
@@ -448,38 +444,13 @@ public class MDEOfficialJob {
                         gridC.gridy++;
 
                         while (addStrok.hasMoreTokens()) {
-
-                            JButton minusButton = new JButton("-");
-
-                            gridC.fill = GridBagConstraints.NONE;
-                            gridC.gridy++;
-                            gridC.gridx = 0;
-                            gridC.weightx = 0;
-                            userSelectablePanel.add(minusButton, gridC);
-
-                            String newFile = addStrok.nextToken();
-                            String oldFile = addTargetsStrok.nextToken();
-
-                            JLabel fileReplaceLabel = new JLabel(newFile);
-                            JLabel replacePathLabel = new JLabel(oldFile);
-
-                            gridC.gridx = 1;
-
-                            userSelectablePanel.add(fileReplaceLabel, gridC);
-                            gridC.gridx = 2;
-                            gridC.weightx = 0;
-
-                            userSelectablePanel.add(replacePathLabel, gridC);
-                            gridC.fill = GridBagConstraints.HORIZONTAL;
-
-                            gridC.gridx = 3;
-                            gridC.weightx = 1;
-
-                            JCheckBox readOnly = new JCheckBox("Read only");
-                            if (readOnlyFiles.contains(oldFile)) {
-                                readOnly.setSelected(true);
+                            boolean readOnly = false;
+                            String destination = addTargetsStrok.nextToken();
+                            if (readOnlyFiles.contains(destination)) {
+                                readOnly = true;
                             }
-                            userSelectablePanel.add(readOnly, gridC);
+                            MDEOfficialJobNewFile mdenf = new MDEOfficialJobNewFile(addStrok.nextToken(),destination,readOnly);
+                            userSelectablePanel.add(mdenf.getPanel());
                         }
                     } else {
                         //empty list, maybe just added.
@@ -513,7 +484,7 @@ public class MDEOfficialJob {
                         gridC.gridy++;
                         MDEOfficialJobConditionalFileItem mdecfi = new MDEOfficialJobConditionalFileItem(MDEOfficialJob.this,(AlternateFile)null);
                         userSelectablePanel.add(mdecfi.getPanel(),gridC);
-                        getWindowRef().repaint();
+                        ModDescEditorWindow.ACTIVE_WINDOW.repaint();
                         mdecfi.getPanel().setCollapsed(false);
                     }
                 });
@@ -556,9 +527,5 @@ public class MDEOfficialJob {
 
         panel.add(jobHeaderPanel);
         panel.add(jobPane);
-    }
-
-    public ModDescEditorWindow getWindowRef() {
-        return windowRef;
     }
 }

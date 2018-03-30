@@ -50,9 +50,15 @@ public class ModDescEditorWindow extends JXFrame {
 	private JTextField updateFolderField;
 	private JTextField updateCodeField;
 	private JCheckBox useUpdaterCB;
+	public static ModDescEditorWindow ACTIVE_WINDOW;
 
 	public ModDescEditorWindow(Mod mod) {
 		ModManager.debugLogger.writeMessage("Opening ModDesc Editor for " + mod.getModName());
+		if (ACTIVE_WINDOW != null) {
+			ACTIVE_WINDOW.dispose();
+			ACTIVE_WINDOW = null;
+		}
+		ACTIVE_WINDOW = this;
 		//JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "This tool is under development and is not yet functional.", "Tool not yet functional",
 		//		JOptionPane.WARNING_MESSAGE);
 		ModManager.debugLogger.writeMessage("Reloading " + mod.getModName() + " without automatic alternates applied.");
@@ -292,7 +298,7 @@ public class ModDescEditorWindow extends JXFrame {
 					headerList.add(0,"BASEGAME"); //add basegame header
 					String chosenHeader = headerList.get(result);
 					System.out.println("You chose "+chosenHeader);
-					MDEOfficialJob mdeoj = new MDEOfficialJob(ModDescEditorWindow.this,chosenHeader, "RAW");
+					MDEOfficialJob mdeoj = new MDEOfficialJob(chosenHeader, "RAW");
 					officalJobs.add(mdeoj);
 					baseOfficialPanel.add(mdeoj.getPanel());
 					repaint();

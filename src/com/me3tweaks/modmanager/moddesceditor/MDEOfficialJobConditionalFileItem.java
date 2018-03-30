@@ -179,7 +179,7 @@ public class MDEOfficialJobConditionalFileItem {
 								if (relativePath.contains("..")) {
 									//reject as out of mod folder.
 
-									JOptionPane.showMessageDialog(owningJob.getWindowRef(), "This file is not in the mod folder.", "Invalid file", JOptionPane.ERROR_MESSAGE);
+									JOptionPane.showMessageDialog(ModDescEditorWindow.ACTIVE_WINDOW, "This file is not in the mod folder.", "Invalid file", JOptionPane.ERROR_MESSAGE);
 								}
 
 								//File is valid
@@ -210,7 +210,7 @@ public class MDEOfficialJobConditionalFileItem {
 					} else {
 						index = MDEModFileChooser.OPTIONTYPE_ADDONLY;
 					}
-					MDEModFileChooser fileChooser = new MDEModFileChooser(owningJob.getWindowRef(), modFile, index, job);
+					MDEModFileChooser fileChooser = new MDEModFileChooser(ModDescEditorWindow.ACTIVE_WINDOW, modFile, index, job);
 					if (fileChooser.getSelectedFile() != null) {
 						modFile = fileChooser.getSelectedFile();
 						destLabel.setText(modFile);
