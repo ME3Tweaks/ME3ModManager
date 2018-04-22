@@ -227,10 +227,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		validateBIOGameDir();
 		ModManager.debugLogger.writeMessage("Mod Manager Window UI: Now setting visible.");
 		try {
+			/*
+			//DEBUG ONLY
 			if (!modModel.isEmpty()) {
 				modList.setSelectedIndex(0);
 				new ModDescEditorWindow(modModel.firstElement());
-			}
+			}*/
 			setVisible(true);
 		} catch (Exception e) {
 			ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
@@ -2128,11 +2130,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				// JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under
-				// construction and is not fully functional in this build yet.");
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under construction and is not fully functional in this build yet.");
 				new ModDescEditorWindow(mod);
 			}
-
 		});
 
 		modutilsCheckforupdate.addActionListener(new ActionListener() {
@@ -3573,15 +3573,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 	}
 
-	/**
-	 * Handles looking up the name of a mod from the mod object that it comes
-	 * from. Uses a hash map.
-	 * 
-	 * @param modName
-	 *            Name of the mod from the list (display name)
-	 * @return File that describes the selected mod
-	 */
 
+	/**
+	 * Handles changes in the modlist selction.
+	 * @param listChange List change event information
+	 */
 	@Override
 	public void valueChanged(ListSelectionEvent listChange) {
 		if (listChange.getValueIsAdjusting() == false) {
