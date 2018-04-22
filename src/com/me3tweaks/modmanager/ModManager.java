@@ -84,9 +84,9 @@ public class ModManager {
 	public static boolean IS_DEBUG = true;
 
 
-	public static final String VERSION = "5.1 Beta 2";
+	public static final String VERSION = "5.1 Beta 3";
 	public static long BUILD_NUMBER = 85L;
-	public static final String BUILD_DATE = "02/21/2018";
+	public static final String BUILD_DATE = "04/22/2018";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -2670,26 +2670,38 @@ public class ModManager {
 		String outputpath = getDeploymentDirectory() + mod.getModName() + "_" + mod.getVersion() + ".7z";
 		ModManager.debugLogger.writeMessage("Deploying " + mod.getModName());
 
+		String iniPath = mod.getDescFile();
+		String tempIniPath = ModManager.getTempDir() + "staged\\moddesc.ini";
+
+		File iniStart = new File(iniPath);
+		File iniDest = new File(tempIniPath);
+		iniDest.getParentFile().mkdirs();
+		try {
+			FileUtils.moveFile(iniStart, iniDest);
+		} catch (IOException e) {
+			ModManager.debugLogger.writeError("Error moving moddesc.ini for optimized deployment: "+e.getMessage());
+		}
 		//Get amount of memory
 		int dictsize = 64; //Default size - definitely not the best, but we'll default to 32-bit.
 
-		if (ResourceUtils.is64BitWindows()) {
-			ModManager.debugLogger.writeMessage("64-bit Windows - calculating dictionary size that *should* work on this computer...");
-			String[] memorycommand = new String[] { "wmic", "ComputerSystem", "get", "TotalPhysicalMemory" };
-			ProcessBuilder pb = new ProcessBuilder(memorycommand);
-			ProcessResult pr = ModManager.runProcess(pb);
-			String output = pr.getOutput();
+		ModManager.debugLogger.writeMessage("64-bit Windows - calculating dictionary size that *should* work on this computer...");
+		String[] memorycommand = new String[] { "wmic", "ComputerSystem", "get", "TotalPhysicalMemory" };
+		ProcessBuilder pb = new ProcessBuilder(memorycommand);
+		ProcessResult pr = ModManager.runProcess(pb);
+		String output = pr.getOutput();
 
-			String[] lines = output.split("\\n");
-			if (lines.length == 3) {
-				String memsizebytes = lines[1].replaceAll("[^0-9]", "");
-				long bytecount = Long.parseLong(memsizebytes);
-				String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
-				ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
-				dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
-				dictsize = Math.max(dictsize, 256); //avoid out of memory error on 32-bit java
-				ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
+		String[] lines = output.split("\\n");
+		if (lines.length == 3) {
+			String memsizebytes = lines[1].replaceAll("[^0-9]", "");
+			long bytecount = Long.parseLong(memsizebytes);
+			String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
+			ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
+			dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
+			if (dictsize > 324) {
+				dictsize = 324;
 			}
+			dictsize = Math.max(dictsize, 64);
+			ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
 		}
 
 		ArrayList<String> commandBuilder = new ArrayList<String>();
@@ -2705,13 +2717,33 @@ public class ModManager {
 		commandBuilder.add(mod.getModPath());//inputfile
 
 		//commandBuilder.add("-mmt" + numcores); //let it multithread itself.
-		commandBuilder.add("-mx=9"); //max compression
-		commandBuilder.add("-aoa"); //overwrite/update
+		commandBuilder.add("-mx9"); //max compression
 		commandBuilder.add("-md" + dictsize + "m");
 		ModManager.debugLogger.writeMessage("Compressing mod - output to " + outputpath);
-		ProcessBuilder pb = new ProcessBuilder(commandBuilder);
+		pb = new ProcessBuilder(commandBuilder);
 		FileUtils.deleteQuietly(new File(outputpath));
 		ModManager.runProcess(pb).getReturnCode();
+
+		//Add ModDesc.ini file without compression.
+		commandBuilder = new ArrayList<String>();
+
+		commandBuilder.add("cmd");
+		commandBuilder.add("/c");
+		commandBuilder.add("start");
+		commandBuilder.add("Mod Manager Mod Compressor");
+		commandBuilder.add("/wait");
+		commandBuilder.add(ModManager.get7zExePath());
+		commandBuilder.add("u"); //add
+		commandBuilder.add(outputpath); //destfile
+		commandBuilder.add(iniDest.getAbsolutePath());//inputfile
+
+		//commandBuilder.add("-mmt" + numcores); //let it multithread itself.
+		commandBuilder.add("-mx0"); //no compression
+		ModManager.debugLogger.writeMessage("Adding moddesc.ini in uncompressed mode." + outputpath);
+		pb = new ProcessBuilder(commandBuilder);
+		ModManager.runProcess(pb).getReturnCode();
+
+		FileUtils.deleteQuietly(iniDest.getParentFile());
 		return outputpath;
 	}
 
