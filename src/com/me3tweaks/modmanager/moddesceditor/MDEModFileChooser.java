@@ -32,7 +32,6 @@ public class MDEModFileChooser extends JDialog {
 	}
 
 	public void setupWindow(ModDescEditorWindow callingWindow, String currentOption, int optionType, ModJob job) {
-		JPanel contentPanel = new JPanel(new BorderLayout());
 		DefaultListModel<String> model = new DefaultListModel<String>();
 		if (optionType == OPTIONTYPE_SELECTONLY) {
 			//add files
@@ -46,6 +45,10 @@ public class MDEModFileChooser extends JDialog {
 				model.addElement("/" + file + "/CookedPCConsole/");
 			}
 		}
+	}
+
+		public void setupWindowWithModel(ModDescEditorWindow callingWindow, DefaultListModel<String> model, String currentOption, int optionType, ModJob job) {
+			JPanel contentPanel = new JPanel(new BorderLayout());
 
 		JList<String> mainFileList = new JList<String>(model);
 		JScrollPane listScroller = new JScrollPane(mainFileList);
