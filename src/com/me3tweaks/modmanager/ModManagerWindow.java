@@ -2130,7 +2130,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under construction and is not fully functional in this build yet.");
+				JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under construction and is not fully functional\nor stable in this build yet. Use at your own risk!");
 				new ModDescEditorWindow(mod);
 			}
 		});
