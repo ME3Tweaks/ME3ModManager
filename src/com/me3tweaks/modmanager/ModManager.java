@@ -84,9 +84,9 @@ public class ModManager {
 	public static boolean IS_DEBUG = true;
 
 
-	public static final String VERSION = "5.1 Beta 3";
+	public static final String VERSION = "5.1 Beta 4";
 	public static long BUILD_NUMBER = 85L;
-	public static final String BUILD_DATE = "04/22/2018";
+	public static final String BUILD_DATE = "04/26/2018";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
@@ -105,7 +105,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
 	public static int MIN_REQUIRED_CMDLINE_REV = 29; //not static as i can force this via update manifest
 
-	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
+	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 461308; //4.7.1
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
@@ -530,7 +530,7 @@ public class ModManager {
 			doFileSystemUpdate();
 			if (!validateNETFrameworkIsInstalled()) {
 				new NetFrameworkMissingWindow(
-						"Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly. ");
+						"Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.7.1 or higher in order to function properly. ");
 			}
 
 			if (checkIfCMMPatchIsTooLong()) {
@@ -1906,7 +1906,7 @@ public class ModManager {
 		if (os.contains("Windows")) {
 			int releaseNum = 0;
 			String netFrameWork4Key = "SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full";
-			ModManager.debugLogger.writeMessage("Checking for .NET Framework 4.5 or higher registry key");
+			ModManager.debugLogger.writeMessage("Checking for .NET Framework 4.7.1 or higher registry key");
 			try {
 				releaseNum = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, netFrameWork4Key, "Release");
 				ModManager.debugLogger.writeMessage(".NET Framework release detected: " + releaseNum);
@@ -1920,11 +1920,11 @@ public class ModManager {
 					return false;
 				}
 			} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
-				ModManager.debugLogger.writeError(".NET Framework 4.5 registry key was not found: " + netFrameWork4Key);
+				ModManager.debugLogger.writeError(".NET Framework 4.7.1 registry key was not found: " + netFrameWork4Key);
 				NET_FRAMEWORK_IS_INSTALLED = false;
 				return false;
 			} catch (Throwable e) {
-				ModManager.debugLogger.writeErrorWithException(".NET Framework 4.5 detection exception:", e);
+				ModManager.debugLogger.writeErrorWithException(".NET Framework 4.7.1 detection exception:", e);
 				NET_FRAMEWORK_IS_INSTALLED = false;
 				return false;
 			}
