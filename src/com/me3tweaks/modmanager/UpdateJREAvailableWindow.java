@@ -54,9 +54,10 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
     JSONObject updateInfo;
     JProgressBar downloadProgress;
     private JPanel downloadPanel;
+    private int jreUpdateTask;
 
     public UpdateJREAvailableWindow(JSONObject updateInfo) {
-        super(null, Dialog.ModalityType.APPLICATION_MODAL);
+        super(null, ModalityType.MODELESS);
         ModManager.debugLogger.writeMessage("Opening JRE update available window");
         this.updateInfo = updateInfo;
         version = (String) updateInfo.get("jre_latest_version_hr_v2");
@@ -74,6 +75,8 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
         setIconImages(ModManager.ICONS);
+        ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("JRE Update available");
+
 
         JPanel updatePanel = new JPanel();
         updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
@@ -195,6 +198,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
                 //downloadLink = "https://me3tweaks.com/modmanager/updates/62/ME3CMM.7z";
                 //downloadLink2 = "https://github.com/Mgamerz/me3modmanager/releases/download/4.4/ME3CMM.7z";
                 publish(new ThreadCommand("UPDATE_STATUS", "Downloading update..."));
+
                 util.downloadFile(downloadLink);
                 // set file information on the GUI
 
@@ -268,7 +272,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
              */
             @Override
             protected void done () {
-                //TODO: Install update through the update script
+                ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jreUpdateTask);
                 if (!error) {
                     runUpdateScript();
                 } else {
@@ -361,6 +365,9 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
                 pack();
                 DownloadTask task = new DownloadTask(ModManager.getTempDir());
                 task.addPropertyChangeListener(this);
+                jreUpdateTask = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("JREUpdate");
+                ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updating JRE...");
+
                 task.execute();
             }
         }
@@ -394,75 +401,23 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             sb.append("::Update script for Mod Manager JRE");
             sb.append("\r\n");
             sb.append("\r\n");
-            sb.append("@echo on");
+            sb.append("@echo off");
             sb.append("\r\n");
             sb.append("setlocal");
             sb.append("\r\n");
-            sb.append("echo Current directory: %CD%");
+            sb.append("echo Updating Mod Manager JRE...");
             sb.append("\r\n");
-            sb.append("pushd data\\temp");
+            sb.append("::Wait for 4 seconds so the JVM fully exits.");
             sb.append("\r\n");
-            sb.append("::Wait for 2 seconds so the JVM fully exits.");
+            sb.append("echo Waiting for Mod Manager to fully exit...");
             sb.append("\r\n");
-            sb.append("TIMEOUT 3 /NOBREAK");
+            sb.append("TIMEOUT 4 /NOBREAK");
             sb.append("\r\n");
-            sb.append("move \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" \""+System.getProperty("user.dir") + "\\data\\jre-x64-OLD\"");
+            sb.append("if exist \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" move \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" \""+System.getProperty("user.dir") + "\\data\\jre-x64-OLD\"");
             sb.append("\r\n");
-            sb.append("move \"" + System.getProperty("user.dir") + "\\data\\JREUPDATE\" \""+System.getProperty("user.dir") + "\\data\\jre-x64\"");
-/*
-            sb.append("mkdir \"" + ModManager.getTempDir() + "NewVersion\"");
-            sb.append("\r\n");
-            sb.append("\r\n");
-            sb.append("::Extract update");
-            sb.append("\r\n\"");
-            sb.append(ModManager.get7zExePath());
-            sb.append("\" -y x \"" + ModManager.getTempDir() + "JRE.7z\" -o\"" + ModManager.getTempDir() + "NewJREVersion\"");
-            sb.append("\r\n");
-            sb.append("\r\n");
-            sb.append("set MODMAN=%errorlevel%");
-            sb.append("\r\n");
-            sb.append("if %MODMAN% EQU 0 (");
-            sb.append("\r\n");
-            sb.append("    color 0A");
-            sb.append("\r\n");
-            sb.append("    echo Mod Manager JRE extracted successfully.");
-            sb.append("\r\n");
-            sb.append(")");
-            sb.append("\r\n");
-
-            sb.append("if %MODMAN% EQU 1 (");
-            sb.append("\r\n");
-            sb.append("    color 06");
-            sb.append("\r\n");
-            sb.append("    echo Mod Manager JRE extracted with warnings.");
-            sb.append("\r\n");
-            sb.append(")");
-            sb.append("\r\n");
-
-            sb.append("if %MODMAN% GEQ 2 (");
-            sb.append("\r\n");
-            sb.append("    color 0C");
-            sb.append("\r\n");
-            sb.append("    echo Mod Manager JRE did not extract successfully. Please report this to FemShep.");
-            sb.append("\r\n");
-            sb.append("    pause");
-            sb.append("\r\n");
-            sb.append(")");
-            sb.append("\r\n");
-            sb.append("::Update the files");
-            sb.append("\r\n");
-            sb.append("xcopy /Y /S \"" + ModManager.getTempDir() + "NewJREVersion\" \"" + System.getProperty("user.dir") + "\"");
-            sb.append("\r\n");
-
-            sb.append("::Cleanup");
-            sb.append("\r\n");
-            sb.append("del /Q \"" + ModManager.getTempDir() + "JRE.7z\"");
-            sb.append("\r\n");
-            sb.append("rmdir /S /Q \"" + ModManager.getTempDir() + "NewJREVersion\"");*/
+            sb.append("if not exist \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" move \"" + System.getProperty("user.dir") + "\\data\\JREUPDATE\" \""+System.getProperty("user.dir") + "\\data\\jre-x64\"");
             sb.append("\r\n");
             sb.append("::Run Mod Manager");
-            sb.append("\r\n");
-            sb.append("popd");
             sb.append("\r\n");
             //sb.append("pause");
             sb.append("\r\n");
@@ -472,27 +427,23 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             sb.append("\r\n");
             sb.append("endlocal");
             sb.append("\r\n");
-            sb.append("pause");
-            sb.append("\r\n");
+            //sb.append("pause");
+            //sb.append("\r\n");
             sb.append("call :deleteSelf&exit /b");
             sb.append("\r\n");
             sb.append(":deleteSelf");
             sb.append("\r\n");
             sb.append("start /b \"\" cmd /c del \"%~f0\"&exit /b");
-
-            //sb.append("pause");
-            //sb.append("exit");
             try {
                 String updatePath = new File(ModManager.getTempDir() + "updater.cmd").getAbsolutePath();
                 Files.write(Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                ModManager.debugLogger.writeMessage("Couldn't generate the update script. Must abort.");
+                ModManager.debugLogger.writeErrorWithException("Could not generate JRE update script.",e);
                 JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error building update script: " + e.getClass() + "\nCannot continue.", "Updater Error",
                         JOptionPane.ERROR_MESSAGE);
                 error = true;
-                e.printStackTrace();
                 dispose();
+                ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("JREUpdate");
                 return false;
             }
             return true;

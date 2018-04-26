@@ -701,22 +701,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 		}
 
 		private void checkForJREUpdates(JSONObject latest_object) {
-			if (!ResourceUtils.is64BitWindows()) {
-				return;
-			}
-
 			if (latest_object == null) {
 				return;
 			}
 
 			String latestjavaexehash = (String) latest_object.get("jre_latest_version_v2");
 
-			if (ModManager.isUsingBundledJRE() || ResourceUtils.is64BitWindows() && ArchUtils.getProcessor().is32Bit()) {
-				// 32-bit JVM on 64-bit windows - should check
-				// Is using the bundled x64 JRE - should check
+			if (!ModManager.IS_DEBUG) {
 				boolean hashMismatch = false;
 				File f = new File(ModManager.getBundledJREPath() + "bin\\java.exe");
-				if (f.exists()) {
+				if (f.exists() && ModManager.isUsingBundledJRE()) {
 					// get hash
 					String bundledHash = "";
 					try {
