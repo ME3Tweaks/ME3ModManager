@@ -709,7 +709,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				return;
 			}
 
-			String latestjavaexehash = (String) latest_object.get("jre_latest_version");
+			String latestjavaexehash = (String) latest_object.get("jre_latest_version_v2");
 
 			if (ModManager.isUsingBundledJRE() || ResourceUtils.is64BitWindows() && ArchUtils.getProcessor().is32Bit()) {
 				// 32-bit JVM on 64-bit windows - should check
@@ -739,7 +739,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				if (hashMismatch) {
 					new UpdateJREAvailableWindow(latest_object);
 				} else {
-					ModManager.debugLogger.writeMessage("No JRE upgrade recommended");
+					ModManager.debugLogger.writeMessage("No JRE upgrade being advertised");
 				}
 			}
 		}

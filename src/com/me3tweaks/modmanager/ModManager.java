@@ -454,8 +454,19 @@ public class ModManager {
 			} catch (InvalidFileFormatException e) {
 				ModManager.debugLogger.writeErrorWithException("Invalid file format exception. Settings in this file will be ignored", e);
 			} catch (IOException e) {
-				System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
+				ModManager.debugLogger.writeError("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 			}
+
+            // SETUI LOOK
+            try {
+                if (ModManager.USE_WINDOWS_UI) {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } else {
+                    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+                }
+            } catch (Exception e) {
+                System.err.println("Couldn't set the UI interface style");
+            }
 
 			if (args.length > 1 && args[0].equals("--update-from")) {
 				// This is being run as an update
@@ -596,16 +607,7 @@ public class ModManager {
 						"Startup Error", JOptionPane.WARNING_MESSAGE);
 			}
 		}
-		// SETUI LOOK
-		try {
-			if (ModManager.USE_WINDOWS_UI) {
-				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			} else {
-				UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-			}
-		} catch (Exception e) {
-			System.err.println("Couldn't set the UI interface style");
-		}
+
 
 		ModManager.debugLogger.writeMessage("Loading JavaFX");
 		new JFXPanel(); // used for initializing javafx thread (ideally called once)
@@ -693,6 +695,10 @@ public class ModManager {
 		}
 
 		// cleanup
+		File jreUpdate = new File(ModManager.getDataDir() + "JREUpdate");
+		FileUtils.deleteQuietly(jreUpdate);
+		File oldJRE = new File(ModManager.getDataDir() + "jre-x64-OLD");
+		FileUtils.deleteQuietly(oldJRE);
 		File mod_info = new File("mod_info");
 		mod_info.delete();
 		File derbylog = new File("derby.log");
@@ -1253,11 +1259,10 @@ public class ModManager {
 
 	/**
 	 * Gets the path of a pristine coalesced with the given filename
-	 *
+	 * @param name Name of object to get. Use with mode to pass in different types
 	 * @param mode
 	 *            ME3TweaksUtils mode indicating what the name variable is
 	 *
-	 * @param basegame
 	 * @return
 	 */
 	public static String getPristineCoalesced(String name, int mode) {
