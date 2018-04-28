@@ -253,7 +253,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
                             downloadProgress.setIndeterminate(false);
                             int percentCompleted = (int) (totalBytesRead * 100 / fileSize);
                             setStatusText(
-                                    "Downloading Update...  " + ResourceUtils.humanReadableByteCount(totalBytesRead, true) + "/" + ResourceUtils.humanReadableByteCount(fileSize, true));
+                                    "Downloading update...  " + ResourceUtils.humanReadableByteCount(totalBytesRead, true) + "/" + ResourceUtils.humanReadableByteCount(fileSize, true));
                             setProgress(percentCompleted);
                             break;
                         case "UPDATE_STATUS":
@@ -375,21 +375,22 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         /**
          * Shuts down Mod Manager and runs the update script
          */
-        public void runUpdateScript() {
-            ModManager.debugLogger.writeMessage("Running external update command.");
-            String[] command = {"cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getTempDir() + "updater.cmd"};
-            try {
-                ProcessBuilder pb = new ProcessBuilder(command);
-                pb.start();
-                ModManager.debugLogger.writeMessage("Upgrading JRE.");
-                ModManager.MOD_MANAGER_UPDATE_READY = true; //do not delete temp
-                System.exit(0);
-            } catch (IOException e) {
-                ModManager.debugLogger.writeErrorWithException("FAILED TO RUN AUTO UPDATER:", e);
-                JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
-                        "Updating Error", JOptionPane.ERROR_MESSAGE);
-            }
+    public void runUpdateScript() {
+        ModManager.debugLogger.writeMessage("Running external update command.");
+        String[] command = {"cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getTempDir() + "updater.cmd"};
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(new File(System.getProperty("user.dir")));
+            pb.start();
+            ModManager.debugLogger.writeMessage("Upgrading JRE.");
+            ModManager.MOD_MANAGER_UPDATE_READY = true; //do not delete temp
+            System.exit(0);
+        } catch (IOException e) {
+            ModManager.debugLogger.writeErrorWithException("FAILED TO RUN AUTO UPDATER:", e);
+            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
+                    "Updating Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
 
         /**
          * Builds the update script (.cmd) to run when swapping files.
@@ -402,6 +403,8 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             sb.append("\r\n");
             sb.append("\r\n");
             sb.append("@echo off");
+            sb.append("\r\n");
+            sb.append("echo Current Directory: %CD%");
             sb.append("\r\n");
             sb.append("setlocal");
             sb.append("\r\n");
@@ -419,7 +422,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             sb.append("\r\n");
             sb.append("::Run Mod Manager");
             sb.append("\r\n");
-            //sb.append("pause");
+            sb.append("pause");
             sb.append("\r\n");
             sb.append("ME3CMM.exe --jre-update-from ");
             sb.append(System.getProperty("java.version"));

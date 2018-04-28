@@ -706,8 +706,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 			}
 
 			String latestjavaexehash = (String) latest_object.get("jre_latest_version_v2");
-
-			if (!ModManager.IS_DEBUG) {
+			if (!ModManager.IS_DEBUG && latestjavaexehash != null) {
 				boolean hashMismatch = false;
 				File f = new File(ModManager.getBundledJREPath() + "bin\\java.exe");
 				if (f.exists() && ModManager.isUsingBundledJRE()) {
