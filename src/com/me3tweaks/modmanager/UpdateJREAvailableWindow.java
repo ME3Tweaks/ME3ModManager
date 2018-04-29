@@ -1,7 +1,6 @@
 package com.me3tweaks.modmanager;
 
-import java.awt.Component;
-import java.awt.Dialog;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -228,153 +227,179 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
 
                 String[] command = new String[]{ModManager.get7zExePath(), "-y", "x", ModManager.getTempDir() + "JRE.7z", "-o\"" + ModManager.getDataDir() + "JREUpdate\""};
                 ProcessBuilder extractCmd = new ProcessBuilder(command);
-                ProcessResult pr  = ModManager.runProcess(extractCmd);
+                ProcessResult pr = ModManager.runProcess(extractCmd);
                 if (pr.hadError()) {
                     System.out.println("Error has occured.");
                 }
                 if (!buildUpdateScript()) {
                     cancel(true);
                 }
-            } catch(IOException ex){
-                    ModManager.debugLogger.writeErrorWithException("ERROR DOWNLOADING UPDATE: ", ex);
-                    JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    publish(new ThreadCommand("UPDATE_PROGRESS", null,0));
-                    error = true;
+                if (!buildJREUpdaterBugWorkaroundScript()) {
                     cancel(true);
                 }
-                return null;
+            } catch (IOException ex) {
+                ModManager.debugLogger.writeErrorWithException("ERROR DOWNLOADING UPDATE: ", ex);
+                JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                publish(new ThreadCommand("UPDATE_PROGRESS", null, 0));
+                error = true;
+                cancel(true);
             }
-
-            @Override
-            protected void process (List < ThreadCommand > chunks) {
-                for (ThreadCommand latest : chunks) {
-                    switch (latest.getCommand()) {
-                        case "UPDATE_PROGRESS":
-                            downloadProgress.setIndeterminate(false);
-                            int percentCompleted = (int) (totalBytesRead * 100 / fileSize);
-                            setStatusText(
-                                    "Downloading update...  " + ResourceUtils.humanReadableByteCount(totalBytesRead, true) + "/" + ResourceUtils.humanReadableByteCount(fileSize, true));
-                            setProgress(percentCompleted);
-                            break;
-                        case "UPDATE_STATUS":
-                            setStatusText(latest.getMessage());
-                            break;
-                        case "EXTRACTING_JRE_UPDATE":
-                            setStatusText("Extracting Java update...");
-                            downloadProgress.setIndeterminate(true);
-                            break;
-                    }
-                }
-            }
-
-            /**
-             * Executed in Swing's event dispatching thread
-             */
-            @Override
-            protected void done () {
-                ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jreUpdateTask);
-                if (!error) {
-                    runUpdateScript();
-                } else {
-                    dispose();
-                }
-            }
-        }
-
-        /**
-         * A utility that downloads a file from a URL.
-         *
-         * @author www.codejava.net
-         */
-        class HTTPDownloadUtil {
-
-            private HttpURLConnection httpConn;
-
-            /**
-             * hold input stream of HttpURLConnection
-             */
-            private InputStream inputStream;
-
-            private String fileName;
-            private int contentLength;
-
-            /**
-             * Downloads a file from a URL
-             *
-             * @param fileURL HTTP URL of the file to be downloaded
-             * @throws IOException
-             */
-            public void downloadFile(String fileURL) throws IOException {
-                URL url = new URL(fileURL);
-                httpConn = (HttpURLConnection) url.openConnection();
-                int responseCode = httpConn.getResponseCode();
-
-                // always check HTTP response code first
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    String disposition = httpConn.getHeaderField("Content-Disposition");
-                    String contentType = httpConn.getContentType();
-                    contentLength = httpConn.getContentLength();
-
-                    if (disposition != null) {
-                        // extracts file name from header field
-                        int index = disposition.indexOf("filename=");
-                        if (index > 0) {
-                            fileName = disposition.substring(index + 10, disposition.length() - 1);
-                        }
-                    } else {
-                        // extracts file name from URL
-                        fileName = fileURL.substring(fileURL.lastIndexOf("/") + 1, fileURL.length());
-                    }
-
-                    // opens input stream from the HTTP connection
-                    inputStream = httpConn.getInputStream();
-
-                } else {
-                    if (responseCode == 404) {
-                        throw new FileNotFoundException("File to download does not exist (404)");
-                    } else {
-                        throw new IOException("No file to download. Server replied HTTP code: " + responseCode);
-                    }
-                }
-            }
-
-            public void disconnect() throws IOException {
-                inputStream.close();
-                httpConn.disconnect();
-            }
-
-            public String getFileName() {
-                return this.fileName;
-            }
-
-            public int getContentLength() {
-                return this.contentLength;
-            }
-
-            public InputStream getInputStream() {
-                return this.inputStream;
-            }
+            return null;
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
-            if (e.getSource() == updateButton) {
-                ModManager.debugLogger.writeMessage("User has accepted the update");
-                updateButton.setEnabled(false);
-                downloadPanel.setVisible(true);
-                pack();
-                DownloadTask task = new DownloadTask(ModManager.getTempDir());
-                task.addPropertyChangeListener(this);
-                jreUpdateTask = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("JREUpdate");
-                ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updating JRE...");
-
-                task.execute();
+        protected void process(List<ThreadCommand> chunks) {
+            for (ThreadCommand latest : chunks) {
+                switch (latest.getCommand()) {
+                    case "UPDATE_PROGRESS":
+                        downloadProgress.setIndeterminate(false);
+                        int percentCompleted = (int) (totalBytesRead * 100 / fileSize);
+                        setStatusText(
+                                "Downloading update...  " + ResourceUtils.humanReadableByteCount(totalBytesRead, true) + "/" + ResourceUtils.humanReadableByteCount(fileSize, true));
+                        setProgress(percentCompleted);
+                        break;
+                    case "UPDATE_STATUS":
+                        setStatusText(latest.getMessage());
+                        break;
+                    case "EXTRACTING_JRE_UPDATE":
+                        setStatusText("Extracting Java update...");
+                        downloadProgress.setIndeterminate(true);
+                        break;
+                }
             }
         }
 
         /**
-         * Shuts down Mod Manager and runs the update script
+         * Executed in Swing's event dispatching thread
          */
+        @Override
+        protected void done() {
+            ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jreUpdateTask);
+            if (!error) {
+                runJREUpdaterWorkaroundScript();
+            } else {
+                dispose();
+            }
+        }
+    }
+
+    /**
+     * A utility that downloads a file from a URL.
+     *
+     * @author www.codejava.net
+     */
+    class HTTPDownloadUtil {
+
+        private HttpURLConnection httpConn;
+
+        /**
+         * hold input stream of HttpURLConnection
+         */
+        private InputStream inputStream;
+
+        private String fileName;
+        private int contentLength;
+
+        /**
+         * Downloads a file from a URL
+         *
+         * @param fileURL HTTP URL of the file to be downloaded
+         * @throws IOException
+         */
+        public void downloadFile(String fileURL) throws IOException {
+            URL url = new URL(fileURL);
+            httpConn = (HttpURLConnection) url.openConnection();
+            int responseCode = httpConn.getResponseCode();
+
+            // always check HTTP response code first
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                String disposition = httpConn.getHeaderField("Content-Disposition");
+                String contentType = httpConn.getContentType();
+                contentLength = httpConn.getContentLength();
+
+                if (disposition != null) {
+                    // extracts file name from header field
+                    int index = disposition.indexOf("filename=");
+                    if (index > 0) {
+                        fileName = disposition.substring(index + 10, disposition.length() - 1);
+                    }
+                } else {
+                    // extracts file name from URL
+                    fileName = fileURL.substring(fileURL.lastIndexOf("/") + 1, fileURL.length());
+                }
+
+                // opens input stream from the HTTP connection
+                inputStream = httpConn.getInputStream();
+
+            } else {
+                if (responseCode == 404) {
+                    throw new FileNotFoundException("File to download does not exist (404)");
+                } else {
+                    throw new IOException("No file to download. Server replied HTTP code: " + responseCode);
+                }
+            }
+        }
+
+        public void disconnect() throws IOException {
+            inputStream.close();
+            httpConn.disconnect();
+        }
+
+        public String getFileName() {
+            return this.fileName;
+        }
+
+        public int getContentLength() {
+            return this.contentLength;
+        }
+
+        public InputStream getInputStream() {
+            return this.inputStream;
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == updateButton) {
+            ModManager.debugLogger.writeMessage("User has accepted the update");
+            updateButton.setEnabled(false);
+            downloadPanel.setVisible(true);
+            pack();
+            DownloadTask task = new DownloadTask(ModManager.getTempDir());
+            task.addPropertyChangeListener(this);
+            jreUpdateTask = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("JREUpdate");
+            ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updating JRE...");
+
+            task.execute();
+        }
+    }
+
+
+    /**
+     * Shuts down Mod Manager and runs the update script
+     */
+    public void runJREUpdaterWorkaroundScript() {
+        ModManager.debugLogger.writeMessage("Running external JRE update command (workaround mode).");
+        String updaterSCriptPath = ModManager.getTempDir() + "jre_bug_workaround_launcher.cmd";
+        //Workaround for https://stackoverflow.com/questions/48131595/why-does-it-keep-lib-modules-locked
+
+        try {
+
+            ModManager.debugLogger.writeMessage("Upgrading JRE.");
+            ModManager.MOD_MANAGER_UPDATE_READY = true; //do not delete temp
+            File script = new File(updaterSCriptPath);
+            Desktop.getDesktop().open(script);
+            System.exit(0);
+        } catch (IOException e) {
+            ModManager.debugLogger.writeErrorWithException("FAILED TO RUN JRE WORKAROUND UPDATER:", e);
+            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
+                    "Updating Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Shuts down Mod Manager and runs the update script
+     */
     public void runUpdateScript() {
         ModManager.debugLogger.writeMessage("Running external update command.");
         String[] command = {"cmd.exe", "/c", "start", "cmd.exe", "/c", ModManager.getTempDir() + "updater.cmd"};
@@ -392,63 +417,90 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         }
     }
 
-        /**
-         * Builds the update script (.cmd) to run when swapping files.
-         *
-         * @return True if created, false otherwise.
-         */
-        private boolean buildUpdateScript() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("::Update script for Mod Manager JRE");
-            sb.append("\r\n");
-            sb.append("\r\n");
-            sb.append("@echo off");
-            sb.append("\r\n");
-            sb.append("echo Current Directory: %CD%");
-            sb.append("\r\n");
-            sb.append("setlocal");
-            sb.append("\r\n");
-            sb.append("echo Updating Mod Manager JRE...");
-            sb.append("\r\n");
-            sb.append("::Wait for 4 seconds so the JVM fully exits.");
-            sb.append("\r\n");
-            sb.append("echo Waiting for Mod Manager to fully exit...");
-            sb.append("\r\n");
-            sb.append("TIMEOUT 4 /NOBREAK");
-            sb.append("\r\n");
-            sb.append("if exist \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" move \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" \""+System.getProperty("user.dir") + "\\data\\jre-x64-OLD\"");
-            sb.append("\r\n");
-            sb.append("if not exist \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" move \"" + System.getProperty("user.dir") + "\\data\\JREUPDATE\" \""+System.getProperty("user.dir") + "\\data\\jre-x64\"");
-            sb.append("\r\n");
-            sb.append("::Run Mod Manager");
-            sb.append("\r\n");
-            sb.append("pause");
-            sb.append("\r\n");
-            sb.append("ME3CMM.exe --jre-update-from ");
-            sb.append(System.getProperty("java.version"));
-            sb.append(" " + (ModManager.isUsingBundledJRE() ? "bundled" : "system"));
-            sb.append("\r\n");
-            sb.append("endlocal");
-            sb.append("\r\n");
-            //sb.append("pause");
-            //sb.append("\r\n");
-            sb.append("call :deleteSelf&exit /b");
-            sb.append("\r\n");
-            sb.append(":deleteSelf");
-            sb.append("\r\n");
-            sb.append("start /b \"\" cmd /c del \"%~f0\"&exit /b");
-            try {
-                String updatePath = new File(ModManager.getTempDir() + "updater.cmd").getAbsolutePath();
-                Files.write(Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
-            } catch (IOException e) {
-                ModManager.debugLogger.writeErrorWithException("Could not generate JRE update script.",e);
-                JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error building update script: " + e.getClass() + "\nCannot continue.", "Updater Error",
-                        JOptionPane.ERROR_MESSAGE);
-                error = true;
-                dispose();
-                ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("JREUpdate");
-                return false;
-            }
-            return true;
+    /**
+     * Builds the update script (.cmd) to run when swapping files.
+     *
+     * @return True if created, false otherwise.
+     */
+    private boolean buildJREUpdaterBugWorkaroundScript() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("@echo off");
+        sb.append("\r\n");
+        sb.append("::JRE Workaround Update script for Mod Manager JRE");
+        sb.append("\r\n");
+        sb.append("cmd.exe /c start cmd.exe /c \"" + ModManager.getTempDir() + "updater.cmd\"");
+        try {
+            String updatePath = new File(ModManager.getTempDir() + "jre_bug_workaround_launcher.cmd").getAbsolutePath();
+            Files.write(Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            ModManager.debugLogger.writeErrorWithException("Could not generate JRE workaround update script.", e);
+            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error building jre updater workaround script: " + e.getClass() + "\nCannot continue.", "Updater Error",
+                    JOptionPane.ERROR_MESSAGE);
+            error = true;
+            dispose();
+            ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jreUpdateTask);
+            return false;
         }
+        return true;
     }
+
+    /**
+     * Builds the update script (.cmd) to run when swapping files.
+     *
+     * @return True if created, false otherwise.
+     */
+    private boolean buildUpdateScript() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("::Update script for Mod Manager JRE");
+        sb.append("\r\n");
+        sb.append("\r\n");
+        sb.append("@echo off");
+        sb.append("\r\n");
+        sb.append("echo Current Directory: %CD%");
+        sb.append("\r\n");
+        sb.append("setlocal");
+        sb.append("\r\n");
+        sb.append("echo Updating Mod Manager JRE...");
+        sb.append("\r\n");
+        sb.append("::Wait for 4 seconds so the JVM fully exits.");
+        sb.append("\r\n");
+        sb.append("echo Waiting for Mod Manager to fully exit...");
+        sb.append("\r\n");
+        sb.append("TIMEOUT 4 /NOBREAK");
+        sb.append("\r\n");
+        sb.append("if exist \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" move \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" \"" + System.getProperty("user.dir") + "\\data\\jre-x64-OLD\"");
+        sb.append("\r\n");
+        sb.append("if not exist \"" + System.getProperty("user.dir") + "\\data\\jre-x64\" move \"" + System.getProperty("user.dir") + "\\data\\JREUPDATE\" \"" + System.getProperty("user.dir") + "\\data\\jre-x64\"");
+        sb.append("\r\n");
+        sb.append("::Run Mod Manager");
+        sb.append("\r\n");
+        //sb.append("pause");
+        //sb.append("\r\n");
+        sb.append("ME3CMM.exe --jre-update-from ");
+        sb.append(System.getProperty("java.version"));
+        sb.append(" " + (ModManager.isUsingBundledJRE() ? "bundled" : "system"));
+        sb.append("\r\n");
+        sb.append("endlocal");
+        sb.append("\r\n");
+        //sb.append("pause");
+        //sb.append("\r\n");
+        sb.append("call :deleteSelf&exit /b");
+        sb.append("\r\n");
+        sb.append(":deleteSelf");
+        sb.append("\r\n");
+        sb.append("start /b \"\" cmd /c del \"%~f0\"&exit /b");
+        try {
+            String updatePath = new File(ModManager.getTempDir() + "updater.cmd").getAbsolutePath();
+            Files.write(Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            ModManager.debugLogger.writeErrorWithException("Could not generate JRE update script.", e);
+            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error building update script: " + e.getClass() + "\nCannot continue.", "Updater Error",
+                    JOptionPane.ERROR_MESSAGE);
+            error = true;
+            dispose();
+            ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jreUpdateTask);
+            return false;
+        }
+        return true;
+    }
+}
