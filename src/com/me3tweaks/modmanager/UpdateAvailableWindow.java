@@ -34,6 +34,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
@@ -337,7 +338,12 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		 * @throws IOException
 		 */
 		public void downloadFile(String fileURL) throws IOException {
-			URL url = new URL(fileURL);
+			URL url;
+			try {
+				url = ME3TweaksUtils.convertToURLEscapingIllegalCharacters(fileURL);
+			} catch (Exception e) {
+				throw new IOException("URL could not be encoded for downloading: " + fileURL);
+			}
 			httpConn = (HttpURLConnection) url.openConnection();
 			int responseCode = httpConn.getResponseCode();
 

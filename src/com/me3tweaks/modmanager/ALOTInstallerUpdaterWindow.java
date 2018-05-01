@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.Version;
 
@@ -230,7 +231,12 @@ public class ALOTInstallerUpdaterWindow extends JDialog implements PropertyChang
 		 * @throws IOException
 		 */
 		public void downloadFile(String fileURL) throws IOException {
-			URL url = new URL(fileURL);
+			URL url;
+			try {
+				url = ME3TweaksUtils.convertToURLEscapingIllegalCharacters(fileURL);
+			} catch (Exception e) {
+				throw new IOException("URL could not be encoded for downloading: " + fileURL);
+			}
 			httpConn = (HttpURLConnection) url.openConnection();
 			int responseCode = httpConn.getResponseCode();
 
