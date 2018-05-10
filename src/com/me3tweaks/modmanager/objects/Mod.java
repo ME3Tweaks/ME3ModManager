@@ -1316,13 +1316,16 @@ public class Mod implements Comparable<Mod> {
 			if (job.getJobName().equals(ModTypeConstants.CUSTOMDLC)) {
 				String appendStr = " CUSTOMDLC (";
 				if (modifyString.equals("")) {
-					appendStr = "\nModifies: " + appendStr;
+					appendStr = "\nModifies:" + appendStr;
 				} else {
 					appendStr = "," + appendStr;
 				}
 				boolean first = true;
 				TreeSet<String> ss = new TreeSet<String>(job.getDestFolders());
 				for (String destFolder : ss) {
+					if (destFolder.endsWith("CookedPCConsole")) {
+						continue; //do not show this
+					}
 					if (first) {
 						first = false;
 					} else {
@@ -2424,18 +2427,24 @@ public class Mod implements Comparable<Mod> {
 			if (fileToRemovePath.charAt(0) == '/' || fileToRemovePath.charAt(0) == '\\') {
 				fileToRemovePath = fileToRemovePath.substring(1);
 			}
-			String fileToRemove = ResourceUtils.normalizeFilePath(getModPath() + fileToRemovePath, false);
+
 			String fileToRemoveTarget = ResourceUtils.normalizeFilePath(af.getModFile(), false);
+			int indexToRemove = job.getFilesToReplaceTargets().indexOf(fileToRemoveTarget);
+
+			job.getFilesToReplaceTargets().remove(indexToRemove);
+			job.getFilesToReplace().remove(indexToRemove);
+
+/*			String fileToRemove = ResourceUtils.normalizeFilePath(getModPath() + af.get fileToRemovePath, false);
 			/*
 			 * if (job.getJobType() == ModJob.CUSTOMDLC) { fileToRemove =
 			 * fileToRemoveTarget; }
-			 */
+			 *
 			boolean ftr = job.getFilesToReplace().remove(fileToRemove);
 			boolean ftrt = job.getFilesToReplaceTargets().remove(fileToRemoveTarget);
 			if (ftr ^ ftrt) {
 				ModManager.debugLogger.writeError(
 						"Application of NO_INSTALL has caused mod to become invalid as one of the replace files lists didn't contain the correct values to remove, but the other one did.");
-			}
+			}*/
 			break;
 		case AlternateFile.OPERATION_SUBSTITUTE:
 			int index = job.getFilesToReplaceTargets().indexOf(af.getModFile());
