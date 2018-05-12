@@ -558,6 +558,9 @@ public class SevenZipCompressedModInspector {
 										moddesc.add("ModInfo", "modsite", tpmi.getModsite());
 										moddesc.add("ModInfo", "moddesc", tpmi.getModdescription());
 										moddesc.add("ModInfo", "unofficial", "true");
+										if (tpmi.getUpdateCode() != 0) {
+											moddesc.add("ModInfo", "updatecode", tpmi.getUpdateCode());
+										}
 										moddesc.add("CUSTOMDLC", "sourcedirs", dlcFolderName);
 										moddesc.add("CUSTOMDLC", "destdirs", dlcFolderName);
 										StringWriter writer = new StringWriter();
