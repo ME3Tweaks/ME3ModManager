@@ -21,7 +21,7 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
 public class NetFrameworkMissingWindow extends JDialog {
 	JLabel introLabel;
 	JButton downloadButton;
-	private static final String netPage = "https://www.microsoft.com/en-us/download/details.aspx?id=48130";
+	private static final String netPage = "https://www.microsoft.com/en-us/download/details.aspx?id=56115";
 
 	public NetFrameworkMissingWindow(String text) {
 		this.setTitle("No usable .NET Framework installed");
@@ -40,7 +40,7 @@ public class NetFrameworkMissingWindow extends JDialog {
 		updatePanel.setBorder(new EmptyBorder(5,5,5,5));
 		updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
 		introLabel = new JLabel("<html><div style=\"width:200px;\">"+text+"<br></div></html>");
-		downloadButton = new JButton("Download .NET 4.6 from Microsoft");
+		downloadButton = new JButton("Download .NET 4.7.1 from Microsoft");
 		downloadButton.addActionListener(new ActionListener() {
 			
 			@Override

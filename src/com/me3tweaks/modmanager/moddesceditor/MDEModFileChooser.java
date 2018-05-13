@@ -1,26 +1,16 @@
 package com.me3tweaks.modmanager.moddesceditor;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.objects.ModJob;
+import org.apache.commons.io.FilenameUtils;
 
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-
-import org.apache.commons.io.FilenameUtils;
-
-import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.objects.ModJob;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class MDEModFileChooser extends JDialog {
 	public static final int OPTIONTYPE_ADDONLY = 0;
@@ -42,7 +32,6 @@ public class MDEModFileChooser extends JDialog {
 	}
 
 	public void setupWindow(ModDescEditorWindow callingWindow, String currentOption, int optionType, ModJob job) {
-		JPanel contentPanel = new JPanel(new BorderLayout());
 		DefaultListModel<String> model = new DefaultListModel<String>();
 		if (optionType == OPTIONTYPE_SELECTONLY) {
 			//add files
@@ -56,6 +45,10 @@ public class MDEModFileChooser extends JDialog {
 				model.addElement("/" + file + "/CookedPCConsole/");
 			}
 		}
+	}
+
+		public void setupWindowWithModel(ModDescEditorWindow callingWindow, DefaultListModel<String> model, String currentOption, int optionType, ModJob job) {
+			JPanel contentPanel = new JPanel(new BorderLayout());
 
 		JList<String> mainFileList = new JList<String>(model);
 		JScrollPane listScroller = new JScrollPane(mainFileList);

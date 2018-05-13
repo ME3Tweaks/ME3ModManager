@@ -3,6 +3,8 @@ package com.me3tweaks.modmanager.modmaker;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -783,5 +785,12 @@ public class ME3TweaksUtils {
 			ModManager.debugLogger.writeErrorWithException("Failed to parse tips: ", e);
 		}
 		return "";
+	}
+
+	public static URL convertToURLEscapingIllegalCharacters(String toEscape) throws MalformedURLException, URISyntaxException {
+		URL url = new URL(toEscape);
+		URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
+		//if a % is included in the toEscape string, it will be re-encoded to %25 and we don't want re-encoding, just encoding
+		return new URL(uri.toString().replace("%25", "%"));
 	}
 }

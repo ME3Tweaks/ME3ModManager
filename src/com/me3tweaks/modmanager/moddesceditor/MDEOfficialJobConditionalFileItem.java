@@ -20,7 +20,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
 
-public class MDEConditionalFileItem {
+public class MDEOfficialJobConditionalFileItem {
 	private JXCollapsiblePane collapsablePanel;
 
 	public JXCollapsiblePane getPanel() {
@@ -82,7 +82,7 @@ public class MDEConditionalFileItem {
 
 	private Mod mod;
 
-	private ModDescEditorWindow owningWindow;
+	private MDEOfficialJob owningJob;
 
 	private SwingLink srcLabel;
 
@@ -92,9 +92,9 @@ public class MDEConditionalFileItem {
 	private String altFile;
 	private String modFile;
 
-	public MDEConditionalFileItem(ModDescEditorWindow owningWindow, AlternateFile af) {
-		this.mod = owningWindow.getMod();
-		this.owningWindow = owningWindow;
+	public MDEOfficialJobConditionalFileItem(MDEOfficialJob owningJob, AlternateFile af) {
+		//this.mod = owningJob.();
+		this.owningJob = owningJob;
 		boolean startCollapsed = false;
 		if (af == null) {
 			af = new AlternateFile();
@@ -116,7 +116,7 @@ public class MDEConditionalFileItem {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				collapsablePanel.setCollapsed(true);
-				owningWindow.removeConditionalFileItem(MDEConditionalFileItem.this);
+				//owningJob.removeConditionalFileItem(MDEOfficialJobConditionalFileItem.this);
 			}
 		});
 
@@ -160,7 +160,6 @@ public class MDEConditionalFileItem {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				// TODO Auto-generated method stub
 				Platform.runLater(() -> {
 					FileChooser fileChooser = new FileChooser();
 					fileChooser.setInitialDirectory(new File(mod.getModPath()));
@@ -180,7 +179,7 @@ public class MDEConditionalFileItem {
 								if (relativePath.contains("..")) {
 									//reject as out of mod folder.
 
-									JOptionPane.showMessageDialog(owningWindow, "This file is not in the mod folder.", "Invalid file", JOptionPane.ERROR_MESSAGE);
+									JOptionPane.showMessageDialog(ModDescEditorWindow.ACTIVE_WINDOW, "This file is not in the mod folder.", "Invalid file", JOptionPane.ERROR_MESSAGE);
 								}
 
 								//File is valid
@@ -211,7 +210,7 @@ public class MDEConditionalFileItem {
 					} else {
 						index = MDEModFileChooser.OPTIONTYPE_ADDONLY;
 					}
-					MDEModFileChooser fileChooser = new MDEModFileChooser(owningWindow, modFile, index, job);
+					MDEModFileChooser fileChooser = new MDEModFileChooser(ModDescEditorWindow.ACTIVE_WINDOW, modFile, index, job);
 					if (fileChooser.getSelectedFile() != null) {
 						modFile = fileChooser.getSelectedFile();
 						destLabel.setText(modFile);
@@ -260,7 +259,6 @@ public class MDEConditionalFileItem {
 
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				// TODO Auto-generated method stub
 				if (e.getStateChange() == ItemEvent.SELECTED) {
 					int index = conditionBox.getSelectedIndex();
 					switch (index) {
@@ -297,6 +295,7 @@ public class MDEConditionalFileItem {
 		} else {
 			conditionBox.setSelectedIndex(2);
 		}
+		conditionBox.setEnabled(false);
 
 		if (af.getOperation() != null) {
 			switch (af.getOperation()) {

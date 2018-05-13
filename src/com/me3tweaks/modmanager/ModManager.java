@@ -81,18 +81,17 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.embed.swing.JFXPanel;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 
-
-	public static final String VERSION = "5.1 Beta 2";
-	public static long BUILD_NUMBER = 85L;
-	public static final String BUILD_DATE = "02/21/2018";
+	public static final String VERSION = "5.1 Beta 5";
+	public static long BUILD_NUMBER = 86L;
+	public static final String BUILD_DATE = "05/12/2018";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
 	public static boolean logging = false;
 	public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
 																// version
-	public static final double MODDESC_VERSION_SUPPORT = 4.5; // max supported
+	public static final double MODDESC_VERSION_SUPPORT = 5.0; // max supported
 																// cmmver in
 																// moddesc
 	public static boolean MOD_MANAGER_UPDATE_READY = false; //if true, don't delete temp
@@ -105,7 +104,7 @@ public class ModManager {
 	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
 	public static int MIN_REQUIRED_CMDLINE_REV = 29; //not static as i can force this via update manifest
 
-	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 379893; //4.5.2
+	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 461308; //4.7.1
 	public static ArrayList<Image> ICONS;
 	public static boolean AUTO_INJECT_KEYBINDS = false;
 	public static boolean AUTO_UPDATE_MOD_MANAGER = true;
@@ -454,8 +453,19 @@ public class ModManager {
 			} catch (InvalidFileFormatException e) {
 				ModManager.debugLogger.writeErrorWithException("Invalid file format exception. Settings in this file will be ignored", e);
 			} catch (IOException e) {
-				System.err.println("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
+				ModManager.debugLogger.writeError("I/O Error reading settings file. It may not exist yet. It will be created when a setting stored to disk.");
 			}
+
+            // SETUI LOOK
+            try {
+                if (ModManager.USE_WINDOWS_UI) {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } else {
+                    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+                }
+            } catch (Exception e) {
+                System.err.println("Couldn't set the UI interface style");
+            }
 
 			if (args.length > 1 && args[0].equals("--update-from")) {
 				// This is being run as an update
@@ -488,10 +498,14 @@ public class ModManager {
 						ModManager.debugLogger.writeError("JRE update failed - same version, not using bundled!");
 						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "JRE update (might have) failed!\nStill using " + javaJRE + ".", "JRE Update Failed",
 								JOptionPane.ERROR_MESSAGE);
-					} else {
+					} else if (args[2].equals("system")){
 						ModManager.debugLogger.writeMessage("JRE update succeeded - same version, but now using bundled");
 						String message = "JRE update successful.\nMod Manager is now using a bundled JRE - it no longer needs the system one\nRunning Java " + args[1];
 						JOptionPane.showMessageDialog(null, message, "JRE Update Complete", JOptionPane.INFORMATION_MESSAGE);
+					} else if (args[2].equals("bundled")){
+						ModManager.debugLogger.writeError("JRE update failed - same version, still using bundled!");
+						String message = "JRE update failed.\nMod Manager may continue to prompt you to update the JRE,\nplease contact FemShep.";
+						JOptionPane.showMessageDialog(null, message, "JRE Update Failed", JOptionPane.ERROR_MESSAGE);
 					}
 				} else {
 					ModManager.debugLogger.writeMessage("JRE update succeeded - updated to " + args[1]);
@@ -519,7 +533,7 @@ public class ModManager {
 			doFileSystemUpdate();
 			if (!validateNETFrameworkIsInstalled()) {
 				new NetFrameworkMissingWindow(
-						"Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.5 or higher in order to function properly. ");
+						"Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.7.1 or higher in order to function properly. ");
 			}
 
 			if (checkIfCMMPatchIsTooLong()) {
@@ -596,16 +610,7 @@ public class ModManager {
 						"Startup Error", JOptionPane.WARNING_MESSAGE);
 			}
 		}
-		// SETUI LOOK
-		try {
-			if (ModManager.USE_WINDOWS_UI) {
-				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			} else {
-				UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-			}
-		} catch (Exception e) {
-			System.err.println("Couldn't set the UI interface style");
-		}
+
 
 		ModManager.debugLogger.writeMessage("Loading JavaFX");
 		new JFXPanel(); // used for initializing javafx thread (ideally called once)
@@ -693,6 +698,10 @@ public class ModManager {
 		}
 
 		// cleanup
+		File jreUpdate = new File(ModManager.getDataDir() + "JREUpdate");
+		FileUtils.deleteQuietly(jreUpdate);
+		File oldJRE = new File(ModManager.getDataDir() + "jre-x64-OLD");
+		FileUtils.deleteQuietly(oldJRE);
 		File mod_info = new File("mod_info");
 		mod_info.delete();
 		File derbylog = new File("derby.log");
@@ -1253,11 +1262,10 @@ public class ModManager {
 
 	/**
 	 * Gets the path of a pristine coalesced with the given filename
-	 *
+	 * @param name Name of object to get. Use with mode to pass in different types
 	 * @param mode
 	 *            ME3TweaksUtils mode indicating what the name variable is
 	 *
-	 * @param basegame
 	 * @return
 	 */
 	public static String getPristineCoalesced(String name, int mode) {
@@ -1901,7 +1909,7 @@ public class ModManager {
 		if (os.contains("Windows")) {
 			int releaseNum = 0;
 			String netFrameWork4Key = "SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full";
-			ModManager.debugLogger.writeMessage("Checking for .NET Framework 4.5 or higher registry key");
+			ModManager.debugLogger.writeMessage("Checking for .NET Framework 4.7.1 or higher registry key");
 			try {
 				releaseNum = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, netFrameWork4Key, "Release");
 				ModManager.debugLogger.writeMessage(".NET Framework release detected: " + releaseNum);
@@ -1915,11 +1923,11 @@ public class ModManager {
 					return false;
 				}
 			} catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
-				ModManager.debugLogger.writeError(".NET Framework 4.5 registry key was not found: " + netFrameWork4Key);
+				ModManager.debugLogger.writeError(".NET Framework 4.7.1 registry key was not found: " + netFrameWork4Key);
 				NET_FRAMEWORK_IS_INSTALLED = false;
 				return false;
 			} catch (Throwable e) {
-				ModManager.debugLogger.writeErrorWithException(".NET Framework 4.5 detection exception:", e);
+				ModManager.debugLogger.writeErrorWithException(".NET Framework 4.7.1 detection exception:", e);
 				NET_FRAMEWORK_IS_INSTALLED = false;
 				return false;
 			}
@@ -2670,26 +2678,38 @@ public class ModManager {
 		String outputpath = getDeploymentDirectory() + mod.getModName() + "_" + mod.getVersion() + ".7z";
 		ModManager.debugLogger.writeMessage("Deploying " + mod.getModName());
 
+		String iniPath = mod.getDescFile();
+		String tempIniPath = ModManager.getTempDir() + "staged\\moddesc.ini";
+
+		File iniStart = new File(iniPath);
+		File iniDest = new File(tempIniPath);
+		iniDest.getParentFile().mkdirs();
+		try {
+			FileUtils.moveFile(iniStart, iniDest);
+		} catch (IOException e) {
+			ModManager.debugLogger.writeError("Error moving moddesc.ini for optimized deployment: "+e.getMessage());
+		}
 		//Get amount of memory
 		int dictsize = 64; //Default size - definitely not the best, but we'll default to 32-bit.
 
-		if (ResourceUtils.is64BitWindows()) {
-			ModManager.debugLogger.writeMessage("64-bit Windows - calculating dictionary size that *should* work on this computer...");
-			String[] memorycommand = new String[] { "wmic", "ComputerSystem", "get", "TotalPhysicalMemory" };
-			ProcessBuilder pb = new ProcessBuilder(memorycommand);
-			ProcessResult pr = ModManager.runProcess(pb);
-			String output = pr.getOutput();
+		ModManager.debugLogger.writeMessage("64-bit Windows - calculating dictionary size that *should* work on this computer...");
+		String[] memorycommand = new String[] { "wmic", "ComputerSystem", "get", "TotalPhysicalMemory" };
+		ProcessBuilder pb = new ProcessBuilder(memorycommand);
+		ProcessResult pr = ModManager.runProcess(pb);
+		String output = pr.getOutput();
 
-			String[] lines = output.split("\\n");
-			if (lines.length == 3) {
-				String memsizebytes = lines[1].replaceAll("[^0-9]", "");
-				long bytecount = Long.parseLong(memsizebytes);
-				String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
-				ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
-				dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
-				dictsize = Math.max(dictsize, 256); //avoid out of memory error on 32-bit java
-				ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
+		String[] lines = output.split("\\n");
+		if (lines.length == 3) {
+			String memsizebytes = lines[1].replaceAll("[^0-9]", "");
+			long bytecount = Long.parseLong(memsizebytes);
+			String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
+			ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
+			dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
+			if (dictsize > 324) {
+				dictsize = 324;
 			}
+			dictsize = Math.max(dictsize, 64);
+			ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
 		}
 
 		ArrayList<String> commandBuilder = new ArrayList<String>();
@@ -2705,13 +2725,33 @@ public class ModManager {
 		commandBuilder.add(mod.getModPath());//inputfile
 
 		//commandBuilder.add("-mmt" + numcores); //let it multithread itself.
-		commandBuilder.add("-mx=9"); //max compression
-		commandBuilder.add("-aoa"); //overwrite/update
+		commandBuilder.add("-mx9"); //max compression
 		commandBuilder.add("-md" + dictsize + "m");
 		ModManager.debugLogger.writeMessage("Compressing mod - output to " + outputpath);
-		ProcessBuilder pb = new ProcessBuilder(commandBuilder);
+		pb = new ProcessBuilder(commandBuilder);
 		FileUtils.deleteQuietly(new File(outputpath));
 		ModManager.runProcess(pb).getReturnCode();
+
+		//Add ModDesc.ini file without compression.
+		commandBuilder = new ArrayList<String>();
+
+		commandBuilder.add("cmd");
+		commandBuilder.add("/c");
+		commandBuilder.add("start");
+		commandBuilder.add("Mod Manager Mod Compressor");
+		commandBuilder.add("/wait");
+		commandBuilder.add(ModManager.get7zExePath());
+		commandBuilder.add("u"); //add
+		commandBuilder.add(outputpath); //destfile
+		commandBuilder.add(iniDest.getAbsolutePath());//inputfile
+
+		//commandBuilder.add("-mmt" + numcores); //let it multithread itself.
+		commandBuilder.add("-mx0"); //no compression
+		ModManager.debugLogger.writeMessage("Adding moddesc.ini in uncompressed mode." + outputpath);
+		pb = new ProcessBuilder(commandBuilder);
+		ModManager.runProcess(pb).getReturnCode();
+
+		FileUtils.deleteQuietly(iniDest.getParentFile());
 		return outputpath;
 	}
 

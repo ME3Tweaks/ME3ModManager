@@ -101,9 +101,7 @@ public class ModJob {
 	 * without the need for one.
 	 * 
 	 * Use the alternative constructors if you don't want a basegame job.
-	 * 
-	 * @param DLCFilePath
-	 *            Path to the DLC Sfar file.
+	 *
 	 */
 	public ModJob() {
 		setJobType(BASEGAME);
@@ -206,10 +204,11 @@ public class ModJob {
 	 * @param ignoreExistenceErrors
 	 *            Ignores errors if a source file doesn't exist. Typically means
 	 *            the file is compressed.
+	 * @param allowDuplicates Allow duplicate items in the list. This can be useful if you want to override an existing item. It will cause a secondary write to be performed, possibly optimized in the future.
 	 * @return True if task was added OK, false if the source file does not
 	 *         exist or duplicate files were added
 	 */
-	public boolean addFileReplace(String newFile, String fileToReplace, boolean ignoreExistenceErrors) {
+	public boolean addFileReplace(String newFile, String fileToReplace, boolean ignoreExistenceErrors, boolean allowDuplicates) {
 		File file = new File(newFile);
 		if (!file.exists() && !ignoreExistenceErrors) {
 			ModManager.debugLogger.writeError("Source file doesn't exist: " + newFile);
@@ -234,8 +233,8 @@ public class ModJob {
 			}
 		}
 
-		if (filesToReplace.contains(newFile) || filesToReplaceTargets.contains(fileToReplace)) {
-			ModManager.debugLogger.writeError("Adding duplicate source or target file for replacement: " + newFile + " or " + fileToReplace);
+		if ((filesToReplace.contains(newFile) || filesToReplaceTargets.contains(fileToReplace)) && !allowDuplicates) {
+			ModManager.debugLogger.writeError("Adding duplicate source or target file for replacement: " + newFile + " for " + fileToReplace);
 			return false;
 		}
 

@@ -136,7 +136,10 @@ public class ModXMLTools {
 				foldername = mod.getModName().replaceAll(" ", "").toLowerCase();
 				foldername = foldername.replaceAll("\\\\", "-").toLowerCase();
 				foldername = foldername.replaceAll("/", "-").toLowerCase();
-
+			} else {
+				if (foldername.lastIndexOf('/') > 0) {
+					foldername = foldername.substring(foldername.lastIndexOf('/'));
+				}
 			}
 
 			File manifestFile = new File(ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
@@ -190,7 +193,9 @@ public class ModXMLTools {
 			} else {
 				ModManager.debugLogger.writeMessage("No old manifest - all files treated as new.");
 				for (File f : newversionfiles) {
-					updatedfiles.add(f);
+					if (!f.getAbsolutePath().equals(mod.getModPath()+"WORKSPACE")) {
+						updatedfiles.add(f);
+					}
 				}
 			}
 

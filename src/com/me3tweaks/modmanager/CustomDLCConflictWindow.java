@@ -822,7 +822,7 @@ public class CustomDLCConflictWindow extends JDialog {
 				dispose();
 				ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 				ModManagerWindow.ACTIVE_WINDOW.highlightMod(outputMod);
-				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
+				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
 						"Compatibility mod has been created.\nApply " + modName
 								+ " to fix the UI overriding conflicts.\n\nIf you update any of your conflicting mods, uninstall this mod then generate a new compatibilty mod.\nGenerating a compatibiilty pack while "
 								+ modName + " is installed will likely crash the game when the new mod is applied.",

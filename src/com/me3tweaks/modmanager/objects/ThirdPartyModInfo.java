@@ -21,7 +21,7 @@ public class ThirdPartyModInfo {
 	private String modname, modauthor, customDLCfolder, moddescription, modsite;
 	private int mountpriority; //unsigned short
 	private boolean blacklistedForModImport;
-
+	private int updatecode;
 	/**
 	 * Copy constructor
 	 * 
@@ -41,6 +41,7 @@ public class ThirdPartyModInfo {
 		this.modsite = original.modsite;
 		this.mountpriority = original.mountpriority;
 		this.blacklistedForModImport = original.blacklistedForModImport;
+		this.updatecode = original.updatecode;
 	}
 
 	public ThirdPartyModInfo(String customdlcfolder, JSONObject modinfo) {
@@ -54,6 +55,11 @@ public class ThirdPartyModInfo {
 		String blacklistedForImport = (String) modinfo.get("preventimport");
 		if (blacklistedForImport != null) {
 			this.blacklistedForModImport = Integer.parseInt(blacklistedForImport) != 0;
+		}
+
+		String updatecodestr = (String) modinfo.get("updatecode");
+		if (updatecodestr != null) {
+			this.updatecode = Integer.parseInt(updatecodestr);
 		}
 	}
 
@@ -104,4 +110,8 @@ public class ThirdPartyModInfo {
 	public void setMountpriority(int mountpriority) {
 		this.mountpriority = mountpriority;
 	}
+
+    public int getUpdateCode() {
+		return updatecode;
+    }
 }

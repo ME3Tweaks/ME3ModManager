@@ -1,29 +1,5 @@
 package com.me3tweaks.modmanager.moddesceditor;
 
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.StringTokenizer;
-
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-
-import org.jdesktop.swingx.HorizontalLayout;
-import org.jdesktop.swingx.JXCollapsiblePane;
-
 import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
 import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.ModJob;
@@ -32,9 +8,21 @@ import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.ui.SwingLink;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
-
 import javafx.application.Platform;
 import javafx.stage.DirectoryChooser;
+import org.jdesktop.swingx.HorizontalLayout;
+import org.jdesktop.swingx.JXCollapsiblePane;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.StringTokenizer;
 
 public class MDEConditionalDLCItem {
 	private JXCollapsiblePane collapsablePanel;
@@ -154,7 +142,8 @@ public class MDEConditionalDLCItem {
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
 		panel.add(ifLabel);
 		panel.add(Box.createRigidArea(new Dimension(itemSpacing, 3)));
-		String condDLCStr = altdlc.getConditionalDLC().replaceAll("\\(", "").replaceAll("\\)", "");
+		String condition = altdlc.getConditionalDLC() == null ? "" : altdlc.getConditionalDLC();
+		String condDLCStr = condition.replaceAll("\\(", "").replaceAll("\\)", "");
 		conditionalDLC = new JTextField(condDLCStr, 16);
 		conditionalDLC.setUI(new HintTextFieldUI("DLC_MOD_Condition"));
 		panel.add(conditionalDLC);
@@ -281,6 +270,37 @@ public class MDEConditionalDLCItem {
 			}
 		});
 
+		conditionBox.addItemListener(new ItemListener() {
+
+			private String originalText;
+
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// TODO Auto-generated method stub
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					int index = conditionBox.getSelectedIndex();
+					switch (index) {
+						case 0: //auto
+						case 1: //auto
+						case 2: //auto
+						case 3: //auto
+
+							if (!conditionalDLC.isEnabled()) {
+								conditionalDLC.setText(originalText);
+								conditionalDLC.setEnabled(true);
+							}
+							break;
+						case 4: //user selected
+							conditionalDLC.setEnabled(false);
+							originalText = conditionalDLC.getText();
+							conditionalDLC.setText("N/A");
+							break;
+					}
+
+				}
+			}
+		});
+
 		// hide into/dest for add
 		if (operationBox.getSelectedIndex() == 0) {
 			destLabel.setVisible(false);
@@ -303,6 +323,8 @@ public class MDEConditionalDLCItem {
 				break;
 			case AlternateCustomDLC.CONDITION_MANUAL:
 				conditionBox.setSelectedIndex(4);
+				conditionalDLC.setEnabled(false);
+				conditionalDLC.setText("N/A");
 				break;
 			}
 		} else {
@@ -389,7 +411,7 @@ public class MDEConditionalDLCItem {
 			str += ",";
 			break;
 		}
-		
+
 		//ModOperation
 		int operationIndex = getOperationBox().getSelectedIndex();
 
@@ -402,9 +424,9 @@ public class MDEConditionalDLCItem {
 			str += ValueParserLib.generateValue("ModOperation", AlternateCustomDLC.OPERATION_ADD_FILES_TO_CUSTOMDLC_FOLDER, false);
 			break;
 		}
-		
+
 		str += ",";
-		
+
 		//FriendlyName
 		str += ValueParserLib.generateValue("FriendlyName", userReasonField.getText(), true);
 
