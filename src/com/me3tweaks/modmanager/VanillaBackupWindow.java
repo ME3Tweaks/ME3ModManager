@@ -317,8 +317,8 @@ public class VanillaBackupWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				if (backupPath != null) {
 					int response = JOptionPane.showConfirmDialog(VanillaBackupWindow.this,
-							"Your entire game installation located at\n" + ModManagerWindow.GetBioGameDir()
-									+ "\nwill be deleted (and restored from the backup) if you continue.\nAre you sure you want to do a complete restore to this directory?",
+							"Your entire game installation located at\n" + new File(ModManagerWindow.GetBioGameDir()).getParent()
+									+ "\nwill be deleted and restored from the backup.\nAre you sure you want to do a complete restore to this directory?",
 							"GAME DIRECTORY WILL BE DELETED", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 					if (response == JOptionPane.YES_OPTION) {
 						//Delete directory and copy over it.
