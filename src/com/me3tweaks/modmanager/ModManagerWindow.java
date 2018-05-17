@@ -1,24 +1,53 @@
 package com.me3tweaks.modmanager;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import com.me3tweaks.modmanager.help.HelpMenu;
+import com.me3tweaks.modmanager.moddesceditor.ModDescEditorWindow;
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
+import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
+import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
+import com.me3tweaks.modmanager.modupdater.ModXMLTools;
+import com.me3tweaks.modmanager.modupdater.UpdatePackage;
+import com.me3tweaks.modmanager.objects.*;
+import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
+import com.me3tweaks.modmanager.ui.StayOpenJCheckboxMenuItem;
+import com.me3tweaks.modmanager.utilities.EXEFileInfo;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import com.me3tweaks.modmanager.utilities.Version;
+import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
+import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
+import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI;
+import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI2;
+import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
+import com.sun.jna.platform.win32.Advapi32Util;
+import javafx.application.Platform;
+import javafx.stage.FileChooser;
+import net.iharder.dnd.FileDrop;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.validator.routines.UrlValidator;
+import org.ini4j.InvalidFileFormatException;
+import org.ini4j.Wini;
+import org.jdesktop.swingx.JXCollapsiblePane;
+import org.jdesktop.swingx.JXCollapsiblePane.Direction;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,93 +65,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import javax.swing.BorderFactory;
-import javax.swing.ComboBoxModel;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
-import javax.swing.JSplitPane;
-import javax.swing.JTextArea;
-import javax.swing.ListSelectionModel;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-import javax.swing.UIManager;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArchUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.validator.routines.UrlValidator;
-import org.ini4j.InvalidFileFormatException;
-import org.ini4j.Wini;
-import org.jdesktop.swingx.JXCollapsiblePane;
-import org.jdesktop.swingx.JXCollapsiblePane.Direction;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
-import com.me3tweaks.modmanager.help.HelpMenu;
-import com.me3tweaks.modmanager.moddesceditor.ModDescEditorWindow;
-import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
-import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
-import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
-import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow;
-import com.me3tweaks.modmanager.modupdater.ModUpdateWindow;
-import com.me3tweaks.modmanager.modupdater.ModXMLTools;
-import com.me3tweaks.modmanager.modupdater.UpdatePackage;
-import com.me3tweaks.modmanager.objects.AlternateCustomDLC;
-import com.me3tweaks.modmanager.objects.AlternateFile;
-import com.me3tweaks.modmanager.objects.InstalledASIMod;
-import com.me3tweaks.modmanager.objects.MainUIBackgroundJob;
-import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModDelta;
-import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ModList;
-import com.me3tweaks.modmanager.objects.ModTypeConstants;
-import com.me3tweaks.modmanager.objects.Patch;
-import com.me3tweaks.modmanager.objects.ProcessResult;
-import com.me3tweaks.modmanager.objects.RestoreMode;
-import com.me3tweaks.modmanager.objects.ThreadCommand;
-import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
-import com.me3tweaks.modmanager.ui.StayOpenJCheckboxMenuItem;
-import com.me3tweaks.modmanager.utilities.EXEFileInfo;
-import com.me3tweaks.modmanager.utilities.MD5Checksum;
-import com.me3tweaks.modmanager.utilities.ResourceUtils;
-import com.me3tweaks.modmanager.utilities.Version;
-import com.me3tweaks.modmanager.valueparsers.bioai.BioAIGUI;
-import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
-import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI;
-import com.me3tweaks.modmanager.valueparsers.powercustomaction.PowerCustomActionGUI2;
-import com.me3tweaks.modmanager.valueparsers.wavelist.WavelistGUI;
-import com.sun.jna.platform.win32.Advapi32Util;
-
-import javafx.application.Platform;
-import javafx.stage.FileChooser;
-import net.iharder.dnd.FileDrop;
 
 /**
  * Controls the main window for Mass Effect 3 Mod Manager.
@@ -332,11 +274,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             File f7z = new File(ModManager.get7zExePath());
             boolean needsUpdate = false;
             if (f7z.exists()) {
-                int mainVersion = EXEFileInfo.getMajorVersionOfProgram((f7z.getAbsolutePath()));
-                int minorVersion = EXEFileInfo.getMinorVersionOfProgram((f7z.getAbsolutePath()));
-                if (mainVersion < 18 || mainVersion == 18 && minorVersion < 5) {
+                try {
+                    int mainVersion = EXEFileInfo.getMajorVersionOfProgram((f7z.getAbsolutePath()));
+                    int minorVersion = EXEFileInfo.getMinorVersionOfProgram((f7z.getAbsolutePath()));
+                    if (mainVersion < 18 || mainVersion == 18 && minorVersion < 5) {
+                        needsUpdate = true;
+                        ModManager.debugLogger.writeMessage("7z is outdated - updating to at least 18.5");
+                    }
+                } catch (Exception e) {
                     needsUpdate = true;
-                    ModManager.debugLogger.writeMessage("7z is outdated - updating to at least 18.5");
+                    ModManager.debugLogger.writeErrorWithException("7z exe version information could not be read - downloading new copy", e);
                 }
             }
             if (!f7z.exists() || needsUpdate) {
@@ -362,11 +309,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             File f7zdll = new File(ModManager.get7zDllPath());
             needsUpdate = false;
             if (f7zdll.exists()) {
-                int mainVersion = EXEFileInfo.getMajorVersionOfProgram((f7zdll.getAbsolutePath()));
-                int minorVersion = EXEFileInfo.getMinorVersionOfProgram((f7zdll.getAbsolutePath()));
-                if (mainVersion < 18 || mainVersion == 18 && minorVersion < 5) {
+                try {
+                    int mainVersion = EXEFileInfo.getMajorVersionOfProgram((f7zdll.getAbsolutePath()));
+                    int minorVersion = EXEFileInfo.getMinorVersionOfProgram((f7zdll.getAbsolutePath()));
+                    if (mainVersion < 18 || mainVersion == 18 && minorVersion < 5) {
+                        needsUpdate = true;
+                        ModManager.debugLogger.writeMessage("7z dll is outdated - updating to at least 18.5");
+                    }
+                } catch (Exception e) {
                     needsUpdate = true;
-                    ModManager.debugLogger.writeMessage("7z dll is outdated - updating to at least 18.5");
+                    ModManager.debugLogger.writeErrorWithException("7z dll version information could not be read - downloading new copy", e);
                 }
             }
             if (!f7zdll.exists() || needsUpdate) {

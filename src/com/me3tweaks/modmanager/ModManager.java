@@ -81,10 +81,10 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.embed.swing.JFXPanel;
 
 public class ModManager {
-	public static boolean IS_DEBUG = false;
+	public static boolean IS_DEBUG = true;
 
-	public static final String VERSION = "5.1 Beta 5";
-	public static long BUILD_NUMBER = 86L;
+	public static final String VERSION = "5.1 Beta 6";
+	public static long BUILD_NUMBER = 87L;
 	public static final String BUILD_DATE = "05/12/2018";
 	public static final String SETTINGS_FILENAME = "me3cmm.ini";
 	public static DebugLogger debugLogger;
