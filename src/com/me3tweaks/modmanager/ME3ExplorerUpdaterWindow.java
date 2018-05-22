@@ -166,7 +166,7 @@ public class ME3ExplorerUpdaterWindow extends JDialog implements PropertyChangeL
 				commandBuilder.add("-y"); // overwrite
 				commandBuilder.add("x"); // extract
 				commandBuilder.add(saveFilePath);// 7z file
-				commandBuilder.add("-o" + ResourceUtils.normalizeFilePath(ModManager.getDataDir(), true)); // extraction
+				commandBuilder.add("-o" + ResourceUtils.normalizeFilePath(ModManager.getME3ExplorerEXEDirectory(), true)); // extraction
 																											// path
 				String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
 				ModManager.debugLogger.writeMessage("Extracting ME3Explorer...");
