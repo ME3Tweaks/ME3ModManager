@@ -117,11 +117,6 @@ public class AboutWindow2Controller {
 	}
 
 	@FXML
-	private void openLauncherWVPage() {
-		ResourceUtils.openWebpage("https://github.com/Mgamerz/LauncherWV");
-	}
-
-	@FXML
 	private void openMEMPage() {
 		ResourceUtils.openWebpage("https://github.com/MassEffectModder/MassEffectModder");
 	}

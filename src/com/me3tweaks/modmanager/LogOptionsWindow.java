@@ -329,14 +329,10 @@ public class LogOptionsWindow extends JDialog {
 			log += "=========[DLCBYPASS] DLC Bypass Information =============\n";
 			if (ModManagerWindow.validateBIOGameDir()) {
 				File gamedir = new File(ModManagerWindow.GetBioGameDir()).getParentFile();
-				File Launcher_WV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
-				File LauncherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\LauncherWV.exe");
 				if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 					log += "Binkw32.dll Bypass is installed (ASI Version)\n";
 				} else if (ModManager.checkIfBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 					log += "Binkw32.dll Bypass is installed (binkw32.dll is modified and binkw23.dll exists, NOT ASI VERSION)\n";
-				} else if (Launcher_WV.exists() || LauncherWV.exists()) {
-					log += "Launcher WV Bypass is installed\n";
 				} else {
 					log += "No DLC bypass is installed. Modified and Custom DLC will not load.\n";
 				}

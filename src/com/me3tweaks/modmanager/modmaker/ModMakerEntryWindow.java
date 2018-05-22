@@ -185,14 +185,14 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		modMakerPanel.add(getCodePane);
 		modMakerPanel.add(Box.createVerticalGlue());
 		if (!hasDLCBypass) {
-			JPanel launcherWVPanel = new JPanel();
-			launcherWVPanel.setLayout(new BoxLayout(launcherWVPanel, BoxLayout.LINE_AXIS));
-			launcherWVPanel.add(Box.createHorizontalGlue());
-			launcherWVPanel.add(new JLabel(
-					"<html>The Launcher_WV.exe DLC bypass will be installed so your mod will work.<br>To use mods you will need to use Start Game from Mod Manager.<br>Tab and ` will open the console in game.<br>Your game will not be modified by this file.</html>"),
+			JPanel binkw32Panel = new JPanel();
+			binkw32Panel.setLayout(new BoxLayout(binkw32Panel, BoxLayout.LINE_AXIS));
+			binkw32Panel.add(Box.createHorizontalGlue());
+			binkw32Panel.add(new JLabel(
+					"<html>The binkw32 DLC bypass will be installed so your mod will work.<br>Tab and ` will open the console in game.</html>"),
 					BorderLayout.CENTER);
-			launcherWVPanel.add(Box.createHorizontalGlue());
-			modMakerPanel.add(launcherWVPanel);
+			binkw32Panel.add(Box.createHorizontalGlue());
+			modMakerPanel.add(binkw32Panel);
 			//setPreferredSize(new Dimension(DIALOG_WIDTH, DIALOG_HEIGHT + 90));
 		} else {
 			//setPreferredSize(new Dimension(DIALOG_WIDTH, DIALOG_HEIGHT));
@@ -469,7 +469,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	}
 
 	/**
-	 * Installs the LauncherWV bypass.
+	 * Installs the Binkw32 DLC bypass.
 	 * 
 	 * @return
 	 */
