@@ -709,7 +709,7 @@ public class RestoreFilesWindow extends JDialog {
 				isTestPatch = true;
 			}
 
-			if (backupSfar == null) {
+			if (!backupSfar.exists()) {
 				//no normal backup.
 				String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
 				if (vanillaBackupPath == null) {

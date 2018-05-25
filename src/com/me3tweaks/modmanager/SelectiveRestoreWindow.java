@@ -286,6 +286,7 @@ public class SelectiveRestoreWindow extends JDialog {
 
 		int rowIndex = -1;
 		// Add and enable/disable DLC checkboxes and add to hashmap
+		String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
 		for (String dlcName : headerArray) {
 			rowIndex++;
 			table.setValueAt(ME3TweaksUtils.headerNameToShortDLCFolderName(dlcName), rowIndex, COL_INTNAME);
@@ -310,6 +311,19 @@ public class SelectiveRestoreWindow extends JDialog {
 				//SFAR exists.
 				table.setValueAt("YES", rowIndex, COL_INSTALLED);
 				//check for backups
+
+				//check for vanilla backup
+				if (!mainSfarbackup.exists() && !testpatchSfarbackup.exists()) { //check for vanilla backup
+					//no normal backup.
+					if (vanillaBackupPath != null) {
+						//Attempt fetch from complete game backup
+						String backupPath = vanillaBackupPath + "\\BIOGame\\";
+						backupPath += ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
+						testpatchSfarbackup = new File(backupPath + "Patch_001.sfar");
+						mainSfarbackup = new File(backupPath + "Default.sfar");
+					}
+				}
+
 				if (!mainSfarbackup.exists() && !testpatchSfarbackup.exists()) {
 					table.setValueAt("NO", rowIndex, COL_BACKEDUP);
 					table.setValueAt("NO BACKUP", rowIndex, COL_ACTION_SFAR);
