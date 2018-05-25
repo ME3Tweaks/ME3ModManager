@@ -46,7 +46,6 @@ public class UnpackWindow extends JDialog {
 	 * Manually invoked unpack window
 	 * 
 	 * @param callingWindow
-	 * @param BioGameDir
 	 */
 	public UnpackWindow(ModManagerWindow callingWindow) {
 		// callingWindow.setEnabled(false);
@@ -250,6 +249,20 @@ public class UnpackWindow extends JDialog {
 				File mainSfar = new File(dlcPath + "Default.sfar");
 
 				File backupSfar = new File(dlcPath + "Default.sfar.bak");
+				if (!backupSfar.exists()) { //check for vanilla backup
+					//no normal backup.
+					String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
+					if (vanillaBackupPath != null) {
+						//Attempt fetch from complete game backup
+						vanillaBackupPath += "\\BIOGame\\";
+						vanillaBackupPath += ModManager.appendSlash(ModTypeConstants.getDLCPath(dlcName));
+						vanillaBackupPath += "Default.sfar"; //cannot be testpatch
+						backupSfar = new File(vanillaBackupPath);
+					}
+				}
+
+
+
 				int _continue = JOptionPane.YES_OPTION;
 				if (mainSfar.exists()) {
 					//Primary DLC
@@ -267,6 +280,7 @@ public class UnpackWindow extends JDialog {
 					publish(Integer.toString(completed));
 					continue;
 				}
+
 				File patch001Sfar = new File(dlcPath + "Patch_001.sfar");
 				if (patch001Sfar.exists()) {
 					hasTestPatch = true;

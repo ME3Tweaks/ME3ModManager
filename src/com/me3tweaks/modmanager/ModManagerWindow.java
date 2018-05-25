@@ -88,7 +88,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     JMenuItem actionCheckForContentUpdates, actionModMaker, actionVisitMe, actionOptions, actionReload, actionExit;
     JMenuItem modManagementImportFromArchive, modManagementImportAlreadyInstalled, modManagementConflictDetector, modManagementModMaker, modManagementASI, modManagementFailedMods,
             modManagementPatchLibary, modManagementClearPatchLibraryCache, modManagementModGroupsManager;
-    JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsInstallLauncherWV, toolsUninstallBinkw32, toolMountdlcEditor,
+    JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsUninstallBinkw32, toolMountdlcEditor,
     /* toolsMergeMod */ toolME3Config, toolsPCCDataDumper;
     JCheckBoxMenuItem toolsInstallBinkw32, toolsInstallBinkw32asi;
     JMenuItem backupBackupDLC, backupCreateGDB;
@@ -1551,9 +1551,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         toolsGrantWriteAccess = new JMenuItem("Grant write access to selected game directory");
         toolsGrantWriteAccess.setToolTipText("Attempts to grant your user account write access to the listed Mass Effect 3 game directory");
 
-        toolsInstallLauncherWV = new JCheckBoxMenuItem("Install LauncherWV DLC Bypass");
-        toolsInstallLauncherWV.setToolTipText(
-                "<html>Installs an in-memory patcher giving you console and allowing modified DLC.<br>This does not does not modify files.<br>This bypass method has been deprecated. Use binkw32 instead</html>");
         toolsInstallBinkw32 = new JCheckBoxMenuItem("Install Binkw32 DLC Bypass");
         toolsInstallBinkw32.setToolTipText(
                 "<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This modifies your game and is erased when doing an Origin Repair</html>");
@@ -1587,7 +1584,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         // toolsMergeMod.addActionListener(this);
         modManagementCheckallmodsforupdate.addActionListener(this);
         toolsUnpackDLC.addActionListener(this);
-        toolsInstallLauncherWV.addActionListener(this);
         toolsGrantWriteAccess.addActionListener(this);
         modManagementPatchLibary.addActionListener(this);
         toolMountdlcEditor.addActionListener(this);
@@ -1654,7 +1650,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         // toolsMenu.add(parsersMenu); not enough content for this to be useful.
         toolsMenu.add(devMenu);
         toolsMenu.addSeparator();
-        // toolsMenu.add(toolsInstallLauncherWV);
         toolsMenu.add(toolsInstallBinkw32);
         toolsMenu.add(toolsInstallBinkw32asi);
         toolsMenu.add(toolsUninstallBinkw32);
@@ -2641,7 +2636,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == buttonStartGame) {
             if (validateBIOGameDir()) {
-                ModManager.debugLogger.writeMessage("Starting game/launcherwv.");
+                ModManager.debugLogger.writeMessage("Starting game.");
                 startGame(ModManager.appendSlash(GetBioGameDir()));
             } else {
                 labelStatus.setText("Starting the game requires a valid BIOGame directory");
@@ -2989,21 +2984,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             new PowerCustomActionGUI();
         } else if (e.getSource() == sqlPowerCustomActionParser2) {
             new PowerCustomActionGUI2();
-        } else if (e.getSource() == toolsInstallLauncherWV) {
-            int result = JOptionPane.showConfirmDialog(ModManagerWindow.ACTIVE_WINDOW,
-                    "LauncherWV has been deprecated.\nYou can install install it, but using the binkw32 bypass methods are far more reliable.\nContinue installing LauncherWV?",
-                    "Deprecated Bypass", JOptionPane.WARNING_MESSAGE);
-            if (result == JOptionPane.OK_OPTION) {
-                if (validateBIOGameDir()) {
-                    ModManager.debugLogger.writeMessage("Installing manual LauncherWV bypass.");
-                    installBypass();
-                } else {
-                    labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
-                    labelStatus.setVisible(true);
-                    JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
-                            "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
-                }
-            }
         } else if (e.getSource() == toolsInstallBinkw32asi) {
             if (ModManager.isMassEffect3Running()) {
                 JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 ASI DLC bypass.",
@@ -3728,8 +3708,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     }
 
     /**
-     * Starts the MassEffect3.exe executable. Due to legacy code if LauncherWV
-     * is found it will be run, however you can no longer install LauncherWV.
+     * Starts the MassEffect3.exe executable.
      *
      * @param CookedDir biogamedir
      */
@@ -3757,20 +3736,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             ModManager.debugLogger.writeErrorWithException("Error getting Mass Effect 3 EXE version. This error will be ignored.", e);
         }
 
-        if (!binkw32bypass) { // try to find Launcher_WV
-            executable = new File(startingDir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
-            if (!executable.exists()) {
-                // Try the other name he uses
-                executable = new File(startingDir.toString() + "\\Binaries\\Win32\\LauncherWV.exe");
-                if (!executable.exists()) {
-                    ModManager.debugLogger.writeMessage("Warranty Voider's memory patcher launcher was not found, using the main one.");
-                    executable = new File(startingDir.toString() + "\\Binaries\\Win32\\MassEffect3.exe"); // use
-                    // standard
-                }
-            }
-        } else {
-            ModManager.debugLogger.writeMessage("Binkw32 installed. Launching standard ME3.");
-        }
         ModManager.debugLogger.writeMessage("Launching: " + executable.getAbsolutePath());
 
         // check if the new one exists
@@ -3787,7 +3752,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             this.setExtendedState(JFrame.ICONIFIED);
             Runtime.getRuntime().exec(command);
         } catch (IOException e) {
-            ModManager.debugLogger.writeErrorWithException("I/O Exception while launching ME3 or LauncherWV.", e);
+            ModManager.debugLogger.writeErrorWithException("I/O Exception while launching ME3.", e);
 
         }
         ModManager.debugLogger.writeMessage("Path: " + executable.getAbsolutePath() + " - Exists? " + executable.exists());
@@ -3812,28 +3777,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         // System.out.println("SELECTED VALUE: " + selectedValue);
         Mod mod = modModel.getElementAt(selectedIndex);
         new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
-    }
-
-    /**
-     * Installs a basic LauncherWV bypass.
-     *
-     * @return
-     */
-    private boolean installBypass() {
-        if (validateBIOGameDir()) {
-            boolean result = ModManager.installLauncherWV(GetBioGameDir());
-            if (result) {
-                // ok
-                labelStatus.setText("Launcher WV installed. Start Game will now use it.");
-            } else {
-                labelStatus.setText("FAILURE: Launcher WV bypass not installed!");
-            }
-            return result;
-        }
-        JOptionPane.showMessageDialog(ModManagerWindow.this,
-                "The BioGame directory is not valid.\nMod Manager cannot install the LauncherWV DLC bypass.\nFix the BioGame directory before continuing.",
-                "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
-        return false;
     }
 
     private boolean installBinkw32Bypass(boolean asi) {

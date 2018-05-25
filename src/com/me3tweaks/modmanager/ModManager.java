@@ -81,28 +81,28 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.embed.swing.JFXPanel;
 
 public class ModManager {
-	public static boolean IS_DEBUG = true;
+    public static boolean IS_DEBUG = false;
 
-	public static final String VERSION = "5.1 Beta 6";
-	public static long BUILD_NUMBER = 87L;
-	public static final String BUILD_DATE = "05/12/2018";
-	public static final String SETTINGS_FILENAME = "me3cmm.ini";
-	public static DebugLogger debugLogger;
-	public static boolean logging = false;
-	public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
-																// version
-	public static final double MODDESC_VERSION_SUPPORT = 5.0; // max supported
-																// cmmver in
-																// moddesc
-	public static boolean MOD_MANAGER_UPDATE_READY = false; //if true, don't delete temp
-	public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
-	public static boolean AUTO_UPDATE_CONTENT = true;
-	public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
-	public static long LAST_AUTOUPDATE_CHECK;
-	public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
-	public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
-	public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-	public static int MIN_REQUIRED_CMDLINE_REV = 29; //not static as i can force this via update manifest
+    public static final String VERSION = "5.1 Beta 5";
+    public static long BUILD_NUMBER = 86L;
+    public static final String BUILD_DATE = "05/22/2018";
+    public static final String SETTINGS_FILENAME = "me3cmm.ini";
+    public static DebugLogger debugLogger;
+    public static boolean logging = false;
+    public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
+    // version
+    public static final double MODDESC_VERSION_SUPPORT = 5.0; // max supported
+    // cmmver in
+    // moddesc
+    public static boolean MOD_MANAGER_UPDATE_READY = false; //if true, don't delete temp
+    public static boolean AUTO_APPLY_MODMAKER_MIXINS = false;
+    public static boolean AUTO_UPDATE_CONTENT = true;
+    public static boolean CHECKED_FOR_UPDATE_THIS_SESSION = false;
+    public static long LAST_AUTOUPDATE_CHECK;
+    public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
+    public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
+    public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
+    public static int MIN_REQUIRED_CMDLINE_REV = 29; //not static as i can force this via update manifest
 
 	private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 461308; //4.7.1
 	public static ArrayList<Image> ICONS;
