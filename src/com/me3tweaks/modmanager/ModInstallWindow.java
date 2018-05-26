@@ -337,7 +337,7 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Checking for DLC Bypass.");
 			if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
 				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing binkw32 bypass...");
-				if (!ModManager.installBinkw32Bypass(bioGameDir, false)) {
+				if (!ModManager.installBinkw32Bypass(bioGameDir)) {
 					ModManager.debugLogger.writeError("Binkw32 bypass failed to install");
 				}
 			} else {
@@ -1332,12 +1332,22 @@ public class ModInstallWindow extends JDialog {
 							if (job.getJobType() == ModJob.BALANCE_CHANGES) {
 								if (ModManager.checkIfASIBinkBypassIsInstalled(bioGameDir)) {
 									if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
-										ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
+										/*ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
 										int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
 												"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
 												"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 										if (result == JOptionPane.YES_OPTION) {
 											new ASIModWindow(new File(bioGameDir).getParent(), true);
+										}*/
+										try {
+											ModManager.debugLogger.writeMessage("Mod requires Balance Changes Replacer - installing");
+											File balancechangeseplacer = new File(new File(ModManagerWindow.GetBioGameDir()).getParent() + "\\Binaries\\Win32\\asi\\BalanceChangesReplacer.asi");
+											balancechangeseplacer.getParentFile().mkdirs();
+											ModManager.ExportResource("/BalanceChangesReplacer.asi", balancechangeseplacer.toString());
+											ModManager.debugLogger.writeMessage("Balance Changes Replacer - installed");
+											break;
+										} catch (Exception e) {
+											ModManager.debugLogger.writeErrorWithException("Error extracting balance changes replacer:", e);
 										}
 									}
 								} else {

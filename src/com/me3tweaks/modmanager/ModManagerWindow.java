@@ -90,7 +90,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             modManagementPatchLibary, modManagementClearPatchLibraryCache, modManagementModGroupsManager;
     JMenuItem toolME3Explorer, toolsGrantWriteAccess, toolsOpenME3Dir, toolsUninstallBinkw32, toolMountdlcEditor,
     /* toolsMergeMod */ toolME3Config, toolsPCCDataDumper;
-    JCheckBoxMenuItem toolsInstallBinkw32, toolsInstallBinkw32asi;
+    JCheckBoxMenuItem toolsInstallBinkw32asi;
     JMenuItem backupBackupDLC, backupCreateGDB;
     JCheckBoxMenuItem backupCreateVanillaCopy;
     JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
@@ -1374,6 +1374,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     .setText("No mods are available in the Mod Manager library. Download some ModMaker mods or import mods through the Mod Management menu to get started.");
         }
 
+        updateBinkBypassStatus();
+
         comboboxBiogameDir.addItemListener(new BiogameDirChangeListener());
         ModManager.debugLogger.writeMessage("Mod Manager GUI: SetupWindow() has completed.");
     }
@@ -1551,21 +1553,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         toolsGrantWriteAccess = new JMenuItem("Grant write access to selected game directory");
         toolsGrantWriteAccess.setToolTipText("Attempts to grant your user account write access to the listed Mass Effect 3 game directory");
 
-        toolsInstallBinkw32 = new JCheckBoxMenuItem("Install Binkw32 DLC Bypass");
-        toolsInstallBinkw32.setToolTipText(
-                "<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This modifies your game and is erased when doing an Origin Repair</html>");
-        toolsInstallBinkw32asi = new JCheckBoxMenuItem("Install Binkw32 DLC Bypass (ASI version)");
+        toolsInstallBinkw32asi = new JCheckBoxMenuItem("Install Binkw32 ASI DLC Bypass");
         toolsInstallBinkw32asi.setToolTipText(
-                "<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This version allows loading of advanced ASI mods that allow 3rd party code to run on your machine.<br>This modifies your game and is erased when doing an Origin Repair</html>");
+                "<html>Installs a startup patcher giving you console and allowing modified DLC.<br>This version allows loading of advanced ASI mods that allow 3rd party game plugins to run on your machine.<br>This modifies your game and is erased when doing an Origin Repair</html>");
 
         toolsUninstallBinkw32 = new JMenuItem("Uninstall Binkw32 DLC Bypass");
-        toolsUninstallBinkw32.setToolTipText("<html>Removes the Binkw32.dll DLC bypass (including ASI version), reverting to the original file</html>");
+        toolsUninstallBinkw32.setToolTipText("<html>Removes the Binkw32.dll DLC bypass, reverting to the original file</html>");
 
         toolsUnpackDLC = new JMenuItem("DLC Unpacker");
-        toolsUnpackDLC.setToolTipText("Opens the Unpack DLC window so you can unpack DLC automatically");
+        toolsUnpackDLC.setToolTipText("Unpack DLC SFARs for quick and easy modding");
 
         toolMountdlcEditor = new JMenuItem("Mount.dlc Editor");
-        toolMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files easily");
+        toolMountdlcEditor.setToolTipText("Allows you to modify or create new Mount.dlc files");
 
         toolME3Config = new JMenuItem("ME3 Config Tool");
         toolME3Config.setToolTipText("<html>Opens the ME3 Configuration Utility that comes packaged with the game.<br>Lets you configure graphics and audio settings.</html>");
@@ -1609,7 +1608,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         devMenu.add(toolTankmasterTLK);
 
         toolsOpenME3Dir.addActionListener(this);
-        toolsInstallBinkw32.addActionListener(this);
         toolsInstallBinkw32asi.addActionListener(this);
         toolsUninstallBinkw32.addActionListener(this);
         toolME3Config.addActionListener(this);
@@ -1650,7 +1648,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         // toolsMenu.add(parsersMenu); not enough content for this to be useful.
         toolsMenu.add(devMenu);
         toolsMenu.addSeparator();
-        toolsMenu.add(toolsInstallBinkw32);
         toolsMenu.add(toolsInstallBinkw32asi);
         toolsMenu.add(toolsUninstallBinkw32);
         menuBar.add(toolsMenu);
@@ -1798,22 +1795,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     }
 
     private void updateBinkBypassStatus() {
-        if (ModManager.checkIfBinkBypassIsInstalled(GetBioGameDir()) && !ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir())) {
-            toolsInstallBinkw32.setVisible(true);
-            toolsInstallBinkw32.setSelected(true);
-            toolsInstallBinkw32.setText("Binkw32 bypass is installed");
-        } else {
-            toolsInstallBinkw32.setVisible(true); // will be hidden again if asi version is installed.
-            toolsInstallBinkw32.setSelected(false);
-            toolsInstallBinkw32.setText("Install Binkw32 DLC Bypass");
-        }
         if (ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir())) {
-            toolsInstallBinkw32.setVisible(false);
             toolsInstallBinkw32asi.setSelected(true);
-            toolsInstallBinkw32asi.setText("Binkw32 ASI bypass is installed");
+            toolsInstallBinkw32asi.setText("Binkw32 ASI DLC bypass is installed");
         } else {
             toolsInstallBinkw32asi.setSelected(false);
-            toolsInstallBinkw32asi.setText("Install Binkw32 DLC Bypass (ASI version)");
+            toolsInstallBinkw32asi.setText("Install Binkw32 ASI DLC Bypass");
         }
         // no bypass installed
         toolsUninstallBinkw32.setVisible(ModManager.checkIfBinkBypassIsInstalled(GetBioGameDir()));
@@ -2991,13 +2978,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 return;
             }
             if (validateBIOGameDir()) {
-                int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
-                        "<html><div style='width: 300px'>Installing the ASI version of binkw32.dll bypass will load .asi files and run 3rd party code. Any .asi file in the same folder as MassEffect3.exe and within a subfolder named asi will be loaded at game startup. The code in these asi files will then be run like any program on your computer.<br><br>Ensure you trust the developer you download and install ASI mods from.<br><br>If you have no idea what this means, you should use the default non-asi binkw32.dll bypass option.<br><br>Install the ASI version of binkw32 bypass?</div></html>",
-                        "Potential security risk", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                if (result == JOptionPane.YES_OPTION) {
                     ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
-                    installBinkw32Bypass(true);
-                }
+                installBinkw32Bypass();
                 updateBinkBypassStatus();
             } else {
                 labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
@@ -3005,25 +2987,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
                         "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
             }
-        } else if (e.getSource() == toolsInstallBinkw32)
-
-        {
-            if (ModManager.isMassEffect3Running()) {
-                JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can install binkw32 DLC bypass.",
-                        "MassEffect3.exe is running", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            if (validateBIOGameDir()) {
-                ModManager.debugLogger.writeMessage("Installing manual Binkw32 bypass (standard).");
-                installBinkw32Bypass(false);
-                updateBinkBypassStatus();
-            } else {
-                labelStatus.setText("Installing DLC bypass requires valid BIOGame directory");
-                labelStatus.setVisible(true);
-                JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
-                        "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
-            }
-
         } else if (e.getSource() == toolsUninstallBinkw32) {
             if (ModManager.isMassEffect3Running()) {
                 JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can uninstall a binkw32 DLC bypass.",
@@ -3779,19 +3742,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         new AutoTocWindow(mod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
     }
 
-    private boolean installBinkw32Bypass(boolean asi) {
+    private boolean installBinkw32Bypass() {
         if (validateBIOGameDir()) {
-            boolean result = ModManager.installBinkw32Bypass(GetBioGameDir(), asi);
+            boolean result = ModManager.installBinkw32Bypass(GetBioGameDir());
             if (result) {
                 // ok
-                labelStatus.setText("Binkw32" + (asi ? " (ASI)" : "") + " installed. DLC will always authorize.");
+                labelStatus.setText("Binkw32 ASI installed. DLC will always authorize.");
             } else {
-                labelStatus.setText("FAILURE: Binkw32" + (asi ? " (ASI)" : "") + " not installed!");
+                labelStatus.setText("FAILURE: Binkw32 ASI not installed!");
             }
             return result;
         }
-        JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory is not valid.\nMod Manager cannot install Binkw32" + (asi ? " (ASI)" : "")
-                + ".dll DLC bypass.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(ModManagerWindow.this, "The BioGame directory is not valid.\nMod Manager cannot install Binkw32 ASI DLC bypass.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
         return false;
     }
 

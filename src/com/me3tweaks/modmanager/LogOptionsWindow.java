@@ -38,6 +38,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 
+import com.me3tweaks.modmanager.objects.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -51,10 +52,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
-import com.me3tweaks.modmanager.objects.CustomDLC;
-import com.me3tweaks.modmanager.objects.ModTypeConstants;
-import com.me3tweaks.modmanager.objects.MountFile;
-import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.EXEFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
@@ -444,15 +441,8 @@ public class LogOptionsWindow extends JDialog {
 						continue;
 					}
 					if (metacmm.exists()) {
-						String metaname = "";
-						try {
-							metaname = FileUtils.readFileToString(metacmm, Charset.defaultCharset());
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							ModManager.debugLogger.writeErrorWithException("Error reading metacmm file (" + metacmm + "):", e);
-							metaname = "[Can't read metacmm.txt]";
-						}
-						installeddlcstr += dir + " (" + metaname + ", installed by Mod Manager)\n";
+						MetaCMM meta = new MetaCMM(metacmm);
+						installeddlcstr += dir + " (" + meta.getDisplayString() + ", installed by Mod Manager)\n";
 					} else {
 						ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dir);
 						if (tpmi != null) {
