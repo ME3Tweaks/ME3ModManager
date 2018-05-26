@@ -1724,7 +1724,7 @@ public class ModManager {
      * Checks for the binkw32 bypass.
      *
      * @return true if bink23 exists and bink32 hash fails, false otherwise
-     */
+     *//*
     public static boolean checkIfBinkBypassIsInstalled(String biogameDir) {
         if (biogameDir == null) {
             return false;
@@ -1747,7 +1747,7 @@ public class ModManager {
             ModManager.debugLogger.writeErrorWithException("Exception while attempting to find DLC bypass (Binkw32).", e);
         }
         return false;
-    }
+    }*/
 
     /**
      * Checks for the ASI binkw32 bypass.

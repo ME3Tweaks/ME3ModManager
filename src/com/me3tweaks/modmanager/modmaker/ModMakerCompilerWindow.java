@@ -1914,7 +1914,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		//Mod Created!
 		if (mod == null) {
 			//updater supresses this window
-			for (ModJob job : newMod.jobs) {
+			/*for (ModJob job : newMod.jobs) {
 				if (job.getJobName().equals(ModTypeConstants.BINI)) {
 					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
@@ -1930,7 +1930,7 @@ public class ModMakerCompilerWindow extends JDialog {
 					}
 					break;
 				}
-			}
+			}*/
 			dispose();
 			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			ModManagerWindow.ACTIVE_WINDOW.highlightMod(newMod);

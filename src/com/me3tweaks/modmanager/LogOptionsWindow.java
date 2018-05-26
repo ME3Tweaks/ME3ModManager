@@ -328,8 +328,6 @@ public class LogOptionsWindow extends JDialog {
 				File gamedir = new File(ModManagerWindow.GetBioGameDir()).getParentFile();
 				if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
 					log += "Binkw32.dll Bypass is installed (ASI Version)\n";
-				} else if (ModManager.checkIfBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
-					log += "Binkw32.dll Bypass is installed (binkw32.dll is modified and binkw23.dll exists, NOT ASI VERSION)\n";
 				} else {
 					log += "No DLC bypass is installed. Modified and Custom DLC will not load.\n";
 				}

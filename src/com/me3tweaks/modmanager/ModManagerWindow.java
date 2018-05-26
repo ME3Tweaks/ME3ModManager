@@ -1803,7 +1803,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             toolsInstallBinkw32asi.setText("Install Binkw32 ASI DLC Bypass");
         }
         // no bypass installed
-        toolsUninstallBinkw32.setVisible(ModManager.checkIfBinkBypassIsInstalled(GetBioGameDir()));
+        toolsUninstallBinkw32.setVisible(ModManager.checkIfASIBinkBypassIsInstalled(GetBioGameDir()));
     }
 
     private ArrayList<Component> buildModUtilsMenu(final Mod mod) {
@@ -3678,10 +3678,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     private void startGame(String CookedDir) {
         File startingDir = new File(CookedDir);
         ModManager.debugLogger.writeMessage("Starting game.");
-        boolean binkw32bypass = ModManager.checkIfBinkBypassIsInstalled(GetBioGameDir()); // favor
-        // bink
-        // over
-        // WV
         startingDir = new File(startingDir.getParent());
         File executable = new File(startingDir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
         // check ME3 version for 1.6
