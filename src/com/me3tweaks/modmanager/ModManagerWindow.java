@@ -215,6 +215,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         }
         if (bg != null) {
             backgroundJobs.remove(bg);
+            ModManager.debugLogger.writeMessage("Released background activity job for "+bg.getTaskName());
             if (backgroundJobs.size() <= 0) {
                 setActivityIcon(false);
             }
