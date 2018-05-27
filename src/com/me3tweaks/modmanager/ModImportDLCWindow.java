@@ -77,7 +77,7 @@ public class ModImportDLCWindow extends JDialog implements ListSelectionListener
 			
 			File mountfile = new File(mainDlcDir + File.separator + dir + File.separator + "CookedPCConsole" + File.separator + "mount.dlc");
 			if (dir.toUpperCase().startsWith("DLC_") && !metacmm.exists() && mountfile.exists()) {
-				ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dir);
+                ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dir, true);
 				if (tpmi != null) {
 					model.addElement(dir + " (" + tpmi.getModname() + ")");
 				} else {

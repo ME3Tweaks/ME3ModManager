@@ -676,11 +676,13 @@ public class ME3TweaksUtils {
 	 *            Folder to search against
 	 * @return
 	 */
-	public static ThirdPartyModInfo getThirdPartyModInfo(String customdlcfoldername) {
+    public static ThirdPartyModInfo getThirdPartyModInfo(String customdlcfoldername, boolean log) {
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
 			return null;
 		}
-		ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: " + customdlcfoldername);
+        if (log) {
+            ModManager.debugLogger.writeMessage("Looking up name of mod using the 3rd party mod id service: " + customdlcfoldername);
+        }
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject dbObj = (JSONObject) parser.parse(ModManager.THIRD_PARTY_MOD_JSON);

@@ -374,7 +374,7 @@ public class ModImportArchiveWindow extends JDialog {
 			for (CompressedMod cm : compressedMods) {
 				if (!cm.isOfficiallySupported()) {
 					//Check for blacklist
-					ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(cm.getCustomDLCFolderName());
+                    ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(cm.getCustomDLCFolderName(), true);
 					if (tpmi != null && tpmi.isBlacklistedForModImport()) {
 						progressBar.setIndeterminate(false);
 						progressBar.setVisible(false);

@@ -442,7 +442,7 @@ public class LogOptionsWindow extends JDialog {
 						MetaCMM meta = new MetaCMM(metacmm);
 						installeddlcstr += dir + " (" + meta.getDisplayString() + ", installed by Mod Manager)\n";
 					} else {
-						ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dir);
+						ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dir, true);
 						if (tpmi != null) {
 							installeddlcstr += dir + " (" + tpmi.getModname() + ", not installed by Mod Manager)";
 							installeddlcstr += "\n";

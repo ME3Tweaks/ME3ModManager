@@ -347,6 +347,17 @@ public class SevenZipCompressedModInspector {
 						boolean folder = (Boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
 						if (!folder && (str == null || path.startsWith(str))) {
 							// null str means parent path resolved to nothing, extract whole folder.
+							if (str != null && !compressedMod.isOfficiallySupported()) {
+								String subPath = path.substring(str.length());
+								int subPathSlashIndex = subPath.indexOf('\\');
+								if (subPathSlashIndex > 0) {
+									String foldername = subPath.substring(0, subPathSlashIndex);
+									ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(foldername, false);
+									if (tpmi != null && !foldername.equals(compressedMod.getCustomDLCFolderName())) {
+										continue; //this is another mod in the archive
+									}
+								}
+							}
 							ModManager.debugLogger.writeMessage("Adding item to extract: " + path);
 							itemsToExtract.add(i);
 							numItems++;
@@ -548,7 +559,7 @@ public class SevenZipCompressedModInspector {
 								String cookedPCConsoleFolder = path;
 								String dlcFolderName = new File(cookedPCConsoleFolder).getParentFile().getName();
 								if (dlcFolderName != null) {
-									ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dlcFolderName);
+									ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dlcFolderName, true);
 									if (tpmi != null) {
 										ModManager.debugLogger.writeMessage("Generating compressed mod (TPMI-based) for " + tpmi.getModname());
 										Wini moddesc = new Wini();
@@ -606,7 +617,7 @@ public class SevenZipCompressedModInspector {
 				ArrayList<CompressedMod> compressed = new ArrayList<>();
 
 				for (String dlcFolderName : rootDLCFolders) {
-					ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dlcFolderName);
+					ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(dlcFolderName, true);
 					if (tpmi != null) {
 						ModManager.debugLogger.writeMessage("Generating compressed mod (UNOFFICIAL) for " + tpmi.getModname());
 

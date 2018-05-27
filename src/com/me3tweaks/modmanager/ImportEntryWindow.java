@@ -205,7 +205,7 @@ public class ImportEntryWindow extends JDialog {
 		panel.setBorder(new EmptyBorder(5, 5, 5, 5));
 
 		//check if we already got this info via 3rdparty telemetry
-		ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(new File(importPath).getName());
+        ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(new File(importPath).getName(), true);
 		if (tpmi != null) {
 			modNameField.setText(tpmi.getModname());
 			modAuthorField.setText(tpmi.getModauthor());
