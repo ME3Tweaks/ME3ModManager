@@ -709,7 +709,7 @@ public class RestoreFilesWindow extends JDialog {
 				isTestPatch = true;
 			}
 
-			if (!backupSfar.exists()) {
+            if (backupSfar == null || !backupSfar.exists()) {
 				//no normal backup.
 				String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
 				if (vanillaBackupPath == null) {
@@ -728,7 +728,7 @@ public class RestoreFilesWindow extends JDialog {
 				if (!backupSfar.exists()) {
 					publish(jobName + ": No backup exists (in-game or in vanilla copy), cannot restore.");
 					JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>No backup for " + jobName
-							+ " exists in both the install target's DLC directory and in unmodified full game copy.<br>ou'll have to restore through Origin's Repair Game feature.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
+                                    + " exists in both the install target's DLC directory and in unmodified full game copy.<br>You'll have to restore through Origin's Repair Game feature.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
 							"Error", JOptionPane.ERROR_MESSAGE);
 					return false;
 				}
