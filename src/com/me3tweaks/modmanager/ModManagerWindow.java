@@ -215,7 +215,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         }
         if (bg != null) {
             backgroundJobs.remove(bg);
-            ModManager.debugLogger.writeMessage("Released background activity job for "+bg.getTaskName());
+            ModManager.debugLogger.writeMessage("Released background activity job for " + bg.getTaskName());
             if (backgroundJobs.size() <= 0) {
                 setActivityIcon(false);
             }
@@ -1255,7 +1255,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 }
             }
         });
+        modList.addKeyListener(new KeyListener() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+                    if (modList.getSelectedIndex() >= 0) {
+                        deleteMod(modModel.getElementAt(modList.getSelectedIndex()), true);
+                    }
+                }
+            }
 
+            @Override
+            public void keyReleased(KeyEvent e) {
+            }
+
+            @Override
+            public void keyTyped(KeyEvent e) {
+            }
+        });
         JScrollPane listScroller = new JScrollPane(modList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         modlistFailedIndicatorLink = new JButton();
@@ -2192,17 +2209,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             @Override
             public void actionPerformed(ActionEvent e) {
                 ModManager.debugLogger.writeMessage("User clicked Delete Mod on " + mod.getModName());
-                int result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
-                        "Deleting this mod will remove it from Mod Manager's library.\nThis does not remove the mod if it is installed.\nThis operation cannot be reversed.\nDelete "
-                                + mod.getModName() + "?",
-                        "Confirm Mod Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                if (result == JOptionPane.OK_OPTION) {
-                    ModManager.debugLogger.writeMessage("Deleting mod: " + modModel.get(modList.getSelectedIndex()).getModPath());
-                    if (FileUtils.deleteQuietly(new File(mod.getModPath()))) {
-                        modWebsiteLink.setVisible(false);
-                        reloadModlist();
-                    }
-                }
+                deleteMod(mod,true);
             }
         });
 
@@ -2228,6 +2235,23 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         });
 
         return menuItems;
+    }
+
+    private void deleteMod(Mod mod, boolean prompt) {
+        int result = JOptionPane.OK_OPTION;
+        if (prompt) {
+            result = JOptionPane.showConfirmDialog(ModManagerWindow.this,
+                    "Deleting this mod will remove it from Mod Manager's library.\nThis does not remove the mod if it is installed.\nThis operation cannot be reversed.\nDelete "
+                            + mod.getModName() + "?",
+                    "Confirm Mod Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        }
+        if (result == JOptionPane.OK_OPTION) {
+            ModManager.debugLogger.writeMessage("Deleting mod: " + mod.getModPath());
+            if (FileUtils.deleteQuietly(new File(mod.getModPath()))) {
+                modWebsiteLink.setVisible(false);
+                reloadModlist();
+            }
+        }
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -2979,7 +3003,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 return;
             }
             if (validateBIOGameDir()) {
-                    ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
+                ModManager.debugLogger.writeMessage("Installing manual Binkw32 (ASI) bypass.");
                 installBinkw32Bypass();
                 updateBinkBypassStatus();
             } else {
