@@ -87,11 +87,6 @@ public class AboutWindow2Controller {
 	}
 
 	@FXML
-	private void openBinkw32Page() {
-		ResourceUtils.openWebpage("https://github.com/HeffU/ME3Utils");
-	}
-
-	@FXML
 	private void openBinkw32ASIPage() {
 		ResourceUtils.openWebpage("https://github.com/Erik-JS/masseffect-binkw32");
 	}
