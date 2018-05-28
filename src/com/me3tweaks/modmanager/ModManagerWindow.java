@@ -94,7 +94,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     JMenuItem backupBackupDLC, backupCreateGDB;
     JCheckBoxMenuItem backupCreateVanillaCopy;
     JMenuItem restoreSelective, restoreRevertEverything, restoreDeleteUnpacked, restoreRevertBasegame, restoreRevertAllDLC, restoreRevertSPDLC, restoreRevertMPDLC,
-            restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreRevertCoal, restoreVanillifyDLC, restoreVanillaCopy;
+            restoreRevertMPBaseDLC, restoreRevertSPBaseDLC, restoreVanillifyDLC, restoreVanillaCopy;
 
     JMenuItem modDevStarterKit, moddevOfficialDLCManager;
     JMenuItem sqlWavelistParser, sqlDifficultyParser, sqlAIWeaponParser, sqlPowerCustomActionParser, sqlPowerCustomActionParser2;
@@ -1755,8 +1755,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         restoreRevertMPBaseDLC = new JMenuItem("Restore MP DLC SFARs + Basegame");
         restoreRevertMPBaseDLC.setToolTipText(
                 "<html>Restores all basegame files, and checks all Multiplayer DLC files.<br>This does not remove custom DLC modules.<br>If you are doing multiplayer mods, you should use this to restore</html>");
-        restoreRevertCoal = new JMenuItem("Restore vanilla Coalesced.bin");
-        restoreRevertCoal.setToolTipText("<html>Restores the basegame coalesced file</html>");
 
         restoreVanillaCopy = new JMenuItem("Restore game to vanilla");
         restoreVanillaCopy.setToolTipText("<html>Restore your game from a previously created vanilla backup</html>");
@@ -1775,7 +1773,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         restoreRevertSPBaseDLC.addActionListener(this);
         restoreRevertMPDLC.addActionListener(this);
         restoreRevertMPBaseDLC.addActionListener(this);
-        restoreRevertCoal.addActionListener(this);
         restoreVanillaCopy.addActionListener(this);
 
         restoreMenuAdvanced.add(restoredeleteAllCustomDLC);
@@ -2389,20 +2386,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         "The BioGame directory is not valid.\nMod Manager cannot update or create the game repair database.\nFix the BioGame directory before continuing.",
                         "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
             }
-        } else if (e.getSource() == restoreRevertCoal) {
-            if (ModManager.isMassEffect3Running()) {
-                JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can restore game files.", "MassEffect3.exe is running",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            if (validateBIOGameDir()) {
-                restoreCoalesced(GetBioGameDir());
-            } else {
-                labelStatus.setText("Cannot restore files without valid BIOGame directory");
-                JOptionPane.showMessageDialog(ModManagerWindow.this,
-                        "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
-                        JOptionPane.ERROR_MESSAGE);
-            }
         } else if (e.getSource() == modDevStarterKit) {
             new StarterKitWindow();
         } else if (e.getSource() == moddevOfficialDLCManager) {
@@ -2541,8 +2524,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     if (JOptionPane.showConfirmDialog(this,
                             "This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
                             "Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
-
-                        restoreCoalesced(GetBioGameDir());
                         restoreDataFiles(GetBioGameDir(), RestoreMode.ALL);
                     }
                 } else {
@@ -2569,7 +2550,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         } else if (e.getSource() == actionModMaker) {
             URI theURI;
             try {
-                theURI = new URI("http://me3tweaks.com/modmaker");
+                theURI = new URI("https://me3tweaks.com/modmaker");
                 java.awt.Desktop.getDesktop().browse(theURI);
             } catch (URISyntaxException ex) {
                 // TODO Auto-generated catch block
@@ -3615,62 +3596,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         } else {
             return description + "\n\n-------------------------\n" + tip;
         }
-    }
-
-    /**
-     * Legacy method from Mod Manager 1+2 to restore the original coalesced file
-     *
-     * @param bioGameDir
-     * @return
-     */
-    private boolean restoreCoalesced(String bioGameDir) {
-        String patch3CoalescedHash = "540053c7f6eed78d92099cf37f239e8e";
-        File cOriginal = new File(ModManager.getDataDir() + "Coalesced.original");
-        if (cOriginal.exists()) {
-            // Take the MD5 first to verify it.
-            try {
-                if (patch3CoalescedHash.equals(MD5Checksum.getMD5Checksum(cOriginal.toString()))) {
-                    // file is indeed the original
-                    // Copy
-                    String destFile = ModManager.appendSlash(bioGameDir) + "CookedPCConsole\\Coalesced.bin";
-                    if (new File(destFile).exists() == false) {
-                        JOptionPane.showMessageDialog(ModManagerWindow.this,
-                                "Coalesced.bin to be restored was not found in the specified BIOGame\\CookedPCConsole directory.\nYou must fix the directory before you can restore Coalesced.",
-                                "Coalesced not found", JOptionPane.ERROR_MESSAGE);
-                        labelStatus.setText("Coalesced.bin not restored");
-                        labelStatus.setVisible(true);
-                        return false;
-                    }
-                    String sourceFile = ModManager.getDataDir() + "Coalesced.original";
-
-                    Files.copy(new File(sourceFile).toPath(), new File(destFile).toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    ModManager.debugLogger.writeMessage("Restored Coalesced.bin");
-                    labelStatus.setText("Coalesced.bin restored");
-                    labelStatus.setVisible(true);
-                    return true;
-                } else {
-                    labelStatus.setText("Coalesced.bin not restored.");
-                    labelStatus.setVisible(true);
-                    JOptionPane.showMessageDialog(ModManagerWindow.this,
-                            "Your backed up original Coalesced.bin file does not match the known original from Mass Effect 3.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.",
-                            "Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
-                    return false;
-                }
-            } catch (Exception e) {
-                ModManager.debugLogger.writeErrorWithException("Coalesced.bin was unable to be restored due to an error:", e);
-                labelStatus.setText("Coalesced.bin not restored");
-                labelStatus.setVisible(true);
-                return false;
-            }
-        } else {
-            labelStatus.setText("Coalesced.bin not restored");
-            labelStatus.setVisible(true);
-            JOptionPane.showMessageDialog(ModManagerWindow.this,
-                    "The backed up Coalesced.bin file (data/Coalesced.original) does not exist.\nYou'll need to manually restore the original (or what you call your original).\nIf you lost your original you can find a copy of Patch 3's Coalesced on http://me3tweaks.com/tools/modmanager/faq.\nYour current Coalesced has not been changed.\n\nThis error should have been caught but can be thrown due to file system changes \nwhile the program is open.",
-                    "Coalesced Backup Error", JOptionPane.ERROR_MESSAGE);
-
-        }
-        return false;
     }
 
     /**
