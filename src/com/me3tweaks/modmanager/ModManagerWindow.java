@@ -2579,7 +2579,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         if (e.getSource() == actionVisitMe) {
             URI theURI;
             try {
-                theURI = new URI("http://me3tweaks.com");
+                theURI = new URI("https://me3tweaks.com");
                 java.awt.Desktop.getDesktop().browse(theURI);
             } catch (URISyntaxException ex) {
                 // TODO Auto-generated catch block
