@@ -1913,24 +1913,6 @@ public class ModMakerCompilerWindow extends JDialog {
 		ModManager.debugLogger.writeMessage("===========END OF MODMAKER========");
 		//Mod Created!
 		if (mod == null) {
-			//updater supresses this window
-			/*for (ModJob job : newMod.jobs) {
-				if (job.getJobName().equals(ModTypeConstants.BINI)) {
-					if (ModManager.checkIfASIBinkBypassIsInstalled(ModManagerWindow.GetBioGameDir())) {
-						if (!ASIModWindow.IsASIModGroupInstalled(5)) {
-							//loader installed, no balance changes replacer
-							JOptionPane.showMessageDialog(this, "<html>" + modName
-									+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the Balance Changes Replacer ASI from<br>the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</html>",
-									"Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
-						}
-					} else {
-						JOptionPane.showMessageDialog(this, "<html><div style=\"width: 400px\">" + modName
-								+ " contains changes to the Balance Changes file.<br>For the mod to fully work you need to install the ASI loader as well as the Balance Changes Replacer ASI from the ASI Mod Management window, located at Mod Management > ASI Mod Manager.</div></html>",
-								"ASI Loader + Balance Changer Replacer ASI required", JOptionPane.WARNING_MESSAGE);
-					}
-					break;
-				}
-			}*/
 			dispose();
 			ModManagerWindow.ACTIVE_WINDOW.reloadModlist();
 			ModManagerWindow.ACTIVE_WINDOW.highlightMod(newMod);

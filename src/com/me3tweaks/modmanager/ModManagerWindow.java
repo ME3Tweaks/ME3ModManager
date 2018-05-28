@@ -56,7 +56,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -2206,7 +2205,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             @Override
             public void actionPerformed(ActionEvent e) {
                 ModManager.debugLogger.writeMessage("User clicked Delete Mod on " + mod.getModName());
-                deleteMod(mod,true);
+                deleteMod(mod, true);
             }
         });
 
@@ -3434,29 +3433,33 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     private void checkDLCIsBackedUp(Mod mod) {
         ModJob[] jobs = mod.getJobs();
         for (ModJob job : jobs) {
-            if (job.getJobType() == ModJob.BASEGAME || job.getJobType() == ModJob.CUSTOMDLC) {
-                continue; // we can't really check for a .bak of Coalesced.
+            if (job.getJobType() == ModJob.BASEGAME || job.getJobType() == ModJob.CUSTOMDLC || job.getJobType() == ModJob.BALANCE_CHANGES) {
+                continue;
             }
             // Default.sfar
-            File mainFile = new File(ModManager.appendSlash(GetBioGameDir()) + job.getDLCFilePath() + "\\Default.sfar");
-            boolean defaultsfarMainFileExists = mainFile.exists();
-            File backFile = new File(ModManager.appendSlash(GetBioGameDir()) + job.getDLCFilePath() + "\\Default.sfar.bak");
-            ModManager.debugLogger.writeMessage("Checking for backup file: " + backFile.getAbsolutePath());
-            if (!backFile.exists()) {
-                // Patch_001.sfar
-                mainFile = new File(ModManager.appendSlash(GetBioGameDir()) + job.getDLCFilePath() + "\\Patch_001.sfar");
-                boolean patch001farMainFileExists = mainFile.exists();
-                backFile = new File(ModManager.appendSlash(GetBioGameDir()) + job.getDLCFilePath() + "\\Patch_001.sfar.bak");
-                ModManager.debugLogger.writeMessage("Checking for TESTPATCH file: " + backFile.getAbsolutePath());
+            String mainFileSubpath = job.getDLCFilePath() + "\\" + (job.TESTPATCH ? "Patch_001.sfar" : "Default.sfar");
 
-                if ((defaultsfarMainFileExists || patch001farMainFileExists) && !backFile.exists()) {
-                    String YesNo[] = {"Yes", "No"}; // Yes/no buttons
-                    int showDLCBackup = JOptionPane.showOptionDialog(ModManagerWindow.ACTIVE_WINDOW,
-                            "<html>" + job.getJobName() + " DLC has not been backed up.<br>Back it up now?</hmtl>", "Backup DLC", JOptionPane.YES_NO_OPTION,
-                            JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
-                    if (showDLCBackup == 0) {
-                        autoBackupDLC(GetBioGameDir(), job.getJobName());
-                    }
+            File primaryBackupFile = new File(mainFileSubpath + ".bak");
+            ModManager.debugLogger.writeMessage("Checking for primary DLC backup file: " + primaryBackupFile.getAbsolutePath());
+
+            if (!primaryBackupFile.exists()) {
+                //check for vanilla
+                String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
+                if (vanillaBackupPath != null) {
+                    //we have backup!
+                    ModManager.debugLogger.writeMessage("Setting backup file to for vanilla full backup DLC file: " + primaryBackupFile.getAbsolutePath());
+                    primaryBackupFile = new File(vanillaBackupPath + "\\BIOGame\\" + mainFileSubpath);
+                }
+            }
+
+            if (!primaryBackupFile.exists()) {
+                ModManager.debugLogger.writeMessage("No backup could be found for " + job.getJobName() + ". Prompting for backup");
+                String YesNo[] = {"Yes", "No"}; // Yes/no buttons
+                int showDLCBackup = JOptionPane.showOptionDialog(ModManagerWindow.ACTIVE_WINDOW,
+                        "<html>" + job.getJobName() + " DLC has not been backed up.<br>Back it up now?</hmtl>", "Backup DLC", JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE, null, YesNo, YesNo[0]);
+                if (showDLCBackup == 0) {
+                    autoBackupDLC(GetBioGameDir(), job.getJobName());
                 }
             }
         }
