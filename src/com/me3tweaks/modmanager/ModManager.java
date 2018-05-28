@@ -792,6 +792,7 @@ public class ModManager {
                 resStreamOut.write(buffer, 0, readBytes);
             }
         } catch (Exception ex) {
+            ModManager.debugLogger.writeErrorWithException("Error extracting resource "+resourceName,ex);
             throw ex;
         } finally {
             stream.close();
