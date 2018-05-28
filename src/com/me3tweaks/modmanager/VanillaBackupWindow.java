@@ -133,7 +133,7 @@ public class VanillaBackupWindow extends JDialog {
 				long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(backupPath), false);
 				String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
 				backupLocMessage = "Backup location: " + backupPath + ", " + sizeHR;
-				message = "<html><div style=\"width: 300px\">A full backup is available on disk.<br>This backup is shared with the ALOT Installer.</div></html>";
+				message = "<html><div style=\"width: 300px\">A full backup is available on disk.<br>This backup is shared with ALOT Installer.</div></html>";
 			} else {
 				long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(ModManagerWindow.GetBioGameDir()), false);
 				String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);

@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -40,7 +41,7 @@ public class UnpackWindow extends JDialog {
 	String currentText;
 	JPanel checkBoxPanel;
 	JProgressBar progressBar;
-	JButton unpackButton;
+	JButton unpackButton, selectAllButton;
 
 	/**
 	 * Manually invoked unpack window
@@ -165,10 +166,23 @@ public class UnpackWindow extends JDialog {
 		checkBoxPanel.add(checkBoxPanelRight, BorderLayout.EAST);
 		rootPanel.add(checkBoxPanel, BorderLayout.CENTER);
 
+		selectAllButton = new JButton("Select all DLC");
+		selectAllButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				for (Map.Entry<String, JCheckBox> entry : checkboxMap.entrySet()) {
+					String key = entry.getKey();
+					JCheckBox value = entry.getValue();
+					if (value.isEnabled() && !key.equals("TESTPATCH")) {
+						value.setSelected(true);
+					}
+				}
+			}
+		});
+		selectAllButton.setToolTipText("Check all boxes for DLC");
+
 		unpackButton = new JButton("Unpack selected DLCs");
 		unpackButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//write to settings
 				if (ModManager.isMassEffect3Running()) {
 					JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Mass Effect 3 must be closed before you can unpack DLC.", "MassEffect3.exe is running",
 							JOptionPane.ERROR_MESSAGE);
@@ -177,9 +191,12 @@ public class UnpackWindow extends JDialog {
 				new UnpackDLCJob(ModManagerWindow.GetBioGameDir(), getJobs(), false).execute();
 			}
 		});
+		unpackButton.setToolTipText("Unpacks the selected DLCs");
 
 		JPanel unpackPanel = new JPanel(new BorderLayout());
-		unpackPanel.add(unpackButton, BorderLayout.CENTER);
+
+		unpackPanel.add(selectAllButton, BorderLayout.WEST);
+		unpackPanel.add(unpackButton, BorderLayout.EAST);
 
 		rootPanel.add(unpackPanel, BorderLayout.SOUTH);
 		rootPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
