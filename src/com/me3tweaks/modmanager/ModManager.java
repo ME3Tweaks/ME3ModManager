@@ -504,7 +504,7 @@ public class ModManager {
                         JOptionPane.showMessageDialog(null, message, "JRE Update Complete", JOptionPane.INFORMATION_MESSAGE);
                     } else if (args[2].equals("bundled")) {
                         ModManager.debugLogger.writeError("JRE update failed - same version, still using bundled!");
-                        String message = "JRE update failed.\nMod Manager may continue to prompt you to update the JRE,\nplease contact FemShep.";
+                        String message = "JRE update failed.\nMod Manager may continue to prompt you to update the JRE,\nplease contact Mgamerz.";
                         JOptionPane.showMessageDialog(null, message, "JRE Update Failed", JOptionPane.ERROR_MESSAGE);
                     }
                 } else {
@@ -628,7 +628,7 @@ public class ModManager {
         } catch (Throwable e) {
             ModManager.debugLogger.writeErrorWithException("Uncaught throwable during runtime:", e);
             JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-                    "Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to FemShep.", "Mod Manager has crashed",
+                    "Mod Manager had an uncaught exception during runtime:\n" + e.getMessage() + "\nPlease report this to Mgamerz.", "Mod Manager has crashed",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -801,40 +801,6 @@ public class ModManager {
         return jarFolder + resourceName;
     }
 
-    public static boolean installLauncherWV(String biogamedir) {
-        ModManager.debugLogger.writeMessage("Installing Launcher_WV.exe bypass");
-        File bgdir = new File(biogamedir);
-        if (!bgdir.exists()) {
-            JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-                    "The BioGame directory is not valid.\nMod Manager cannot install the DLC bypass.\nFix the BioGame directory before continuing.", "Invalid BioGame Directory",
-                    JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-
-        File gamedir = bgdir.getParentFile();
-
-        File launcherWV = new File(gamedir.toString() + "\\Binaries\\Win32\\Launcher_WV.exe");
-        ModManager.debugLogger.writeMessage("Using binary win32 folder: " + launcherWV.getAbsolutePath());
-
-        try {
-            ModManager.ExportResource("/Launcher_WV.exe", launcherWV.toString());
-        } catch (Exception e1) {
-            e1.printStackTrace();
-            if (isAdmin()) {
-                JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nPlease report this to FemShep.",
-                        "Launcher_WV.exe error", JOptionPane.ERROR_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-                        "An error occured extracting Launcher_WV.exe out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator.", "Launcher_WV.exe error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-            ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
-            return false;
-        }
-
-        return true;
-    }
-
     public static int checkforME3105(String biogamedir) {
         //Check to make sure ME3 1.05
         File executable = new File(new File(biogamedir).getParent() + "\\Binaries\\Win32\\MassEffect3.exe");
@@ -883,7 +849,7 @@ public class ModManager {
             ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
             if (isAdmin()) {
                 JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-                        "An error occurred extracting binkw32_asi.dll out of ME3CMM.exe.\nPlease report this to FemShep.",
+                        "An error occurred extracting binkw32_asi.dll out of ME3CMM.exe.\nPlease report this to Mgamerz.",
                         "binkw32 dll error", JOptionPane.ERROR_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,

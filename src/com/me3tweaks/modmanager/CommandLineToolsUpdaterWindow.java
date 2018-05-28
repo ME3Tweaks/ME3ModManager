@@ -190,7 +190,7 @@ public class CommandLineToolsUpdaterWindow extends JDialog implements PropertyCh
 						//we're still out of date...
 						ModManager.debugLogger.writeError("Downloaded command line tools does not satisfy requirements: " + installedVersion + ", needs " + minVersion);
 						publish(new ThreadCommand("DOWNLOAD_ERROR",
-								"The downloaded version of Command Line Tools does not satisfy the requirements for this version of Mod Manager.\nMod Manager will not function correctly without the correct version of Command Line Tools.\nContact FemShep about this issue - this means this build is not fully ready for release."));
+								"The downloaded version of Command Line Tools does not satisfy the requirements for this version of Mod Manager.\nMod Manager will not function correctly without the correct version of Command Line Tools.\nContact Mgamerz about this issue - this means this build is not fully ready for release."));
 						return false;
 					}
 				}

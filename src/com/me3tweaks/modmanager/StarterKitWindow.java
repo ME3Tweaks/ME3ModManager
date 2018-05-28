@@ -675,7 +675,7 @@ public class StarterKitWindow extends JDialog {
 							modname + " created", JOptionPane.INFORMATION_MESSAGE);
 				} else {
 					JOptionPane.showMessageDialog(callingDialog, modname
-							+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with a diagnostics log attached.",
+							+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact Mgamerz with a diagnostics log attached.",
 							modname + " not created", JOptionPane.ERROR_MESSAGE);
 				}
 			}

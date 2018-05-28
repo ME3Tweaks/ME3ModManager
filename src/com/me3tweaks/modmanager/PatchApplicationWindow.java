@@ -236,12 +236,12 @@ public class PatchApplicationWindow extends JDialog {
 								break;
 							case Patch.APPLY_FAILED_OTHERERROR:
 								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
-										patch.getPatchName() + " failed to apply because an unknown error occured.\nCheck the Mod Manager log, and report this to FemShep if you keep having this issue.",
+										patch.getPatchName() + " failed to apply because an unknown error occured.\nCheck the Mod Manager log, and report this to Mgamerz if you keep having this issue.",
 										"MixIn failed to apply", JOptionPane.ERROR_MESSAGE);
 								break;
 							case Patch.APPLY_FAILED_SIZE_CHANGED:
 								JOptionPane.showMessageDialog(PatchApplicationWindow.this,
-										patch.getPatchName() + " was applied but the filesize of the output file changed,\nbut this MixIn was not marked as a finalizer.\nThis error should not occur, please report it to FemShep.",
+										patch.getPatchName() + " was applied but the filesize of the output file changed,\nbut this MixIn was not marked as a finalizer.\nThis error should not occur, please report it to Mgamerz.",
 										"MixIn incorrectly marked", JOptionPane.ERROR_MESSAGE);
 								break;
 							}

@@ -842,7 +842,7 @@ public class DeltaWindow extends JDialog {
 			} catch (ExecutionException e) {
 				ModManager.debugLogger.writeErrorWithException("Unhandled Delta Application Exception:", e);
 				JOptionPane.showMessageDialog(DeltaWindow.this,
-						"An unhandled error occured while trying to apply the delta:\n" + e.getMessage() + "\n\nYou should report this to FemShep.", "Delta Error",
+						"An unhandled error occured while trying to apply the delta:\n" + e.getMessage() + "\n\nYou should report this to Mgamerz.", "Delta Error",
 						JOptionPane.ERROR_MESSAGE);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -851,7 +851,7 @@ public class DeltaWindow extends JDialog {
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Unhandled Delta Application Exception:", e);
 				JOptionPane.showMessageDialog(DeltaWindow.this,
-						"An unhandled error occured while trying to apply the delta:\n" + e.getMessage() + "\n\nYou should report this to FemShep.", "Delta Error",
+						"An unhandled error occured while trying to apply the delta:\n" + e.getMessage() + "\n\nYou should report this to Mgamerz.", "Delta Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
 			ModManager.debugLogger.writeMessage("============END OF DELTAWORKER()==============");

@@ -35,7 +35,7 @@
       <padding>
          <Insets left="4.0" />
       </padding></Label>
-	<Label text="Developed by FemShep (Mgamerz)" GridPane.columnIndex="1" GridPane.rowIndex="2">
+	<Label text="Developed by Mgamerz" GridPane.columnIndex="1" GridPane.rowIndex="2">
       <padding>
          <Insets left="4.0" />
       </padding></Label>

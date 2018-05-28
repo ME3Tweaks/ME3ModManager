@@ -12,7 +12,7 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
  * Contains data that the DLC Injector can understand. It is typically passed as
  * a property container object. (object that contains properties)
  * 
- * @author FemShep
+ * @author Mgamerz
  *
  */
 public class ModJob {

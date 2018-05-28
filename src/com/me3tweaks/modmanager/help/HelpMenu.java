@@ -109,7 +109,7 @@ public class HelpMenu {
 	 */
 	public static JMenu constructHelpMenu() {
 		JMenu helpMenu = new JMenu("Help");
-		JMenuItem helpModDescDocumentation, helpForums, helpAbout, helpLogViewer, helpGetLog, helpEmailFemShep;
+		JMenuItem helpModDescDocumentation, helpForums, helpAbout, helpLogViewer, helpGetLog, helpContactMgamerz;
 
 		helpModDescDocumentation = new JMenuItem("ModDesc File Documentation");
 		helpModDescDocumentation.setToolTipText("Opens the documentation for Mod Manager's moddesc.ini format");
@@ -121,19 +121,19 @@ public class HelpMenu {
 		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
 		helpGetLog = new JMenuItem("Generate Diagnostics Log");
 		helpGetLog.setToolTipText(
-				"<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
+				"<html>Allows you to generate a Mod Manager log with diagnostic information for Mgamerz and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
 
 		helpLogViewer = new JMenuItem("View Mod Manager log");
 		helpLogViewer.setToolTipText("<html>View the current session log</html>");
 
-		helpEmailFemShep = new JMenuItem("Contact FemShep");
-		helpEmailFemShep.setToolTipText("<html>How to contact FemShep</html>");
+		helpContactMgamerz = new JMenuItem("Contacting Mgamerz");
+		helpContactMgamerz.setToolTipText("<html>How to contact Mgamerz</html>");
 
 		HelpMenu.insertLocalHelpMenus(helpMenu);
 		helpMenu.addSeparator();
 		helpMenu.add(helpLogViewer);
 		helpMenu.add(helpGetLog);
-		helpMenu.add(helpEmailFemShep);
+		helpMenu.add(helpContactMgamerz);
 		helpMenu.addSeparator();
 		helpMenu.add(helpModDescDocumentation);
 		helpMenu.add(helpAbout);
@@ -174,11 +174,11 @@ public class HelpMenu {
 				}
 			}
 		});
-		helpEmailFemShep.addActionListener(new ActionListener() {
+		helpContactMgamerz.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-						"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>" + "Please use the ME3Tweaks Discord link in the help menu to contact me.<br>"
+						"<html><div style=\"width:400px;\">Mgamerz (also known as FemShep) is the developer of this program.<br>" + "Please use the ME3Tweaks Discord link in the help menu to contact me.<br>"
 								+ "If you have a crash or a bug I will need the Mod Manager log:<br><br>"
 								+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
 								+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
@@ -188,7 +188,7 @@ public class HelpMenu {
 								+ "Please do not do any other operations as it makes the logs harder to read.<br>"
 								+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
 								+ "Please note that I only speak English.</div></html>",
-						"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
+						"Contacting Mgamerz", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 

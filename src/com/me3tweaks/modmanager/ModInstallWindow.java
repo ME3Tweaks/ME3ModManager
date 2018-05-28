@@ -493,7 +493,7 @@ public class ModInstallWindow extends JDialog {
 					failedLoadingDB = true;
 					JOptionPane.showMessageDialog(ModInstallWindow.this, "<html>The game repair database failed to load.<br>"
 							+ "Only one connection to the local repair database is allowed at a time.<br>"
-							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to Mgamerz through the help menu.</html>",
 							"Database Failure", JOptionPane.ERROR_MESSAGE);
 					return true;
 				}
@@ -1391,7 +1391,7 @@ public class ModInstallWindow extends JDialog {
 							//cannot continue
 							JOptionPane.showMessageDialog(ModInstallWindow.this, "<html>The game repair database failed to load.<br>"
 									+ "Only one connection to the local repair database is allowed at a time.<br>"
-									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to Mgamerz through the help menu.</html>",
 									"Database Failure", JOptionPane.ERROR_MESSAGE);
 
 						}

@@ -614,7 +614,7 @@ public class ASIModWindow extends JDialog {
 					}
 					if (mod.getDownloadURL() == null) {
 						JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-								"This ASI had an error while parsing the download link. Please report this to femshep with a Mod Manager log.", "No download link available",
+								"This ASI had an error while parsing the download link. Please report this to Mgamerz with a Mod Manager log.", "No download link available",
 								JOptionPane.ERROR_MESSAGE);
 						return;
 					}
@@ -842,7 +842,7 @@ public class ASIModWindow extends JDialog {
 				}
 			}
 		} else {
-			ModManager.debugLogger.writeError("Update group is not present in the manifest: " + group + ". An ASI mod in this group cannot exist. Please report this to femshep.");
+			ModManager.debugLogger.writeError("Update group is not present in the manifest: " + group + ". An ASI mod in this group cannot exist. Please report this to Mgamerz.");
 		}
 		return false;
 	}

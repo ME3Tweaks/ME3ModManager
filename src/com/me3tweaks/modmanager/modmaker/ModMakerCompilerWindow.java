@@ -664,7 +664,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Error occured in DecompilerWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while decompiling coalesced files:\n" + e.getMessage() + "\n\nYou should report this to FemShep via the Forums link in the help menu.",
+						"An error occured while decompiling coalesced files:\n" + e.getMessage() + "\n\nYou should report this to Mgamerz via the Forums link in the help menu.",
 						"Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
@@ -751,7 +751,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Error occured in CompilerWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to recompile modified coalesced xml files into a coalesced.bin file:\n"
-						+ e.getMessage() + "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+						+ e.getMessage() + "\n\nYou should report this to Mgamerz via the ME3Tweaks Discord link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -827,7 +827,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
 						"An error occured while trying to download pristine Coalesced files from ME3Tweaks:\n" + e.getMessage()
-								+ "\n\nYou should report this to FemShep via the Forums link in the help menu.\nInclude a Mod Manager log from this session.",
+								+ "\n\nYou should report this to Mgamerz via the ME3Tweaks Discord link in the help menu.\nInclude a Mod Manager log from this session.",
 						"Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
@@ -1363,7 +1363,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Error occured in MergeWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to merge mod delta into coalesced files:\n" + e.getMessage()
-						+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+						+ "\n\nYou should report this to Mgamerz via the ME3Tweaks Discord link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -1609,7 +1609,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				ModManager.debugLogger.writeError("Error occured in TLKWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to decompile the TLK (translations) file:\n" + e.getMessage()
-						+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+						+ "\n\nYou should report this to Mgamerz via the ME3Tweaks Discord link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -1855,7 +1855,7 @@ public class ModMakerCompilerWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Mod failed validation. Setting error flag to true.");
 			error = true;
 			JOptionPane.showMessageDialog(this, modName
-					+ " was not successfully created.\nGenerate a diagnostics log from the help menu and search for errors.\nContact FemShep if you need help via the forums.",
+					+ " was not successfully created.\nGenerate a diagnostics log from the help menu and search for errors.\nContact Mgamerz if you need help via ME3Tweaks Discord.",
 					"Mod Not Created", JOptionPane.ERROR_MESSAGE);
 		}
 		/*
@@ -2012,7 +2012,7 @@ public class ModMakerCompilerWindow extends JDialog {
 				ModManager.debugLogger.writeMessage("Error occured in TOCDownloadWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this, "An error occured while trying to download the TOC files for the mod:\n" + e.getMessage()
-						+ "\n\nYou should report this to FemShep via the Forums link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
+						+ "\n\nYou should report this to Mgamerz via the ME3Tweaks Discord link in the help menu.", "Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block

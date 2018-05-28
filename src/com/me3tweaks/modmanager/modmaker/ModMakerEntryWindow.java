@@ -294,7 +294,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			}
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(ModMakerEntryWindow.this, "<html>An error occured while attempting to check prerequesites for ModMaker:<br>" + e.getMessage()
-					+ "<br>Please report this to FemShep with the Mod Manager log at femshep@me3tweaks.com.</html>", "Prerequesites Error", JOptionPane.ERROR_MESSAGE);
+					+ "<br>Please report this to Mgamerz with the Mod Manager log on the ME3Tweaks Discord.</html>", "Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		//All prereqs met.

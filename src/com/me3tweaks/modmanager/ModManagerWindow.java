@@ -158,7 +158,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
             JOptionPane.showMessageDialog(ModManagerWindow.this,
                     "<html><div style=\"width:330px;\">Mod Manager's interface (post-startup) encountered a critical unknown error and was unable to start:<br>" + emessage + "<br>"
-                            + "<br>This has been logged to the me3cmm_last_run_log.txt file next to ME3CMM.exe.<br>Please report this to FemShep.</div></html>",
+                            + "<br>This has been logged to the me3cmm_last_run_log.txt file next to ME3CMM.exe.<br>Please report this to Mgamerz.</div></html>",
                     "Critical Error", JOptionPane.ERROR_MESSAGE);
             ModManager.debugLogger.writeMessage("Shutting down...");
             System.exit(1);

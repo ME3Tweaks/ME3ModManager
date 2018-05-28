@@ -609,7 +609,7 @@ public class LogOptionsWindow extends JDialog {
 						ModManager.debugLogger.writeError("Pastebin thread NOT OK!");
 						if (pastebinlink != null && pastebinlink.equals("")) {
 							JOptionPane.showMessageDialog(LogOptionsWindow.this,
-									"An error occured uploading the log to the server.\nThe server responded, but there was nothing in the message. You should contact FemSHep as this shouldn't happen.\n\nYou can use the save to disk option and upload that as a backup for log sharing.",
+									"An error occured uploading the log to the server.\nThe server responded, but there was nothing in the message. You should contact Mgamerz as this shouldn't happen.\n\nYou can use the save to disk option and upload that as a backup for log sharing.",
 									"Upload Error", JOptionPane.ERROR_MESSAGE);
 						} else {
 							JOptionPane.showMessageDialog(LogOptionsWindow.this, "An error occured uploading the log to the server.\n" + pastebinlink

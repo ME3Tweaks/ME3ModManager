@@ -832,7 +832,7 @@ public class CustomDLCConflictWindow extends JDialog {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to generate compatibility mod");
 				statusText.setText(modName + " was not created");
 				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
-						"An error occured while generating the compatibility mod.\nOpen the log viewer to find more detailed information.\n\nIf you continue to have issues, please contact FemShep (see the help menu)\nand attach the log to your message.",
+						"An error occured while generating the compatibility mod.\nOpen the log viewer to find more detailed information.\n\nIf you continue to have issues, please contact Mgamerz (see the help menu)\nand attach the log to your message.",
 						"Mod not created", JOptionPane.ERROR_MESSAGE);
 				dispose();
 			}

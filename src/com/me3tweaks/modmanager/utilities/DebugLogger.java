@@ -19,7 +19,7 @@ import com.me3tweaks.modmanager.ModManager;
  * Used in Mod Manager 2.0 and above as a way to write console messages to a
  * file when the jar file is wrapped in the exe.
  * 
- * @author FemShep
+ * @author Mgamerz
  *
  */
 public class DebugLogger {

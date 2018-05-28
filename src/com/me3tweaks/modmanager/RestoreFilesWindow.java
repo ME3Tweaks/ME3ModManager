@@ -789,7 +789,7 @@ public class RestoreFilesWindow extends JDialog {
 
 		protected void finishRestore() {
 			ModManager.debugLogger.writeMessage("Finished restoration thread.");
-			String status = "Unknown restore operation: " + restoreMode + ", report this to FemShep";
+			String status = "Unknown restore operation: " + restoreMode + ", report this to Mgamerz";
 			switch (restoreMode) {
 			case RestoreMode.ALL:
 			case RestoreMode.BASEGAME:

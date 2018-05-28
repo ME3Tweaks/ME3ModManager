@@ -392,7 +392,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             System.exit(0);
         } catch (IOException e) {
             ModManager.debugLogger.writeErrorWithException("FAILED TO RUN JRE WORKAROUND UPDATER:", e);
-            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
+            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to Mgamerz.",
                     "Updating Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -412,7 +412,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             System.exit(0);
         } catch (IOException e) {
             ModManager.debugLogger.writeErrorWithException("FAILED TO RUN AUTO UPDATER:", e);
-            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
+            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to Mgamerz.",
                     "Updating Error", JOptionPane.ERROR_MESSAGE);
         }
     }
