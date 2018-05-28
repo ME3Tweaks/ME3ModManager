@@ -307,9 +307,9 @@ public class SelectiveRestoreWindow extends JDialog {
 			File mainSfarbackup = new File(dlcPath + "\\Default.sfar.bak");
 			File testpatchSfarbackup = new File(dlcPath + "\\Patch_001.sfar.bak");
 			ModManager.debugLogger.writeMessage("Looking for Default.sfar, Patch_001.sfar in " + filepath);
-			if (mainSfar.exists() || testpatchSfar.exists()) {
-				//SFAR exists.
-				table.setValueAt("YES", rowIndex, COL_INSTALLED);
+
+			//SFAR exists.
+				table.setValueAt(mainSfar.exists() || testpatchSfar.exists()? "YES" : "NO", rowIndex, COL_INSTALLED);
 				//check for backups
 
 				//check for vanilla backup
@@ -335,16 +335,17 @@ public class SelectiveRestoreWindow extends JDialog {
 				if (mainSfar.exists()) {
 					if (mainSfar.length() != sizesMap.get(dlcName)) {
 						table.setValueAt("MODIFIED" + (mainSfar.length() > sizesMap.get(dlcName) ? "+" : "-"), rowIndex, COL_MODIFIED);
-
 					} else {
 						table.setValueAt("ORIGINAL", rowIndex, COL_MODIFIED);
 					}
-				} else {
+				} else if (testpatchSfar.exists()){
 					if (testpatchSfar.length() != sizesMap.get(dlcName) && testpatchSfar.length() != ModTypeConstants.TESTPATCH_16_SIZE) {
 						table.setValueAt("MODIFIED" + (testpatchSfar.length() > sizesMap.get(dlcName) ? "+" : "-"), rowIndex, COL_MODIFIED);
 					} else {
 						table.setValueAt("ORIGINAL", rowIndex, COL_MODIFIED);
 					}
+				} else {
+					table.setValueAt("N/A", rowIndex, COL_MODIFIED);
 				}
 
 				//CALCULATE UNPACKED
@@ -364,22 +365,22 @@ public class SelectiveRestoreWindow extends JDialog {
 				ArrayList<String> unpackedFiles = getUnpackedFilesList(new String[] { dlcName });
 				table.setValueAt(unpackedFiles.size(), rowIndex, COL_ACTION_DEL_UNPACKED);
 				continue;
-			} else {
-				ModManager.debugLogger.writeMessage(dlcName + " folder exists, but SFAR is not present.");
-				setDLCNotInstalled(rowIndex);
-				continue;
 			}
-		}
+			//else {
+			//	ModManager.debugLogger.writeMessage(dlcName + " folder exists, but SFAR is not present.");
+		//		setDLCNotInstalled(rowIndex);
+		//		continue;
+		//	}
+
 		ModManager.debugLogger.writeMessage("===END OF UPDATING CUSTOM RESTORE TABLE===");
 	}
 
 	private void setDLCNotInstalled(int i) {
 		table.setValueAt("NO", i, COL_INSTALLED);
-		table.setValueAt("N/A", i, COL_BACKEDUP);
-		table.setValueAt("N/A", i, COL_ACTION_UNPACKED);
+		table.setValueAt("N/A", i, COL_MODIFIED);
 		table.setValueAt(0, i, COL_ACTION_UNPACKED);
 		table.setValueAt(0, i, COL_ACTION_DEL_UNPACKED);
-		table.setValueAt("", i, COL_MODIFIED);
+		table.setValueAt("N/A", i, COL_MODIFIED);
 		table.setValueAt("N/A", i, COL_BACKEDUP);
 	}
 
@@ -394,9 +395,6 @@ public class SelectiveRestoreWindow extends JDialog {
 				try {
 					Files.walk(Paths.get(dlcDirectory.getAbsolutePath()))
 							.filter(p -> !p.toString().endsWith(".sfar") && !p.toString().endsWith(".bak") && !p.toFile().isDirectory()).forEach(p -> filepaths.add(p.toString()));
-					for (String str : filepaths) {
-						System.out.println("UNPACKED FILE: " + str);
-					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					ModManager.debugLogger.writeErrorWithException("ERROR LISTING UNPACKED FILES FOR DLC: " + header, e);

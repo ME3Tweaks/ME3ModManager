@@ -270,10 +270,14 @@ public class Patch implements Comparable<Patch> {
 				if (modSourceFile == null) {
 					//couldn't copy or extract file, have nothing we can patch
 					ModManager.debugLogger.writeMessage("Unable to acquire file using original path. Attempting to pull from backup.");
-					modSourceFile = ModManager.getBackupPatchSource(targetPath, targetModule);
+					modSourceFile = ModManager.getBackupPatchSource(targetPath, targetModule,false);
 					if (modSourceFile == null) {
-						ModManager.debugLogger.writeMessage(mod.getModName() + "'s patch " + getPatchName() + " was not able to acquire a source file to patch.");
-						return APPLY_FAILED_NO_SOURCE_FILE;
+						//Fetch from vanilla backup. This could be very slow if it is on a NAS.
+						modSourceFile = ModManager.getBackupPatchSource(targetPath, targetModule,true);
+						if (modSourceFile == null) {
+							ModManager.debugLogger.writeMessage(mod.getModName() + "'s patch " + getPatchName() + " was not able to acquire a source file to patch.");
+							return APPLY_FAILED_NO_SOURCE_FILE;
+						}
 					}
 				}
 
@@ -283,7 +287,7 @@ public class Patch implements Comparable<Patch> {
 					libraryFile.delete();
 					ModManager.debugLogger.writeMessage("Initial file fetch file is not the correct size - library file deleted. Attempting lookup via cmmbackup");
 					//Check if this is backed up - we might be able to pull a backup file instead
-					modSourceFile = ModManager.getBackupPatchSource(targetPath, targetModule);
+					modSourceFile = ModManager.getBackupPatchSource(targetPath, targetModule,false);
 					if (modSourceFile != null) {
 						libraryFile = new File(modSourceFile);
 						if (libraryFile.length() != targetSize) {
@@ -292,8 +296,19 @@ public class Patch implements Comparable<Patch> {
 							return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
 						}
 					} else {
-						ModManager.debugLogger.writeError("No file that was the correct size could be used for patching.");
-						return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
+						//Fetch from vanilla backup. This could be very slow if it is on a NAS.
+						modSourceFile = ModManager.getBackupPatchSource(targetPath, targetModule, true);
+						if (modSourceFile == null) {
+							ModManager.debugLogger.writeError("No file that was the correct size could be sourced for patching.");
+							return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
+						}
+						//Fetched from vanilla backup. Check size.
+						libraryFile = new File(modSourceFile);
+						if (libraryFile.length() != targetSize) {
+							ModManager.debugLogger.writeError("Backup file that was fetched does not match patch descriptor size (" + libraryFile.length()
+									+ " vs one can be applied to: " + targetSize + ")! Unable to apply patch");
+							return APPLY_FAILED_SOURCE_FILE_WRONG_SIZE;
+						}
 					}
 				}
 

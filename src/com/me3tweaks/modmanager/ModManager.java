@@ -85,7 +85,7 @@ public class ModManager {
 
     public static final String VERSION = "5.1 Beta 6";
     public static long BUILD_NUMBER = 87L;
-    public static final String BUILD_DATE = "05/26/2018";
+    public static final String BUILD_DATE = "05/27/2018";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
@@ -102,7 +102,7 @@ public class ModManager {
     public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
     public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
     public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-    public static int MIN_REQUIRED_CMDLINE_REV = 29; //not static as i can force this via update manifest
+    public static int MIN_REQUIRED_CMDLINE_REV = 31; //not static as i can force this via update manifest
 
     private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 461308; //4.7.1
     public static ArrayList<Image> ICONS;
@@ -2724,10 +2724,17 @@ public class ModManager {
      * @param targetModule Headername, e.g. MP4
      * @return
      */
-    public static String getBackupPatchSource(String targetPath, String targetModule) {
+    public static String getBackupPatchSource(String targetPath, String targetModule, boolean vanillaBackupCopy) {
         String cmmbackup = new File(ModManagerWindow.GetBioGameDir()).getParent() + "\\cmmbackup";
-        System.out.println(cmmbackup);
-
+        if (vanillaBackupCopy) {
+                String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
+                if (vanillaBackupPath == null) {
+                    //no full vanilla backup exists
+                    ModManager.debugLogger.writeError("Vanilla backup does not exist: cannot use for mixin file fetch");
+                    return null;
+                }
+                cmmbackup = vanillaBackupPath;
+        }
         ModManager.debugLogger.writeMessage("Looking for backup patch source: " + targetPath + " in module " + targetModule);
         File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator + targetPath);
         if (sourceDestination.exists()) {
@@ -2766,8 +2773,6 @@ public class ModManager {
         } else {
             // DLC===============================================================
             // Pull from SFAR.bak
-            // Check if its unpacked
-            String gamedir = appendSlash(new File(ModManagerWindow.GetBioGameDir()).getParent());
 
             // use the sfar
             // get .sfar path
@@ -2775,6 +2780,8 @@ public class ModManager {
             if (targetModule.equals(ModTypeConstants.TESTPATCH)) {
                 sfarName = "Patch_001.sfar.bak";
             }
+
+
             String sfarPath = ModManager.appendSlash(ModManagerWindow.GetBioGameDir()) + ModManager.appendSlash(ModTypeConstants.getDLCPath(targetModule)) + sfarName;
             ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Caching " + sourceDestination.getName());
             ProcessResult pr = ModManager.ExtractFileFromSFAR(sfarPath, targetPath, sourceDestination.getParent());

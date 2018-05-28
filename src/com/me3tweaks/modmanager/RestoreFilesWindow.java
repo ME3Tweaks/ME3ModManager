@@ -657,14 +657,11 @@ public class RestoreFilesWindow extends JDialog {
 			File defaultSfar = new File(fullDLCDirectory + "Default.sfar");
 			File testpatchSfar = new File(fullDLCDirectory + "Patch_001.sfar");
 			File mainSfar = null;
-			boolean isTestpatch = false;
-			if (defaultSfar.exists()) {
+			boolean isTestpatch = jobName.equals(ModTypeConstants.TESTPATCH);
+			if (!isTestpatch) {
 				mainSfar = defaultSfar;
 			} else {
-				if (testpatchSfar.exists()) {
-					isTestpatch = true;
-					mainSfar = testpatchSfar;
-				}
+				mainSfar = testpatchSfar;
 			}
 
 			if (mainSfar == null) {
@@ -692,7 +689,7 @@ public class RestoreFilesWindow extends JDialog {
 				}
 			} else {
 				ModManager.debugLogger.writeMessage(jobName + ": DLC file does not exist: " + mainSfar.toString());
-				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping.");
+				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping size check.");
 			}
 
 			// Check for backup
@@ -703,10 +700,8 @@ public class RestoreFilesWindow extends JDialog {
 			if (defaultSfarBackup.exists()) {
 				backupSfar = defaultSfarBackup;
 			}
-			boolean isTestPatch = false;
-			if (testpatchSfar.exists()) {
+			if (isTestpatch) {
 				backupSfar = testpatchSfarBackup;
-				isTestPatch = true;
 			}
 
             if (backupSfar == null || !backupSfar.exists()) {
@@ -723,7 +718,7 @@ public class RestoreFilesWindow extends JDialog {
 				//Attempt fetch from complete game backup
 				vanillaBackupPath += "\\BIOGame\\";
 				vanillaBackupPath += ModManager.appendSlash(ModTypeConstants.getDLCPath(jobName));
-				vanillaBackupPath += isTestPatch ? "Patch_001.sfar" : "Default.sfar";
+				vanillaBackupPath += isTestpatch ? "Patch_001.sfar" : "Default.sfar";
 				backupSfar = new File(vanillaBackupPath);
 				if (!backupSfar.exists()) {
 					publish(jobName + ": No backup exists (in-game or in vanilla copy), cannot restore.");
