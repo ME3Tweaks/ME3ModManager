@@ -299,11 +299,13 @@ public class ModImportArchiveWindow extends JDialog {
 
 		private String archiveFile;
 		private int jobCode;
+		private boolean is7zfile = false;
 
 		public ScanWorker(String archiveFile) {
 			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Scanning archive for mods");
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Scanning " + FilenameUtils.getName(archiveFile));
 			this.archiveFile = archiveFile;
+			is7zfile = archiveFile.toLowerCase().endsWith(".7z");
 			checkMap.clear();
 			compressedModModel.setRowCount(0);
 			compressedMods.clear();
@@ -330,8 +332,11 @@ public class ModImportArchiveWindow extends JDialog {
 					break;
 				case "FOUND_MODFILE":
 					int data = (int) command.getData();
-					descriptionArea.setText("Scanning archive for Mod Manager mods...\nFound " + data + " potential mod" + (data != 1 ? "s" : "")
-							+ "\n\nThe progress bar may not move for a while for large mods or mods compressed as a 7z file.");
+					descriptionArea.setText("Scanning archive for Mod Manager mods...\nFound " + data + " potential mod" + (data != 1 ? "s" : ""));
+					if (is7zfile) {
+						descriptionArea.setText(descriptionArea.getText()+ "\n\nThe progress bar may not move for a while for large mods or mods compressed as a 7z file.");
+					}
+
 					break;
 				case "POST_SUBTEXT":
 					String rside = descriptionArea.getText();
