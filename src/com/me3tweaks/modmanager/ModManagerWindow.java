@@ -662,8 +662,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 return;
             }
 
+            ModManager.debugLogger.writeMessage("Environment Check: JRE - Checking for update");
             String latestjavaexehash = (String) latest_object.get("jre_latest_version_v2");
             if (!ModManager.IS_DEBUG && latestjavaexehash != null) {
+                ModManager.debugLogger.writeMessage("Environment Check: JRE -  Server has hash to check against: " + latestjavaexehash);
+
                 boolean hashMismatch = false;
                 File f = new File(ModManager.getBundledJREPath() + "bin\\java.exe");
                 if (f.exists() && ModManager.isUsingBundledJRE()) {
@@ -676,14 +679,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                                 e);
                         return;
                     }
+                    ModManager.debugLogger.writeMessage("Environment Check: JRE -  Local JRE hash: " + bundledHash);
+
                     if (!bundledHash.equals(latestjavaexehash)) {
                         hashMismatch = true;
-                        ModManager.debugLogger.writeMessage("Bundled JRE hash does not match server - likely out of date.");
+                        ModManager.debugLogger.writeMessage("Bundled JRE hash does not match server - likely out of date Advertising update to user.");
                     }
                 } else {
                     // doesn't exist - failed hash check
                     hashMismatch = true;
-                    ModManager.debugLogger.writeMessage("Bundled JRE does not exist, but we should be using one.");
+                    ModManager.debugLogger.writeMessage("Bundled JRE does not exist, but we should be using one. Advertising to user");
                 }
 
                 if (hashMismatch) {
