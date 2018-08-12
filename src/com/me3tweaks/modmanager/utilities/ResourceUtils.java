@@ -246,7 +246,6 @@ public class ResourceUtils {
 	 * @return
 	 */
 	public static String getRelativePath(String targetPath, String basePath, String pathSeparator) {
-
 		// Normalize the paths
 		String normalizedTargetPath = FilenameUtils.normalizeNoEndSeparator(targetPath);
 		String normalizedBasePath = FilenameUtils.normalizeNoEndSeparator(basePath);
@@ -255,11 +254,9 @@ public class ResourceUtils {
 		if (pathSeparator.equals("/")) {
 			normalizedTargetPath = FilenameUtils.separatorsToUnix(normalizedTargetPath);
 			normalizedBasePath = FilenameUtils.separatorsToUnix(normalizedBasePath);
-
 		} else if (pathSeparator.equals("\\")) {
 			normalizedTargetPath = FilenameUtils.separatorsToWindows(normalizedTargetPath);
 			normalizedBasePath = FilenameUtils.separatorsToWindows(normalizedBasePath);
-
 		} else {
 			throw new IllegalArgumentException("Unrecognised dir separator '" + pathSeparator + "'");
 		}
@@ -316,6 +313,9 @@ public class ResourceUtils {
 			for (int i = 0; i < numDirsUp; i++) {
 				relative.append(".." + pathSeparator);
 			}
+		}
+		if (common.length() >= normalizedTargetPath.length()) {
+			return ".";
 		}
 		relative.append(normalizedTargetPath.substring(common.length()));
 		return relative.toString();

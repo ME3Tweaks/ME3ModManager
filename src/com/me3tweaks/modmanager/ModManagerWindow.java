@@ -3266,12 +3266,12 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         }
 
         if (coalesced.exists() && dlcFolder.exists() && parentPath != null) {
-            // It exists - testing for subdirectory.
+            // It exists - testing for mod manager as subdirectory.
             String localpath = ModManager.appendSlash(System.getProperty("user.dir"));
             try {
                 if (!localpath.equalsIgnoreCase(ModManager.appendSlash(parentPath.getAbsolutePath()))) {
                     String relative = ResourceUtils.getRelativePath(localpath, ModManager.appendSlash(parentPath.getAbsolutePath()), File.separator);
-                    if (relative.startsWith("..")) {
+                    if (relative.startsWith("..") || relative.equals(".")) {
                         return true;
                     }
                 }
@@ -3861,6 +3861,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
      * @param folder Folder to grant write permissions to.
      */
     private void showFolderPermissionsGrantDialog(String folder) {
+        if (!(new File(ModManager.getCommandLineToolsDir() + "elevate.exe")).exists()) {
+            //no elevate.exe
+            return;
+        }
         String username = Advapi32Util.getUserName();
         String message = "Your user account (" + username + ") does not have write permissions to the game directory:\n";
         message += folder + "\n\n";
