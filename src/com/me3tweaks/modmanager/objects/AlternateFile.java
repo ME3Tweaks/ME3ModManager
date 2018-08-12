@@ -67,6 +67,7 @@ public class AlternateFile {
 		enabled = alt.enabled;
 		substitutefile = alt.substitutefile;
 		associatedJobName = alt.associatedJobName;
+		friendlyName = alt.friendlyName;
 	}
 
 	/**
@@ -87,7 +88,7 @@ public class AlternateFile {
 	@Override
 	public String toString() {
 		return "AlternateFile [Applies to Task=" + conditionalDLC + ", Applies with condition=" + condition + ", Operation=" + operation + ", Normal file mod uses="
-				+ conditionalDLC + ", Alternate files to use=" + altFile + "]";
+				+ modFile + ", Alternate files to use=" + altFile + "]";
 	}
 
 	public String getModFile() {
@@ -189,12 +190,10 @@ public class AlternateFile {
 		this.enabled = enabled;
 	}
 
-	public String getSubtituteFile() {
-		return substitutefile;
-	}
-
-	public void setSubstituteFile(String substitutefile) {
-		this.substitutefile = substitutefile;
+	public String getSubstituteFile() {
+		if (substitutefile != null) return substitutefile;
+		if (operation.equals(OPERATION_SUBSTITUTE)) return altFile;
+		return null;
 	}
 
 	public void setAssociatedJobName(String jobType) {

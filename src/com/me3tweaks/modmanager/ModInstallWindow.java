@@ -321,7 +321,6 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeMessage(" - Applying Automatic and Manual Alternate files to mod object");
 				mod.applyAutomaticAlternates(bioGameDir);
 				mod.applyManualAlternates(bioGameDir);
-				ModManager.debugLogger.writeMessage("App");
 				ModManager.debugLogger.writeMessage(" - Applying Manual Custom DLCs to mod object");
 				mod.applyManualCustomDLCs();
 				numjobs += mod.jobs.size();
