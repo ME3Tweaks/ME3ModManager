@@ -685,10 +685,13 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         hashMismatch = true;
                         ModManager.debugLogger.writeMessage("Bundled JRE hash does not match server - likely out of date Advertising update to user.");
                     }
-                } else {
+                } else if (f.exists() && !ModManager.isUsingBundledJRE()) {
                     // doesn't exist - failed hash check
                     hashMismatch = true;
-                    ModManager.debugLogger.writeMessage("Bundled JRE does not exist, but we should be using one. Advertising to user");
+                    ModManager.debugLogger.writeMessage("Bundled JRE exists locally - why are we not using it though...?");
+                } else if (!ModManager.isUsingBundledJRE()) {
+                    hashMismatch = true;
+                    ModManager.debugLogger.writeMessage("Bundled JRE does not exist locally, but we should be using one. Advertising to user");
                 }
 
                 if (hashMismatch) {

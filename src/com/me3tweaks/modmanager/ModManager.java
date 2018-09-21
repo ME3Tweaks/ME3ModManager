@@ -81,11 +81,10 @@ import com.sun.jna.win32.W32APIOptions;
 import javafx.embed.swing.JFXPanel;
 
 public class ModManager {
-    public static boolean IS_DEBUG = true;
-
+    public static boolean IS_DEBUG = false;
     public static final String VERSION = "5.1";
     public static long BUILD_NUMBER = 88L;
-    public static final String BUILD_DATE = "08/12/2018";
+    public static final String BUILD_DATE = "09/20/2018";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
@@ -145,11 +144,6 @@ public class ModManager {
 
     public static void main(String[] args) {
         loadLogger();
-        String gameP = "C:\\Program Files (x86)\\Origin Games\\EA\\Mass Effect 3\\";
-        String workP = "C:\\Program Files (x86)\\Origin Games\\EA\\";
-
-        String res = ResourceUtils.getRelativePath(gameP, workP, File.separator);
-
         boolean emergencyMode = false;
         boolean isUpdate = false;
         try {
