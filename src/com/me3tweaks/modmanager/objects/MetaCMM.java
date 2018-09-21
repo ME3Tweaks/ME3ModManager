@@ -43,11 +43,10 @@ public class MetaCMM {
 				}
 
 			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				modName= "_metacmm.txt not found";
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				modName= "Could not read _metacmm.txt";
+
 			}
 		}
 	}

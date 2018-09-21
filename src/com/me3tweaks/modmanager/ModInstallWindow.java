@@ -321,7 +321,6 @@ public class ModInstallWindow extends JDialog {
 				ModManager.debugLogger.writeMessage(" - Applying Automatic and Manual Alternate files to mod object");
 				mod.applyAutomaticAlternates(bioGameDir);
 				mod.applyManualAlternates(bioGameDir);
-				ModManager.debugLogger.writeMessage("App");
 				ModManager.debugLogger.writeMessage(" - Applying Manual Custom DLCs to mod object");
 				mod.applyManualCustomDLCs();
 				numjobs += mod.jobs.size();
@@ -337,7 +336,7 @@ public class ModInstallWindow extends JDialog {
 			ModManager.debugLogger.writeMessage("Checking for DLC Bypass.");
 			if (!ModManager.hasKnownDLCBypass(bioGameDir)) {
 				ModManager.debugLogger.writeMessage("No DLC bypass detected, installing binkw32 bypass...");
-				if (!ModManager.installBinkw32Bypass(bioGameDir, false)) {
+				if (!ModManager.installBinkw32Bypass(bioGameDir)) {
 					ModManager.debugLogger.writeError("Binkw32 bypass failed to install");
 				}
 			} else {
@@ -493,7 +492,7 @@ public class ModInstallWindow extends JDialog {
 					failedLoadingDB = true;
 					JOptionPane.showMessageDialog(ModInstallWindow.this, "<html>The game repair database failed to load.<br>"
 							+ "Only one connection to the local repair database is allowed at a time.<br>"
-							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to Mgamerz through the help menu.</html>",
 							"Database Failure", JOptionPane.ERROR_MESSAGE);
 					return true;
 				}
@@ -1332,12 +1331,22 @@ public class ModInstallWindow extends JDialog {
 							if (job.getJobType() == ModJob.BALANCE_CHANGES) {
 								if (ModManager.checkIfASIBinkBypassIsInstalled(bioGameDir)) {
 									if (!ASIModWindow.IsASIModGroupInstalled(5)) { //update group 5 = Balance Changes on ME3Tweaks
-										ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
+										/*ModManager.debugLogger.writeMessage("Balance changes ASI is not installed. Advertising install");
 										int result = JOptionPane.showConfirmDialog(ModInstallWindow.this,
 												"This mod contains edits to the balance changes file.\nFor these edits to take effect you need to have the Balance Changes Replacer ASI mod installed.\nOpen the ASI management window to install this?",
 												"ASI mod required", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 										if (result == JOptionPane.YES_OPTION) {
 											new ASIModWindow(new File(bioGameDir).getParent(), true);
+										}*/
+										try {
+											ModManager.debugLogger.writeMessage("Mod requires Balance Changes Replacer - installing");
+											File balancechangeseplacer = new File(new File(ModManagerWindow.GetBioGameDir()).getParent() + "\\Binaries\\Win32\\asi\\BalanceChangesReplacer.asi");
+											balancechangeseplacer.getParentFile().mkdirs();
+											ModManager.ExportResource("/BalanceChangesReplacer.asi", balancechangeseplacer.toString());
+											ModManager.debugLogger.writeMessage("Balance Changes Replacer - installed");
+											break;
+										} catch (Exception e) {
+											ModManager.debugLogger.writeErrorWithException("Error extracting balance changes replacer:", e);
 										}
 									}
 								} else {
@@ -1381,7 +1390,7 @@ public class ModInstallWindow extends JDialog {
 							//cannot continue
 							JOptionPane.showMessageDialog(ModInstallWindow.this, "<html>The game repair database failed to load.<br>"
 									+ "Only one connection to the local repair database is allowed at a time.<br>"
-									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to FemShep through the help menu.</html>",
+									+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and<br>delete the the data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to Mgamerz through the help menu.</html>",
 									"Database Failure", JOptionPane.ERROR_MESSAGE);
 
 						}

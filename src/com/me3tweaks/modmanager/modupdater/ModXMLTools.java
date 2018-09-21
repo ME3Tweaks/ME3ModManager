@@ -93,7 +93,7 @@ public class ModXMLTools {
 			}
 
 			if (mod.getClassicUpdateCode() <= 0) {
-				ModManager.debugLogger.writeError("Mod must have an ME3Tweaks update code for updating. Contact FemShep if you need one.");
+				ModManager.debugLogger.writeError("Mod must have an ME3Tweaks update code for updating. Contact Mgamerz if you need one.");
 				publish(new ThreadCommand("Mod needs an updatecode in ModInfo", "ERROR"));
 				return "";
 			}

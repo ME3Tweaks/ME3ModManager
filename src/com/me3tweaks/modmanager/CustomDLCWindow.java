@@ -67,6 +67,8 @@ public class CustomDLCWindow extends JDialog {
 		JPanel panel = new JPanel(new BorderLayout());
 		JLabel infoLabel = new JLabel("<html><center>Installed Custom DLCs<br>Disabled DLCs start with an x. Mass Effect 3 only loads DLCs that start with DLC_.</center></html>");
 		infoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        infoLabel.setBorder(new EmptyBorder(4, 4, 4, 4));
+
 		panel.add(infoLabel, BorderLayout.NORTH);
 
 		File mainDlcDir = new File(ModManager.appendSlash(bioGameDir) + "DLC/");
@@ -209,6 +211,12 @@ public class CustomDLCWindow extends JDialog {
 
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+
+        JLabel alotStatusLabel = new JLabel(ModManager.isALOTInstalled(ModManagerWindow.GetBioGameDir()) ? "ALOT (texture mod) is installed" : "ALOT (texture mod) is not installed");
+        alotStatusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        alotStatusLabel.setBorder(new EmptyBorder(4, 4, 4, 4));
+        bottomPanel.add(alotStatusLabel);
+
 		// bottomPanel.setLayout(new Flow);
 		String bypassmessage = "Your game has a DLC bypass installed. Custom DLC will be able to authorize.";
 		if (!ModManager.hasKnownDLCBypass(bioGameDir)) {

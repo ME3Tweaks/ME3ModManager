@@ -657,14 +657,11 @@ public class RestoreFilesWindow extends JDialog {
 			File defaultSfar = new File(fullDLCDirectory + "Default.sfar");
 			File testpatchSfar = new File(fullDLCDirectory + "Patch_001.sfar");
 			File mainSfar = null;
-			boolean isTestpatch = false;
-			if (defaultSfar.exists()) {
+			boolean isTestpatch = jobName.equals(ModTypeConstants.TESTPATCH);
+			if (!isTestpatch) {
 				mainSfar = defaultSfar;
 			} else {
-				if (testpatchSfar.exists()) {
-					isTestpatch = true;
-					mainSfar = testpatchSfar;
-				}
+				mainSfar = testpatchSfar;
 			}
 
 			if (mainSfar == null) {
@@ -692,7 +689,7 @@ public class RestoreFilesWindow extends JDialog {
 				}
 			} else {
 				ModManager.debugLogger.writeMessage(jobName + ": DLC file does not exist: " + mainSfar.toString());
-				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping.");
+				ModManager.debugLogger.writeMessage(jobName + " might not be installed. Skipping size check.");
 			}
 
 			// Check for backup
@@ -703,13 +700,11 @@ public class RestoreFilesWindow extends JDialog {
 			if (defaultSfarBackup.exists()) {
 				backupSfar = defaultSfarBackup;
 			}
-			boolean isTestPatch = false;
-			if (testpatchSfar.exists()) {
+			if (isTestpatch) {
 				backupSfar = testpatchSfarBackup;
-				isTestPatch = true;
 			}
 
-			if (backupSfar == null) {
+            if (backupSfar == null || !backupSfar.exists()) {
 				//no normal backup.
 				String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
 				if (vanillaBackupPath == null) {
@@ -723,12 +718,12 @@ public class RestoreFilesWindow extends JDialog {
 				//Attempt fetch from complete game backup
 				vanillaBackupPath += "\\BIOGame\\";
 				vanillaBackupPath += ModManager.appendSlash(ModTypeConstants.getDLCPath(jobName));
-				vanillaBackupPath += isTestPatch ? "Patch_001.sfar" : "Default.sfar";
+				vanillaBackupPath += isTestpatch ? "Patch_001.sfar" : "Default.sfar";
 				backupSfar = new File(vanillaBackupPath);
 				if (!backupSfar.exists()) {
 					publish(jobName + ": No backup exists (in-game or in vanilla copy), cannot restore.");
 					JOptionPane.showMessageDialog(RestoreFilesWindow.this, "<html>No backup for " + jobName
-							+ " exists in both the install target's DLC directory and in unmodified full game copy.<br>ou'll have to restore through Origin's Repair Game feature.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
+                                    + " exists in both the install target's DLC directory and in unmodified full game copy.<br>You'll have to restore through Origin's Repair Game feature.<br>Select Tools > Backup DLC to avoid this issue after the game is restored.</html>",
 							"Error", JOptionPane.ERROR_MESSAGE);
 					return false;
 				}
@@ -794,7 +789,7 @@ public class RestoreFilesWindow extends JDialog {
 
 		protected void finishRestore() {
 			ModManager.debugLogger.writeMessage("Finished restoration thread.");
-			String status = "Unknown restore operation: " + restoreMode + ", report this to FemShep";
+			String status = "Unknown restore operation: " + restoreMode + ", report this to Mgamerz";
 			switch (restoreMode) {
 			case RestoreMode.ALL:
 			case RestoreMode.BASEGAME:

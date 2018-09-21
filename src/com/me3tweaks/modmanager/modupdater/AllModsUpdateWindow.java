@@ -325,7 +325,7 @@ public class AllModsUpdateWindow extends JDialog {
 
 			if (completedUpdates.size() == 0) {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error applying updates");
-				JOptionPane.showMessageDialog(callingWindow, "No mods successfully updated.\nCheck the Mod Manager log for more info or contact FemShep for help.",
+				JOptionPane.showMessageDialog(callingWindow, "No mods successfully updated.\nCheck the Mod Manager log for more info or contact Mgamerz for help.",
 						"Mods failed to update", JOptionPane.ERROR_MESSAGE);
 			} else if (upackages.size() != completedUpdates.size()) {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Error applying some of the updates");

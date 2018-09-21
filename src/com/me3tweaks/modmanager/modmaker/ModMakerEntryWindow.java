@@ -185,14 +185,14 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 		modMakerPanel.add(getCodePane);
 		modMakerPanel.add(Box.createVerticalGlue());
 		if (!hasDLCBypass) {
-			JPanel launcherWVPanel = new JPanel();
-			launcherWVPanel.setLayout(new BoxLayout(launcherWVPanel, BoxLayout.LINE_AXIS));
-			launcherWVPanel.add(Box.createHorizontalGlue());
-			launcherWVPanel.add(new JLabel(
-					"<html>The Launcher_WV.exe DLC bypass will be installed so your mod will work.<br>To use mods you will need to use Start Game from Mod Manager.<br>Tab and ` will open the console in game.<br>Your game will not be modified by this file.</html>"),
+			JPanel binkw32Panel = new JPanel();
+			binkw32Panel.setLayout(new BoxLayout(binkw32Panel, BoxLayout.LINE_AXIS));
+			binkw32Panel.add(Box.createHorizontalGlue());
+			binkw32Panel.add(new JLabel(
+					"<html>The binkw32 DLC bypass will be installed so your mod will work.<br>Tab and ` will open the console in game.</html>"),
 					BorderLayout.CENTER);
-			launcherWVPanel.add(Box.createHorizontalGlue());
-			modMakerPanel.add(launcherWVPanel);
+			binkw32Panel.add(Box.createHorizontalGlue());
+			modMakerPanel.add(binkw32Panel);
 			//setPreferredSize(new Dimension(DIALOG_WIDTH, DIALOG_HEIGHT + 90));
 		} else {
 			//setPreferredSize(new Dimension(DIALOG_WIDTH, DIALOG_HEIGHT));
@@ -294,7 +294,7 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 			}
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(ModMakerEntryWindow.this, "<html>An error occured while attempting to check prerequesites for ModMaker:<br>" + e.getMessage()
-					+ "<br>Please report this to FemShep with the Mod Manager log at femshep@me3tweaks.com.</html>", "Prerequesites Error", JOptionPane.ERROR_MESSAGE);
+					+ "<br>Please report this to Mgamerz with the Mod Manager log on the ME3Tweaks Discord.</html>", "Prerequesites Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		//All prereqs met.
@@ -469,11 +469,11 @@ public class ModMakerEntryWindow extends JDialog implements ActionListener {
 	}
 
 	/**
-	 * Installs the LauncherWV bypass.
+	 * Installs the Binkw32 DLC bypass.
 	 * 
 	 * @return
 	 */
 	private boolean installBypass() {
-		return ModManager.installBinkw32Bypass(biogameDir, false);
+        return ModManager.installBinkw32Bypass(biogameDir);
 	}
 }

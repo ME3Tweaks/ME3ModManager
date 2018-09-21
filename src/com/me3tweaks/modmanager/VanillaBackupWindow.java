@@ -133,7 +133,7 @@ public class VanillaBackupWindow extends JDialog {
 				long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(backupPath), false);
 				String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
 				backupLocMessage = "Backup location: " + backupPath + ", " + sizeHR;
-				message = "<html><div style=\"width: 300px\">A full backup is available on disk.<br>This backup is shared with the ALOT Installer.</div></html>";
+				message = "<html><div style=\"width: 300px\">A full backup is available on disk.<br>This backup is shared with ALOT Installer.</div></html>";
 			} else {
 				long gamedirsize = ResourceUtils.GetDirectorySize(Paths.get(ModManagerWindow.GetBioGameDir()), false);
 				String sizeHR = ResourceUtils.humanReadableByteCount(gamedirsize, true);
@@ -317,8 +317,8 @@ public class VanillaBackupWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				if (backupPath != null) {
 					int response = JOptionPane.showConfirmDialog(VanillaBackupWindow.this,
-							"Your entire game installation located at\n" + ModManagerWindow.GetBioGameDir()
-									+ "\nwill be deleted (and restored from the backup) if you continue.\nAre you sure you want to do a complete restore to this directory?",
+							"Your entire game installation located at\n" + new File(ModManagerWindow.GetBioGameDir()).getParent()
+									+ "\nwill be deleted and restored from the backup.\nAre you sure you want to do a complete restore to this directory?",
 							"GAME DIRECTORY WILL BE DELETED", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 					if (response == JOptionPane.YES_OPTION) {
 						//Delete directory and copy over it.

@@ -200,12 +200,12 @@ public class CustomDLCConflictWindow extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				int result = JOptionPane.showConfirmDialog(CustomDLCConflictWindow.this,
 						"An interface mod is superceding other installed Custom DLC mods, or another mod is using interfaces\nthat won't work with controllers.\n"
-								+ "These conflicts may cause game instability or you to become locked in an interface.\n"
-								+ "Mod Manager can generate a new mod that will inject controller interfaces into these files.\n"
+								+ "These conflicts may cause game instability or you to become locked in an interface that does not support controllers.\n"
+								+ "Mod Manager can generate a new mod that will inject proper interface files into the conflicting files.\n"
 								+ "This generated mod will only apply to the current versions of the conflicting mods, so\n"
 								+ "if you update any of them, you must uninstall the generated mod and regenerate a new one.\n\n"
 								+ "Generate a GUI conflict compatibility mod?",
-						"Generate a compatibilty mod", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+						"UI mod conflicts found", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 				if (result == JOptionPane.YES_OPTION) {
 					// generate
 					String modName = "MM GUI Compatibility";
@@ -832,7 +832,7 @@ public class CustomDLCConflictWindow extends JDialog {
 				ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to generate compatibility mod");
 				statusText.setText(modName + " was not created");
 				JOptionPane.showMessageDialog(CustomDLCConflictWindow.this,
-						"An error occured while generating the compatibility mod.\nOpen the log viewer to find more detailed information.\n\nIf you continue to have issues, please contact FemShep (see the help menu)\nand attach the log to your message.",
+						"An error occured while generating the compatibility mod.\nOpen the log viewer to find more detailed information.\n\nIf you continue to have issues, please contact Mgamerz (see the help menu)\nand attach the log to your message.",
 						"Mod not created", JOptionPane.ERROR_MESSAGE);
 				dispose();
 			}

@@ -331,10 +331,6 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		buttonApplyPatch.setEnabled(false);
 		buttonApplyPatch.setToolTipText("Applies the selected MixIns to a mod");
 
-		// buttonStartGame = new JButton("Start Game");
-		// buttonStartGame.addActionListener(this);
-		// buttonStartGame.setToolTipText("Starts the game. If LauncherWV DLC
-		// bypass is installed, it will that to launch the game instead");
 		bc.anchor = GridBagConstraints.WEST;
 		bc.weightx = 1;
 		buttonPanel.add(modComboBox, bc);

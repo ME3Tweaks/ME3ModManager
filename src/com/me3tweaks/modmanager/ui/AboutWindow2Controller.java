@@ -53,12 +53,7 @@ public class AboutWindow2Controller {
 
 	@FXML
 	private void openME3ExplorerPage() {
-		ResourceUtils.openWebpage("https://github.com/ME3Explorer/ME3Explorer");
-	}
-
-	@FXML
-	private void openMassEffectModderPage() {
-		ResourceUtils.openWebpage("https://github.com/MassEffectModder/MassEffectModder");
+		ResourceUtils.openWebpage("https://github.com/Mgamerz/ME3Explorer");
 	}
 
 	@FXML
@@ -92,11 +87,6 @@ public class AboutWindow2Controller {
 	}
 
 	@FXML
-	private void openBinkw32Page() {
-		ResourceUtils.openWebpage("https://github.com/HeffU/ME3Utils");
-	}
-
-	@FXML
 	private void openBinkw32ASIPage() {
 		ResourceUtils.openWebpage("https://github.com/Erik-JS/masseffect-binkw32");
 	}
@@ -114,11 +104,6 @@ public class AboutWindow2Controller {
 	@FXML
 	private void openLaunch4jPage() {
 		ResourceUtils.openWebpage("http://launch4j.sourceforge.net/");
-	}
-
-	@FXML
-	private void openLauncherWVPage() {
-		ResourceUtils.openWebpage("https://github.com/Mgamerz/LauncherWV");
 	}
 
 	@FXML

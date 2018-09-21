@@ -109,12 +109,11 @@ public class HelpMenu {
 	 */
 	public static JMenu constructHelpMenu() {
 		JMenu helpMenu = new JMenu("Help");
-		JMenuItem helpPost, helpForums, helpAbout, helpLogViewer, helpGetLog, helpEmailFemShep;
+		JMenuItem helpModDescDocumentation, helpForums, helpAbout, helpLogViewer, helpGetLog, helpContactMgamerz;
 
-		helpPost = new JMenuItem("View FAQ");
-		helpPost.setToolTipText("Opens the Mod Manager FAQ");
-		helpForums = new JMenuItem("Forums");
-		helpForums.setToolTipText("Opens the ME3Tweaks forums");
+		helpModDescDocumentation = new JMenuItem("ModDesc File Documentation");
+		helpModDescDocumentation.setToolTipText("Opens the documentation for Mod Manager's moddesc.ini format");
+
 		helpAbout = new JMenuItem("About Mod Manager");
 		helpAbout.setToolTipText("<html>Shows credits for Mod Manager and source code information</html>");
 
@@ -122,48 +121,30 @@ public class HelpMenu {
 		helpGetLog.setToolTipText("<html>Flushes the log to disk and then copies it to the clipboard</html>");
 		helpGetLog = new JMenuItem("Generate Diagnostics Log");
 		helpGetLog.setToolTipText(
-				"<html>Allows you to generate a Mod Manager log with diagnostic information for FemShep and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
+				"<html>Allows you to generate a Mod Manager log with diagnostic information for Mgamerz and Mod Developers.<br>Allows you to automatically upload to PasteBin for super easy sharing.</html>");
 
 		helpLogViewer = new JMenuItem("View Mod Manager log");
 		helpLogViewer.setToolTipText("<html>View the current session log</html>");
 
-		helpEmailFemShep = new JMenuItem("Contact FemShep");
-		helpEmailFemShep.setToolTipText("<html>How to contact FemShep</html>");
+		helpContactMgamerz = new JMenuItem("Contacting Mgamerz");
+		helpContactMgamerz.setToolTipText("<html>How to contact Mgamerz</html>");
 
-		helpMenu.add(helpPost);
-		helpMenu.add(helpForums);
 		HelpMenu.insertLocalHelpMenus(helpMenu);
 		helpMenu.addSeparator();
 		helpMenu.add(helpLogViewer);
 		helpMenu.add(helpGetLog);
-		helpMenu.add(helpEmailFemShep);
+		helpMenu.add(helpContactMgamerz);
 		helpMenu.addSeparator();
+		helpMenu.add(helpModDescDocumentation);
 		helpMenu.add(helpAbout);
 
-		helpPost.addActionListener(new ActionListener() {
+		helpModDescDocumentation.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				URI theURI;
 				try {
-					theURI = new URI("http://me3tweaks.com/tools/modmanager/faq");
-					java.awt.Desktop.getDesktop().browse(theURI);
-				} catch (URISyntaxException ex) {
-					// TODO Auto-generated catch block
-					ex.printStackTrace();
-				} catch (IOException ex) {
-					// TODO Auto-generated catch block
-					ex.printStackTrace();
-				}
-			}
-		});
-
-		helpForums.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				URI theURI;
-				try {
-					theURI = new URI("http://me3tweaks.com/forums");
+					theURI = new URI("https://me3tweaks.com/modmanager/documentation/moddesc");
 					java.awt.Desktop.getDesktop().browse(theURI);
 				} catch (URISyntaxException ex) {
 					// TODO Auto-generated catch block
@@ -193,38 +174,21 @@ public class HelpMenu {
 				}
 			}
 		});
-		helpEmailFemShep.addActionListener(new ActionListener() {
+		helpContactMgamerz.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-						"<html><div style=\"width:400px;\">FemShep is the developer of this program.<br>" + "Please use the ME3Tweaks Discord link in the help menu to contact me.<br>"
+						"<html><div style=\"width:400px;\">Mgamerz (also known as FemShep) is the developer of this program.<br>" + "Please use the ME3Tweaks Discord link in the help menu to contact me.<br>"
 								+ "If you have a crash or a bug I will need the Mod Manager log:<br><br>"
 								+ "1. Close Mod Manager with logging enabled. Restart Mod Manager, and reproduce your issue.<br>"
 								+ "2. Immediately after the issue occurs, go to Help > Generate Diagnostics Log.<br>"
 								+ "3. Leave the default options unless instructed otherwise. Upload your log to pastebin via the button.<br>"
-								+ "4. In your message on Discord, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
+								+ "4. In your message on the ME3Tweaks Discord, give me a description of the problem and the steps you took to produce it. INCLUDE THE PASTEBIN LINK.<br>  "
 								+ "I will not look into the log to attempt to figure what issue you are having if you don't give me a description.<br>"
 								+ "Please do not do any other operations as it makes the logs harder to read.<br>"
 								+ "If you submit a crash/bug report without a Mod Manager log there is very little I can do to help you.<br>"
 								+ "Please note that I only speak English.</div></html>",
-						"Contacting FemShep", JOptionPane.INFORMATION_MESSAGE);
-			}
-		});
-		helpForums.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				URI theURI;
-				try {
-					theURI = new URI("http://me3tweaks.com/forums");
-					java.awt.Desktop.getDesktop().browse(theURI);
-				} catch (URISyntaxException ex) {
-					// TODO Auto-generated catch block
-					ex.printStackTrace();
-				} catch (IOException ex) {
-					// TODO Auto-generated catch block
-					ex.printStackTrace();
-				}
+						"Contacting Mgamerz", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
@@ -311,10 +275,7 @@ public class HelpMenu {
 
 	/**
 	 * Recursively adds lists and elements to lists using XPATH
-	 * 
-	 * @param topMenu
-	 *            Menu to add sublists and elements to
-	 * @param xmlElem
+	 *
 	 * @throws XPathExpressionException
 	 */
 	private static void buildSublist(JMenu menu, Element xmlElem, boolean validateOnly) throws XPathExpressionException {
@@ -418,6 +379,9 @@ public class HelpMenu {
 
 		String title = itemElem.getAttribute("title");
 		String tooltipText = itemElem.getAttribute("tooltip");
+		if (tooltipText == null || tooltipText.equals("")) {
+			tooltipText = itemElem.getAttribute("url");
+		}
 		String url = itemElem.getAttribute("url");
 		String content = itemElem.getTextContent();
 		String modalTitle = itemElem.getAttribute("modaltitle");

@@ -457,7 +457,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			System.exit(0);
 		} catch (IOException e) {
 			ModManager.debugLogger.writeErrorWithException("FAILED TO RUN AUTO UPDATER:", e);
-			JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
+			JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to Mgamerz.",
 					"Updating Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -517,7 +517,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("    color 0C");
 		sb.append("\r\n");
-		sb.append("    echo Mod Manager did not extract succesfully. Please report this to FemShep.");
+		sb.append("    echo Mod Manager did not extract succesfully. Please report this to Mgamerz.");
 		sb.append("\r\n");
 		sb.append("    pause");
 		sb.append("\r\n");

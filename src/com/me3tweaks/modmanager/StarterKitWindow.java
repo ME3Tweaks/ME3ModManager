@@ -155,7 +155,7 @@ public class StarterKitWindow extends JDialog {
 
 		modName.setUI(new HintTextFieldUI("A Most Excellent Mod", true));
 		modDeveloper.setUI(new HintTextFieldUI("GatorZ", true));
-		modSite.setUI(new HintTextFieldUI("http://me3tweaks.com/forums/...", true));
+		modSite.setUI(new HintTextFieldUI("https://me3tweaks.com/forums/...", true));
 		internalDLCName.setUI(new HintTextFieldUI("ExcellentMod", true));
 		internalDisplayName.setUI(new HintTextFieldUI("Excellent DLC Module", true));
 		internalTLKId.setUI(new HintTextFieldUI("13370000", true));
@@ -675,7 +675,7 @@ public class StarterKitWindow extends JDialog {
 							modname + " created", JOptionPane.INFORMATION_MESSAGE);
 				} else {
 					JOptionPane.showMessageDialog(callingDialog, modname
-							+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact FemShep with a diagnostics log attached.",
+							+ " was not successfully created.\nReview the Mod Manager log in the help menu for more detailed information.\nIf you continue to have issues contact Mgamerz with a diagnostics log attached.",
 							modname + " not created", JOptionPane.ERROR_MESSAGE);
 				}
 			}

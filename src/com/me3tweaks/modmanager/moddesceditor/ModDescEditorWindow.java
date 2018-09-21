@@ -211,7 +211,7 @@ public class ModDescEditorWindow extends JXFrame {
 
 		useUpdaterCB = new JCheckBox("Use ME3Tweaks Updater Service");
 		useUpdaterCB.setToolTipText(
-				"<html>ME3Tweaks Updater Service allows your mod to automatically update in Mod Manager for end users.<br>Using this feature requires an update code which you can request from FemShep.</html>");
+				"<html>ME3Tweaks Updater Service allows your mod to automatically update in Mod Manager for end users.<br>Using this feature requires an update code which you can request from Mgamerz.</html>");
 		JLabel updateCodeLabel = new JLabel("Update Code:");
 		JLabel updateFolderLabel = new JLabel("Server Folder:");
 		useUpdaterCB.addActionListener(new ActionListener() {

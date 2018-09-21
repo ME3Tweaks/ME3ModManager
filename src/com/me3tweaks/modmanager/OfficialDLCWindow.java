@@ -196,7 +196,7 @@ public class OfficialDLCWindow extends JDialog {
 			if (realName.toLowerCase().startsWith("xdlc_")) {
 				realName = realName.substring(1);
 			}
-			ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(realName);
+            ThirdPartyModInfo tpmi = ME3TweaksUtils.getThirdPartyModInfo(realName, true);
 			if (tpmi != null) {
 				displayName = tpmi.getModname();
 				mountPriority = tpmi.getMountPriority();

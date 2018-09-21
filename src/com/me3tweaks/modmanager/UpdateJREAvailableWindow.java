@@ -222,14 +222,11 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
 
                 publish(new ThreadCommand("EXTRACTING_JRE_UPDATE", null, totalBytesRead));
 
-                //sb.append(ModManager.get7zExePath());
-                //sb.append("\" -y x \"" + ModManager.getTempDir() + "JRE.7z\" -o\"" + ModManager.getTempDir() + "NewJREVersion\"");
-
-                String[] command = new String[]{ModManager.get7zExePath(), "-y", "x", ModManager.getTempDir() + "JRE.7z", "-o\"" + ModManager.getDataDir() + "JREUpdate\""};
+                String[] command = new String[]{ModManager.get7zExePath(), "-y", "x", ModManager.getTempDir() + "JRE.7z", "\"-o" + ModManager.getDataDir() + "JREUpdate\""};
                 ProcessBuilder extractCmd = new ProcessBuilder(command);
                 ProcessResult pr = ModManager.runProcess(extractCmd);
                 if (pr.hadError()) {
-                    System.out.println("Error has occured.");
+                    ModManager.debugLogger.writeError("Error occurred extracting JRE! Return code " + pr.getReturnCode());
                 }
                 if (!buildUpdateScript()) {
                     cancel(true);
@@ -386,13 +383,14 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         try {
 
             ModManager.debugLogger.writeMessage("Upgrading JRE.");
+            JOptionPane.showMessageDialog(null, "DEBUG: Check data folder, click OK to continue update.");
             ModManager.MOD_MANAGER_UPDATE_READY = true; //do not delete temp
             File script = new File(updaterSCriptPath);
             Desktop.getDesktop().open(script);
             System.exit(0);
         } catch (IOException e) {
             ModManager.debugLogger.writeErrorWithException("FAILED TO RUN JRE WORKAROUND UPDATER:", e);
-            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
+            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to Mgamerz.",
                     "Updating Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -412,7 +410,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             System.exit(0);
         } catch (IOException e) {
             ModManager.debugLogger.writeErrorWithException("FAILED TO RUN AUTO UPDATER:", e);
-            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to FemShep.",
+            JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Mod Manager had a critical exception attempting to run the updater.\nPlease report this to Mgamerz.",
                     "Updating Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -476,14 +474,16 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         sb.append("\r\n");
         //sb.append("pause");
         //sb.append("\r\n");
+        sb.append("echo Restarting Mod Manager...");
+        sb.append("\r\n");
         sb.append("ME3CMM.exe --jre-update-from ");
         sb.append(System.getProperty("java.version"));
         sb.append(" " + (ModManager.isUsingBundledJRE() ? "bundled" : "system"));
         sb.append("\r\n");
         sb.append("endlocal");
-        sb.append("\r\n");
-        //sb.append("pause");
         //sb.append("\r\n");
+        //sb.append("pause");
+        sb.append("\r\n");
         sb.append("call :deleteSelf&exit /b");
         sb.append("\r\n");
         sb.append(":deleteSelf");
