@@ -808,9 +808,6 @@ public class Mod implements Comparable<Mod> {
 						return;
 					}
 					for (String alt : alts) {
-						if (alts.size() == 3) {
-							System.out.println("b");
-						}
 						AlternateFile af = new AlternateFile(alt, modCMMVer);
 						af.setAssociatedJobName(ModTypeConstants.CUSTOMDLC);
 						ModManager.debugLogger.writeMessageConditionally("Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);

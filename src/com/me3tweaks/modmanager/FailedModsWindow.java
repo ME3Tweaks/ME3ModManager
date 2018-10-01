@@ -149,9 +149,9 @@ public class FailedModsWindow extends JDialog implements ListSelectionListener {
 							ModManagerWindow.ACTIVE_WINDOW.startSingleModUpdate(mod);
 							dispose();
 						} else {
-							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(".NET Framework 4.7.1 or higher is missing");
+							ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
 							ModManager.debugLogger.writeMessage("Fail Mod Restore: Missing .NET Framework");
-							new NetFrameworkMissingWindow("You must install .NET Framework 4.7.1 to restore ModMaker mods.");
+							new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" to restore ModMaker mods.");
 						}
 					} else {
 						ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Restoring ModMaker mods requires valid BIOGame");
