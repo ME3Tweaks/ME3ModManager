@@ -14,7 +14,7 @@ import java.net.URL;
 public class NetFrameworkMissingWindow extends JDialog {
     JLabel introLabel;
     JButton downloadButton;
-    private static final String netPage = "https://www.microsoft.com/en-us/download/details.aspx?id=56115";
+    private static final String netPage = "https://www.microsoft.com/net/download/dotnet-framework-runtime";
 
     public NetFrameworkMissingWindow(String text) {
         this.setTitle("No usable .NET Framework installed");
