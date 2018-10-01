@@ -43,7 +43,7 @@ public class ModManager {
     public static boolean IS_DEBUG = false;
     public static final String VERSION = "5.1";
     public static long BUILD_NUMBER = 88L;
-    public static final String BUILD_DATE = "09/20/2018";
+    public static final String BUILD_DATE = "09/30/2018";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
