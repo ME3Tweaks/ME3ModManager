@@ -383,7 +383,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         try {
 
             ModManager.debugLogger.writeMessage("Upgrading JRE.");
-            JOptionPane.showMessageDialog(null, "DEBUG: Check data folder, click OK to continue update.");
+            //JOptionPane.showMessageDialog(null, "DEBUG: Check data folder, click OK to continue update.");
             ModManager.MOD_MANAGER_UPDATE_READY = true; //do not delete temp
             File script = new File(updaterSCriptPath);
             Desktop.getDesktop().open(script);
