@@ -1,51 +1,13 @@
 package com.me3tweaks.modmanager;
 
-import java.awt.Image;
-import java.awt.Toolkit;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.StringWriter;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.prefs.Preferences;
-
-import javax.swing.ImageIcon;
-import javax.swing.JOptionPane;
-import javax.swing.ToolTipManager;
-import javax.swing.UIManager;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import com.me3tweaks.modmanager.objects.*;
+import com.me3tweaks.modmanager.utilities.*;
+import com.me3tweaks.modmanager.utilities.Version;
+import com.sun.jna.Native;
+import com.sun.jna.platform.win32.*;
+import com.sun.jna.win32.W32APIOptions;
+import javafx.embed.swing.JFXPanel;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -56,35 +18,32 @@ import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.w3c.dom.Document;
 
-import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
-import com.me3tweaks.modmanager.objects.CustomDLC;
-import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModList;
-import com.me3tweaks.modmanager.objects.ModTypeConstants;
-import com.me3tweaks.modmanager.objects.PCCDumpOptions;
-import com.me3tweaks.modmanager.objects.Patch;
-import com.me3tweaks.modmanager.objects.ProcessResult;
-import com.me3tweaks.modmanager.utilities.DebugLogger;
-import com.me3tweaks.modmanager.utilities.EXEFileInfo;
-import com.me3tweaks.modmanager.utilities.MD5Checksum;
-import com.me3tweaks.modmanager.utilities.ResourceUtils;
-import com.me3tweaks.modmanager.utilities.Version;
-import com.sun.jna.Native;
-import com.sun.jna.platform.win32.Advapi32Util;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.Tlhelp32;
-import com.sun.jna.platform.win32.WinDef;
-import com.sun.jna.platform.win32.WinNT;
-import com.sun.jna.platform.win32.WinReg;
-import com.sun.jna.win32.W32APIOptions;
-
-import javafx.embed.swing.JFXPanel;
+import javax.swing.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.awt.*;
+import java.io.*;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.prefs.Preferences;
 
 public class ModManager {
     public static boolean IS_DEBUG = false;
     public static final String VERSION = "5.1";
     public static long BUILD_NUMBER = 88L;
-    public static final String BUILD_DATE = "09/20/2018";
+    public static final String BUILD_DATE = "09/30/2018";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
@@ -103,7 +62,9 @@ public class ModManager {
     public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
     public static int MIN_REQUIRED_CMDLINE_REV = 31; //not static as i can force this via update manifest
 
-    private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 461308; //4.7.1
+    private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 461808; //4.7.2
+    public final static String MIN_REQUIRED_NET_FRAMEWORK_STR = "4.7.2";
+
     public static ArrayList<Image> ICONS;
     public static boolean AUTO_INJECT_KEYBINDS = false;
     public static boolean AUTO_UPDATE_MOD_MANAGER = true;
@@ -532,7 +493,7 @@ public class ModManager {
             doFileSystemUpdate();
             if (!validateNETFrameworkIsInstalled()) {
                 new NetFrameworkMissingWindow(
-                        "Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework 4.7.1 or higher in order to function properly. ");
+                        "Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to function properly. ");
             }
 
             if (checkIfCMMPatchIsTooLong()) {
@@ -791,7 +752,7 @@ public class ModManager {
                 resStreamOut.write(buffer, 0, readBytes);
             }
         } catch (Exception ex) {
-            ModManager.debugLogger.writeErrorWithException("Error extracting resource "+resourceName,ex);
+            ModManager.debugLogger.writeErrorWithException("Error extracting resource " + resourceName, ex);
             throw ex;
         } finally {
             stream.close();
@@ -1852,7 +1813,7 @@ public class ModManager {
         if (os.contains("Windows")) {
             int releaseNum = 0;
             String netFrameWork4Key = "SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full";
-            ModManager.debugLogger.writeMessage("Checking for .NET Framework 4.7.1 or higher registry key");
+            ModManager.debugLogger.writeMessage("Checking for .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher registry key");
             try {
                 releaseNum = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, netFrameWork4Key, "Release");
                 ModManager.debugLogger.writeMessage(".NET Framework release detected: " + releaseNum);
@@ -1866,11 +1827,11 @@ public class ModManager {
                     return false;
                 }
             } catch (com.sun.jna.platform.win32.Win32Exception keynotfoundException) {
-                ModManager.debugLogger.writeError(".NET Framework 4.7.1 registry key was not found: " + netFrameWork4Key);
+                ModManager.debugLogger.writeError(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " registry key was not found: " + netFrameWork4Key);
                 NET_FRAMEWORK_IS_INSTALLED = false;
                 return false;
             } catch (Throwable e) {
-                ModManager.debugLogger.writeErrorWithException(".NET Framework 4.7.1 detection exception:", e);
+                ModManager.debugLogger.writeErrorWithException(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " detection exception:", e);
                 NET_FRAMEWORK_IS_INSTALLED = false;
                 return false;
             }
@@ -2693,13 +2654,13 @@ public class ModManager {
     public static String getBackupPatchSource(String targetPath, String targetModule, boolean vanillaBackupCopy) {
         String cmmbackup = new File(ModManagerWindow.GetBioGameDir()).getParent() + "\\cmmbackup";
         if (vanillaBackupCopy) {
-                String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
-                if (vanillaBackupPath == null) {
-                    //no full vanilla backup exists
-                    ModManager.debugLogger.writeError("Vanilla backup does not exist: cannot use for mixin file fetch");
-                    return null;
-                }
-                cmmbackup = vanillaBackupPath;
+            String vanillaBackupPath = VanillaBackupWindow.GetFullBackupPath(false);
+            if (vanillaBackupPath == null) {
+                //no full vanilla backup exists
+                ModManager.debugLogger.writeError("Vanilla backup does not exist: cannot use for mixin file fetch");
+                return null;
+            }
+            cmmbackup = vanillaBackupPath;
         }
         ModManager.debugLogger.writeMessage("Looking for backup patch source: " + targetPath + " in module " + targetModule);
         File sourceDestination = new File(getPatchesDir() + "source/" + ME3TweaksUtils.headerNameToInternalName(targetModule) + File.separator + targetPath);
