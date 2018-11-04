@@ -1946,6 +1946,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
 
             // Populate Manual Alternate Files for Official DLC
+            boolean hasAltFiles = false;
             for (ModJob job : mod.getJobs()) {
                 if (job.getJobType() == ModJob.CUSTOMDLC) {
                     continue; // don't parse these
@@ -1970,12 +1971,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                             labelStatus.setText(item.getText() + " set to " + (item.isSelected() ? "enabled" : "disabled"));
                         }
                     });
+                    hasAltFiles = true;
                     modAlternatesMenu.add(item);
                 }
             }
 
             if (altdlcs.size() > 0) {
-                modAlternatesMenu.addSeparator();
+                if (hasAltFiles) {
+                    modAlternatesMenu.addSeparator();
+                }
                 for (AlternateCustomDLC altdlc : altdlcs) {
                     String friendlyname = altdlc.getOperation() + " due to " + altdlc.getCondition() + " for " + altdlc.getConditionalDLC();
                     if (altdlc.getFriendlyName() != null) {

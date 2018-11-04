@@ -390,30 +390,6 @@ public class ModXMLTools {
 
 	}
 
-	/**
-	 * Takes a mod and validates it against the server for latest versions (also
-	 * checks locally against hashes) This method should be run in a background
-	 * thread.
-	 * 
-	 * @param mod
-	 *            Mod to check against
-	 * @return null if up to date, otherwise updatepackage describing an
-	 *         applicable update operation
-	 */
-	public static UpdatePackage validateLatestAgainstServer(Mod mod) {
-		String updateURL = "https://me3tweaks.com/mods/getlatest";
-		ModManager.debugLogger.writeMessage("=========Checking for update of " + mod.getModName() + "=========");
-		if (mod.getModMakerCode() > 0) {
-			Document doc = getOnlineInfo(updateURL, true, mod.getModMakerCode());
-			return checkForModMakerUpdate(mod, doc);
-		}
-		if (mod.getModMakerCode() <= 0) {
-			Document doc = getOnlineInfo(updateURL, false, mod.getClassicUpdateCode());
-			return checkForClassicUpdate(mod, doc, null);
-		}
-		return null;
-	}
-
 	public static ArrayList<UpdatePackage> validateLatestAgainstServer(ArrayList<Mod> mods, AllModsDownloadTask allModsDownloadTask) {
 		String updateURL = "https://me3tweaks.com/mods/getlatest_batch";
 		ModManager.debugLogger.writeMessage("Checking for updates of the following mods:");
