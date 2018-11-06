@@ -247,7 +247,7 @@ public class LogOptionsWindow extends JDialog {
         ArrayList<String> acceptableHashes = new ArrayList<String>();
         acceptableHashes.add("1d09c01c94f01b305f8c25bb56ce9ab4"); //1.5
         acceptableHashes.add("598bf934e0f4d269f5b1657002f453ce"); //1.6
-
+        acceptableHashes.add("90d51c84b278b273e41fbe75682c132e"); //1.5 signed by EA, not sure of the difference
         String bioGameDir = ModManagerWindow.GetBioGameDir();
         if (installeddlcoption.isSelected()) {
             log += "=========[INSTALLEDDLC] Installed DLC =============\n";
