@@ -19,6 +19,7 @@ import org.ini4j.Wini;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -40,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 public class ModManager {
-    public static boolean IS_DEBUG = false;
+    public static boolean IS_DEBUG = true;
     public static final String VERSION = "5.1.1";
     public static long BUILD_NUMBER = 89L;
     public static final String BUILD_DATE = "11/04/2018";
@@ -2775,6 +2776,32 @@ public class ModManager {
             } catch (IOException e) {
                 ModManager.debugLogger.writeErrorWithException("Error checking if ALOT is installed.", e);
             }
+        }
+        return false;
+    }
+
+    /**
+     * Checks the gamersettings.ini file for vanilla versions of TEXTUREGROUP_Character_1024 and TEXTUREGROUP_World. If they are not the orignials a high res mod is assumed to be installed.
+     *
+     * @return true if TEXTUREGROUP_World and TEXTUREGROUP_Character_1024 are not their original versions, false otherwise
+     */
+    public static boolean areHighResGamerSettingsInstalled() {
+        File gamerSettings = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath() + "\\BioWare\\Mass Effect 3\\BioGame\\Config\\GamerSettings.ini");
+        if (!gamerSettings.exists()) {
+            return false;
+        }
+
+        try {
+            Wini ini = new Wini(gamerSettings);
+            ini.load(gamerSettings);
+            String HRGroupCharacter1024 = "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)";
+            String HRGroupWorld = "(MinLODSize=256,MaxLODSize=4096,LODBias=0)";
+            String textureGroupCharacter1024 = ini.get("SystemSettings", "TEXTUREGROUP_Character_1024");
+            String textureGroupWorld = ini.get("SystemSettings", "TEXTUREGROUP_World");
+            return textureGroupCharacter1024.equals(HRGroupCharacter1024) && textureGroupWorld.equals(HRGroupWorld);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            ModManager.debugLogger.writeErrorWithException("Error reading game configuration file!", e);
         }
         return false;
     }

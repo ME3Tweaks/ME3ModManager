@@ -3837,8 +3837,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     ModManager.debugLogger.writeMessage("Selected path: " + selectedGamePath);
                     if (currentpath != null && !currentpath.equalsIgnoreCase(selectedGamePath)) {
                         // Update registry key.
-                        boolean is64bit = ResourceUtils.is64BitWindows();
-                        String keypath = is64bit ? "HKLM\\SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3" : "HKLM\\SOFTWARE\\BioWare\\Mass Effect 3";
+                        String keypath = "HKLM\\SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
                         ArrayList<String> command = new ArrayList<String>();
                         command.add(ModManager.getCommandLineToolsDir() + "elevate.exe");
                         command.add("-c");
@@ -3857,6 +3856,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         ProcessResult pr = ModManager.runProcess(pb);
                         if (pr.getReturnCode() == 0) {
                             ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updated registry key to point to selected installation");
+                        }
+
+                        //Get ALOT status of this new target
+                        boolean alotInstalled = ModManager.isALOTInstalled(selectedPath);
+                        boolean highResSettings = ModManager.areHighResGamerSettingsInstalled();
+                        if (alotInstalled && !highResSettings) {
+                            //offer to upgrade
+                            int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, "The current texture settings are default quality, however ALOT is detected as installed.\nUpdate your texture settings to ALOT's high quality settings?", "Upgrade texture settings", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                        } else if (!alotInstalled && highResSettings) {
+                            //offer to revert
+                            int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, "The current texture settings are high quality, however ALOT is not detected as installed.\nThis will cause black textures and potential crashes due to null mips in game files.\nDowngrading to the defaults will prevent this issue.\nDowngrade your texture settings to the defaults?", "Downgrade texture settings", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
                         }
                     }
                 } else {
