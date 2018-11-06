@@ -113,7 +113,7 @@ public class AllModsUpdateWindow extends JDialog {
 		int jobCode;
 
 		public AllModsDownloadTask() {
-			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Checking all mods for updates");
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("AllModsUpdateCheck","Checking all mods for updates");
 		}
 
 		/**

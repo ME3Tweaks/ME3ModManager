@@ -45,6 +45,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -61,6 +62,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -198,6 +200,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     }
 
     /**
+     * Submits a background job indicator. When the task is complete you then
+     * submit a task completion and when the list is empty the activity
+     * indicator will stop.
+     *
+     * @param taskname Name of the task.
+     * @param uiText Text to display on the UI statusbar if this is the last remaining task
+     * @return hashcode of the task that requires submission to end the task.
+     */
+    public int submitBackgroundJob(String taskname, String uiText) {
+        MainUIBackgroundJob bg = new MainUIBackgroundJob(taskname, uiText);
+        backgroundJobs.add(bg);
+        setActivityIcon(true);
+        return bg.hashCode();
+    }
+
+    /**
      * Submits a completion request to the main interface using the originally
      * returned code. When all jobs are cleared, the activity indicator is
      * hidden.
@@ -217,6 +235,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             ModManager.debugLogger.writeMessage("Released background activity job for " + bg.getTaskName());
             if (backgroundJobs.size() <= 0) {
                 setActivityIcon(false);
+            } else if (backgroundJobs.size() == 1 && backgroundJobs.get(0).getUIText() != null) {
+                labelStatus.setText(backgroundJobs.get(0).getUIText());
             }
         }
     }
@@ -224,7 +244,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     private void initializeWindow() {
         setupWindow();
         pack();
-        setLocationRelativeTo(null);
         if (isUpdate) {
             JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER
                     + ").\nYou can access the changelog via the Help menu.", "Update Complete", JOptionPane.INFORMATION_MESSAGE);
@@ -950,7 +969,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         public SingleModUpdateCheckThread(Mod mod) {
             this.mod = mod;
             labelStatus.setText("Checking for " + mod.getModName() + " updates");
-            jobCode = submitBackgroundJob("Checking for " + mod.getModName() + " updates");
+            jobCode = submitBackgroundJob("SingleModUpdate","Checking for " + mod.getModName() + " updates");
         }
 
         @Override
@@ -3864,31 +3883,110 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         if (alotInstalled && !highResSettings) {
                             //offer to upgrade
                             int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, "The current texture settings are default quality, however ALOT is detected as installed.\nUpdate your texture settings to ALOT's high quality settings?", "Upgrade texture settings", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                            if (result == JOptionPane.YES_OPTION) {
+                                File gamerSettings = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath() + "\\BioWare\\Mass Effect 3\\BioGame\\Config\\GamerSettings.ini");
+                                if (gamerSettings.exists()) {
+                                    try {
+                                        Wini ini = new Wini(gamerSettings);
+                                        ini.load(gamerSettings);
+                                        ini.put("SystemSettings", "TEXTUREGROUP_World", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_WorldSpecular", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_WorldNormalMap", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_AmbientLightMap", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_ShadowMap", "(MinLODSize=1024,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_RenderTarget", "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_64", "(MinLODSize=128,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_128", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_256", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_512", "(MinLODSize=1024,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_1024", "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_64", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_128", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_256", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_512", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_1024", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_APL_128", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_APL_256", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_APL_512", "(MinLODSize=1024,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_APL_1024", "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_UI", "(MinLODSize=64,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Promotional", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Character_1024", "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Character_Diff", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Character_Norm", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Character_Spec", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.store();
+                                        ModManager.debugLogger.writeMessage("Updated LODs for ALOT (HR)");
+                                    } catch (Exception ex) {
+                                        // TODO Auto-generated catch block
+                                        ModManager.debugLogger.writeErrorWithException("Error updating game LODs!", ex);
+                                    }
+                                }
+                            }
                         } else if (!alotInstalled && highResSettings) {
                             //offer to revert
                             int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, "The current texture settings are high quality, however ALOT is not detected as installed.\nThis will cause black textures and potential crashes due to null mips in game files.\nDowngrading to the defaults will prevent this issue.\nDowngrade your texture settings to the defaults?", "Downgrade texture settings", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-
+                            if (result == JOptionPane.YES_OPTION) {
+                                File gamerSettings = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath() + "\\BioWare\\Mass Effect 3\\BioGame\\Config\\GamerSettings.ini");
+                                if (gamerSettings.exists()) {
+                                    try {
+                                        Wini ini = new Wini(gamerSettings);
+                                        ini.load(gamerSettings);
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_World");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_WorldSpecular");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_WorldNormalMap");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_AmbientLightMap");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_ShadowMap");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_RenderTarget");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_64");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_128");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_256");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_512");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_1024");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_64");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_128");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_256");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_512");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_1024");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_128");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_256");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_512");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_1024");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_UI");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Promotional");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_1024");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Diff");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Norm");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Spec");
+                                        ini.store();
+                                        ModManager.debugLogger.writeMessage("Updated LODs for non-ALOT (normal)");
+                                    } catch (Exception ex) {
+                                        // TODO Auto-generated catch block
+                                        ModManager.debugLogger.writeErrorWithException("Error downgrading game LODs!", ex);
+                                    }
+                                }
+                            }
+                        } else {
+                            ModManager.debugLogger.writeMessage("Updated game path, checked LODS, looked OK");
                         }
-                    }
-                } else {
-                    ModManager.debugLogger.writeMessage("REGISTRY PATH NOT FOUND. There's a likely reason...");
-                }
 
-                // CHECK WRITE PERMISSIONS
-                File biogame = new File(selectedGamePath + "\\BIOGame");
-                File selectedGamePathF = new File(selectedGamePath);
-                File cookedPCConsole = new File(selectedGamePath + "\\BIOGame\\CookedPCConsole");
+                        // CHECK WRITE PERMISSIONS
+                        File biogame = new File(selectedGamePath + "\\BIOGame");
+                        File selectedGamePathF = new File(selectedGamePath);
+                        File cookedPCConsole = new File(selectedGamePath + "\\BIOGame\\CookedPCConsole");
 
-                if (biogame.exists() && selectedGamePathF.exists() && cookedPCConsole.exists()) { //prevents it from thinking it is unable to write due to non-existence
-                    if (biogame.isDirectory() && selectedGamePathF.isDirectory() && cookedPCConsole.isDirectory()) { //make sure it is a folder so we can write into sub
-                        boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
-                                && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
-                        if (!hasWritePermissions) {
-                            showFolderPermissionsGrantDialog(selectedGamePath);
+                        if (biogame.exists() && selectedGamePathF.exists() && cookedPCConsole.exists()) { //prevents it from thinking it is unable to write due to non-existence
+                            if (biogame.isDirectory() && selectedGamePathF.isDirectory() && cookedPCConsole.isDirectory()) { //make sure it is a folder so we can write into sub
+                                boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
+                                        && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
+                                if (!hasWritePermissions) {
+                                    showFolderPermissionsGrantDialog(selectedGamePath);
+                                }
+                            }
                         }
+                        validateBIOGameDir(); // reset upper state
                     }
                 }
-                validateBIOGameDir(); // reset upper state
             }
         }
     }

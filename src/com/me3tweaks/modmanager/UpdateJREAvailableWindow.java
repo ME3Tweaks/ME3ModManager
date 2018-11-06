@@ -364,7 +364,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             pack();
             DownloadTask task = new DownloadTask(ModManager.getTempDir());
             task.addPropertyChangeListener(this);
-            jreUpdateTask = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("JREUpdate");
+            jreUpdateTask = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("JREUpdate","Updating JRE");
             ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updating JRE...");
 
             task.execute();

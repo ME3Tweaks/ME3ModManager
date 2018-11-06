@@ -81,7 +81,7 @@ public class ModXMLTools {
 			if (changelog != null && !changelog.equals("")) {
 				this.changelog = changelog;
 			}
-			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ManifestGenerator");
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ManifestGenerator", "Preparing mod for updater service");
 		}
 
 		@Override

@@ -2798,7 +2798,7 @@ public class ModManager {
             String HRGroupWorld = "(MinLODSize=256,MaxLODSize=4096,LODBias=0)";
             String textureGroupCharacter1024 = ini.get("SystemSettings", "TEXTUREGROUP_Character_1024");
             String textureGroupWorld = ini.get("SystemSettings", "TEXTUREGROUP_World");
-            return textureGroupCharacter1024.equals(HRGroupCharacter1024) && textureGroupWorld.equals(HRGroupWorld);
+            return textureGroupCharacter1024!= null && textureGroupWorld != null && textureGroupCharacter1024.equals(HRGroupCharacter1024) && textureGroupWorld.equals(HRGroupWorld);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             ModManager.debugLogger.writeErrorWithException("Error reading game configuration file!", e);

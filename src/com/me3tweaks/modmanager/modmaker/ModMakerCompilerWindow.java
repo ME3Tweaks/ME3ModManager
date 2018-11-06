@@ -119,7 +119,7 @@ public class ModMakerCompilerWindow extends JDialog {
 		this.code = code;
 		this.languages = languages;
 		setupWindow();
-		jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Compiling ModMaker Mod");
+		jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ModMakerCompiler","Compiling ModMaker Mod");
 		ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Compiling ModMaker Mod...");
 		new ModDownloadWorker().execute();
 
