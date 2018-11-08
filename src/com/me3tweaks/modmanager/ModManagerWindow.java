@@ -3384,7 +3384,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             Mod mod = modModel.get(index);
 
             // Precheck all required items
-            ArrayList<String> requiredHeaders = mod.getRequiredDLCHeaders();
+            ArrayList<String> requiredHeadersExplicit = mod.getRequiredDLCHeaders();
+            List<String> requiredHeaders = requiredHeadersExplicit.stream()
+                    .map(String::toUpperCase)
+                    .collect(Collectors.toList());
             if (requiredHeaders.size() > 0) {
                 ArrayList<String> installedDLC = ModManager.getInstalledDLC(GetBioGameDir());
                 if (!installedDLC.containsAll(requiredHeaders)) {
@@ -3566,7 +3569,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         buttonApplyMod.setEnabled(false);
                     }
 
-                    ArrayList<String> requiredHeaders = selectedMod.getRequiredDLCHeaders();
+                    ArrayList<String> requiredHeadersExplicit = selectedMod.getRequiredDLCHeaders();
+                    List<String> requiredHeaders = requiredHeadersExplicit.stream()
+                            .map(String::toUpperCase)
+                            .collect(Collectors.toList());
                     if (requiredHeaders.size() > 0) {
                         ArrayList<String> installedDLC = ModManager.getInstalledDLC(GetBioGameDir());
                         if (installedDLC.containsAll(requiredHeaders)) {
