@@ -3494,7 +3494,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             // Default.sfar
             String mainFileSubpath = job.getDLCFilePath() + "\\" + (job.TESTPATCH ? "Patch_001.sfar" : "Default.sfar");
 
-            File primaryBackupFile = new File(mainFileSubpath + ".bak");
+            File primaryBackupFile = new File(GetBioGameDir() + "\\" + mainFileSubpath + ".bak");
             ModManager.debugLogger.writeMessage("Checking for primary DLC backup file: " + primaryBackupFile.getAbsolutePath());
 
             if (!primaryBackupFile.exists()) {
