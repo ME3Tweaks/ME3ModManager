@@ -451,7 +451,7 @@ public class BackupWindow extends JDialog {
 				statusLabel.setText("<html><center>Preparing to backup DLC<br>Please wait</center></html>");
 			}
 
-			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("DLCBackup");
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("DLCBackup", "Backing up DLC...");
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Backing up DLC...");
 			this.closeOnComplete = closeOnComplete;
 			this.jobs = jobs;

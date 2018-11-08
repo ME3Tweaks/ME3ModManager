@@ -1,7 +1,15 @@
 package com.me3tweaks.modmanager.objects;
 
 public class MainUIBackgroundJob {
-	@Override
+	private String uiText;
+	private String taskName;
+
+	public MainUIBackgroundJob(String taskname, String uiText) {
+		this.taskName = taskName;
+		this.uiText = uiText;
+	}
+
+    @Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
@@ -24,12 +32,10 @@ public class MainUIBackgroundJob {
 	public String getTaskName() {
 		return taskName;
 	}
-
-	public void setTaskName(String taskName) {
-		this.taskName = taskName;
+	public String getUIText() {
+		return uiText;
 	}
 
-	private String taskName;
 
 	public MainUIBackgroundJob(String taskName) {
 		this.taskName = taskName;

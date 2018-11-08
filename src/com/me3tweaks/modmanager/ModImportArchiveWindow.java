@@ -302,7 +302,7 @@ public class ModImportArchiveWindow extends JDialog {
 		private boolean is7zfile = false;
 
 		public ScanWorker(String archiveFile) {
-			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Scanning archive for mods");
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ArchiveScan","Scanning archive for mods");
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Scanning " + FilenameUtils.getName(archiveFile));
 			this.archiveFile = archiveFile;
 			is7zfile = archiveFile.toLowerCase().endsWith(".7z");
@@ -428,7 +428,7 @@ public class ModImportArchiveWindow extends JDialog {
 			// TODO Auto-generated constructor stub
 			this.archiveFilePath = archiveFilePath;
 			this.modsToImport = modsToImport;
-			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Importing Mods");
+			jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Importing Mods", "Importing mod(s)...");
 			ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Importing " + (modsToImport.size() != 1 ? "mods" : modsToImport.get(0).getModName()));
 			descriptionArea.setText("Importing mods into Mod Manager...");
 			progressBar.setIndeterminate(true);

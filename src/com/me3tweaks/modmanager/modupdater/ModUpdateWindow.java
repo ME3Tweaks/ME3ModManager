@@ -75,7 +75,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
      * @param frame
      */
     public void startUpdate(JFrame frame) {
-        jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Updating singlemod");
+        jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("SingleModUpdate","Updating mod");
         ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updating " + upackage.getMod().getModName());
         if (upackage.isModmakerupdate()) {
             //get default language
@@ -98,7 +98,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
      * @param amuw
      */
     public boolean startAllModsUpdate(AllModsUpdateWindow amuw) {
-        jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Updating multimod");
+        jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("MultimodUpdate","Updating mods");
         ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updating " + upackage.getMod().getModName());
         if (upackage.isModmakerupdate()) {
             //validate biogamedir (TLK)

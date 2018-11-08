@@ -45,6 +45,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -61,6 +62,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -198,6 +200,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     }
 
     /**
+     * Submits a background job indicator. When the task is complete you then
+     * submit a task completion and when the list is empty the activity
+     * indicator will stop.
+     *
+     * @param taskname Name of the task.
+     * @param uiText Text to display on the UI statusbar if this is the last remaining task
+     * @return hashcode of the task that requires submission to end the task.
+     */
+    public int submitBackgroundJob(String taskname, String uiText) {
+        MainUIBackgroundJob bg = new MainUIBackgroundJob(taskname, uiText);
+        backgroundJobs.add(bg);
+        setActivityIcon(true);
+        return bg.hashCode();
+    }
+
+    /**
      * Submits a completion request to the main interface using the originally
      * returned code. When all jobs are cleared, the activity indicator is
      * hidden.
@@ -217,6 +235,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             ModManager.debugLogger.writeMessage("Released background activity job for " + bg.getTaskName());
             if (backgroundJobs.size() <= 0) {
                 setActivityIcon(false);
+            } else if (backgroundJobs.size() == 1 && backgroundJobs.get(0).getUIText() != null) {
+                labelStatus.setText(backgroundJobs.get(0).getUIText());
             }
         }
     }
@@ -224,7 +244,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     private void initializeWindow() {
         setupWindow();
         pack();
-        setLocationRelativeTo(null);
         if (isUpdate) {
             JOptionPane.showMessageDialog(this, "Update successful: Updated to Mod Manager " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER
                     + ").\nYou can access the changelog via the Help menu.", "Update Complete", JOptionPane.INFORMATION_MESSAGE);
@@ -950,7 +969,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         public SingleModUpdateCheckThread(Mod mod) {
             this.mod = mod;
             labelStatus.setText("Checking for " + mod.getModName() + " updates");
-            jobCode = submitBackgroundJob("Checking for " + mod.getModName() + " updates");
+            jobCode = submitBackgroundJob("SingleModUpdate","Checking for " + mod.getModName() + " updates");
         }
 
         @Override
@@ -1365,7 +1384,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
             buttonApplyMod.setToolTipText("Select a mod on the left");
         } else {
-            buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to install mods");
+            buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to install mods");
         }
         buttonStartGame = new JButton("Start Game");
         buttonStartGame.addActionListener(this);
@@ -1444,7 +1463,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else {
             buttonApplyMod.setText(".NET Missing");
-            buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to install mods");
+            buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to install mods");
             buttonApplyMod.setEnabled(false);
         }
     }
@@ -1946,6 +1965,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
 
             // Populate Manual Alternate Files for Official DLC
+            boolean hasAltFiles = false;
             for (ModJob job : mod.getJobs()) {
                 if (job.getJobType() == ModJob.CUSTOMDLC) {
                     continue; // don't parse these
@@ -1970,12 +1990,15 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                             labelStatus.setText(item.getText() + " set to " + (item.isSelected() ? "enabled" : "disabled"));
                         }
                     });
+                    hasAltFiles = true;
                     modAlternatesMenu.add(item);
                 }
             }
 
             if (altdlcs.size() > 0) {
-                modAlternatesMenu.addSeparator();
+                if (hasAltFiles) {
+                    modAlternatesMenu.addSeparator();
+                }
                 for (AlternateCustomDLC altdlc : altdlcs) {
                     String friendlyname = altdlc.getOperation() + " due to " + altdlc.getCondition() + " for " + altdlc.getConditionalDLC();
                     if (altdlc.getFriendlyName() != null) {
@@ -2099,9 +2122,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         new SingleModUpdateCheckThread(mod).execute();
                     } else {
                         updateApplyButton();
-                        labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                        labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                         ModManager.debugLogger.writeMessage("Single mode updater: Missing .NET Framework");
-                        new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" to update ModMaker mods.");
+                        new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " to update ModMaker mods.");
                     }
                 } else {
                     labelStatus.setText("Updating ModMaker mods requires valid BIOGame");
@@ -2124,9 +2147,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         new SingleModUpdateCheckThread(cloneMod).execute();
                     } else {
                         updateApplyButton();
-                        labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                        labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                         ModManager.debugLogger.writeMessage("Single mode updater: Missing .NET Framework");
-                        new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" to update ModMaker mods.");
+                        new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " to update ModMaker mods.");
                     }
                 } else {
                     labelStatus.setText("Updating ModMaker mods requires valid BIOGame");
@@ -2148,9 +2171,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         new DeltaWindow(mod, delta, true, false);
                     }
                 } else {
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher to switch mod variants.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher to switch mod variants.");
                 }
             }
         });
@@ -2163,9 +2186,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     ModManager.debugLogger.writeMessage("Reverting a delta.");
                     new DeltaWindow(mod);
                 } else {
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("Revert Delta: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher to switch mod variants.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher to switch mod variants.");
                 }
             }
         });
@@ -2179,9 +2202,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     new KeybindsInjectionWindow(ModManagerWindow.this, mod, false);
                 } else {
                     updateApplyButton();
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("Keybinds Injector: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to use the Keybinds Injector.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to use the Keybinds Injector.");
                 }
             }
         });
@@ -2202,9 +2225,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     autoTOC(AutoTocWindow.LOCALMOD_MODE);
                 } else {
                     updateApplyButton();
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to use the AutoTOC feature.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to use the AutoTOC feature.");
                 }
             }
         });
@@ -2296,9 +2319,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 } else {
 
                     updateApplyButton();
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("ModMaker: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to use ModMaker.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to use ModMaker.");
                 }
             } else {
                 labelStatus.setText("ModMaker requires valid BIOGame directory to start");
@@ -2343,9 +2366,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     new CustomDLCConflictWindow();
                 } else {
                     updateApplyButton();
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeError("Custom DLC Conflict Window: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to fully use the conflict detection tool.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to fully use the conflict detection tool.");
                 }
             } else {
                 labelStatus.setText("Conflict detector requires valid BIOGame directory");
@@ -2620,9 +2643,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         applyMod();
                     } else {
                         updateApplyButton();
-                        labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                        labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                         ModManager.debugLogger.writeMessage("Applying selected mod: .NET is not installed");
-                        new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to install mods.");
+                        new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to install mods.");
                     }
                 } else {
                     labelStatus.setText("Installing a mod requires valid BIOGame path");
@@ -2651,9 +2674,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 new PCCDataDumperWindow();
             } else {
                 updateApplyButton();
-                labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                 ModManager.debugLogger.writeMessage("Run PCC Data Dumper: .NET is not installed");
-                new NetFrameworkMissingWindow("The PCC Data Dumper tool requires .NET "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher to be installed.");
+                new NetFrameworkMissingWindow("The PCC Data Dumper tool requires .NET " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher to be installed.");
             }
 
         } else if (e.getSource() == toolME3Explorer) {
@@ -2725,9 +2748,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 }
             } else {
                 updateApplyButton();
-                labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                 ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
-                new NetFrameworkMissingWindow("ME3Explorer requires .NET "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to run.");
+                new NetFrameworkMissingWindow("ME3Explorer requires .NET " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to run.");
             }
         } else if (e.getSource() == toolAlotInstaller) {
             if (ModManager.validateNETFrameworkIsInstalled()) {
@@ -2788,9 +2811,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
             } else {
                 updateApplyButton();
-                labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                 ModManager.debugLogger.writeMessage("Run ALOT Installer: .NET is not installed");
-                new NetFrameworkMissingWindow("ALOT Installer requires .NET "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to run.");
+                new NetFrameworkMissingWindow("ALOT Installer requires .NET " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to run.");
             }
 
         } else if (e.getSource() == modManagementOpenModsFolder)
@@ -2835,18 +2858,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 }
             } else {
                 updateApplyButton();
-                labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                 ModManager.debugLogger.writeMessage("Run TLK: .NET is not installed");
-                new NetFrameworkMissingWindow("Tankmaster's TLK Tool requires .NET "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to run.");
+                new NetFrameworkMissingWindow("Tankmaster's TLK Tool requires .NET " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to run.");
             }
         } else if (e.getSource() == toolTankmasterCoalUI) {
             if (ModManager.validateNETFrameworkIsInstalled()) {
                 new CoalescedWindow();
             } else {
                 updateApplyButton();
-                labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                 ModManager.debugLogger.writeMessage("Run ME3Explorer: .NET is not installed");
-                new NetFrameworkMissingWindow("ME3Explorer requires .NET "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to run.");
+                new NetFrameworkMissingWindow("ME3Explorer requires .NET " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to run.");
             }
         } else if (e.getSource() == actionOptions) {
             new OptionsWindow(this);
@@ -2894,9 +2917,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     new UnpackWindow(this);
                 } else {
                     updateApplyButton();
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("Unpack DLC Tool: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to unpack DLC.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to unpack DLC.");
                 }
             } else {
                 labelStatus.setText("Unpacking DLC requires a valid BIOGame directory");
@@ -2922,9 +2945,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     new AutoTocWindow(ModManagerWindow.GetBioGameDir());
                 } else {
                     updateApplyButton();
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("AutoTOC: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to use the AutoTOC feature.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to use the AutoTOC feature.");
                 }
             } else {
                 labelStatus.setText("Game AutoTOC requires a valid BIOGame directory");
@@ -2942,9 +2965,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     new PatchLibraryWindow(PatchLibraryWindow.MANUAL_MODE);
                 } else {
                     updateApplyButton();
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("Patch Library: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to use MixIns.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to use MixIns.");
                 }
             } else {
                 labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
@@ -2960,9 +2983,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     new ModGroupWindow();
                 } else {
                     updateApplyButton();
-                    labelStatus.setText(".NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher is missing");
+                    labelStatus.setText(".NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher is missing");
                     ModManager.debugLogger.writeMessage("Batch Mod Installer: Missing .NET Framework");
-                    new NetFrameworkMissingWindow("You must install .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to batch install mods.");
+                    new NetFrameworkMissingWindow("You must install .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to batch install mods.");
                 }
             } else {
                 labelStatus.setText("Use of the patch library requires a valid BIOGame folder");
@@ -3359,6 +3382,31 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         int index = modList.getSelectedIndex();
         if (index >= 0) {
             Mod mod = modModel.get(index);
+
+            // Precheck all required items
+            ArrayList<String> requiredHeadersExplicit = mod.getRequiredDLCHeaders();
+            List<String> requiredHeaders = requiredHeadersExplicit.stream()
+                    .map(String::toUpperCase)
+                    .collect(Collectors.toList());
+            if (requiredHeaders.size() > 0) {
+                ArrayList<String> installedDLC = ModManager.getInstalledDLC(GetBioGameDir());
+                if (!installedDLC.containsAll(requiredHeaders)) {
+                    requiredHeaders.removeAll(installedDLC);
+                    String message = "This mod is missing required DLC:";
+                    for (String str : requiredHeaders) {
+                        ModManager.debugLogger.writeMessage("Detected missing DLC: " + str);
+
+                        if (!installedDLC.contains(str)) {
+                            message += "\n - " + ME3TweaksUtils.getThirdPartyModName(str, true);
+                        }
+                    }
+                    message += "\n\n" + ((requiredHeaders.size() == 1) ? "This DLC" : "These DLCs") + " must be installed before you can\ninstall " + mod.getModName() + ".";
+                    JOptionPane.showMessageDialog(this, message, "Required DLC missing", JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+            }
+
+
             if (ModManager.isALOTInstalled(GetBioGameDir())) {
                 boolean hasPCCInstall = false;
                 ModManager.debugLogger.writeMessage("ALOT is installed, checking for installation of non-testpatch PCC files...");
@@ -3368,7 +3416,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         continue; // we don't are about this
                     }
                     for (String destFile : job.getFilesToReplaceTargets()) {
-                        String extension = FilenameUtils.getExtension(destFile);
                         if (FilenameUtils.getExtension(destFile).toLowerCase().equals("pcc")) {
                             hasPCCInstall = true;
                             ModManager.debugLogger.writeMessage("Detected PCC file attempting to install over ALOT installation: " + destFile);
@@ -3387,7 +3434,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     } else {
                         ModManager.debugLogger.writeMessage("ALOT is installed, found conflicts. User has allow install check off, but we are going to warn anyways.");
                         int result = JOptionPane.showOptionDialog(this,
-                                "ALOT is installed and this mod installs PCC files.\nYou should only install this if you really know what you are doing as you WILL break the game.\nSeriously - if you don't know what you are actually doing, do not continue.\n\nInstall anyways?",
+                                "ALOT is installed and this mod installs PCC files.\nYou should only install this if you really know what you are doing as you WILL break the game.\nYou cannot install PCC files after installation of ALOT due to invalid texture pointers in the files being installed.\nSeriously - if you don't know what you are actually doing, do not continue.\n\nInstall anyways?",
                                 "Warning: ALOT is installed", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, null, new String[]{"Yes", "No"}, "No");
                         if (result == JOptionPane.NO_OPTION) {
                             return false;
@@ -3489,7 +3536,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 if (ModManager.NET_FRAMEWORK_IS_INSTALLED) {
                     buttonApplyMod.setToolTipText("Select a mod on the left");
                 } else {
-                    buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to install mods");
+                    buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to install mods");
                 }
                 fieldDescription.setText(getNoSelectedModDescription());
                 modWebsiteLink.setVisible(false);
@@ -3517,19 +3564,22 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         buttonApplyMod.setToolTipText(
                                 "<html>Apply this mod to the game.<br>If other mods are installed, you should consider uninstalling them by<br>using the Restore Menu if they are known to not work together.</html>");
                     } else {
-                        buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework "+ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR+" or higher in order to install mods");
+                        buttonApplyMod.setToolTipText("Mod Manager requires .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to install mods");
                         buttonApplyMod.setText("Missing .NET");
                         buttonApplyMod.setEnabled(false);
                     }
 
-                    ArrayList<String> requiredHeaders = selectedMod.getRequiredDLCHeaders();
+                    ArrayList<String> requiredHeadersExplicit = selectedMod.getRequiredDLCHeaders();
+                    List<String> requiredHeaders = requiredHeadersExplicit.stream()
+                            .map(String::toUpperCase)
+                            .collect(Collectors.toList());
                     if (requiredHeaders.size() > 0) {
                         ArrayList<String> installedDLC = ModManager.getInstalledDLC(GetBioGameDir());
                         if (installedDLC.containsAll(requiredHeaders)) {
                             buttonApplyMod.setEnabled(true);
                             buttonApplyMod.setText("Apply Mod");
                         } else {
-                            buttonApplyMod.setEnabled(false);
+                            requiredHeaders.removeAll(installedDLC);
                             String toolTip = "<html>This mod is missing required DLC.<br>Missing required DLC:";
                             for (String str : requiredHeaders) {
                                 if (!installedDLC.contains(str)) {
@@ -3812,8 +3862,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     ModManager.debugLogger.writeMessage("Selected path: " + selectedGamePath);
                     if (currentpath != null && !currentpath.equalsIgnoreCase(selectedGamePath)) {
                         // Update registry key.
-                        boolean is64bit = ResourceUtils.is64BitWindows();
-                        String keypath = is64bit ? "HKLM\\SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3" : "HKLM\\SOFTWARE\\BioWare\\Mass Effect 3";
+                        String keypath = "HKLM\\SOFTWARE\\Wow6432Node\\BioWare\\Mass Effect 3";
                         ArrayList<String> command = new ArrayList<String>();
                         command.add(ModManager.getCommandLineToolsDir() + "elevate.exe");
                         command.add("-c");
@@ -3833,26 +3882,117 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         if (pr.getReturnCode() == 0) {
                             ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Updated registry key to point to selected installation");
                         }
-                    }
-                } else {
-                    ModManager.debugLogger.writeMessage("REGISTRY PATH NOT FOUND. There's a likely reason...");
-                }
 
-                // CHECK WRITE PERMISSIONS
-                File biogame = new File(selectedGamePath + "\\BIOGame");
-                File selectedGamePathF = new File(selectedGamePath);
-                File cookedPCConsole = new File(selectedGamePath + "\\BIOGame\\CookedPCConsole");
-
-                if (biogame.exists() && selectedGamePathF.exists() && cookedPCConsole.exists()) { //prevents it from thinking it is unable to write due to non-existence
-                    if (biogame.isDirectory() && selectedGamePathF.isDirectory() && cookedPCConsole.isDirectory()) { //make sure it is a folder so we can write into sub
-                        boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
-                                && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
-                        if (!hasWritePermissions) {
-                            showFolderPermissionsGrantDialog(selectedGamePath);
+                        //Get ALOT status of this new target
+                        boolean alotInstalled = ModManager.isALOTInstalled(selectedPath);
+                        boolean highResSettings = ModManager.areHighResGamerSettingsInstalled();
+                        if (alotInstalled && !highResSettings) {
+                            //offer to upgrade
+                            int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, "The current texture settings are default quality, however ALOT is detected as installed.\nUpdate your texture settings to ALOT's high quality settings?", "Upgrade texture settings", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                            if (result == JOptionPane.YES_OPTION) {
+                                File gamerSettings = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath() + "\\BioWare\\Mass Effect 3\\BioGame\\Config\\GamerSettings.ini");
+                                if (gamerSettings.exists()) {
+                                    try {
+                                        Wini ini = new Wini(gamerSettings);
+                                        ini.load(gamerSettings);
+                                        ini.put("SystemSettings", "TEXTUREGROUP_World", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_WorldSpecular", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_WorldNormalMap", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_AmbientLightMap", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_ShadowMap", "(MinLODSize=1024,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_RenderTarget", "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_64", "(MinLODSize=128,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_128", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_256", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_512", "(MinLODSize=1024,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Environment_1024", "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_64", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_128", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_256", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_512", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_VFX_1024", "(MinLODSize=32,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_APL_128", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_APL_256", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_APL_512", "(MinLODSize=1024,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_APL_1024", "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_UI", "(MinLODSize=64,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Promotional", "(MinLODSize=256,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Character_1024", "(MinLODSize=2048,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Character_Diff", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Character_Norm", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.put("SystemSettings", "TEXTUREGROUP_Character_Spec", "(MinLODSize=512,MaxLODSize=4096,LODBias=0)");
+                                        ini.store();
+                                        ModManager.debugLogger.writeMessage("Updated LODs for ALOT (HR)");
+                                    } catch (Exception ex) {
+                                        // TODO Auto-generated catch block
+                                        ModManager.debugLogger.writeErrorWithException("Error updating game LODs!", ex);
+                                    }
+                                }
+                            }
+                        } else if (!alotInstalled && highResSettings) {
+                            //offer to revert
+                            int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, "The current texture settings are high quality, however ALOT is not detected as installed.\nThis will cause black textures and potential crashes due to null mips in game files.\nDowngrading to the defaults will prevent this issue.\nDowngrade your texture settings to the defaults?", "Downgrade texture settings", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                            if (result == JOptionPane.YES_OPTION) {
+                                File gamerSettings = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath() + "\\BioWare\\Mass Effect 3\\BioGame\\Config\\GamerSettings.ini");
+                                if (gamerSettings.exists()) {
+                                    try {
+                                        Wini ini = new Wini(gamerSettings);
+                                        ini.load(gamerSettings);
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_World");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_WorldSpecular");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_WorldNormalMap");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_AmbientLightMap");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_ShadowMap");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_RenderTarget");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_64");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_128");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_256");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_512");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_1024");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_64");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_128");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_256");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_512");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_1024");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_128");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_256");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_512");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_1024");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_UI");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Promotional");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_1024");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Diff");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Norm");
+                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Spec");
+                                        ini.store();
+                                        ModManager.debugLogger.writeMessage("Updated LODs for non-ALOT (normal)");
+                                    } catch (Exception ex) {
+                                        // TODO Auto-generated catch block
+                                        ModManager.debugLogger.writeErrorWithException("Error downgrading game LODs!", ex);
+                                    }
+                                }
+                            }
+                        } else {
+                            ModManager.debugLogger.writeMessage("Updated game path, checked LODS, looked OK");
                         }
+
+                        // CHECK WRITE PERMISSIONS
+                        File biogame = new File(selectedGamePath + "\\BIOGame");
+                        File selectedGamePathF = new File(selectedGamePath);
+                        File cookedPCConsole = new File(selectedGamePath + "\\BIOGame\\CookedPCConsole");
+
+                        if (biogame.exists() && selectedGamePathF.exists() && cookedPCConsole.exists()) { //prevents it from thinking it is unable to write due to non-existence
+                            if (biogame.isDirectory() && selectedGamePathF.isDirectory() && cookedPCConsole.isDirectory()) { //make sure it is a folder so we can write into sub
+                                boolean hasWritePermissions = ModManager.checkWritePermissions(selectedGamePath) && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame")
+                                        && ModManager.checkWritePermissions(selectedGamePath + "\\BIOGame\\CookedPCConsole");
+                                if (!hasWritePermissions) {
+                                    showFolderPermissionsGrantDialog(selectedGamePath);
+                                }
+                            }
+                        }
+                        validateBIOGameDir(); // reset upper state
                     }
                 }
-                validateBIOGameDir(); // reset upper state
             }
         }
     }

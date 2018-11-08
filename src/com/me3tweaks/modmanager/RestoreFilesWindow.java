@@ -738,8 +738,6 @@ public class RestoreFilesWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Failure restoring backup SFAR:", e);
 					return false;
 				}
-				completed++;
-				publish(Integer.toString(completed));
 				return true;
 			}
 
