@@ -174,6 +174,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				modList.setSelectedIndex(0);
 				new ModDescEditorWindow(modModel.firstElement());
 			}*/
+			setLocationRelativeTo(null);
             setVisible(true);
         } catch (Exception e) {
             ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
@@ -4179,13 +4180,78 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 ModManager.debugLogger.writeMessage("Staged mod is valid.");
             }
 
-            publish(new ThreadCommand("UPDATE_STATUS", "Deploying - memory usage will be high temporarily"));
+            publish(new ThreadCommand("UPDATE_STATUS", "Calculating compression parameters"));
 
-            String outputfile = ModManager.compressModForDeployment(testmod);
-            outfile = new File(outputfile);
-            ModManager.debugLogger.writeMessage("Thread exiting - result of compression method: " + outfile.exists());
+            //Calculate size of staged directory
+
+            long dirSizeMB = FileUtils.sizeOfDirectory(stagingdirfile) / 1024 / 1024;
+            if (dirSizeMB == 0) dirSizeMB = 1; //ensure it is at least one as it can be a divisor
+
+            ModManager.debugLogger.writeMessage("Directory size: "+dirSizeMB+"MB");
+
+            //Get amount of system memory
+            int dictsize = 64; //Default size to start with
+
+            ModManager.debugLogger.writeMessage("Calculating dictionary size that *should* work on this computer...");
+            String[] memorycommand = new String[]{"wmic", "ComputerSystem", "get", "TotalPhysicalMemory"};
+            ProcessBuilder pb = new ProcessBuilder(memorycommand);
+            ProcessResult pr = ModManager.runProcess(pb);
+            String output = pr.getOutput();
+
+            String[] lines = output.split("\\n");
+            if (lines.length == 3) {
+                String memsizebytesStr = lines[1].replaceAll("[^0-9]", "");
+                long memorybytecountMB = Long.parseLong(memsizebytesStr) / 1024 / 1024;
+
+                double modSizePercentOfRam = dirSizeMB * 1.0 / memorybytecountMB;
+                if (modSizePercentOfRam > 10) {
+                    //over 10 percent of ram
+                    ModManager.debugLogger.writeMessage("Mod is over 10% size of ram - subtracting mod size from total system RAM");
+                    memorybytecountMB -= dirSizeMB; //subtract out the mod size as it's gonna eat up a lot of ram compressing
+                    ModManager.debugLogger.writeMessage("New memory value: "+memorybytecountMB+"MB");
+                }
+
+                ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memorybytecountMB + "MB");
+                dictsize = (int) (memorybytecountMB / 48); //Seems to be around where it is optimal. Not that I've
+                if (dictsize > 324) {
+                    ModManager.debugLogger.writeMessage("Capping dictionary size to max of 324MB.");
+                    dictsize = 324;
+                }
+                if (dictsize > dirSizeMB) {
+                    ModManager.debugLogger.writeMessage("Capping dictionary size to max directory size: "+dirSizeMB+"MB");
+                    dictsize = (int) dirSizeMB;
+                }
+                ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
+            }
+
+            //This is just stupid.
+            //Why the hell can I not assign variables in lambdas like I can in C#!?
+            Object[] compressionSettings = new Object[2];
+            compressionSettings[0] = 9;
+            compressionSettings[1] = true;
+            Runnable task2 = () -> {
+                CompressionOptionsWindow cow = new CompressionOptionsWindow(ModManagerWindow.this,(int)compressionSettings[0],(boolean)compressionSettings[1]);
+                compressionSettings[0] = cow.getCompressionLevel();
+                compressionSettings[1] = cow.getMultithreaded();
+            };
+
+            SwingUtilities.invokeAndWait(task2);
+
+            int compressionLevel = (int) compressionSettings[0];
+            boolean multithreaded =  (boolean) compressionSettings[1];
+
+            if (compressionLevel != -1) {
+                ModManager.debugLogger.writeMessage("Compressing with the following settings:");
+                ModManager.debugLogger.writeMessage(" - Compression Level: "+compressionLevel);
+                ModManager.debugLogger.writeMessage(" - Dictionary Size: " +dictsize);
+                ModManager.debugLogger.writeMessage(" - Multithreaded: "+multithreaded);
+                publish(new ThreadCommand("UPDATE_STATUS", "Deploying - memory usage will be high temporarily"));
+                String outputfile = ModManager.compressModForDeployment(testmod, compressionLevel, dictsize, multithreaded);
+                outfile = new File(outputfile);
+                ModManager.debugLogger.writeMessage("Thread exiting - result of compression method: " + outfile.exists());
+            }
             FileUtils.deleteDirectory(stagingdirfile);
-            return outfile.exists();
+            return outfile != null && outfile.exists();
         }
 
         @Override

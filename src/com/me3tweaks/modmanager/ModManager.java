@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 public class ModManager {
-    public static boolean IS_DEBUG = false;
+    public static boolean IS_DEBUG = true;
     public static final String VERSION = "5.1.1";
     public static long BUILD_NUMBER = 89L;
     public static final String BUILD_DATE = "11/08/2018";
@@ -571,7 +571,6 @@ public class ModManager {
                         "Startup Error", JOptionPane.WARNING_MESSAGE);
             }
         }
-
 
         ModManager.debugLogger.writeMessage("Loading JavaFX");
         new JFXPanel(); // used for initializing javafx thread (ideally called once)
@@ -2554,14 +2553,17 @@ public class ModManager {
     }
 
     /**
-     * Compresses the selected mod for deployment by staging the mod and then
-     * compressing the staged mod - this prevents additional files from being
-     * included in the mod. More ram you have = more compressed the mod will be.
+     * Compresses the selected mod for deployment. The moddesc is copied out
+     * and then stored without compression after the rest of the mod is compressed.
+     * This method should be used after the mod has been already staged.
      *
-     * @param mod Mod to stage
+     * @param mod Staged mod to compress
+     * @param compressionLevel Level of 7zip compression
+     * @param dictionarySize Size of 7z dictionary
+     * @param multiThread Multithreaded compression. Uses more RAM
      * @return Path to output file
      */
-    public static String compressModForDeployment(Mod mod) {
+    public static String compressModForDeployment(Mod mod, int compressionLevel, int dictionarySize, boolean multiThread) {
         String outputpath = getDeploymentDirectory() + mod.getModName() + "_" + mod.getVersion() + ".7z";
         ModManager.debugLogger.writeMessage("Deploying " + mod.getModName());
 
@@ -2576,28 +2578,7 @@ public class ModManager {
         } catch (IOException e) {
             ModManager.debugLogger.writeError("Error moving moddesc.ini for optimized deployment: " + e.getMessage());
         }
-        //Get amount of memory
-        int dictsize = 64; //Default size - definitely not the best, but we'll default to 32-bit.
 
-        ModManager.debugLogger.writeMessage("64-bit Windows - calculating dictionary size that *should* work on this computer...");
-        String[] memorycommand = new String[]{"wmic", "ComputerSystem", "get", "TotalPhysicalMemory"};
-        ProcessBuilder pb = new ProcessBuilder(memorycommand);
-        ProcessResult pr = ModManager.runProcess(pb);
-        String output = pr.getOutput();
-
-        String[] lines = output.split("\\n");
-        if (lines.length == 3) {
-            String memsizebytes = lines[1].replaceAll("[^0-9]", "");
-            long bytecount = Long.parseLong(memsizebytes);
-            String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
-            ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
-            dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
-            if (dictsize > 324) {
-                dictsize = 324;
-            }
-            dictsize = Math.max(dictsize, 64);
-            ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
-        }
 
         ArrayList<String> commandBuilder = new ArrayList<String>();
 
@@ -2612,10 +2593,14 @@ public class ModManager {
         commandBuilder.add(mod.getModPath());//inputfile
 
         //commandBuilder.add("-mmt" + numcores); //let it multithread itself.
-        commandBuilder.add("-mx9"); //max compression
-        commandBuilder.add("-md" + dictsize + "m");
+        if (!multiThread) {
+            commandBuilder.add("-mmt=off");
+        }
+        commandBuilder.add("-mx"+compressionLevel); //unsure if this actually does anything anymore.
+        commandBuilder.add("-md" + dictionarySize + "m");
+        commandBuilder.add("-myx9"); //maximum file analysis
         ModManager.debugLogger.writeMessage("Compressing mod - output to " + outputpath);
-        pb = new ProcessBuilder(commandBuilder);
+        ProcessBuilder pb = new ProcessBuilder(commandBuilder);
         FileUtils.deleteQuietly(new File(outputpath));
         ModManager.runProcess(pb).getReturnCode();
 
