@@ -174,7 +174,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 				modList.setSelectedIndex(0);
 				new ModDescEditorWindow(modModel.firstElement());
 			}*/
-			setLocationRelativeTo(null);
+            setLocationRelativeTo(null);
             setVisible(true);
         } catch (Exception e) {
             ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);
@@ -206,7 +206,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
      * indicator will stop.
      *
      * @param taskname Name of the task.
-     * @param uiText Text to display on the UI statusbar if this is the last remaining task
+     * @param uiText   Text to display on the UI statusbar if this is the last remaining task
      * @return hashcode of the task that requires submission to end the task.
      */
     public int submitBackgroundJob(String taskname, String uiText) {
@@ -963,6 +963,80 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
     }
 
+    class ALOTInstallerLauncherThread extends SwingWorker<String, Object> {
+        File alotInstallerEXE;
+        int launchJobCode;
+
+        public ALOTInstallerLauncherThread(File alotInstallerEXE) {
+            this.alotInstallerEXE = alotInstallerEXE;
+            launchJobCode = submitBackgroundJob("ALOTInstallerLaunch", "Launching ALOT Installer");
+            labelStatus.setText("Launching ALOT Installer");
+        }
+
+        public String doInBackground() {
+            ModManager.debugLogger.writeMessage("Launching ALOT Installer Thread executing");
+            ArrayList<String> acceptableHashes = new ArrayList<String>();
+            acceptableHashes.add("1d09c01c94f01b305f8c25bb56ce9ab4"); //1.5 signed by EA
+            acceptableHashes.add("90d51c84b278b273e41fbe75682c132e"); //1.5 signed by EA, not sure of the difference
+
+            String bioGameDir = GetBioGameDir();
+            if (bioGameDir != null) {
+                File gamedir = new File(bioGameDir).getParentFile();
+                File executable = new File(gamedir.toString() + "\\Binaries\\Win32\\MassEffect3.exe");
+                if (executable.exists()) {
+                    int minorBuildNum = -1;
+                    try {
+                        minorBuildNum = EXEFileInfo.getMinorVersionOfProgram(executable.getAbsolutePath());
+                        if (minorBuildNum < 5) {
+                            return "Game is not up to date";
+                        } else if (minorBuildNum > 5) {
+                            return "Game is at version 1.6 - this is a very rare and is not supported by ALOT Installer.\nDowngrade to 1.5 to use ALOT Installer.";
+                        }
+                    } catch (Exception e) {
+                        ModManager.debugLogger.writeErrorWithException("Error checking game version:", e);
+                        return "Unable to detect game version.\nCannot launch ALOT Installer.";
+                    }
+
+                    try {
+                        String hash = MD5Checksum.getMD5Checksum(executable.getAbsolutePath());
+                        ArrayList<String> command = new ArrayList<String>();
+                        command.add(alotInstallerEXE.getAbsolutePath());
+                        if (acceptableHashes.contains(hash.toLowerCase())) {
+                            ModManager.debugLogger.writeMessage("Supported hash detected, passing game directory to ALOT Installer");
+                            command.add("--me3path");
+                            command.add(gamedir.getAbsolutePath());
+                        }
+                        ProcessBuilder pb = new ProcessBuilder(command);
+                        pb.directory(new File(ModManager.getALOTInstallerDirectory()));
+
+
+                        ModManager.runProcessDetached(pb);
+                        Thread.sleep(1500); //wait a few seconds while it loads
+
+                    } catch (Exception e) {
+                        ModManager.debugLogger.writeErrorWithException("Could not launch ALOT Installer: ", e);
+                    }
+                }
+            }
+            return null;
+        }
+
+        public void done() {
+            try {
+                submitJobCompletion(launchJobCode);
+                String result = get();
+                if (result != null) {
+                    labelStatus.setText("Could not launch ALOT Installer");
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, result, "Error launching ALOT Installer", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    labelStatus.setText("Launched ALOT Installer");
+                }
+            } catch (Exception e) {
+                ModManager.debugLogger.writeErrorWithException("Could not launch ALOT Installer in thread: ", e);
+            }
+        }
+    }
+
     class SingleModUpdateCheckThread extends SwingWorker<Void, Object> {
         Mod mod;
         int jobCode;
@@ -970,7 +1044,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         public SingleModUpdateCheckThread(Mod mod) {
             this.mod = mod;
             labelStatus.setText("Checking for " + mod.getModName() + " updates");
-            jobCode = submitBackgroundJob("SingleModUpdate","Checking for " + mod.getModName() + " updates");
+            jobCode = submitBackgroundJob("SingleModUpdate", "Checking for " + mod.getModName() + " updates");
         }
 
         @Override
@@ -1013,7 +1087,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         String updatetext = mod.getModName() + " has an update available from ME3Tweaks:\n";
                         updatetext += AllModsUpdateWindow.getVersionUpdateString(upackage);
                         if (upackage.getChangeLog() != null && !upackage.getChangeLog().equals("")) {
-                            updatetext += "    Changelog: ";
+                            updatetext += "     Changelog: ";
                             updatetext += upackage.getChangeLog();
                             updatetext += "\n";
                         }
@@ -2789,11 +2863,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         new ALOTInstallerUpdaterWindow(ModManager.ALOTINSTALLER_LATESTVERSION, true);
                     } else {
                         if (alotInstallerEXE.exists()) {
-                            ModManager.debugLogger.writeMessage("Launching ALOT Installer");
-                            ProcessBuilder pb = new ProcessBuilder(alotInstallerEXE.getAbsolutePath());
-                            pb.directory(new File(ModManager.getALOTInstallerDirectory()));
-                            ModManager.runProcessDetached(pb);
-                            labelStatus.setText("Launched ALOT Installer");
+                            new ALOTInstallerLauncherThread(alotInstallerEXE).execute();
 
                         } else {
                             ModManager.debugLogger.writeMessage("Aboring ALOT Installer launch - does not exist locally");
@@ -2802,11 +2872,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     }
                 } else {
                     if (alotInstallerEXE.exists()) {
-                        // run it
-                        ModManager.debugLogger.writeMessage("Launching ALOT Installer");
-                        ProcessBuilder pb = new ProcessBuilder(alotInstallerEXE.getAbsolutePath());
-                        ModManager.runProcessDetached(pb);
-                        labelStatus.setText("Launched ALOT Installer");
+                        new ALOTInstallerLauncherThread(alotInstallerEXE).execute();
+
                     }
                 }
 
@@ -4187,7 +4254,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             long dirSizeMB = FileUtils.sizeOfDirectory(stagingdirfile) / 1024 / 1024;
             if (dirSizeMB == 0) dirSizeMB = 1; //ensure it is at least one as it can be a divisor
 
-            ModManager.debugLogger.writeMessage("Directory size: "+dirSizeMB+"MB");
+            ModManager.debugLogger.writeMessage("Directory size: " + dirSizeMB + "MB");
 
             //Get amount of system memory
             int dictsize = 64; //Default size to start with
@@ -4198,17 +4265,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             ProcessResult pr = ModManager.runProcess(pb);
             String output = pr.getOutput();
 
+            long memorybytecountMB = -1;
             String[] lines = output.split("\\n");
             if (lines.length == 3) {
                 String memsizebytesStr = lines[1].replaceAll("[^0-9]", "");
-                long memorybytecountMB = Long.parseLong(memsizebytesStr) / 1024 / 1024;
+                memorybytecountMB = Long.parseLong(memsizebytesStr) / 1024 / 1024;
 
                 double modSizePercentOfRam = dirSizeMB * 1.0 / memorybytecountMB;
                 if (modSizePercentOfRam > 10) {
                     //over 10 percent of ram
                     ModManager.debugLogger.writeMessage("Mod is over 10% size of ram - subtracting mod size from total system RAM");
                     memorybytecountMB -= dirSizeMB; //subtract out the mod size as it's gonna eat up a lot of ram compressing
-                    ModManager.debugLogger.writeMessage("New memory value: "+memorybytecountMB+"MB");
+                    ModManager.debugLogger.writeMessage("New memory value: " + memorybytecountMB + "MB");
                 }
 
                 ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memorybytecountMB + "MB");
@@ -4218,7 +4286,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     dictsize = 324;
                 }
                 if (dictsize > dirSizeMB) {
-                    ModManager.debugLogger.writeMessage("Capping dictionary size to max directory size: "+dirSizeMB+"MB");
+                    ModManager.debugLogger.writeMessage("Capping dictionary size to max directory size: " + dirSizeMB + "MB");
                     dictsize = (int) dirSizeMB;
                 }
                 ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
@@ -4230,7 +4298,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             compressionSettings[0] = 9;
             compressionSettings[1] = true;
             Runnable task2 = () -> {
-                CompressionOptionsWindow cow = new CompressionOptionsWindow(ModManagerWindow.this,(int)compressionSettings[0],(boolean)compressionSettings[1]);
+                CompressionOptionsWindow cow = new CompressionOptionsWindow(ModManagerWindow.this, (int) compressionSettings[0], (boolean) compressionSettings[1]);
                 compressionSettings[0] = cow.getCompressionLevel();
                 compressionSettings[1] = cow.getMultithreaded();
             };
@@ -4238,16 +4306,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             SwingUtilities.invokeAndWait(task2);
 
             int compressionLevel = (int) compressionSettings[0];
-            boolean multithreaded =  (boolean) compressionSettings[1];
+            boolean multithreaded = (boolean) compressionSettings[1];
 
             if (compressionLevel != -1) {
                 ModManager.debugLogger.writeMessage("Compressing with the following settings:");
-                ModManager.debugLogger.writeMessage(" - Compression Level: "+compressionLevel);
-                ModManager.debugLogger.writeMessage(" - Dictionary Size: " +dictsize);
-                ModManager.debugLogger.writeMessage(" - Multithreaded: "+multithreaded);
+                ModManager.debugLogger.writeMessage(" - Compression Level: " + compressionLevel);
+                ModManager.debugLogger.writeMessage(" - Dictionary Size: " + dictsize);
+                ModManager.debugLogger.writeMessage(" - Multithreaded: " + multithreaded);
                 publish(new ThreadCommand("UPDATE_STATUS", "Deploying - memory usage will be high temporarily"));
-                String outputfile = ModManager.compressModForDeployment(testmod, compressionLevel, dictsize, multithreaded);
-                outfile = new File(outputfile);
+                String outputfile = ModManager.compressModForDeployment(testmod, compressionLevel, dictsize, multithreaded, memorybytecountMB, dirSizeMB);
+                if (outputfile != null) {
+                    outfile = new File(outputfile);
+                }
                 ModManager.debugLogger.writeMessage("Thread exiting - result of compression method: " + outfile.exists());
             }
             FileUtils.deleteDirectory(stagingdirfile);

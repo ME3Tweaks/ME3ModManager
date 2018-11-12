@@ -2563,7 +2563,7 @@ public class ModManager {
      * @param multiThread Multithreaded compression. Uses more RAM
      * @return Path to output file
      */
-    public static String compressModForDeployment(Mod mod, int compressionLevel, int dictionarySize, boolean multiThread) {
+    public static String compressModForDeployment(Mod mod, int compressionLevel, int dictionarySize, boolean multiThread, long ramMB, long modSizeMB) {
         String outputpath = getDeploymentDirectory() + mod.getModName() + "_" + mod.getVersion() + ".7z";
         ModManager.debugLogger.writeMessage("Deploying " + mod.getModName());
 
@@ -2577,6 +2577,7 @@ public class ModManager {
             FileUtils.moveFile(iniStart, iniDest);
         } catch (IOException e) {
             ModManager.debugLogger.writeError("Error moving moddesc.ini for optimized deployment: " + e.getMessage());
+            return null;
         }
 
 
@@ -2592,9 +2593,14 @@ public class ModManager {
         commandBuilder.add(outputpath); //destfile
         commandBuilder.add(mod.getModPath());//inputfile
 
-        //commandBuilder.add("-mmt" + numcores); //let it multithread itself.
         if (!multiThread) {
             commandBuilder.add("-mmt=off");
+        } else if (ramMB < 8092 && modSizeMB > 256) {
+            commandBuilder.add("-mmt=2");
+        } else if (ramMB < 16384 && modSizeMB > 400 && Runtime.getRuntime().availableProcessors() > 2) {
+            commandBuilder.add("-mmt=2");
+        } else if (ramMB < 32768 && modSizeMB > 1024 && Runtime.getRuntime().availableProcessors() > 4) {
+            commandBuilder.add("-mmt=4");
         }
         commandBuilder.add("-mx"+compressionLevel); //unsure if this actually does anything anymore.
         commandBuilder.add("-md" + dictionarySize + "m");

@@ -215,7 +215,7 @@ public class AllModsUpdateWindow extends JDialog {
 						ModManager.debugLogger.writeMessage("Parsing upackage " + upackage.getServerModName() + "");
 						updatetext += getVersionUpdateString(upackage);
 						if (upackage.getChangeLog() != null && !upackage.getChangeLog().equals("")) {
-							updatetext += "   Changelog: " + upackage.getChangeLog() + "\n";
+							updatetext += "     Changelog: " + upackage.getChangeLog() + "\n";
 						}
 					}
 					if (upackages.size() > 1) {
