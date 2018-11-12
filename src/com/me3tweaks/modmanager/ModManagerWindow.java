@@ -62,7 +62,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -284,13 +283,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
         @Override
         public Void doInBackground() {
-
-            if (!ResourceUtils.is64BitWindows() && LocalDateTime.now().toLocalDate().isAfter(LocalDate.parse("2018-05-15"))) {
-                ModManager.debugLogger.writeMessage("Mod Manager on 32-bit windows is no longer supported. Networking support was disabled May 15th, 2018.");
-                publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Network support for 32-bit Mod Manager ended May 15, 2018"));
-                return null;
-            }
-
             File f7z = new File(ModManager.get7zExePath());
             boolean needsUpdate = false;
             if (f7z.exists()) {
@@ -450,9 +442,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
             // checkForME3ExplorerUpdates();
             checkForCommandLineToolUpdates();
-            if (isUpdate || ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force)
-
-            {
+            if (isUpdate || ModManager.AUTO_UPDATE_CONTENT || forceUpdateOnReloadList.size() > 0 || force) {
                 boolean forcedByUpdate = isUpdate;
                 isUpdate = false; // no mas
                 checkForContentUpdates(force || forcedByUpdate == true);
@@ -645,6 +635,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     case "SHOW_UPDATE_WINDOW":
                         new UpdateAvailableWindow((JSONObject) latest.getData());
                         break;
+                    case "SHOW_JRE_UPDATE_REQUIRED_FIRST":
+                        labelStatus.setText("JRE update required");
+                        JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "You must update Mod Manager's JRE before you can download new updates to Mod Manager.\nIf you're seeing this without prompts to update the JRE, please contact Mgamerz.", "JRE update required", JOptionPane.ERROR_MESSAGE);
+                        break;
                     case "SET_STATUSBAR_TEXT":
                         labelStatus.setText(latest.getMessage());
                         break;
@@ -757,7 +751,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                         if (buildHash != null && !buildHash.equals("") && !currentHash.equals(buildHash)) {
                             // hash mismatch
                             hashMismatch = true;
-                            ModManager.debugLogger.writeMessage("Local hash (" + currentHash + ") does not match server hash (" + buildHash + ")");
+                            ModManager.debugLogger.writeMessage("Local executable hash (" + currentHash + ") does not match server hash (" + buildHash + ")");
                         } else {
                             if (buildHash != null) {
                                 ModManager.debugLogger.writeMessage("Server build hash: " + buildHash);
@@ -773,10 +767,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 }
 
                 long latest_build = (long) latest_object.get("latest_build_number");
-
-                String arch = ResourceUtils.is64BitWindows() ? "_x64" : "_x86";
-
-                String latestCommandLineToolsLink = (String) latest_object.get("latest_commandlinetools_link" + arch);
+                String latestCommandLineToolsLink = (String) latest_object.get("latest_commandlinetools_link_x64");
                 ModManager.LATEST_ME3EXPLORER_VERSION = (String) latest_object.get("latest_me3explorer_version");
                 ModManager.LATEST_ME3EXPLORER_URL = (String) latest_object.get("latest_me3explorer_download_link");
                 String commandLineToolsRequiredVersion = (String) latest_object.get("latest_commandlinetools_version");
@@ -814,52 +805,64 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     return latest_object;
                 }
 
-                ModManager.debugLogger
-                        .writeMessage("Update check: Local:" + ModManager.BUILD_NUMBER + " Latest: " + latest_build + ", is less? " + (ModManager.BUILD_NUMBER < latest_build));
+                long minJavaRequiredStr = (long) latest_object.get("min_required_jre_for_update");
+                int runTimeMajor = Runtime.version().feature();
 
-                boolean showUpdate = true;
-                // make sure the user hasn't declined this one.
-                Wini settingsini = ModManager.LoadSettingsINI();
-                String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
-                long build_check = ModManager.BUILD_NUMBER;
-                if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
-                    try {
-                        build_check = Integer.parseInt(showIfHigherThan);
-                        if (latest_build > build_check) {
-                            // update is newer than one stored in ini, show
-                            // the
-                            // dialog.
-                            ModManager.debugLogger.writeMessage("Advertising build " + latest_build);
-                            settingsini.remove("Settings", "nextupdatedialogbuild");
-                            try {
-                                settingsini.store();
-                            } catch (IOException e) {
-                                // TODO Auto-generated catch block
-                                ModManager.debugLogger.writeErrorWithException("Unable to save settings:", e);
-                            }
-                            showUpdate = true;
-                        } else {
-                            ModManager.debugLogger.writeMessage("User isn't seeing updates until build " + build_check);
-                            // don't show it.
-                            showUpdate = false;
-                        }
-                    } catch (NumberFormatException e) {
-                        ModManager.debugLogger.writeMessage("Number format exception reading the build number updateon in the ini. Showing the dialog.");
-                    }
-                }
-
-                if (showUpdate) {
-                    // An update is available!
-                    publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Mod Manager update available"));
-                    publish(new ThreadCommand("SHOW_UPDATE_WINDOW", null, latest_object));
+                if (minJavaRequiredStr > runTimeMajor) {
+                    //cant update, JRE required is too new
                     ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+                    ModManager.debugLogger.writeMessage("JRE update is required before we can update. Local major: " + runTimeMajor + ", update requires " + minJavaRequiredStr);
+                    publish(new ThreadCommand("SHOW_JRE_UPDATE_REQUIRED_FIRST", null, latest_object));
                 } else {
-                    labelStatus.setVisible(true);
-                    labelStatus.setText("Update notification suppressed until next build");
+
+                    ModManager.debugLogger
+                            .writeMessage("Update check: Local:" + ModManager.BUILD_NUMBER + " Latest: " + latest_build + ", is less? " + (ModManager.BUILD_NUMBER < latest_build));
+
+                    boolean showUpdate = true;
+                    // make sure the user hasn't declined this one.
+                    Wini settingsini = ModManager.LoadSettingsINI();
+                    String showIfHigherThan = settingsini.get("Settings", "nextupdatedialogbuild");
+                    long build_check = ModManager.BUILD_NUMBER;
+                    if (showIfHigherThan != null && !showIfHigherThan.equals("")) {
+                        try {
+                            build_check = Integer.parseInt(showIfHigherThan);
+                            if (latest_build > build_check) {
+                                // update is newer than one stored in ini, show
+                                // the
+                                // dialog.
+                                ModManager.debugLogger.writeMessage("Advertising build " + latest_build);
+                                settingsini.remove("Settings", "nextupdatedialogbuild");
+                                try {
+                                    settingsini.store();
+                                } catch (IOException e) {
+                                    // TODO Auto-generated catch block
+                                    ModManager.debugLogger.writeErrorWithException("Unable to save settings:", e);
+                                }
+                                showUpdate = true;
+                            } else {
+                                ModManager.debugLogger.writeMessage("User isn't seeing updates until build " + build_check);
+                                // don't show it.
+                                showUpdate = false;
+                            }
+                        } catch (NumberFormatException e) {
+                            ModManager.debugLogger.writeMessage("Number format exception reading the build number updateon in the ini. Showing the dialog.");
+                        }
+                    }
+
+                    if (showUpdate) {
+                        // An update is available!
+                        publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Mod Manager update available"));
+                        publish(new ThreadCommand("SHOW_UPDATE_WINDOW", null, latest_object));
+                        ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
+                    } else {
+                        labelStatus.setVisible(true);
+                        labelStatus.setText("Update notification suppressed until next build");
+                    }
                 }
                 if (latestCommandLineToolsLink != null) {
                     ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
                 }
+
                 checkForGUIupdates(latest_object);
             } catch (ParseException e) {
                 // TODO Auto-generated catch block
@@ -2884,9 +2887,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 new NetFrameworkMissingWindow("ALOT Installer requires .NET " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to run.");
             }
 
-        } else if (e.getSource() == modManagementOpenModsFolder)
-
-        {
+        } else if (e.getSource() == modManagementOpenModsFolder) {
             ResourceUtils.openDir(ModManager.getModsDir());
         } else if (e.getSource() == modManagementClearPatchLibraryCache) {
             File libraryDir = new File(ModManager.getPatchesDir() + "source");
