@@ -29,7 +29,7 @@ public class ME3TweaksUpdaterServiceWindow {
                     Channel channel = session.openChannel("sftp");
                     channel.connect();
                     ChannelSftp sftpChannel = (ChannelSftp) channel;
-                    Vector filelist = sftpChannel.ls(".");
+                    Vector filelist = sftpChannel.ls("me3tweaks_manifests");
                     for(int i=0; i<filelist.size();i++){
                         ChannelSftp.LsEntry entry = (ChannelSftp.LsEntry) filelist.get(i);
                         System.out.println(entry.getFilename());

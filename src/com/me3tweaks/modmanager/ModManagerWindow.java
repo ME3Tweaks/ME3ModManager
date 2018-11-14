@@ -678,7 +678,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
             ModManager.debugLogger.writeMessage("Environment Check: JRE - Checking for update");
             String latestjavaexehash = (String) latest_object.get("jre_latest_version_v2");
-            if (!ModManager.IS_DEBUG && latestjavaexehash != null) {
+            if (/*!ModManager.IS_DEBUG && */latestjavaexehash != null) {
                 ModManager.debugLogger.writeMessage("Environment Check: JRE -  Server has hash to check against: " + latestjavaexehash);
 
                 boolean hashMismatch = false;
@@ -4273,15 +4273,16 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 memorybytecountMB = Long.parseLong(memsizebytesStr) / 1024 / 1024;
 
                 double modSizePercentOfRam = dirSizeMB * 1.0 / memorybytecountMB;
-                if (modSizePercentOfRam > 10) {
-                    //over 10 percent of ram
-                    ModManager.debugLogger.writeMessage("Mod is over 10% size of ram - subtracting mod size from total system RAM");
+                if (modSizePercentOfRam > 0.3) {
+                    //over 30 percent of ram
+                    //This is used on very low end systems
+                    ModManager.debugLogger.writeMessage("Mod is over 30% size of ram - subtracting mod size from total system RAM");
                     memorybytecountMB -= dirSizeMB; //subtract out the mod size as it's gonna eat up a lot of ram compressing
                     ModManager.debugLogger.writeMessage("New memory value: " + memorybytecountMB + "MB");
                 }
 
                 ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memorybytecountMB + "MB");
-                dictsize = (int) (memorybytecountMB / 48); //Seems to be around where it is optimal. Not that I've
+                dictsize = (int) (memorybytecountMB / 48); //Seems to be around where it is optimal. Not that I've tested or anything
                 if (dictsize > 324) {
                     ModManager.debugLogger.writeMessage("Capping dictionary size to max of 324MB.");
                     dictsize = 324;

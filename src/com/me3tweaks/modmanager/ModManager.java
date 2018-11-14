@@ -106,7 +106,7 @@ public class ModManager {
 
     public static void main(String[] args) {
         loadLogger();
-        ME3TweaksUpdaterServiceWindow.main(null);
+        //ME3TweaksUpdaterServiceWindow.main(null);
 
         boolean emergencyMode = false;
         boolean isUpdate = false;

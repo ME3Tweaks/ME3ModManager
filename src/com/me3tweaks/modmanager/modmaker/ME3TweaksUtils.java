@@ -8,19 +8,27 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
+import com.me3tweaks.modmanager.objects.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModTypeConstants;
-import com.me3tweaks.modmanager.objects.ThirdPartyImportingInfo;
-import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 
 /**
  * Utilities class for interfacing with ME3Tweaks and ModMaker
@@ -34,6 +42,42 @@ public class ME3TweaksUtils {
 	public static final int INTERNAL = 2;
 
 	private static HashMap<String, String> coalHashMap, tocHashMap;
+
+	/**
+	 * Submits telemetry to ME3Tweaks
+	 * @param telemetryData List of telemetry data
+	 * @param forceWait If the telemetry submission can be background threaded or should force waiting (e.g. before an update commences)
+	 */
+	public static void SubmitTelemetry(ArrayList<Pair<String,String>> telemetryData, boolean forceWait) {
+		Runnable task = () -> {
+			try {
+				//ModManager.debugLogger.writeMessage("Sending DLC mod telemetry to ME3Tweaks. This information will be used to help build a database of what DLC content mods exist.");
+				// Request parameters and other properties.
+				List<NameValuePair> params = new ArrayList<NameValuePair>();
+				for (Pair p : telemetryData) {
+					params.add(new BasicNameValuePair(p.getKey().toString(), p.getValue().toString()));
+				}
+				URIBuilder urib = new URIBuilder("https://me3tweaks.com/modmanager/telemetry");
+				urib.setParameters(params);
+				HttpClient httpClient = HttpClientBuilder.create().build();
+				URI uri = urib.build();
+				//System.out.println("Sending telemetry via GET: " + uri.toString());
+				//Execute and get the response.
+				HttpGet get = new HttpGet(uri);
+				HttpResponse response = httpClient.execute(get);
+				HttpEntity entity = response.getEntity();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since this is optional we will ignore this error: ", e);
+			}
+		};
+		if (forceWait) {
+			task.run();
+		} else {
+			//Run on separate thread
+			Thread thread = new Thread(task);
+			thread.start();
+		}
+	}
 
 	/**
 	 * Downloads a pristine coalesced to the correct pristine directory. This

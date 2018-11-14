@@ -17,6 +17,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.Box;
@@ -33,8 +34,11 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.ProcessResult;
 import org.apache.commons.lang3.ArchUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
@@ -234,6 +238,14 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
                 if (!buildJREUpdaterBugWorkaroundScript()) {
                     cancel(true);
                 }
+                ArrayList<Pair<String,String>> telemetryData = new ArrayList<Pair<String,String>>();
+                telemetryData.add(new ImmutablePair<>("telemetrykey","JREUPDATE_ATTEMPT"));
+                telemetryData.add(new ImmutablePair<>("startbuild",System.getProperty("java.version")));
+                telemetryData.add(new ImmutablePair<>("destbuild",version));
+                ME3TweaksUtils.SubmitTelemetry(telemetryData,true);
+                while (true){
+
+                }
             } catch (IOException ex) {
                 ModManager.debugLogger.writeErrorWithException("ERROR DOWNLOADING UPDATE: ", ex);
                 JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -383,6 +395,9 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         try {
 
             ModManager.debugLogger.writeMessage("Upgrading JRE.");
+
+
+
             //JOptionPane.showMessageDialog(null, "DEBUG: Check data folder, click OK to continue update.");
             ModManager.MOD_MANAGER_UPDATE_READY = true; //do not delete temp
             File script = new File(updaterSCriptPath);
