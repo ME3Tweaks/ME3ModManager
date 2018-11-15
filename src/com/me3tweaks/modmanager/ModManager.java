@@ -575,7 +575,15 @@ public class ModManager {
         }
 
         ModManager.debugLogger.writeMessage("Loading JavaFX");
-        new JFXPanel(); // used for initializing javafx thread (ideally called once)
+        ModManager.debugLogger.writeMessage("If the application hangs here, it means JavaFX has failed to load. Ensure you are not running MSI Afterburner or Rivatuner as it will cause initialization of this to crash.");
+        try {
+            new JFXPanel(); // used for initializing javafx thread (ideally called once)
+        } catch (Exception e) {
+            ModManager.debugLogger.writeErrorWithException("JavaFX has failed to load! This is a fatal startup error.", e);
+            JOptionPane.showMessageDialog(null,"JavaFX failed to load. Please contact Mgamerz for assistance.","JavaFX failed to load",JOptionPane.ERROR_MESSAGE);
+            ModManager.debugLogger.writeError("Application aborting");
+            System.exit(1);
+        }
         ModManager.debugLogger.writeMessage("Loaded JavaFX");
 
         try {
