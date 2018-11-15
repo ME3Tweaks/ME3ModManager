@@ -14,6 +14,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.w3c.dom.Document;
@@ -434,20 +436,26 @@ public class ModManager {
                 // This is being run as an update
                 try {
                     long oldbuild = Long.parseLong(args[1]);
+                    ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
+                    telemetryData.add(new ImmutablePair<>("startbuild", Long.toString(oldbuild)));
+                    telemetryData.add(new ImmutablePair<>("destbuild", Long.toString(BUILD_NUMBER)));
                     if (oldbuild >= ModManager.BUILD_NUMBER) {
+                        telemetryData.add(new ImmutablePair<>("telemetrykey", "JREUPDATE_FAILED"));
+                        ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
                         // SOMETHING WAS WRONG!
                         JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed",
                                 JOptionPane.ERROR_MESSAGE);
                         ModManager.debugLogger.writeMessage("UPDATE FAILED!");
                     } else {
                         // update ok
+                        telemetryData.add(new ImmutablePair<>("telemetrykey", "JREUPDATE_SUCCESS"));
+                        ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
                         ModManager.debugLogger.writeMessage("UPDATE SUCCEEDED!");
                         File file = new File("update"); // Delete the update
                         // directory
                         file.delete();
                         isUpdate = true;
                     }
-
                 } catch (NumberFormatException e) {
                     ModManager.debugLogger.writeMessage("--update-from number format exception.");
                 }

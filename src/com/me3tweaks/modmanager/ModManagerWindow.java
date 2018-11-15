@@ -806,7 +806,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 }
 
                 long minJavaRequiredStr = (long) latest_object.get("min_required_jre_for_update");
-                int runTimeMajor = Runtime.version().feature();
+                int runTimeMajor = Runtime.version().major();//feature();
 
                 if (minJavaRequiredStr > runTimeMajor) {
                     //cant update, JRE required is too new

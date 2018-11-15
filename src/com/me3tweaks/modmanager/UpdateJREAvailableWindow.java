@@ -243,9 +243,6 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
                 telemetryData.add(new ImmutablePair<>("startbuild",System.getProperty("java.version")));
                 telemetryData.add(new ImmutablePair<>("destbuild",version));
                 ME3TweaksUtils.SubmitTelemetry(telemetryData,true);
-                while (true){
-
-                }
             } catch (IOException ex) {
                 ModManager.debugLogger.writeErrorWithException("ERROR DOWNLOADING UPDATE: ", ex);
                 JOptionPane.showMessageDialog(UpdateJREAvailableWindow.this, "Error downloading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
