@@ -67,7 +67,7 @@ public class ModXMLTools {
         private Mod mod;
         private String changelog;
         private int jobCode;
-
+        boolean aborted = false;
         public ManifestGeneratorUpdateCompressor(Mod mod) {
             this.mod = mod;
             //Verify Deltas
@@ -76,18 +76,21 @@ public class ModXMLTools {
             }
             FileUtils.deleteQuietly(new File(mod.getModPath() + "VARIANTS")); //nuke variants.
             String changelog = JOptionPane.showInputDialog(ModManagerWindow.ACTIVE_WINDOW,
-                    "Enter a short changelog users will see when updating your mod.\nKeep it to 1 sentence or less.\nLeave blank for no changelog.", "Enter Changelog",
+                    "Enter a short changelog users will see when updating your mod.\nKeep it to 1 sentence or less as this will be shown in a dialog to users.\nLeave blank for no changelog.", "Enter Changelog",
                     JOptionPane.PLAIN_MESSAGE);
             if (changelog != null && !changelog.equals("")) {
                 this.changelog = changelog;
+            } else {
+                aborted=true;
             }
             jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ManifestGenerator", "Preparing mod for updater service");
         }
 
         @Override
         protected String doInBackground() throws Exception {
+            if (aborted) {return "";}
             if (mod.getModMakerCode() > 0) {
-                System.err.println("ModMaker codes use the ID");
+                ModManager.debugLogger.writeError("ModMaker codes use the ID");
                 publish(new ThreadCommand("ModMaker mods can't use classic updater", "ERROR"));
                 return "";
             }
@@ -101,6 +104,12 @@ public class ModXMLTools {
             if (mod.getVersion() <= 0) {
                 ModManager.debugLogger.writeError("Mod must have a double/numeric version number for updating");
                 publish(new ThreadCommand("Mod requires numeric version number", "ERROR"));
+                return "";
+            }
+
+            if (mod.getServerModFolder().equals(Mod.DEFAULT_SERVER_FOLDER)) {
+                ModManager.debugLogger.writeError("Mod must have [UPDATES]serverfolder set.");
+                publish(new ThreadCommand("Mod requires serverfolder in moddesc", "ERROR"));
                 return "";
             }
 
@@ -347,6 +356,8 @@ public class ModXMLTools {
                     }
                     fileElement.setTextContent(relativePath);
                     rootElement.appendChild(fileElement);
+                } else {
+                    ModManager.debugLogger.writeMessage("Skipping file for manifest generating (was not compressed): "+relativePath);
                 }
                 processed++;
             }

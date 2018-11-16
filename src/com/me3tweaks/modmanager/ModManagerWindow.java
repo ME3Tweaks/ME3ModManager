@@ -1721,11 +1721,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         moddevUpdateXMLGenerator.setToolTipText("No mod is currently selected");
         moddevUpdateXMLGenerator.setEnabled(false);
         moddevUpdateXMLGenerator.addActionListener(this);
-        devMenu.add(mountMenu);
-        devMenu.add(toolMountdlcEditor);
+
+
         devMenu.add(modDevStarterKit);
+        devMenu.add(toolMountdlcEditor);
         devMenu.add(moddevOfficialDLCManager);
-        devMenu.add(moddevUpdateXMLGenerator);
         devMenu.add(toolTankmasterCoalUI);
         devMenu.add(toolTankmasterTLK);
 
@@ -2137,7 +2137,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             modutilsCheckforupdate.setEnabled(false);
             modutilsCheckforupdate.setText("Mod not eligible for updates");
             moddevUpdateXMLGenerator.setEnabled(false);
-            moddevUpdateXMLGenerator.setToolTipText(mod.getModName() + " does not have a ME3Tweaks update code");
+            moddevUpdateXMLGenerator.setToolTipText(mod.getModName() + " does not have a ME3Tweaks update code or version is not set");
             moddevUpdateXMLGenerator.setText("Cannot prepare " + mod.getModName() + " for ME3Tweaks Updater Service");
             modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
         }
@@ -2150,15 +2150,18 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
 
         // DEPLOYMENT
-        JMenuItem modutilsModdescEditor = new JMenuItem("Installation editor (moddesc)");
-        modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
+        JMenuItem modutilsModdescEditor = new JMenuItem("Installation  (moddesc)");
+        modutilsModdescEditor.setToolTipText("<html>Read-only moddesc.ini viewer</html>");
 
         // OPEN MOD FOLDER
         JMenuItem modutilsOpenFolder = new JMenuItem("Open mod folder");
         modutilsOpenFolder.setToolTipText("<html>Opens this mod's folder in File Explorer.<br>" + mod.getModPath() + "</html>");
 
-        modDeveloperMenu.add(modutilsModdescEditor);
+        //modDeveloperMenu.add(modutilsModdescEditor);
         modDeveloperMenu.add(modutilsDeploy);
+        modDeveloperMenu.add(moddevUpdateXMLGenerator);
+        modDeveloperMenu.add(mountMenu);
+
 
         // DELETE MOD
         JMenuItem modutilsDeleteMod = new JMenuItem("Delete mod from library");
@@ -3064,8 +3067,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
 
         } else if (e.getSource() == moddevUpdateXMLGenerator) {
+            Mod mod = modModel.getElementAt(modList.getSelectedIndex());
+            if (mod.getServerModFolder().equals(Mod.DEFAULT_SERVER_FOLDER)) {
+                ModManager.debugLogger.writeError("Mod must have [UPDATES]serverfolder set.");
+                labelStatus.setText("Mod requires serverfolder to be set in moddesc");
+                return;
+            }
             ModManager.debugLogger.writeMessage("Generating Manifest...");
-            ModXMLTools.generateXMLFileList(modModel.getElementAt(modList.getSelectedIndex()));
+            ModXMLTools.generateXMLFileList(mod);
         } else if (e.getSource() == sqlDifficultyParser) {
             new DifficultyGUI();
         } else if (e.getSource() == sqlWavelistParser) {
