@@ -1,22 +1,5 @@
 package com.me3tweaks.modmanager.objects;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.*;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.ini4j.InvalidFileFormatException;
-import org.ini4j.Wini;
-
-import com.me3tweaks.modmanager.AutoTocWindow;
-import com.me3tweaks.modmanager.DeltaWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.moddesceditor.MDEOfficialJob;
@@ -24,6 +7,15 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.utilities.ByteArrayInOutStream;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.valueparsers.ValueParserLib;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.ini4j.InvalidFileFormatException;
+import org.ini4j.Wini;
+
+import java.io.*;
+import java.util.*;
 
 public class Mod implements Comparable<Mod> {
     public static final String DELTAS_FOLDER = "DELTAS";
@@ -64,7 +56,6 @@ public class Mod implements Comparable<Mod> {
     public String rawAltDlcText;
     public String rawAltFilesText;
     public ArrayList<String> requiredDLC = new ArrayList<>();
-    private String rawOutdatedCustomDLCText;
     private boolean modIsUnofficial;
     private ArrayList<String> additionalIncludeFolders = new ArrayList<String>();
 
@@ -706,9 +697,7 @@ public class Mod implements Comparable<Mod> {
         }
 
         // CHECK FOR CUSTOMDLC HEADER (3.1+)
-        if (modCMMVer >= 3.1)
-
-        {
+        if (modCMMVer >= 3.1) {
             ModManager.debugLogger.writeMessageConditionally("Mod built for ModManager 3.1+, checking for CUSTOMDLC header", ModManager.LOG_MOD_INIT);
             String iniModDir = modini.get(ModTypeConstants.CUSTOMDLC, "sourcedirs");
             if (iniModDir != null && !iniModDir.equals("")) {
@@ -868,7 +857,6 @@ public class Mod implements Comparable<Mod> {
 
                 String outdatedDLC = modini.get("CUSTOMDLC", "outdatedcustomdlc");
                 if (outdatedDLC != null && !outdatedDLC.equals("")) {
-                    rawOutdatedCustomDLCText = outdatedDLC;
                     StringTokenizer outdatedDLCTok = new StringTokenizer(outdatedDLC, ";");
                     ArrayList<String> official = ModTypeConstants.getStandardDLCFolders();
                     while (outdatedDLCTok.hasMoreTokens()) {
@@ -919,11 +907,33 @@ public class Mod implements Comparable<Mod> {
             }
         }
 
+        if (modCMMVer >= 5.1) {
+            ModManager.debugLogger.writeMessageConditionally("Targetting >= ModDesc 5.1, looking for additionaldeploymentfolders descriptor", ModManager.LOG_MOD_INIT);
+            String additionalFoldersStr = modini.get("Updates", "additionaldeploymentfolders");
+            if (additionalFoldersStr != null && !additionalFoldersStr.equals("")) {
+                ArrayList<String> additionalFolders = new ArrayList<String>(Arrays.asList(additionalFoldersStr.split(";")));
+                for (String additionalFolder : additionalFolders) {
+                    //Validate not in use by another job.
+                    if (additionalFolder.contains("..")) {
+                        //reject
+                        ModManager.debugLogger.writeError("This mod lists additional data folders for the mod that contains a .. in the path. This is not allowed for security reasons.");
+                        setFailedReason("This mod lists additional data folders for the mod that contains a .. in the path. This is not allowed for security reasons. Fix [UPDATES]additionalfolders in moddesc.ini to resolve this issue.");
+                        return;
+                    }
+                    File path = new File(modFolderPath + additionalFolder);
+                    if (!(path.exists() && !path.isDirectory())) {
+                        ModManager.debugLogger.writeError("A specified additional folder could not be found: "+additionalFolder);
+                        setFailedReason("This mod lists an additional data folder that does not exist: "+additionalFolder+". Ensure this folder exists in your mod's directory, or remove it from the [UPDATES]additionalfolders moddesc.ini descriptor.");
+                        return;
+                    }
+                }
+                additionalIncludeFolders = additionalFolders;
+            }
+        }
+
         // Backwards compatibility for Mod Manager 2's modcoal flag (has now
         // moved to [BASEGAME] as of 3.0)
-        if (modCMMVer < 3.0f && modCMMVer >= 2.0f)
-
-        {
+        if (modCMMVer < 3.0f && modCMMVer >= 2.0f) {
             modCMMVer = 2.0;
             ModManager.debugLogger.writeMessageConditionally(modName + ": Targets CMM2.0. Checking for modcoal flag", ModManager.LOG_MOD_INIT);
 
@@ -1383,11 +1393,12 @@ public class Mod implements Comparable<Mod> {
      * Creates a moddesc.ini string that should be written to a file that
      * describes this mod object.
      *
-     * @param keepUpdaterCode Keeps the classic update code
-     * @param cmmVersion      Version of moddesc to write to file
+     * @param keepUpdaterCode      Keeps the classic update code
+     * @param cmmVersion           Version of moddesc to write to file
+     * @param createUpdaterSection Creates the [UPDATES] section with blank values for user
      * @return moddesc.ini file as a string
      */
-    public String createModDescIni(boolean keepUpdaterCode, double cmmVersion) {
+    public String createModDescIni(boolean keepUpdaterCode, double cmmVersion, boolean createUpdaterSection) {
         // Write mod descriptor file
         try {
             Wini ini = new Wini();
@@ -1532,6 +1543,17 @@ public class Mod implements Comparable<Mod> {
 
                 if (job.getFilesToRemoveTargets().size() > 0) {
                     ini.put(job.getJobName(), "removefilestargets", rftsb.toString());
+                }
+            }
+
+            if (createUpdaterSection) {
+                String serverUpdateField = (String) ini.get("UPDATES", "serverfolder");
+                if (serverUpdateField == null) {
+                    ini.put("UPDATES", "serverfolder", "");
+                }
+                serverUpdateField = (String) ini.get("UPDATES", "additionalfolders");
+                if (serverUpdateField == null) {
+                    ini.put("UPDATES", "additionalfolders", "");
                 }
             }
             ByteArrayOutputStream os = new ByteArrayOutputStream();

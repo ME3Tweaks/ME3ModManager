@@ -353,7 +353,7 @@ public class ImportEntryWindow extends JDialog {
 			dlcJob.getDestFolders().add(dlcModName);
 			mod.addTask(ModTypeConstants.CUSTOMDLC, dlcJob);
 
-			String desc = mod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT);
+			String desc = mod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT,false);
 			File descFile = new File(localModPathFile + File.separator + "moddesc.ini");
 			FileUtils.writeStringToFile(descFile, desc, StandardCharsets.UTF_8);
 

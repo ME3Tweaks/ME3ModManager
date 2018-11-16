@@ -21,12 +21,6 @@ import org.ini4j.Wini;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.io.*;
 import java.net.URL;
@@ -51,7 +45,7 @@ public class ModManager {
     public static boolean logging = false;
     public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
     // version
-    public static final double MODDESC_VERSION_SUPPORT = 5.0; // max supported
+    public static final double MODDESC_VERSION_SUPPORT = 5.1; // max supported
     // cmmver in
     // moddesc
     public static boolean MOD_MANAGER_UPDATE_READY = false; //if true, don't delete temp

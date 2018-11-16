@@ -602,7 +602,7 @@ public class StarterKitWindow extends JDialog {
 			startermod.setSite(modsite);
 			startermod.setModName(modname);
 			startermod.setVersion(1.0);
-			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT), StandardCharsets.UTF_8);
+			FileUtils.writeStringToFile(new File(modpath + "moddesc.ini"), startermod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT,true), StandardCharsets.UTF_8);
 
 			//reload newly written mod.
 			ModManager.debugLogger.writeMessage("Loading moddesc.ini to verify mod is valid");

@@ -180,7 +180,7 @@ public class KeybindsInjectionWindow extends JDialog {
 				}
 
 				//write new moddesc.ini file
-				String descini = mod.createModDescIni(true, mod.modCMMVer);
+				String descini = mod.createModDescIni(true, mod.modCMMVer,false);
 				ModManager.debugLogger.writeMessage("Writing new moddesc.ini with new coal modding job");
 				FileUtils.writeStringToFile(new File(stagingIniPath), descini);
 
@@ -271,7 +271,7 @@ public class KeybindsInjectionWindow extends JDialog {
 					mod.modCMMVer = newCmmVer;
 
 					//write new moddesc.ini file
-					String descini = mod.createModDescIni(true, mod.modCMMVer);
+					String descini = mod.createModDescIni(true, mod.modCMMVer,false);
 					ModManager.debugLogger.writeMessage("Writing new moddesc.ini with new coal modding job");
 					FileUtils.writeStringToFile(new File(stagingIniPath), descini);
 

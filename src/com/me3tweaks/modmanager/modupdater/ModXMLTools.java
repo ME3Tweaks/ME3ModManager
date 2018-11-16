@@ -1,27 +1,16 @@
 package com.me3tweaks.modmanager.modupdater;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import javax.swing.JOptionPane;
-import javax.swing.SwingWorker;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
+import com.me3tweaks.modmanager.DeltaWindow;
+import com.me3tweaks.modmanager.ModManager;
+import com.me3tweaks.modmanager.ModManagerWindow;
+import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
+import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow.AllModsDownloadTask;
+import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ModDelta;
+import com.me3tweaks.modmanager.objects.ModJob;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -43,17 +32,25 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.me3tweaks.modmanager.DeltaWindow;
-import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.ModManagerWindow;
-import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
-import com.me3tweaks.modmanager.modupdater.AllModsUpdateWindow.AllModsDownloadTask;
-import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModDelta;
-import com.me3tweaks.modmanager.objects.ModJob;
-import com.me3tweaks.modmanager.objects.ThreadCommand;
-import com.me3tweaks.modmanager.utilities.MD5Checksum;
-import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import javax.swing.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class ModXMLTools {
     static DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -68,6 +65,7 @@ public class ModXMLTools {
         private String changelog;
         private int jobCode;
         boolean aborted = false;
+
         public ManifestGeneratorUpdateCompressor(Mod mod) {
             this.mod = mod;
             //Verify Deltas
@@ -81,14 +79,16 @@ public class ModXMLTools {
             if (changelog != null && !changelog.equals("")) {
                 this.changelog = changelog;
             } else {
-                aborted=true;
+                aborted = true;
             }
             jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ManifestGenerator", "Preparing mod for updater service");
         }
 
         @Override
         protected String doInBackground() throws Exception {
-            if (aborted) {return "";}
+            if (aborted) {
+                return "";
+            }
             if (mod.getModMakerCode() > 0) {
                 ModManager.debugLogger.writeError("ModMaker codes use the ID");
                 publish(new ThreadCommand("ModMaker mods can't use classic updater", "ERROR"));
@@ -357,7 +357,7 @@ public class ModXMLTools {
                     fileElement.setTextContent(relativePath);
                     rootElement.appendChild(fileElement);
                 } else {
-                    ModManager.debugLogger.writeMessage("Skipping file for manifest generating (was not compressed): "+relativePath);
+                    ModManager.debugLogger.writeMessage("Skipping file for manifest generating (was not compressed): " + relativePath);
                 }
                 processed++;
             }

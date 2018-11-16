@@ -34,8 +34,6 @@ public class ModJob {
 	private String jobName, requirementText;
 	private ArrayList<String> sourceFolders;
 
-
-
 	private ArrayList<String> originalSourceFolders; //Used when doing local autotoc. Does not contain any alternates, only what happens on initial load
 	private ArrayList<String> destFolders;
 	public ArrayList<String> filesToReplace, filesToReplaceTargets, addFiles, addFilesTargets, removeFilesTargets;
