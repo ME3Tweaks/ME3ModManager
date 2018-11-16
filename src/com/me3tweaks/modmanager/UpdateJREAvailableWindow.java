@@ -91,7 +91,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         JPanel updatePanel = new JPanel();
         updatePanel.setLayout(new BoxLayout(updatePanel, BoxLayout.Y_AXIS));
         introLabel = new JLabel();
-        introLabel.setText("<html>An update for Mod Manager's Java Runtime is available.</html>");
+        introLabel.setText("<html>An update for Mod Manager's Java Runtime Environment (JRE) is available.</html>");
 
         String bitnessUpgrade = "";
         boolean x86 = ArchUtils.getProcessor().is32Bit();
@@ -99,13 +99,13 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
             bitnessUpgrade = "<br>This will upgrade Mod Manager from 32-bit java to 64-bit java.";
         }
         if (!x86 && !ModManager.isUsingBundledJRE()) {
-            bitnessUpgrade = "<br>This will switch Mod Manager from using your system JRE to a bundled version.";
+            bitnessUpgrade = "<br><br>This will switch Mod Manager from using your system JRE to a bundled version.";
         }
 
-        versionsLabel = new JLabel("<html>Local Version: " + System.getProperty("java.version") + "<br>" + "Supported Version: " + version + bitnessUpgrade + "</html>");
+        versionsLabel = new JLabel("<html><div style='width: 290px'>Local Version: " + System.getProperty("java.version") + "<br>" + "Supported Version: " + version + bitnessUpgrade + "<br>Note: Mod Manager does not work with a locally installed JRE. Mod Manager will only work with this customized JRE.</div></html>");
 
         String release_notes = (String) updateInfo.get("jre_latest_release_notes_v2");
-        changelogLabel = new JLabel("<html><div style=\"width:270px;\">" + release_notes + "</div></html>");
+        changelogLabel = new JLabel("<html><div style=\"width:270px;\">" + release_notes.replaceAll("\n","") + "</div></html>");
         updateButton = new JButton("Install Update");
         updateButton.addActionListener(this);
         notNowButton = new JButton("Not now");
@@ -136,14 +136,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         updatePanel.add(changeLogPanel);
         updatePanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-        JPanel actionPanel = new JPanel();
-        actionPanel.setLayout(new BoxLayout(actionPanel, BoxLayout.X_AXIS));
-        actionPanel.add(updateButton);
-        actionPanel.add(Box.createHorizontalGlue());
-        actionPanel.setBorder(new TitledBorder(new EtchedBorder(), "Actions"));
-        actionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        updatePanel.add(actionPanel);
+        updatePanel.add(updateButton);
 
         downloadPanel = new JPanel();
         downloadPanel.setLayout(new BoxLayout(downloadPanel, BoxLayout.Y_AXIS));
@@ -153,7 +146,6 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         downloadPanel.setVisible(false);
         updatePanel.add(downloadPanel);
 
-        actionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         downloadPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         versionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         changeLogPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -376,6 +368,7 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         if (e.getSource() == updateButton) {
             ModManager.debugLogger.writeMessage("User has accepted the update");
             updateButton.setEnabled(false);
+            updateButton.setVisible(false);
             downloadPanel.setVisible(true);
             pack();
             DownloadTask task = new DownloadTask(ModManager.getTempDir());
