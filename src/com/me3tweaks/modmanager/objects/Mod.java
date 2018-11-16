@@ -784,6 +784,7 @@ public class Mod implements Comparable<Mod> {
                         }
                     }
                     newJob.getSourceFolders().add(sourceFolder);
+                    newJob.getOriginalSourceFolders().add(sourceFolder);
                     newJob.getDestFolders().add(destFolder);
                 }
                 ModManager.debugLogger.writeMessageConditionally(modName + ": Successfully made a new Mod Job for: " + ModTypeConstants.CUSTOMDLC, ModManager.LOG_MOD_INIT);
@@ -1093,7 +1094,7 @@ public class Mod implements Comparable<Mod> {
                     String replacementFilePath = getModTaskPath(af.getModFile(), job.getJobName());
                     String relativePath = ResourceUtils.getRelativePath(replacementFilePath, modPath, File.separator);
                     relativePath = ResourceUtils.normalizeFilePath(relativePath, false);
-                    //af.setAltFile(relativePath);
+                    af.setAltFile(relativePath);
                 }
             }
         }
@@ -1119,7 +1120,6 @@ public class Mod implements Comparable<Mod> {
         while (strok.hasMoreTokens()) {
             str = strok.nextToken();
         }
-        // ModManager.debugLogger.writeMessage("SFAR Shortened filename: "+str);
         return str;
     }
 
@@ -1130,10 +1130,6 @@ public class Mod implements Comparable<Mod> {
      * @param newJob
      */
     public void addTask(String name, ModJob newJob) {
-        /*
-         * if (name.equals(ModType.COAL)) { modCoal = true;
-         * updateModifyString(ModType.COAL); return; }
-         */
         if (!name.equals(ModTypeConstants.CUSTOMDLC)) {
             updateModifyString(name);
         }
@@ -1728,7 +1724,7 @@ public class Mod implements Comparable<Mod> {
      * Searches through all jobs for the specified path. Uses a module ID
      * (header) to find a job.
      *
-     * @return path to new file if found, null if it does't exist.
+     * @return path to new file if found, null if it doesn't exist.
      */
     public String getModTaskPath(String modulePath, String header) {
         if (header.equals(ModTypeConstants.COAL)) {

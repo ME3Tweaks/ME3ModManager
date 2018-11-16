@@ -172,7 +172,7 @@ public class AutoTocWindow extends JDialog {
 					}
 					ArrayList<String> folders = new ArrayList<>();
 					int tocd = 0;
-					for (String srcFolder : job.getSourceFolders()) {
+					for (String srcFolder : job.getOriginalSourceFolders()) {
 						folders.add(mod.getModPath() + srcFolder);
 						tocd++;
 					}

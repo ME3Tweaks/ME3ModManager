@@ -1930,11 +1930,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         modutilsHeader.setEnabled(false);
         JMenuItem modutilsInstallCustomKeybinds = new JMenuItem("Install custom keybinds into this mod");
         // check if BioInput.xml exists.
-        if (!checkForKeybindsOverride()) {
+        if (!checkForKeybindsOverride() || mod.getModTaskPath("/BIOGame/CookedPCConsole/Coalesced.bin","BASEGAME") == null) {
             // ModManager.debugLogger.writeMessage("No keybinds file in the override
             // directory (bioinput.xml)");
             modutilsInstallCustomKeybinds.setEnabled(false);
-            modutilsInstallCustomKeybinds.setToolTipText("<html>To enable installing custom keybinds put a<br>BioInput.xml file in the data/override/ directory.</html>");
+            modutilsInstallCustomKeybinds.setToolTipText("<html>Installing custom keybinds requires the following:<br> - BioInput.xml file in the data/override/ directory<br> - Mod must modify BASEGAME Coalesced.bin file</html>");
         } else {
             // ModManager.debugLogger.writeMessage("Found keybinds file in the override
             // directory (bioinput.xml)");
@@ -2112,7 +2112,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         }
 
         JMenuItem modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
-        modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes");
+        modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes.<br>This does not TOC any alternate files.");
 
         // UPDATES CHECK
         JMenuItem modutilsRestoreMod = new JMenuItem("Restore mod from ME3Tweaks");
@@ -2158,6 +2158,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         modutilsOpenFolder.setToolTipText("<html>Opens this mod's folder in File Explorer.<br>" + mod.getModPath() + "</html>");
 
         //modDeveloperMenu.add(modutilsModdescEditor);
+        modDeveloperMenu.add(modutilsAutoTOC);
         modDeveloperMenu.add(modutilsDeploy);
         modDeveloperMenu.add(moddevUpdateXMLGenerator);
         modDeveloperMenu.add(mountMenu);
@@ -2178,7 +2179,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         menuItems.add(new JSeparator());
         menuItems.add(modutilsInstallCustomKeybinds);
         menuItems.add(modutilsInfoEditor);
-        menuItems.add(modutilsAutoTOC);
         menuItems.add(modDeveloperMenu);
         menuItems.add(new JSeparator());
         menuItems.add(modutilsOpenFolder);
