@@ -66,6 +66,7 @@ public class Mod implements Comparable<Mod> {
     public ArrayList<String> requiredDLC = new ArrayList<>();
     private String rawOutdatedCustomDLCText;
     private boolean modIsUnofficial;
+    private ArrayList<String> additionalIncludeFolders = new ArrayList<String>();
 
     public ArrayList<AlternateCustomDLC> getAppliedAutomaticAlternateCustomDLC() {
         return appliedAutomaticAlternateCustomDLC;
@@ -231,6 +232,8 @@ public class Mod implements Comparable<Mod> {
         alternateFiles = new ArrayList<AlternateFile>();
         requiredPatches = new ArrayList<Patch>();
         modDeltas = new ArrayList<ModDelta>();
+        additionalIncludeFolders = new ArrayList<String>();
+
         for (ModJob job : mod.jobs) {
             ModJob newjob = new ModJob(job);
             newjob.setOwningMod(this);
@@ -256,6 +259,9 @@ public class Mod implements Comparable<Mod> {
         }
         for (String str : mod.requiredDLC) {
             requiredDLC.add(str);
+        }
+        for (String str : mod.additionalIncludeFolders) {
+            additionalIncludeFolders.add(str);
         }
     }
 

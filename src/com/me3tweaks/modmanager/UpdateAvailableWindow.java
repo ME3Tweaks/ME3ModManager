@@ -18,6 +18,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.Box;
@@ -35,6 +36,8 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.json.simple.JSONObject;
@@ -48,6 +51,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 	String downloadLink, downloadLink2, updateScriptLink, manualLink, changelogLink;
 	boolean error = false;
 	String version;
+	String buildHash;
 	long build;
 	JLabel introLabel, versionsLabel, changelogLabel, sizeLabel;
 	JButton updateButton, notNowButton, nextUpdateButton, manualDownloadButton;
@@ -66,6 +70,8 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		downloadLink2 = (String) updateInfo.get("download_link2");
 		manualLink = (String) updateInfo.get("manual_link");
 		changelogLink = (String) updateInfo.get("changelog_link");
+		buildHash = (String) updateInfo.get("build_md5");
+
 		if (manualLink == null) {
 			manualLink = downloadLink2 == null ? downloadLink : downloadLink2;
 		}
@@ -269,6 +275,14 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 
 				if (!buildUpdateScript()) {
 					cancel(true);
+				}
+				ArrayList<Pair<String,String>> telemetryData = new ArrayList<Pair<String,String>>();
+				telemetryData.add(new ImmutablePair<>("telemetrykey","MODMANAGERUPDATE_ATTEMPT"));
+				telemetryData.add(new ImmutablePair<>("startbuild",Long.toString(ModManager.BUILD_NUMBER)));
+				telemetryData.add(new ImmutablePair<>("destbuild",Long.toString(build)));
+				ME3TweaksUtils.SubmitTelemetry(telemetryData,true);
+				while (true){
+					//do nothing
 				}
 			} catch (IOException ex) {
 				ModManager.debugLogger.writeErrorWithException("ERROR DOWNLOADING UPDATE: ", ex);
@@ -546,6 +560,9 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append("popd");
 		sb.append("\r\n");
+		sb.append("echo Starting Mod Manager...");
+		sb.append("\r\n");
+		sb.append("\r\n");
 		//sb.append("pause");
 		sb.append("\r\n");
 		if (build == ModManager.BUILD_NUMBER) {
@@ -554,6 +571,10 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			sb.append("ME3CMM.exe --update-from ");
 		}
 		sb.append(ModManager.BUILD_NUMBER);
+		if (build == ModManager.BUILD_NUMBER) {
+			sb.append(" ");
+			sb.append(buildHash);
+		}
 		sb.append("\r\n");
 		sb.append("endlocal");
 		sb.append("\r\n");
@@ -570,11 +591,10 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 			Files.write(Paths.get(updatePath), sb.toString().getBytes(), StandardOpenOption.CREATE);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			ModManager.debugLogger.writeMessage("Couldn't generate the update script. Must abort.");
+			ModManager.debugLogger.writeErrorWithException("Couldn't generate the update script. Must abort.",e);
 			JOptionPane.showMessageDialog(UpdateAvailableWindow.this, "Error building update script: " + e.getClass() + "\nCannot continue.", "Updater Error",
 					JOptionPane.ERROR_MESSAGE);
 			error = true;
-			e.printStackTrace();
 			dispose();
 			return false;
 		}

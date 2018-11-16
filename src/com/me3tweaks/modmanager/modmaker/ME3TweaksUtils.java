@@ -61,13 +61,15 @@ public class ME3TweaksUtils {
 				urib.setParameters(params);
 				HttpClient httpClient = HttpClientBuilder.create().build();
 				URI uri = urib.build();
-				//System.out.println("Sending telemetry via GET: " + uri.toString());
+				if (ModManager.IS_DEBUG) {
+                    System.out.println("Sending telemetry via GET: " + uri.toString());
+                }
 				//Execute and get the response.
 				HttpGet get = new HttpGet(uri);
 				HttpResponse response = httpClient.execute(get);
 				HttpEntity entity = response.getEntity();
 			} catch (Exception e) {
-				ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since this is optional we will ignore this error: ", e);
+				ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since telemetry is not required, we will ignore this error.", e);
 			}
 		};
 		if (forceWait) {

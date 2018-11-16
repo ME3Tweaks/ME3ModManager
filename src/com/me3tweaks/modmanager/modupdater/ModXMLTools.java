@@ -328,23 +328,26 @@ public class ModXMLTools {
 
                 String srcFile = file.getAbsolutePath();
                 String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
-                Element fileElement = modDoc.createElement("sourcefile");
-                try {
-                    fileElement.setAttribute("hash", MD5Checksum.getMD5Checksum(srcFile));
-                    fileElement.setAttribute("size", Long.toString(new File(srcFile).length()));
-                    fileElement.setAttribute("lzmahash", MD5Checksum.getMD5Checksum(compressedfulloutputfolder + relativePath + ".lzma"));
-                    fileElement.setAttribute("lzmasize", Long.toString(new File(compressedfulloutputfolder + relativePath + ".lzma").length()));
-                    String normalizedRelativePath = relativePath.replaceAll("\\\\", "/");
-                    if (mod.getSideloadOnlyTargets().contains(normalizedRelativePath)) {
-                        fileElement.setAttribute("sideloadonly", "true");
+                String lzmafile = compressedfulloutputfolder + relativePath + ".lzma";
+                if (new File(lzmafile).exists()) { //Skip files not staged
+                    Element fileElement = modDoc.createElement("sourcefile");
+                    try {
+                        fileElement.setAttribute("hash", MD5Checksum.getMD5Checksum(srcFile));
+                        fileElement.setAttribute("size", Long.toString(new File(srcFile).length()));
+                        fileElement.setAttribute("lzmahash", MD5Checksum.getMD5Checksum(lzmafile));
+                        fileElement.setAttribute("lzmasize", Long.toString(new File(lzmafile).length()));
+                        String normalizedRelativePath = relativePath.replaceAll("\\\\", "/");
+                        if (mod.getSideloadOnlyTargets().contains(normalizedRelativePath)) {
+                            fileElement.setAttribute("sideloadonly", "true");
+                        }
+                    } catch (DOMException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        ModManager.debugLogger.writeErrorWithException("Exception while generating part of manifest: ", e);
                     }
-                } catch (DOMException e) {
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    ModManager.debugLogger.writeErrorWithException("Except while generating part of manifest: ", e);
+                    fileElement.setTextContent(relativePath);
+                    rootElement.appendChild(fileElement);
                 }
-                fileElement.setTextContent(relativePath);
-                rootElement.appendChild(fileElement);
                 processed++;
             }
 
