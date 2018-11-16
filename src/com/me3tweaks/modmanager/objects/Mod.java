@@ -1337,88 +1337,6 @@ public class Mod implements Comparable<Mod> {
         return modifyString;
     }
 
-    public boolean canMergeWith(Mod other) {
-        ModManager.debugLogger.writeMessage("Checking if mods can cleanly merge. Will report only first failure.");
-        for (ModJob job : jobs) {
-            ModJob otherCorrespondingJob = null;
-            for (ModJob otherjob : other.jobs) {
-                if (otherjob.equals(job)) {
-                    otherCorrespondingJob = otherjob;
-                    break;
-                }
-            }
-            if (otherCorrespondingJob == null) {
-                continue;
-            }
-            // scanned for matching job. Found it. Iterate over files...
-
-            //Compare my replace files to others replace/remove
-            for (String file : job.getFilesToReplaceTargets()) {
-                if (FilenameUtils.getName(file).equalsIgnoreCase("PCConsoleTOC.bin")) {
-                    continue;
-                }
-                ModManager.debugLogger.writeMessage("==Checking file for conflicts " + file + "==");
-
-                for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
-                    ModManager.debugLogger.writeMessage("Comparing replace files: " + file + " vs " + otherfile);
-                    if (file.equalsIgnoreCase(otherfile)) {
-                        ModManager.debugLogger.writeMessage("Merge conflicts with file to update " + file);
-                        return false;
-                    }
-                }
-                for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
-                    if (file.equalsIgnoreCase(otherfile)) {
-                        ModManager.debugLogger.writeMessage("Merge conflicts with file to update " + file);
-                        return false;
-                    }
-                }
-            }
-
-            //Compare my replace files to others replace/remove
-            for (String file : job.getFilesToRemoveTargets()) {
-                for (String otherfile : otherCorrespondingJob.getFilesToReplaceTargets()) {
-                    if (file.equalsIgnoreCase(otherfile)) {
-                        ModManager.debugLogger.writeMessage("Merge would add a task to remove a file requiring replace: " + file);
-                        return false;
-                    }
-                }
-            }
-
-            //compare files to add
-            for (String file : job.getFilesToAdd()) {
-                for (String otherfile : otherCorrespondingJob.getFilesToAdd()) {
-                    if (file.equalsIgnoreCase(otherfile)) {
-                        ModManager.debugLogger.writeMessage("Merge conflicts with file to add " + file);
-                        return false;
-                    }
-                }
-            }
-
-            //Compare my add files to others remove
-            for (String file : job.getFilesToAddTargets()) {
-                for (String otherfile : otherCorrespondingJob.getFilesToRemoveTargets()) {
-                    if (file.equalsIgnoreCase(otherfile)) {
-                        ModManager.debugLogger.writeMessage("Merge conflicts with file to add/remove " + file);
-                        return false;
-                    }
-                }
-            }
-            for (String file : job.getFilesToRemoveTargets()) {
-                for (String otherfile : otherCorrespondingJob.getFilesToAddTargets()) {
-                    if (file.equalsIgnoreCase(otherfile)) {
-                        ModManager.debugLogger.writeMessage("Merge conflicts with file to add/remove " + file);
-                        return false;
-                    }
-                }
-            }
-
-            //don't care about files to remove. I think...
-
-        }
-        ModManager.debugLogger.writeMessage("No conflicted detected.");
-        return true;
-    }
-
     /**
      * Gets the list of files that conflict with the specified mod, in terms of
      * files to replace.
@@ -1686,121 +1604,6 @@ public class Mod implements Comparable<Mod> {
         }
     }
 
-    /**
-     * Creates a new mod package in a folder with the same name as this mod.
-     * Copies files to the new directory based on the name of this mod. Creates
-     * a moddesc.ini file based on jobs in this mod.
-     *
-     * @param otherMergingMod Other mod this one is merging with. This can be null. This is
-     *                        used to find the Custom DLC directory to copy to the new mod
-     *                        if one isn't present for this mod.
-     */
-    public Mod createNewMod(Mod otherMergingMod) {
-        printModContents();
-        File modFolder = new File(ModManager.getModsDir() + modName);
-        modFolder.mkdirs();
-        for (ModJob job : jobs) {
-            if (job.getJobType() == ModJob.CUSTOMDLC) {
-                for (String sourceFolder : job.getSourceFolders()) {
-                    try {
-                        File srcFolder = new File(ModManager.appendSlash(modDescFile.getParentFile().getAbsolutePath()) + sourceFolder);
-                        if (!srcFolder.exists() && otherMergingMod != null) {
-                            //may be in other mod as we haven't copied it yet and we don't use file pointers here (folder names)
-                            srcFolder = new File(ModManager.appendSlash(otherMergingMod.modDescFile.getParentFile().getAbsolutePath()) + sourceFolder);
-                        }
-                        File destFolder = new File(modFolder + File.separator + sourceFolder); //source folder is a string
-                        ModManager.debugLogger.writeMessage("Copying custom DLC folder: " + srcFolder.getAbsolutePath() + " to " + destFolder.getAbsolutePath());
-                        FileUtils.copyDirectory(srcFolder, destFolder);
-                    } catch (IOException e) {
-                        ModManager.debugLogger.writeMessage("IOException while merging mods (custom DLC).");
-                        ModManager.debugLogger.writeException(e);
-                    }
-                }
-                continue;
-            }
-
-            File moduleDir = new File(modFolder + File.separator + getStandardFolderName(job.getJobName()));
-            moduleDir.mkdirs();
-            // scanned for matching job. Found it. Iterate over files...
-            //Copy files to replace
-            for (String mergefile : job.getFilesToReplace()) {
-                File file = new File(mergefile);
-                String baseName = FilenameUtils.getName(mergefile);
-                try {
-                    File destinationFile = new File(moduleDir + File.separator + baseName);
-                    ModManager.debugLogger.writeMessage("Copying to new mod folder: " + file.getAbsolutePath() + " to " + destinationFile.getAbsolutePath());
-                    FileUtils.copyFile(file, destinationFile);
-                } catch (IOException e) {
-                    ModManager.debugLogger.writeMessage("IOException while merging mods.");
-                    ModManager.debugLogger.writeException(e);
-                }
-                ModManager.debugLogger.writeMessage(job.getJobName() + ": " + file);
-            }
-            //copy files to add
-            for (String mergefile : job.getFilesToAdd()) {
-                File file = new File(mergefile);
-                String baseName = FilenameUtils.getName(mergefile);
-                try {
-                    File destinationFile = new File(moduleDir + File.separator + baseName);
-                    ModManager.debugLogger.writeMessage("Copying to new mod folder: " + file.getAbsolutePath() + " to " + destinationFile.getAbsolutePath());
-                    FileUtils.copyFile(file, destinationFile);
-                } catch (IOException e) {
-                    ModManager.debugLogger.writeMessage("IOException while merging mods.");
-                    ModManager.debugLogger.writeException(e);
-                }
-                ModManager.debugLogger.writeMessage(job.getJobName() + ": " + file);
-            }
-        }
-
-        //COPY DELTAS
-        if (modDeltas.size() > 0) {
-            File dir = new File(modFolder + File.separator + DELTAS_FOLDER);
-            dir.mkdirs();
-            for (ModDelta delta : modDeltas) {
-                try {
-                    FileUtils.copyFile(new File(delta.getDeltaFilepath()), new File(dir + File.separator + FilenameUtils.getName(delta.getDeltaFilepath())));
-                } catch (IOException e) {
-                    ModManager.debugLogger.writeErrorWithException("Unable to copy delta:", e);
-                }
-            }
-        }
-
-        try {
-            ModManager.debugLogger.writeMessage("Creating moddesc.ini...");
-            FileUtils.writeStringToFile(new File(modFolder + File.separator + "moddesc.ini"), createModDescIni(false, modCMMVer));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            ModManager.debugLogger.writeMessage("IOException while merging mods.");
-            ModManager.debugLogger.writeException(e);
-            e.printStackTrace();
-        }
-        Mod newMod = new Mod(modFolder + File.separator + "moddesc.ini");
-        for (ModDelta delta : newMod.getModDeltas()) {
-            new DeltaWindow(newMod, delta, true, true);
-        }
-        if (newMod.isValidMod()) {
-            new AutoTocWindow(newMod, AutoTocWindow.LOCALMOD_MODE, ModManagerWindow.GetBioGameDir());
-        } else {
-            return null;
-        }
-        return newMod;
-    }
-
-    private void printModContents() {
-        ModManager.debugLogger.writeMessage("========" + modName + "========");
-        for (ModJob job : jobs) {
-            if (job.getJobType() == ModJob.CUSTOMDLC) {
-                for (String sourceFolder : job.getSourceFolders()) {
-                    ModManager.debugLogger.writeMessage(job.getJobName() + ": " + sourceFolder);
-                }
-                continue;
-            }
-            for (String sourceFile : job.getFilesToAdd()) {
-                ModManager.debugLogger.writeMessage(job.getJobName() + ": " + sourceFile);
-            }
-        }
-    }
-
     public void setModName(String modName) {
         this.modName = modName;
     }
@@ -1831,10 +1634,9 @@ public class Mod implements Comparable<Mod> {
     }
 
     /**
-     * Attempts to parse the mod version from the CMM string If it fails it
-     * returns a 0
+     * Attempts to parse the mod version from the CMM string
      *
-     * @return
+     * @return Double parsed value, 0 otherwise (including failures)
      */
     public double getVersion() {
         if (modVersion == null) {
@@ -1953,14 +1755,6 @@ public class Mod implements Comparable<Mod> {
             }
         }
         return null;
-    }
-
-    public ArrayList<Patch> getRequiredPatches() {
-        return requiredPatches;
-    }
-
-    public void setRequiredPatches(ArrayList<Patch> requiredPatches) {
-        this.requiredPatches = requiredPatches;
     }
 
     public boolean isValidMod() {

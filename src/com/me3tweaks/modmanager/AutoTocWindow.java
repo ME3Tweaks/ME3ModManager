@@ -179,7 +179,7 @@ public class AutoTocWindow extends JDialog {
 					ProcessResult pr = ModManager.runAutoTOCOnFolders(folders);
 					int returncode = pr.getReturnCode();
 					if (returncode != 0 || pr.hadError()) {
-						ModManager.debugLogger.writeError("Command line AutoTOC did not return with code 0! An error has occured.");
+						ModManager.debugLogger.writeError("Command line AutoTOC did not return with code 0! An error has occurred.");
 					} else {
 						completed.addAndGet(tocd);
 						ModManager.debugLogger
