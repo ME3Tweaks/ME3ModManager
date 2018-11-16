@@ -59,6 +59,10 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
     private JPanel downloadPanel;
     private int jreUpdateTask;
 
+    /**
+     * Instantiates and displays the JRE Update Window
+     * @param updateInfo JSON update information that can be further parsed.
+     */
     public UpdateJREAvailableWindow(JSONObject updateInfo) {
         super(null, ModalityType.MODELESS);
         ModManager.debugLogger.writeMessage("Opening JRE update available window");
@@ -73,6 +77,9 @@ public class UpdateJREAvailableWindow extends JDialog implements ActionListener,
         setVisible(true);
     }
 
+    /**
+     * Sets up this window.
+     */
     private void setupWindow() {
         setTitle("JRE Update Available");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
