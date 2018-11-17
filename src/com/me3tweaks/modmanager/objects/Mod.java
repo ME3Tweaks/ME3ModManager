@@ -57,6 +57,11 @@ public class Mod implements Comparable<Mod> {
     public String rawAltFilesText;
     public ArrayList<String> requiredDLC = new ArrayList<>();
     private boolean modIsUnofficial;
+
+    public ArrayList<String> getAdditionalIncludeFolders() {
+        return additionalIncludeFolders;
+    }
+
     private ArrayList<String> additionalIncludeFolders = new ArrayList<String>();
 
     public ArrayList<AlternateCustomDLC> getAppliedAutomaticAlternateCustomDLC() {
@@ -909,7 +914,7 @@ public class Mod implements Comparable<Mod> {
 
         if (modCMMVer >= 5.1) {
             ModManager.debugLogger.writeMessageConditionally("Targetting >= ModDesc 5.1, looking for additionaldeploymentfolders descriptor", ModManager.LOG_MOD_INIT);
-            String additionalFoldersStr = modini.get("Updates", "additionaldeploymentfolders");
+            String additionalFoldersStr = modini.get("UPDATES", "additionaldeploymentfolders");
             if (additionalFoldersStr != null && !additionalFoldersStr.equals("")) {
                 ArrayList<String> additionalFolders = new ArrayList<String>(Arrays.asList(additionalFoldersStr.split(";")));
                 for (String additionalFolder : additionalFolders) {
@@ -920,8 +925,14 @@ public class Mod implements Comparable<Mod> {
                         setFailedReason("This mod lists additional data folders for the mod that contains a .. in the path. This is not allowed for security reasons. Fix [UPDATES]additionalfolders in moddesc.ini to resolve this issue.");
                         return;
                     }
+                    if (additionalFolder.contains("/") || additionalFolder.contains("\\")) {
+                        //reject
+                        ModManager.debugLogger.writeError("This mod lists additional data folders that are subdirectories. Only top level directories are allowed.");
+                        setFailedReason("This mod lists additional data folders that are subdirectories. Only top level directories are allowed.");
+                        return;
+                    }
                     File path = new File(modFolderPath + additionalFolder);
-                    if (!(path.exists() && !path.isDirectory())) {
+                    if (!path.exists() || !path.isDirectory()) {
                         ModManager.debugLogger.writeError("A specified additional folder could not be found: "+additionalFolder);
                         setFailedReason("This mod lists an additional data folder that does not exist: "+additionalFolder+". Ensure this folder exists in your mod's directory, or remove it from the [UPDATES]additionalfolders moddesc.ini descriptor.");
                         return;
@@ -1551,9 +1562,9 @@ public class Mod implements Comparable<Mod> {
                 if (serverUpdateField == null) {
                     ini.put("UPDATES", "serverfolder", "");
                 }
-                serverUpdateField = (String) ini.get("UPDATES", "additionalfolders");
+                serverUpdateField = (String) ini.get("UPDATES", "additionaldeploymentfolders");
                 if (serverUpdateField == null) {
-                    ini.put("UPDATES", "additionalfolders", "");
+                    ini.put("UPDATES", "additionaldeploymentfolders", "");
                 }
             }
             ByteArrayOutputStream os = new ByteArrayOutputStream();

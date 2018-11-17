@@ -107,7 +107,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     final String selectAModDescription = "Select a mod on the left to view its description.";
     DefaultListModel<Mod> modModel;
     private ArrayList<Patch> patchList;
-    private JMenuItem moddevUpdateXMLGenerator;
     private JMenuItem modManagementCheckallmodsforupdate;
     private JMenuItem restoreRevertUnpacked;
     private JMenuItem restoreRevertBasegameUnpacked;
@@ -118,7 +117,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     private JMenuItem toolTankmasterCoalUI;
     private JMenuItem toolTankmasterTLK;
     private JMenuItem modManagementOpenModsFolder;
-    private JMenu mountMenu;
     private JButton modWebsiteLink;
     private ArrayList<Mod> invalidMods;
     private JButton modlistFailedIndicatorLink;
@@ -1696,9 +1694,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         toolsPCCDataDumper
                 .setToolTipText("<html>Parses PCC informtation (such as scripts, properties, coalesced, etc)<br>and dumps it into an easily searchable text format.</html>");
 
-        mountMenu = new JMenu("Manage [PLACEHOLDER] Mount files");
-        mountMenu.setVisible(false);
-
         toolsAutoTOCGame.addActionListener(this);
         modManagementModMaker.addActionListener(this);
         modManagementASI.addActionListener(this);
@@ -1718,10 +1713,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         moddevOfficialDLCManager = new JMenuItem("Official DLC Toggler");
         moddevOfficialDLCManager.addActionListener(this);
         moddevOfficialDLCManager.setToolTipText("Allows you to quickly enable or disable official BioWare DLC for testing");
-        moddevUpdateXMLGenerator = new JMenuItem("Prepare mod for ME3Tweaks Updater Service");
-        moddevUpdateXMLGenerator.setToolTipText("No mod is currently selected");
-        moddevUpdateXMLGenerator.setEnabled(false);
-        moddevUpdateXMLGenerator.addActionListener(this);
 
 
         devMenu.add(modDevStarterKit);
@@ -2112,7 +2103,74 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         }
 
         JMenuItem modutilsAutoTOC = new JMenuItem("Run AutoTOC on this mod");
-        modutilsAutoTOC.setToolTipText("Automatically update all TOC files this mod uses with proper sizes to prevent crashes.<br>This does not TOC any alternate files.");
+        modutilsAutoTOC.setToolTipText("<html>Automatically update all TOC files this mod uses with proper sizes to prevent crashes.<br>This does not TOC any alternate files.</html>");
+
+
+        // DEVELOPER MENU
+        JMenu modDeveloperMenu = new JMenu("Developer options");
+
+        // MODDESC EDITOR
+        JMenuItem modutilsDeploy = new JMenuItem("Deploy Mod");
+        modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
+
+        // DEPLOYMENT
+        JMenuItem modutilsModdescEditor = new JMenuItem("Installation  (moddesc)");
+        modutilsModdescEditor.setToolTipText("<html>Read-only moddesc.ini viewer</html>");
+
+        JMenuItem moddevUpdateXMLGenerator = new JMenuItem("Prepare mod for ME3Tweaks Updater Service");
+        moddevUpdateXMLGenerator.setToolTipText("No mod is currently selected");
+        moddevUpdateXMLGenerator.setEnabled(false);
+
+
+
+
+        //MOUNT FILES
+        JMenu mountMenu = new JMenu("Manage " + mod.getModName() + " Mount.dlc files");
+        mountMenu.setVisible(false);
+        if (mod.containsCustomDLCJob()) {
+            mountMenu.setVisible(true);
+            mountMenu.setText(mod.getModName() + " Mount.dlc files");
+            for (ModJob job : mod.getJobs()) {
+                if (job.getJobType() == ModJob.CUSTOMDLC) {
+                    // has custom dlc task
+                    // for (: job.get
+                    for (int i = 0; i < job.getFilesToReplace().size(); i++) {
+                        String target = job.getFilesToReplace().get(i);
+                        if (FilenameUtils.getName(target).equalsIgnoreCase("mount.dlc")) {
+                            // mount.dlc file found!
+                            File mountFile = new File(target);
+                            String folderName = FilenameUtils.getBaseName(mountFile.getParentFile().getParent());
+                            JMenuItem mountItem = new JMenuItem("Mount.dlc in " + folderName);
+                            mountItem.addActionListener(new ActionListener() {
+
+                                @Override
+                                public void actionPerformed(ActionEvent arg0) {
+                                    new MountFileEditorWindow(target);
+                                }
+                            });
+                            mountMenu.add(mountItem);
+                        }
+                    }
+                }
+            }
+        } else {
+            mountMenu.setVisible(false);
+        }
+
+        // OPEN MOD FOLDER
+        JMenuItem modutilsOpenFolder = new JMenuItem("Open mod folder");
+        modutilsOpenFolder.setToolTipText("<html>Opens this mod's folder in File Explorer.<br>" + mod.getModPath() + "</html>");
+
+        //modDeveloperMenu.add(modutilsModdescEditor);
+        modDeveloperMenu.add(modutilsAutoTOC);
+        modDeveloperMenu.add(modutilsDeploy);
+        modDeveloperMenu.add(moddevUpdateXMLGenerator);
+        modDeveloperMenu.add(mountMenu);
+
+
+        // DELETE MOD
+        JMenuItem modutilsDeleteMod = new JMenuItem("Delete mod from library");
+        modutilsDeleteMod.setToolTipText("<html>Delete this mod from Mod Manager.<br>This does not remove this mod if it is installed</html>");
 
         // UPDATES CHECK
         JMenuItem modutilsRestoreMod = new JMenuItem("Restore mod from ME3Tweaks");
@@ -2142,32 +2200,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             modutilsCheckforupdate.setToolTipText("<html>Mod update eligibility requires a floating point version number<br>and an update code from ME3Tweaks</html>");
         }
 
-        // DEVELOPER MENU
-        JMenu modDeveloperMenu = new JMenu("Developer options");
-
-        // MODDESC EDITOR
-        JMenuItem modutilsDeploy = new JMenuItem("Deploy Mod");
-        modutilsDeploy.setToolTipText("<html>Prepares the mod for deployment.<br>Stages only files used by the mod, AutoTOC's, then compresses the mod.</html>");
-
-        // DEPLOYMENT
-        JMenuItem modutilsModdescEditor = new JMenuItem("Installation  (moddesc)");
-        modutilsModdescEditor.setToolTipText("<html>Read-only moddesc.ini viewer</html>");
-
-        // OPEN MOD FOLDER
-        JMenuItem modutilsOpenFolder = new JMenuItem("Open mod folder");
-        modutilsOpenFolder.setToolTipText("<html>Opens this mod's folder in File Explorer.<br>" + mod.getModPath() + "</html>");
-
-        //modDeveloperMenu.add(modutilsModdescEditor);
-        modDeveloperMenu.add(modutilsAutoTOC);
-        modDeveloperMenu.add(modutilsDeploy);
-        modDeveloperMenu.add(moddevUpdateXMLGenerator);
-        modDeveloperMenu.add(mountMenu);
-
-
-        // DELETE MOD
-        JMenuItem modutilsDeleteMod = new JMenuItem("Delete mod from library");
-        modutilsDeleteMod.setToolTipText("<html>Delete this mod from Mod Manager.<br>This does not remove this mod if it is installed</html>");
-
         ArrayList<Component> menuItems = new ArrayList<>();
         menuItems.add(modutilsHeader);
         menuItems.add(modutilsCheckforupdate);
@@ -2190,6 +2222,19 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             public void actionPerformed(ActionEvent arg0) {
                 JOptionPane.showMessageDialog(ModManagerWindow.this, "This tool is under construction and is not fully functional\nor stable in this build yet. Use at your own risk!");
                 new ModDescEditorWindow(mod);
+            }
+        });
+
+        moddevUpdateXMLGenerator.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (mod.getServerModFolder().equals(Mod.DEFAULT_SERVER_FOLDER)) {
+                    ModManager.debugLogger.writeError("Mod must have [UPDATES]serverfolder set.");
+                    labelStatus.setText("Mod requires serverfolder to be set in moddesc");
+                    return;
+                }
+                ModManager.debugLogger.writeMessage("Preparing "+mod.getModName()+" for updater service");
+                ModXMLTools.generateXMLFileList(mod);
             }
         });
 
@@ -2524,7 +2569,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         } else if (e.getSource() == restoredeleteAllCustomDLC) {
             if (validateBIOGameDir()) {
                 if (ModManager.isALOTInstalled(GetBioGameDir())) {
-                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Deleting Custom DLC while ALOT is installed will put your ALOT installation\ninto an unsupported state. Adding or removing files is not supported.","ALOT is installed",
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Deleting Custom DLC while ALOT is installed will put your ALOT installation\ninto an unsupported state. Adding or removing files is not supported.", "ALOT is installed",
                             JOptionPane.WARNING_MESSAGE);
                     return;
                 }
@@ -3124,16 +3169,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 JOptionPane.showMessageDialog(ModManagerWindow.this, "The BIOGame directory is not valid.\nFix the BIOGame directory before continuing.",
                         "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
             }
-
-        } else if (e.getSource() == moddevUpdateXMLGenerator) {
-            Mod mod = modModel.getElementAt(modList.getSelectedIndex());
-            if (mod.getServerModFolder().equals(Mod.DEFAULT_SERVER_FOLDER)) {
-                ModManager.debugLogger.writeError("Mod must have [UPDATES]serverfolder set.");
-                labelStatus.setText("Mod requires serverfolder to be set in moddesc");
-                return;
-            }
-            ModManager.debugLogger.writeMessage("Generating Manifest...");
-            ModXMLTools.generateXMLFileList(mod);
         } else if (e.getSource() == sqlDifficultyParser) {
             new DifficultyGUI();
         } else if (e.getSource() == sqlWavelistParser) {
@@ -3679,9 +3714,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 modWebsiteLink.setVisible(false);
                 modUtilsMenu.setEnabled(false);
                 modUtilsMenu.setToolTipText("Select a mod to enable this menu");
-                moddevUpdateXMLGenerator.setText("Prepare mod for ME3Tweaks Updater Service");
-                moddevUpdateXMLGenerator.setToolTipText("No mod is currently selected");
-                moddevUpdateXMLGenerator.setEnabled(false);
             } else {
                 Mod selectedMod = modModel.get(modList.getSelectedIndex());
                 modUtilsMenu.setToolTipText(null);
@@ -3744,39 +3776,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 } else {
                     modWebsiteLink.setVisible(false);
                 }
-
-                mountMenu.removeAll();
-
-                if (selectedMod.containsCustomDLCJob()) {
-                    mountMenu.setVisible(true);
-                    mountMenu.setText(selectedMod.getModName() + " Mount.dlc files");
-                    for (ModJob job : selectedMod.getJobs()) {
-                        if (job.getJobType() == ModJob.CUSTOMDLC) {
-                            // has custom dlc task
-                            // for (: job.get
-                            for (int i = 0; i < job.getFilesToReplace().size(); i++) {
-                                String target = job.getFilesToReplace().get(i);
-                                if (FilenameUtils.getName(target).equalsIgnoreCase("mount.dlc")) {
-                                    // mount.dlc file found!
-                                    File mountFile = new File(target);
-                                    String folderName = FilenameUtils.getBaseName(mountFile.getParentFile().getParent());
-                                    JMenuItem mountItem = new JMenuItem("Mount.dlc in " + folderName);
-                                    mountItem.addActionListener(new ActionListener() {
-
-                                        @Override
-                                        public void actionPerformed(ActionEvent arg0) {
-                                            new MountFileEditorWindow(target);
-                                        }
-                                    });
-                                    mountMenu.add(mountItem);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    mountMenu.setVisible(false);
-                }
-
             }
         }
     }
@@ -4276,6 +4275,23 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
             }
 
+            //additional folders
+            for (String folder : mod.getAdditionalIncludeFolders()) {
+                String additionalfolderpath = mod.getModPath() + folder;
+                String outputtoppath = stagingdir + folder;
+
+                Predicate<Path> predicate = p -> Files.isRegularFile(p);
+                ArrayList<Path> files = (ArrayList<Path>) Files.walk(Paths.get(additionalfolderpath)).filter(predicate).collect(Collectors.toList());
+                for (Path p : files) {
+                    File additionalfile = p.toFile();
+                    String relativePath = ResourceUtils.getRelativePath(additionalfile.getAbsolutePath(), mod.getModPath(), File.separator);
+                    String outputpath = stagingdir + relativePath;
+                    ModManager.debugLogger.writeMessage("Copying [ADDITIONAL FOLDER FILE] file to staging: " + relativePath + " -> " + outputpath);
+                    FileUtils.copyFile(additionalfile, new File(outputpath));
+                    stagedfilecount++;
+                    publish(new ThreadCommand("UPDATE_STATUS", "Staged " + stagedfilecount + " files..."));
+                }
+            }
             String stagingini = stagingdir + "moddesc.ini";
             FileUtils.copyFile(new File(mod.getDescFile()), new File(stagingini));
 
