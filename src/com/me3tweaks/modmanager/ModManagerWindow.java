@@ -62,6 +62,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -1930,7 +1931,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         modutilsHeader.setEnabled(false);
         JMenuItem modutilsInstallCustomKeybinds = new JMenuItem("Install custom keybinds into this mod");
         // check if BioInput.xml exists.
-        if (!checkForKeybindsOverride() || mod.getModTaskPath("/BIOGame/CookedPCConsole/Coalesced.bin","BASEGAME") == null) {
+        if (!checkForKeybindsOverride() || mod.getModTaskPath("/BIOGame/CookedPCConsole/Coalesced.bin", "BASEGAME") == null) {
             // ModManager.debugLogger.writeMessage("No keybinds file in the override
             // directory (bioinput.xml)");
             modutilsInstallCustomKeybinds.setEnabled(false);
@@ -4127,15 +4128,24 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         activityPanel.setCollapsed(!visbiility);
     }
 
-    class ModDeploymentThread extends SwingWorker<Boolean, ThreadCommand> {
-        Mod mod;
+    public static class ModDeploymentThread extends SwingWorker<Boolean, ThreadCommand> {
+        private Mod mod;
         private File outfile;
-        int jobCode;
+        private int jobCode;
+
+        //Used when doing an ME3Tweaks updater servicing
+        public CountDownLatch latch;
+        public boolean stageOnly;
+        public boolean result;
 
         public ModDeploymentThread(Mod mod) {
             this.mod = mod;
-            labelStatus.setText("Staging mod for deployment...");
+            ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Staging mod for deployment...");
             jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Deploying " + mod.getModName());
+        }
+
+        public Mod getMod() {
+            return mod;
         }
 
         @Override
@@ -4257,6 +4267,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 ModManager.debugLogger.writeMessage("Staged mod is valid.");
             }
 
+            mod = testmod; //change variable over
+            if (stageOnly) {
+                return true;
+            }
             publish(new ThreadCommand("UPDATE_STATUS", "Calculating compression parameters"));
 
             //Calculate size of staged directory
@@ -4309,7 +4323,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             compressionSettings[0] = 9;
             compressionSettings[1] = true;
             Runnable task2 = () -> {
-                CompressionOptionsWindow cow = new CompressionOptionsWindow(ModManagerWindow.this, (int) compressionSettings[0], (boolean) compressionSettings[1]);
+                CompressionOptionsWindow cow = new CompressionOptionsWindow(ModManagerWindow.ACTIVE_WINDOW, (int) compressionSettings[0], (boolean) compressionSettings[1]);
                 compressionSettings[0] = cow.getCompressionLevel();
                 compressionSettings[1] = cow.getMultithreaded();
             };
@@ -4340,7 +4354,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             for (ThreadCommand latest : chunks) {
                 switch (latest.getCommand()) {
                     case "UPDATE_STATUS":
-                        labelStatus.setText(latest.getMessage());
+                        ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(latest.getMessage());
                         break;
 
                 }
@@ -4351,24 +4365,28 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
 
             try {
-                boolean result = get();
-                if (result && outfile != null) {
-                    ModManager.debugLogger.writeMessage("SUCCESS COMPRESSING MOD.");
-                    ArrayList<String> showInExplorerProcess = new ArrayList<String>();
-                    labelStatus.setText("Mod deployment succeeded");
-                    showInExplorerProcess.add("explorer.exe");
-                    showInExplorerProcess.add("/select,");
-                    showInExplorerProcess.add("\"" + outfile.getAbsolutePath() + "\"");
-                    ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
-                    ModManager.runProcessDetached(pb);
+                result = get();
+                if (stageOnly) {
+                    ModManager.debugLogger.writeMessage("Stage-only for mod completed.");
+                    ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod staged");
+                    latch.countDown();
                 } else {
-                    labelStatus.setText("Mod failed deployment - see logs");
-                    ModManager.debugLogger.writeError("Mod failed to compress (output file does not exist!)");
-                    ModManager.debugLogger.writeError("FAILURE COMPRESSING MOD.");
+                    if (result && outfile != null) {
+                        ModManager.debugLogger.writeMessage("SUCCESSFULLY COMPRESSED MOD");
+                        ArrayList<String> showInExplorerProcess = new ArrayList<String>();
+                        ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod deployment succeeded");
+                        showInExplorerProcess.add("explorer.exe");
+                        showInExplorerProcess.add("/select,");
+                        showInExplorerProcess.add("\"" + outfile.getAbsolutePath() + "\"");
+                        ProcessBuilder pb = new ProcessBuilder(showInExplorerProcess);
+                        ModManager.runProcessDetached(pb);
+                    } else {
+                        ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Mod failed deployment - see logs");
+                        ModManager.debugLogger.writeError("Mod failed to compress (output file does not exist!)");
+                        ModManager.debugLogger.writeError("FAILURE COMPRESSING MOD.");
+                    }
                 }
-            } catch (InterruptedException |
-
-                    ExecutionException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 ModManager.debugLogger.writeErrorWithException("Exception in ModDeploymentThread:", e);
             }
         }

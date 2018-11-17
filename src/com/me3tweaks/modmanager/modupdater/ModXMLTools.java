@@ -51,6 +51,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public class ModXMLTools {
     static DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -76,7 +77,7 @@ public class ModXMLTools {
             String changelog = JOptionPane.showInputDialog(ModManagerWindow.ACTIVE_WINDOW,
                     "Enter a short changelog users will see when updating your mod.\nKeep it to 1 sentence or less as this will be shown in a dialog to users.\nLeave blank for no changelog.", "Enter Changelog",
                     JOptionPane.PLAIN_MESSAGE);
-            if (changelog != null && !changelog.equals("")) {
+            if (changelog != null) {
                 this.changelog = changelog;
             } else {
                 aborted = true;
@@ -112,6 +113,23 @@ public class ModXMLTools {
                 publish(new ThreadCommand("Mod requires serverfolder in moddesc", "ERROR"));
                 return "";
             }
+
+            CountDownLatch latch = new CountDownLatch(1);
+            ModManagerWindow.ModDeploymentThread mdt = new ModManagerWindow.ModDeploymentThread(mod);
+            mdt.stageOnly = true;
+            mdt.latch = latch;
+            ModManager.debugLogger.writeMessage("Waiting for deployment thread to finish...");
+            mdt.execute();
+            latch.await();
+
+            if (!mdt.result) {
+                ModManager.debugLogger.writeError("Deployment thread failed to return a proper staged mod!");
+                publish(new ThreadCommand("Failed to stage mod", null));
+                return "";
+            }
+
+            mod = mdt.getMod(); //gets the staged mod
+            ModManager.debugLogger.writeMessage("Deployment thread exited, continuing ME3Tweaks Updater Servicing thread");
 
             //check blacklisted files
             for (String blf : mod.getBlacklistedFiles()) {
@@ -177,8 +195,12 @@ public class ModXMLTools {
                     if (up != null) {
                         for (ManifestModFile mf : up.getFilesToDownload()) {
                             File f = new File(mod.getModPath() + File.separator + mf.getRelativePath());
-                            assert f.exists();
-                            updatedfiles.add(f);
+                            if (f.exists()) {
+                                updatedfiles.add(f);
+                            } else {
+                                ModManager.debugLogger.writeMessage("File not found in staged mod, while present in previous manifest. File is no longer available");
+//                                removedfiles.add(f);
+                            }
                         }
                         for (String str : up.getFilesToDelete()) {
                             File f = new File(str);
@@ -394,7 +416,12 @@ public class ModXMLTools {
         public void done() {
             ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
             try {
-                get();
+                String result = get();
+                if (result != null && result.equals("")) {
+                    //FAILED
+                    ModManager.debugLogger.writeError("Failed to build server packages.");
+                    //ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to prepare mod for updater service");
+                }
             } catch (Exception e) {
                 ModManager.debugLogger.writeErrorWithException("Error while creating manifest: ", e);
             }
