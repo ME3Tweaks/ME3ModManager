@@ -1806,7 +1806,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         backupMenu.add(backupBackupDLC);
         backupMenu.add(backupCreateVanillaCopy);
         backupMenu.add(backupBasegameUnpacked);
-        backupMenu.add(backupCreateGDB);
+        //backupMenu.add(backupCreateGDB);
         menuBar.add(backupMenu);
 
         // RESTORE
@@ -1817,8 +1817,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         restoreSelective.setToolTipText("Allows you to restore specific basegame, DLC, and unpacked files");
 
         restoreRevertEverything = new JMenuItem("Restore everything");
-        restoreRevertEverything.setToolTipText(
-                "<html>Restores all basegame files, deletes unpacked DLC files, and restores all SFAR files.<br>This will delete any non standard DLC folders.</html>");
+        restoreRevertEverything.setToolTipText("<html>Restores all basegame files, deletes unpacked DLC files, and restores all SFAR files.<br>This will delete any non standard DLC folders.</html>");
 
         restoreDeleteUnpacked = new JMenuItem("Delete all unpacked DLC files");
         restoreDeleteUnpacked
@@ -1880,6 +1879,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         restoreRevertMPBaseDLC.addActionListener(this);
         restoreVanillaCopy.addActionListener(this);
 
+        restoreMenuAdvanced.add(restoreRevertEverything);
         restoreMenuAdvanced.add(restoredeleteAllCustomDLC);
         restoreMenuAdvanced.addSeparator();
 
@@ -1898,7 +1898,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         restoreMenu.add(restoreCustomDLCManager);
         restoreMenu.addSeparator();
 
-        restoreMenu.add(restoreRevertEverything);
         restoreMenu.add(restoreRevertMPBaseDLC);
         restoreMenu.add(restoreRevertSPBaseDLC);
         restoreMenu.add(restoreVanillaCopy);
@@ -2510,6 +2509,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreRevertAllDLC) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 restoreDataFiles(GetBioGameDir(), RestoreMode.ALLDLC);
             } else {
                 labelStatus.setText("Cannot restore files without valid BIOGame directory");
@@ -2519,6 +2523,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoredeleteAllCustomDLC) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Deleting Custom DLC while ALOT is installed will put your ALOT installation\ninto an unsupported state. Adding or removing files is not supported.","ALOT is installed",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
                 if (JOptionPane.showConfirmDialog(this, "This will delete all folders in the BIOGame/DLC folder that aren't known to be official.\nDelete all custom DLC?",
                         "Delete all Custom DLC", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
 
@@ -2550,6 +2559,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreRevertBasegame) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 restoreDataFiles(GetBioGameDir(), RestoreMode.BASEGAME);
             } else {
                 labelStatus.setText("Cannot restore files without valid BIOGame directory");
@@ -2559,6 +2573,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreRevertUnpacked) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 restoreDataFiles(GetBioGameDir(), RestoreMode.UNPACKED);
             } else {
                 labelStatus.setText("Cannot restore files without valid BIOGame directory");
@@ -2568,6 +2587,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreRevertBasegameUnpacked) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 restoreDataFiles(GetBioGameDir(), RestoreMode.UNPACKEDBASEGAME);
             } else {
                 labelStatus.setText("Cannot restore files without valid BIOGame directory");
@@ -2577,6 +2601,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreVanillifyDLC) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 if (JOptionPane.showConfirmDialog(this,
                         "This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
                         "Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
@@ -2591,6 +2620,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreRevertSPDLC) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 restoreDataFiles(GetBioGameDir(), RestoreMode.SP);
             } else {
                 labelStatus.setText("Cannot restore files without valid BIOGame directory");
@@ -2600,6 +2634,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreRevertMPDLC) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 restoreDataFiles(GetBioGameDir(), RestoreMode.MP);
             } else {
                 labelStatus.setText("Cannot restore files without valid BIOGame directory");
@@ -2609,6 +2648,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreRevertSPBaseDLC) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 restoreDataFiles(GetBioGameDir(), RestoreMode.SPBASE);
             } else {
                 labelStatus.setText("Cannot restore files without valid BIOGame directory");
@@ -2618,6 +2662,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
         } else if (e.getSource() == restoreRevertMPBaseDLC) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 restoreDataFiles(GetBioGameDir(), RestoreMode.MPBASE);
             } else {
                 labelStatus.setText("Cannot restore files without valid BIOGame directory");
@@ -2632,21 +2681,30 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 return;
             }
             if (validateBIOGameDir()) {
-                if (validateBIOGameDir()) {
-                    if (JOptionPane.showConfirmDialog(this,
-                            "This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
-                            "Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
-                        restoreDataFiles(GetBioGameDir(), RestoreMode.ALL);
-                    }
-                } else {
-                    labelStatus.setText("Cannot restore files without valid BIOGame directory");
-                    JOptionPane.showMessageDialog(ModManagerWindow.this,
-                            "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
-                            "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Unable to restore using this option while ALOT is installed.\nDoing so would break the game.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
+                if (JOptionPane.showConfirmDialog(this,
+                        "This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
+                        "Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+                    restoreDataFiles(GetBioGameDir(), RestoreMode.ALL);
+                }
+            } else {
+                labelStatus.setText("Cannot restore files without valid BIOGame directory");
+                JOptionPane.showMessageDialog(ModManagerWindow.this,
+                        "The BioGame directory is not valid.\nMod Manager cannot do any restorations.\nFix the BioGame directory before continuing.",
+                        "Invalid BioGame Directory", JOptionPane.ERROR_MESSAGE);
             }
+
         } else if (e.getSource() == restoreDeleteUnpacked) {
             if (validateBIOGameDir()) {
+                if (ModManager.isALOTInstalled(GetBioGameDir())) {
+                    JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "ALOT is installed.\nRemoving unpacked files will break ALOT and also make DLC corrupt.", "ALOT is installed",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 if (JOptionPane.showConfirmDialog(this,
                         "This will delete all unpacked DLC items, including backups of those files.\nThe backup files are deleted because you shouldn't restore unpacked files if your DLC isn't set up for unpacked files.\nMake sure you have your *original* SFARs backed up! Otherwise you will have to use Origin to download them again.\nAre you sure you want to continue?",
                         "Delete unpacked DLC files", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
@@ -4012,44 +4070,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                             //offer to revert
                             int result = JOptionPane.showConfirmDialog(ModManagerWindow.this, "The current texture settings are high quality, however ALOT is not detected as installed.\nThis will cause black textures and potential crashes due to null mips in game files.\nDowngrading to the defaults will prevent this issue.\nDowngrade your texture settings to the defaults?", "Downgrade texture settings", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                             if (result == JOptionPane.YES_OPTION) {
-                                File gamerSettings = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath() + "\\BioWare\\Mass Effect 3\\BioGame\\Config\\GamerSettings.ini");
-                                if (gamerSettings.exists()) {
-                                    try {
-                                        Wini ini = new Wini(gamerSettings);
-                                        ini.load(gamerSettings);
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_World");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_WorldSpecular");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_WorldNormalMap");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_AmbientLightMap");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_ShadowMap");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_RenderTarget");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_64");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_128");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_256");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_512");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Environment_1024");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_64");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_128");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_256");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_512");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_VFX_1024");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_128");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_256");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_512");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_APL_1024");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_UI");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Promotional");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_1024");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Diff");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Norm");
-                                        ini.remove("SystemSettings", "TEXTUREGROUP_Character_Spec");
-                                        ini.store();
-                                        ModManager.debugLogger.writeMessage("Updated LODs for non-ALOT (normal)");
-                                    } catch (Exception ex) {
-                                        // TODO Auto-generated catch block
-                                        ModManager.debugLogger.writeErrorWithException("Error downgrading game LODs!", ex);
-                                    }
-                                }
+                                ModManager.SetDefaultTextureGamerSettings();
                             }
                         } else {
                             ModManager.debugLogger.writeMessage("Updated game path, checked LODS, looked OK");

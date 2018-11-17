@@ -96,6 +96,47 @@ public class ModManager {
         return GUID;
     }
 
+    public static void SetDefaultTextureGamerSettings() {
+        File gamerSettings = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath() + "\\BioWare\\Mass Effect 3\\BioGame\\Config\\GamerSettings.ini");
+        if (gamerSettings.exists()) {
+            try {
+                Wini ini = new Wini(gamerSettings);
+                ini.load(gamerSettings);
+                ini.remove("SystemSettings", "TEXTUREGROUP_World");
+                ini.remove("SystemSettings", "TEXTUREGROUP_WorldSpecular");
+                ini.remove("SystemSettings", "TEXTUREGROUP_WorldNormalMap");
+                ini.remove("SystemSettings", "TEXTUREGROUP_AmbientLightMap");
+                ini.remove("SystemSettings", "TEXTUREGROUP_ShadowMap");
+                ini.remove("SystemSettings", "TEXTUREGROUP_RenderTarget");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_64");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_128");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_256");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_512");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_1024");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_64");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_128");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_256");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_512");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_1024");
+                ini.remove("SystemSettings", "TEXTUREGROUP_APL_128");
+                ini.remove("SystemSettings", "TEXTUREGROUP_APL_256");
+                ini.remove("SystemSettings", "TEXTUREGROUP_APL_512");
+                ini.remove("SystemSettings", "TEXTUREGROUP_APL_1024");
+                ini.remove("SystemSettings", "TEXTUREGROUP_UI");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Promotional");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Character_1024");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Character_Diff");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Character_Norm");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Character_Spec");
+                ini.store();
+                ModManager.debugLogger.writeMessage("Updated LODs for non-ALOT (normal)");
+            } catch (Exception ex) {
+                // TODO Auto-generated catch block
+                ModManager.debugLogger.writeErrorWithException("Error downgrading game LODs!", ex);
+            }
+        }
+    }
+
     public static final class Lock {
     } //threading wait() and notifyall();
 
@@ -497,20 +538,20 @@ public class ModManager {
                         }
 
                         if (hashOK) {
-                            ArrayList<Pair<String,String>> telemetryData = new ArrayList<Pair<String,String>>();
-                            telemetryData.add(new ImmutablePair<>("telemetrykey","MODMANAGERUPDATE_SUCCESS"));
-                            telemetryData.add(new ImmutablePair<>("startbuild",Long.toString(ModManager.BUILD_NUMBER))); //same
-                            telemetryData.add(new ImmutablePair<>("destbuild",Long.toString(ModManager.BUILD_NUMBER))); //same
-                            ME3TweaksUtils.SubmitTelemetry(telemetryData,false);
+                            ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
+                            telemetryData.add(new ImmutablePair<>("telemetrykey", "MODMANAGERUPDATE_SUCCESS"));
+                            telemetryData.add(new ImmutablePair<>("startbuild", Long.toString(ModManager.BUILD_NUMBER))); //same
+                            telemetryData.add(new ImmutablePair<>("destbuild", Long.toString(ModManager.BUILD_NUMBER))); //same
+                            ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
 
                             JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Minor update was applied.", "Update OK", JOptionPane.INFORMATION_MESSAGE);
                             ModManager.debugLogger.writeMessage("MINOR UPDATE OK!");
                         } else {
-                            ArrayList<Pair<String,String>> telemetryData = new ArrayList<Pair<String,String>>();
-                            telemetryData.add(new ImmutablePair<>("telemetrykey","MODMANAGERUPDATE_FAILURE"));
-                            telemetryData.add(new ImmutablePair<>("startbuild",Long.toString(ModManager.BUILD_NUMBER))); //same
-                            telemetryData.add(new ImmutablePair<>("destbuild",Long.toString(ModManager.BUILD_NUMBER))); //same
-                            ME3TweaksUtils.SubmitTelemetry(telemetryData,false);
+                            ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
+                            telemetryData.add(new ImmutablePair<>("telemetrykey", "MODMANAGERUPDATE_FAILURE"));
+                            telemetryData.add(new ImmutablePair<>("startbuild", Long.toString(ModManager.BUILD_NUMBER))); //same
+                            telemetryData.add(new ImmutablePair<>("destbuild", Long.toString(ModManager.BUILD_NUMBER))); //same
+                            ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
 
                             JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Minor update was not applied.\nThe new build hash doesn't match the expected one.", "Update Failed", JOptionPane.ERROR_MESSAGE);
                             ModManager.debugLogger.writeError("MINOR UPDATE FAILED!");
@@ -2440,6 +2481,7 @@ public class ModManager {
 
     /**
      * Checks if the given folder has write permissions.
+     *
      * @param selectedGamePath Path to test game permissions on
      * @return True if write permissions were found, false if not. Note that if the directory input doesn't exist, you won't have write permissions as it doesn't exist.
      */
@@ -2475,6 +2517,7 @@ public class ModManager {
 
     /**
      * Gets the minimum required command line version string.
+     *
      * @return Version string of the command line tools required by the server or local client. e.g. 1.0.0.31
      */
     public static String getCommandLineToolsRequiredVersion() {
