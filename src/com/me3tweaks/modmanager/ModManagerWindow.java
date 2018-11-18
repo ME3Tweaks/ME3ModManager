@@ -166,13 +166,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         validateBIOGameDir();
         ModManager.debugLogger.writeMessage("Mod Manager Window UI: Now setting visible.");
         try {
-			/*
-			//DEBUG ONLY
-			if (!modModel.isEmpty()) {
-				modList.setSelectedIndex(0);
-				new ModDescEditorWindow(modModel.firstElement());
-			}*/
             setLocationRelativeTo(null);
+            new ME3TweaksUpdaterServiceWindow(null,new File("C:\\Users\\mgame\\workspace\\modmanager3\\data\\ME3TweaksUpdaterService\\Manifests\\fancifuledi_testingonly.xml"),"C:\\Users\\mgame\\workspace\\modmanager3\\data\\ME3TweaksUpdaterService\\Full\\fancifuledi_testingonly");
             setVisible(true);
         } catch (Exception e) {
             ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);

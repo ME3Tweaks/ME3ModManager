@@ -936,10 +936,10 @@ public class ModManager {
     }
 
     /**
-     * Appends a slash onto the end of a string if not already there.
+     * Appends a backslash onto the end of a string if not already there.
      *
      * @param string Original string
-     * @return Original string with a slash on the end if it was not there
+     * @return Original string with a backslash on the end if it was not there
      * previously.
      */
     public static String appendSlash(String string) {
@@ -949,6 +949,23 @@ public class ModManager {
             return string;
         } else {
             return string + File.separator;
+        }
+    }
+
+    /**
+     * Appends a slash onto the end of a string if not already there.
+     *
+     * @param string Original string
+     * @return Original string with a slash on the end if it was not there
+     * previously.
+     */
+    public static String appendForwardSlash(String string) {
+        if (string == null)
+            return null;
+        if (string.charAt(string.length() - 1) == '/') {
+            return string;
+        } else {
+            return string + '/';
         }
     }
 

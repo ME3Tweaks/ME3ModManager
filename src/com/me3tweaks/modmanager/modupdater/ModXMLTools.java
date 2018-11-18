@@ -1,6 +1,7 @@
 package com.me3tweaks.modmanager.modupdater;
 
 import com.me3tweaks.modmanager.DeltaWindow;
+import com.me3tweaks.modmanager.ME3TweaksUpdaterServiceWindow;
 import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
@@ -66,6 +67,8 @@ public class ModXMLTools {
         private String changelog;
         private int jobCode;
         boolean aborted = false;
+        private File manifestFile;
+        private String compressedfulloutputfolder;
 
         public ManifestGeneratorUpdateCompressor(Mod mod) {
             this.mod = mod;
@@ -169,7 +172,7 @@ public class ModXMLTools {
                 }
             }
 
-            File manifestFile = new File(ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
+            manifestFile = new File(ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
 
             //SIMULATE REVERSE UPDATE
             //CHECK FOR FILE EXISTENCE IN MOD UPDATE FOLDER, LZMA HASHES.
@@ -234,7 +237,7 @@ public class ModXMLTools {
 
             long startTime = System.currentTimeMillis();
             String sideloadoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Sideload" + File.separator + foldername + File.separator;
-            String compressedfulloutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Full" + File.separator + foldername + File.separator;
+            compressedfulloutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Full" + File.separator + foldername + File.separator;
             String compressedupdateoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "UpdateDelta" + File.separator + foldername + File.separator;
 
             if (!manifestFile.exists()) {
@@ -421,6 +424,8 @@ public class ModXMLTools {
                     //FAILED
                     ModManager.debugLogger.writeError("Failed to build server packages.");
                     //ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to prepare mod for updater service");
+                } else {
+                    //ME3TweaksUpdaterServiceWindow.main(mod, manifestFile,compressedfulloutputfolder);
                 }
             } catch (Exception e) {
                 ModManager.debugLogger.writeErrorWithException("Error while creating manifest: ", e);
