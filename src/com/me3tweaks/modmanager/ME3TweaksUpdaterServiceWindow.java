@@ -261,7 +261,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
 
 
                     Predicate<Path> fpredicate = p -> Files.isDirectory(p);
-                    var foldersAsPath = (ArrayList<Path>) Files.walk(Paths.get(compressedfulloutputfolder)).filter(fpredicate).collect(Collectors.toList());
+                    ArrayList<Path> foldersAsPath = (ArrayList<Path>) Files.walk(Paths.get(compressedfulloutputfolder)).filter(fpredicate).collect(Collectors.toList());
                     ArrayList<String> relativePaths = new ArrayList<>();
                     relativePaths.add(FilenameUtils.getName(compressedfulloutputfolder));
                     for (Path folder : foldersAsPath) {
@@ -291,7 +291,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         Path compressedRootPath = Paths.get(compressedfulloutputfolder);
                         totalBytesToTransfer = ResourceUtils.GetDirectorySize(compressedRootPath, true);
                         ModManager.debugLogger.writeMessage("Amount of data to upload: " + ResourceUtils.humanReadableByteCount(totalBytesTransferred, true));
-                        var files = (ArrayList<Path>) Files.walk(compressedRootPath).filter(predicate).collect(Collectors.toList());
+                        ArrayList<Path> files = (ArrayList<Path>) Files.walk(compressedRootPath).filter(predicate).collect(Collectors.toList());
                         relativePaths = new ArrayList<>();
                         for (Path file : files) {
                             relativePaths.add(FilenameUtils.getName(compressedfulloutputfolder) + "/" + ResourceUtils.normalizeFilePath(ResourceUtils.getRelativePath(file.toString(), compressedfulloutputfolder, File.separator), false));

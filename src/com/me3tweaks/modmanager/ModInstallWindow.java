@@ -51,6 +51,8 @@ import com.me3tweaks.modmanager.repairdb.BasegameHashDB;
 import com.me3tweaks.modmanager.repairdb.RepairFileInfo;
 import com.me3tweaks.modmanager.utilities.MD5Checksum;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 @SuppressWarnings("serial")
 /**
@@ -1259,6 +1261,13 @@ public class ModInstallWindow extends JDialog {
             boolean hasException = false;
             try {
                 success = get();
+                for (Mod mod : mods) {
+                    ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
+                    telemetryData.add(new ImmutablePair<>("telemetrykey", "MOD_INSTALL_SUCCESS"));
+                    telemetryData.add(new ImmutablePair<>("modname", mod.getModName()));
+                    telemetryData.add(new ImmutablePair<>("version", Double.toString(mod.getVersion())));
+                    ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
+                }
             } catch (InterruptedException e) {
                 ModManager.debugLogger.writeException(e);
                 hasException = true;
