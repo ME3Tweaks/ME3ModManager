@@ -167,7 +167,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         ModManager.debugLogger.writeMessage("Mod Manager Window UI: Now setting visible.");
         try {
             setLocationRelativeTo(null);
-            new ME3TweaksUpdaterServiceWindow(null,new File("C:\\Users\\mgame\\workspace\\modmanager3\\data\\ME3TweaksUpdaterService\\Manifests\\fancifuledi_testingonly.xml"),"C:\\Users\\mgame\\workspace\\modmanager3\\data\\ME3TweaksUpdaterService\\Full\\fancifuledi_testingonly");
             setVisible(true);
         } catch (Exception e) {
             ModManager.debugLogger.writeErrorWithException("Uncaught runtime exception:", e);

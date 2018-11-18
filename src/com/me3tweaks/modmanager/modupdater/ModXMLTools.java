@@ -69,6 +69,7 @@ public class ModXMLTools {
         boolean aborted = false;
         private File manifestFile;
         private String compressedfulloutputfolder;
+        private ArrayList<File> updatedFiles;
 
         public ManifestGeneratorUpdateCompressor(Mod mod) {
             this.mod = mod;
@@ -178,18 +179,23 @@ public class ModXMLTools {
             //CHECK FOR FILE EXISTENCE IN MOD UPDATE FOLDER, LZMA HASHES.
             //FILES THAT FAIL THIS WILL BE ADDED TO COLLECTION OF FILES TO UDPATE
             Collection<File> newversionfiles = FileUtils.listFiles(new File(mod.getModPath()), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-            ArrayList<File> updatedfiles = new ArrayList<>();
+            updatedFiles = new ArrayList<>();
             UpdatePackage up = null;
             if (manifestFile.exists()) {
                 ModManager.debugLogger.writeMessage("Running reverse-update from old manifest");
                 //check local files against old manifest. Changes will be considered updates and will be added to the updates folder.
                 String oldmanifest = FileUtils.readFileToString(manifestFile);
-                Document doc = null;
+                Document doc = getOnlineInfo("https://me3tweaks.com/mods/getlatest_batch", false, mod.getClassicUpdateCode());
                 try {
-                    DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                    InputSource is = new InputSource();
-                    is.setCharacterStream(new StringReader(oldmanifest));
-                    doc = db.parse(is);
+                    if (doc == null) {
+                        ModManager.debugLogger.writeMessage("Reading cached manifest instead of server");
+                        DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                        InputSource is = new InputSource();
+                        is.setCharacterStream(new StringReader(oldmanifest));
+                        doc = db.parse(is);
+                    } else {
+                        ModManager.debugLogger.writeMessage("Using server manifest to calculate updates");
+                    }
                     double modversion = mod.getVersion();
                     mod.setVersion(0.001);
                     publish(new ThreadCommand("Calculating what files to use in delta update", null));
@@ -199,7 +205,7 @@ public class ModXMLTools {
                         for (ManifestModFile mf : up.getFilesToDownload()) {
                             File f = new File(mod.getModPath() + File.separator + mf.getRelativePath());
                             if (f.exists()) {
-                                updatedfiles.add(f);
+                                updatedFiles.add(f);
                             } else {
                                 ModManager.debugLogger.writeMessage("File not found in staged mod, while present in previous manifest. File is no longer available");
 //                                removedfiles.add(f);
@@ -209,7 +215,7 @@ public class ModXMLTools {
                             File f = new File(str);
                             if (f.exists()) {
                                 //reverse - new files have been added
-                                updatedfiles.add(f);
+                                updatedFiles.add(f);
                             }
                         }
                     } else {
@@ -221,14 +227,14 @@ public class ModXMLTools {
                 } catch (Exception e) {
                     ModManager.debugLogger.writeErrorWithException("Error loading old manifest. Performing a full compression. Error: ", e);
                     for (File f : newversionfiles) {
-                        updatedfiles.add(f); //variants check
+                        updatedFiles.add(f); //variants check
                     }
                 }
             } else {
                 ModManager.debugLogger.writeMessage("No old manifest - all files treated as new.");
                 for (File f : newversionfiles) {
                     if (!f.getAbsolutePath().equals(mod.getModPath() + "WORKSPACE")) {
-                        updatedfiles.add(f);
+                        updatedFiles.add(f);
                     }
                 }
             }
@@ -250,9 +256,9 @@ public class ModXMLTools {
             File f = new File(compressedupdateoutputfolder);
             FileUtils.deleteDirectory(f);
             f.mkdirs();
-            int numFiles = updatedfiles.size();
+            int numFiles = updatedFiles.size();
             int processed = 1;
-            for (File file : updatedfiles) {
+            for (File file : updatedFiles) {
 
                 publish(new ThreadCommand("Compressing " + FilenameUtils.getBaseName(file.getAbsolutePath()), processed + "/" + numFiles));
                 String srcFile = file.getAbsolutePath();
@@ -271,7 +277,7 @@ public class ModXMLTools {
                 ModManager.debugLogger.writeMessage("Building updatedelta folder for server upload");
 
                 publish(new ThreadCommand("Applying delta to full server package", null));
-                for (File newfile : updatedfiles) {
+                for (File newfile : updatedFiles) {
                     if (!newfile.exists()) {
                         continue; //it was deleted in this package, existed in old one. reverse update made it look like this file was required for download
                     }
@@ -425,7 +431,9 @@ public class ModXMLTools {
                     ModManager.debugLogger.writeError("Failed to build server packages.");
                     //ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to prepare mod for updater service");
                 } else {
-                    //ME3TweaksUpdaterServiceWindow.main(mod, manifestFile,compressedfulloutputfolder);
+                    if (result != null) {
+                        new ME3TweaksUpdaterServiceWindow(mod, manifestFile, compressedfulloutputfolder, updatedFiles);
+                    }
                 }
             } catch (Exception e) {
                 ModManager.debugLogger.writeErrorWithException("Error while creating manifest: ", e);

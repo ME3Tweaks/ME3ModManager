@@ -37,11 +37,13 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
     private Mod mod;
     private JButton loginButton;
     private JLabel taskLabel;
+    private ArrayList<File> updatedFiles; //delta only
 
-    public ME3TweaksUpdaterServiceWindow(Mod mod, File manifestFile, String compressedfulloutputfolder) {
+    public ME3TweaksUpdaterServiceWindow(Mod mod, File manifestFile, String compressedfulloutputfolder, ArrayList<File> updatedFiles) {
         this.mod = mod;
         this.manifestFile = manifestFile;
         this.compressedfulloutputfolder = compressedfulloutputfolder;
+        this.updatedFiles = updatedFiles;
         setupWindow();
         pack();
         setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
@@ -216,12 +218,12 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                 String onServerManifestPath = ModManager.appendForwardSlash(manifestsPathRoot) + manifestFile.getName();
                 String serverUpdateRoot = ModManager.appendForwardSlash(settings.get("UpdaterService", "lzmastoragepath"));
 
-                if (false && manifestAlreadyOnServer) {
+                if (manifestAlreadyOnServer) {
                     //region Delta upload
                     //Get manifest and set version to 0.001 while we upload new files.
 
                     String manifestOnServerStr = "";
-
+                    publish(new ThreadCommand("TASK_UPDATE", "Disable updates for existing clients"));
                     try (InputStream is = sftpChannel.get(onServerManifestPath)) {
                         InputStreamReader isr = new InputStreamReader(is);
                         BufferedReader br = new BufferedReader(isr);
@@ -234,8 +236,9 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     }
 
                     String newXml = "";
+                    Document d;
                     try {
-                        Document d = ResourceUtils.loadXMLFromString(manifestOnServerStr);
+                        d = ResourceUtils.loadXMLFromString(manifestOnServerStr);
                         Element root = d.getDocumentElement();
                         root.setAttribute("version", "0.001");
                         newXml = ModMakerCompilerWindow.docToString(d);
@@ -250,6 +253,22 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         writer.flush();
                     } catch (IOException e) {
                         System.err.println("Exception");
+                    }
+
+                    for (File file : updatedFiles) {
+                        System.out.println("Updating file: " + file);
+                    }
+
+                    //Upload full new manifest
+                    try {
+                        publish(new ThreadCommand("TASK_UPDATE", "Uploading manifest"));
+
+                        sftpChannel.put(manifestFile.getAbsolutePath(), onServerManifestPath, ChannelSftp.OVERWRITE);
+                        publish(new ThreadCommand("TASK_UPDATE", mod.getModName() + "<br>uploaded to updater service"));
+
+                        System.out.println("Updated MANIFEST");
+                    } catch (Exception e) {
+                        ModManager.debugLogger.writeErrorWithException("Error uploading manifest: ", e);
                     }
                     System.out.println("Updated MANIFEST");
                     //endregion
@@ -285,7 +304,6 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         }
                     }
 
-
                     Predicate<Path> predicate = p -> Files.isRegularFile(p) && !Files.isDirectory(p);
                     try {
                         Path compressedRootPath = Paths.get(compressedfulloutputfolder);
@@ -310,7 +328,6 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     } catch (Exception e) {
                         ModManager.debugLogger.writeErrorWithException("Error uploading files: ", e);
                     }
-
 
                     try {
                         publish(new ThreadCommand("TASK_UPDATE", "Uploading manifest"));
