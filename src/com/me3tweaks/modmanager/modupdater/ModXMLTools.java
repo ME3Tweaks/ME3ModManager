@@ -69,6 +69,8 @@ public class ModXMLTools {
         boolean aborted = false;
         private File manifestFile;
         private String compressedfulloutputfolder;
+        private String compresseddeltaoutputfolder;
+
         private ArrayList<File> updatedFiles;
 
         public ManifestGeneratorUpdateCompressor(Mod mod) {
@@ -181,26 +183,35 @@ public class ModXMLTools {
             Collection<File> newversionfiles = FileUtils.listFiles(new File(mod.getModPath()), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
             updatedFiles = new ArrayList<>();
             UpdatePackage up = null;
-            if (manifestFile.exists()) {
-                ModManager.debugLogger.writeMessage("Running reverse-update from old manifest");
-                //check local files against old manifest. Changes will be considered updates and will be added to the updates folder.
+            Document doc = getOnlineInfo("https://me3tweaks.com/mods/getlatest_batch", false, mod.getClassicUpdateCode());
+
+            boolean deltaUpdate = false;
+            if (doc.getElementsByTagName("mod").getLength() > 0) {
+                ModManager.debugLogger.writeMessage("Running reverse-update using server manifest");
+                deltaUpdate = true;
+            } else if (manifestFile.exists()) {
+                ModManager.debugLogger.writeMessage("Running reverse-update using cached manifest");
                 String oldmanifest = FileUtils.readFileToString(manifestFile);
-                Document doc = getOnlineInfo("https://me3tweaks.com/mods/getlatest_batch", false, mod.getClassicUpdateCode());
+                DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                InputSource is = new InputSource();
+                is.setCharacterStream(new StringReader(oldmanifest));
+                doc = db.parse(is);
+                deltaUpdate = true;
+            }
+
+            if (deltaUpdate) {
+                //check local files against old manifest. Changes will be considered updates and will be added to the updates folder.
                 try {
-                    if (doc == null) {
-                        ModManager.debugLogger.writeMessage("Reading cached manifest instead of server");
-                        DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                        InputSource is = new InputSource();
-                        is.setCharacterStream(new StringReader(oldmanifest));
-                        doc = db.parse(is);
-                    } else {
-                        ModManager.debugLogger.writeMessage("Using server manifest to calculate updates");
-                    }
+
                     double modversion = mod.getVersion();
                     mod.setVersion(0.001);
                     publish(new ThreadCommand("Calculating what files to use in delta update", null));
                     up = checkForClassicUpdate(mod, doc, null);
                     mod.setVersion(modversion); //restore, since this is pointe
+                    if (up.getVersion() >= mod.getVersion()) {
+                        ModManager.debugLogger.writeMessage("Server version is equal or higher to current version, which is not an update.");
+                        return "";
+                    }
                     if (up != null) {
                         for (ManifestModFile mf : up.getFilesToDownload()) {
                             File f = new File(mod.getModPath() + File.separator + mf.getRelativePath());
@@ -244,16 +255,16 @@ public class ModXMLTools {
             long startTime = System.currentTimeMillis();
             String sideloadoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Sideload" + File.separator + foldername + File.separator;
             compressedfulloutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Full" + File.separator + foldername + File.separator;
-            String compressedupdateoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "UpdateDelta" + File.separator + foldername + File.separator;
+            compresseddeltaoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "UpdateDelta" + File.separator + foldername + File.separator;
 
             if (!manifestFile.exists()) {
-                compressedupdateoutputfolder = compressedfulloutputfolder; //don't use update folder
+                compresseddeltaoutputfolder = compressedfulloutputfolder; //don't use update folder
             }
 
             //COMPRESSING FILES................
             ModManager.debugLogger.writeMessage("Compressing files...");
 
-            File f = new File(compressedupdateoutputfolder);
+            File f = new File(compresseddeltaoutputfolder);
             FileUtils.deleteDirectory(f);
             f.mkdirs();
             int numFiles = updatedFiles.size();
@@ -263,7 +274,7 @@ public class ModXMLTools {
                 publish(new ThreadCommand("Compressing " + FilenameUtils.getBaseName(file.getAbsolutePath()), processed + "/" + numFiles));
                 String srcFile = file.getAbsolutePath();
                 String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
-                String outputFile = compressedupdateoutputfolder + relativePath + ".lzma";
+                String outputFile = compresseddeltaoutputfolder + relativePath + ".lzma";
                 new File(outputFile).getParentFile().mkdirs();
 
                 String[] procargs = {ModManager.getToolsDir() + "lzma.exe", "e", srcFile, outputFile, "-d26", "-mt" + Runtime.getRuntime().availableProcessors()};
@@ -273,7 +284,7 @@ public class ModXMLTools {
             }
 
             //Update the full distribution folder (assuming we are doing a delta build)
-            if (!compressedfulloutputfolder.equals(compressedupdateoutputfolder)) {
+            if (!compressedfulloutputfolder.equals(compresseddeltaoutputfolder)) {
                 ModManager.debugLogger.writeMessage("Building updatedelta folder for server upload");
 
                 publish(new ThreadCommand("Applying delta to full server package", null));
@@ -284,7 +295,7 @@ public class ModXMLTools {
                     //copy from update to full
                     ModManager.debugLogger.writeMessage("Copying updated file from update package to full server package: " + newfile);
                     String relativePath = ResourceUtils.getRelativePath(newfile.getAbsolutePath(), mod.getModPath(), File.separator);
-                    File updatedfile = new File(compressedupdateoutputfolder + relativePath + ".lzma");
+                    File updatedfile = new File(compresseddeltaoutputfolder + relativePath + ".lzma");
                     File oldfile = new File(compressedfulloutputfolder + relativePath + ".lzma");
                     FileUtils.deleteQuietly(oldfile);
                     FileUtils.copyFile(updatedfile, oldfile);
@@ -306,7 +317,7 @@ public class ModXMLTools {
             } catch (ParserConfigurationException e) {
                 ModManager.debugLogger.writeErrorWithException("Parser Configuration Error (dafuq?):", e);
                 publish(new ThreadCommand("Parser Configuration Error (See log)", "ERROR"));
-                return null;
+                return "";
             }
 
             Document modDoc = docBuilder.newDocument();
@@ -412,7 +423,7 @@ public class ModXMLTools {
 
             publish(new ThreadCommand(mod.getModName() + " prepared for updater service", null));
             ResourceUtils.openFolderInExplorer(ModManager.getME3TweaksUpdaterServiceFolder());
-            return null;
+            return "OK";
         }
 
         @Override
@@ -431,8 +442,8 @@ public class ModXMLTools {
                     ModManager.debugLogger.writeError("Failed to build server packages.");
                     //ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to prepare mod for updater service");
                 } else {
-                    if (result != null) {
-                        new ME3TweaksUpdaterServiceWindow(mod, manifestFile, compressedfulloutputfolder, updatedFiles);
+                    if (result != null && result.equals("OK")) {
+                        new ME3TweaksUpdaterServiceWindow(mod, manifestFile, compressedfulloutputfolder, compresseddeltaoutputfolder, updatedFiles);
                     }
                 }
             } catch (Exception e) {
@@ -694,9 +705,7 @@ public class ModXMLTools {
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         // params.add(new BasicNameValuePair("updatecode",
         // Integer.toString(mod.getClassicUpdateCode())));
-        params.add(new BasicNameValuePair("updatecode", Integer.toString(updatecode)));
-        params.add(new BasicNameValuePair("modtype", modmakerMod ? "modmaker" : "classic"));
-
+        params.add(new BasicNameValuePair((modmakerMod ? "modmaker" : "classic") + "updatecode[]", Integer.toString(updatecode)));
         URIBuilder urib;
         String responseString = null;
         try {

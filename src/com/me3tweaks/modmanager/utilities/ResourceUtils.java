@@ -607,7 +607,7 @@ public class ResourceUtils {
 	public static String removeTrailingSlashes(String input) {
 		if (input.endsWith("/"))
 		    return input.substring(0,input.length()-1);
-		else if (input.endsWith(File.separator)) {
+		else if (input.endsWith("\\")) {
 		    return input.substring(0,input.length()-1);
 		}
 		else

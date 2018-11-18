@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 public class ME3TweaksUpdaterServiceWindow extends JDialog {
     private final String compressedfulloutputfolder;
+    private final String deltaoutputfolder;
     private JPasswordField passwordField;
     private JTextField usernameField;
     private JList manifestLists;
@@ -39,10 +40,12 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
     private JLabel taskLabel;
     private ArrayList<File> updatedFiles; //delta only
 
-    public ME3TweaksUpdaterServiceWindow(Mod mod, File manifestFile, String compressedfulloutputfolder, ArrayList<File> updatedFiles) {
+    public ME3TweaksUpdaterServiceWindow(Mod mod, File manifestFile, String compressedfulloutputfolder, String deltaoutputfolder, ArrayList<File> updatedFiles) {
+        super(null, ModalityType.APPLICATION_MODAL);
         this.mod = mod;
         this.manifestFile = manifestFile;
         this.compressedfulloutputfolder = compressedfulloutputfolder;
+        this.deltaoutputfolder = deltaoutputfolder;
         this.updatedFiles = updatedFiles;
         setupWindow();
         pack();
@@ -54,6 +57,9 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         setIconImages(ModManager.ICONS);
         setTitle("ME3Tweaks Updater Service");
         setMinimumSize(new Dimension(240, 240));
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setResizable(false);
+        setIconImages(ModManager.ICONS);
 
         Wini settings = ModManager.LoadSettingsINI();
 
@@ -166,12 +172,12 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
             mod = new Mod();
             mod.setModName("Fanciful Edi Test");
         }
-        taskLabel = new JLabel("<html><center>Login to upload to updater service<br>" + mod.getModName()+"</center></html>", SwingConstants.CENTER);
+        taskLabel = new JLabel("<html><center>Login to upload to updater service<br>" + mod.getModName() + "</center></html>", SwingConstants.CENTER);
         taskLabel.setHorizontalAlignment(JLabel.CENTER);
         rootPanel.add(taskLabel, constraints);
 
         constraints.weighty = 1;
-        rootPanel.add(new JLabel(""),constraints);
+        rootPanel.add(new JLabel(""), constraints);
         add(rootPanel);
         getRootPane().setDefaultButton(loginButton);
     }
@@ -255,9 +261,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         System.err.println("Exception");
                     }
 
-                    for (File file : updatedFiles) {
-                        System.out.println("Updating file: " + file);
-                    }
+                    UploadFolder(sftpChannel, deltaoutputfolder, serverUpdateRoot);
 
                     //Upload full new manifest
                     try {
@@ -274,60 +278,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     //endregion
                 } else {
                     //region Upload everything
-
-                    //Create folders first
-                    publish(new ThreadCommand("TASK_UPDATE", "Creating folders"));
-
-
-                    Predicate<Path> fpredicate = p -> Files.isDirectory(p);
-                    ArrayList<Path> foldersAsPath = (ArrayList<Path>) Files.walk(Paths.get(compressedfulloutputfolder)).filter(fpredicate).collect(Collectors.toList());
-                    ArrayList<String> relativePaths = new ArrayList<>();
-                    relativePaths.add(FilenameUtils.getName(compressedfulloutputfolder));
-                    for (Path folder : foldersAsPath) {
-                        if (folder.toString().equalsIgnoreCase(compressedfulloutputfolder)) {
-                            continue;
-                        }
-                        relativePaths.add(FilenameUtils.getName(compressedfulloutputfolder) + "/" + ResourceUtils.normalizeFilePath(ResourceUtils.getRelativePath(folder.toString(), compressedfulloutputfolder, File.separator), false));
-                    }
-
-                    for (String folder : relativePaths) {
-                        //Create on server
-                        String fullpath = serverUpdateRoot + folder;
-                        System.out.println(fullpath);
-                        try {
-                            sftpChannel.cd(fullpath);
-                            System.out.println("Path exists: " + fullpath);
-                        } catch (SftpException e) {
-                            sftpChannel.mkdir(fullpath);
-                            sftpChannel.cd(fullpath);
-                            System.out.println("Created path: " + fullpath);
-                        }
-                    }
-
-                    Predicate<Path> predicate = p -> Files.isRegularFile(p) && !Files.isDirectory(p);
-                    try {
-                        Path compressedRootPath = Paths.get(compressedfulloutputfolder);
-                        totalBytesToTransfer = ResourceUtils.GetDirectorySize(compressedRootPath, true);
-                        ModManager.debugLogger.writeMessage("Amount of data to upload: " + ResourceUtils.humanReadableByteCount(totalBytesTransferred, true));
-                        ArrayList<Path> files = (ArrayList<Path>) Files.walk(compressedRootPath).filter(predicate).collect(Collectors.toList());
-                        relativePaths = new ArrayList<>();
-                        for (Path file : files) {
-                            relativePaths.add(FilenameUtils.getName(compressedfulloutputfolder) + "/" + ResourceUtils.normalizeFilePath(ResourceUtils.getRelativePath(file.toString(), compressedfulloutputfolder, File.separator), false));
-                        }
-
-                        for (String file : relativePaths) {
-                            //oo... hacky...
-                            String sourceFile = ResourceUtils.normalizeFilePath(compressedfulloutputfolder + file.substring(FilenameUtils.getName(compressedfulloutputfolder).length()), true);
-                            String destFile = ResourceUtils.normalizeFilePath(serverUpdateRoot + file, false);
-                            //System.out.println(sourceFile+" -> "+destFile);
-                            System.out.println("Uploading " + destFile);
-                            publish(new ThreadCommand("TASK_UPDATE", "Uploading<br>" + FilenameUtils.getName(destFile)));
-                            sftpChannel.put(sourceFile, destFile, new SystemOutProgressMonitor(), ChannelSftp.OVERWRITE);
-                            System.out.println("Uploaded " + file);
-                        }
-                    } catch (Exception e) {
-                        ModManager.debugLogger.writeErrorWithException("Error uploading files: ", e);
-                    }
+                    UploadFolder(sftpChannel, compressedfulloutputfolder, serverUpdateRoot);
 
                     try {
                         publish(new ThreadCommand("TASK_UPDATE", "Uploading manifest"));
@@ -352,6 +303,62 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                 ex.printStackTrace();
             }
             return null;
+        }
+
+        private void UploadFolder(ChannelSftp sftpChannel, String folderSource, String serverUpdateRoot) throws Exception {
+            //Create folders first
+            publish(new ThreadCommand("TASK_UPDATE", "Creating folders"));
+
+            folderSource = ResourceUtils.removeTrailingSlashes(folderSource);
+            Predicate<Path> fpredicate = p -> Files.isDirectory(p);
+            ArrayList<Path> foldersAsPath = (ArrayList<Path>) Files.walk(Paths.get(folderSource)).filter(fpredicate).collect(Collectors.toList());
+            ArrayList<String> relativePaths = new ArrayList<>();
+            relativePaths.add(FilenameUtils.getName(folderSource));
+            for (Path folder : foldersAsPath) {
+                if (folder.toString().equalsIgnoreCase(folderSource)) {
+                    continue;
+                }
+                relativePaths.add(FilenameUtils.getName(folderSource) + "/" + ResourceUtils.normalizeFilePath(ResourceUtils.getRelativePath(folder.toString(), folderSource, File.separator), false));
+            }
+
+            for (String folder : relativePaths) {
+                //Create on server
+                String fullpath = serverUpdateRoot + folder;
+                System.out.println(fullpath);
+                try {
+                    sftpChannel.cd(fullpath);
+                    ModManager.debugLogger.writeMessage("Directory created on server: " + fullpath);
+                } catch (SftpException e) {
+                    sftpChannel.mkdir(fullpath);
+                    sftpChannel.cd(fullpath);
+                    ModManager.debugLogger.writeMessage("Directory already exists on server, skipping creation: " + fullpath);
+                }
+            }
+
+            Predicate<Path> predicate = p -> Files.isRegularFile(p) && !Files.isDirectory(p);
+            try {
+                Path compressedRootPath = Paths.get(folderSource);
+                totalBytesToTransfer = ResourceUtils.GetDirectorySize(compressedRootPath, true);
+                ModManager.debugLogger.writeMessage("Amount of data to upload: " + ResourceUtils.humanReadableByteCount(totalBytesTransferred, true));
+                ArrayList<Path> files = (ArrayList<Path>) Files.walk(compressedRootPath).filter(predicate).collect(Collectors.toList());
+                relativePaths = new ArrayList<>();
+                for (Path file : files) {
+                    relativePaths.add(FilenameUtils.getName(folderSource) + "/" + ResourceUtils.normalizeFilePath(ResourceUtils.getRelativePath(file.toString(), folderSource, File.separator), false));
+                }
+
+                for (String file : relativePaths) {
+                    //oo... hacky...
+                    String sourceFile = ResourceUtils.normalizeFilePath(folderSource + file.substring(FilenameUtils.getName(folderSource).length()), true);
+                    String destFile = ResourceUtils.normalizeFilePath(serverUpdateRoot + file, false);
+                    //System.out.println(sourceFile+" -> "+destFile);
+                    System.out.println("Uploading " + destFile);
+                    publish(new ThreadCommand("TASK_UPDATE", "Uploading<br>" + FilenameUtils.getName(destFile)));
+                    sftpChannel.put(sourceFile, destFile, new SystemOutProgressMonitor(), ChannelSftp.OVERWRITE);
+                    System.out.println("Uploaded " + file);
+                }
+            } catch (Exception e) {
+                ModManager.debugLogger.writeErrorWithException("Error uploading files: ", e);
+            }
         }
 
         @Override
