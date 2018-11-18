@@ -4,6 +4,7 @@ import com.jcraft.jsch.*;
 import com.me3tweaks.modmanager.modmaker.ModMakerCompilerWindow;
 import com.me3tweaks.modmanager.modmaker.ModMakerEntryWindow;
 import com.me3tweaks.modmanager.objects.Mod;
+import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.ini4j.Wini;
@@ -21,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
     private File manifestFile;
     private Mod mod;
     private JButton loginButton;
+    private JLabel taskLabel;
 
     public ME3TweaksUpdaterServiceWindow(Mod mod, File manifestFile, String compressedfulloutputfolder) {
         this.mod = mod;
@@ -41,11 +44,15 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         this.compressedfulloutputfolder = compressedfulloutputfolder;
         setupWindow();
         pack();
+        setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
         setVisible(true);
     }
 
     private void setupWindow() {
+        setIconImages(ModManager.ICONS);
         setTitle("ME3Tweaks Updater Service");
+        setMinimumSize(new Dimension(240, 240));
+
         Wini settings = ModManager.LoadSettingsINI();
 
         JPanel rootPanel = new JPanel(new GridBagLayout());
@@ -57,7 +64,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         constraints.ipadx = 2;
         constraints.ipady = 2;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.CENTER;
+        constraints.anchor = GridBagConstraints.PAGE_START;
 
         //region LoginPanel
 
@@ -92,7 +99,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         }
 
         JLabel updaterService = new JLabel("Updater Service");
-        updaterService.setAlignmentX(Component.CENTER_ALIGNMENT);
+        updaterService.setHorizontalAlignment(JLabel.CENTER);
         c.gridy = ++y;
         loginPanel.add(updaterService, c);
 
@@ -152,11 +159,27 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         constraints.gridy = ++gridy;
 
         rootPanel.add(progressBar, constraints);
+        constraints.gridy = ++gridy;
+        if (mod == null) {
+            mod = new Mod();
+            mod.setModName("Fanciful Edi Test");
+        }
+        taskLabel = new JLabel("<html><center>Login to upload to updater service<br>" + mod.getModName()+"</center></html>", SwingConstants.CENTER);
+        taskLabel.setHorizontalAlignment(JLabel.CENTER);
+        rootPanel.add(taskLabel, constraints);
+
+        constraints.weighty = 1;
+        rootPanel.add(new JLabel(""),constraints);
         add(rootPanel);
         getRootPane().setDefaultButton(loginButton);
     }
 
-    class LoginThread extends SwingWorker<Void, Void> {
+
+    class LoginThread extends SwingWorker<Void, ThreadCommand> {
+        long totalBytesTransferredThisFile = 0;
+        long totalBytesTransferred = 0;
+        long totalBytesToTransfer = 1;
+
         public LoginThread() {
             loginButton.setEnabled(false);
             progressBar.setIndeterminate(true);
@@ -167,6 +190,8 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
             JSch jsch = new JSch();
             Session session = null;
             try {
+                publish(new ThreadCommand("TASK_UPDATE", "Connecting to server"));
+
                 session = jsch.getSession(usernameField.getText(), "ftp.me3tweaks.com", 22);
                 session.setConfig("StrictHostKeyChecking", "no");
                 session.setPassword(new String(passwordField.getPassword()));
@@ -174,6 +199,8 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
 
                 Channel channel = session.openChannel("sftp");
                 channel.connect();
+                publish(new ThreadCommand("HIDE_LOGIN"));
+
                 ChannelSftp sftpChannel = (ChannelSftp) channel;
                 String manifestsPathRoot = settings.get("UpdaterService", "manifestspath");
                 Vector filelist = sftpChannel.ls(manifestsPathRoot);
@@ -230,6 +257,9 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     //region Upload everything
 
                     //Create folders first
+                    publish(new ThreadCommand("TASK_UPDATE", "Creating folders"));
+
+
                     Predicate<Path> fpredicate = p -> Files.isDirectory(p);
                     var foldersAsPath = (ArrayList<Path>) Files.walk(Paths.get(compressedfulloutputfolder)).filter(fpredicate).collect(Collectors.toList());
                     ArrayList<String> relativePaths = new ArrayList<>();
@@ -258,7 +288,10 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
 
                     Predicate<Path> predicate = p -> Files.isRegularFile(p) && !Files.isDirectory(p);
                     try {
-                        var files = (ArrayList<Path>) Files.walk(Paths.get(compressedfulloutputfolder)).filter(predicate).collect(Collectors.toList());
+                        Path compressedRootPath = Paths.get(compressedfulloutputfolder);
+                        totalBytesToTransfer = ResourceUtils.GetDirectorySize(compressedRootPath, true);
+                        ModManager.debugLogger.writeMessage("Amount of data to upload: " + ResourceUtils.humanReadableByteCount(totalBytesTransferred, true));
+                        var files = (ArrayList<Path>) Files.walk(compressedRootPath).filter(predicate).collect(Collectors.toList());
                         relativePaths = new ArrayList<>();
                         for (Path file : files) {
                             relativePaths.add(FilenameUtils.getName(compressedfulloutputfolder) + "/" + ResourceUtils.normalizeFilePath(ResourceUtils.getRelativePath(file.toString(), compressedfulloutputfolder, File.separator), false));
@@ -267,10 +300,11 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         for (String file : relativePaths) {
                             //oo... hacky...
                             String sourceFile = ResourceUtils.normalizeFilePath(compressedfulloutputfolder + file.substring(FilenameUtils.getName(compressedfulloutputfolder).length()), true);
-                            String destFile = ResourceUtils.normalizeFilePath(serverUpdateRoot + file,false);
+                            String destFile = ResourceUtils.normalizeFilePath(serverUpdateRoot + file, false);
                             //System.out.println(sourceFile+" -> "+destFile);
                             System.out.println("Uploading " + destFile);
-                            sftpChannel.put(sourceFile, destFile, ChannelSftp.OVERWRITE);
+                            publish(new ThreadCommand("TASK_UPDATE", "Uploading<br>" + FilenameUtils.getName(destFile)));
+                            sftpChannel.put(sourceFile, destFile, new SystemOutProgressMonitor(), ChannelSftp.OVERWRITE);
                             System.out.println("Uploaded " + file);
                         }
                     } catch (Exception e) {
@@ -279,7 +313,11 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
 
 
                     try {
+                        publish(new ThreadCommand("TASK_UPDATE", "Uploading manifest"));
+
                         sftpChannel.put(manifestFile.getAbsolutePath(), onServerManifestPath, ChannelSftp.OVERWRITE);
+                        publish(new ThreadCommand("TASK_UPDATE", mod.getModName() + "<br>uploaded to updater service"));
+
                         System.out.println("Updated MANIFEST");
                     } catch (Exception e) {
                         ModManager.debugLogger.writeErrorWithException("Error uploading manifest: ", e);
@@ -299,9 +337,54 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
             return null;
         }
 
+        @Override
+        protected void process(List<ThreadCommand> chunks) {
+            for (ThreadCommand tc : chunks) {
+                String command = tc.getCommand();
+                switch (command) {
+                    case "PROGRESS_UPDATE":
+                        progressBar.setValue((int) (totalBytesTransferred * 100.0 / totalBytesToTransfer));
+                        progressBar.setIndeterminate(false);
+                        break;
+                    case "TASK_UPDATE":
+                        taskLabel.setText("<html><center>" + tc.getMessage() + "</center></html>");
+                        break;
+                    case "HIDE_LOGIN":
+                        loginButton.setVisible(false);
+                        break;
+                }
+            }
+        }
+
         public void done() {
             loginButton.setEnabled(true);
             progressBar.setIndeterminate(false);
+        }
+
+        public class SystemOutProgressMonitor implements SftpProgressMonitor {
+            public SystemOutProgressMonitor() {
+            }
+
+            @Override
+            public void init(int op, java.lang.String src, java.lang.String dest, long max) {
+                System.out.println("STARTING: " + op + " " + src + " -> " + dest + " total: " + max);
+            }
+
+            @Override
+            public boolean count(long bytes) {
+                //for(int x=0; x < bytes; x++) {
+                System.out.print("#");
+                totalBytesTransferred += bytes;
+                totalBytesTransferredThisFile += bytes;
+                //}
+                publish(new ThreadCommand("PROGRESS_UPDATE"));
+                return (true);
+            }
+
+            @Override
+            public void end() {
+                System.out.println("\nFINISHED!");
+            }
         }
     }
 }

@@ -672,7 +672,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
             ModManager.debugLogger.writeMessage("Environment Check: JRE - Checking for update");
             String latestjavaexehash = (String) latest_object.get("jre_latest_version_v2");
-            if (/*!ModManager.IS_DEBUG && */latestjavaexehash != null) {
+            if (!ModManager.IS_DEBUG && latestjavaexehash != null) {
                 ModManager.debugLogger.writeMessage("Environment Check: JRE -  Server has hash to check against: " + latestjavaexehash);
 
                 boolean hashMismatch = false;
@@ -4178,6 +4178,9 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 // Files to replace
                 for (String str : job.getFilesToReplace()) {
                     String relativepath = ResourceUtils.getRelativePath(str, modbasepath, File.separator);
+                    if (FilenameUtils.getName(relativepath).equals("_metacmm.txt")) {
+                        continue; //skip this file
+                    }
                     String outputpath = stagingdir + relativepath;
                     ModManager.debugLogger.writeMessage("Copying mod file to staging: " + str + " -> " + outputpath);
                     FileUtils.copyFile(new File(str), new File(outputpath));
