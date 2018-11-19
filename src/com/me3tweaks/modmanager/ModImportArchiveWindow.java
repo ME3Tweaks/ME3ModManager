@@ -1,41 +1,5 @@
 package com.me3tweaks.modmanager;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingWorker;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableModel;
-
-import org.apache.commons.io.FilenameUtils;
-
 import com.me3tweaks.modmanager.ModManager.Lock;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.CompressedMod;
@@ -43,13 +7,29 @@ import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
 import com.me3tweaks.modmanager.utilities.SevenZipCompressedModInspector;
-
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import net.sf.sevenzipjbinding.SevenZip;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Window that handles importing a mod into mod manager from zip 7z rar
@@ -61,7 +41,6 @@ public class ModImportArchiveWindow extends JDialog {
     public final static int IMPORT_AS_NEW_OPTION = 1;
     public static final int IMPORT_AS_SIDELOAD_OPTION = 0;
     private int sideloadresult;
-    HashMap<JCheckBox, CompressedMod> checkMap = new HashMap<JCheckBox, CompressedMod>(); //crazy, I know...
     private JButton importButton;
     private JProgressBar progressBar;
     private JPanel leftsidePanel;
@@ -161,6 +140,8 @@ public class ModImportArchiveWindow extends JDialog {
                 switch (colIndex) {
                     case 0:
                         return Boolean.class;
+                    case 1:
+                        return CompressedMod.class;
                     default:
                         return String.class;
                 }
@@ -268,14 +249,14 @@ public class ModImportArchiveWindow extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ArrayList<CompressedMod> modsToImport = new ArrayList<>();
-                for (Map.Entry<JCheckBox, CompressedMod> entry : checkMap.entrySet()) {
-                    JCheckBox key = entry.getKey();
-                    CompressedMod value = entry.getValue();
 
-                    if (key.isSelected()) {
-                        modsToImport.add(value);
+                for (int row = 0; row < compressedModModel.getRowCount(); row++) {
+                    boolean selectedForImport = (boolean) compressedModModel.getValueAt(row, 0);
+                    if (selectedForImport) {
+                        modsToImport.add((CompressedMod) compressedModModel.getValueAt(row, 1));
                     }
                 }
+
                 if (modsToImport.size() > 0) {
                     importButton.setText("Importing");
                     importButton.setEnabled(false);
@@ -289,8 +270,10 @@ public class ModImportArchiveWindow extends JDialog {
                 }
             }
         });
+
         pack();
         splitPane.setDividerLocation(0.5);
+
         setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
     }
 
@@ -305,7 +288,6 @@ public class ModImportArchiveWindow extends JDialog {
             ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Scanning " + FilenameUtils.getName(archiveFile));
             this.archiveFile = archiveFile;
             is7zfile = archiveFile.toLowerCase().endsWith(".7z");
-            checkMap.clear();
             compressedModModel.setRowCount(0);
             compressedMods.clear();
             progressBar.setIndeterminate(true);
@@ -316,11 +298,6 @@ public class ModImportArchiveWindow extends JDialog {
         @Override
         protected ArrayList<CompressedMod> doInBackground() throws Exception {
             ModManager.debugLogger.writeMessage("[ScanWorker]: Reading archive...");
-            ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
-            telemetryData.add(new ImmutablePair<>("telemetrykey", "IMPORTARCHIVE_FILE"));
-            telemetryData.add(new ImmutablePair<>("filename", FilenameUtils.getName(archiveFile)));
-            ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
-            // TODO Auto-generated method stub
             return SevenZipCompressedModInspector.getCompressedModsInArchive(archiveFile, this);
         }
 
@@ -365,14 +342,13 @@ public class ModImportArchiveWindow extends JDialog {
             ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
             ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Archive scan finished");
             ModManager.debugLogger.writeMessage("[SCANWORKER] Background thread finished.");
-            checkMap.clear();
             compressedModModel.setRowCount(0);
             compressedMods = null;
             try {
                 compressedMods = get();
             } catch (ExecutionException | InterruptedException e) {
                 ModManager.debugLogger.writeErrorWithException("Unable to get compressed mod info from archive:", e);
-                JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "An error occured while reading this archive file.", "Error reaching archive file",
+                JOptionPane.showMessageDialog(ModImportArchiveWindow.this, "An error occurred while reading this archive file.", "Error reaching archive file",
                         JOptionPane.ERROR_MESSAGE);
             }
             ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
@@ -401,11 +377,7 @@ public class ModImportArchiveWindow extends JDialog {
 
                     }
                 }
-
-                JCheckBox importBox = new JCheckBox(cm.getModName());
-                importBox.setSelected(true);
-                checkMap.put(importBox, cm);
-                compressedModModel.addRow(new Object[]{true, cm.getModName()});
+                compressedModModel.addRow(new Object[]{true, cm});
             }
             if (compressedMods.size() > 0) {
                 importButton.setEnabled(true); //will stay false if no mods loaded

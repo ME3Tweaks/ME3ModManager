@@ -128,7 +128,7 @@ public class CompressedMod {
 
 	@Override
 	public String toString() {
-		return getModName() + " in " + getCustomDLCFolderName();
+		return getModName();
 	}
 
 }
