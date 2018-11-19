@@ -232,7 +232,10 @@ public class AllModsUpdateWindow extends JDialog {
 					switch (result) {
 					case JOptionPane.YES_OPTION:
 						userChose = 1;
-						setVisible(true);
+						if (!isVisible()) {
+							setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
+							setVisible(true);
+						}
 						break;
 					case JOptionPane.NO_OPTION:
 						userChose = -1;
@@ -241,7 +244,7 @@ public class AllModsUpdateWindow extends JDialog {
 					}
 					break;
 				case "NOTIFY_START":
-					AllModsUpdateWindow.this.setLocation(getX(), (getY() - 160));
+					AllModsUpdateWindow.this.setLocation(getX(), (getY() - 120));
 					operationLabel.setText("Updating mods from ME3Tweaks");
 					break;
 				case "MANIFEST_DOWNLOADED":
