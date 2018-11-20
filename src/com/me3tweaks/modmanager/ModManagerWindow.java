@@ -2116,8 +2116,6 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         moddevUpdateXMLGenerator.setEnabled(false);
 
 
-
-
         //MOUNT FILES
         JMenu mountMenu = new JMenu("Manage " + mod.getModName() + " Mount.dlc files");
         mountMenu.setVisible(false);
@@ -2223,11 +2221,21 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (mod.getServerModFolder().equals(Mod.DEFAULT_SERVER_FOLDER)) {
-                    ModManager.debugLogger.writeError("Mod must have [UPDATES]serverfolder set.");
+                    ModManager.debugLogger.writeError("Mod must have [UPDATES]serverfolder set to prepare for updater service.");
                     labelStatus.setText("Mod requires serverfolder to be set in moddesc");
                     return;
                 }
-                ModManager.debugLogger.writeMessage("Preparing "+mod.getModName()+" for updater service");
+                Wini settings = ModManager.LoadSettingsINI();
+                String username = settings.get("UpdaterService", "username");
+                String serverStorageRoot = settings.get("UpdaterService", "lzmastoragepath");
+                String manifestStorageRoot = settings.get("UpdaterService", "manifestspath");
+
+                if (username == null || serverStorageRoot == null || manifestStorageRoot == null ){
+                    ModManager.debugLogger.writeError("username/storage root/manifest root not found in me3cmm.ini. Cannot prepare mod for updater service");
+                    JOptionPane.showMessageDialog(ModManagerWindow.this,"Required parameters not set for updater service.\nEnsure you have the following items set in me3cmm.ini under [UpdaterService]:\n - lzmastoragepath\n - manifestspath\n - username","Required information missing",JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                ModManager.debugLogger.writeMessage("Preparing " + mod.getModName() + " for updater service");
                 ModXMLTools.generateXMLFileList(mod);
             }
         });
