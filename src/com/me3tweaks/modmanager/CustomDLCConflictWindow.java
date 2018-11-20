@@ -561,7 +561,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			String internalName = modName.toUpperCase().replaceAll(" ", "_");
 			ModManager.debugLogger.writeMessage("Compatibility pack will be named DLC_MOD_" + internalName);
 			StarterKitWindow.StarterKitGenerator skg = new StarterKitGenerator(guiPatchButton, progressPanel,
-					CustomDLCConflictWindow.this);
+					CustomDLCConflictWindow.this,"compat");
 			skg.setInternaldisplayname("GUI Compatibility Pack from Mod Manager " + ModManager.BUILD_NUMBER);
 			skg.setMountpriority(31050);
 			skg.setModdev("Mod Manager Build " + ModManager.BUILD_NUMBER);
