@@ -37,8 +37,10 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
     private File manifestFile;
     private Mod mod;
     private JButton loginButton;
+    private JButton copyManifestsButton, validateManifestButton;
     private JLabel taskLabel;
     private ArrayList<File> updatedFiles; //delta only
+    private JPanel manifestActionsPanel;
 
     public ME3TweaksUpdaterServiceWindow(Mod mod, File manifestFile, String compressedfulloutputfolder, String deltaoutputfolder, ArrayList<File> updatedFiles) {
         super(null, ModalityType.APPLICATION_MODAL);
@@ -48,7 +50,6 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         this.deltaoutputfolder = deltaoutputfolder;
         this.updatedFiles = updatedFiles;
         setupWindow();
-        pack();
         setLocationRelativeTo(ModManagerWindow.ACTIVE_WINDOW);
         setVisible(true);
     }
@@ -56,7 +57,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
     private void setupWindow() {
         setIconImages(ModManager.ICONS);
         setTitle("ME3Tweaks Updater Service");
-        setMinimumSize(new Dimension(240, 240));
+        setMinimumSize(new Dimension(240, 230));
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
         setIconImages(ModManager.ICONS);
@@ -151,9 +152,6 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
             }
         });
 
-        if (!usernameField.getText().equals("")) {
-            passwordField.requestFocusInWindow();
-        }
 
         //endregion
 
@@ -167,6 +165,32 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         constraints.gridy = ++gridy;
 
         rootPanel.add(progressBar, constraints);
+
+        constraints.gridy = ++gridy;
+        manifestActionsPanel = new JPanel(new BorderLayout());
+
+        copyManifestsButton = new JButton("Activate");
+        copyManifestsButton.setToolTipText("<html>Copies manifest from your server directory into the live production directory on ME3Tweaks.<br>On the hour, every hour, manifests are automatically copied from 3rd party accounts to production.<br>You can use this option to force this immediately.</html>");
+        copyManifestsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ResourceUtils.openWebpage("https://me3tweaks.com/mods/latestxml/copy3rdpartymanifests");
+            }
+        });
+
+        manifestActionsPanel.add(copyManifestsButton, BorderLayout.WEST);
+        validateManifestButton = new JButton("Validate live manifest");
+        copyManifestsButton.setToolTipText("<html>Triggers ME3Tweaks to read and validate the current production manifest.<br>If you have not yet activated the manifest this may be out of sync from the backing data.<br>This option checks for LZMA files and their sizes to ensure clients won't have issues downloading the update.</html>");
+        validateManifestButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ResourceUtils.openWebpage("https://me3tweaks.com/mods/latestxml/validatemanifests?file=" + manifestFile.getName());
+            }
+        });
+        manifestActionsPanel.setVisible(false);
+        manifestActionsPanel.add(validateManifestButton, BorderLayout.EAST);
+        rootPanel.add(manifestActionsPanel, constraints);
+
         constraints.gridy = ++gridy;
         if (mod == null) {
             mod = new Mod();
@@ -179,6 +203,10 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         constraints.weighty = 1;
         rootPanel.add(new JLabel(""), constraints);
         add(rootPanel);
+        pack();
+        if (!usernameField.getText().equals("")) {
+            passwordField.requestFocus();
+        }
         getRootPane().setDefaultButton(loginButton);
     }
 
@@ -199,11 +227,24 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
             Session session = null;
             try {
                 publish(new ThreadCommand("TASK_UPDATE", "Connecting to server"));
+                String username = usernameField.getText();
+                session = jsch.getSession(username, "ftp.me3tweaks.com", 22);
 
-                session = jsch.getSession(usernameField.getText(), "ftp.me3tweaks.com", 22);
+
                 session.setConfig("StrictHostKeyChecking", "no");
                 session.setPassword(new String(passwordField.getPassword()));
-                session.connect();
+                try {
+                    session.connect();
+                } catch (JSchException je) {
+                    publish(new ThreadCommand("TASK_UPDATE", "Connection error: " + je.getMessage()));
+                    ModManager.debugLogger.writeErrorWithException("Connection error: ", je);
+                    return null;
+                }
+
+                if (!username.contains("_me3tweaks")) {
+                    //Not third party
+                    publish(new ThreadCommand("DISABLE_COPY_BUTTON"));
+                }
 
                 Channel channel = session.openChannel("sftp");
                 channel.connect();
@@ -238,7 +279,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                             manifestOnServerStr += line + "\n";
                         }
                     } catch (Exception e) {
-                        System.err.println("Exception");
+                        ModManager.debugLogger.writeErrorWithException("Error reading existing manifest string from server:", e);
                     }
 
                     String newXml = "";
@@ -249,7 +290,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         root.setAttribute("version", "0.001");
                         newXml = ModMakerCompilerWindow.docToString(d);
                     } catch (Exception e) {
-                        System.err.println("Exception");
+                        ModManager.debugLogger.writeErrorWithException("Error creating un-updatable manifest for upload duration:", e);
                     }
 
                     //write xml to server
@@ -258,7 +299,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         writer.write(newXml);
                         writer.flush();
                     } catch (IOException e) {
-                        System.err.println("Exception");
+                        ModManager.debugLogger.writeErrorWithException("Error writing xml to server:", e);
                     }
 
                     UploadFolder(sftpChannel, deltaoutputfolder, serverUpdateRoot);
@@ -269,12 +310,10 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
 
                         sftpChannel.put(manifestFile.getAbsolutePath(), onServerManifestPath, ChannelSftp.OVERWRITE);
                         publish(new ThreadCommand("TASK_UPDATE", mod.getModName() + "<br>uploaded to updater service"));
-
-                        System.out.println("Updated MANIFEST");
                     } catch (Exception e) {
                         ModManager.debugLogger.writeErrorWithException("Error uploading manifest: ", e);
                     }
-                    System.out.println("Updated MANIFEST");
+                    publish(new ThreadCommand("SHOW_ACTION_PANEL"));
                     //endregion
                 } else {
                     //region Upload everything
@@ -282,11 +321,9 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
 
                     try {
                         publish(new ThreadCommand("TASK_UPDATE", "Uploading manifest"));
-
                         sftpChannel.put(manifestFile.getAbsolutePath(), onServerManifestPath, ChannelSftp.OVERWRITE);
                         publish(new ThreadCommand("TASK_UPDATE", mod.getModName() + "<br>uploaded to updater service"));
-
-                        System.out.println("Updated MANIFEST");
+                        publish(new ThreadCommand("SHOW_ACTION_PANEL"));
                     } catch (Exception e) {
                         ModManager.debugLogger.writeErrorWithException("Error uploading manifest: ", e);
                     }
@@ -295,12 +332,12 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
 
                 sftpChannel.exit();
                 session.disconnect();
-            } catch (
-                    JSchException ex) {
-                ex.printStackTrace();
-            } catch (
-                    SftpException ex) {
-                ex.printStackTrace();
+            } catch (JSchException ex) {
+                publish(new ThreadCommand("TASK_UPDATE","JSch Error - see logs"));
+                ModManager.debugLogger.writeErrorWithException("Jsch Error in uploader thread: ",ex);
+            } catch (SftpException ex) {
+                publish(new ThreadCommand("TASK_UPDATE","SFTP Error - see logs"));
+                ModManager.debugLogger.writeErrorWithException("SFTP Error in uploader thread: ",ex);
             }
             return null;
         }
@@ -375,6 +412,12 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         break;
                     case "HIDE_LOGIN":
                         loginButton.setVisible(false);
+                        break;
+                    case "DISABLE_COPY_BUTTON":
+                        copyManifestsButton.setEnabled(false);
+                        break;
+                    case "SHOW_ACTION_PANEL":
+                        manifestActionsPanel.setVisible(true);
                         break;
                 }
             }

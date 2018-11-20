@@ -85,10 +85,11 @@ public class ModXMLTools {
                     JOptionPane.PLAIN_MESSAGE);
             if (changelog != null) {
                 this.changelog = changelog;
+                jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ManifestGenerator", "Preparing mod for updater service");
             } else {
+                ModManager.debugLogger.writeMessage("Aborting package build due to user cancellation");
                 aborted = true;
             }
-            jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("ManifestGenerator", "Preparing mod for updater service");
         }
 
         @Override
@@ -175,6 +176,8 @@ public class ModXMLTools {
                 }
             }
 
+            publish(new ThreadCommand("Fetching online manifest"));
+
             manifestFile = new File(ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
 
             //SIMULATE REVERSE UPDATE
@@ -183,13 +186,16 @@ public class ModXMLTools {
             Collection<File> newversionfiles = FileUtils.listFiles(new File(mod.getModPath()), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
             updatedFiles = new ArrayList<>();
             UpdatePackage up = null;
+
             Document doc = getOnlineInfo("https://me3tweaks.com/mods/getlatest_batch", false, mod.getClassicUpdateCode());
 
             boolean deltaUpdate = false;
             if (doc.getElementsByTagName("mod").getLength() > 0) {
                 ModManager.debugLogger.writeMessage("Running reverse-update using server manifest");
                 deltaUpdate = true;
-            } else if (manifestFile.exists()) {
+            }
+            //Commented out: cached manifest. Must use server manifest.
+            /*else if (manifestFile.exists()) {
                 ModManager.debugLogger.writeMessage("Running reverse-update using cached manifest");
                 String oldmanifest = FileUtils.readFileToString(manifestFile);
                 DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -197,7 +203,7 @@ public class ModXMLTools {
                 is.setCharacterStream(new StringReader(oldmanifest));
                 doc = db.parse(is);
                 deltaUpdate = true;
-            }
+            }*/
 
             if (deltaUpdate) {
                 //check local files against old manifest. Changes will be considered updates and will be added to the updates folder.
@@ -208,11 +214,12 @@ public class ModXMLTools {
                     publish(new ThreadCommand("Calculating what files to use in delta update", null));
                     up = checkForClassicUpdate(mod, doc, null);
                     mod.setVersion(modversion); //restore, since this is pointe
-                    if (up.getVersion() >= mod.getVersion()) {
-                        ModManager.debugLogger.writeMessage("Server version is equal or higher to current version, which is not an update.");
-                        return "";
-                    }
+
                     if (up != null) {
+                        if (up.getVersion() >= mod.getVersion()) {
+                            ModManager.debugLogger.writeMessage("Server version is equal or higher to current version, which is not an update.");
+                            return "";
+                        }
                         for (ManifestModFile mf : up.getFilesToDownload()) {
                             File f = new File(mod.getModPath() + File.separator + mf.getRelativePath());
                             if (f.exists()) {
@@ -422,7 +429,7 @@ public class ModXMLTools {
             clpbrd.setContents(new StringSelection(manifest), null);
 
             publish(new ThreadCommand(mod.getModName() + " prepared for updater service", null));
-            ResourceUtils.openFolderInExplorer(ModManager.getME3TweaksUpdaterServiceFolder());
+            //ResourceUtils.openFolderInExplorer(ModManager.getME3TweaksUpdaterServiceFolder());
             return "OK";
         }
 
@@ -434,7 +441,9 @@ public class ModXMLTools {
 
         @Override
         public void done() {
-            ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
+            if (!aborted) {
+                ModManagerWindow.ACTIVE_WINDOW.submitJobCompletion(jobCode);
+            }
             try {
                 String result = get();
                 if (result != null && result.equals("")) {

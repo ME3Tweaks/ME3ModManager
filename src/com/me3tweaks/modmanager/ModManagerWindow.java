@@ -1845,7 +1845,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         restoreRevertMPBaseDLC.setToolTipText(
                 "<html>Restores all basegame files, and checks all Multiplayer DLC files.<br>This does not remove custom DLC modules.<br>If you are doing multiplayer mods, you should use this to restore</html>");
 
-        restoreVanillaCopy = new JMenuItem("Restore game to vanilla");
+        restoreVanillaCopy = new JMenuItem("Restore game from backup");
         restoreVanillaCopy.setToolTipText("<html>Restore your game from a previously created vanilla backup</html>");
 
         restoreSelective.addActionListener(this);
