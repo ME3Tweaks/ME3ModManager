@@ -29,6 +29,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -4388,7 +4390,14 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 ModManager.debugLogger.writeMessage("Thread exiting - result of compression method: " + outfile.exists());
             }
             FileUtils.deleteDirectory(stagingdirfile);
-            return outfile != null && outfile.exists();
+            if (outfile != null && outfile.exists() && outfile.length() > 0) {
+                ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
+                telemetryData.add(new ImmutablePair<>("telemetrykey", "MOD_DEPLOYMENT_SUCCESS"));
+                telemetryData.add(new ImmutablePair<>("modname", mod.getModName()));
+                telemetryData.add(new ImmutablePair<>("version", Double.toString(mod.getVersion())));
+                ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
+            }
+            return outfile != null && outfile.exists() && outfile.length() > 0;
         }
 
         @Override

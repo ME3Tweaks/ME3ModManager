@@ -135,7 +135,13 @@ public class ModXMLTools {
                 return "";
             }
 
+            String originalPath = mod.getModPath();
             mod = mdt.getMod(); //gets the staged mod
+            String newPath = mod.getModPath();
+            if (originalPath.equalsIgnoreCase(newPath)) {
+                ModManager.debugLogger.writeError("New mod path is the same as the old one! This mod was not staged. This is a bug or error - aborting updater service session");
+                return "";
+            }
             ModManager.debugLogger.writeMessage("Deployment thread exited, continuing ME3Tweaks Updater Servicing thread");
 
             //check blacklisted files
@@ -417,6 +423,8 @@ public class ModXMLTools {
                 blacklistedelement.setTextContent(str);
                 rootElement.appendChild(blacklistedelement);
             }
+
+            FileUtils.deleteDirectory(new File(mod.getModPath()));
 
             long finishTime = System.currentTimeMillis();
             ModManager.debugLogger.writeMessage("Manifest ready. Took " + ((finishTime - startTime) / 1000) + " seconds.");
