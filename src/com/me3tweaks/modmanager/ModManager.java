@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 public class ModManager {
-    public static boolean IS_DEBUG = false;
+    public static boolean IS_DEBUG = true;
     public static final String VERSION = "5.1.2";
     public static long BUILD_NUMBER = 90L;
     public static final String BUILD_DATE = "11/20/2018";

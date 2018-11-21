@@ -223,7 +223,8 @@ public class AlternateCustomDLC {
 				CONDITION_DLC_NOT_PRESENT,
 				CONDITION_ANY_DLC_NOT_PRESENT,
 				CONDITION_ANY_DLC_PRESENT,
-				CONDITION_ALL_DLC_PRESENT
+				CONDITION_ALL_DLC_PRESENT,
+                CONDITION_MANUAL
 		};
 		return new ArrayList<String>(Arrays.asList(validConditions)).contains(condition);
 	}

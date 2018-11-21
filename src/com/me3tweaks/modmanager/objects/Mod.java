@@ -1061,7 +1061,11 @@ public class Mod implements Comparable<Mod> {
         if (alternateCustomDLC.size() > 0 && !ignoreLoadErrors) {
             if (ModManagerWindow.validateBIOGameDir()) {
                 if (shouldApplyAutos) {
-                    addCustomDLCAlternates(ModManagerWindow.GetBioGameDir());
+                    if (addCustomDLCAlternates(ModManagerWindow.GetBioGameDir())) {
+                        ModManager.debugLogger.writeMessageConditionally("Applied at least 1 automatic alternate Custom DLC", ModManager.LOG_MOD_INIT);
+                    } else {
+                        ModManager.debugLogger.writeMessageConditionally("No automatic alternate DLCs were applied", ModManager.LOG_MOD_INIT);
+                    }
                 }
             } else {
                 ModManager.debugLogger.writeError(
@@ -1999,7 +2003,7 @@ public class Mod implements Comparable<Mod> {
      * @return true if all were added OK. False if any failed.
      */
     public boolean addCustomDLCAlternates(String biogamedir) {
-        if (alternateFiles.size() > 0 && ModManagerWindow.validateBIOGameDir()) {
+        if (alternateCustomDLC.size() > 0 && ModManagerWindow.validateBIOGameDir()) {
             boolean altApplied = false;
             ModManager.debugLogger.writeMessageConditionally(
                     getModName() + ": Checking automatic alternate custom dlc list to see if applicable and will apply if conditions are right", ModManager.LOG_MOD_INIT);
