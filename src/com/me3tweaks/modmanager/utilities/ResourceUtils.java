@@ -450,6 +450,7 @@ public class ResourceUtils {
 		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
 		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
 			try {
+				ModManager.debugLogger.writeMessage("Opening URL: "+uri.toString());
 				desktop.browse(uri);
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Error opening webpage:", e);

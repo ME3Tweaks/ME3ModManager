@@ -302,7 +302,7 @@ public class ImportEntryWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since this is optional we will ignore this error: ", e);
 				}
 			}
-			String fileSystemName = modName.replaceAll("[\\\\/:*?\"<>|]", "_");
+			String fileSystemName = modName.replaceAll("[\\\\/:*?\"<>|]", "-");
 
 			String localModPath = ModManager.getModsDir() + fileSystemName;
 			File localModPathFile = new File(localModPath);
