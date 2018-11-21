@@ -70,6 +70,8 @@ public class ModXMLTools {
         private File manifestFile;
         private String compressedfulloutputfolder;
         private String compresseddeltaoutputfolder;
+        private int forcepushtoserverResult = -1;
+        private final Object lock = new ModManager.Lock(); //threading wait() and notifyall();
 
         private ArrayList<File> updatedFiles;
 
@@ -99,25 +101,25 @@ public class ModXMLTools {
             }
             if (mod.getModMakerCode() > 0) {
                 ModManager.debugLogger.writeError("ModMaker codes use the ID");
-                publish(new ThreadCommand("ModMaker mods can't use classic updater", "ERROR"));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "ModMaker mods can't use classic updater"));
                 return "";
             }
 
             if (mod.getClassicUpdateCode() <= 0) {
                 ModManager.debugLogger.writeError("Mod must have an ME3Tweaks update code for updating. Contact Mgamerz if you need one.");
-                publish(new ThreadCommand("Mod needs an updatecode in ModInfo", "ERROR"));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Mod needs an updatecode in ModInfo"));
                 return "";
             }
 
             if (mod.getVersion() <= 0) {
                 ModManager.debugLogger.writeError("Mod must have a double/numeric version number for updating");
-                publish(new ThreadCommand("Mod requires numeric version number", "ERROR"));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Mod requires numeric version number"));
                 return "";
             }
 
             if (mod.getServerModFolder().equals(Mod.DEFAULT_SERVER_FOLDER)) {
                 ModManager.debugLogger.writeError("Mod must have [UPDATES]serverfolder set.");
-                publish(new ThreadCommand("Mod requires serverfolder in moddesc", "ERROR"));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Mod requires serverfolder in moddesc"));
                 return "";
             }
 
@@ -131,7 +133,7 @@ public class ModXMLTools {
 
             if (!mdt.result) {
                 ModManager.debugLogger.writeError("Deployment thread failed to return a proper staged mod!");
-                publish(new ThreadCommand("Failed to stage mod", null));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Failed to stage mod"));
                 return "";
             }
 
@@ -150,7 +152,7 @@ public class ModXMLTools {
                 if (f.exists()) {
                     ModManager.debugLogger.writeError("A blacklisted file " + f
                             + " exists in mod folder. Blacklisted files will be deleted when the mod is applied. Remove this file from your distribution or remove the blacklisting in moddesc");
-                    publish(new ThreadCommand("Mod has a blacklisted file (check moddesc)", "ERROR"));
+                    publish(new ThreadCommand("SET_BOTTOM_TEXT", "Mod has a blacklisted file (check moddesc)"));
                     return "";
                 }
             }
@@ -161,7 +163,7 @@ public class ModXMLTools {
                 if (!urlValidator.isValid(mod.getSideloadURL())) {
                     if (mod.getSideloadOnlyTargets().size() > 0) {
                         ModManager.debugLogger.writeError("Mod has invalid sideload URL, and some files are marked for sideloading only. Aborting manifest generation");
-                        publish(new ThreadCommand("Invalid Sideload URL. Manifest requires valid sideload URL", null));
+                        publish(new ThreadCommand("SET_BOTTOM_TEXT", "Invalid Sideload URL. Manifest requires valid sideload URL"));
                         return "";
                     } else {
                         ModManager.debugLogger
@@ -182,7 +184,7 @@ public class ModXMLTools {
                 }
             }
 
-            publish(new ThreadCommand("Fetching online manifest"));
+            publish(new ThreadCommand("SET_BOTTOM_TEXT", "Fetching online manifest"));
 
             manifestFile = new File(ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
 
@@ -217,15 +219,32 @@ public class ModXMLTools {
 
                     double modversion = mod.getVersion();
                     mod.setVersion(0.001);
-                    publish(new ThreadCommand("Calculating what files to use in delta update", null));
+                    publish(new ThreadCommand("SET_BOTTOM_TEXT", "Calculating what files to use in delta update"));
                     up = checkForClassicUpdate(mod, doc, null);
                     mod.setVersion(modversion); //restore, since this is pointe
 
                     if (up != null) {
                         if (up.getVersion() >= mod.getVersion()) {
                             ModManager.debugLogger.writeMessage("Server version is equal or higher to current version, which is not an update.");
-                            publish(new ThreadCommand("Server version >= moddesc version, not an update", null));
-                            return "";
+                            publish(new ThreadCommand("SET_BOTTOM_TEXT", "Waiting for user input"));
+                            publish(new ThreadCommand("MANIFEST_ON_SERVER_NEWER_OR_SAME", Double.toString(up.getVersion())));
+                            synchronized (lock) {
+                                while (forcepushtoserverResult == -1) {
+                                    try {
+                                        ModManager.debugLogger.writeMessage("Waiting for user to select force push, build locally, or cancel");
+                                        lock.wait();
+                                    } catch (InterruptedException e) {
+                                        ModManager.debugLogger.writeErrorWithException("Unable to wait for force push prompt lock:", e);
+                                    }
+                                }
+                            }
+
+                            ModManager.debugLogger.writeMessage("User chose option: " + forcepushtoserverResult);
+                            if (forcepushtoserverResult == 2) {
+                                publish(new ThreadCommand("SET_BOTTOM_TEXT","Server version (" + up.getVersion() + ") >= moddesc version (" + mod.getVersion() + "), not an update"));
+                                ModManager.debugLogger.writeMessage("User cancelled preparations.");
+                                return "";
+                            }
                         }
                         for (ManifestModFile mf : up.getFilesToDownload()) {
                             File f = new File(mod.getModPath() + File.separator + mf.getRelativePath());
@@ -246,7 +265,7 @@ public class ModXMLTools {
                     } else {
                         //no update.
                         ModManager.debugLogger.writeMessage("No files to update. Exiting update service mod preparer thread.");
-                        publish(new ThreadCommand("No changes detected from previous generated manifest", null));
+                        publish(new ThreadCommand("SET_BOTTOM_TEXT","No changes detected from previous generated manifest"));
                         return null;
                     }
                 } catch (Exception e) {
@@ -285,7 +304,7 @@ public class ModXMLTools {
             int processed = 1;
             for (File file : updatedFiles) {
 
-                publish(new ThreadCommand("Compressing " + FilenameUtils.getBaseName(file.getAbsolutePath()), processed + "/" + numFiles));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Compressing " + FilenameUtils.getBaseName(file.getAbsolutePath()), processed + "/" + numFiles));
                 String srcFile = file.getAbsolutePath();
                 String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
                 String outputFile = compresseddeltaoutputfolder + relativePath + ".lzma";
@@ -301,7 +320,7 @@ public class ModXMLTools {
             if (!compressedfulloutputfolder.equals(compresseddeltaoutputfolder)) {
                 ModManager.debugLogger.writeMessage("Building updatedelta folder for server upload");
 
-                publish(new ThreadCommand("Applying delta to full server package", null));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Applying delta to full server package", null));
                 for (File newfile : updatedFiles) {
                     if (!newfile.exists()) {
                         continue; //it was deleted in this package, existed in old one. reverse update made it look like this file was required for download
@@ -330,7 +349,7 @@ public class ModXMLTools {
                 docBuilder = docFactory.newDocumentBuilder();
             } catch (ParserConfigurationException e) {
                 ModManager.debugLogger.writeErrorWithException("Parser Configuration Error (dafuq?):", e);
-                publish(new ThreadCommand("Parser Configuration Error (See log)", "ERROR"));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Parser Configuration Error (See log)"));
                 return "";
             }
 
@@ -358,7 +377,7 @@ public class ModXMLTools {
             //PREPARE SIDELOAD PACKAGE
             boolean hassideload = false;
             for (File file : newversionfiles) {
-                publish(new ThreadCommand("Preparing sideload package"));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Preparing sideload package"));
                 String srcFile = file.getAbsolutePath();
                 String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
                 String normalizedRelativePath = relativePath.replaceAll("\\\\", "/");
@@ -372,7 +391,7 @@ public class ModXMLTools {
                 }
             }
             if (hassideload) {
-                publish(new ThreadCommand("Building sideload package"));
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Building sideload package"));
                 File moddesc = new File(mod.getModPath() + "moddesc.ini");
                 //DECREMENT VERSION SO SERVER VERSION APPEARS AS UPDATE.
                 Wini ini = new Wini(moddesc);
@@ -388,8 +407,8 @@ public class ModXMLTools {
             }
             //GENERATE MANIFEST
             ModManager.debugLogger.writeMessage("Generating full manifest");
-            for (File file : newversionfiles) { //TODO
-                publish(new ThreadCommand("Building server manifest", processed + "/" + numFiles));
+            for (File file : newversionfiles) {
+                publish(new ThreadCommand("SET_BOTTOM_TEXT", "Building server manifest [" + processed + "/" + numFiles + "]"));
 
                 String srcFile = file.getAbsolutePath();
                 String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
@@ -437,15 +456,34 @@ public class ModXMLTools {
             FileUtils.writeStringToFile(manifestFile, manifest);
             clpbrd.setContents(new StringSelection(manifest), null);
 
-            publish(new ThreadCommand(mod.getModName() + " prepared for updater service", null));
-            //ResourceUtils.openFolderInExplorer(ModManager.getME3TweaksUpdaterServiceFolder());
+            publish(new ThreadCommand("SET_BOTTOM_TEXT", mod.getModName() + " prepared for updater service"));
+            if (forcepushtoserverResult == 1) {
+                ResourceUtils.openFolderInExplorer(ModManager.getME3TweaksUpdaterServiceFolder());
+            }
             return "OK";
         }
 
         @Override
         protected void process(List<ThreadCommand> chunks) {
-            ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(chunks.get(chunks.size() - 1).getCommand()
-                    + (chunks.get(chunks.size() - 1).getMessage() != null ? " [" + chunks.get(chunks.size() - 1).getMessage() + "]" : ""));
+            for (ThreadCommand command : chunks) {
+                switch (command.getCommand()) {
+                    case "MANIFEST_ON_SERVER_NEWER_OR_SAME":
+                        Object[] choices = {"Force push to server", "Prepare locally only", "Cancel"};
+                        String message = "<html><div style='width: 250px'>The manifest on the ME3Tweaks Updater Service is the same version or higher than the current mod version you are uploading.<br>" +
+                                "Current server version: " + command.getMessage() + "<br>" +
+                                "Local version you are preparing to upload: " + mod.getVersion() + "<br><br>" +
+                                "You can force your version to upload to the server, prepare the update locally on disk without pushing to the server, or cancel this operation.<div></html>";
+                        synchronized (lock) {
+                            forcepushtoserverResult = JOptionPane.showOptionDialog(ModManagerWindow.ACTIVE_WINDOW, message, "Mod same or newer on server", JOptionPane.YES_NO_CANCEL_OPTION,
+                                    JOptionPane.QUESTION_MESSAGE, null, choices, choices[0]);
+                            lock.notifyAll(); //wake up thread
+                        }
+                        break;
+                    case "SET_BOTTOM_TEXT":
+                        ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText(command.getMessage());
+                        break;
+                }
+            }
         }
 
         @Override
@@ -460,7 +498,7 @@ public class ModXMLTools {
                     ModManager.debugLogger.writeError("Failed to build server packages.");
                     //ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Failed to prepare mod for updater service");
                 } else {
-                    if (result != null && result.equals("OK")) {
+                    if (result != null && result.equals("OK") && (forcepushtoserverResult == -1 || forcepushtoserverResult == 0)) {
                         new ME3TweaksUpdaterServiceWindow(mod, manifestFile, compressedfulloutputfolder, compresseddeltaoutputfolder, updatedFiles);
                     }
                 }
