@@ -855,8 +855,15 @@ public class Mod implements Comparable<Mod> {
                     }
                     for (String alt : alts) {
                         AlternateCustomDLC altdlc = new AlternateCustomDLC(alt);
-                        ModManager.debugLogger.writeMessageConditionally("Alternate CustomDLC specified: " + alt.toString(), ModManager.LOG_MOD_INIT);
-                        alternateCustomDLC.add(altdlc);
+                        if (altdlc.hasValidCondition()) {
+                            ModManager.debugLogger.writeMessageConditionally("Alternate CustomDLC specified: " + alt.toString(), ModManager.LOG_MOD_INIT);
+                            alternateCustomDLC.add(altdlc);
+                        } else {
+                            ModManager.debugLogger.writeError("Alternate CustomDLC was specified, but uses an unknown condition: " + altdlc.getCondition());
+                            setFailedReason(
+                                    "The moddesc indicates there are alternate installation options based on your environment, but the condition listed is unknown: " + altdlc.getCondition());
+                            return;
+                        }
                     }
                 }
 
@@ -933,8 +940,8 @@ public class Mod implements Comparable<Mod> {
                     }
                     File path = new File(modFolderPath + additionalFolder);
                     if (!path.exists() || !path.isDirectory()) {
-                        ModManager.debugLogger.writeError("A specified additional folder could not be found: "+additionalFolder);
-                        setFailedReason("This mod lists an additional data folder that does not exist: "+additionalFolder+". Ensure this folder exists in your mod's directory, or remove it from the [UPDATES]additionalfolders moddesc.ini descriptor.");
+                        ModManager.debugLogger.writeError("A specified additional folder could not be found: " + additionalFolder);
+                        setFailedReason("This mod lists an additional data folder that does not exist: " + additionalFolder + ". Ensure this folder exists in your mod's directory, or remove it from the [UPDATES]additionalfolders moddesc.ini descriptor.");
                         return;
                     }
                 }
@@ -2052,6 +2059,18 @@ public class Mod implements Comparable<Mod> {
                                 altApplied = true;
                             } else {
                                 ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as all DLC in condition are present: " + altdlc,
+                                        ModManager.LOG_MOD_INIT);
+                            }
+                            break;
+                        case AlternateCustomDLC.CONDITION_ANY_DLC_PRESENT:
+                            if (!Collections.disjoint(remappedHeaders, installedDLC)) {
+                                ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as at least one DLC in condition is present: " + altdlc,
+                                        ModManager.LOG_MOD_INIT);
+                                ModJob job = getJobByModuleName(ModTypeConstants.CUSTOMDLC);
+                                applyAlternateDLCOperation(job, altdlc);
+                                altApplied = true;
+                            } else {
+                                ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable as none of hte listed DLC in condition are present: " + altdlc,
                                         ModManager.LOG_MOD_INIT);
                             }
                             break;

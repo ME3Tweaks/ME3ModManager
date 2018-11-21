@@ -17,6 +17,7 @@ public class AlternateCustomDLC {
 	public static final String CONDITION_DLC_PRESENT = "COND_DLC_PRESENT"; //automatically choose alt if DLC listed is present
 	public static final String CONDITION_DLC_NOT_PRESENT = "COND_DLC_NOT_PRESENT"; //automatically choose if DLC is not present
 	public static final String CONDITION_ANY_DLC_NOT_PRESENT = "COND_ANY_DLC_NOT_PRESENT"; //multiple DLC, any of which are missing
+	public static final String CONDITION_ANY_DLC_PRESENT = "COND_ANY_DLC_PRESENT"; //multiple DLC, any of which are detected. Can be used to detect multi-versions of mods like CEM
 	public static final String CONDITION_ALL_DLC_PRESENT = "COND_ALL_DLC_PRESENT";
 
 	private boolean isValid = true;
@@ -44,7 +45,7 @@ public class AlternateCustomDLC {
 		condition = ValueParserLib.getStringProperty(altfileText, "Condition", false);
 		if (!condition.equals(CONDITION_MANUAL)) {
 			conditionalDLC = ValueParserLib.getStringProperty(altfileText, "ConditionalDLC", false);
-			if (condition.equals(CONDITION_ANY_DLC_NOT_PRESENT)) {
+			if (condition.equals(CONDITION_ANY_DLC_NOT_PRESENT) || condition.equals(CONDITION_ANY_DLC_PRESENT) || condition.equals(CONDITION_ALL_DLC_PRESENT)) {
 				parseConditionalDLC();
 			}
 		}
@@ -210,5 +211,20 @@ public class AlternateCustomDLC {
 
 	public boolean hasBeenChoosen() {
 		return hasBeenChosen;
+	}
+
+	/**
+	 * Checks if the condition of this object is supported.
+	 * @return True if condition matches list of known conditions, false otherwise.
+	 */
+	public boolean hasValidCondition() {
+		String[] validConditions =  new String[]{CONDITION_MANUAL,
+				CONDITION_DLC_PRESENT,
+				CONDITION_DLC_NOT_PRESENT,
+				CONDITION_ANY_DLC_NOT_PRESENT,
+				CONDITION_ANY_DLC_PRESENT,
+				CONDITION_ALL_DLC_PRESENT
+		};
+		return new ArrayList<String>(Arrays.asList(validConditions)).contains(condition);
 	}
 }

@@ -358,7 +358,7 @@ public class ModImportArchiveWindow extends JDialog {
             telemetryData.add(new ImmutablePair<>("nummodsfound", compressedMods != null ? Integer.toString(compressedMods.size()) : "0"));
             ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
 
-            ModManager.debugLogger.writeMessage("[SCANWORKER] Found " + compressedMods.size() + " in archive. Displaying to user.");
+            ModManager.debugLogger.writeMessage("[SCANWORKER] Found " + compressedMods.size() + " in archive.");
             browseButton.setEnabled(true);
 
             for (CompressedMod cm : compressedMods) {
