@@ -224,6 +224,7 @@ public class ModXMLTools {
                     if (up != null) {
                         if (up.getVersion() >= mod.getVersion()) {
                             ModManager.debugLogger.writeMessage("Server version is equal or higher to current version, which is not an update.");
+                            publish(new ThreadCommand("Server version >= moddesc version, not an update", null));
                             return "";
                         }
                         for (ManifestModFile mf : up.getFilesToDownload()) {
