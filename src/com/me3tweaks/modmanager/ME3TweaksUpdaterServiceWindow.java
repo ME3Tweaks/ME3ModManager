@@ -148,7 +148,8 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new LoginThread().execute();
+                ModManager.debugLogger.writeMessage("Clicked login, running uploader thread...");
+                new ME3TweaksUpdaterServicingThread().execute();
             }
         });
 
@@ -211,12 +212,13 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
     }
 
 
-    class LoginThread extends SwingWorker<Void, ThreadCommand> {
+    class ME3TweaksUpdaterServicingThread extends SwingWorker<Void, ThreadCommand> {
         long totalBytesTransferredThisFile = 0;
         long totalBytesTransferred = 0;
         long totalBytesToTransfer = 1;
 
-        public LoginThread() {
+        public ME3TweaksUpdaterServicingThread() {
+            ModManager.debugLogger.writeMessage("Disabling login button");
             loginButton.setEnabled(false);
             progressBar.setIndeterminate(true);
         }
@@ -228,12 +230,15 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
             try {
                 publish(new ThreadCommand("TASK_UPDATE", "Connecting to server"));
                 String username = usernameField.getText();
+                ModManager.debugLogger.writeMessage("Opening session to ME3Tweaks with username " + username);
+
                 session = jsch.getSession(username, "ftp.me3tweaks.com", 22);
 
 
                 session.setConfig("StrictHostKeyChecking", "no");
                 session.setPassword(new String(passwordField.getPassword()));
                 try {
+                    ModManager.debugLogger.writeMessage("Connecting to server using password authentication");
                     session.connect();
                 } catch (JSchException je) {
                     publish(new ThreadCommand("TASK_UPDATE", "Connection error: " + je.getMessage()));
@@ -241,14 +246,23 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     return null;
                 }
 
+                ModManager.debugLogger.writeMessage("Connected to server.");
+
                 if (!username.contains("_me3tweaks")) {
                     //Not third party
+                    ModManager.debugLogger.writeMessage("Not third party - disabling activate button as it will automatically activate itself");
                     publish(new ThreadCommand("DISABLE_COPY_BUTTON"));
                 }
 
                 Channel channel = session.openChannel("sftp");
+                ModManager.debugLogger.writeMessage("Connecting to FTP over SSH");
+
                 channel.connect();
+                ModManager.debugLogger.writeMessage("Connected to FTP over SSH");
+
                 publish(new ThreadCommand("HIDE_LOGIN"));
+
+                ModManager.debugLogger.writeMessage("Checking if manifest already exists on server");
 
                 ChannelSftp sftpChannel = (ChannelSftp) channel;
                 String manifestsPathRoot = settings.get("UpdaterService", "manifestspath");
@@ -257,17 +271,25 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                 for (int i = 0; i < filelist.size(); i++) {
                     ChannelSftp.LsEntry entry = (ChannelSftp.LsEntry) filelist.get(i);
                     if (entry.getFilename().equals(manifestFile.getName())) {
+                        ModManager.debugLogger.writeMessage("Manifest already exists on server");
                         manifestAlreadyOnServer = true;
                         break;
                     }
+                }
+                if (!manifestAlreadyOnServer) {
+                    ModManager.debugLogger.writeMessage("Manifest is not already on server");
                 }
 
                 String onServerManifestPath = ModManager.appendForwardSlash(manifestsPathRoot) + manifestFile.getName();
                 String serverUpdateRoot = ModManager.appendForwardSlash(settings.get("UpdaterService", "lzmastoragepath"));
 
+                ModManager.debugLogger.writeMessage("Server manifest path: "+onServerManifestPath);
+                ModManager.debugLogger.writeMessage("Server LZMA storage path: "+serverUpdateRoot);
+
                 if (manifestAlreadyOnServer) {
                     //region Delta upload
                     //Get manifest and set version to 0.001 while we upload new files.
+                    ModManager.debugLogger.writeMessage("Downloading existing manifest");
 
                     String manifestOnServerStr = "";
                     publish(new ThreadCommand("TASK_UPDATE", "Disable updates for existing clients"));
@@ -285,6 +307,8 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     String newXml = "";
                     Document d;
                     try {
+                        ModManager.debugLogger.writeMessage("Reading existing manifest into XML document");
+
                         d = ResourceUtils.loadXMLFromString(manifestOnServerStr);
                         Element root = d.getDocumentElement();
                         root.setAttribute("version", "0.001");
@@ -294,6 +318,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     }
 
                     //write xml to server
+                    ModManager.debugLogger.writeMessage("Writing decremented manifest back to server");
                     try (OutputStream out = sftpChannel.put(onServerManifestPath, ChannelSftp.OVERWRITE)) {
                         OutputStreamWriter writer = new OutputStreamWriter(out);
                         writer.write(newXml);
@@ -302,10 +327,12 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                         ModManager.debugLogger.writeErrorWithException("Error writing xml to server:", e);
                     }
 
+                    ModManager.debugLogger.writeMessage("Uploading folder to server: "+deltaoutputfolder+" -> "+serverUpdateRoot);
                     UploadFolder(sftpChannel, deltaoutputfolder, serverUpdateRoot);
 
                     //Upload full new manifest
                     try {
+                        ModManager.debugLogger.writeMessage("Publishing new manifest");
                         publish(new ThreadCommand("TASK_UPDATE", "Uploading manifest"));
 
                         sftpChannel.put(manifestFile.getAbsolutePath(), onServerManifestPath, ChannelSftp.OVERWRITE);
@@ -317,9 +344,11 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     //endregion
                 } else {
                     //region Upload everything
+                    ModManager.debugLogger.writeMessage("New mod - uploading folder to server: "+deltaoutputfolder+" -> "+serverUpdateRoot);
                     UploadFolder(sftpChannel, compressedfulloutputfolder, serverUpdateRoot);
 
                     try {
+                        ModManager.debugLogger.writeMessage("Publishing manifest");
                         publish(new ThreadCommand("TASK_UPDATE", "Uploading manifest"));
                         sftpChannel.put(manifestFile.getAbsolutePath(), onServerManifestPath, ChannelSftp.OVERWRITE);
                         publish(new ThreadCommand("TASK_UPDATE", mod.getModName() + "<br>uploaded to updater service"));
@@ -329,15 +358,16 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     }
                     //endregion
                 }
+                ModManager.debugLogger.writeMessage("Servicing complete, disconnecting");
 
                 sftpChannel.exit();
                 session.disconnect();
             } catch (JSchException ex) {
-                publish(new ThreadCommand("TASK_UPDATE","JSch Error - see logs"));
-                ModManager.debugLogger.writeErrorWithException("Jsch Error in uploader thread: ",ex);
+                publish(new ThreadCommand("TASK_UPDATE", "JSch Error - see logs"));
+                ModManager.debugLogger.writeErrorWithException("Jsch Error in uploader thread: ", ex);
             } catch (SftpException ex) {
-                publish(new ThreadCommand("TASK_UPDATE","SFTP Error - see logs"));
-                ModManager.debugLogger.writeErrorWithException("SFTP Error in uploader thread: ",ex);
+                publish(new ThreadCommand("TASK_UPDATE", "SFTP Error - see logs"));
+                ModManager.debugLogger.writeErrorWithException("SFTP Error in uploader thread: ", ex);
             }
             return null;
         }
@@ -388,10 +418,11 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
                     String sourceFile = ResourceUtils.normalizeFilePath(folderSource + file.substring(FilenameUtils.getName(folderSource).length()), true);
                     String destFile = ResourceUtils.normalizeFilePath(serverUpdateRoot + file, false);
                     //System.out.println(sourceFile+" -> "+destFile);
-                    System.out.println("Uploading " + destFile);
+                    ModManager.debugLogger.writeMessage("Uploading " + destFile);
+
                     publish(new ThreadCommand("TASK_UPDATE", "Uploading<br>" + FilenameUtils.getName(destFile)));
                     sftpChannel.put(sourceFile, destFile, new SystemOutProgressMonitor(), ChannelSftp.OVERWRITE);
-                    System.out.println("Uploaded " + file);
+                    ModManager.debugLogger.writeMessage("Uploaded " + destFile);
                 }
             } catch (Exception e) {
                 ModManager.debugLogger.writeErrorWithException("Error uploading files: ", e);
@@ -450,7 +481,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
 
             @Override
             public void end() {
-                System.out.println("\nFINISHED!");
+
             }
         }
     }
