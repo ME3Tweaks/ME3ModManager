@@ -11,9 +11,13 @@ import net.sf.sevenzipjbinding.*;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.CharSet;
 import org.ini4j.Wini;
 
 import java.io.*;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -509,7 +513,23 @@ public class SevenZipCompressedModInspector {
                     ModManager.debugLogger.writeMessage("Got third party importing info TPIS.");
                     if (impinfo.getServermoddescname() != null) {
                         //This file has a designated serverside moddesc.ini file
-
+                        try {
+                            ModManager.debugLogger.writeMessage("This archive has an associated moddesc.ini file on the server. Fetching...");
+                            StringWriter sw = new StringWriter();
+                            sw.write(IOUtils.toString(new URL("https://me3tweaks.com/mods/dlc_mods/importingmoddesc/" + impinfo.getServermoddescname()), StandardCharsets.UTF_8));
+                            Mod serverMod = new Mod(sw);
+                            CompressedMod cm = new CompressedMod();
+                            ModManager.debugLogger.writeMessage("Generating compressed mod with server moddesc.ini");
+                            cm.setModDescMod(serverMod);
+                            cm.setModDescription(serverMod.getModDisplayDescription());
+                            cm.setModName(serverMod.getModName());
+                            cm.setUnofficialModDescString(sw.toString());
+                            cm.setOfficiallySupported(false);
+                            compressed.add(cm);
+                            return compressed;
+                        } catch (Exception e) {
+                            ModManager.debugLogger.writeErrorWithException("Error downloading server moddesc: ",e);
+                        }
                     }
 
                     ArrayList<String> modFolders = new ArrayList<>();

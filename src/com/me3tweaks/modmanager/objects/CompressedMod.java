@@ -11,6 +11,16 @@ public class CompressedMod {
 	private String unofficialModDescString;
 	private String customDLCFolderName = "";
 
+	public String getCachedServerDesc() {
+		return cachedServerDesc;
+	}
+
+	public void setCachedServerDesc(String cachedServerDesc) {
+		this.cachedServerDesc = cachedServerDesc;
+	}
+
+	private String cachedServerDesc;
+
 	public String getCustomDLCFolderName() {
 		return customDLCFolderName;
 	}

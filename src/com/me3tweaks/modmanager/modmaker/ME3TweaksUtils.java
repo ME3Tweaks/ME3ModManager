@@ -822,7 +822,8 @@ public class ME3TweaksUtils {
 							String inarchivepathtosearch = (String) jobj.get("inarchivepathtosearch");
 							String filename = (String) jobj.get("filename");
 							int subdirectorydepth = Integer.parseInt((String) jobj.get("subdirectorydepth"));
-							ThirdPartyImportingInfo tpii = new ThirdPartyImportingInfo(md5, inarchivepathtosearch, filename, subdirectorydepth);
+							String serverdescname = (String) jobj.get("servermoddescname");
+							ThirdPartyImportingInfo tpii = new ThirdPartyImportingInfo(md5, inarchivepathtosearch, filename, subdirectorydepth,serverdescname);
 							items.add(tpii);
 						}
 						return items;
