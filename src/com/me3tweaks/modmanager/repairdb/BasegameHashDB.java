@@ -138,8 +138,8 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 		// connect method #1 - embedded driver
 		File databases = new File(ModManager.getDatabaseDir());
 		databases.mkdirs();
-		String repairInfoURL = "jdbc:derby:repairinfo;create=true"; //derby home is in data/databases
-		dbConnection = DriverManager.getConnection(repairInfoURL);
+		String connectionURL = "jdbc:derby:repairinfo;create=true;territory=en_US"; //derby home is in data/databases
+		dbConnection = DriverManager.getConnection(connectionURL);
 		if (dbConnection != null) {
 			if (progressBar != null) {
 				progressBar.setIndeterminate(false);
@@ -384,7 +384,7 @@ public class BasegameHashDB extends JFrame implements ActionListener {
 					infoLabel.setText("Database failed to load.");
 					JOptionPane.showMessageDialog(BasegameHashDB.this, "<html>The game repair database failed to load.<br>"
 							+ "Only one connection to the local repair database is allowed at a time.<br>"
-							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as Java (TM) Platform Binary (or javaw.exe on Windows Vista/7) in Task Manager.<br><br>If the issue persists and you are sure only one instance is running, close Mod Manager and delete the<br>data\\databases folder.<br>You will need to re-create the game repair database afterwards.<br><br>If this *STILL* does not fix your issue, please send a log to Mgamerz through the help menu.</html>",
+							+ "Please make sure you only have one instance of Mod Manager running.<br>Mod Manager appears as 'OpenJDK Platform binary' in Task Manager.<br><br>If the issue persists, please contact Mgamerz and include a diagnostic log from the help menu.</html>",
 							"Database Failure", JOptionPane.ERROR_MESSAGE);
 					dispose();
 				}

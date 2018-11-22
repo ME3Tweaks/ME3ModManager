@@ -4,6 +4,15 @@ public class ThirdPartyImportingInfo {
 	private String md5;
 	private String inarchivepathtosearch;
 
+	public String getServermoddescname() {
+		return servermoddescname;
+	}
+
+	public void setServermoddescname(String servermoddescname) {
+		this.servermoddescname = servermoddescname;
+	}
+
+	private String servermoddescname;
 	public String getMd5() {
 		return md5;
 	}

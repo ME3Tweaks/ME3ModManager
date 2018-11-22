@@ -489,16 +489,15 @@ public class SevenZipCompressedModInspector {
             }
 
             // No moddesc.ini files found. Lets do a second pass via size
-
             if (thirdPartyImportsWithThisSize != null && thirdPartyImportsWithThisSize.size() > 0) {
                 // hash file
                 scanworker.publishUpdate(new ThreadCommand("SET_SUBTEXT_SCANNING", "Looking up importing info from Third Party Importing Service..."));
                 String hash = MD5Checksum.getMD5Checksum(archivePath);
                 ThirdPartyImportingInfo impinfo = null;
-                System.out.println("HASH: " + hash);
+                //System.out.println("HASH: " + hash);
 
                 for (ThirdPartyImportingInfo info : thirdPartyImportsWithThisSize) {
-                    System.out.println("fhash: " + info.getMd5() + " " + info.getFilename());
+                    //System.out.println("fhash: " + info.getMd5() + " " + info.getFilename());
 
                     if (info.getMd5().equals(hash)) {
                         impinfo = info;
@@ -508,6 +507,11 @@ public class SevenZipCompressedModInspector {
                 if (impinfo != null) {
                     ArrayList<CompressedMod> compressed = new ArrayList<>();
                     ModManager.debugLogger.writeMessage("Got third party importing info TPIS.");
+                    if (impinfo.getServermoddescname() != null) {
+                        //This file has a designated serverside moddesc.ini file
+
+                    }
+
                     ArrayList<String> modFolders = new ArrayList<>();
                     for (int i = 0; i < count; i++) {
                         boolean isFolder = (boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
