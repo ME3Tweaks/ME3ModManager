@@ -5,7 +5,7 @@ public class MainUIBackgroundJob {
 	private String taskName;
 
 	public MainUIBackgroundJob(String taskname, String uiText) {
-		this.taskName = taskName;
+		this.taskName = taskname;
 		this.uiText = uiText;
 	}
 

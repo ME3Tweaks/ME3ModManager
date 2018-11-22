@@ -4,6 +4,15 @@ public class ThirdPartyImportingInfo {
 	private String md5;
 	private String inarchivepathtosearch;
 
+	public String getServermoddescname() {
+		return servermoddescname;
+	}
+
+	public void setServermoddescname(String servermoddescname) {
+		this.servermoddescname = servermoddescname;
+	}
+
+	private String servermoddescname;
 	public String getMd5() {
 		return md5;
 	}
@@ -36,12 +45,13 @@ public class ThirdPartyImportingInfo {
 		this.subidrectorydepth = subidrectorydepth;
 	}
 
-	public ThirdPartyImportingInfo(String md5, String inarchivepathtosearch, String filename, int subidrectorydepth) {
+	public ThirdPartyImportingInfo(String md5, String inarchivepathtosearch, String filename, int subidrectorydepth, String servermoddescname) {
 		super();
 		this.md5 = md5;
 		this.inarchivepathtosearch = inarchivepathtosearch;
 		this.filename = filename;
 		this.subidrectorydepth = subidrectorydepth;
+		this.servermoddescname = servermoddescname;
 	}
 
 	private String filename;

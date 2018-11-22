@@ -389,7 +389,7 @@ public class Patch implements Comparable<Patch> {
 				}
 
 				//write new moddesc.ini file
-				String descini = mod.createModDescIni(true, mod.modCMMVer);
+				String descini = mod.createModDescIni(true, mod.modCMMVer,false);
 				ModManager.debugLogger.writeMessage("Updating moddesc.ini with updated job");
 				FileUtils.writeStringToFile(mod.modDescFile, descini);
 

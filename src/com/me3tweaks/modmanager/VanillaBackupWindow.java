@@ -400,6 +400,10 @@ public class VanillaBackupWindow extends JDialog {
 		public Boolean doInBackground() {
 			//Get files list 
 
+			if (!isBackup) {
+				ModManager.SetDefaultTextureGamerSettings();
+			}
+
 			ArrayList<String> filesToCopyRelative = new ArrayList<String>();
 			File sourceDirFile = new File(sourceDir);
 			File destDirFile = new File(destDir);

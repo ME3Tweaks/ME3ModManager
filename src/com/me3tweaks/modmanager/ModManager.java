@@ -14,18 +14,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
-import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.io.*;
 import java.net.URL;
@@ -42,15 +37,15 @@ import java.util.prefs.Preferences;
 
 public class ModManager {
     public static boolean IS_DEBUG = false;
-    public static final String VERSION = "5.1.1";
-    public static long BUILD_NUMBER = 89L;
-    public static final String BUILD_DATE = "11/07/2018";
+    public static final String VERSION = "5.1.2";
+    public static long BUILD_NUMBER = 90L;
+    public static final String BUILD_DATE = "11/21/2018";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
     public static final double MODMAKER_VERSION_SUPPORT = 2.2; // max modmaker
     // version
-    public static final double MODDESC_VERSION_SUPPORT = 5.0; // max supported
+    public static final double MODDESC_VERSION_SUPPORT = 5.1; // max supported
     // cmmver in
     // moddesc
     public static boolean MOD_MANAGER_UPDATE_READY = false; //if true, don't delete temp
@@ -101,11 +96,54 @@ public class ModManager {
         return GUID;
     }
 
+    public static void SetDefaultTextureGamerSettings() {
+        File gamerSettings = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath() + "\\BioWare\\Mass Effect 3\\BioGame\\Config\\GamerSettings.ini");
+        if (gamerSettings.exists()) {
+            try {
+                Wini ini = new Wini(gamerSettings);
+                ini.load(gamerSettings);
+                ini.remove("SystemSettings", "TEXTUREGROUP_World");
+                ini.remove("SystemSettings", "TEXTUREGROUP_WorldSpecular");
+                ini.remove("SystemSettings", "TEXTUREGROUP_WorldNormalMap");
+                ini.remove("SystemSettings", "TEXTUREGROUP_AmbientLightMap");
+                ini.remove("SystemSettings", "TEXTUREGROUP_ShadowMap");
+                ini.remove("SystemSettings", "TEXTUREGROUP_RenderTarget");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_64");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_128");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_256");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_512");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Environment_1024");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_64");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_128");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_256");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_512");
+                ini.remove("SystemSettings", "TEXTUREGROUP_VFX_1024");
+                ini.remove("SystemSettings", "TEXTUREGROUP_APL_128");
+                ini.remove("SystemSettings", "TEXTUREGROUP_APL_256");
+                ini.remove("SystemSettings", "TEXTUREGROUP_APL_512");
+                ini.remove("SystemSettings", "TEXTUREGROUP_APL_1024");
+                ini.remove("SystemSettings", "TEXTUREGROUP_UI");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Promotional");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Character_1024");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Character_Diff");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Character_Norm");
+                ini.remove("SystemSettings", "TEXTUREGROUP_Character_Spec");
+                ini.store();
+                ModManager.debugLogger.writeMessage("Updated LODs for non-ALOT (normal)");
+            } catch (Exception ex) {
+                // TODO Auto-generated catch block
+                ModManager.debugLogger.writeErrorWithException("Error downgrading game LODs!", ex);
+            }
+        }
+    }
+
     public static final class Lock {
     } //threading wait() and notifyall();
 
     public static void main(String[] args) {
         loadLogger();
+        //ME3TweaksUpdaterServiceWindow.main(null);
+
         boolean emergencyMode = false;
         boolean isUpdate = false;
         try {
@@ -432,20 +470,26 @@ public class ModManager {
                 // This is being run as an update
                 try {
                     long oldbuild = Long.parseLong(args[1]);
+                    ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
+                    telemetryData.add(new ImmutablePair<>("startbuild", Long.toString(oldbuild)));
+                    telemetryData.add(new ImmutablePair<>("destbuild", Long.toString(BUILD_NUMBER)));
                     if (oldbuild >= ModManager.BUILD_NUMBER) {
+                        telemetryData.add(new ImmutablePair<>("telemetrykey", "MODMANAGERUPDATE_FAILURE"));
+                        ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
                         // SOMETHING WAS WRONG!
                         JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Update failed! Still using Build " + ModManager.BUILD_NUMBER + ".", "Update Failed",
                                 JOptionPane.ERROR_MESSAGE);
                         ModManager.debugLogger.writeMessage("UPDATE FAILED!");
                     } else {
                         // update ok
+                        telemetryData.add(new ImmutablePair<>("telemetrykey", "MODMANAGERUPDATE_SUCCESS"));
+                        ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
                         ModManager.debugLogger.writeMessage("UPDATE SUCCEEDED!");
                         File file = new File("update"); // Delete the update
                         // directory
                         file.delete();
                         isUpdate = true;
                     }
-
                 } catch (NumberFormatException e) {
                     ModManager.debugLogger.writeMessage("--update-from number format exception.");
                 }
@@ -479,10 +523,39 @@ public class ModManager {
                 // This is being run as a minor update
                 try {
                     long oldbuild = Long.parseLong(args[1]);
+                    String hash = "";
+                    if (args.length > 2) {
+                        hash = args[2];
+                    }
                     if (oldbuild == ModManager.BUILD_NUMBER) {
-                        // SOMETHING WAS WRONG!
-                        JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Minor update was applied.", "Update OK", JOptionPane.INFORMATION_MESSAGE);
-                        ModManager.debugLogger.writeMessage("MINOR UPDATE OK!");
+                        boolean hashOK = hash.equals("");
+                        try {
+                            if (!hashOK) {
+                                hashOK = hash.equals(MD5Checksum.getMD5Checksum("ME3CMM.exe"));
+                            }
+                        } catch (Exception e) {
+                            ModManager.debugLogger.writeErrorWithException("Unable to hash check minor update: ", e);
+                        }
+
+                        if (hashOK) {
+                            ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
+                            telemetryData.add(new ImmutablePair<>("telemetrykey", "MODMANAGERUPDATE_SUCCESS"));
+                            telemetryData.add(new ImmutablePair<>("startbuild", Long.toString(ModManager.BUILD_NUMBER))); //same
+                            telemetryData.add(new ImmutablePair<>("destbuild", Long.toString(ModManager.BUILD_NUMBER))); //same
+                            ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
+
+                            JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Minor update was applied.", "Update OK", JOptionPane.INFORMATION_MESSAGE);
+                            ModManager.debugLogger.writeMessage("MINOR UPDATE OK!");
+                        } else {
+                            ArrayList<Pair<String, String>> telemetryData = new ArrayList<Pair<String, String>>();
+                            telemetryData.add(new ImmutablePair<>("telemetrykey", "MODMANAGERUPDATE_FAILURE"));
+                            telemetryData.add(new ImmutablePair<>("startbuild", Long.toString(ModManager.BUILD_NUMBER))); //same
+                            telemetryData.add(new ImmutablePair<>("destbuild", Long.toString(ModManager.BUILD_NUMBER))); //same
+                            ME3TweaksUtils.SubmitTelemetry(telemetryData, false);
+
+                            JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Minor update was not applied.\nThe new build hash doesn't match the expected one.", "Update Failed", JOptionPane.ERROR_MESSAGE);
+                            ModManager.debugLogger.writeError("MINOR UPDATE FAILED!");
+                        }
                     }
                 } catch (NumberFormatException e) {
                     ModManager.debugLogger.writeMessage("--minor-update-from number format exception.");
@@ -497,7 +570,7 @@ public class ModManager {
                         "Mod Manager was unable to detect a usable .NET Framework. Mod Manager requires Microsoft .NET Framework " + ModManager.MIN_REQUIRED_NET_FRAMEWORK_STR + " or higher in order to function properly. ");
             }
 
-            if (checkIfCMMPatchIsTooLong()) {
+            if (checkIfModManagerRootDirectoryIsTooDeep()) {
                 JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
                         "Mod Manager has detected that it running from a location with a long filepath.\nMod Manager caches files using their relative game directory path.\nYou may consider moving Mod Manager higher up this file system's hierarchy\nto avoid issues with Windows path limitations.",
                         "Windows Path Limitation Warning", JOptionPane.WARNING_MESSAGE);
@@ -572,9 +645,16 @@ public class ModManager {
             }
         }
 
-
         ModManager.debugLogger.writeMessage("Loading JavaFX");
-        new JFXPanel(); // used for initializing javafx thread (ideally called once)
+        ModManager.debugLogger.writeMessage("If the application hangs here, it means JavaFX has failed to load. Ensure you are not running MSI Afterburner or Rivatuner as it will cause initialization of this to crash.");
+        try {
+            new JFXPanel(); // used for initializing javafx thread (ideally called once)
+        } catch (Exception e) {
+            ModManager.debugLogger.writeErrorWithException("JavaFX has failed to load! This is a fatal startup error.", e);
+            JOptionPane.showMessageDialog(null, "JavaFX failed to load. Please contact Mgamerz for assistance.", "JavaFX failed to load", JOptionPane.ERROR_MESSAGE);
+            ModManager.debugLogger.writeError("Application aborting");
+            System.exit(1);
+        }
         ModManager.debugLogger.writeMessage("Loaded JavaFX");
 
         try {
@@ -855,23 +935,11 @@ public class ModManager {
         return true;
     }
 
-    public static void printDocument(Document doc, OutputStream out) throws IOException, TransformerException {
-        TransformerFactory tf = TransformerFactory.newInstance();
-        Transformer transformer = tf.newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-        transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-
-        transformer.transform(new DOMSource(doc), new StreamResult(new OutputStreamWriter(out, "UTF-8")));
-    }
-
     /**
-     * Appends a slash onto the end of a string if not already there.
+     * Appends a backslash onto the end of a string if not already there.
      *
      * @param string Original string
-     * @return Original string with a slash on the end if it was not there
+     * @return Original string with a backslash on the end if it was not there
      * previously.
      */
     public static String appendSlash(String string) {
@@ -881,6 +949,23 @@ public class ModManager {
             return string;
         } else {
             return string + File.separator;
+        }
+    }
+
+    /**
+     * Appends a slash onto the end of a string if not already there.
+     *
+     * @param string Original string
+     * @return Original string with a slash on the end if it was not there
+     * previously.
+     */
+    public static String appendForwardSlash(String string) {
+        if (string == null)
+            return null;
+        if (string.charAt(string.length() - 1) == '/') {
+            return string;
+        } else {
+            return string + '/';
         }
     }
 
@@ -1168,7 +1253,7 @@ public class ModManager {
             }
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            ModManager.debugLogger.writeError("ERROR GENERATING HASH FOR PRISTING COALESCED: " + coal.getAbsolutePath());
+            ModManager.debugLogger.writeError("ERROR GENERATING HASH FOR PRISTINE COALESCED: " + coal.getAbsolutePath());
             ModManager.debugLogger.writeException(e);
             return false;
         }
@@ -1914,7 +1999,6 @@ public class ModManager {
                         IOUtils.copy(process.getInputStream(), writer); //don't know which charset to use.
                         IOUtils.copy(process.getErrorStream(), writer);
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
@@ -1927,7 +2011,7 @@ public class ModManager {
             writer.close();
             return new ProcessResult(returncode, output, null);
         } catch (IOException | InterruptedException e) {
-            ModManager.debugLogger.writeErrorWithException("Process exception occured:", e);
+            ModManager.debugLogger.writeErrorWithException("Process exception occurred:", e);
             String output = writer.toString();
             try {
                 writer.close();
@@ -1940,16 +2024,6 @@ public class ModManager {
 
     public static File getHelpFile() {
         return new File(getHelpDir() + "localhelp.xml");
-    }
-
-    /**
-     * Gets the GUI Transplant Directory (Transplanter-CLI, Transplanter-GUI)
-     *
-     * @return
-     */
-    public static String getTransplantDir() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     public static void loadLogger() {
@@ -1966,7 +2040,8 @@ public class ModManager {
      * @param dlcdirectory DLC directory of ME3
      * @return map of conflicts, or null if exception occurs.
      */
-    public static HashMap<String, ArrayList<CustomDLC>> getCustomDLCConflicts(ArrayList<CustomDLC> customDLCs, String dlcdirectory) {
+    public static HashMap<String, ArrayList<CustomDLC>> getCustomDLCConflicts
+    (ArrayList<CustomDLC> customDLCs, String dlcdirectory) {
         try {
             Collections.sort(customDLCs);
 
@@ -2149,7 +2224,7 @@ public class ModManager {
         return new File(getME3TweaksServicesCache() + "thirdpartymoddb.json");
     }
 
-    public static boolean checkIfCMMPatchIsTooLong() {
+    public static boolean checkIfModManagerRootDirectoryIsTooDeep() {
         return System.getProperty("user.dir").length() > 120;
     }
 
@@ -2159,7 +2234,7 @@ public class ModManager {
     }
 
     /**
-     * Returns a file object taht points to a new log file that will be written
+     * Returns a file object that points to a new log file that will be written
      * to disk
      *
      * @return
@@ -2421,15 +2496,21 @@ public class ModManager {
         return pr.getReturnCode() == 0;
     }
 
+    /**
+     * Checks if the given folder has write permissions.
+     *
+     * @param selectedGamePath Path to test game permissions on
+     * @return True if write permissions were found, false if not. Note that if the directory input doesn't exist, you won't have write permissions as it doesn't exist.
+     */
     public static boolean checkWritePermissions(String selectedGamePath) {
         File testfile = new File(selectedGamePath + "\\MODMANAGER_PERMISSIONSTEST");
         if (testfile.exists()) {
             boolean deleted = testfile.delete();
             if (deleted) {
-                ModManager.debugLogger.writeMessage("User has write permissions to file: " + testfile);
+                ModManager.debugLogger.writeMessage("User has write permissions (delete) to file: " + testfile);
                 return true;
             } else {
-                ModManager.debugLogger.writeMessage("User does not have write permissions to file: " + testfile);
+                ModManager.debugLogger.writeMessage("User does not have write permissions (delete) to file: " + testfile);
                 return false;
             }
         } else {
@@ -2451,6 +2532,11 @@ public class ModManager {
         }
     }
 
+    /**
+     * Gets the minimum required command line version string.
+     *
+     * @return Version string of the command line tools required by the server or local client. e.g. 1.0.0.31
+     */
     public static String getCommandLineToolsRequiredVersion() {
         return ModManager.MIN_REQUIRED_CMDLINE_MAIN + "." + ModManager.MIN_REQUIRED_CMDLINE_MINOR + "." + ModManager.MIN_REQUIRED_CMDLINE_BUILD + "."
                 + ModManager.MIN_REQUIRED_CMDLINE_REV;
@@ -2554,14 +2640,18 @@ public class ModManager {
     }
 
     /**
-     * Compresses the selected mod for deployment by staging the mod and then
-     * compressing the staged mod - this prevents additional files from being
-     * included in the mod. More ram you have = more compressed the mod will be.
+     * Compresses the selected mod for deployment. The moddesc is copied out
+     * and then stored without compression after the rest of the mod is compressed.
+     * This method should be used after the mod has been already staged.
      *
-     * @param mod Mod to stage
+     * @param mod              Staged mod to compress
+     * @param compressionLevel Level of 7zip compression
+     * @param dictionarySize   Size of 7z dictionary
+     * @param multiThread      Multithreaded compression. Uses more RAM
      * @return Path to output file
      */
-    public static String compressModForDeployment(Mod mod) {
+    public static String compressModForDeployment(Mod mod, int compressionLevel, int dictionarySize,
+                                                  boolean multiThread, long ramMB, long modSizeMB) {
         String outputpath = getDeploymentDirectory() + mod.getModName() + "_" + mod.getVersion() + ".7z";
         ModManager.debugLogger.writeMessage("Deploying " + mod.getModName());
 
@@ -2575,29 +2665,9 @@ public class ModManager {
             FileUtils.moveFile(iniStart, iniDest);
         } catch (IOException e) {
             ModManager.debugLogger.writeError("Error moving moddesc.ini for optimized deployment: " + e.getMessage());
+            return null;
         }
-        //Get amount of memory
-        int dictsize = 64; //Default size - definitely not the best, but we'll default to 32-bit.
 
-        ModManager.debugLogger.writeMessage("64-bit Windows - calculating dictionary size that *should* work on this computer...");
-        String[] memorycommand = new String[]{"wmic", "ComputerSystem", "get", "TotalPhysicalMemory"};
-        ProcessBuilder pb = new ProcessBuilder(memorycommand);
-        ProcessResult pr = ModManager.runProcess(pb);
-        String output = pr.getOutput();
-
-        String[] lines = output.split("\\n");
-        if (lines.length == 3) {
-            String memsizebytes = lines[1].replaceAll("[^0-9]", "");
-            long bytecount = Long.parseLong(memsizebytes);
-            String memsize = ResourceUtils.humanReadableByteCount(bytecount, false);
-            ModManager.debugLogger.writeMessage("Total memory (including virtual): " + memsize);
-            dictsize = (int) (bytecount / 43 / 1024 / 1024); //MB
-            if (dictsize > 324) {
-                dictsize = 324;
-            }
-            dictsize = Math.max(dictsize, 64);
-            ModManager.debugLogger.writeMessage("Chosen dictionary size: " + dictsize + "MB");
-        }
 
         ArrayList<String> commandBuilder = new ArrayList<String>();
 
@@ -2611,11 +2681,20 @@ public class ModManager {
         commandBuilder.add(outputpath); //destfile
         commandBuilder.add(mod.getModPath());//inputfile
 
-        //commandBuilder.add("-mmt" + numcores); //let it multithread itself.
-        commandBuilder.add("-mx9"); //max compression
-        commandBuilder.add("-md" + dictsize + "m");
+        if (!multiThread) {
+            commandBuilder.add("-mmt=off");
+        } else if (ramMB < 8092 && modSizeMB > 256) {
+            commandBuilder.add("-mmt=2");
+        } else if (ramMB < 16384 && modSizeMB > 400 && Runtime.getRuntime().availableProcessors() > 2) {
+            commandBuilder.add("-mmt=2");
+        } else if (ramMB < 32768 && modSizeMB > 1024 && Runtime.getRuntime().availableProcessors() > 4) {
+            commandBuilder.add("-mmt=4");
+        }
+        commandBuilder.add("-mx" + compressionLevel); //unsure if this actually does anything anymore.
+        commandBuilder.add("-md" + dictionarySize + "m");
+        commandBuilder.add("-myx9"); //maximum file analysis
         ModManager.debugLogger.writeMessage("Compressing mod - output to " + outputpath);
-        pb = new ProcessBuilder(commandBuilder);
+        ProcessBuilder pb = new ProcessBuilder(commandBuilder);
         FileUtils.deleteQuietly(new File(outputpath));
         ModManager.runProcess(pb).getReturnCode();
 
@@ -2798,7 +2877,7 @@ public class ModManager {
             String HRGroupWorld = "(MinLODSize=256,MaxLODSize=4096,LODBias=0)";
             String textureGroupCharacter1024 = ini.get("SystemSettings", "TEXTUREGROUP_Character_1024");
             String textureGroupWorld = ini.get("SystemSettings", "TEXTUREGROUP_World");
-            return textureGroupCharacter1024!= null && textureGroupWorld != null && textureGroupCharacter1024.equals(HRGroupCharacter1024) && textureGroupWorld.equals(HRGroupWorld);
+            return textureGroupCharacter1024 != null && textureGroupWorld != null && textureGroupCharacter1024.equals(HRGroupCharacter1024) && textureGroupWorld.equals(HRGroupWorld);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             ModManager.debugLogger.writeErrorWithException("Error reading game configuration file!", e);

@@ -16,6 +16,7 @@
     <libelement value="jar://$MODULE_DIR$/libraries/commons-lang3-3.6.jar!/" />
     <libelement value="jar://$MODULE_DIR$/libraries/jna-4.4.0.jar!/" />
     <libelement value="jar://$MODULE_DIR$/libraries/jna-platform-4.4.0.jar!/" />
+    <libelement value="jar://$MODULE_DIR$/libraries/jsch-0.1.54.jar!/" />
     <src_description expected_position="0">
       <src_folder value="file://$MODULE_DIR$/src" expected_position="0" />
       <src_folder value="file://$MODULE_DIR$/dlcpatcher" expected_position="1" />
@@ -174,6 +175,16 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libraries/jsch-0.1.54.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="inheritedJdk" />
   </component>
 </module>

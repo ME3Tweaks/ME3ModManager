@@ -32,8 +32,10 @@ public class ModJob {
 	private int jobType;
 	String DLCFilePath;
 	private String jobName, requirementText;
-	private ArrayList<String> sourceFolders; //CUSTOMDLC (used only for writing desc file)
-	private ArrayList<String> destFolders; //CUSTOMDLC (used only for writing desc file)
+	private ArrayList<String> sourceFolders;
+
+	private ArrayList<String> originalSourceFolders; //Used when doing local autotoc. Does not contain any alternates, only what happens on initial load
+	private ArrayList<String> destFolders;
 	public ArrayList<String> filesToReplace, filesToReplaceTargets, addFiles, addFilesTargets, removeFilesTargets;
 	private String sourceDir;
 	private ArrayList<String> addFilesReadOnlyTargets;
@@ -60,6 +62,7 @@ public class ModJob {
 		addFiles = new ArrayList<String>();
 		addFilesTargets = new ArrayList<String>();
 		removeFilesTargets = new ArrayList<String>();
+		originalSourceFolders = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
 		altfiles = new ArrayList<AlternateFile>();
 	}
@@ -78,6 +81,10 @@ public class ModJob {
 
 	public void setAddFilesTargets(ArrayList<String> addFilesTargets) {
 		this.addFilesTargets = addFilesTargets;
+	}
+
+	public ArrayList<String> getOriginalSourceFolders() {
+		return originalSourceFolders;
 	}
 
 	public ArrayList<String> getFilesToRemoveTargets() {
@@ -113,6 +120,8 @@ public class ModJob {
 		removeFilesTargets = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
 		altfiles = new ArrayList<AlternateFile>();
+		originalSourceFolders = new ArrayList<String>();
+
 	}
 
 	/**
@@ -147,6 +156,7 @@ public class ModJob {
 		removeFilesTargets = new ArrayList<String>();
 		setAddFilesReadOnlyTargets(new ArrayList<String>());
 		altfiles = new ArrayList<AlternateFile>();
+		originalSourceFolders = new ArrayList<String>();
 
 		for (AlternateFile f : job.altfiles) {
 			altfiles.add(new AlternateFile(f));
@@ -168,6 +178,9 @@ public class ModJob {
 		}
 		for (String str : job.getAddFilesReadOnlyTargets()) {
 			getAddFilesReadOnlyTargets().add(str);
+		}
+		for (String str : job.getOriginalSourceFolders()) {
+			getOriginalSourceFolders().add(str);
 		}
 
 		sourceDir = job.sourceDir;

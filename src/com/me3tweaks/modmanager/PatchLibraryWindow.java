@@ -463,7 +463,7 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 				}
 				mod.setModDescription(desc);
 				mod.setAuthor("Mod Manager " + ModManager.VERSION);
-				String descini = mod.createModDescIni(true, ModManager.MODDESC_VERSION_SUPPORT);
+				String descini = mod.createModDescIni(true, ModManager.MODDESC_VERSION_SUPPORT,false);
 				ModManager.debugLogger.writeMessage("Creating blank moddesc.ini file for new mod " + input);
 				try {
 					FileUtils.writeStringToFile(new File(modfolder + "/moddesc.ini"), descini);

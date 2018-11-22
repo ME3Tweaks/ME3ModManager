@@ -6,13 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -35,6 +29,14 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -49,6 +51,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
+import org.xml.sax.InputSource;
 
 /**
  * Contains generic methods for basic tasks
@@ -69,6 +72,18 @@ public class ResourceUtils {
 			// TODO Auto-generated catch block
 			ModManager.debugLogger.writeErrorWithException("I/O Exception while opening directory " + dir + ".", e);
 		}
+	}
+
+	public static void printDocument(org.w3c.dom.Document doc, OutputStream out) throws IOException, TransformerException {
+		TransformerFactory tf = TransformerFactory.newInstance();
+		Transformer transformer = tf.newTransformer();
+		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+		transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+		transformer.transform(new DOMSource(doc), new StreamResult(new OutputStreamWriter(out, "UTF-8")));
 	}
 
 	public static boolean decompressLZMAFile(String lzmaFile, String expectedHash) {
@@ -435,6 +450,7 @@ public class ResourceUtils {
 		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
 		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
 			try {
+				ModManager.debugLogger.writeMessage("Opening URL: "+uri.toString());
 				desktop.browse(uri);
 			} catch (Exception e) {
 				ModManager.debugLogger.writeErrorWithException("Error opening webpage:", e);
@@ -450,6 +466,14 @@ public class ResourceUtils {
 			ModManager.debugLogger.writeErrorWithException("Error opening webpage: ", e);
 			return false;
 		}
+	}
+
+	public static org.w3c.dom.Document loadXMLFromString(String xml) throws Exception
+	{
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		InputSource is = new InputSource(new StringReader(xml));
+		return builder.parse(is);
 	}
 
 	/**
@@ -584,7 +608,7 @@ public class ResourceUtils {
 	public static String removeTrailingSlashes(String input) {
 		if (input.endsWith("/"))
 		    return input.substring(0,input.length()-1);
-		else if (input.endsWith(File.separator)) {
+		else if (input.endsWith("\\")) {
 		    return input.substring(0,input.length()-1);
 		}
 		else

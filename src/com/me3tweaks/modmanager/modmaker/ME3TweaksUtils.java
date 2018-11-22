@@ -8,19 +8,27 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
+import com.me3tweaks.modmanager.objects.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.me3tweaks.modmanager.ModManager;
-import com.me3tweaks.modmanager.objects.Mod;
-import com.me3tweaks.modmanager.objects.ModTypeConstants;
-import com.me3tweaks.modmanager.objects.ThirdPartyImportingInfo;
-import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 
 /**
  * Utilities class for interfacing with ME3Tweaks and ModMaker
@@ -34,6 +42,44 @@ public class ME3TweaksUtils {
 	public static final int INTERNAL = 2;
 
 	private static HashMap<String, String> coalHashMap, tocHashMap;
+
+	/**
+	 * Submits telemetry to ME3Tweaks
+	 * @param telemetryData List of telemetry data
+	 * @param forceWait If the telemetry submission can be background threaded or should force waiting (e.g. before an update commences)
+	 */
+	public static void SubmitTelemetry(ArrayList<Pair<String,String>> telemetryData, boolean forceWait) {
+		Runnable task = () -> {
+			try {
+				//ModManager.debugLogger.writeMessage("Sending DLC mod telemetry to ME3Tweaks. This information will be used to help build a database of what DLC content mods exist.");
+				// Request parameters and other properties.
+				List<NameValuePair> params = new ArrayList<NameValuePair>();
+				for (Pair p : telemetryData) {
+					params.add(new BasicNameValuePair(p.getKey().toString(), p.getValue().toString()));
+				}
+				URIBuilder urib = new URIBuilder("https://me3tweaks.com/modmanager/telemetry");
+				urib.setParameters(params);
+				HttpClient httpClient = HttpClientBuilder.create().build();
+				URI uri = urib.build();
+				if (ModManager.IS_DEBUG) {
+                    System.out.println("Sending telemetry via GET: " + uri.toString());
+                }
+				//Execute and get the response.
+				HttpGet get = new HttpGet(uri);
+				HttpResponse response = httpClient.execute(get);
+				HttpEntity entity = response.getEntity();
+			} catch (Exception e) {
+				ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since telemetry is not required, we will ignore this error.", e);
+			}
+		};
+		if (forceWait) {
+			task.run();
+		} else {
+			//Run on separate thread
+			Thread thread = new Thread(task);
+			thread.start();
+		}
+	}
 
 	/**
 	 * Downloads a pristine coalesced to the correct pristine directory. This
@@ -211,6 +257,11 @@ public class ME3TweaksUtils {
 		}
 	}
 
+	/**
+	 * Converts a coalesced file filename into the header it represents
+	 * @param coalName Coalesced filename (e.g. Default_DLC_CON_MP1.bin
+	 * @return Header name if match is found, null otherwise
+	 */
 	public static String coalFilenameToHeaderName(String coalName) {
 		switch (coalName) {
 		case "Default_DLC_CON_MP1.bin":
@@ -252,7 +303,7 @@ public class ME3TweaksUtils {
 		case "ServerCoalesced.bin":
 			return "BALANCE_CHANGES";
 		default:
-			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: FILENAME => HEADER " + coalName);
+			ModManager.debugLogger.writeError("ME3TWEAKSUTILS ERROR: FILENAME => HEADER NOT FOUND:" + coalName);
 			return null;
 		}
 	}
@@ -261,8 +312,8 @@ public class ME3TweaksUtils {
 	 * Converts ModDesc.ini headers and job names into ModMaker-style internal
 	 * names
 	 * 
-	 * @param header
-	 * @return
+	 * @param header Header to convert
+	 * @return ModMaker style internal names
 	 */
 	public static String headerNameToInternalName(String header) {
 		switch (header) {
@@ -307,7 +358,7 @@ public class ME3TweaksUtils {
 		case "COLLECTORS_EDITION":
 			return "OnlinePassHidCE";
 		default:
-			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => INTERNAL " + header);
+			ModManager.debugLogger.writeError("ME3TWEAKSUTILS ERROR: HEADER => INTERNAL NOT FOUND: " + header);
 			return null;
 		}
 	}
@@ -364,11 +415,16 @@ public class ME3TweaksUtils {
 		case "COLLECTORS_EDITION":
 			return "OnlinePassHidCE";
 		default:
-			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => INTERNAL " + header);
+			ModManager.debugLogger.writeError("ME3TWEAKSUTILS ERROR: HEADER => INTERNAL NOT FOUND: " + header);
 			return null;
 		}
 	}
 
+	/**
+	 * Converts a moddesc.ini header into the coalecsed filename.
+	 * @param header Header to convert
+	 * @return Coalesced filename if found, null otherwise
+	 */
 	public static String headerNameToCoalFilename(String header) {
 		switch (header) {
 		case "RESURGENCE":
@@ -410,7 +466,7 @@ public class ME3TweaksUtils {
 		case "BALANCE_CHANGES":
 			return "ServerCoalesced.bin";
 		default:
-			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: HEADER => FILENAME " + header);
+			ModManager.debugLogger.writeError("ME3TWEAKSUTILS ERROR: HEADER => FILENAME NOT FOUND: " + header);
 			return null;
 		}
 	}
@@ -465,7 +521,7 @@ public class ME3TweaksUtils {
 		case "BALANCE_CHANGES":
 			return "ServerCoalesced.bin";
 		default:
-			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: NO MATCH INTERNAL => FILENAME: " + internal);
+			ModManager.debugLogger.writeError("ME3TWEAKSUTILS ERROR: NO MATCH INTERNAL => FILENAME: " + internal);
 			return null;
 		}
 	}
@@ -473,8 +529,8 @@ public class ME3TweaksUtils {
 	/**
 	 * Converts Internal (MP3) names into header names (EARTH)
 	 * 
-	 * @param internal
-	 * @return
+	 * @param internal Internal name to convert
+	 * @return modesc.ini header name if found, null otherwise
 	 */
 	public static String internalNameToHeaderName(String internal) {
 		switch (internal) {
@@ -517,11 +573,15 @@ public class ME3TweaksUtils {
 		case "BALANCE_CHANGES":
 			return "BALANCE_CHANGES";
 		default:
-			ModManager.debugLogger.writeMessage("ME3TWEAKSUTILS ERROR: INTERNAL => HEADER " + internal);
+			ModManager.debugLogger.writeError("ME3TWEAKSUTILS ERROR: INTERNAL => HEADER NOT FOUND " + internal);
 			return null;
 		}
 	}
 
+	/**
+	 * Gets a map of header names to coalesced hashes
+	 * @return Map of hashes of coalesced files
+	 */
 	public static HashMap<String, String> getCoalHashesMap() {
 		if (coalHashMap != null) {
 			return coalHashMap;
@@ -546,11 +606,16 @@ public class ME3TweaksUtils {
 		coalHashMap.put(ModTypeConstants.GUN01, "fe9084127be47b8c084dad67c64cd211");
 		coalHashMap.put(ModTypeConstants.GUN02, "f3231b3855fdf288482a541b147dfca9");
 		coalHashMap.put(ModTypeConstants.BINI, "1d3e646cdf9da8bcb8207d8fd961f7f5");
-		coalHashMap.put(ModTypeConstants.COLLECTORSEDITION, "");
-		coalHashMap.put(ModTypeConstants.DH1, "");
+		coalHashMap.put(ModTypeConstants.COLLECTORSEDITION, "8e017be0d50a14920fd39795a1ee426c");
+		coalHashMap.put(ModTypeConstants.DH1, "f6b542f9cf4287ef9840ea8b6e9e2ccc");
 		return coalHashMap;
 	}
 
+
+	/**
+	 * Gets a map of header names to PCConsoleTOC hashes
+	 * @return Map of hashes of PCConsoleTOC files
+	 */
 	public static HashMap<String, String> getTOCHashesMap() {
 		if (tocHashMap != null) {
 			return tocHashMap;
@@ -574,8 +639,8 @@ public class ME3TweaksUtils {
 		tocHashMap.put(ModTypeConstants.APP01, "21c396e4ae50b4d8b3cf55fe2b9c0722");
 		tocHashMap.put(ModTypeConstants.GUN01, "53f06f917f27af46af25cae77f595d75");
 		tocHashMap.put(ModTypeConstants.GUN02, "6c26b453dfaf663ebaeeafeac78440c2");
-		tocHashMap.put(ModTypeConstants.COLLECTORSEDITION, "");
-		tocHashMap.put(ModTypeConstants.DH1, "");
+		tocHashMap.put(ModTypeConstants.COLLECTORSEDITION, "5e500d48e2039731f32663bc63cf3239");
+		tocHashMap.put(ModTypeConstants.DH1, "8de672dfeb0aac5ec64dea71fe9b5519");
 		return tocHashMap;
 	}
 
@@ -674,7 +739,7 @@ public class ME3TweaksUtils {
 	 * 
 	 * @param customdlcfoldername
 	 *            Folder to search against
-	 * @return
+	 * @return info if found, null otherwise
 	 */
     public static ThirdPartyModInfo getThirdPartyModInfo(String customdlcfoldername, boolean log) {
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
@@ -699,6 +764,11 @@ public class ME3TweaksUtils {
 		return null;
 	}
 
+	/**
+	 * Gets third party information by the Mount ID.
+	 * @param priorityString mountID, as string
+	 * @return First mount ID that matches the specified priorityString, null if none are found or there is a parsing error.
+	 */
 	public static ThirdPartyModInfo getThirdPartyModInfoByMountID(String priorityString) {
 		if (ModManager.THIRD_PARTY_MOD_JSON == null) {
 			return null;
@@ -724,6 +794,11 @@ public class ME3TweaksUtils {
 		return null;
 	}
 
+	/**
+	 * Looks up importing information for files by looking up files with a specific size.
+	 * @param size size of file to look in DB for.
+	 * @return List of files that match this size. Null if there's an error parsing information.
+	 */
 	public static ArrayList<ThirdPartyImportingInfo> getThirdPartyImportingInfosBySize(long size) {
 		if (ModManager.THIRD_PARTY_IMPORTING_JSON == null) {
 			return null;
@@ -747,7 +822,8 @@ public class ME3TweaksUtils {
 							String inarchivepathtosearch = (String) jobj.get("inarchivepathtosearch");
 							String filename = (String) jobj.get("filename");
 							int subdirectorydepth = Integer.parseInt((String) jobj.get("subdirectorydepth"));
-							ThirdPartyImportingInfo tpii = new ThirdPartyImportingInfo(md5, inarchivepathtosearch, filename, subdirectorydepth);
+							String serverdescname = (String) jobj.get("servermoddescname");
+							ThirdPartyImportingInfo tpii = new ThirdPartyImportingInfo(md5, inarchivepathtosearch, filename, subdirectorydepth,serverdescname);
 							items.add(tpii);
 						}
 						return items;
@@ -764,7 +840,7 @@ public class ME3TweaksUtils {
 	 * Gets a random ME3Tweaks Tip from the tips service
 	 * 
 	 * @return random tip string, blank string if service not available or error
-	 *         occured.
+	 *         occurred.
 	 */
 	public static String getME3TweaksTip() {
 		if (ModManager.TIPS_SERVICE_JSON == null) {
@@ -788,6 +864,7 @@ public class ME3TweaksUtils {
 		}
 		return "";
 	}
+
 
 	public static URL convertToURLEscapingIllegalCharacters(String toEscape) throws MalformedURLException, URISyntaxException {
 		URL url = new URL(toEscape);

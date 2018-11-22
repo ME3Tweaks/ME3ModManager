@@ -302,7 +302,7 @@ public class ImportEntryWindow extends JDialog {
 					ModManager.debugLogger.writeErrorWithException("Error sending telemetry. Since this is optional we will ignore this error: ", e);
 				}
 			}
-			String fileSystemName = modName.replaceAll("[\\\\/:*?\"<>|]", "_");
+			String fileSystemName = modName.replaceAll("[\\\\/:*?\"<>|]", "-");
 
 			String localModPath = ModManager.getModsDir() + fileSystemName;
 			File localModPathFile = new File(localModPath);
@@ -353,7 +353,7 @@ public class ImportEntryWindow extends JDialog {
 			dlcJob.getDestFolders().add(dlcModName);
 			mod.addTask(ModTypeConstants.CUSTOMDLC, dlcJob);
 
-			String desc = mod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT);
+			String desc = mod.createModDescIni(false, ModManager.MODDESC_VERSION_SUPPORT,false);
 			File descFile = new File(localModPathFile + File.separator + "moddesc.ini");
 			FileUtils.writeStringToFile(descFile, desc, StandardCharsets.UTF_8);
 

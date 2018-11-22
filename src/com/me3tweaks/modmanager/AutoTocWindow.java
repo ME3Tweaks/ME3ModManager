@@ -172,14 +172,14 @@ public class AutoTocWindow extends JDialog {
 					}
 					ArrayList<String> folders = new ArrayList<>();
 					int tocd = 0;
-					for (String srcFolder : job.getSourceFolders()) {
+					for (String srcFolder : job.getOriginalSourceFolders()) {
 						folders.add(mod.getModPath() + srcFolder);
 						tocd++;
 					}
 					ProcessResult pr = ModManager.runAutoTOCOnFolders(folders);
 					int returncode = pr.getReturnCode();
 					if (returncode != 0 || pr.hadError()) {
-						ModManager.debugLogger.writeError("Command line AutoTOC did not return with code 0! An error has occured.");
+						ModManager.debugLogger.writeError("Command line AutoTOC did not return with code 0! An error has occurred.");
 					} else {
 						completed.addAndGet(tocd);
 						ModManager.debugLogger
