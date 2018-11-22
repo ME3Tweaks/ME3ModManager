@@ -528,7 +528,9 @@ public class SevenZipCompressedModInspector {
                             compressed.add(cm);
                             return compressed;
                         } catch (Exception e) {
+                            scanWorker.publishUpdate(new ThreadCommand("ONLINE_REQUIRED"));
                             ModManager.debugLogger.writeErrorWithException("Error downloading server moddesc: ",e);
+                            return compressed;
                         }
                     }
 

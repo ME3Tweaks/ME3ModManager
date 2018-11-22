@@ -278,7 +278,7 @@ public class ModImportArchiveWindow extends JDialog {
     }
 
     public class ScanWorker extends SwingWorker<ArrayList<CompressedMod>, ThreadCommand> {
-
+        private boolean onlineRequired = false;
         private String archiveFile;
         private int jobCode;
         private boolean is7zfile = false;
@@ -317,6 +317,10 @@ public class ModImportArchiveWindow extends JDialog {
                             descriptionArea.setText(descriptionArea.getText() + "\n\nThe progress bar may not move for a while for large mods or mods compressed as a 7z file.");
                         }
 
+                        break;
+                    case "ONLINE_REQUIRED":
+                        onlineRequired = true;
+                        ModManager.debugLogger.writeMessage("Importing this mod requires connectivity to ME3Tweaks.");
                         break;
                     case "POST_SUBTEXT":
                         String rside = descriptionArea.getText();
@@ -385,8 +389,13 @@ public class ModImportArchiveWindow extends JDialog {
                 descriptionArea.setText("Select a mod in the list to view its description.");
             } else {
                 importButton.setEnabled(false); //will stay false if no mods loaded
-                descriptionArea.setText("The selected archive does not contain any Mod Manager mods.");
-                importButton.setText("No mods in this archive");
+                if (!onlineRequired) {
+                    descriptionArea.setText("The selected archive does not contain any Mod Manager mods.");
+                    importButton.setText("No mods in this archive");
+                } else {
+                    descriptionArea.setText("The selected archive can only be imported with a ME3Tweaks custom built moddesc.ini file. Please ensure you have internet connectivity and can reach ME3Tweaks in a browser, and try again.");
+                    importButton.setText("Importing this mod requires server");
+                }
             }
             progressBar.setIndeterminate(false);
             progressBar.setVisible(false);

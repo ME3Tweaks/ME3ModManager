@@ -2054,6 +2054,19 @@ public class Mod implements Comparable<Mod> {
                                         ModManager.LOG_MOD_INIT);
                             }
                             break;
+                        case AlternateCustomDLC.CONDITION_ALL_DLC_NOT_PRESENT:
+                            if (Collections.disjoint(remappedHeaders, installedDLC)) {
+                                ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as all DLC in condition is not present: " + altdlc,
+                                        ModManager.LOG_MOD_INIT);
+                                ModJob job = getJobByModuleName(ModTypeConstants.CUSTOMDLC);
+                                applyAlternateDLCOperation(job, altdlc);
+                                altApplied = true;
+
+                            } else {
+                                ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is not applicable at least one DLC in condition is present (not_any condition): " + altdlc,
+                                        ModManager.LOG_MOD_INIT);
+                            }
+                            break;
                         case AlternateCustomDLC.CONDITION_ANY_DLC_NOT_PRESENT:
                             if (!installedDLC.containsAll(remappedHeaders)) {
                                 ModManager.debugLogger.writeMessageConditionally(" > Custom DLC Alternate is applicable as at least one DLC in condition are not present: " + altdlc,
