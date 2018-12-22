@@ -207,6 +207,10 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
         MainUIBackgroundJob bg = new MainUIBackgroundJob(taskname, uiText);
         backgroundJobs.add(bg);
         setActivityIcon(true);
+        if (backgroundJobs.size() == 1 && backgroundJobs.get(0).getUIText() != null) {
+            labelStatus.setText(backgroundJobs.get(0).getUIText());
+        }
+
         return bg.hashCode();
     }
 
@@ -3856,11 +3860,25 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             return;
         }
         // Executable exists.
-        String[] command = {"cmd.exe", "/c", "start", "cmd.exe", "/c", executable.getAbsolutePath()};
+        String[] command = {executable.getAbsolutePath()};
         try {
-            labelStatus.setText("Launched Mass Effect 3");
-            this.setExtendedState(JFrame.ICONIFIED);
-            Runtime.getRuntime().exec(command);
+            int code = submitBackgroundJob("GameLaunch","Launching Mass Effect 3");
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(new File(startingDir.toString() + "\\Binaries\\Win32"));
+            pb.start();
+            new java.util.Timer().schedule(
+                new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        // your code here
+                        submitJobCompletion(code);
+                        labelStatus.setText("Launched Mass Effect 3");
+                        ModManagerWindow.this.setExtendedState(JFrame.ICONIFIED);
+                        cancel();
+                    }
+                },
+                3000
+            );
         } catch (IOException e) {
             ModManager.debugLogger.writeErrorWithException("I/O Exception while launching ME3.", e);
 
@@ -3984,6 +4002,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
     }
 
     class BiogameDirChangeListener implements ItemListener {
+
+
         @Override
         public void itemStateChanged(ItemEvent event) {
             if (event.getStateChange() == ItemEvent.SELECTED) {
