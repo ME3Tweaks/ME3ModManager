@@ -260,7 +260,7 @@ public class ModXMLTools {
                             if (f.exists()) {
                                 updatedFiles.add(f);
                             } else {
-                                ModManager.debugLogger.writeMessage("File not found in staged mod, while present in previous manifest. File is no longer available");
+                                ModManager.debugLogger.writeMessage("File not found in staged mod, while present in previous manifest. File is no longer available: "+mf.getRelativePath());
 //                                removedfiles.add(f);
                             }
                         }
@@ -287,7 +287,7 @@ public class ModXMLTools {
                             }
                         }
                         for (String str : up.getFilesToDelete()) {
-                            File f = new File(mod.getModPath() + File.separator +str);
+                            File f = new File(str);
                             if (f.exists()) {
                                 //reverse - new files have been added
                                 updatedFiles.add(f);
@@ -586,7 +586,6 @@ public class ModXMLTools {
                     return null;
                 }
             } catch (XPathExpressionException e1) {
-                // TODO Auto-generated catch block
                 ModManager.debugLogger.writeErrorWithException("Xpath Expression Error: ", e1);
                 return null;
             }
@@ -623,7 +622,6 @@ public class ModXMLTools {
                     }
                 }
             } catch (XPathExpressionException e1) {
-                // TODO Auto-generated catch block
                 ModManager.debugLogger.writeErrorWithException("Xpath Expression Error: ", e1);
                 return null;
             }
