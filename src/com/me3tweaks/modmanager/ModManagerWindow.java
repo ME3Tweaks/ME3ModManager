@@ -4229,7 +4229,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
                 // Manual Alternates
                 for (AlternateFile af : job.getAlternateFiles()) {
-                    String substitutefile = af.getSubstituteFile();
+                    String substitutefile = af.getSubstituteFile(mod.modCMMVer < 5.0);
                     if (substitutefile != null) {
                         String outputpath = stagingdir + substitutefile;
                         ModManager.debugLogger.writeMessage("Copying [MANUAL SUB] mod file to staging: " + substitutefile + " -> " + outputpath);
@@ -4250,7 +4250,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
 
             // Automatically applied alternates
             for (AlternateFile af : mod.getAlternateFiles()) {
-                String substitutefile = af.getSubstituteFile();
+                String substitutefile = af.getSubstituteFile(mod.modCMMVer < 5.0);
                 if (substitutefile != null) {
                     String outputpath = stagingdir + substitutefile;
                     ModManager.debugLogger.writeMessage("Copying [AUTO SUB] mod file to staging: " + substitutefile + " -> " + outputpath);

@@ -190,9 +190,9 @@ public class AlternateFile {
 		this.enabled = enabled;
 	}
 
-	public String getSubstituteFile() {
+	public String getSubstituteFile(boolean mm5noSubMode) {
 		if (substitutefile != null) return substitutefile;
-		if (operation.equals(OPERATION_SUBSTITUTE)) return altFile;
+		if (mm5noSubMode && operation.equals(OPERATION_SUBSTITUTE)) return altFile;
 		return null;
 	}
 

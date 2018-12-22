@@ -646,7 +646,7 @@ public class Mod implements Comparable<Mod> {
                             af.setModFile(ResourceUtils.normalizeFilePath(af.getModFile(), false));
                             ModManager.debugLogger.writeMessageConditionally("Alternate file specified: " + af.toString(), ModManager.LOG_MOD_INIT);
 
-                            String subPath = (modCMMVer == 4.5 && af.getOperation() == AlternateFile.OPERATION_SUBSTITUTE) ? af.getSubstituteFile() : af.getAltFile();
+                            String subPath = (modCMMVer == 4.5 && af.getOperation() == AlternateFile.OPERATION_SUBSTITUTE) ? af.getSubstituteFile(modCMMVer < 5.0) : af.getAltFile();
                             if (subPath != null) {
                                 //check location
                                 String subfile = ModManager.appendSlash(getModPath()) + subPath;
@@ -664,7 +664,7 @@ public class Mod implements Comparable<Mod> {
 
                                 //Validate substition for moddesc 4.5 -> 5.0
                                 if (af.getOperation().equals(AlternateFile.OPERATION_SUBSTITUTE)) {
-                                    if (!af.getAssociatedJobName().equals(ModTypeConstants.CUSTOMDLC) && modCMMVer == 4.5 && af.getSubstituteFile() == null) {
+                                    if (!af.getAssociatedJobName().equals(ModTypeConstants.CUSTOMDLC) && modCMMVer == 4.5 && af.getSubstituteFile(modCMMVer < 5.0) == null) {
                                         //missing substitute file on 4.5
                                         ModManager.debugLogger
                                                 .writeError("Automatic alternate file targets Mod Manager 4.5 but does not have a listed SubstituteFile: " + af.getModFile());
@@ -673,7 +673,7 @@ public class Mod implements Comparable<Mod> {
                                                 + "\n\nThis is specific to mods targeting ModDesc 4.5. ModDesc 5.0+ mods use the same ModFile/AltModFile format for all operations.");
                                         return;
                                     }
-                                    if (modCMMVer > 4.5 && af.getSubstituteFile() != null) {
+                                    if (modCMMVer > 4.5 && af.getSubstituteFile(modCMMVer < 5.0) != null) {
                                         //Using substitute operation on > 4.5 is not allowed
                                         ModManager.debugLogger
                                                 .writeError("Automatic alternate file targets Mod Manager > 4.5 but contains 4.5 only SubstituteFile: " + af.getModFile());
@@ -2297,9 +2297,9 @@ public class Mod implements Comparable<Mod> {
             case AlternateFile.OPERATION_SUBSTITUTE:
                 int index = job.getFilesToReplaceTargets().indexOf(af.getModFile());
                 if (modCMMVer <= 4.5) {
-                    if (af.getSubstituteFile() != null) { //Substitute on OFFICIAL HEADERS - moddesc 4.5 only.
-                        ModManager.debugLogger.writeMessage("Condition match, (ModDesc 4.5 backcompat) repointing " + af.getModFile() + " to use " + af.getSubstituteFile());
-                        job.getFilesToReplace().set(index, getModPath() + af.getSubstituteFile());
+                    if (af.getSubstituteFile(modCMMVer < 5.0) != null) { //Substitute on OFFICIAL HEADERS - moddesc 4.5 only.
+                        ModManager.debugLogger.writeMessage("Condition match, (ModDesc 4.5 backcompat) repointing " + af.getModFile() + " to use " + af.getSubstituteFile(modCMMVer < 5.0));
+                        job.getFilesToReplace().set(index, getModPath() + af.getSubstituteFile(modCMMVer < 5.0));
                     } else {
                         ModManager.debugLogger.writeError("Applying substitute file failed: af.getSubstituteFile() returned null in Mod:applyAlternateFileOperation()");
                     }
