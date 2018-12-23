@@ -327,7 +327,6 @@ public class ModXMLTools {
             int numFiles = updatedFiles.size();
             int processed = 1;
             for (File file : updatedFiles) {
-
                 publish(new ThreadCommand("SET_BOTTOM_TEXT", "Compressing " + FilenameUtils.getBaseName(file.getAbsolutePath()), processed + "/" + numFiles));
                 String srcFile = file.getAbsolutePath();
                 String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
