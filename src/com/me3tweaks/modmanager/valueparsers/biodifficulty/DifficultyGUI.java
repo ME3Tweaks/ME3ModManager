@@ -28,6 +28,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
@@ -339,6 +343,30 @@ public class DifficultyGUI extends JFrame implements ActionListener {
 		if (e.getSource() == submit) {
 			// parse it.
 			String input_text = input.getText();
+
+			//attempt to parse as xml first
+			try {
+				Document doc = DocumentBuilderFactory.newInstance()
+						.newDocumentBuilder()
+						.parse(new InputSource(new StringReader(input_text)));
+				XPath xPath = XPathFactory.newInstance().newXPath();
+				XPathExpression exp = xPath.compile("//Value");
+				NodeList valueNodes = (NodeList)exp.evaluate(doc, XPathConstants.NODESET);
+				if (valueNodes.getLength() > 0) {
+					StringBuilder sb = new StringBuilder();
+					for( int i = 0; i < valueNodes.getLength(); i++){
+						Node n = valueNodes.item(i);
+						String nodeText = n.getTextContent();
+						Category c = new Category(nodeText);
+						sb.append("\n"+c.toCSV());
+					}
+					output.setText(sb.toString());
+					return;
+				}
+			} catch (Exception ex) {
+
+			}
+
 			try {
 				Category cat = new Category(input_text);
 				output.setText(cat.toString());

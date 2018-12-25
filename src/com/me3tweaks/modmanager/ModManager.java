@@ -4,6 +4,7 @@ import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.*;
 import com.me3tweaks.modmanager.utilities.*;
 import com.me3tweaks.modmanager.utilities.Version;
+import com.me3tweaks.modmanager.valueparsers.biodifficulty.DifficultyGUI;
 import com.sun.jna.Native;
 import com.sun.jna.platform.win32.*;
 import com.sun.jna.win32.W32APIOptions;
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 public class ModManager {
-    public static boolean IS_DEBUG = false;
+    public static boolean IS_DEBUG = true;
     public static final String VERSION = "5.1.3";
     public static long BUILD_NUMBER = 91L;
     public static final String BUILD_DATE = "12/23/2018";
@@ -141,6 +142,7 @@ public class ModManager {
     } //threading wait() and notifyall();
 
     public static void main(String[] args) {
+        new DifficultyGUI();
         loadLogger();
         //ME3TweaksUpdaterServiceWindow.main(null);
 

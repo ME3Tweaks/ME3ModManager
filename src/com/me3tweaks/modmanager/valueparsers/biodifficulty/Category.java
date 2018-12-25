@@ -137,4 +137,13 @@ public class Category {
 		ModManager.debugLogger.writeMessage("Matching "+categoryname+" against "+importing.categoryname);
 		return categoryname.equals(importing.categoryname);
 	}
+
+    public String toCSV() {
+		String str = categoryname;
+		str+="\n";
+		for (Stat stat : stats){
+			str+=stat.toCSV()+"\n";
+		}
+		return str;
+    }
 }
