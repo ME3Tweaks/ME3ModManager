@@ -185,8 +185,6 @@ public class ModXMLTools {
 
             publish(new ThreadCommand("SET_BOTTOM_TEXT", "Fetching online manifest"));
 
-            manifestFile = new File(ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
-
             //SIMULATE REVERSE UPDATE
             //CHECK FOR FILE EXISTENCE IN MOD UPDATE FOLDER, LZMA HASHES.
             //FILES THAT FAIL THIS WILL BE ADDED TO COLLECTION OF FILES TO UDPATE
@@ -215,7 +213,7 @@ public class ModXMLTools {
             String sideloadoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Sideload" + File.separator + foldername + File.separator;
             compressedfulloutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "Full" + File.separator + foldername + File.separator;
             compresseddeltaoutputfolder = ModManager.getME3TweaksUpdaterServiceFolder() + "UpdateDelta" + File.separator + foldername + File.separator;
-            if (!manifestFile.exists()) {
+            if (!deltaUpdate) {
                 compresseddeltaoutputfolder = compressedfulloutputfolder;
             }
             File deltaOutFolder = new File(compresseddeltaoutputfolder);
@@ -258,6 +256,7 @@ public class ModXMLTools {
                         for (ManifestModFile mf : up.getFilesToDownload()) {
                             File f = new File(mod.getModPath() + File.separator + mf.getRelativePath());
                             if (f.exists()) {
+                                ModManager.debugLogger.writeMessage("Add file to upload list: "+mf.getRelativePath());
                                 updatedFiles.add(f);
                             } else {
                                 ModManager.debugLogger.writeMessage("File not found in staged mod, while present in previous manifest. File is no longer available: "+mf.getRelativePath());
@@ -272,7 +271,7 @@ public class ModXMLTools {
                             String relativePath = ResourceUtils.getRelativePath(srcFile, mod.getModPath(), File.separator);
                             String outputFile = compressedfulloutputfolder + relativePath + ".lzma";
                             if (!(new File(outputFile).exists())) {
-                                ModManager.debugLogger.writeMessage("Up to date local file not found compressed - compressing for new manifest generation...: "+relativePath);
+                                ModManager.debugLogger.writeMessage("Up to date local file not found compressed ("+outputFile+")- compressing for new manifest generation...: "+relativePath);
                                 publish(new ThreadCommand("SET_BOTTOM_TEXT", "Compressing up to date files for manifest building ["+numComputed+"/"+up.getUpToDateFiles().size()+"]"));
                                 new File(outputFile).getParentFile().mkdirs();
                                 String[] procargs = {ModManager.getToolsDir() + "lzma.exe", "e", srcFile, outputFile, "-d26", "-mt" + Runtime.getRuntime().availableProcessors()};
@@ -287,7 +286,7 @@ public class ModXMLTools {
                             }
                         }
                         for (String str : up.getFilesToDelete()) {
-                            File f = new File(str);
+                            File f = new File(mod.getModPath()+str);
                             if (f.exists()) {
                                 //reverse - new files have been added
                                 updatedFiles.add(f);
@@ -315,14 +314,9 @@ public class ModXMLTools {
             }
 
             //Compressing mod to /serverupdate
-
             long startTime = System.currentTimeMillis();
-
-
-
             //COMPRESSING FILES................
             ModManager.debugLogger.writeMessage("Compressing files...");
-
 
             int numFiles = updatedFiles.size();
             int processed = 1;
@@ -475,6 +469,7 @@ public class ModXMLTools {
             modDoc.appendChild(rootElement);
             Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
             String manifest = ModMakerCompilerWindow.docToString(modDoc);
+            manifestFile = new File(ModManager.getME3TweaksUpdaterServiceFolder() + "Manifests" + File.separator + foldername + ".xml");
             manifestFile.getParentFile().mkdirs();
             FileUtils.writeStringToFile(manifestFile, manifest);
             clpbrd.setContents(new StringSelection(manifest), null);

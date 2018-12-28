@@ -142,7 +142,6 @@ public class ModManager {
     } //threading wait() and notifyall();
 
     public static void main(String[] args) {
-        new DifficultyGUI();
         loadLogger();
         //ME3TweaksUpdaterServiceWindow.main(null);
 

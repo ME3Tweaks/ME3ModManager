@@ -406,7 +406,7 @@ public class ME3TweaksUpdaterServiceWindow extends JDialog {
             try {
                 Path compressedRootPath = Paths.get(folderSource);
                 totalBytesToTransfer = ResourceUtils.GetDirectorySize(compressedRootPath, true);
-                ModManager.debugLogger.writeMessage("Amount of data to upload: " + ResourceUtils.humanReadableByteCount(totalBytesTransferred, true));
+                ModManager.debugLogger.writeMessage("Amount of data to upload: " + ResourceUtils.humanReadableByteCount(totalBytesToTransfer, true));
                 ArrayList<Path> files = (ArrayList<Path>) Files.walk(compressedRootPath).filter(predicate).collect(Collectors.toList());
                 relativePaths = new ArrayList<>();
                 for (Path file : files) {
