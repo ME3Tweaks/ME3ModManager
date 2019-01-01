@@ -733,10 +733,11 @@ public class ModXMLTools {
                 ModManager.debugLogger.writeMessage("Checking for files that are no longer necessary");
                 for (ModJob job : mod.getJobs()) {
                     for (String srcFile : job.getFilesToReplace()) {
-                        String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
+                        String relativePathLowercase = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
+                        String relativePath = ResourceUtils.getRelativePath(srcFile, modpath, File.separator).replaceAll("\\\\", "/");
                         boolean existsOnServer = false;
                         for (ManifestModFile mf : serverFiles) {
-                            if (mf.getRelativePath().toLowerCase().equals(relativePath)) {
+                            if (mf.getRelativePath().toLowerCase().equals(relativePathLowercase)) {
                                 existsOnServer = true;
                                 continue;
                             }
@@ -744,21 +745,22 @@ public class ModXMLTools {
                         if (!existsOnServer) {
                             // file needs to be removed
                             ModManager.debugLogger.writeMessage(relativePath + " is not in updated version of mod on server, marking for removal");
-                            filesToRemove.add(srcFile);
+                            filesToRemove.add(relativePath);
                         }
                     }
                     for (AlternateFile altFile : job.getAlternateFiles()) {
+                        String relativePathLower =  ResourceUtils.getRelativePath(altFile.getAltFile(), modpath, File.separator).replaceAll("\\\\", "/");
                         String relativePath =  ResourceUtils.getRelativePath(altFile.getAltFile(), modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
                         boolean existsOnServer = false;
                         for (ManifestModFile mf : serverFiles) {
-                            if (mf.getRelativePath().toLowerCase().equals(relativePath)) {
+                            if (mf.getRelativePath().toLowerCase().equals(relativePathLower)) {
                                 existsOnServer = true;
                                 continue;
                             }
                         }
                         if (!existsOnServer) {
                             // file needs to be removed
-                            ModManager.debugLogger.writeMessage(relativePath + " is not in updated version of mod on server (job altfile), marking for removal");
+                            ModManager.debugLogger.writeMessage(relativePathLower + " is not in updated version of mod on server (job altfile), marking for removal");
                             filesToRemove.add(altFile.getAltFile());
                         }
                     }
@@ -766,17 +768,18 @@ public class ModXMLTools {
             }
 
             for (AlternateFile altFile : mod.getAlternateFiles()) {
+                String relativePathLower =  altFile.getAltFile().toLowerCase().replaceAll("\\\\", "/");
                 String relativePath =  altFile.getAltFile().toLowerCase().replaceAll("\\\\", "/");
                 boolean existsOnServer = false;
                 for (ManifestModFile mf : serverFiles) {
-                    if (mf.getRelativePath().toLowerCase().equals(relativePath)) {
+                    if (mf.getRelativePath().toLowerCase().equals(relativePathLower)) {
                         existsOnServer = true;
                         continue;
                     }
                 }
                 if (!existsOnServer) {
                     // file needs to be removed
-                    ModManager.debugLogger.writeMessage(relativePath + " is not in updated version of mod on server (mod altfile), marking for removal");
+                    ModManager.debugLogger.writeMessage(relativePathLower + " is not in updated version of mod on server (mod altfile), marking for removal");
                     filesToRemove.add(altFile.getAltFile());
                 }
             }
