@@ -37,9 +37,9 @@ import java.util.prefs.Preferences;
 
 public class ModManager {
     public static boolean IS_DEBUG = false;
-    public static final String VERSION = "5.1.2";
-    public static long BUILD_NUMBER = 90L;
-    public static final String BUILD_DATE = "11/21/2018";
+    public static final String VERSION = "5.1.3";
+    public static long BUILD_NUMBER = 91L;
+    public static final String BUILD_DATE = "01/01/2019";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
@@ -56,7 +56,7 @@ public class ModManager {
     public static final int MIN_REQUIRED_CMDLINE_MAIN = 1;
     public static final int MIN_REQUIRED_CMDLINE_MINOR = 0;
     public final static int MIN_REQUIRED_CMDLINE_BUILD = 0;
-    public static int MIN_REQUIRED_CMDLINE_REV = 31; //not static as i can force this via update manifest
+    public static int MIN_REQUIRED_CMDLINE_REV = 34; //not static as i can force this via update manifest
 
     private final static int MIN_REQUIRED_NET_FRAMEWORK_RELNUM = 461808; //4.7.2
     public final static String MIN_REQUIRED_NET_FRAMEWORK_STR = "4.7.2";

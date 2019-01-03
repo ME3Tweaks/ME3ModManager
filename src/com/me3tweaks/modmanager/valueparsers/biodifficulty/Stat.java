@@ -57,4 +57,9 @@ public class Stat {
 		str.append(")"); //end stat
 		return str.toString();
 	}
+
+    public String toCSV() {
+		String str = statname+","+statrange.toCSV();
+		return str;
+    }
 }

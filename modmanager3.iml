@@ -82,15 +82,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="sevenzipjbinding-AllWindows.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/sevenzipjbinding-AllWindows.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
       <library name="sevenzipjbinding.jar">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/libraries/sevenzipjbinding.jar!/" />
@@ -99,15 +90,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="filedrop.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/filedrop.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="sevenzipjbinding-Windows-amd64" level="project" />
     <orderEntry type="module-library">
       <library name="commons-validator-1.6.jar">
         <CLASSES>
@@ -185,6 +168,15 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="module-library">
+      <library name="filedrop.jar">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libraries/filedrop.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="inheritedJdk" />
   </component>
 </module>

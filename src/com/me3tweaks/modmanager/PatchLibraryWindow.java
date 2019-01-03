@@ -14,20 +14,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.BorderFactory;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingWorker;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -48,7 +35,6 @@ import com.me3tweaks.modmanager.objects.Mod;
 import com.me3tweaks.modmanager.objects.Patch;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.ModCellRenderer;
-import com.me3tweaks.modmanager.ui.PatchCellRenderer;
 
 /**
  * Patch Window shows the list of patches in the patch library and things you
@@ -283,7 +269,6 @@ public class PatchLibraryWindow extends JDialog implements ListSelectionListener
 		patchModel = new DefaultListModel<Patch>();
 		patchList.setModel(patchModel);
 		patchList.addListSelectionListener(this);
-		patchList.setCellRenderer(new PatchCellRenderer());
 		for (Patch patch : ModManagerWindow.ACTIVE_WINDOW.getPatchList()) {
 			patchModel.addElement(patch);
 			//System.out.println(patch.convertToME3TweaksSQLInsert());

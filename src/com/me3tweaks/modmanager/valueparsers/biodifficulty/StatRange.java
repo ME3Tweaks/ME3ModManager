@@ -38,4 +38,12 @@ public class StatRange {
 		str.append("f)"); //append f
 		return str.toString();
 	}
+
+    public String toCSV() {
+		if (isfloat) {
+			return floatx +","+floaty;
+		} else {
+			return intx +","+inty;
+		}
+    }
 }

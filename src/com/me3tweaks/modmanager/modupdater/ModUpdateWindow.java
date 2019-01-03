@@ -467,8 +467,9 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
             }
 
             for (String str : upackage.getFilesToDelete()) {
-                ModManager.debugLogger.writeMessage("Deleting unused file: " + str);
-                File file = new File(str);
+                String fileToDelete = upackage.getMod().getModPath() + str; //path is relative
+                ModManager.debugLogger.writeMessage("Deleting unused file: " + fileToDelete);
+                File file = new File(fileToDelete);
                 FileUtils.deleteQuietly(file);
             }
             ModManager.debugLogger.writeMessage("Update applied, verifying mod...");
@@ -485,7 +486,7 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
                 ModManager.debugLogger.writeException(e);
             }
 
-            ModManager.debugLogger.writeMessage("Mod cleaned up, install finished");
+            ModManager.debugLogger.writeMessage("Staging directory cleanup complete, update has been applied");
         }
 
         /**

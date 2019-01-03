@@ -618,4 +618,9 @@ public class Patch implements Comparable<Patch> {
 	public boolean isDynamic() {
 		return this.isDynamic;
 	}
+
+	@Override
+	public String toString() {
+		return getPatchName();
+	}
 }

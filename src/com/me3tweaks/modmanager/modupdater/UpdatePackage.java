@@ -14,6 +14,7 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
  *
  */
 public class UpdatePackage {
+	private ArrayList<ManifestModFile> filesUpToDate;
 	private ArrayList<ManifestModFile> filesToDownload;
 	private ArrayList<String> filesToDelete;
 	private String serverFolderName;
@@ -37,25 +38,18 @@ public class UpdatePackage {
 		return filesToDownload;
 	}
 
-	public void setFilesToDownload(ArrayList<ManifestModFile> filesToDownload) {
-		this.filesToDownload = filesToDownload;
-	}
-
 	public ArrayList<String> getFilesToDelete() {
 		return filesToDelete;
 	}
 
-	public void setFilesToDelete(ArrayList<String> filesToDelete) {
-		this.filesToDelete = filesToDelete;
+	public ArrayList<ManifestModFile> getUpToDateFiles() {
+		return filesUpToDate;
 	}
 
 	public String getServerFolderName() {
 		return serverFolderName;
 	}
 
-	public void setServerFolderName(String serverFolderName) {
-		this.serverFolderName = serverFolderName;
-	}
 
 	/**
 	 * Classic mod constructor for update package
@@ -67,7 +61,7 @@ public class UpdatePackage {
 	 * @param filesToDelete
 	 * @param serverFolderName
 	 */
-	public UpdatePackage(Mod mod, double version, ArrayList<ManifestModFile> filesToDownload, ArrayList<String> filesToDelete, String serverFolderName,String changelog) {
+	public UpdatePackage(Mod mod, double version, ArrayList<ManifestModFile> filesToDownload, ArrayList<ManifestModFile> filesUpToDate, ArrayList<String> filesToDelete, String serverFolderName,String changelog) {
 		super();
 		this.mod = mod;
 		this.version = version;
@@ -77,6 +71,7 @@ public class UpdatePackage {
 		this.modmakerupdate = false;
 		this.serverModName = mod.getModName();
 		this.changelog = changelog;
+		this.filesUpToDate = filesUpToDate;
 	}
 
 	/**
@@ -118,16 +113,8 @@ public class UpdatePackage {
 		return modmakerupdate;
 	}
 
-	public void setModmakerupdate(boolean modmakerupdate) {
-		this.modmakerupdate = modmakerupdate;
-	}
-
 	public String getServerModName() {
 		return serverModName;
-	}
-
-	public void setServerModName(String serverModName) {
-		this.serverModName = serverModName;
 	}
 
 	public void sortByLargestFirst() {

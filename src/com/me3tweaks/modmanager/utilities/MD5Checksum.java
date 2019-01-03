@@ -30,10 +30,6 @@ public class MD5Checksum {
        String result = "";
 
        for (int i=0; i < b.length; i++) {
-           System.out.print("-");
-           if (i % 50 == 0) {
-               System.out.println();
-           }
            result += Integer.toString( ( b[i] & 0xff ) + 0x100, 16).substring( 1 );
        }
        return result;
