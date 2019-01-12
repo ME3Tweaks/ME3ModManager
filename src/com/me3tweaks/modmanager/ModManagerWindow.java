@@ -722,6 +722,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             // Check for update
             try {
                 String update_check_link = "https://me3tweaks.com/modmanager/updatecheck?currentversion=" + ModManager.BUILD_NUMBER;
+                //System.out.println(update_check_link);
                 String serverJSON = null;
                 try {
                     serverJSON = IOUtils.toString(new URL(update_check_link), StandardCharsets.UTF_8);

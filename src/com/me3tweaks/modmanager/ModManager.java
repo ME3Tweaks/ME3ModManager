@@ -39,7 +39,7 @@ public class ModManager {
     public static boolean IS_DEBUG = false;
     public static final String VERSION = "5.1.3";
     public static long BUILD_NUMBER = 91L;
-    public static final String BUILD_DATE = "01/01/2019";
+    public static final String BUILD_DATE = "01/12/2019";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
@@ -159,7 +159,7 @@ public class ModManager {
             ToolTipManager.sharedInstance().setDismissDelay(15000);
 
             System.setProperty("derby.system.home", new File(ModManager.getDatabaseDir()).getAbsolutePath()); //move derby.log
-
+            System.setProperty("https.protocols", "TLSv1.2");
             File settings = new File(ModManager.SETTINGS_FILENAME);
             if (!settings.exists()) {
                 settings.createNewFile();
