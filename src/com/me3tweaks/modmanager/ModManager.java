@@ -37,7 +37,6 @@ import java.util.prefs.Preferences;
 
 public class ModManager {
     public static boolean IS_DEBUG = false;
-    public static boolean IS_DEBUG = false;
     public static final String VERSION = "5.1.3 MR7";
     public static long BUILD_NUMBER = 91L;
     public static final String BUILD_DATE = "01/16/2019";
