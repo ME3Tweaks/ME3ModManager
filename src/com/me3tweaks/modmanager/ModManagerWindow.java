@@ -787,6 +787,8 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                     labelStatus.setText("No Mod Manager updates available");
                     ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
                     checkForGUIupdates(latest_object);
+                    checkForDatabaseUpdates(latest_object);
+
                     if (latestCommandLineToolsLink != null) {
                         ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
                     }
@@ -794,11 +796,11 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 }
                 if (latest_build == ModManager.BUILD_NUMBER && !hashMismatch) {
                     // build is same as server version
-                    labelStatus.setVisible(true);
                     ModManager.debugLogger.writeMessage("No updates, at latest version.");
                     labelStatus.setText("Mod Manager is up to date");
                     ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
                     checkForGUIupdates(latest_object);
+                    checkForDatabaseUpdates(latest_object);
                     if (latestCommandLineToolsLink != null) {
                         ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
                     }
@@ -862,7 +864,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
                 if (latestCommandLineToolsLink != null) {
                     ModManager.COMMANDLINETOOLS_URL = latestCommandLineToolsLink;
                 }
-
+                checkForDatabaseUpdates(latest_object);
                 checkForGUIupdates(latest_object);
             } catch (ParseException e) {
                 // TODO Auto-generated catch block
@@ -870,6 +872,70 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
             }
             ModManager.CHECKED_FOR_UPDATE_THIS_SESSION = true;
             return latest_object;
+        }
+
+        private void checkForDatabaseUpdates(JSONObject serversJSON) {
+            Object obj = serversJSON.get("latest_vanilladbmarker");
+            Object objlink = serversJSON.get("latest_vanilladblink");
+
+            String vanillaDBlink = null;
+            String vanillaDBmarker = ModManager.getDatabaseDir();
+            if (obj != null) {
+                vanillaDBmarker += (String) obj;
+            }
+            if (objlink != null) {
+                vanillaDBlink = (String) objlink;
+            }
+            if (obj != null && vanillaDBlink != null) {
+                File markerFile = new File(vanillaDBmarker);
+                if (!markerFile.exists()) {
+                    //DB update required
+                    ModManager.debugLogger.writeMessage("Vanilla database is missing, updating...");
+                    int code = submitBackgroundJob("VanillaDatabaseUpdater", "Updating vanilla database");
+
+                    ModManager.debugLogger.writeMessage("Downloading vanilla DB: " + vanillaDBlink);
+                    try {
+                        File updateDir = new File(ModManager.getTempDir());
+                        updateDir.mkdirs();
+                        FileUtils.copyURLToFile(new URL(vanillaDBlink), new File(ModManager.getTempDir() + "databases.7z"));
+                        ModManager.debugLogger.writeMessage("Databases 7z downloaded.");
+
+                        //run 7za on it
+                        ArrayList<String> commandBuilder = new ArrayList<String>();
+                        commandBuilder.add(ModManager.get7zExePath());
+                        commandBuilder.add("-y"); //overwrite
+                        commandBuilder.add("x"); //extract
+                        commandBuilder.add(ModManager.getTempDir() + "databases.7z");//7z file
+                        commandBuilder.add("-o" + ModManager.getDataDir()); //extraction path
+
+                        // System.out.println("Building command");
+                        String[] command = commandBuilder.toArray(new String[commandBuilder.size()]);
+                        // Debug stuff
+                        StringBuilder sb = new StringBuilder();
+                        for (String arg : command) {
+                            sb.append(arg + " ");
+                        }
+                        ModManager.debugLogger.writeMessage("Extracting databases file...");
+                        int returncode = 1;
+                        ProcessBuilder pb = new ProcessBuilder(command);
+                        returncode = ModManager.runProcess(pb).getReturnCode();
+                        ModManager.debugLogger.writeMessage("Unzip completed successfully (code 0): " + (returncode == 0));
+                    } catch (IOException e) {
+                        ModManager.debugLogger.writeErrorWithException("Error downloading database:", e);
+                    }
+                    submitJobCompletion(code);
+                    try {
+                        markerFile.createNewFile();
+                        ModManager.debugLogger.writeMessage("Created database version marker file");
+                    } catch (Exception e) {
+                        ModManager.debugLogger.writeErrorWithException("Could not create DB marker file: ",e);
+                    }
+                    publish(new ThreadCommand("SET_STATUSBAR_TEXT", "Updated vanilla database"));
+
+                } else {
+                    ModManager.debugLogger.writeMessage("Environment Check: Vanilla database marker found, up to date: "+ obj);
+                }
+            }
         }
 
         /**

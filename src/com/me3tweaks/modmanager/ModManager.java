@@ -36,10 +36,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 public class ModManager {
-    public static boolean IS_DEBUG = false;
-    public static final String VERSION = "5.1.3";
+    public static boolean IS_DEBUG = fals;
+    public static final String VERSION = "5.1.3 MR7";
     public static long BUILD_NUMBER = 91L;
-    public static final String BUILD_DATE = "01/12/2019";
+    public static final String BUILD_DATE = "01/16/2019";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;

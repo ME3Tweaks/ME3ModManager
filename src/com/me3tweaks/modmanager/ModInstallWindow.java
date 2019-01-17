@@ -1281,15 +1281,16 @@ public class ModInstallWindow extends JDialog {
                     for (Map.Entry<String, String> entry : outdatedinstalledfolders.entrySet()) {
                         String modname = entry.getKey();
                         String outdated = entry.getValue();
-
+                        String modnamehuman = ME3TweaksUtils.getThirdPartyModName(outdated, false);
+                        ModManager.debugLogger.writeMessage("Mod installation finished. Detected incompatible or old mod: " + modnamehuman);
                         int result = JOptionPane.showConfirmDialog(ModInstallWindow.this, "<html><div style='width: 400px'>" + modname
-                                + "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "(" + ME3TweaksUtils.getThirdPartyModName(outdated, false)
+                                + "'s mod descriptor indicates that the currently installed CustomDLC " + outdated + "(" + modnamehuman
                                 + ") is not compatible/no longer necessary for this mod. The mod indicates they should be deleted as they may conflict with this mod.<br><br>Delete the Custom DLC folder "
                                 + outdated + "?</div></html>", "Outdated CustomDLC detected", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                         if (result == JOptionPane.YES_OPTION) {
                             String deleteFolder = ModManager.appendSlash(bioGameDir) + "DLC\\" + outdated;
                             ModManager.debugLogger.writeMessage("Deleting outdated custom DLC: " + deleteFolder);
-                            boolean deleted = false;//FileUtils.deleteQuietly(new File(deleteFolder));
+                            boolean deleted = FileUtils.deleteQuietly(new File(deleteFolder));
                             if (deleted) {
                                 ModManager.debugLogger.writeMessage("Deleted outdated custom DLC: " + deleteFolder);
                                 ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Deleted " + outdated);
