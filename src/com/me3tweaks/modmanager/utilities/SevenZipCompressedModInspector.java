@@ -7,12 +7,12 @@ import com.me3tweaks.modmanager.ModManager;
 import com.me3tweaks.modmanager.ModManagerWindow;
 import com.me3tweaks.modmanager.modmaker.ME3TweaksUtils;
 import com.me3tweaks.modmanager.objects.*;
+import com.me3tweaks.modmanager.utilities.nexusmods.NexusModsFileInfo;
 import net.sf.sevenzipjbinding.*;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.CharSet;
 import org.ini4j.Wini;
 
 import java.io.*;
@@ -492,11 +492,12 @@ public class SevenZipCompressedModInspector {
                 return compressed;
             }
 
-            // No moddesc.ini files found. Lets do a second pass via size
+            // No moddesc.ini files found. Lets do a second pass via size and use the third party database
             if (thirdPartyImportsWithThisSize != null && thirdPartyImportsWithThisSize.size() > 0) {
                 // hash file
                 scanworker.publishUpdate(new ThreadCommand("SET_SUBTEXT_SCANNING", "Looking up importing info from Third Party Importing Service..."));
                 String hash = MD5Checksum.getMD5Checksum(archivePath);
+
                 ThirdPartyImportingInfo impinfo = null;
                 //System.out.println("HASH: " + hash);
 
@@ -509,6 +510,9 @@ public class SevenZipCompressedModInspector {
                     }
                 }
                 if (impinfo != null) {
+
+                    NexusModsFileInfo nmfi = NexusModsAPI.GetModInfoByMD5(hash);
+
                     ArrayList<CompressedMod> compressed = new ArrayList<>();
                     ModManager.debugLogger.writeMessage("Got third party importing info TPIS.");
                     if (impinfo.getServermoddescname() != null) {
@@ -529,7 +533,7 @@ public class SevenZipCompressedModInspector {
                             return compressed;
                         } catch (Exception e) {
                             scanWorker.publishUpdate(new ThreadCommand("ONLINE_REQUIRED"));
-                            ModManager.debugLogger.writeErrorWithException("Error downloading server moddesc: ",e);
+                            ModManager.debugLogger.writeErrorWithException("Error downloading server moddesc: ", e);
                             return compressed;
                         }
                     }
@@ -575,13 +579,26 @@ public class SevenZipCompressedModInspector {
                                         if (tpmi.getUpdateCode() != 0) {
                                             moddesc.add("ModInfo", "updatecode", tpmi.getUpdateCode());
                                             moddesc.add("ModInfo", "modver", "0.01"); //will force upgrade
+                                        } else {
+                                            if (nmfi != null) {
+                                                try {
+                                                    moddesc.add("ModInfo", "modver", Double.parseDouble(nmfi.mod_version)); //Should include .0
+                                                }catch (NumberFormatException e) {
+                                                    moddesc.add("ModInfo", "modver", nmfi.mod_version); //Write directly
+                                                }
+                                            }
                                         }
+
                                         moddesc.add("CUSTOMDLC", "sourcedirs", dlcFolderName);
                                         moddesc.add("CUSTOMDLC", "destdirs", dlcFolderName);
+
+
+
                                         StringWriter writer = new StringWriter();
                                         moddesc.store(writer);
 
                                         Mod mod = new Mod(writer);
+
                                         CompressedMod cm = new CompressedMod();
                                         cm.setUnofficialModDescString(writer.toString());
                                         File extractRoot = new File(cookedPCConsoleFolder).getParentFile(); // will be
@@ -594,7 +611,7 @@ public class SevenZipCompressedModInspector {
                                         } else {
                                             extractRoot = new File("");
                                         }
-                                        System.out.println(extractRoot.toString());
+                                        //System.out.println(extractRoot.toString());
                                         String inarchivepath = extractRoot.toString();
                                         if (hasParent) {
                                             inarchivepath += "\\";
@@ -604,6 +621,7 @@ public class SevenZipCompressedModInspector {
                                         cm.setModDescMod(mod);
                                         cm.setModDescription(mod.getModDisplayDescription());
                                         cm.setModName(mod.getModName());
+
                                         compressed.add(cm);
                                     }
                                 }

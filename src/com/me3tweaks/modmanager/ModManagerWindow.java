@@ -32,6 +32,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.apache.http.client.fluent.Request;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.jdesktop.swingx.JXCollapsiblePane;

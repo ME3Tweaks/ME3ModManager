@@ -6,6 +6,9 @@ import com.me3tweaks.modmanager.objects.CompressedMod;
 import com.me3tweaks.modmanager.objects.ThirdPartyModInfo;
 import com.me3tweaks.modmanager.objects.ThreadCommand;
 import com.me3tweaks.modmanager.ui.HintTextFieldUI;
+import com.me3tweaks.modmanager.utilities.MD5Checksum;
+import com.me3tweaks.modmanager.utilities.NexusModsAPI;
+import com.me3tweaks.modmanager.utilities.ResourceUtils;
 import com.me3tweaks.modmanager.utilities.SevenZipCompressedModInspector;
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
@@ -297,6 +300,11 @@ public class ModImportArchiveWindow extends JDialog {
 
         @Override
         protected ArrayList<CompressedMod> doInBackground() throws Exception {
+            ModManager.debugLogger.writeMessage("[ScanWorker]: Hashing archive for NexusMods API lookup...");
+            String md5 = MD5Checksum.getMD5Checksum(archiveFile);
+            ModManager.debugLogger.writeMessage("[ScanWorker]: Hash created: "+md5);
+            NexusModsAPI.GetModInfoByMD5(md5);
+
             ModManager.debugLogger.writeMessage("[ScanWorker]: Reading archive...");
             return SevenZipCompressedModInspector.getCompressedModsInArchive(archiveFile, this);
         }
@@ -415,7 +423,6 @@ public class ModImportArchiveWindow extends JDialog {
         private String CURRENT_MOD_NAME = "";
 
         public ImportWorker(String archiveFilePath, ArrayList<CompressedMod> modsToImport) {
-            // TODO Auto-generated constructor stub
             this.archiveFilePath = archiveFilePath;
             this.modsToImport = modsToImport;
             jobCode = ModManagerWindow.ACTIVE_WINDOW.submitBackgroundJob("Importing Mods", "Importing mod(s)...");
