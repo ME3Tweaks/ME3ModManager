@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
@@ -465,6 +466,32 @@ public class ResourceUtils {
 		} catch (URISyntaxException e) {
 			ModManager.debugLogger.writeErrorWithException("Error opening webpage: ", e);
 			return false;
+		}
+	}
+
+	/** This method goes through all folders that are directly contained in a
+	 * directory, and appends them to a list if they are empty. Used
+	 * recursively for directories containing multiple folders
+	 *
+	 * @param dir is the directory to check for content
+	 * @param emptyFolders is he List we add empty folders to.
+	 */
+	public static void seekEmpty(File dir, List<File> emptyFolders) {
+
+		// Populate an array with files/folders in the directory
+		File[] folderContents = dir.listFiles();
+		if (folderContents.length == 0) {
+			// we are empty, add us.
+			emptyFolders.add(dir);
+		}
+
+		// Iterate through every file/folder
+		for (File content : folderContents) {
+			// Disregard files, acquire folders
+			if (content.isDirectory()) {
+				// check if this folder is empty
+				seekEmpty(content, emptyFolders);
+			}
 		}
 	}
 
