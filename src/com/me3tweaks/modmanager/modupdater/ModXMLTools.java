@@ -768,6 +768,9 @@ public class ModXMLTools {
             }
 
             for (AlternateFile altFile : mod.getAlternateFiles()) {
+                if (altFile.getOperation().equals(AlternateFile.OPERATION_NOINSTALL)) {
+                    continue;
+                }
                 String relativePathLower =  altFile.getAltFile().toLowerCase().replaceAll("\\\\", "/");
                 String relativePath =  altFile.getAltFile().toLowerCase().replaceAll("\\\\", "/");
                 boolean existsOnServer = false;
