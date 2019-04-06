@@ -487,6 +487,20 @@ public class ModUpdateWindow extends JDialog implements PropertyChangeListener {
             }
 
             ModManager.debugLogger.writeMessage("Staging directory cleanup complete, update has been applied");
+
+            ModManager.debugLogger.writeMessage("Checking for empty directories in updated mod directory");
+            int remainingLoops = 10; //Used to prevent infinite loop
+            while (true) {
+                if (remainingLoops <= 0) {break;}
+                remainingLoops--;
+                ArrayList<File> listOfBottomFirstEmptyDirectories = new ArrayList<>();
+                ResourceUtils.seekEmpty(new File(verifyingMod.getModPath()), listOfBottomFirstEmptyDirectories);
+                for (var folder : listOfBottomFirstEmptyDirectories) {
+                    ModManager.debugLogger.writeMessage("Deleting empty leaf directory in mod: "+folder);
+                    FileUtils.deleteQuietly(folder);
+                }
+            }
+
         }
 
         /**

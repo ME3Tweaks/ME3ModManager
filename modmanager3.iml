@@ -37,7 +37,7 @@
     <orderEntry type="module-library">
       <library name="commons-io-2.5.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/commons-io-2.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/commons-io-2.5.jar!/" />
         </CLASSES>
         <JAVADOC>
           <root url="https://commons.apache.org/proper/commons-io/javadocs/api-2.5/" />
@@ -48,7 +48,7 @@
     <orderEntry type="module-library">
       <library name="derby.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/derby.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/derby.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -57,7 +57,7 @@
     <orderEntry type="module-library">
       <library name="ini4j-0.5.2.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/ini4j-0.5.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/ini4j-0.5.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -66,7 +66,7 @@
     <orderEntry type="module-library">
       <library name="json-simple-1.1.1.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/json-simple-1.1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/json-simple-1.1.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -75,7 +75,7 @@
     <orderEntry type="module-library">
       <library name="commons-logging-1.2.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/commons-logging-1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/commons-logging-1.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -84,7 +84,7 @@
     <orderEntry type="module-library">
       <library name="sevenzipjbinding.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/sevenzipjbinding.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/sevenzipjbinding.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -94,25 +94,7 @@
     <orderEntry type="module-library">
       <library name="commons-validator-1.6.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/commons-validator-1.6.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="httpclient-4.5.3.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/httpclient-4.5.3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="httpcore-4.4.6.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/httpcore-4.4.6.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/commons-validator-1.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -121,7 +103,7 @@
     <orderEntry type="module-library">
       <library name="swingx-all-1.6.5-1.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/swingx-all-1.6.5-1.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/swingx-all-1.6.5-1.jar!/" />
         </CLASSES>
         <JAVADOC>
           <root url="file:/X:/Google%20Drive/Code/Java/Mod%20Manager/Library%20Documentation/" />
@@ -132,7 +114,7 @@
     <orderEntry type="module-library">
       <library name="commons-lang3-3.6.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/commons-lang3-3.6.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/commons-lang3-3.6.jar!/" />
         </CLASSES>
         <JAVADOC>
           <root url="https://commons.apache.org/proper/commons-lang/javadocs/api-release" />
@@ -141,42 +123,17 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="jna-4.4.0.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/jna-4.4.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="jna-platform-4.4.0.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/jna-platform-4.4.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/jsch-0.1.54.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="lib" level="project" />
-    <orderEntry type="module-library">
       <library name="filedrop.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/filedrop.jar!/" />
+          <root url="jar://$MODULE_DIR$/Libraries/filedrop.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="httpclient-4.5.7" level="project" />
+    <orderEntry type="library" name="jsch-0.1.54" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="inheritedJdk" />
   </component>
 </module>
