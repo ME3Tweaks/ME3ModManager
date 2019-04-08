@@ -267,7 +267,7 @@ public class CustomDLCConflictWindow extends JDialog {
 		guiPatchPanel.add(guiPatchButton, BorderLayout.NORTH);
 
 		progressPanel = new JPanel(new BorderLayout());
-		statusText = new JLabel("Preparing to create compatibilty mod", SwingConstants.CENTER);
+		statusText = new JLabel("Preparing to create compatibility mod", SwingConstants.CENTER);
 		guiProgressBar = new JProgressBar();
 		guiProgressBar.setVisible(true);
 		guiProgressBar.setIndeterminate(true);
@@ -375,6 +375,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			HashMap<String, ArrayList<CustomDLC>> nonguimodfiles = new HashMap<>();
 			// filter out files where the gui mod is superceding, we don't care.
 			for (Map.Entry<String, ArrayList<CustomDLC>> entry : dlcfilemap.entrySet()) {
+				//If highest priority DLC item is a GUI mod, or the file is a blacklisted file, do not scan it
 				if (entry.getValue().get(entry.getValue().size() - 1).isGUIMod()
 						|| blacklistedGUIconflictfiles.contains(entry.getKey())) {
 					// ignores heavy MP4/MP5 files that dont have any actual GUIs.
@@ -386,6 +387,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			numFilesToScan = nonguimodfiles.size();
 			int cores = Runtime.getRuntime().availableProcessors();
 			cores = Math.max(1, cores - 1);
+			//cores = 1; //Debugging
 			ModManager.debugLogger.writeMessage("GUI Conflict scanner will use " + cores + " threads.");
 			ExecutorService guiscanExecutor = Executors.newFixedThreadPool(cores);
 			ArrayList<Future<GUIScanResult>> futures = new ArrayList<Future<GUIScanResult>>();
@@ -423,6 +425,11 @@ public class CustomDLCConflictWindow extends JDialog {
 			private String filepath;
 			private ArrayList<CustomDLC> dlcs;
 
+			/**
+			 * Task to scan a DLC for a GUI export with GUI transplanter scanner.
+			 * @param filepath basic filename of the file
+			 * @param dlcs list of custom DLCs that contain this file, in order of lowest to highest priority. The highest priority one will be scanned
+			 */
 			public GUIScanTask(String filepath, ArrayList<CustomDLC> dlcs) {
 				this.filepath = filepath;
 				this.dlcs = dlcs;
@@ -431,7 +438,7 @@ public class CustomDLCConflictWindow extends JDialog {
 			@Override
 			public GUIScanResult call() throws Exception {
 				// scan file
-				String scanFile = biogameDirectory + "DLC/" + dlcs.get(0).getDlcName() + "/CookedPCConsole/" + filepath;
+				String scanFile = biogameDirectory + "DLC/" + dlcs.get(dlcs.size()-1).getDlcName() + "/CookedPCConsole/" + filepath;
 				ArrayList<String> commandBuilder = new ArrayList<String>();
 				commandBuilder.add(transplanterpath);
 				commandBuilder.add("--guiscan");
@@ -843,8 +850,7 @@ public class CustomDLCConflictWindow extends JDialog {
 	 * Detects if the conflicts are caused by one of the following mods: -
 	 * DLC_CON_XBX (SP Controller Support) - DLC_CON_UIScaling (Interface Scaling
 	 * Mod) - DLC_CON_UIScaling_Shared (Interface Scaling Add-On).
-	 * 
-	 * 
+	 *
 	 * @param conflicts
 	 *            hashmap of conflict files and the list of dlc they appear in
 	 * @return null if no UI mod conflicts, otherwise a map of the next superceeding
