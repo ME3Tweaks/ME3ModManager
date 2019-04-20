@@ -598,7 +598,7 @@ public class ModManagerWindow extends JFrame implements ActionListener, ListSele
          */
         private void checkForALOTInstallerUpdates() {
             try {
-                String alotInstallerReleaseAPIEndpoint = "https://api.github.com/repos/Mgamerz/ALOTAddonGUI/releases/latest";
+                String alotInstallerReleaseAPIEndpoint = "https://api.github.com/repos/ME3Tweaks/ALOTInstaller/releases/latest";
                 String response = IOUtils.toString(new URL(alotInstallerReleaseAPIEndpoint), StandardCharsets.UTF_8);
                 JSONParser parser = new JSONParser();
                 JSONObject latestRelease = (JSONObject) parser.parse(response);
