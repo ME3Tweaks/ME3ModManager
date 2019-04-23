@@ -885,7 +885,7 @@ public class ModManager {
             ModManager.ExportResource("/zlib1.dll", zlib.toString());
             File me3logger_truncating = new File(gamedir.toString() + "\\Binaries\\Win32\\asi\\me3logger_truncating.asi");
             me3logger_truncating.getParentFile().mkdirs();
-            ModManager.ExportResource("/me3logger_truncating.asi", me3logger_truncating.toString());
+            ModManager.ExportResource("/ME3Logger_truncating.asi", me3logger_truncating.toString());
 
         } catch (Exception e1) {
             ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
