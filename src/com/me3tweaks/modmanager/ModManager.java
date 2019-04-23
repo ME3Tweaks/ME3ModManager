@@ -868,7 +868,7 @@ public class ModManager {
             return false;
         } else if (exebuild != 5) {
             JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Binkw32 bypass does not support any version of Mass Effect 3 except 1.05.\n" + (exebuild == 6
-                    ? "Downgrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this."
+                    ? "Downgrade to Mass Effect 3 1.05 to use it."
                     : "Upgrade your game to use 1.05. Pirated editions of the game are not supported."), "Unsupported ME3 version", JOptionPane.ERROR_MESSAGE);
             return false;
         }
