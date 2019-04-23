@@ -37,9 +37,9 @@ import java.util.prefs.Preferences;
 
 public class ModManager {
     public static boolean IS_DEBUG = false;
-    public static final String VERSION = "5.1.5 DEV BUILD";
+    public static final String VERSION = "5.1.5";
     public static long BUILD_NUMBER = 93L;
-    public static final String BUILD_DATE = "04/07/2019";
+    public static final String BUILD_DATE = "04/23/2019";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
