@@ -661,10 +661,10 @@ public class ModMakerCompilerWindow extends JDialog {
 			try {
 				get(); // this line can throw InterruptedException or ExecutionException
 			} catch (ExecutionException e) {
-				ModManager.debugLogger.writeMessage("Error occured in DecompilerWorker():");
+				ModManager.debugLogger.writeMessage("Error occurred in DecompilerWorker():");
 				ModManager.debugLogger.writeException(e);
 				JOptionPane.showMessageDialog(ModMakerCompilerWindow.this,
-						"An error occured while decompiling coalesced files:\n" + e.getMessage() + "\n\nYou should report this to Mgamerz via the Forums link in the help menu.",
+						"An error occurred while decompiling coalesced files:\n" + e.getMessage() + "\n\nYou should report this to Mgamerz via the ME3Tweaks Discord link in the help menu.",
 						"Compiling Error", JOptionPane.ERROR_MESSAGE);
 				error = true;
 			} catch (InterruptedException e) {

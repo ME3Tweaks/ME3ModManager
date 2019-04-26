@@ -109,7 +109,7 @@ public class HelpMenu {
 	 */
 	public static JMenu constructHelpMenu() {
 		JMenu helpMenu = new JMenu("Help");
-		JMenuItem helpModDescDocumentation, helpForums, helpAbout, helpLogViewer, helpGetLog, helpContactMgamerz;
+		JMenuItem helpModDescDocumentation, helpAbout, helpLogViewer, helpGetLog, helpContactMgamerz;
 
 		helpModDescDocumentation = new JMenuItem("ModDesc File Documentation");
 		helpModDescDocumentation.setToolTipText("Opens the documentation for Mod Manager's moddesc.ini format");

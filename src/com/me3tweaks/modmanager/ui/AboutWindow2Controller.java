@@ -53,7 +53,7 @@ public class AboutWindow2Controller {
 
 	@FXML
 	private void openME3ExplorerPage() {
-		ResourceUtils.openWebpage("https://github.com/Mgamerz/ME3Explorer");
+		ResourceUtils.openWebpage("https://github.com/ME3Tweaks/ME3Explorer");
 	}
 
 	@FXML

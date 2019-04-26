@@ -124,7 +124,7 @@ public class StarterKitWindow extends JDialog {
 
         modName.setUI(new HintTextFieldUI("A Most Excellent Mod", true));
         modDeveloper.setUI(new HintTextFieldUI("GatorZ", true));
-        modSite.setUI(new HintTextFieldUI("https://me3tweaks.com/forums/...", true));
+        modSite.setUI(new HintTextFieldUI("https://nexusmods.com/massefect3/...", true));
         internalDLCName.setUI(new HintTextFieldUI("ExcellentMod", true));
         internalDisplayName.setUI(new HintTextFieldUI("Excellent DLC Module", true));
         internalTLKId.setUI(new HintTextFieldUI("13370000", true));

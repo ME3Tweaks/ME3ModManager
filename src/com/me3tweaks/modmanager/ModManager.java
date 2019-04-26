@@ -37,9 +37,9 @@ import java.util.prefs.Preferences;
 
 public class ModManager {
     public static boolean IS_DEBUG = false;
-    public static final String VERSION = "5.1.4";
-    public static long BUILD_NUMBER = 92L;
-    public static final String BUILD_DATE = "04/06/2019";
+    public static final String VERSION = "5.1.5";
+    public static long BUILD_NUMBER = 93L;
+    public static final String BUILD_DATE = "04/23/2019";
     public static final String SETTINGS_FILENAME = "me3cmm.ini";
     public static DebugLogger debugLogger;
     public static boolean logging = false;
@@ -868,7 +868,7 @@ public class ModManager {
             return false;
         } else if (exebuild != 5) {
             JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW, "Binkw32 bypass does not support any version of Mass Effect 3 except 1.05.\n" + (exebuild == 6
-                    ? "Downgrade to Mass Effect 3 1.05 to use it, or continue using LauncherWV through Mod Manager.\nThe ME3Tweaks forums has instructions on how to do this."
+                    ? "Downgrade to Mass Effect 3 1.05 to use it."
                     : "Upgrade your game to use 1.05. Pirated editions of the game are not supported."), "Unsupported ME3 version", JOptionPane.ERROR_MESSAGE);
             return false;
         }
@@ -885,7 +885,7 @@ public class ModManager {
             ModManager.ExportResource("/zlib1.dll", zlib.toString());
             File me3logger_truncating = new File(gamedir.toString() + "\\Binaries\\Win32\\asi\\me3logger_truncating.asi");
             me3logger_truncating.getParentFile().mkdirs();
-            ModManager.ExportResource("/me3logger_truncating.asi", me3logger_truncating.toString());
+            ModManager.ExportResource("/ME3Logger_truncating.asi", me3logger_truncating.toString());
 
         } catch (Exception e1) {
             ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));

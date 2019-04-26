@@ -185,7 +185,7 @@ public class ASIModWindow extends JDialog {
 				//String filepath = ModManager.appendSlash(asiDir.getAbsolutePath()) + asifile;
 				Object[] row = new Object[3];
 				row[COL_ASIFILENAME] = mod;
-				row[COL_DESCRIPTION] = "Manually installed ASI. This ASI has not been verified by ME3Tweaks. If you wish to have it verified, please visit the forums.";
+				row[COL_DESCRIPTION] = "Manually installed ASI. This ASI has not been verified by ME3Tweaks. If you wish to have it verified, please come to the ME3Tweaks Discord server.";
 				row[COL_ACTION] = "<html><center>Manually Installed</center></html>";
 				model.addRow(row);
 			}
