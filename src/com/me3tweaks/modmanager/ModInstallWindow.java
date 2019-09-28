@@ -1287,9 +1287,9 @@ public class ModInstallWindow extends JDialog {
                                 + ") is not compatible/no longer necessary for this mod. The mod indicates they should be deleted as they may conflict with this mod.<br><br>Delete the Custom DLC folder "
                                 + outdated + "?</div></html>", "Outdated CustomDLC detected", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                         if (result == JOptionPane.YES_OPTION) {
-                            String deleteFolder = bioGameDir + "DLC/" + outdated;
+                            String deleteFolder = ModManager.appendSlash(bioGameDir) + "DLC/" + outdated;
                             ModManager.debugLogger.writeMessage("Deleting outdated custom DLC: " + deleteFolder);
-                            boolean deleted = false;//FileUtils.deleteQuietly(new File(deleteFolder));
+                            boolean deleted = FileUtils.deleteQuietly(new File(deleteFolder));
                             if (deleted) {
                                 ModManager.debugLogger.writeMessage("Deleted outdated custom DLC: " + deleteFolder);
                                 ModManagerWindow.ACTIVE_WINDOW.labelStatus.setText("Deleted " + outdated);

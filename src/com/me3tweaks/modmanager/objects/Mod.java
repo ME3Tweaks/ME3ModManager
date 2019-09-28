@@ -1117,19 +1117,19 @@ public class Mod implements Comparable<Mod> {
         }
 
         //Resolve Official Alternates
-        if (modCMMVer >= 4.5 && !ignoreLoadErrors) { //modpath will be null if we are inspecting a compressed mod. So just ignore this step.
-            for (ModJob job : jobs) {
-                if (job.getJobType() == ModJob.CUSTOMDLC) {
-                    continue;
-                }
-                for (AlternateFile af : job.getAlternateFiles()) {
-                    String replacementFilePath = getModTaskPath(af.getModFile(), job.getJobName());
-                    String relativePath = ResourceUtils.getRelativePath(replacementFilePath, modPath, File.separator);
-                    relativePath = ResourceUtils.normalizeFilePath(relativePath, false);
-                    af.setAltFile(relativePath);
-                }
-            }
-        }
+//        if (modCMMVer >= 4.5 && !ignoreLoadErrors) { //modpath will be null if we are inspecting a compressed mod. So just ignore this step.
+//            for (ModJob job : jobs) {
+//                if (job.getJobType() == ModJob.CUSTOMDLC) {
+//                    continue;
+//                }
+//                for (AlternateFile af : job.getAlternateFiles()) {
+//                    String replacementFilePath = getModTaskPath(af.getModFile(), job.getJobName());
+//                    String relativePath = ResourceUtils.getRelativePath(replacementFilePath, modPath, File.separator);
+//                    relativePath = ResourceUtils.normalizeFilePath(relativePath, false);
+//                    af.setAltFile(relativePath);
+//                }
+//            }
+//        }
 
         generateModDisplayDescription();
         ModManager.debugLogger.writeMessage("Finished loading moddesc.ini for " + getModName());
