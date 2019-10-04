@@ -749,8 +749,8 @@ public class ModXMLTools {
                         }
                     }
                     for (AlternateFile altFile : job.getAlternateFiles()) {
-                        String relativePathLower =  ResourceUtils.getRelativePath(altFile.getAltFile(), modpath, File.separator).replaceAll("\\\\", "/");
-                        String relativePath =  ResourceUtils.getRelativePath(altFile.getAltFile(), modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
+                        String relativePathLower =  altFile.getAltFile().replaceAll("\\\\", "/").toLowerCase();
+                        //String relativePath =  ResourceUtils.getRelativePath(altFile.getAltFile(), modpath, File.separator).toLowerCase().replaceAll("\\\\", "/");
                         boolean existsOnServer = false;
                         for (ManifestModFile mf : serverFiles) {
                             if (mf.getRelativePath().toLowerCase().equals(relativePathLower)) {
