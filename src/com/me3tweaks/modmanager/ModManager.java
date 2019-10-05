@@ -891,11 +891,11 @@ public class ModManager {
             ModManager.debugLogger.writeMessage(ExceptionUtils.getStackTrace(e1));
             if (isAdmin()) {
                 JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-                        "An error occurred extracting binkw32_asi.dll out of ME3CMM.exe.\nPlease report this to Mgamerz.",
+                        "An error occurred extracting binkw32_asi.dll out of ME3CMM.exe.\nPlease report this to Mgamerz on the ME3Tweaks Discord.",
                         "binkw32 dll error", JOptionPane.ERROR_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(ModManagerWindow.ACTIVE_WINDOW,
-                        "An error occurred extracting binkw32_asi.dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator or grant yourself write permissions from the tools menu.",
+                        "An error occurred extracting binkw32_asi.dll out of ME3CMM.exe.\nYou may need to run ME3CMM.exe as an administrator or grant yourself write permissions from the tools menu.\nPlease report this to Mgamerz on the ME3Tweaks Discord.",
                         "binkw32 dll error", JOptionPane.ERROR_MESSAGE);
             }
             return false;
