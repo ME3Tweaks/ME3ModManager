@@ -304,6 +304,16 @@ public class Mod implements Comparable<Mod> {
             modCMMVer = 1.0f;
         }
 
+        if (modCMMVer >= 6)
+        {
+            //Java Mod Manager does not support these mods.
+            ModManager.debugLogger.writeError("Mod Manager does not support cmmver 6 or higher. You must use ME3Tweaks Mod Manager for these mods.");
+            delayedFailure = "This mod targets ModDesc 6 or higher, which is only supported in ME3Tweaks Mod Manager. Mass Effect 3 Mod Manager users will be upgraded to" +
+                    "ME3Tweaks Mod Manager in the future, if you want to use this mod you must download it yourself from https://me3tweaks.com/modmanager.";
+            setFailedReason(delayedFailure);
+            return;
+        }
+
         //READ NON-ESSENTIAL DATA, USEFUL FOR FAILED MODS, AS THEY WILL ABORT ON ERROR
         if (modini.get("ModInfo", "modver") != null) {
             modVersion = modini.get("ModInfo", "modver");

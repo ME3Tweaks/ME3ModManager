@@ -390,7 +390,7 @@ public class ModImportArchiveWindow extends JDialog {
             } else {
                 importButton.setEnabled(false); //will stay false if no mods loaded
                 if (!onlineRequired) {
-                    descriptionArea.setText("The selected archive does not contain any Mod Manager mods.");
+                    descriptionArea.setText("The selected archive does not contain any Mass Effect 3 Mod Manager mods.");
                     importButton.setText("No mods in this archive");
                 } else {
                     descriptionArea.setText("The selected archive can only be imported with a ME3Tweaks custom built moddesc.ini file. Please ensure you have internet connectivity and can reach ME3Tweaks in a browser, and try again.");

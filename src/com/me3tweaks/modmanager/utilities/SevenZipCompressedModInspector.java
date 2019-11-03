@@ -480,6 +480,7 @@ public class SevenZipCompressedModInspector {
                     ByteArrayInOutStream value = entry.getValue();
                     ModManager.debugLogger.writeMessage("Loading compressed mod descriptor. - may throw errors for missing files - OK to ignore.");
                     Mod mod = new Mod(value);
+                    if (mod.modCMMVer >= 6) continue; //Do not allow these
                     CompressedMod cm = new CompressedMod();
                     ModManager.debugLogger.writeMessage("Finished loading compressed mod descriptor.");
                     cm.setModDescMod(mod);
