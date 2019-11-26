@@ -2044,6 +2044,8 @@ public class Mod implements Comparable<Mod> {
                                             .writeError("[alt dlc application] Alt dlc specifies non-existent Custom DLC/Mod Manager Header, this shouldn't really be possible. "
                                                     + conditionaldlc);
                                 }
+                            } else {
+                                remappedHeaders.add(dlcpart.toUpperCase());
                             }
                         } else {
                             remappedHeaders.add(dlcpart.toUpperCase());
