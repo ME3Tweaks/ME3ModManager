@@ -50,6 +50,7 @@ import com.me3tweaks.modmanager.utilities.ResourceUtils;
 public class UpdateAvailableWindow extends JDialog implements ActionListener, PropertyChangeListener {
 	String downloadLink, downloadLink2, updateScriptLink, manualLink, changelogLink;
 	boolean error = false;
+	boolean ism3upgrade = false;
 	String version;
 	String buildHash;
 	long build;
@@ -71,6 +72,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		manualLink = (String) updateInfo.get("manual_link");
 		changelogLink = (String) updateInfo.get("changelog_link");
 		buildHash = (String) updateInfo.get("build_md5");
+		ism3upgrade = build > 100;
 
 		if (manualLink == null) {
 			manualLink = downloadLink2 == null ? downloadLink : downloadLink2;
@@ -121,7 +123,7 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		versionsLabel = new JLabel("<html>Local Version: " + ModManager.VERSION + " (Build " + ModManager.BUILD_NUMBER + ")<br>" + "Latest Version: " + latest_version_hr
 				+ " (Build " + latest_build_number + ")</html>");
 
-		String release_notes = (String) updateInfo.get("release_notes");
+		String release_notes = (String) updateInfo.get(ism3upgrade ? "release_notes_me3cmm" : "release_notes");
 		changelogLabel = new JLabel("<html><div style=\"width:270px;\">" + release_notes + "</div></html>");
 		updateButton = new JButton("Install Update");
 		updateButton.addActionListener(this);
@@ -129,6 +131,9 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		notNowButton.addActionListener(this);
 		nextUpdateButton = new JButton("Skip this build");
 		nextUpdateButton.addActionListener(this);
+		if (ism3upgrade){
+			nextUpdateButton.setEnabled(false);
+		}
 		manualDownloadButton = new JButton("Manual Download");
 		manualDownloadButton.addActionListener(this);
 		changelogButton = new JButton("View full changelog");
@@ -542,36 +547,55 @@ public class UpdateAvailableWindow extends JDialog implements ActionListener, Pr
 		sb.append("\r\n");
 		sb.append(")");
 		sb.append("\r\n");
-		sb.append("::Update the files");
-		sb.append("\r\n");
-		sb.append("xcopy /Y /S \"" + ModManager.getTempDir() + "NewVersion\" \"" + System.getProperty("user.dir") + "\"");
-		sb.append("\r\n");
+		if (ism3upgrade){
+			sb.append("::Copy ME3TweaksModManager.exe to cmmdir");
+			sb.append("\r\n");
+			sb.append("xcopy /Y /S \"" + ModManager.getTempDir() + "NewVersion\\ME3TweaksModManager\" \"" + System.getProperty("user.dir") + "\"");
+		} else {
+			sb.append("::Update the files");
+			sb.append("\r\n");
+			sb.append("xcopy /Y /S \"" + ModManager.getTempDir() + "NewVersion\" \"" + System.getProperty("user.dir") + "\"");
+		}
 
+		sb.append("\r\n");
 		sb.append("::Cleanup");
 		sb.append("\r\n");
 		sb.append("del /Q \"" + ModManager.getTempDir() + "ME3CMM.7z\"");
 		sb.append("\r\n");
 		sb.append("rmdir /S /Q \"" + ModManager.getTempDir() + "NewVersion\"");
 		sb.append("\r\n");
-		sb.append("::Run Mod Manager");
-		sb.append("\r\n");
 		sb.append("popd");
 		sb.append("\r\n");
-		sb.append("echo Starting Mod Manager...");
+		sb.append("::Run Mod Manager");
+		sb.append("\r\n");
+		if (ism3upgrade){
+			sb.append("echo Upgrading to ME3Tweaks Mod Manager - this may take a few seconds...");
+		} else {
+			sb.append("echo Starting Mod Manager...");
+		}
 		sb.append("\r\n");
 		sb.append("\r\n");
 		//sb.append("pause");
 		sb.append("\r\n");
-		if (build == ModManager.BUILD_NUMBER) {
-			sb.append("ME3CMM.exe --minor-update-from ");
-		} else {
-			sb.append("ME3CMM.exe --update-from ");
+		if (ism3upgrade){
+			sb.append("start ME3TweaksModManager.exe --upgrade-from-me3cmm");
+            sb.append("\r\n");
+            sb.append("timeout /t 8 /nobreak");
+            sb.append("\r\n");
+
+        } else {
+			if (build == ModManager.BUILD_NUMBER) {
+				sb.append("ME3CMM.exe --minor-update-from ");
+			} else {
+				sb.append("ME3CMM.exe --update-from ");
+			}
+			sb.append(ModManager.BUILD_NUMBER);
+			if (build == ModManager.BUILD_NUMBER) {
+				sb.append(" ");
+				sb.append(buildHash);
+			}
 		}
-		sb.append(ModManager.BUILD_NUMBER);
-		if (build == ModManager.BUILD_NUMBER) {
-			sb.append(" ");
-			sb.append(buildHash);
-		}
+
 		sb.append("\r\n");
 		sb.append("endlocal");
 		sb.append("\r\n");

@@ -35,17 +35,6 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
-      <library name="commons-io-2.5.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/Libraries/commons-io-2.5.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="https://commons.apache.org/proper/commons-io/javadocs/api-2.5/" />
-        </JAVADOC>
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
       <library name="derby.jar">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/Libraries/derby.jar!/" />
@@ -54,15 +43,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="ini4j-0.5.2.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/Libraries/ini4j-0.5.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="commons-io-2.5" level="project" />
     <orderEntry type="module-library">
       <library name="json-simple-1.1.1.jar">
         <CLASSES>
@@ -100,17 +81,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="swingx-all-1.6.5-1.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/Libraries/swingx-all-1.6.5-1.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="file:/X:/Google%20Drive/Code/Java/Mod%20Manager/Library%20Documentation/" />
-        </JAVADOC>
-        <SOURCES />
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="httpclient-4.5.11" level="project" />
     <orderEntry type="module-library">
       <library name="commons-lang3-3.6.jar">
         <CLASSES>
@@ -131,9 +102,28 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="httpclient-4.5.7" level="project" />
     <orderEntry type="library" name="jsch-0.1.54" level="project" />
     <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="module-library">
+      <library name="swingx-all-1.6.5-1.jar">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/Libraries/swingx-all-1.6.5-1.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="file:/X:/Google%20Drive/Code/Java/Mod%20Manager/Library%20Documentation/" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="ini4j-0.5.2.jar">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/Libraries/ini4j-0.5.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="inheritedJdk" />
   </component>
 </module>
