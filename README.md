@@ -1,4 +1,7 @@
-# Mass Effect 3 Mod Manager
+# [This project has been superceded by ME3Tweaks Mod Manager](https://github.com/ME3Tweaks/ME3TweaksModManager)
+This program is no longer supported.
+
+## Mass Effect 3 Mod Manager
 Mass Effect 3 Mod Manager handles installing mods for Mass Effect 3 from basic coalesced swaps to advanced mods that change configuration based on what's already installed.
 
 ![Mass Effect 3 Mod Manager](https://raw.github.com/mgamerz/me3modmanager/static-content/modmanager.png)
